@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 04-app · amayui-toolkit
 
 面向《天結いキャッスルマイスター》的本地数据查询 / 制作规划应用。

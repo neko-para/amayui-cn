@@ -52,38 +52,20 @@
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "B1 删掉 interpreter.run()/RunResult（本票第 1 项完成）；第 2/3 项按 notes 里的实测情况改归：pickHoverLabel 是测试门面（单独改），waitFlags 归 T-0008"
+      "what": "B1 删掉 interpreter.run()/RunResult（本票第 1 项完成）；第 2/3 项按 notes 里的实测情况改归：pickHoverLabel 是测试门面（单独改），waitFlags 归 T-0008",
+      "kind": "decision"
     },
     {
       "at": "2026-09-15",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "改字段：priority"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "open → done —— ①–③ 已在 B1/T-0008 落地；本次删掉 Engine.pickHoverLabel（门面挪 test/harness），44/44 绿 + 源码棘轮"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— ①–③ 已在 B1/T-0008 落地；本次删掉 Engine.pickHoverLabel（门面挪 test/harness），44/44 绿 + 源码棘轮",
+      "kind": "status"
     }
   ],
-  "notes": "（2026-09-14 B1）三项的准确情况，别照原描述盲删：\n1. `interpreter.run()` / `RunResult` **已删**（全仓无导入者，且没有任何每帧服务）——这是 B1 的一部分。\n2. `Engine.pickHoverLabel()` **只被测试调用**（`adv-msgwin.test.ts` 5 处 + `route-dispatch.test.ts` 5 处）。它不是纯死代码，而是\"产品路径已改走 `serviceAdvanceWait` 内部\"之后留下的**测试门面**；删它要同步改写那 10 条断言（并会丢掉这 10 条里对 `hoverDispatchAllowed()` 门控的覆盖）⇒ 单独一次小改动做，别混在 B1 里。\n3. `PixiBackend.waitFlags` 的粘滞是**缺陷**不是死代码 ⇒ 归 T-0008（needsRender 判据），删字段要跟它一起做。",
   "links": {
     "tickets": [
       "T-0008",

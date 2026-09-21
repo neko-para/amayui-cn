@@ -256,7 +256,7 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
 > `test/engine-field-store.test.ts`。
 >
 > **「会回写操作数」的 stub 正在逐批转真实现**（2026-09 起；57 条 stub 的逐条复评、分类判据与批次台账见
-> `docs-new/03-engine/stub-reaudit-2026-09.md`）：
+> `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`）：
 > - **批 A1（3 条，已完成）**：`0x1CB`（`GetConfig("message:ReadTextSkip") → op1`，`0x1CA` 的读取端；
 >   语料 30+ 场景脚本 + 本体 `SC0000:443`/`DRAWCHARM:8` 都用它 —— 此前当 no-op ⇒ 读到旧槽值）、
 >   `0x2C8`（**按字符**取子串 → op1 字符串，`0x2C7` 的字符版）、`0x2C9`（**可变数组元素引用**

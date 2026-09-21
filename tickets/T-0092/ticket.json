@@ -3,7 +3,7 @@
   "type": "bug",
   "priority": "P3",
   "area": "emulator/vm",
-  "why": "审计 `op-2-10`（`docs-new/03-engine/audit-2026-09-opcodes.md`）：引擎 `sub_41A820` 的 **-11** 分支（raw 25645-25660）是 `_this[95777] = -1` → 读配置 `set:SaveVersion1` 并写回 → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → `return`；\n而 `sub_40F750`（raw 18877-18951）三条路径**都不做程序退出**（a2==2 / a2==3 装载记录并恢复 ip/返回栈；a2==1 且 a3∉{10,20} 什么都不做）。\nemulator `app/amayui-emulator/src/vm/handlers/control.ts` 只在 `c.e.saveResume?.pendingRecord0` 为真时走装载分支，否则落进 `else` 抛 `ExitScript`（= 程序退出）⇒ **与引擎语义相反**。\n-11 由存档/读档装载路径写入（raw 19577、19695）⇒ 可达；一旦命中，emulator 会把「一次控制转移」误当成「整个程序退出」（静默地错，不报错）。\n另：引擎该分支对 `set:SaveVersion1/2` 的读改写在 emulator 也没有对应实现。",
+  "why": "审计 `op-2-10`（`docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md`）：引擎 `sub_41A820` 的 **-11** 分支（raw 25645-25660）是 `_this[95777] = -1` → 读配置 `set:SaveVersion1` 并写回 → `sub_40F750(_this, v5, \"set:SaveVersion2\")` → `return`；\n而 `sub_40F750`（raw 18877-18951）三条路径**都不做程序退出**（a2==2 / a2==3 装载记录并恢复 ip/返回栈；a2==1 且 a3∉{10,20} 什么都不做）。\nemulator `app/amayui-emulator/src/vm/handlers/control.ts` 只在 `c.e.saveResume?.pendingRecord0` 为真时走装载分支，否则落进 `else` 抛 `ExitScript`（= 程序退出）⇒ **与引擎语义相反**。\n-11 由存档/读档装载路径写入（raw 19577、19695）⇒ 可达；一旦命中，emulator 会把「一次控制转移」误当成「整个程序退出」（静默地错，不报错）。\n另：引擎该分支对 `set:SaveVersion1/2` 的读改写在 emulator 也没有对应实现。",
   "acceptance": [
     "把 `caller === -11` 的兜底改成按 `sub_40F750` 的语义：**无记录 0 ⇒ 不做任何动作**（不抛 ExitScript），并说明此时帧 ip / caller 应落成什么（按体 raw 25645-25660 + 18877-18951 给出）",
     "补 `set:SaveVersion1` / `set:SaveVersion2` 的读改写（或写明为什么不需要——必须给体依据）",
@@ -12,7 +12,7 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-2-10 — 0x02 exit 的 -11 分支被 emulator 当成「整个程序退出」",
       "note": "审计条目：声明 / 实际 / 证据 / 建议处置",
       "line": 178
@@ -42,40 +42,21 @@
     ],
     "docs": [
       "docs-new/03-engine/opcode-table.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md"
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md"
     ]
   },
-  "notes": "来源 = 审计 P2（`op-2-10`），此前没有被任何票据承接（`T-0079` 只把 `flow-control.md` 的措辞改成「已实现」，没有核 -11 的兜底分支）。★定位提示：先 grep `//----- (0041A820)` 与 `//----- (0040F750)` 的定义头再读体。",
   "id": "T-0092",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → done —— 已落地：control.ts 的 op_exit -11 分支改为按 sub_40F750 语义（写 callRet=-1 → 两次 GetConfig → 分派 record/partial/none；无记录 0 ⇒ 不动作、不抛 ExitScript），既有 pendingRecord0 装载路径一字未动，其它负值仍抛；守卫 test/op-02-exit-minus11.test.ts（5 条）。★验收②走票据允许的「写明为什么不需要」：审计 op-2-10 的「读配置并写回」是 Hex-Rays 误渲染 —— 权威 = .lst:0041A85A-0041A88B（两次 [vtable+4] = sub_4904D0 retn 4 单参 GetConfig 只读；写侧 [vtable+12] = sub_492AB0 未被调用），已在审计与 opcode-table 0x02 行订正。npm run verify 全绿"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 已落地：control.ts 的 op_exit -11 分支改为按 sub_40F750 语义（写 callRet=-1 → 两次 GetConfig → 分派 record/partial/none；无记录 0 ⇒ 不动作、不抛 ExitScript），既有 pendingRecord0 装载路径一字未动，其它负值仍抛；守卫 test/op-02-exit-minus11.test.ts（5 条）。★验收②走票据允许的「写明为什么不需要」：审计 op-2-10 的「读配置并写回」是 Hex-Rays 误渲染 —— 权威 = .lst:0041A85A-0041A88B（两次 [vtable+4] = sub_4904D0 retn 4 单参 GetConfig 只读；写侧 [vtable+12] = sub_492AB0 未被调用），已在审计与 opcode-table 0x02 行订正。npm run verify 全绿",
+      "kind": "status"
     }
   ],
   "tests": [

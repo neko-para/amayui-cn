@@ -99,37 +99,33 @@
       "T-0048"
     ]
   },
-  "notes": "过程笔记见 notes.md（含：官方资料口径摘要与链接、两个 Windows 坑、以及「为什么降级必须做扎实」）。★残余（已写进能力条目）：`ShowCursor` 的两处与另两处「光标居中」没接线（本作只在 0x10A 这条路上需要）；三条语料用途的**观感**要人在真界面看一次（`T-0051` 的 E4 清单）。★`.node` 不进 git（按需构建）—— 这也意味着**任何自动化都不能假定模块已构建**，降级路径是契约的一部分。",
   "id": "T-0058",
   "status": "done",
   "history": [
     {
       "at": "2026-09-17",
-      "what": "创建（用户要求：用 cmake + cpp + node-addon-api 建一个辅助 .node 模块，后续宿主需求复用它；要查资料把二进制打包讲清楚）"
+      "what": "创建（用户要求：用 cmake + cpp + node-addon-api 建一个辅助 .node 模块，后续宿主需求复用它；要查资料把二进制打包讲清楚）",
+      "kind": "created"
     },
     {
       "at": "2026-09-17",
-      "what": "调研：Electron 官方 Native Node Modules（延迟加载钩子 / 何时必须重编译）、node-addon-api 的 cmake-js 写法、prebuildify 与 asarUnpack 口径；确认本机工具链（CMake 4.3 + VS 2026 MSVC 19.51 + LLVM/Ninja）"
+      "what": "调研：Electron 官方 Native Node Modules（延迟加载钩子 / 何时必须重编译）、node-addon-api 的 cmake-js 写法、prebuildify 与 asarUnpack 口径；确认本机工具链（CMake 4.3 + VS 2026 MSVC 19.51 + LLVM/Ninja）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "建 native/（多模块之家 + 统一口径）与 native/win32-input：CMakeLists + C++ N-API（光标/虚拟屏/系统度量/键态/显隐）+ CJS 加载器（搜索链+降级）+ d.ts + 只读烟测 + README（构建与打包）；构建成功（MSVC，含 win_delay_load_hook.cc）"
+      "what": "建 native/（多模块之家 + 统一口径）与 native/win32-input：CMakeLists + C++ N-API（光标/虚拟屏/系统度量/键态/显隐）+ CJS 加载器（搜索链+降级）+ d.ts + 只读烟测 + README（构建与打包）；构建成功（MSVC，含 win_delay_load_hook.cc）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "真机核验：模块级 set/get 往返一致并复位；Electron 宿主 `tools/verify-cursor.cjs` 验证 DIP→物理（125% 缩放）读回一致；`tools/boottime.cjs` 的产品日志证明 .node 在 electron.exe 里加载成功"
+      "what": "真机核验：模块级 set/get 往返一致并复位；Electron 宿主 `tools/verify-cursor.cjs` 验证 DIP→物理（125% 缩放）读回一致；`tools/boottime.cjs` 的产品日志证明 .node 在 electron.exe 里加载成功",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "接入产品：NativeBridge.setSystemCursor 缝 + 0x10A 调用 + PixiBackend 换算 + IPC（preload/主进程）+ 主进程 nativeAddon.ts（三跳换算+诊断+降级）+ headless 显式 no-op + nativeTap 登记；守卫 test/native-win32.test.ts（7 条）；台账/文档：能力 host-cursor-warp 升 modeled-verified/E3、opcode-table 0x10A 行、input-system §10、docs-new/04-app/native-addon.md ⇒ open → done"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "接入产品：NativeBridge.setSystemCursor 缝 + 0x10A 调用 + PixiBackend 换算 + IPC（preload/主进程）+ 主进程 nativeAddon.ts（三跳换算+诊断+降级）+ headless 显式 no-op + nativeTap 登记；守卫 test/native-win32.test.ts（7 条）；台账/文档：能力 host-cursor-warp 升 modeled-verified/E3、opcode-table 0x10A 行、input-system §10、docs-new/04-app/native-addon.md ⇒ open → done",
+      "kind": "status"
     }
   ],
   "tests": [

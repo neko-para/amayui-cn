@@ -50,13 +50,14 @@ tickets/
   "tests":["app/amayui-emulator/test/x.test.ts"], // status=done 时★必须存在
   "evidence":[{"file":"app/…/report.ts","anchor":"maxStepsPerFrame","note":"…","line":108}],
   "blockedBy":["T-0001"],"links":{"docs":[],"analysis":[],"tickets":[]},
-  "notes":"自由文本（长内容写 notes.md）",
-  "history":[{"at":"2026-09-14","what":"创建"}]
+  "history":[{"at":"2026-09-14","kind":"created","what":"创建"}]   // kind ∈ created|status|scope|decision；无 --note 不追加
 }
 ```
 
-**`history[]` vs `changes.md`**：前者记**状态/范围级**事件（由工具自动追加），后者记**实现级**改动
-（第 N 次变更改了哪些文件、行为怎么变、判据是什么）。**别在两处重复记同一件事。**
+**`history[]` vs `changes.md` vs `journal.jsonl`**：`history` 记**状态/范围级**事件（工具写，**没有 `--note` 就不记**）；
+`changes.md` 记**实现级**改动（第 N 次变更改了哪些文件、行为怎么变、判据是什么）；`analysis/journal.jsonl` 记**会话级**沿革
+（本轮几条线、方法论教训、跨票因果）。**沿革只有这三处，别在别处复述。**
+★`ticket.json` 的 **`notes` 字段已废除**（2026-09）：长文一律写 `notes.md`。
 
 ---
 

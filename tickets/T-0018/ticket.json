@@ -102,43 +102,13 @@
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "改字段：title, acceptance"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：why, notes"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "open → done —— 整条槽链路实现 + 10 条守卫；引擎真源与两处保真度订正（0x1A1 不写操作数、0x1AC 第二份失败 = 2）见 notes.md，实测见 changes.md"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：why, tests"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 整条槽链路实现 + 10 条守卫；引擎真源与两处保真度订正（0x1A1 不写操作数、0x1AC 第二份失败 = 2）见 notes.md，实测见 changes.md",
+      "kind": "status"
     }
   ],
   "tests": [
@@ -146,6 +116,5 @@
     "app/amayui-emulator/test/save-slot-chain.test.ts",
     "app/amayui-emulator/test/wheel.test.ts",
     "app/amayui-emulator/test/save-data.test.ts"
-  ],
-  "notes": "为什么是「一整条链」：脚本侧一次存档/读档要用到 0x1A0（列表显示前逐槽读头判存在性）、0x1A1（装载）、0x19E（写）、0x1AE（写 .STH 缩略图）；少一条就表现成「界面能画但点不动/点不动菜单」。真实用例见 src/$1$SC0330.txt:532-545、571-582、17533-17596。★引擎保真度上的两个坑：① 0x1A1 **不写任何操作数**（raw 21217 的调度器丢弃返回值、sub_42DDE0 不调 sub_42B4B0）—— emulator 早先写了 op1 = 状态码，会污染脚本的占位槽（真脚本给 (global-int f7ffd)）；② 0x1AC「只有第二份文件（.STH）失败」的返回码是 **2** 不是 1。★本工程的槽是私有扩展（同一容器 + format 0 明文 payload + 尾块状态 AMYS1\\\\n + JSON），引擎读不了我们的槽、我们只读引擎槽的头 + 头里的游玩秒数（SLOT_GAPS 记了 5 条边界）。"
+  ]
 }

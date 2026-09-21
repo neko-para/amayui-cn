@@ -47,21 +47,18 @@
       "docs-new/03-engine/save-data.md"
     ]
   },
-  "notes": "并表是单调的（不会删键）⇒ 下一次保存写回的 overlay 副本就带上全部键，问题自愈；真游戏 base 那份始终不动。",
   "id": "T-0069",
   "status": "done",
   "history": [
     {
       "at": "2026-09-18",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-18",
-      "what": "open → done —— 并表 + readSaveDataBoth；守卫 test/save-data.test.ts"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 并表 + readSaveDataBoth；守卫 test/save-data.test.ts",
+      "kind": "status"
     }
   ]
 }

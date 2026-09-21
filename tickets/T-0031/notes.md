@@ -89,3 +89,7 @@ CONFIG1.txt:2327  save-int (global-int a9df)                ; 同一批：SAVE.D
   键表/默认取 `sub_491880`（可机械抽取：`sub_434D00`/`sub_434E00` 调用序列），顺序即构造顺序（与 `sub_490590` 的导出一致）。
 - 这样首跑生成的 INI **天然全量**，"部分键集会不会固化残缺配置"的顾虑消失（只需论证：我们导出的键值 = 引擎内建默认 + 文件叠盖后的值）。
 - `test/engine-config.test.ts` 的那条既存失败（`formatIni：往返不丢键、不改分节/键顺序`）应按新语义**改写**为固定顺序全量导出的断言。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+定因=无 INI 早退使配置注册表改动不落盘；已按「固定顺序全量导出」修完并 E4 验证（写入/读回两半）。证据：evidence/generated-SYS4REG.ini（115 键产物）、run1-first-change-creates-ini.log（[main] config ini <-）、run2-boot-reads-ini.log（引擎字段按 INI 恢复）。★引擎侧订正：INI 只读、导出写 HKCU（见 capability note）。★工具坑：record.cjs 的 --out 按仓库根解析，传 cwd 相对路径会 EPERM 弹窗 —— 见 T-0032。

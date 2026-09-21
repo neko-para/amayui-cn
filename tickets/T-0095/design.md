@@ -343,7 +343,7 @@ opcode-table 里 `0x70`/`0x71` 的 handler 列写 `sub_41ED20`/`sub_41ED80` 是�
      **`0x71` 行「读 op1 文本」是错的** ⇒ 改为「`op1` = 消息窗槽号（0 ⇒ 默认窗）」；
      `0x1D0` 行去掉 deferred、补「门在写端」；`0x85` 行理由订正；
    - `analysis/opcode-gaps.json`：464 → `implemented`；133(`i85`) 的 note 订正（清的是两张表，非 GDI 容器）；
-   - `docs-new/03-engine/route-c-text-metrics-2026-09.md` §1.3 的 bit1 残余不确定：**本轮已闭环**（§9 引用证据链）。
+   - `docs-new/99-records/2026-09-route-c/route-c-text-metrics-2026-09.md` §1.3 的 bit1 残余不确定：**本轮已闭环**（§9 引用证据链）。
 
 ### 6.2 守卫怎么写（合成指令 + 断言清单）
 

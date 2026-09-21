@@ -66,29 +66,18 @@
       "T-0047"
     ]
   },
-  "notes": "同一轮顺手查到、**本单不改**的一条偏差（已单独开单 **tickets/T-0047**）：`0xCD` 的节流间隔 `Engine[429812]` 被 `mouse-callback`(0xCC) 的 op1 写入（`sub_453A60` raw 66101-66113），TITLE/CHARMEDIT 的 `mouse-callback 10`（十六进制 = 0x10）⇒ 真机 16ms（`32`=0x32 ⇒ 50ms）；emulator 的 `advanceThrottle` 仍恒 0（旧注「全工程无写入」漏了 `sub_453A60`）。改它会让三处用冻结时钟驱动的 headless 测试（title-exit / route-dispatch ⑦b）失去输入派发，需要同步改它们的时钟模型 ⇒ 见 T-0047（含失败清单与落地顺序）。文档（opcode-table 0xCC/0xCD、input-system §6a/§7b）已按引擎事实改写并标注 emulator 现状。",
   "id": "T-0046",
   "status": "done",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— open → done：0x100 的「掩码为空 ⇒ 派发默认键槽（Engine[517]=SetKeyTotal）」分支已实现（+ 两分支都压返回点、扫描上界收到 [517]），Engine[517] 初值 7 按 Input 构造建模。守卫 test/input.test.ts：合成用例（空掩码跳 joyJump[SetKeyTotal]、bit≥上界不派发、压返回点）+ CHARMEDIT 端到端（SetKeyTotal=12 ⇒ 右键关闭离开脚本；=7 ⇒ 被 jcc (local b) 挡回）。真启动链实测 Engine[517]=12（SYSTEM4 i0fe c）；npm run verify 全绿 563 测试。另一条相关偏差（0xCD 节流间隔 = mouse-callback 的 op1；emulator 仍恒 0）已写进 notes，单独处理。"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "改字段：links, notes"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— open → done：0x100 的「掩码为空 ⇒ 派发默认键槽（Engine[517]=SetKeyTotal）」分支已实现（+ 两分支都压返回点、扫描上界收到 [517]），Engine[517] 初值 7 按 Input 构造建模。守卫 test/input.test.ts：合成用例（空掩码跳 joyJump[SetKeyTotal]、bit≥上界不派发、压返回点）+ CHARMEDIT 端到端（SetKeyTotal=12 ⇒ 右键关闭离开脚本；=7 ⇒ 被 jcc (local b) 挡回）。真启动链实测 Engine[517]=12（SYSTEM4 i0fe c）；npm run verify 全绿 563 测试。另一条相关偏差（0xCD 节流间隔 = mouse-callback 的 op1；emulator 仍恒 0）已写进 notes，单独处理。",
+      "kind": "status"
     }
   ]
 }

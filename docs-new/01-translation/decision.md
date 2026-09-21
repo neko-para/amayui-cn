@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 方案 B 决策与依据
 
 ## 1. 目标

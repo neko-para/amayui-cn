@@ -61,41 +61,33 @@
       "docs-new/03-engine/save-data.md"
     ]
   },
-  "notes": "本次试接的结论（重要）：把「帧 0 ← CALLBACK_LOAD.BIN（返回帧 -11）+ exit 时装记录 0」接上之后，**读档会卡死**——headless 实测轨迹只有 `CALLBACK_LOAD.BIN`、40 帧后 ip 停在数组下标 12（= dword 38 = `i2fa 0`，`0x2FA`/`sub_426910` 在 opcode-table 里只标了「仅映射」、语义未建模）⇒ 已回退到「直接装记录 0 的脚本」，只留下按名读的通道。**所以本票的第一步其实是：先给 `0x2FA` 建模**（看 `sub_426910` 在 CALLBACK_LOAD 里那一步做什么），再按引擎接回调。第二步（若 ① 之后 TITLE 的项仍在）：查 `sub_410160` 第一步那两段被配置门控的释放（`set:CreateObject & 2` ⇒ 释放全部 1000 个图像槽 + 10 个 L2D 槽 + 两个容器）。用户截图里的 Now Loading 横幅说明那一张是**读档过程中的瞬态**，steady state 见日志最后一次 `[present]`（无 190xxx 菜单项，但 TITLE 的 10/100/118/119/200/201/300+ 仍在）。★同日收口：装载点补 clearDrawContainer()+clearMeshSlots() ⇒ **E4 实拍**（npm run shot -- --load 79）读档后画面只剩 ADV 场景（背景 + 立绘 + 文字），标题/菜单残留全部消失。根因记在能力条 scene-teardown-on-load-point：引擎把上一屏的 CMesh/纹理析构掉、且场景 init 的 i1f6 会整批清容器，但**读档续跑落点在主循环里 ⇒ 那一遍 i1f6 被 i0ae 跳过**（NOVEL dword 29 → 628，越过 dword≈262 的 i1f6）。 ★收尾清单更新（同日）：CALLBACK_LOAD 用到的最后两条「仅映射」指令已登记 —— `0x137`（`i137 0`，ResetStack：int 栈家族全库只此 1 处、`i138`/`i13b`/`i13c`/`i13d` 全 0 处 ⇒ 观测等价 no-op）与 `0x244`（`i244`，批量清 `flags & 2` 绘制项的 `anim_start`；emulator 先 no-op 并如实记下「窗推进语义不完全同构」这个缺口）。登记后 headless 实测整条读档链**零未实现指令**：`CALLBACK_LOAD → LOADCHARM → SYSTEM4 → … → NOVEL → SN0000`（落点 917 / 收尾落点 794），ADV 文字回到 8 号窗 (0,0,1280,720)。\n★2026-09 复核更正（tickets/T-0074）：上面「引擎把上一屏的 CMesh/纹理对象析构掉」**不成立** —— 那两段释放被配置门控（set:CreateObject & 2 / AutoFreeTexture & 2），而引擎默认值 = 1 / 0（raw 111733 / 111742）⇒ 装载路径**什么都不清**（sub_410160 的 27 个被调函数全查过；i0ae 也只调 sub_40F750 重装帧、不重建绘制项）。因此装载点的 clearDrawContainer()+clearMeshSlots() 只是 emulator 侧近似；引擎实际靠「上一屏残留的绘制项 + 重建后的槽对象（Scene[slot+10614] / Scene[5*slot+466]）」还原画面 ⇒ 整批清掉会清掉载荷项（用户实测：清后背景只剩上一屏残留像素）。CALLBACK_LOAD 那一跳与槽表重装仍是引擎行为，保留。",
   "id": "T-0072",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建（用户读档截图 + 日志取证）"
+      "what": "创建（用户读档截图 + 日志取证）",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → done —— 先补 0x2FA（T-0073）让 CALLBACK_LOAD 能跑到底，再按引擎接：装载点按名装回调进帧 0（返回帧 -11）+ op_exit 的 -11 分支装记录 0；守卫 test/slot-load-resume.test.ts 的 E3 断言这一跳"
+      "what": "open → done —— 先补 0x2FA（T-0073）让 CALLBACK_LOAD 能跑到底，再按引擎接：装载点按名装回调进帧 0（返回帧 -11）+ op_exit 的 -11 分支装记录 0；守卫 test/slot-load-resume.test.ts 的 E3 断言这一跳",
+      "kind": "status"
     },
     {
       "at": "2026-09-19",
-      "what": "改字段：evidence"
+      "what": "done → open —— 2026-09 复核（tickets/T-0074）：装载点 clearDrawContainer()+clearMeshSlots() 已确认不是引擎行为（sub_410160 的 27 个被调函数里没有清容器；唯一的整批释放是 raw 19378-19389 的两段配置门，默认 set:CreateObject=1 / set:AutoFreeTexture=0 ⇒ 都不执行；i0ae 只重装帧、不重建绘制项）。本票的 CALLBACK_LOAD 半边保留，'丢掉上一个画面的绘制项' 半边降级为 emulator 侧近似，真做法需要 仮想ディスプレイ/载荷项 机制，见 T-0074。",
+      "kind": "status"
     },
     {
       "at": "2026-09-19",
-      "what": "done → open —— 2026-09 复核（tickets/T-0074）：装载点 clearDrawContainer()+clearMeshSlots() 已确认不是引擎行为（sub_410160 的 27 个被调函数里没有清容器；唯一的整批释放是 raw 19378-19389 的两段配置门，默认 set:CreateObject=1 / set:AutoFreeTexture=0 ⇒ 都不执行；i0ae 只重装帧、不重建绘制项）。本票的 CALLBACK_LOAD 半边保留，'丢掉上一个画面的绘制项' 半边降级为 emulator 侧近似，真做法需要 仮想ディスプレイ/载荷项 机制，见 T-0074。"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "改字段：evidence（②c 注释重写 ⇒ 锚点从「②c ⚠️**emulator 侧近似**」跟进到「②c ★**装载点不整批清绘制项**」）"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "T-0083 的 (B) 步落地：撤销装载点的 clearDrawContainer()+clearMeshSlots()，改为 native.dropFrameItems(callerFrame)（装载点只丢掉**被放弃的调用方帧**画的绘制项 = 引擎 仮想ディスプレイ 复位 `sub_403EF0` 的近似）；守卫 test/slot-load-screen.test.ts（(B) 机械判据 + (C) A/B 模型一致）。★E4 实拍（`npm run shot -- --load 79`）：读档后存档列表的**文字/行框**已消失，但仍有约 49 项（handle 120xxx/121xxx）残留 —— 它们**不是调用方帧（2=SAVE.BIN）画的**（日志 `dropFrameItems: 剩余绘制项按归属帧分桶`）⇒ 「哪一层 UI」的判据还要扩到同一条被放弃的调用链（见 T-0083 的 (B) 收尾项）"
+      "what": "T-0083 的 (B) 步落地：撤销装载点的 clearDrawContainer()+clearMeshSlots()，改为 native.dropFrameItems(callerFrame)（装载点只丢掉**被放弃的调用方帧**画的绘制项 = 引擎 仮想ディスプレイ 复位 `sub_403EF0` 的近似）；守卫 test/slot-load-screen.test.ts（(B) 机械判据 + (C) A/B 模型一致）。★E4 实拍（`npm run shot -- --load 79`）：读档后存档列表的**文字/行框**已消失，但仍有约 49 项（handle 120xxx/121xxx）残留 —— 它们**不是调用方帧（2=SAVE.BIN）画的**（日志 `dropFrameItems: 剩余绘制项按归属帧分桶`）⇒ 「哪一层 UI」的判据还要扩到同一条被放弃的调用链（见 T-0083 的 (B) 收尾项）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-20",
-      "what": "done：装载点不再留上一屏的项 —— 引擎 sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 经 native.restoreDrawItems 等价实现（T-0083）。A/B 守卫在 slot-load-screen.test.ts"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "done：装载点不再留上一屏的项 —— 引擎 sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 经 native.restoreDrawItems 等价实现（T-0083）。A/B 守卫在 slot-load-screen.test.ts",
+      "kind": "status"
     }
   ]
 }

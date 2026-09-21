@@ -25,3 +25,7 @@
 在 `findDeadWrites()` 里对参与统计的文本先做一次注释剥离（`stripComments(src)`：行注释 `//…$`
 与块注释 `/*…*/`），再进 `countAccess`；`stripFunctions` 的顺序无所谓（两者互不影响）。
 守卫可以直接测 `countAccess`（若导出）或测 `findDeadWrites` 对一个临时目录的输入。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+★2026-09-16 收尾：四条 acceptance 全部达成（见上）；顺带把字符串字面量也纳入剥离范围。

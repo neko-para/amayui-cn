@@ -60,21 +60,18 @@
       "T-0034"
     ]
   },
-  "notes": "同族历史：T-0034（engine-config.test.ts 直接读真游戏 base 的 SYS4REG.INI ⇒ 玩家一改设置就红）—— 都是'守卫依赖环境/产物'。本票是它在另外两处的同类。③的现场：`node scripts/translate.js assemble CONFIG1` 写出 install/CONFIG1.BIN 后在 install/DATA1 上 ENOENT；补跑 CONFIG/CONFIG2 同样。跑完这三条后 test/config1-chain.test.ts 10/10 绿（2026-09-16 实测）。\n\n★2026-09-16 收尾：①②③ 都已解决（①平台化路径断言 ②产物缺失显式 skip/诊断 ③删掉\"往 install/DATA1 装\"的错误操作并从 res/images 补 AGF 的真源口径），本机 npm test 0 红。",
   "id": "T-0043",
   "status": "done",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— ①②③ 全部解决：①平台原生路径断言（macOS 12/12 绿）②config1-chain 缺产物时显式 skip/诊断（0 红）③删掉往 install/DATA1 装的错误操作 + res/images 作为 AGF overlay 真源；本机 npm test 559 条 0 红"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— ①②③ 全部解决：①平台原生路径断言（macOS 12/12 绿）②config1-chain 缺产物时显式 skip/诊断（0 红）③删掉往 install/DATA1 装的错误操作 + res/images 作为 AGF overlay 真源；本机 npm test 559 条 0 红",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -72,24 +72,17 @@
     ]
   },
   "status": "done",
-  "notes": "同轮顺带订正了 `rendering.md` 两处口径（由本单的 raw 复读逼出来的）：① 归并的 sort-key 是**表节点字节 +12 处的 key**（= handle = 层序），不是『项的 +12』——记录 `+12` 其实是源矩形 top（`sub_4ACE50` raw 131830-131833）；② `draw-texture` 记录 `+4 = op2 = 纹理槽`（`0x215` 用 `sub_4ADC20` 读它），不是『LAYER』；层序就是 map key。`i214` 的『整块互换但次序不变』正是『层序不在记录里』的反证。★未做：没有 E3 端到端（ADV 收场块在章节深处、BUNKIMOVE 需要武器画面状态；headless 里 boot SN0000 跑 2500 帧都到不了那些块），语义已由模型级 + VM 级守卫钉死。",
   "id": "T-0049",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "改字段：links"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "open → done —— open → done：0x214 进 `GFX_ITEM_OPS`（`op_swap_items` → `native.swapItems` → `scSwapItems`；Pixi 与 headless 两个宿主 + stubNative + nativeTap 白名单都接上）。语义按 raw 复读钉死：整条 740 字节记录互换、键(handle)/层序不动、缺键先建全 0 记录、两侧都缺只置脏位（无错误串）、只碰绘图项表（网格表不动）。守卫 test/op-214-swap-items.test.ts（模型级 9 条 + VM 级端到端 4 条）；opcode-table 0x214「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x423AE0 / 0x4ABEF0；台账新增 BUNKIMOVE（partial，含 43-77 的 10×i214 搬运段）；rendering.md 订正了两处口径（sort-key = 表节点 +12 的 key；记录 +4 = 纹理槽）。npm run verify 566 测试全绿。★无 E3：ADV 收场块在章节深处、BUNKIMOVE 需武器画面状态（headless boot SN0000 跑 2500 帧都到不了）。"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— open → done：0x214 进 `GFX_ITEM_OPS`（`op_swap_items` → `native.swapItems` → `scSwapItems`；Pixi 与 headless 两个宿主 + stubNative + nativeTap 白名单都接上）。语义按 raw 复读钉死：整条 740 字节记录互换、键(handle)/层序不动、缺键先建全 0 记录、两侧都缺只置脏位（无错误串）、只碰绘图项表（网格表不动）。守卫 test/op-214-swap-items.test.ts（模型级 9 条 + VM 级端到端 4 条）；opcode-table 0x214「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x423AE0 / 0x4ABEF0；台账新增 BUNKIMOVE（partial，含 43-77 的 10×i214 搬运段）；rendering.md 订正了两处口径（sort-key = 表节点 +12 的 key；记录 +4 = 纹理槽）。npm run verify 566 测试全绿。★无 E3：ADV 收场块在章节深处、BUNKIMOVE 需武器画面状态（headless boot SN0000 跑 2500 帧都到不了）。",
+      "kind": "status"
     }
   ]
 }

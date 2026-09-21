@@ -54,21 +54,18 @@
       "T-0002"
     ]
   },
-  "notes": "预载的 4 张图的实测映射见 why；本条是'删掉第二套入口'的整理需求，不需要新守卫，判据是启动日志 + 三屏截图 + G3 逐帧相等。",
   "id": "T-0029",
   "status": "open",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-17",
-      "what": "刷新 texturesIdle 证据行号（T-0054 在 pixiBackend.ts 插入代码导致漂移）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "刷新 texturesIdle 证据行号（T-0054 在 pixiBackend.ts 插入代码导致漂移）",
+      "kind": "decision"
     }
   ]
 }

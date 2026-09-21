@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · Live2D `.MOC` 二进制格式（本作 Cubism 2.0.06 / version 10）
 
 > **本页回答什么**：`.MOC` 文件**逐字节长什么样**、每个字段从哪来、哪些不变量被 335 个真实模型证实。
@@ -205,7 +209,7 @@ LAYOUT:{X,Y,ANCHOR_X,ANCHOR_Y,SCALE_X,SCALE_Y}=值   # ★动作自带布局：T
 ## 7. 未解 / 回链
 
 - **变形求值**（`BDAffine` 的 origin/scale/rotation/reflect 运算顺序、`BDBoxGrid` 的贝塞尔求值、
-  `params[0]` 最快变化的组合下标与插值）→ 结论在 `analysis/live2d-deform-semantics.md`，叙述在 `live2d.md`。
+  `params[0]` 最快变化的组合下标与插值）→ 结论在 `docs-new/99-records/2026-09-live2d/live2d-deform-semantics.md`，叙述在 `live2d.md`。
 - **每帧调用序列**（`sub_4783D0` → `sub_4BCB50` → update/draw）→ `live2d.md` §5。
 - **`0x346`–`0x351`**（572B 节点 setter / 纹理乘色 / 命名参数 / 队列复位）在本作语料里 **0 次**，
   但登记在 `opcode-table.md` 与 `live2d.md` §3（引擎能力边界，不能当不存在）。

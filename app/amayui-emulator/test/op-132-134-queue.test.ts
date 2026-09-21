@@ -1,6 +1,6 @@
 /**
  * ★通用 `Queue_int` 队族：`0x132` 重建 / `0x133` 压入 / `0x134` 弹出
- * （`tickets/T-0076` 的 B3；筛体方案 `docs-new/03-engine/b3-screening-2026-09.md` §2.1）。
+ * （`tickets/T-0076` 的 B3；筛体方案 `docs-new/99-records/2026-09-b3/b3-screening-2026-09.md` §2.1）。
  *
  * 引擎真源（逐条**定义头 grep** 定位，非邻近常量推断）：
  *  - `//----- (00422150)` **raw 30647-30681** ⇒ `0x132`：`op1 > 0xA`（unsigned）⇒ 打 "RESETQ" 错误串、

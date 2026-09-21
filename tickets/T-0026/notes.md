@@ -117,3 +117,6 @@ README 明确写着用它对比原版。**没有任何地方记录「现在这�
 - 证据新增两条锚点：`resourceDir.ts` 的 `resolveResourceDir`（唯一解析点，现在没有 config 输入）、
   `report.ts` 的 `arg('resources')`（最高优先的 CLI 覆盖）。
 
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+背景与设计取舍见 notes.md。核心动机：fontSet.ts 的字体政策是 cnjp 单一政策，而资源根已经可以切到纯日文（raw）——两者不一致时错的是字形，不报错。

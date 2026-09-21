@@ -1,5 +1,5 @@
 /**
- * opcode 缺口台账守卫（`tickets/T-0081`，B0；审计 `docs-new/03-engine/audit-2026-09.md` §1「不静默跳过」）。
+ * opcode 缺口台账守卫（`tickets/T-0081`，B0；审计 `docs-new/99-records/2026-09-audit/audit-2026-09.md` §1「不静默跳过」）。
  *
  * 守三件事：
  *  ① **覆盖**：语料（`src/*.txt` 941 个脚本）用到、而运行时三张表（`OPS`/`NATIVE_OPS`/`ENGINE_INTERNAL_OPS`）
@@ -110,4 +110,25 @@ test('★缺口台账给出的量级与审计结论一致（防"修着修着清�
     }
   }
   assert.ok(report.entries.length > 0 && report.corpusKinds > 200, `语料口径异常：kinds=${report.corpusKinds}`);
+});
+
+/**
+ * ★**文档模型（2026-09）**：生成物只渲染真源 `note` 的**一句话**，不是全文。
+ *
+ * 背景：`note` 是审计轨（71 条 ≈ 80 KB，含体证叙事 + 逐轮沿革）。此前 `renderGapMd` 把 `e.note`
+ * 逐字塞进 §§2–6 的表格单元 ⇒ 生成物 **92.8% 的字节**都是它，而其中大部分是"当初怎么想错了"的沿革，
+ * 对"现在该怎么处置"没有导航价值。现在改成裁到 120 字 + 指回 JSON（`gaps.js --show <opcode>`）。
+ *
+ * 本守卫是**反回归**：只要有人把全文渲染回来，就红。
+ */
+test('★生成物只渲染 note 的一句话（全文留在 JSON）', () => {
+  const md = fs.readFileSync(path.join(ROOT, 'docs-new/03-engine/opcode-gaps.md'), 'utf8');
+  const reg = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'analysis/opcode-gaps.json'), 'utf8'),
+  ) as { entries: { opcode: number; note: string }[] };
+  const norm = (s: string) => s.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  const big = reg.entries.filter((e) => norm(e.note).length > 400);
+  assert.ok(big.length >= 20, `样本太少（${big.length} 条 >400 字），守卫失去辨别力`);
+  const leaked = big.filter((e) => md.includes(norm(e.note).slice(0, 240))).map((e) => `0x${e.opcode.toString(16)}`);
+  assert.deepEqual(leaked, [], `这些条目的 note 全文漏进 md 了（应由 summarize() 裁剪）：${leaked.join(' ')}`);
 });

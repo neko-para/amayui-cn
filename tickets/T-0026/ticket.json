@@ -83,37 +83,38 @@
     "analysis": [],
     "tickets": []
   },
-  "notes": "背景与设计取舍见 notes.md。核心动机：fontSet.ts 的字体政策是 cnjp 单一政策，而资源根已经可以切到纯日文（raw）——两者不一致时错的是字形，不报错。",
   "id": "T-0026",
   "status": "done",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "改字段：acceptance —— 接受用户决策：jp 用工程自带 SarasaGothicSC"
+      "what": "改字段：acceptance —— 接受用户决策：jp 用工程自带 SarasaGothicSC",
+      "kind": "scope"
     },
     {
       "at": "2026-09-14",
-      "what": "改字段：title, why, acceptance, evidence —— 补充需求：resources.path（相对 config）+ 两键共用 resources 前缀；优先序 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > install/"
+      "what": "改字段：title, why, acceptance, evidence —— 补充需求：resources.path（相对 config）+ 两键共用 resources 前缀；优先序 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > install/",
+      "kind": "scope"
     },
     {
       "at": "2026-09-14",
-      "what": "改字段：tests, evidence —— 实现完成：resources 段（version 驱动字体分叉 / path 驱动资源根）+ 入口接线 + 测试"
+      "what": "改字段：tests, evidence —— 实现完成：resources 段（version 驱动字体分叉 / path 驱动资源根）+ 入口接线 + 测试",
+      "kind": "scope"
     },
     {
       "at": "2026-09-14",
-      "what": "open → doing —— 开工"
+      "what": "open → doing —— 开工",
+      "kind": "status"
     },
     {
       "at": "2026-09-14",
-      "what": "doing → done —— 实现 + 8 条新测试 + E1/E2/E3 实测见 changes.md（该单验收全部满足）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 实现 + 8 条新测试 + E1/E2/E3 实测见 changes.md（该单验收全部满足）",
+      "kind": "status"
     }
   ]
 }

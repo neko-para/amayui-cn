@@ -47,31 +47,33 @@
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
+      "kind": "created"
     },
     {
       "at": "2026-09-13",
-      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先"
+      "what": "改字段：priority —— 用户指示：headless 与 UI 的核心驱动一致性影响所有其它需求的开发/测试流程 ⇒ 最优先",
+      "kind": "scope"
     },
     {
       "at": "2026-09-13",
-      "what": "open → doing —— 开工：B1（用户指示最优先）"
+      "what": "open → doing —— 开工：B1（用户指示最优先）",
+      "kind": "status"
     },
     {
       "at": "2026-09-13",
-      "what": "改字段：acceptance —— 按用户指示把 B1 范围收敛为 headless 三家；run.ts 移出（其顺序是缺陷，B2 处理）"
+      "what": "改字段：acceptance —— 按用户指示把 B1 范围收敛为 headless 三家；run.ts 移出（其顺序是缺陷，B2 处理）",
+      "kind": "scope"
     },
     {
       "at": "2026-09-14",
-      "what": "B1 阶段 1 完成：src/frame/{host,loop}.ts + gameStartChain/config1Chain 接驱动（E3 断言全绿，判据见 changes.md 第 1 次变更）"
+      "what": "B1 阶段 1 完成：src/frame/{host,loop}.ts + gameStartChain/config1Chain 接驱动（E3 断言全绿，判据见 changes.md 第 1 次变更）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-14",
-      "what": "B1 完成：driver + headless 三家接线 + 驱动契约测试 6 例 + G2 逐字节取证 + interpreter.run 删除（427/427 全绿）→ done"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "B1 完成：driver + headless 三家接线 + 驱动契约测试 6 例 + G2 逐字节取证 + interpreter.run 删除（427/427 全绿）→ done",
+      "kind": "status"
     }
   ],
   "tests": [

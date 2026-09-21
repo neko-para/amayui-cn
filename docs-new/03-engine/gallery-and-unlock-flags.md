@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 回想/鉴赏与「已使用文件」解锁标志
 
 > 面向「回想（EU-ROOM）」这条界面链：四个按钮（CG 鑑賞 / シーン回想 / BGM 鑑賞 / 情報画面）上的

@@ -72,49 +72,48 @@
       "line": 2748
     }
   ],
-  "notes": "来源 = T-0035 第 7 轮的三图量化（老汉化 / 新汉化 / emulator，用户提供）。复现：python .tmp/measure-final.py（.tmp 为临时区，数字与口径写在 T-0035 notes 第 7 轮里）。",
   "id": "T-0042",
   "status": "done",
   "history": [
     {
       "at": "2026-09-15",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-15",
-      "what": "补：机制定位（f807b ← adcd[14acda]，CONFIG1 label_0000dc98）+ 两条真源锚点"
+      "what": "补：机制定位（f807b ← adcd[14acda]，CONFIG1 label_0000dc98）+ 两条真源锚点",
+      "kind": "decision"
     },
     {
       "at": "2026-09-15",
-      "what": "定位：排除 6 条假设，锁定未建模的离屏表面贴出路径；真机 SAVE.DAT 成功解码"
+      "what": "定位：排除 6 条假设，锁定未建模的离屏表面贴出路径；真机 SAVE.DAT 成功解码",
+      "kind": "decision"
     },
     {
       "at": "2026-09-15",
-      "what": "open → doing —— 定位：排除 6 条假设（截图色调曲线/合成 alpha/配置色/AA/描边顺序/模糊缩放），锁定未建模的 msgwin-offscreen-surface-lifecycle（E0）"
+      "what": "open → doing —— 定位：排除 6 条假设（截图色调曲线/合成 alpha/配置色/AA/描边顺序/模糊缩放），锁定未建模的 msgwin-offscreen-surface-lifecycle（E0）",
+      "kind": "status"
     },
     {
       "at": "2026-09-15",
-      "what": "确证 α≈0.855 为稳定态合成；排除激活/非激活与脚本窗 alpha；给出 MesWinAlpha 定源实验"
+      "what": "确证 α≈0.855 为稳定态合成；排除激活/非激活与脚本窗 alpha；给出 MesWinAlpha 定源实验",
+      "kind": "decision"
     },
     {
       "at": "2026-09-15",
-      "what": "第 1 次变更：按实测文字白电平 0.89 对齐 emulator 取色（机制仍待查，见 acceptance 第 1 条）"
+      "what": "第 1 次变更：按实测文字白电平 0.89 对齐 emulator 取色（机制仍待查，见 acceptance 第 1 条）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-16",
-      "what": "★机制定位完成：填充按「字形覆盖率 α」合成到已画好的描边上（sub_46F2D0 的 GGO 覆盖率位图 + sub_46D9F0 的 dst=(C*α+dst*(255-α))/255，α=255*cov/17≤240）⇒ 白字必然偏灰；第 2 次变更改为机制实现（raster 侧 globalAlpha）+ antiAlias 以像素判据取 true；真机/模拟器同屏 OPTION 对照：样例文字 255→225（真机 226-228）。残留：行标签仍偏亮（252 vs 230），已写进 acceptance"
+      "what": "★机制定位完成：填充按「字形覆盖率 α」合成到已画好的描边上（sub_46F2D0 的 GGO 覆盖率位图 + sub_46D9F0 的 dst=(C*α+dst*(255-α))/255，α=255*cov/17≤240）⇒ 白字必然偏灰；第 2 次变更改为机制实现（raster 侧 globalAlpha）+ antiAlias 以像素判据取 true；真机/模拟器同屏 OPTION 对照：样例文字 255→225（真机 226-228）。残留：行标签仍偏亮（252 vs 230），已写进 acceptance",
+      "kind": "decision"
     },
     {
       "at": "2026-09-16",
-      "what": "改字段："
-    },
-    {
-      "at": "2026-09-16",
-      "what": "doing → done —— 第 3 次变更：行标签元素归属确证 + 透明表面按引擎的 A=max(A_dst,α) 写入 ⇒ 255→(233,231,230) 暖（真机区间 226-234）；ADV 颜色来源残留转 T-0035"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 第 3 次变更：行标签元素归属确证 + 透明表面按引擎的 A=max(A_dst,α) 写入 ⇒ 255→(233,231,230) 暖（真机区间 226-234）；ADV 颜色来源残留转 T-0035",
+      "kind": "status"
     }
   ],
   "links": {

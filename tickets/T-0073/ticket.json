@@ -41,21 +41,18 @@
       "docs-new/03-engine/save-data.md"
     ]
   },
-  "notes": "同类隐患：`opcode-table.md` 里标「仅映射」的其它 opcode 若被脚本用到，也会以同样方式卡死（不报错、只空转）。CALLBACK_LOAD 自己还剩 `0x137`（`i137 0`，ResetStack）与 `0x244`（`i244`，`sub_4AD9F0` 模式 2）两条未实现 —— 它们现在靠跳过策略绕过；要完全按引擎跑回调还得补这两条（已记在 `tickets/T-0072`）。",
   "id": "T-0073",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → done —— 0x2FA 进 ENGINE_INTERNAL_OPS + opcode-table 行改「已核对」；CALLBACK_LOAD 实测能跑到 exit（stopReason=exit，无被跳过指令）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 0x2FA 进 ENGINE_INTERNAL_OPS + opcode-table 行改「已核对」；CALLBACK_LOAD 实测能跑到 exit（stopReason=exit，无被跳过指令）",
+      "kind": "status"
     }
   ]
 }

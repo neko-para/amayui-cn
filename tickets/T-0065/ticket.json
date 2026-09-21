@@ -37,21 +37,18 @@
       "note": "读档入口（真存档槽 79 就是在这里进来的）"
     }
   ],
-  "notes": "用真槽 79 复现：修复前帧循环 400 帧的轨迹是 SYSTEM4→INITCONFIG*→INIT2→SCINIT→CTINIT→…→TITLE#46；修复后 0xAE 六帧内走栈完成并收尾在 SN0000.BIN 落点 794（= 第一句话，与 emulator 槽的 lastMsgIp 一致）。",
   "id": "T-0065",
   "status": "done",
   "history": [
     {
       "at": "2026-09-18",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-18",
-      "what": "open → done —— 槽头带版本 + 注册表默认兜底；守卫 test/slot-load-resume.test.ts"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 槽头带版本 + 注册表默认兜底；守卫 test/slot-load-resume.test.ts",
+      "kind": "status"
     }
   ]
 }

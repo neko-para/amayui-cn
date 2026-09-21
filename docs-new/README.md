@@ -1,121 +1,64 @@
-# 天結いキャッスルマイスター 工程文档（docs-new · 唯一新来源）
+---
+kind: index
+state: live
+---
+# 天結いキャッスルマイスター 工程文档（docs-new）
 
-> **本文档体系是工程全部信息的唯一新来源**，于 2026-09 全量重建。所有内容**自包含**，
-> **不再引用任何 `docs/` 或 `app/*/docs/` 下的旧文档**；旧文档已作废，仅作历史参考（不应再作为事实源）。
+> **本文档体系是工程全部信息的唯一新来源。** 所有内容**自包含**，不引用任何已作废的旧 `docs/`。
 >
-> 工程根：`E:\Games\Eushully\天結`（git 仓库，`/install`、`/raw` 已被 `.gitignore` 排除）。
-> 游戏本体：`E:\Games\Eushully\天結いキャッスルマイスター`（Eushully，2017-05-26，v1.07 + AP01-05）。
+> 这里是**入口**。真正的索引、当前状态、权威契约都在 `00-overview/` 下：
 
-## 0. 一条话现状
+| 想知道 | 去哪 |
+|---|---|
+| **全部文档的清单（含 `kind` / `state`）** | [`00-overview/index.md`](./00-overview/index.md) —— **生成物**，扫 front-matter 得到 |
+| **现在什么状态、下一步做什么** | [`00-overview/status.md`](./00-overview/status.md) —— **生成物**，从四份台账 + 票据 + 沿革算出 |
+| **权威声明 + 数据模型 + 文档状态机** | [`00-overview/authority.md`](./00-overview/authority.md) |
+| 目录纪律（raw/install/data/src/res/tools/patch…） | [`00-overview/conventions.md`](./00-overview/conventions.md) |
+| 工程定位与现状 | [`00-overview/project.md`](./00-overview/project.md) |
+| 需求/缺陷单台账怎么用 | [`00-overview/tickets.md`](./00-overview/tickets.md) |
+| 工程纪律（踩过的坑） | [`00-overview/lessons.md`](./00-overview/lessons.md) |
+| 怎么接手继续做 | [`03-engine/handoff.md`](./03-engine/handoff.md) |
+
+## 一句话现状
 
 用 **TypeScript + Electron + PixiJS v8** 重写《天結いキャッスルマイスター》的 AGE/System4 引擎 VM：
 启动链 `SYSTEM4 → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 已**零未实现 opcode**跑通，
-Electron 渲染壳（场景合成 / ADV 文本 / 音频 / 输入）与三闸门（意图丢弃 / 能力缺口 / 死写）齐备，
-`npm run verify` 全绿（383 测试 + 3×tsc + 死写棘轮）；
-同时以「方案 B：改数据文件」完成**简体中文重制补丁**（翻译已收官，仅剩校对），
-并配套**进程内存查看器**与**数据查询/制作规划 App** 两个落地工具。
-（架构总览见 `04-app/emulator.md`。★旧文里"解释器只跑到 TITLE"的说法已过期。）
+Electron 渲染壳（场景合成 / ADV 文本 / 音频 / 输入）与三闸门（意图丢弃 / 能力缺口 / 死写）齐备；
+同时以「方案 B：改数据文件」完成**简体中文重制补丁**（翻译已收官，仅剩校对）。
+（★本页**不写测试条数等会漂移的数**——跑 `cd app/amayui-emulator && npm run verify` 看；
+现状数字在 `00-overview/status.md`。）
 
-## 1. 权威声明（贯穿全库）
+## 目录
+
+| 目录 | 内容 |
+|---|---|
+| `00-overview/` | 入口、权威契约、索引与状态（后两者是生成物） |
+| `01-translation/` | 汉化：决策、格式工具链、流水线、编码字体、UI 图片、发布 |
+| `02-data/` | 业务数据：掉落 / 技能 / 物品配方 / 地图单位 / 训练所 / 提取口径 |
+| `03-engine/` | 引擎分析：机制叙述 + opcode 全表（生成物）+ 台账渲染物 + 交接与计划 |
+| `04-app/` | `amayui-emulator` / `amayui-inspector` / `amayui-toolkit` |
+| `05-scripts/` | **脚本台账**（`analysis/scripts.json` 的生成物） |
+| `99-records/` | **历史记录区**：一次性审计 / 规格 / 提案（`kind: record`、`state: consumed`）。结论都已落台账，**不要当现行真源读** |
+
+## 权威声明（速查，细则见 `00-overview/authority.md`）
 
 | 项 | 权威 | 说明 |
 |---|---|---|
-| 翻译结果 | **`src/*.txt`（941 个）** | 唯一权威、视为已确认；后续仅持续校对、整体修正。**`docs/translate/*`（302 篇）已作废**，不再引用。 |
-| 引擎机制 | `docs-new/03-engine/` | 仅引擎内部（VM/opcode/`this` 布局/资源加载/渲染）。 |
-| 引擎结论数据层 | **`analysis/functions.json` + `fields.json`**（函数/偏移「是什么」）、**`analysis/engine-capabilities.json`**（引擎**常态能力**）、**`analysis/scripts.json`**（**脚本台账**：每个读过的 `src/*.txt` 的结构/槽/不变量/缺口） | 三层数据层是**唯一会增长**的地方；`docs-new/03-engine/engine-capabilities.md` 与 `docs-new/05-scripts/*` 是它们的**生成物**（`scripts/build-capabilities.mjs` / `scripts/build-scripts.mjs`），勿手改。 |
-| 业务数据 | `docs-new/02-data/` | 掉落/技能/物品/地图等及其地址，**与引擎内部无必然联系**；除非有确切证据不与引擎混同。 |
-| 汉化字体基底 | **Sarasa Gothic SC**（更纱黑体 SC，2026-08 起替换 WenQuanYi） | 渲染用 Sarasa SC；游戏内为 Amayui CN（Sarasa 基底 cnjp 替换版）。 |
+| 翻译结果 | **`src/*.txt`（941 个）** | 翻译域唯一权威；`docs/translate/*`（302 篇）已作废 |
+| 引擎机制 | `docs-new/03-engine/` 的机制叙述 | 仅讲**整体机制**；逐条事实回链台账 id |
+| 引擎事实台账 | `analysis/functions.json` + `fields.json` + `opcodes.json` + `engine-capabilities.json` + `scripts.json` + `opcode-gaps.json` | **唯一会增长的地方**；`docs-new` 下对应的 md 是生成物 |
+| 沿革 | `tickets/<ID>/changes.md`（实现级）+ `analysis/journal.jsonl`（会话级）+ 各实体 `journal[]`（结论级） | **只留这三处** |
+| 业务数据 | `docs-new/02-data/` | 与引擎内部**无必然联系**，不混同 |
+| 汉化字体基底 | **Sarasa Gothic SC**（游戏内 = Amayui CN） | — |
 
-## 2. 文档结构（docs-new）
-
-```
-docs-new/
-├── README.md                 ← 本文件：总览 + 权威声明 + 结构表 + 术语速览
-├── 00-overview/
-│   ├── project.md            ← 工程定位与现状、四大方向
-│   ├── conventions.md        ← 目录纪律（raw/install/data/src/res/tools/patch…）
-│   └── authority.md          ← 权威声明细则（src=真值 / 引擎·数据解耦 / 字体基底）
-├── 01-translation/           ← 游戏汉化
-│   ├── decision.md           ← 方案 B 决策与依据
-│   ├── format-toolchain.md   ← 数据格式（脚本/AGF/exe/DLL）+ 工具链
-│   ├── pipeline.md           ← 翻译语法 + assemble/reflow/校验收官
-│   ├── encoding-font.md      ← SJIS 码位映射 + 字体（Sarasa SC / Amayui CN）
-│   ├── ui-images.md          ← 界面图片汉化（AGF→PNG→注入）+ AGERC
-│   └── publish-status.md     ← 发布/patch/manifest + 当前进度
-├── 02-data/                  ← 游戏数据分析
-│   ├── scripts-control.md    ← call-script 索引 / jcc 语义 / 脚本 CFG
-│   ├── drops.md              ← 掉落 item/rate/随机池/调用链
-│   ├── skills.md             ← 技能三段数组 + 数值字段
-│   ├── items-recipes.md      ← 物品/建筑/配方
-│   ├── maps-units.md         ← 地图地板 / 地图内单位 / 特殊点位
-│   ├── training-speakers.md  ← 训练所(DRINIT) / 单位字段 / 说话人 id
-│   └── extraction.md         ← 数据提取口径（toolkit metadata）
-├── 03-engine/                ← 游戏引擎分析
-│   ├── unpacking.md          ← AGE 引擎加壳拆壳 + 重定型管线
-│   ├── vm-opcodes.md         ← (已归档) 解释器主循环/分发概览；语义看 opcode-table.md + 数据层
-│   ├── opcode-table.md       ← **opcode→引擎位置 / 语义 / 分析状态全表（574 条，真源；`scripts/asm/opcodes.json` 由它生成）**
-│   ├── engine-capabilities.md ← **引擎「常态能力」台账（第二层，生成物）**：逐帧流程/门控/惰性创建/转场/资源生命周期 + emulator 现状
-│   ├── operands.md           ← (瘦身) 操作数速记(DEC/ENC/指针模型)；原语以 data 层 functions.json 为准
-│   ├── runtime-memory.md     ← (瘦身) this 布局说明 + 消息窗对象叙事；字段以 data 层 fields.json 为准
-│   ├── resource-loading.md   ← 统一文件 id 空间 / 启动链 / 纹理·AGF 映射
-│   ├── save-data.md          ← **SAVE.DAT**：脚本 save-int/save-string 两张表的持久化（= 设置界面开关的真正归处）+ 容器/Crypt/LZSS 全解 + emulator 现状
-│   ├── sound-system.md       ← **声音子系统**：DirectSound 设备(15 通道) / SE·Voice·Music 三模块 / `sound:Volume0..4` 路由 / ADV 文本↔语音联动
-│   ├── gallery-and-unlock-flags.md ← **回想/鉴赏与解锁**：FileDB「已使用文件」哈希表 / `0x19D` / SETMEMOIR 的三套收集表 / `$$SAVE.DAT` / BGM 鑑賞列表
-│   ├── scene-start-flow.md   ← **新游戏开局链路**：TITLE 右上角 Game Start → GAMESTART → INITGAME/SETFATE → SN0000 首文案；两个点击点坐标的脚本来源 + 该路径 25 条缺失指令的逐条跳过评估 + 两个渲染侧缺口
-│   ├── audit-2026-09.md      ← **文档×实现 凭空/推测点审计总览**（2026-09）：opcode-table 574 行 + capabilities 130 条 + 17 份机制文档逐条与引擎反编译对照，含 3 份明细报告与 P0/P1 一览
-│   ├── repair-plan-2026-09.md ← **修复计划**（依据上条）：四处必须重构（操作数读取计划 / 缺口治理 / 呈现与帧保留 / 台账文档一致性）+ B0..B7 批次顺序与出口判据
-│   ├── opcode-gaps.md        ← **opcode 缺口台账（生成物）**：真源 `analysis/opcode-gaps.json`（`tickets/T-0081`）；语料用到却未注册（命中即硬停）+ 已注册为 no-op 但体内有真实效果，两类缺口逐条登记，守卫 `test/opcode-gaps.test.ts`
-│   ├── audit-2026-09-opcodes.md ← 上条的 opcode 明细（95 条：P0 2 / P1 8 / P2 28 / P3 57）
-│   ├── audit-2026-09-capabilities.md ← 上条的 capabilities 明细（84 条）
-│   ├── audit-2026-09-docs.md ← 上条的机制文档明细（67 条）
-│   ├── stub-reaudit-2026-09.md ← **已 stub 指令的复评台账**：57 条 stub 逐条判据（42 要实现 / 14 排除（视频·Live2D·键盘输入）/ 1 真·空）+ 批次进度（**A1–A6 全部完成**：44 条转真实现，`ENGINE_INTERNAL_OPS` 48 → **14**；A6 = AGERC 接口解锁存档/读档界面）+ **§4 逐条状态总表（由代码实算）**
-│   ├── agerc-module.md       ← **AGERC.DLL 模块接口**：引擎启动时硬编码加载 + `set:RCVersion` 版本锁 + 脚本侧 `0x14B/0x14C/0x14D`（全语料唯一调用点 `SAVE.txt:7-9`，21 个导出清单）+ 汉化宽字符串证据 + 反汇编 UTF-8 转写规则 + 17 个地图导出「本作不可达」结论
-│   ├── agerc-internals.md    ← **AGERC.DLL 内部能力地图**：反编译覆盖率（122 体=100%，`// idb` 全是 jmp thunk）+ exe⇄DLL 服务定位器（`_GetClassObject@4`/`AGE:reg`/`AGE:IAGEService`）+ 配置键全集与换算陷阱 + 顶部菜单 38 命令 + 对话框资源表 + 截图/注册码/硬件采集 + 多边形碰撞微引擎 + emulator 建模/忽略清单
-│   ├── live2d.md             ← **Live2D 子系统**（内嵌 SDK 2.0.06 for DirectX / .MOC+.MTN+PNG 口径 / 10 槽 + 76B 实例 + 572B 立绘节点 / opcode 面 / 能力·缺失面 / 重写三路线摘要）
-│   ├── rendering.md          ← 绘制模型 / FadeTimer / 淡入淡出
-│   └── (其余主题件)           ← flow-control / instruction-directions / input-system / message-config-gates /
-│                                adv-text-rendering / copyright-effect / engine-reset-mainloop / field-97058-timer-dialog
-├── 04-app/                   ← app 工具
-│   ├── README.md             ← 三子工程总览（独立、不引用 app/*/docs）
-│   ├── emulator.md           ← amayui-emulator
-│   ├── live2d-support-assessment.md ← **Live2D 支持评估**：系统能力速查 / ★要不要引依赖库（Cubism 5 ❌、Cubism 2.1 运行时 ⚠️、自研移值 ✅）/ 工作量 / 分阶段计划 / 待拍板项
-│   ├── native-addon.md       ← **宿主侧原生模块**（N-API）：何时才该加 / CMake+cmake-js 选型 / 加载与降级 / ★二进制打包（asarUnpack·prebuildify）/ 排障
-│   ├── inspector.md          ← amayui-inspector
-│   └── toolkit.md            ← amayui-toolkit
-└── 05-scripts/               ← **脚本台账**（第三层数据层 `analysis/scripts.json` 的生成物，勿手改）
-    ├── README.md             ← 索引 + 覆盖率（已登记 N / 941）+ 怎么用的流程
-    └── <ID>.md               ← 每个读过的 src/*.txt 一页：结构（行区间+锚点）/ 关键槽 / 不变量 / 坑 / 缺口 / 相关
-```
-
-## 3. 术语速览
+## 术语速览
 
 | 术语 | 含义 |
 |---|---|
 | AGE/System4 | Eushully 自研引擎；本作用 SYS4.5 / 魔数 SYS4IC450 |
 | 方案 B | 不沿用心愿屋汉化壳，直接改游戏数据文件重制补丁 |
-| src/*.txt | 反汇编脚本 + 翻译语法；**翻译真值** |
-| data/*.txt | 只读日文基线（assemble 骨架校验基准） |
-| SYS4INI.BIN | 全局文件索引（TOC 为 LZSS 压缩） |
-| DATA1-8.ALF / APPENDnn.AAI | 聚合档案；`$N$` 前缀=APPEND(追加包) |
-| AGF | Eushully 图片容器（ACGF 有头 / 无头） |
-| set-string | 脚本字面量文本指令 |
 | DEC/ENC | 引擎操作数去混淆（rol32/ror32 + key） |
-| `this` | 引擎对象指针（engine.hpp 的 `struct Engine`） |
-| Amayui CN | 游戏内中文字体（Sarasa SC 基底，cnjp 替换版，族名 Amayui CN） |
-| 三层数据层 | `analysis/` 下的三类结论：① `functions.json`+`fields.json`（函数/偏移是什么）② `engine-capabilities.json`（引擎常态行为）③ `scripts.json`（脚本台账）。**唯一会增长的地方**，md 都是渲染物 |
-| 脚本台账 | 第三层：每个被分析过的 `src/*.txt` 一条（结构 / 槽 / 不变量 / 坑 / 缺口）；渲染物在 `docs-new/05-scripts/` |
-| 锚点棘轮 | 脚本台账每条结构记录都带「行区间 + 必须出现在该区间内的锚点串」；`src/*.txt` 一重排，守卫测试就红 ⇒ 逼人刷新行号，防止结论悄悄失真 |
-
-## 4. 四大方向 → 文档入口
-
-| 方向 | 入口 |
-|---|---|
-| ① 游戏汉化 | `01-translation/` |
-| ② 游戏数据分析 | `02-data/` |
-| ③ 游戏引擎分析 | `03-engine/`（+ 数据层：`analysis/*.json`；`03-engine/engine-capabilities.md` 是第二层的渲染物） |
-| ④ app 工具 | `04-app/` |
-| ⑤ 脚本台账（引擎分析的产物层） | `05-scripts/`（真源 `analysis/scripts.json`；`node scripts/build-scripts.mjs` 生成） |
-
-四个方向的顶层入口见 `04-app/README.md`；方向内各主题按上述目录逐一自包含展开。
-`05-scripts/` 是**按脚本**记录「这个界面/演出脚本长什么样」的台账（行区间 + 锚点钉在 `src/*.txt` 上），
-与 `03-engine/` 的跨脚本叙述互补：能靠读某个脚本回答的，写进 `05-scripts/`；跨脚本的机制写进 `03-engine/`。
+| `this` | 引擎对象指针（`struct Engine`） |
+| front-matter 状态机 | `docs-new` 每份 md 的 `kind`/`state` 头；**读文档前先看 `state`** |
+| `99-records/` | 历史记录区。`state: consumed` = 结论已落台账、只作票据证据锚点 |
+| 锚点棘轮 | 台账/票据的每条结构记录带「行区间 + 必须出现的锚点串」；`src/*.txt` 一重排守卫就红 |

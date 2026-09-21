@@ -41,29 +41,18 @@
       "T-0031"
     ]
   },
-  "notes": "2026-09 发现路径：做 T-0033 时跑 npm run verify，这两条红；核对后确认是**玩家数据被改**（base SYS4REG.INI 的 mtime 与 MessageSpeed 都变了），与本轮代码改动无关 —— 但按台账纪律要开票，不许放着不管。",
   "id": "T-0034",
   "status": "done",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-14",
-      "what": "open → done —— 夹具 + 自洽断言；三场景实测见 changes.md"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 夹具 + 自洽断言；三场景实测见 changes.md",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -45,3 +45,10 @@
 
 ### 验收
 `test/run-cli-loop.test.ts`（新）全绿 + `npm run verify` 全绿；`STEPS=300 npm run run` 输出**逐字不变**（纯搬移的判据）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+（2026-09-14 B2 第 2 批）代码已修：run.ts 现在经 runFrameLoop 跑 —— 产品顺序 + 每帧时钟 + 两个每帧服务 + ADV 分支 + 门。
+- 实测：STEPS=300 恰好 300 条（修前 20000 条：cap 只在帧边界判；这正是新加的 stopAfterStep 解决的）。
+- 仍 doing：守卫待补。run.ts 是 CLI（只被 npm run run 调用，没有测试面）⇒ 按纪律不能标 done。
+  两条候选：① 把它的驱动配置抽成可导出的常量/函数，用单测断言"= 产品语义"；② 给 CLI 写一个 spawnSync 冒烟测试（注意沙箱下"捕获子进程管道输出"可能被拒，需 stdio: ignore + 退出码判据）。已登记进 T-0020（测试结构）。

@@ -1,5 +1,5 @@
 /**
- * **arity 槽自动核验**（`tickets/T-0082` 的 B2 第二步；审计 `docs-new/03-engine/audit-2026-09-opcodes.md`）。
+ * **arity 槽自动核验**（`tickets/T-0082` 的 B2 第二步；审计 `docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md`）。
  *
  * 引擎的**每条** handler 体开头都会写"本指令的操作数个数槽"：`_this[30*cur + 95805] = N`（dword 形式）或
  * `*(_DWORD *)(_this + 120*cur + 383220) = N`（字节形式）。两者的关系是 **`N = 2*argc + 1`**

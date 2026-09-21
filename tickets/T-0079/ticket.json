@@ -3,7 +3,7 @@
   "type": "docs",
   "priority": "P1",
   "area": "docs/03-engine",
-  "why": "审计（docs-new/03-engine/audit-2026-09-docs.md）逐节核对 17 份机制文档后确认 9 条 P0/P1 与引擎/代码不符。危险点有两类：①「已实现写成未建模」——`flow-control.md:181` 说 emulator 停在 `ScriptReset`（实际 `op_exit_script` 已重载根脚本 0 并 jump(0) 继续，全 src 无该符号；同文档 §9.2/§9.3/§8 早已写对）、`flow-control.md:422/427` 说 `i143` 与 `exit` 的 `-11` 分支未建模（实际都已实现）、`scene-start-flow.md:96/105/170` 说 16 条还在 ENGINE_INTERNAL_OPS（实际只剩 9 条，16 条全转真实现）且声称的「16 条不写操作数棘轮」在测试里不存在（只有 A5 的 7 条）、E2 行三个数字全错；②「把有读者的字段写成死写」——`scene-start-flow.md:100` 把 `0x238` 与 `0x1B1` 同列死写（`0x238` 装载 0x400 等待门计时器，读者 sub_407E20 raw 12761-12786 + 主循环 raw 21109）、`scene-start-flow.md:102` 说 `0xD9` 清的 0x1000 位无人读（主循环 raw 20841 就是读者）；③ `rendering.md:112` 把解除帧保留的判据写成 `calcDiffuse` 输出（实际是 `state0` 高字节 alpha，`pixiBackend.ts` 的 `#meshVisible`）。",
+  "why": "审计（docs-new/99-records/2026-09-audit/audit-2026-09-docs.md）逐节核对 17 份机制文档后确认 9 条 P0/P1 与引擎/代码不符。危险点有两类：①「已实现写成未建模」——`flow-control.md:181` 说 emulator 停在 `ScriptReset`（实际 `op_exit_script` 已重载根脚本 0 并 jump(0) 继续，全 src 无该符号；同文档 §9.2/§9.3/§8 早已写对）、`flow-control.md:422/427` 说 `i143` 与 `exit` 的 `-11` 分支未建模（实际都已实现）、`scene-start-flow.md:96/105/170` 说 16 条还在 ENGINE_INTERNAL_OPS（实际只剩 9 条，16 条全转真实现）且声称的「16 条不写操作数棘轮」在测试里不存在（只有 A5 的 7 条）、E2 行三个数字全错；②「把有读者的字段写成死写」——`scene-start-flow.md:100` 把 `0x238` 与 `0x1B1` 同列死写（`0x238` 装载 0x400 等待门计时器，读者 sub_407E20 raw 12761-12786 + 主循环 raw 21109）、`scene-start-flow.md:102` 说 `0xD9` 清的 0x1000 位无人读（主循环 raw 20841 就是读者）；③ `rendering.md:112` 把解除帧保留的判据写成 `calcDiffuse` 输出（实际是 `state0` 高字节 alpha，`pixiBackend.ts` 的 `#meshVisible`）。",
   "acceptance": [
     "9 条按报告逐条改文档（引用 raw 行号或代码 file:line），不留「与同文档他节矛盾」的段落",
     "凡涉及 emulator 现状的句子，必须以代码为准（本工程纪律：文档里的 emulator 现状要与实现同源）",
@@ -14,7 +14,7 @@
   "tests": [],
   "evidence": [
     {
-      "file": "docs-new/03-engine/audit-2026-09-docs.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-docs.md",
       "anchor": "### `docs-new/03-engine/scene-start-flow.md:102` — `0xD9` 清写的 0x1000 位有读者",
       "note": "P1 条示例；同文件含 P0/P1 逐条四段（声明/实际/证据/建议处置）与 P2/P3 汇总表",
       "line": 59
@@ -44,27 +44,24 @@
       "T-0078"
     ],
     "docs": [
-      "docs-new/03-engine/audit-2026-09-docs.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-docs.md",
       "docs-new/03-engine/flow-control.md",
       "docs-new/03-engine/scene-start-flow.md",
       "docs-new/03-engine/rendering.md"
     ]
   },
-  "notes": "另有一条方法学提醒（审计报告末尾）：任何「按构造期地址反解 opcode」的分析都要先把该地址在构造函数里核对到赋值行 —— 本次核对后确认 0xFB..0x10F 全都有赋值（先前一个 agent 提出的『偏移漂移』结论不成立），而 opcode-table.md 里 30 行 status 为空的行是**别的 AGE 作品**的交叉引用（Amayui 2 / Tenmei / Fuukan / Hyakusen），不是本引擎的表项，属于正常设计。",
   "id": "T-0079",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → done —— 9 条 P0/P1 机制文档订正完成（两轮：轮 11 修 5 条，轮 12 修余下 4 条）。每处都标注「2026-09 订正」与本仓库的真实出处（代码 file:line 或 raw 行号）。"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 9 条 P0/P1 机制文档订正完成（两轮：轮 11 修 5 条，轮 12 修余下 4 条）。每处都标注「2026-09 订正」与本仓库的真实出处（代码 file:line 或 raw 行号）。",
+      "kind": "status"
     }
   ],
   "doneWhy": "9 条机制文档 P0/P1 陈旧全部按审计报告订正：flow-control.md（181 不停在 ScriptReset；422/427 i143、0xAE、0x7C、exit -11 均已实现）、scene-start-flow.md（96/105 16 条已转真实现+棘轮名单；100 0x238 是等待门计时器；102 0xD9 的位有读者；170 E2 三张名单棘轮的准确口径）、rendering.md:112 帧保留解除判据 = state0 高字节 alpha（#meshVisible）。npm run verify 全绿。"

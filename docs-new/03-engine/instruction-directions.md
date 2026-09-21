@@ -1,7 +1,11 @@
+---
+kind: index
+state: live
+---
 # 03-engine · 指令功能方向分类（功能簇索引）
 
 > 本文件只保留**功能方向粗分类**（声音/渲染/消息UI/输入/字符串/数据/脚本控制…），用于快速定位指令簇。
-> **每条指令的语义 / 分析状态不再重复**——一律以真源 [`./opcode-table.md`](./opcode-table.md) 与数据层 `analysis/functions.json` 为准（handler=该 opcode 在本引擎 dispatch 表中的实现函数；读 `engine/天结_unpacked.exe_utf8.c` 对应对应 handler 体定归类）。
+> **每条指令的语义 / 分析状态不再重复**——一律以真源 `analysis/opcodes.json` 与数据层 `analysis/functions.json` 为准（渲染物 [`./opcode-table.md`](./opcode-table.md)）（handler=该 opcode 在本引擎 dispatch 表中的实现函数；读 `engine/天结_unpacked.exe_utf8.c` 对应对应 handler 体定归类）。
 > 说明：`iXXXX` = opcode `0xXXXX`（未命名）；`load-int`/`save-int`/`save-string` 等 = 已命名 opcode。
 
 ## 1. 声音相关（26）

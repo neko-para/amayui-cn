@@ -32,19 +32,18 @@
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "evidence 锚点随 B1 上移（原 `return maxFrames` / `return frames` 两行在 B1 中改写）—— 锚点棘轮抓到的第一次真实失效"
+      "what": "evidence 锚点随 B1 上移（原 `return maxFrames` / `return frames` 两行在 B1 中改写）—— 锚点棘轮抓到的第一次真实失效",
+      "kind": "decision"
     },
     {
       "at": "2026-09-14",
-      "what": "B2 第 2 批：C5（返回语义统一）+ D3（文档订正）完成 → done（doneWhy：文档票无测试面）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "B2 第 2 批：C5（返回语义统一）+ D3（文档订正）完成 → done（doneWhy：文档票无测试面）",
+      "kind": "status"
     }
   ],
   "doneWhy": "两处矛盾都已订正：① run(frames) 返回语义统一（config1Chain 不再返回 maxFrames；两侧调用方判据 (await run(N,f)) < N 一致）；② 文档/注释里\"渲染帧循环由 Pixi ticker/startFrameLoop 每帧驱动\"的说法删除，改为\"帧驱动在 src/frame/loop.ts，present 由驱动调用\"。凭据：npm test 434/434（含两份 chain 的 E3，它们依赖 run 的返回语义）；两处注释已按新事实改写（renderer.ts / native.ts）。"

@@ -109,3 +109,7 @@ node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --validate
 
 E3 数字（`SAVE.BIN` 的 `label_0000706c` 段，32 条目）：**31 次派发**（= 32 − 1）、
 末条（`t = 481 ms`）在 **496 ms** 的帧上派发、共 **31 帧**、`local 0x210` = 31。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+过程笔记见 notes.md。要点：① 三条指令是**一套小语言**，只实现其中一条没有意义；② 真正的难点不在 handler 而在**帧循环的门**（`0x40` 置位期间整个脚本停摆）；③ 两条口径（派发次数 = 条目数 − 1、到点 = 时钟推到 t）都是逐行核对 raw 得出的，写错都会表现为「动画不对但一切正常」。

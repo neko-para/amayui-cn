@@ -49,3 +49,7 @@ B3 第八条（目标轮 13）：**0x223**（语料 178 处/178 个脚本，剩�
 ⇒ **收口条件建议改为**：当 `deferred` 里"语料 > 0"的条数降到 0（即每条都进了某张表或有等价的宿主缝）时才关本票；
 在此之前它是"待建模型"的公共账本，扩展点写在 `analysis/opcode-gaps.json` 的 note 与 `docs-new/03-engine/opcode-gaps.md` §6。
 派生票：`T-0084`（转场扫描带渲染）、`T-0085`（`set:BlankExtentMode` 门）、`T-0086`（`0x249` 归一化，done）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+处置纪律提醒：`stubs.ts:150-152` 明写「登记成 no-op 反而把缺口藏起来」——因此 0x243/0x233/0x337 这类『有体但影响面不明』的指令，宁可登记成带 raw 依据的 engine-internal 并在报告里留缺口，也不要静默跳过。另：0x7C(local-ret) 的缺口早在 flow-control.md:427 披露过，只需按 raw 25778-25824 实现。

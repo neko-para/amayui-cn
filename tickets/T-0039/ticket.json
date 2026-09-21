@@ -46,23 +46,16 @@
   "history": [
     {
       "at": "2026-09-15",
-      "what": "创建"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "改字段：evidence"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— countAccess 统计前剥注释+字符串（stripCommentsAndStrings）；新增守卫 test/no-dead-writes.test.ts 第 3 条；check:dead-writes 0/0、3 测试全绿；局限段已写"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— countAccess 统计前剥注释+字符串（stripCommentsAndStrings）；新增守卫 test/no-dead-writes.test.ts 第 3 条；check:dead-writes 0/0、3 测试全绿；局限段已写",
+      "kind": "status"
     }
   ],
   "tests": [
     "app/amayui-emulator/test/no-dead-writes.test.ts"
-  ],
-  "notes": "\n\n★2026-09-16 收尾：四条 acceptance 全部达成（见上）；顺带把字符串字面量也纳入剥离范围。"
+  ]
 }

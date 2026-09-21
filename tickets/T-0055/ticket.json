@@ -94,33 +94,28 @@
     ],
     "tickets": []
   },
-  "notes": "过程笔记见 notes.md。要点：① 三条指令是**一套小语言**，只实现其中一条没有意义；② 真正的难点不在 handler 而在**帧循环的门**（`0x40` 置位期间整个脚本停摆）；③ 两条口径（派发次数 = 条目数 − 1、到点 = 时钟推到 t）都是逐行核对 raw 得出的，写错都会表现为「动画不对但一切正常」。",
   "id": "T-0055",
   "status": "done",
   "history": [
     {
       "at": "2026-09-17",
-      "what": "创建（用户要求：实现 SAVE.txt 存档路径上的 i0d3/i0d4/i0d5）"
+      "what": "创建（用户要求：实现 SAVE.txt 存档路径上的 i0d3/i0d4/i0d5）",
+      "kind": "created"
     },
     {
       "at": "2026-09-17",
-      "what": "反编译读通：三条 handler + 消费者 sub_408F10 + 主循环 0x40 门 + 计时器 sub_453A90/453BB0 + 压返回点 sub_405360；确认「派发次数 = 条目数 − 1」与「落后 ⇒ op4」两条口径"
+      "what": "反编译读通：三条 handler + 消费者 sub_408F10 + 主循环 0x40 门 + 计时器 sub_453A90/453BB0 + 压返回点 sub_405360；确认「派发次数 = 条目数 − 1」与「落后 ⇒ op4」两条口径",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "实现：新增 src/vm/stageLoop.ts（StageLoop + runStageService）、src/vm/handlers/stage.ts（0xD3/0xD4/0xD5）、Engine.stage/serviceStageLoop、frame/loop.ts 的 stage 门档、report.ts 帧边界；顺带修 script/bin.ts 的 0xD4 label 操作数 [0]→[2,3]、重生成 opcodes.json"
+      "what": "实现：新增 src/vm/stageLoop.ts（StageLoop + runStageService）、src/vm/handlers/stage.ts（0xD3/0xD4/0xD5）、Engine.stage/serviceStageLoop、frame/loop.ts 的 stage 门档、report.ts 帧边界；顺带修 script/bin.ts 的 0xD4 label 操作数 [0]→[2,3]、重生成 opcodes.json",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "守卫 test/stage-loop.test.ts 11 条全绿（含 E3 真语料 31 次派发/481ms/31 帧）；全仓 598 测试 597 通过 0 失败；文档/台账同步（opcode-table 3 行、mainloop §B.6、functions 4 条、fields 5 条、capabilities 1 条、scripts SAVE 子块）⇒ open → done"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "守卫 test/stage-loop.test.ts 11 条全绿（含 E3 真语料 31 次派发/481ms/31 帧）；全仓 598 测试 597 通过 0 失败；文档/台账同步（opcode-table 3 行、mainloop §B.6、functions 4 条、fields 5 条、capabilities 1 条、scripts SAVE 子块）⇒ open → done",
+      "kind": "status"
     }
   ],
   "tests": [

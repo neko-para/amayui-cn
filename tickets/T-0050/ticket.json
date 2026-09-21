@@ -66,20 +66,17 @@
     ]
   },
   "status": "done",
-  "notes": "★与 `0x207` 的关系：`0x207`（`sub_4A3980`）是**同尺寸**槽→槽 StretchRect，`0x32` 是它的**缩放**兄弟；两者的宿主缝本来就是同一个 `blitSlotToSlot`，但此前 Pixi/headless 两侧都只记日志、**不做像素** ⇒ 本单顺手把这条缝补成真实现（画布间 drawImage），所以 `0x207` 的视觉效果也一并落地。★未做/待验：① GDI 分支（`Engine[166964] == 0`，文本/2D 对象 vtable+64）没建模（emulator 走 D3D 等价路径，与其余渲染一致）；② 缩放插值用的是「引擎采样器 = MINFILTER LINEAR」这一条证据（raw 93927），若真机缩略图明显更锐（point）再回来改；③ **E4 未做**：headless 无画布 ⇒ 端到端只能验到模型层；「存档缩略图真的变成截图」要在 Electron 里存一次档看 `.STH`（`getSlotPixels` 路径，T-0036 已有读回）。",
   "id": "T-0050",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— open → done：`0x32` 进 `GFX_STATE_OPS`（`op_stretch_texture`），与 `0x207` 共用宿主缝 `blitSlotToSlot`；`clampScaledBlit` 按 raw 128005-128097 实现两个矩形的按比例夹取（int 截断），`TextureCache.blitSlotToSlot` 在两张画布间 drawImage（平滑插值，依据 raw 93927 的 MINFILTER=LINEAR；源/目标表面缺失时不转送并打引擎那两句错误串）。★顺手把 0x207/0x32 共同的宿主缝从\"只记日志\"补成真像素。守卫 test/op-032-stretch-texture.test.ts（夹取 5 组 + 语料形态端到端）；opcode-table 0x32「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x41E2D0 / 0x4A87A0；save-data.md §7 补了缩略图流水线那 9 行；SN0000 台账补 3171-3184 段与坑。npm run verify 569 测试全绿。★E4 未做（headless 无画布）：要在 Electron 里存一次档看 .STH 是否变成真截图。"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— open → done：`0x32` 进 `GFX_STATE_OPS`（`op_stretch_texture`），与 `0x207` 共用宿主缝 `blitSlotToSlot`；`clampScaledBlit` 按 raw 128005-128097 实现两个矩形的按比例夹取（int 截断），`TextureCache.blitSlotToSlot` 在两张画布间 drawImage（平滑插值，依据 raw 93927 的 MINFILTER=LINEAR；源/目标表面缺失时不转送并打引擎那两句错误串）。★顺手把 0x207/0x32 共同的宿主缝从\"只记日志\"补成真像素。守卫 test/op-032-stretch-texture.test.ts（夹取 5 组 + 语料形态端到端）；opcode-table 0x32「仅映射」→「已核对」并重生成 opcodes.json；functions.json 新增 0x41E2D0 / 0x4A87A0；save-data.md §7 补了缩略图流水线那 9 行；SN0000 台账补 3171-3184 段与坑。npm run verify 569 测试全绿。★E4 未做（headless 无画布）：要在 Electron 里存一次档看 .STH 是否变成真截图。",
+      "kind": "status"
     }
   ]
 }

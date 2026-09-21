@@ -11,7 +11,7 @@
  *  - 写集：`[0]=0`、`[1]=0`、`[2]=a8=op7`、`[3]=a9=op8`、`[4]=a3=op2`、`[5]=a4=op3`、
  *    `[7]=a5=op4`、`[6]=a6=op5`、`[8]=a7=op6`；末尾 `Scene[11627] = 1`（置脏）。
  *  - `[0] = 0` ⇒ **类别 0 = 全屏交叉淡化**（帧渲染器 `sub_4B06D0` 按 `[0]` 分四类，见
- *    `docs-new/03-engine/transition-render-spec-2026-09.md` §2.2/§3.3）。
+ *    `docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md` §2.2/§3.3）。
  *
  * ★为什么有这条守卫（`tickets/T-0087`）：旧实现把这 9 个数存进 emulator 私有的
  * `Engine.itemRegions` —— **数据对、容器错**（无生产读者、渲染端不可见、记录长度 9 ≠ 24）。

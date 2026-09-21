@@ -39,3 +39,7 @@ emulator：`InputManager.flush()`（`src/vm/input.ts` 的 `(this.buttons & 1)` /
 - 不实现 panelB / `0x7C` 右键取消跳读通路（见 `adv-advance-route-table` 的登记缺口）。
 - 不改逐字显现节拍模型（`adv-text-reveal-progress`）。
 - 不做 `--record/--replay` 轨迹格式变更；若刷子拆分影响快照字段（`pressLatch`/`mouseEdge`），只做增量并在 changes.md 记明。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+调查与候选次因见 notes.md；复现步骤见 repro.md；实现级变更见 changes.md。环境（macOS + jp 资源）只记录不归因。

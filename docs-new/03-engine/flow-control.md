@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 流程控制指令族（exit / call-script / ret / exit-script / jmp / jcc / i143）
 
 > 本文件对《天結いキャッスルマイスター》引擎**最核心的流程控制**指令族做逐条拆分：每条给出忠实于原始反编译的伪代码、语义、所用帧/引擎槽，并标注当前 `app/amayui-emulator` 的实现状态（用于防止后续实现时遗漏「跨帧返回 / 返回栈 / 派发」这类易错细节）。
@@ -179,7 +183,7 @@ int sub_428A60(int _this) {
 
 ### 语义 / 状态
 - **全量 teardown → 回根**：释放 40 帧 → 清内存池 → flush 输入 → `sub_40DF10`（引擎整体复位）→ 释放对象 → 按配置复制窗口尺寸/释放纹理 → **重载根脚本 index 0**（`sub_40ED40(0, …)`）。 `[已实现]`（抽象）：emulator `op_exit_script` 清 40 帧 + 全局数组 + `cur=0` + `callRet=-1` + `effectFlags=0` + `throw ScriptReset`。
-- **emulator 现状（2026-09 订正）**：引擎**重载根脚本 0 并继续跑**，emulator 也已经这样做 —— `op_exit_script`（`control.ts:401-406`）读回根脚本 INDEX0、装进帧 0、`cur=0` 后 `jump(0)`，**不再停在 `ScriptReset`**（全 `app/amayui-emulator/src` 里已无 `ScriptReset` 这个符号）。 `[已实现]`
+- **emulator 现状**：引擎**重载根脚本 0 并继续跑**，emulator 也已经这样做 —— `op_exit_script`（`control.ts:401-406`）读回根脚本 INDEX0、装进帧 0、`cur=0` 后 `jump(0)`，**不再停在 `ScriptReset`**（全 `app/amayui-emulator/src` 里已无 `ScriptReset` 这个符号）。 `[已实现]`
   - 遗留缺口：
   - `sub_40DF10`（整体复位）、内存池/memflip、对象/纹理释放、`_this+676732` 回调 → `[平台无关/未建模]`。
 - **关键字段**：`cur`、`call_ret`、`draw-mode`(0xA30D0)、`_this[387932]`、`_this[699244]`、`_this[497380/497384]`、`sub_40ED40`（重载）。

@@ -40,7 +40,8 @@
  * 5. **证据锚点棘轮**：`evidence[].file` 必须存在；给了 `anchor` 就必须在文件里出现（代码被删/改名 ⇒ 变红）；
  *    给了 `line` 而 anchor 不在该行 ±40 行内 ⇒ **警告**（行号会随重构漂移，不据此判失败）；
  * 6. `links.tickets` / `blockedBy` 不许悬空，且 `blockedBy` 不许成环；
- * 7. `history` 至少一条，每条有 `at` + `what`（"谁在什么时候改了什么"）。
+ * 7. `history` 至少一条，每条有 `at` + `kind` + `what`；`kind ∈ created|status|scope|decision`。
+ *    ★**没有 `--note` 就不记 history**（字段级 diff 由版本控制负责）。`notes` 字段已废（长文进 `notes.md`）。
  */
 /* eslint-disable no-console */
 const fs = require('fs');
@@ -294,8 +295,10 @@ function validate() {
       if (!index.has(rel)) problems.push(at(`links.tickets 悬空：${rel}`));
     }
     if (!Array.isArray(t.history) || t.history.length === 0) problems.push(at('history 为空（至少一条"创建"记录）'));
+    const HISTORY_KINDS = ['created', 'status', 'scope', 'decision'];
     for (const h of Array.isArray(t.history) ? t.history : []) {
       if (!h || typeof h.at !== 'string' || typeof h.what !== 'string') problems.push(at('history 条目缺 at/what'));
+      else if (!HISTORY_KINDS.includes(h.kind)) problems.push(at(`history 条目的 kind 非法（${h.kind}）；合法值 ${HISTORY_KINDS.join('/')}`));
     }
     for (const k of ['evidence', 'acceptance', 'history']) {
       if (t[k] !== undefined && !Array.isArray(t[k])) problems.push(at(`${k} 必须是数组`));
@@ -434,7 +437,7 @@ function cmdAdd() {
   t.type = t.type ?? 'req';
   t.status = t.status ?? 'open';
   t.priority = t.priority ?? 'P2';
-  t.history = t.history ?? [{ at: today(), what: '创建' }];
+  t.history = t.history ?? [{ at: today(), kind: 'created', what: '创建' }];
   writeTicket(t, { notes: typeof opt.note === 'string' ? opt.note : undefined });
   console.log(`✅ 建单 ${t.id} → tickets/${t.id}/ticket.json${opt.note ? ' + notes.md' : ''}`);
   console.log('   下一步：node scripts/build-tickets.mjs（刷新看板）');
@@ -484,9 +487,14 @@ function cmdEdit() {
     setPath(t, k, val);
   }
   const changed = Object.keys(t).filter((k) => JSON.stringify(t[k]) !== JSON.stringify(before[k]));
-  t.history = [...(t.history ?? []), { at: today(), what: `改字段：${changed.join(', ')}${typeof opt.note === 'string' ? ` —— ${opt.note}` : ''}` }];
+  // ★2026-09 文档模型：**没有 `--note` 就不记 history**。
+  //   此前每次 `--edit` 都追加一条 `改字段：evidence` 这类字段 diff ⇒ 全库 515 条 history 里 262 条是零信息噪音
+  //   （占体积 92% 的工具条目）。字段级 diff 由版本控制负责，history 只记**有说明的范围级事件**。
+  if (typeof opt.note === 'string' && opt.note.trim()) {
+    t.history = [...(t.history ?? []), { at: today(), kind: 'scope', what: `改字段：${changed.join(', ')} —— ${opt.note}` }];
+  }
   writeTicket(t);
-  console.log(`✅ 改单 ${id}（${changed.join(', ')}）`);
+  console.log(`✅ 改单 ${id}（${changed.join(', ')}）${typeof opt.note === 'string' ? '' : '（未给 --note ⇒ 不记 history）'}`);
 }
 
 function cmdSetStatus() {
@@ -506,7 +514,7 @@ function cmdSetStatus() {
   const from = t.status;
   t.status = status;
   if (status === 'dropped' && typeof opt.note === 'string' && !t.droppedWhy) t.droppedWhy = opt.note;
-  t.history = [...(t.history ?? []), { at: today(), what: `${from} → ${status}${typeof opt.note === 'string' ? ` —— ${opt.note}` : ''}` }];
+  t.history = [...(t.history ?? []), { at: today(), kind: 'status', what: `${from} → ${status}${typeof opt.note === 'string' ? ` —— ${opt.note}` : ''}` }];
   writeTicket(t);
   console.log(`✅ ${id}: ${from} → ${status}`);
 }

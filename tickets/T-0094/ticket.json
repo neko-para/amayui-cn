@@ -8,7 +8,7 @@
     "按 raw 29075-29095 实现第①②路：MessageSpeed==0 或 ADV 位已置 ⇒ `sub_46CBF0` 语义（同步排空，无计时器）；否则 `sub_46BE30` + `effect_flags |= 0x20000000` + 节拍计时器（按 emulator 既有的 `sleepUntil`/`SLEEP_GATE` 机制落，而不是新造一个平行机制）",
     "把 `test/op-3-004-furigana-outer-gate.test.ts` 的「缺口棘轮」断言翻成正向行为断言（并保留「不许退回未建模」的棘轮）",
     "E3：用一份真实含 `display-furigana` 的脚本（如 CONFIG/CONFIG1）跑到该指令，断言注音出现时机与 MessageSpeed 的关系（或给出场景级不变量）",
-    "订正 `docs-new/03-engine/audit-2026-09-opcodes.md` 的 op-3-004「语料 i196 = 0」为「助记符 `i196` = 0，但名字形式 `display-furigana` = 6341 处」",
+    "订正 `docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md` 的 op-3-004「语料 i196 = 0」为「助记符 `i196` = 0，但名字形式 `display-furigana` = 6341 处」",
     "npm run verify 全绿"
   ],
   "evidence": [
@@ -33,7 +33,7 @@
     {
       "note": "轮 7 已在该节补「落地 + 三具体证 + 实测可观测时序」的订正段",
       "anchor": "### op-3-004 — 0x196 漏注外层门，且 effect_flags/节拍半边未实现",
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "line": 298
     }
   ],
@@ -42,37 +42,27 @@
       "T-0077"
     ],
     "docs": [
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "来源 = 轮 6 子代理按体实现 0x196 时的发现（并订正了审计文档的语料计数错误）。★先 grep `//----- (0041FC20)` 定义头再读体。",
   "id": "T-0094",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：evidence"
+      "what": "open → doing —— 实现 + 守卫翻正向 + E3 已全部落地；审计文档订正已写。等结算的 npm run verify 全绿后转 done（见 changes.md）",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → doing —— 实现 + 守卫翻正向 + E3 已全部落地；审计文档订正已写。等结算的 npm run verify 全绿后转 done（见 changes.md）"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— ①②路节流半边已落地并实测可观测：msgwin.ts 的 op_display_furigana 按 raw 29071/29075/29093/29095 装 SLEEP_GATE + sleepUntil（复用 0x6E 同机制）；棘轮已翻正向（测试名保留「缺口棘轮」四字以不动锚点）；E3 用真 install/CONFIG1.BIN，MessageSpeed=40 ⇒ 66.7ms/处、=0 ⇒ 0ms；审计 op-3-004 与 opcode-table 0x196 行同步；主 agent 独立复跑 19/19；npm run verify 全绿"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— ①②路节流半边已落地并实测可观测：msgwin.ts 的 op_display_furigana 按 raw 29071/29075/29093/29095 装 SLEEP_GATE + sleepUntil（复用 0x6E 同机制）；棘轮已翻正向（测试名保留「缺口棘轮」四字以不动锚点）；E3 用真 install/CONFIG1.BIN，MessageSpeed=40 ⇒ 66.7ms/处、=0 ⇒ 0ms；审计 op-3-004 与 opcode-table 0x196 行同步；主 agent 独立复跑 19/19；npm run verify 全绿",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -354,3 +354,7 @@ npm run shot -- --name t0042i        # 默认贴屏幕下缘（T-0040），不�
 | 两张图 diff | — | 只有样例预览那一带（文案换语言） |
 
 ⇒ 结论与 BIN 的新旧/语言无关。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+来源 = T-0035 第 7 轮的三图量化（老汉化 / 新汉化 / emulator，用户提供）。复现：python .tmp/measure-final.py（.tmp 为临时区，数字与口径写在 T-0035 notes 第 7 轮里）。

@@ -17,12 +17,12 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/repair-plan-2026-09.md",
+      "file": "docs-new/03-engine/plan-2026-09.md",
       "anchor": "**RF-B 缺口治理**",
       "note": "重构判定：为什么靠注释+人脑不行、目标形态"
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-3-002 — 0x243/0x233/0x23A/0x337 无注册也无登记，命中即整轮硬停",
       "note": "未注册缺口的典型条（语料 i243 = 341 行 / 338 文件）",
       "line": 84
@@ -47,30 +47,23 @@
       "T-0080"
     ],
     "docs": [
-      "docs-new/03-engine/repair-plan-2026-09.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/plan-2026-09.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "命名与落点沿用既有三层数据层纪律：真源进 `analysis/`，md 是渲染物（勿手改），守卫进 `app/amayui-emulator/test/`，CLI/生成脚本与 `scripts/build-capabilities.mjs` 同风格。★本票是 B0，先于任何「补指令」工作：否则补完一批又会出现新的静默 no-op。",
   "id": "T-0081",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → done —— B0 完成：① analysis/opcode-gaps.json（真源，69 条：58 未实现 / 4 unjustified no-op / 5 有据 no-op / 2 已实现；语料累计 2394 次调用）；② scripts/build-opcode-gaps.mjs（可复算：语料按 iXX+名字两种写法统计、注册状态认 [op,handler] 与 0xNN:{…} 两种登记形态、引擎 dispatch 表推 handler 体行号；--check 供 CI）；③ 生成物 docs-new/03-engine/opcode-gaps.md；④ 守卫 test/opcode-gaps.test.ts（3 条：生成器校验+md 最新 / 与运行时三张表一致+未登记即红 / 审计 P0/P1 与 4 条 unjustified 不许缩水）。副产：修正两个统计口径（名字形式指令、对象键注册），发现 0x7C local-ret 668 处此前未被计入语料统计。"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— B0 完成：① analysis/opcode-gaps.json（真源，69 条：58 未实现 / 4 unjustified no-op / 5 有据 no-op / 2 已实现；语料累计 2394 次调用）；② scripts/build-opcode-gaps.mjs（可复算：语料按 iXX+名字两种写法统计、注册状态认 [op,handler] 与 0xNN:{…} 两种登记形态、引擎 dispatch 表推 handler 体行号；--check 供 CI）；③ 生成物 docs-new/03-engine/opcode-gaps.md；④ 守卫 test/opcode-gaps.test.ts（3 条：生成器校验+md 最新 / 与运行时三张表一致+未登记即红 / 审计 P0/P1 与 4 条 unjustified 不许缩水）。副产：修正两个统计口径（名字形式指令、对象键注册），发现 0x7C local-ret 668 处此前未被计入语料统计。",
+      "kind": "status"
     }
   ]
 }

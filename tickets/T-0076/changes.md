@@ -5,7 +5,7 @@
 续跑第 1 轮（2026-09，subagent 并行）——B3 筛体 + 首批落地。
 
 ### 1. B3 逐条筛体（32 条，排除 0x24f/0x250/0x251 并行处理）
-- 新文档 `docs-new/03-engine/b3-screening-2026-09.md`：32 条逐条读体 → **可实现 13 条 / deferred 19 条**（其中 9 条标「需新模型」，含于 deferred）。
+- 新文档 `docs-new/99-records/2026-09-b3/b3-screening-2026-09.md`：32 条逐条读体 → **可实现 13 条 / deferred 19 条**（其中 9 条标「需新模型」，含于 deferred）。
 - `analysis/opcode-gaps.json`：25 条改 `deferred` 并逐条追加「★筛体(2026-09)：…」扩展点 note（含此前 6 条同族）。
 - 台账：未实现 **35（语料 203）→ 13（语料 65）**；已实现 14 → 19。
 
@@ -17,7 +17,7 @@
   改动：`handlers/audio.ts`（+2 handler + 抽 4 段共用体）、`engineFieldIds.ts`（`musicPaused:174714`）、`audio/audioEngine.ts`（`bgm-pause` 意图）、`renderer/audio/webAudioHost.ts`（`setPaused`）、`test/audio-opcodes.test.ts`+`test/audio-engine.test.ts`+`test/fakeAudioHost.ts`。
 
 ### 3. bit2 族语义已定（规格文档，供下一轮实现）
-- 新文档 `docs-new/03-engine/b3-bit2-model-spec-2026-09.md`：**bit2 = 「本绘制项已挂 B 族周期/循环动画层」**。
+- 新文档 `docs-new/99-records/2026-09-b3/b3-bit2-model-spec-2026-09.md`：**bit2 = 「本绘制项已挂 B 族周期/循环动画层」**。
 - ★台账旧结论**方向反了**：`+536/+556/+560/+568/+572` 不是「bit2 的消费端」，它们就是**窗字段本身**；bit2 全反编译**唯一读取点**是渲染器 `sub_4AEEA0` raw 133390（`(flags & 4) == 0 ⇒ 跳过整层`），求值 `sub_49BCC0`（raw 117944-118365）分 5 通道（颜色/缩放/旋转/平移往复 + 贴图换格）。
 - 实现硬前置：`src/vm/native.ts` 的 `KNOWN_DRAW_ITEM_FLAGS` 需由 `0b011` 扩成 `0b111`；bit2 **不进 wait 门**（`itemAnimationsPending` 不该被它变真）。
 - 三条 handler 订正：`0x230`→`sub_4AD580`（唯一走它的），`0x231`→`sub_4AD690`，`0x235`→`sub_4AD900`（旧注「族共用 sub_4AD580」错）。
@@ -89,7 +89,7 @@
 - 第一层：`Engine 0x5D8F4 frames[].len_slot`（`N = 2*argc+1`）已建模；并把 `DrawItem 0x244..0x24C` 由「平移窗目标位移」**订正为旋转轴**（`rot_win_axis`），`trans_win_*` 全库清零。
 - 票据：**86 张**（doing 4 / open 19 / done 62 / dropped 1）。本轮 `T-0060`、`T-0086` 收口，`T-0084`/`T-0085` 新开；`tickets/` 的 evidence 行号漂移警告已清零。
 - `npm run verify`：**722 tests / 721 pass / 1 skip / 0 fail**，死写 0。
-- 批次总账与交接：`repair-plan-2026-09.md` **§2d**（本轮）+ `handoff-2026-09.md` 已整体刷新；`audit-2026-09.md` §6 已补本轮两行并订正「B3 剩余」段。
+- 批次总账与交接：`plan-2026-09.md` **§2d**（本轮）+ `handoff.md` 已整体刷新；`audit-2026-09.md` §6 已补本轮两行并订正「B3 剩余」段。
 
 ## 2026-09-20
 
@@ -103,4 +103,4 @@
 
 ⇒ 结果：这 4 条已从 `deferred` 转 **implemented**（`op_scene_scale`/`op_scene_translation`/`op_scene_axis_scale`/`op_scene_axis_translation`；新宿主缝 4 条五处同步；`SceneState.sceneXform` + presenter 归并循环三路消费；守卫 `test/op-22a-22f-scene-world.test.ts`(13) 与 `test/op-22a-22f-scene-xform.test.ts`(12，判定棘轮已按文件头指示翻转)）。台账：`implemented` 30 → **34**、`deferred` 31 → **27**。
 
-**教训**（已写进 `handoff-2026-09.md` 纪律 3）：筛体/规格文档的推断是线索不是结论；本轮四条里就有 1 处「门读反」+ 1 处「被调体记混」，都是读体才纠正的。
+**教训**（已写进 `handoff.md` 纪律 3）：筛体/规格文档的推断是线索不是结论；本轮四条里就有 1 处「门读反」+ 1 处「被调体记混」，都是读体才纠正的。

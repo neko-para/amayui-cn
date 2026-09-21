@@ -15,7 +15,7 @@
   - 引擎语义长文：`docs-new/03-engine/live2d.md`；
   - **格式长文（验收 #2 ①）**：`docs-new/03-engine/live2d-moc-format.md`（每条格式事实标 S1/S2/S3/O/E 来源）；
   - 数据层：`analysis/functions.json` 新增 **44 条** L2D 条目；`analysis/engine-capabilities.json` 的 5 条 Live2D 条目全部重评（见 §6）；
-  - 变形语义报告（oracle 专项）：`analysis/live2d-deform-semantics.md`（856 行，逐条带 raw 行号）；
+  - 变形语义报告（oracle 专项）：`docs-new/99-records/2026-09-live2d/live2d-deform-semantics.md`（856 行，逐条带 raw 行号）；
   - 本单（`ticket.json` + 本文件）。
 - **结论一句话**：内嵌 SDK **2.0.06 for DirectX**（Cubism 2.x）；资产 `.MOC/.MTN/PNG`，**无需 `.model.json`、无需 moc3 转换**；**推荐自研移值**（无新依赖、可 headless）；唯一待拍板 = **是否接受把 `live2d.min.js`（专有运行时）随补丁再分发**。
 
@@ -124,7 +124,7 @@ pivotCount 取值 {2,3,4,5,21}；单对象最多 5 个参数（3^5 = 243 档）
 
 **顺带收敛的旧悬案**：`DrawData.pivotPoints` 是**局部坐标**（变形器再变换）——
 `sub_4C8BC0`（raw 153345-153424）把文件里的点放进自己的缓冲，再由 `targetId` 指向的
-`BDAffine`/`BDBoxGrid` 变换进父缓冲（§4.3 of `analysis/live2d-deform-semantics.md`）⇒
+`BDAffine`/`BDBoxGrid` 变换进父缓冲（§4.3 of `docs-new/99-records/2026-09-live2d/live2d-deform-semantics.md`）⇒
 `deform.ts` 当前"点 = 局部 + 链式矩阵"的取法**得到证实**（原按 E4 待定的那一条已可收敛）。
 
 ---
@@ -365,10 +365,10 @@ cd app/amayui-emulator && npm run verify
 - **评估正文**：`docs-new/04-app/live2d-support-assessment.md`（本单的"要不要引依赖库 / 系统大致能力"都在那里）
 - 引擎语义长文：`docs-new/03-engine/live2d.md`
 - **格式长文**：`docs-new/03-engine/live2d-moc-format.md`
-- 变形语义报告（oracle 专项）：`analysis/live2d-deform-semantics.md`
+- 变形语义报告（oracle 专项）：`docs-new/99-records/2026-09-live2d/live2d-deform-semantics.md`
 - 数据层：`analysis/functions.json`（`report.js --find live2d`）、`analysis/engine-capabilities.json`（`capabilities.js --subsystem Live2D`）、`analysis/scripts.json`（`scripts.js --id TITLE`）
 - 相关票：**T-0051**（E4 真界面待验证清单 —— 本单的 E4 项可挂在那里）
-- 被本单改判的旧结论：`docs-new/03-engine/stub-reaudit-2026-09.md` §1.2（Live2D 一行已划掉并注明改判理由）
+- 被本单改判的旧结论：`docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §1.2（Live2D 一行已划掉并注明改判理由）
 
 ## E4 记录（2026-09-17；★证据不放 `.tmp/`，见 T-0057 R6）
 
@@ -378,3 +378,8 @@ cd app/amayui-emulator && npm run verify
 > 同一轮日志：`[l2d] 纹理 0x4f9f/0x4fa0/0x4fa1 → TITLE00/01/02.PNG`、
 > `[present …] l2d={槽1 节点1 可画1 纹理3}`。
 > 复现：`npm run build:electron && npx electron tools/shot.cjs --centered --name l2dfix`（产物落 `.tmp/`，只作一次性目视，不进证据）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+评估已完成并单独成文：**docs-new/04-app/live2d-support-assessment.md**（系统能力 / 要不要引依赖库 / 工作量 / 分阶段计划 / 待拍板）；引擎语义长文见 docs-new/03-engine/live2d.md；本单的过程笔记只留决策记录与 acceptance 对照。
+★待用户决策：是否接受把 Live2D 专有运行时（Cubism 2.1 的 `live2d.min.js`）随补丁再分发 —— 路线 B 的可行性取决于此；路线 C（自研移值）没有这个许可问题但工作量最大。

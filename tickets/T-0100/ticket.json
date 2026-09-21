@@ -56,57 +56,23 @@
       "docs-new/03-engine/save-data.md"
     ]
   },
-  "notes": "来源 = 用户轮 7 的 E4 实测原话：「我验证了目前SN0000的路径，目前能够正确加载和保存，并且能够进入到第一个SC场景，但是进入后SN0000中心的文字没有被清除，可以记录等待后续处理完成后验证」。★本轮只记录，不修。",
   "id": "T-0100",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：evidence"
+      "what": "open → doing —— 修复已落地并被 4 条新守卫 + 124/124 受影响族 + 45/45 真语料链 + tsc 干净验证；仅剩全量 npm run verify（被 T-0096 在飞的 4 条 Live2D 自测挡住）⇒ 转 done",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：why"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → doing —— 修复已落地并被 4 条新守卫 + 124/124 受影响族 + 45/45 真语料链 + tsc 干净验证；仅剩全量 npm run verify（被 T-0096 在飞的 4 条 Live2D 自测挡住）⇒ 转 done"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。三处收敛（serviceRevealAdvanceInput/serviceTextReveal/0x70 emitWin）+ 4 条新守卫（含\"reveal 同时含残留窗与当前窗\"的辨别力证明）+ 受影族 124/124 + 真语料链 45/45 + 能力台账 text-reveal-pump-409400 已补本票的持续行为结论"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。三处收敛（serviceRevealAdvanceInput/serviceTextReveal/0x70 emitWin）+ 4 条新守卫（含\"reveal 同时含残留窗与当前窗\"的辨别力证明）+ 受影族 124/124 + 真语料链 45/45 + 能力台账 text-reveal-pump-409400 已补本票的持续行为结论",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -88,37 +88,28 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ]
   },
-  "notes": "★**轮 9 现状**（白色半边）：分支判死（`708ada` 恒 0 ⇒ 恒走填灰支；槽 48 是 DEBUG 路径）；白底的形状 = **未解析纹理槽的 `draw-texture` 项被画成纯白矩形**（`presenter.ts` 的 `#placeholder` + tint 被 `itemColor` 覆盖）；「开合侧边栏才对」的机制 = 第二次 `set-texture` **同步**命中 `#imgCache`（探针实测）。**已修**：`TextureCache.onReady → pixiBackend.#markDirty()`（白占位块最多存活一帧）+ `session.ts` 的纹理屏障覆盖 `0x249`；守卫 `test/texture-bind-race.test.ts`(7)。**未修（登记）**：H2 `waitIdle` 500 ms 超时后仍静默按 0×0 走；H3 世代判据把槽打成永久无纹理后 `resolve`/`size` 无自愈点；`presenter` 对「`imgid` 已知但无纹理」**完全静默**（建议放宽到 `!tex`）。★**未证**：用户那一次白的是哪个槽/handle（冷载 `SC0000` 不画 ADV 窗口、DEBUG 入口在未实现的 `i140` 上活锁）⇒ 修复针对\"白底这一类\"的机制，不等于已复现用户那一帧。★**紫色半边**：判据已跑通（`advReturnProbe`），三处语义误读已订正、发现 `1397` 门；下一步 = 用 ADV 入口跑完整路径（判据见 `changes.md` §「轮 9」§5）。过程文档：`changes.md` / `white-report.md` / `notes.md`。",
   "id": "T-0102",
   "status": "open",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建（来源：轮 8 用户实测两条原话）"
+      "what": "创建（来源：轮 8 用户实测两条原话）",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "轮 8 追加批一：用户复验 ⇒ 判据① 的假设被推翻（白底仍在、角色名仍青色），另新增第 3 条症状（ADV 文字色继承设置界面最后一行的紫色 = 回归）；判据重排为代码点取证"
+      "what": "轮 8 追加批一：用户复验 ⇒ 判据① 的假设被推翻（白底仍在、角色名仍青色），另新增第 3 条症状（ADV 文字色继承设置界面最后一行的紫色 = 回归）；判据重排为代码点取证",
+      "kind": "decision"
     },
     {
       "at": "2026-09-20",
-      "what": "轮 8 追加批一取证完成：白底 = ADV 半透明黑底由脚本往槽 48 画（NOVEL.txt:44-55 / SC0000.txt:1036-1047）；sub_43B070 = SetColorKey（.lst 定死）、Scene+1560 = 像素格式掩码 ⇒ 引擎无窗底色字段，订正 msgwin.ts/raster.ts 两处凭空注释；并修 TextureCache 异步载入陈旧回写（守卫 test/texture-bind-race.test.ts）"
+      "what": "轮 8 追加批一取证完成：白底 = ADV 半透明黑底由脚本往槽 48 画（NOVEL.txt:44-55 / SC0000.txt:1036-1047）；sub_43B070 = SetColorKey（.lst 定死）、Scene+1560 = 像素格式掩码 ⇒ 引擎无窗底色字段，订正 msgwin.ts/raster.ts 两处凭空注释；并修 TextureCache 异步载入陈旧回写（守卫 test/texture-bind-race.test.ts）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-20",
-      "what": "轮 8 追加批二（用户第二次复验）：白底**仍然白** ⇒ 竞态修复不是原因，白底半边继续开着；紫色**真机不紫** ⇒ 推翻「与引擎同构」的结论。本机复现：runConfig1Chain 的 previewProbe 显示角色设定页跑完时**全局** Engine[21664] 残留在 #b690ff（紫），而样例窗 win 9 仍正确为白 ⇒ 历史守卫只钉住了样例窗、没钉住全局。已定位引擎的「回 ADV」路径 = CONFIG.txt:225-269（按当前消息号 3f37 重派生 14acda → call label_00001ae8 重算并 i076/i077 应用 → :269 的 i082）—— 与用户报的 i082 是同一段代码。下一步：把链路扩到「右键退出 CONFIG → 回 ADV 首帧」并 dump 三个值，或取用户 GUI 日志"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：history"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "轮 8 追加批二（用户第二次复验）：白底**仍然白** ⇒ 竞态修复不是原因，白底半边继续开着；紫色**真机不紫** ⇒ 推翻「与引擎同构」的结论。本机复现：runConfig1Chain 的 previewProbe 显示角色设定页跑完时**全局** Engine[21664] 残留在 #b690ff（紫），而样例窗 win 9 仍正确为白 ⇒ 历史守卫只钉住了样例窗、没钉住全局。已定位引擎的「回 ADV」路径 = CONFIG.txt:225-269（按当前消息号 3f37 重派生 14acda → call label_00001ae8 重算并 i076/i077 应用 → :269 的 i082）—— 与用户报的 i082 是同一段代码。下一步：把链路扩到「右键退出 CONFIG → 回 ADV 首帧」并 dump 三个值，或取用户 GUI 日志",
+      "kind": "decision"
     }
   ],
   "tests": [

@@ -121,7 +121,7 @@
       "docs-new/03-engine/live2d.md",
       "docs-new/03-engine/resource-loading.md",
       "docs-new/03-engine/rendering.md",
-      "docs-new/03-engine/stub-reaudit-2026-09.md"
+      "docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md"
     ],
     "analysis": [
       "analysis/engine-capabilities.json#live2d-enabled-config-flag",
@@ -137,41 +137,28 @@
       "T-0051"
     ]
   },
-  "notes": "评估已完成并单独成文：**docs-new/04-app/live2d-support-assessment.md**（系统能力 / 要不要引依赖库 / 工作量 / 分阶段计划 / 待拍板）；引擎语义长文见 docs-new/03-engine/live2d.md；本单的过程笔记只留决策记录与 acceptance 对照。\n★待用户决策：是否接受把 Live2D 专有运行时（Cubism 2.1 的 `live2d.min.js`）随补丁再分发 —— 路线 B 的可行性取决于此；路线 C（自研移值）没有这个许可问题但工作量最大。",
   "id": "T-0054",
   "status": "doing",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "改字段：why, links, notes"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-16",
-      "what": "open → doing —— 用户拍板：按自研（C）实施 + 参考源纪律（规范优先/资产实证兜底/反汇编仅 oracle）；开始 M1"
+      "what": "open → doing —— 用户拍板：按自研（C）实施 + 参考源纪律（规范优先/资产实证兜底/反汇编仅 oracle）；开始 M1",
+      "kind": "status"
     },
     {
       "at": "2026-09-17",
-      "what": "M1 收尾（渲染最后一公里）：新增 live2d/render.ts（出画几何 = 快照与绘制同源）、pixi/l2dTextures.ts（普通 PNG → Pixi 纹理）、presenter 第四类图元（四路归并）、Electron readById 通道（真实运行时装载链此前是断的）；快照导出批次/三角形/纹理来源；新增守卫 test/live2d-render.test.ts（6 条，含真资产 E3）；能力台账 +1（live2d-mesh-batches=modeled-verified/E3）；顺带收敛「pivotPoints 是局部坐标」。M3（a9d0 真读 / slot-probe）与 E4 仍未做。"
+      "what": "M1 收尾（渲染最后一公里）：新增 live2d/render.ts（出画几何 = 快照与绘制同源）、pixi/l2dTextures.ts（普通 PNG → Pixi 纹理）、presenter 第四类图元（四路归并）、Electron readById 通道（真实运行时装载链此前是断的）；快照导出批次/三角形/纹理来源；新增守卫 test/live2d-render.test.ts（6 条，含真资产 E3）；能力台账 +1（live2d-mesh-batches=modeled-verified/E3）；顺带收敛「pivotPoints 是局部坐标」。M3（a9d0 真读 / slot-probe）与 E4 仍未做。",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "真机联调：修两个\"只有真机才暴露\"的静默失败 —— ① moc.ts 用 Node 的 Buffer 解字符串（渲染进程无 Node 集成）⇒ 加渲染器安全源码棘轮；② 出画批次按纹理号合并、alpha 取最小值 ⇒ op=0 的网格把整张角色纹理压透明 ⇒ 改为一网格一批（7 条守卫）；③ 删掉 Live2D 的宿主缝（l2dLoadModel/l2dBindTexture/l2dStartMotion/destroyL2DSlot/l2dSlotSet/setTextureTransform）与两处被覆盖的死 handler（gfx-misc 的 0x342/0x352、gfx-texture 的 0x344 旧解）⇒ 控制窗不再报假缺口。E4 已取得（.tmp/l2dfix-0-title.png 角色完整出画）⇒ live2d-mesh-batches 升 E4。M3 仍未做。"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "真机联调：修两个\"只有真机才暴露\"的静默失败 —— ① moc.ts 用 Node 的 Buffer 解字符串（渲染进程无 Node 集成）⇒ 加渲染器安全源码棘轮；② 出画批次按纹理号合并、alpha 取最小值 ⇒ op=0 的网格把整张角色纹理压透明 ⇒ 改为一网格一批（7 条守卫）；③ 删掉 Live2D 的宿主缝（l2dLoadModel/l2dBindTexture/l2dStartMotion/destroyL2DSlot/l2dSlotSet/setTextureTransform）与两处被覆盖的死 handler（gfx-misc 的 0x342/0x352、gfx-texture 的 0x344 旧解）⇒ 控制窗不再报假缺口。E4 已取得（.tmp/l2dfix-0-title.png 角色完整出画）⇒ live2d-mesh-batches 升 E4。M3 仍未做。",
+      "kind": "decision"
     }
   ],
   "tests": [

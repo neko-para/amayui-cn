@@ -2903,7 +2903,7 @@
       "emulator": {
         "status": "absent",
         "evidence": "E1",
-        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/03-engine/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场景模型里加\"每槽粒子效果\"这一层"
+        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场景模型里加\"每槽粒子效果\"这一层"
       }
     },
     {
@@ -3847,7 +3847,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/draw-item-loop-anim.test.ts",
-        "note": "2026-09 B3 落地：bit2 = 本绘制项已挂 B 族周期/循环动画层（语义规格见 docs-new/03-engine/b3-bit2-model-spec-2026-09.md）。写入端 0x230..0x235 六条 + 消费端五通道求值（drawitem/eval.ts）+ 世界矩阵有效位（Item.useWorld 经 itemUsesWorld 进 presenter）都已实现；KNOWN_DRAW_ITEM_FLAGS 由 0b011 扩到 0b111。★另一处读取点 = sub_4AEEA0 raw 133385-133396（bit2 全反编译唯一读取点，命中时强制 Scene+46532 世界矩阵有效位）。★仍缺（已在代码与台账披露）：① sub_49BCC0 raw 118304-118336 的特例分支（handle 属于 20..30 且 Scene 的 1164 槽等于 2 时对平移矩阵 Decompose 后重投影；语料未涉、语义未确证）；② 0x244 里两张 572B 表（L2dNode 无起点字段）没建模；③ 0x234 的二维方向取 axis.z 符号，D3D 手性未逐项验证"
+        "note": "2026-09 B3 落地：bit2 = 本绘制项已挂 B 族周期/循环动画层（语义规格见 docs-new/99-records/2026-09-b3/b3-bit2-model-spec-2026-09.md）。写入端 0x230..0x235 六条 + 消费端五通道求值（drawitem/eval.ts）+ 世界矩阵有效位（Item.useWorld 经 itemUsesWorld 进 presenter）都已实现；KNOWN_DRAW_ITEM_FLAGS 由 0b011 扩到 0b111。★另一处读取点 = sub_4AEEA0 raw 133385-133396（bit2 全反编译唯一读取点，命中时强制 Scene+46532 世界矩阵有效位）。★仍缺（已在代码与台账披露）：① sub_49BCC0 raw 118304-118336 的特例分支（handle 属于 20..30 且 Scene 的 1164 槽等于 2 时对平移矩阵 Decompose 后重投影；语料未涉、语义未确证）；② 0x244 里两张 572B 表（L2dNode 无起点字段）没建模；③ 0x234 的二维方向取 axis.z 符号，D3D 手性未逐项验证"
       }
     },
     {

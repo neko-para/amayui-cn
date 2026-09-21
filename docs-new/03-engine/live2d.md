@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · Live2D 子系统（Cubism 2.0.06 for DirectX）
 
 > 状态：**引擎侧语义已钉死（raw 行号齐）；重写侧（emulator）完全没有建模**。

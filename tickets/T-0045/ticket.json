@@ -42,21 +42,18 @@
       "T-0044"
     ]
   },
-  "notes": "工作流现在是：`cd scripts && node translate.js assemble`（全量）→ `npm run prune-install -- --apply --restore-agf`（收口）。★清单本身有两处**已知陈旧**：内容 md5 不符 5 个（`$1$IMINIT/$1$SCINIT/$1$SCJUMP` 是 opcode 改名后工具链重编的产物；`AGERC.DLL` 是菜单汉化补丁；`SO025.AGF` 与本机这份不同）—— 需要时由人跑根目录 `npm run manifest` 刷新，工具只报告不改清单。",
   "id": "T-0045",
   "status": "done",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— prune-install.mjs 落地：清单外无译文 BIN 已清理 447 个、res/images 的 9 个 AGF 已补进 install 根；收口后 install 顶层与清单只差 1 多余（天结.exe，EXCLUDED_NAMES）+ 6 个作者机器才有的文件"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— prune-install.mjs 落地：清单外无译文 BIN 已清理 447 个、res/images 的 9 个 AGF 已补进 install 根；收口后 install 顶层与清单只差 1 多余（天结.exe，EXCLUDED_NAMES）+ 6 个作者机器才有的文件",
+      "kind": "status"
     }
   ]
 }

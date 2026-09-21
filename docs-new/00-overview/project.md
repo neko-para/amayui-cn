@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 00-overview · 工程定位与现状
 
 ## 1. 这是什么

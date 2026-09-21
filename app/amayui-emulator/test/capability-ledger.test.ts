@@ -125,3 +125,17 @@ test('缺口可见：统计数据可读（体检报告）', () => {
     `至少应有一条已核验能力（当前 ${L.counts['modeled-verified']}）\n需要关注的 ${attention.length} 条：\n${lines.slice(0, 40).join('\n')}`,
   );
 });
+
+/**
+ * ★**文档模型（2026-09）**：生成物只渲染 `emulator.note` 的**一句话**，不是全文（同 opcode-gaps 的纪律）。
+ * `note` 是审计轨（136 条 ≈ 60 KB，占实体数据 43%）⇒ md 只给 200 字 + 指回 JSON（`capabilities.js --show <id>`）。
+ */
+test('★生成物只渲染 emulator.note 的一句话（全文留在 JSON）', () => {
+  const md = fs.readFileSync(MD_PATH, 'utf8');
+  const L = load();
+  const norm = (s: string) => s.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  const big = L.entries.filter((e) => norm(e.emulator.note).length > 500);
+  assert.ok(big.length >= 10, `样本太少（${big.length} 条 >500 字），守卫失去辨别力`);
+  const leaked = big.filter((e) => md.includes(norm(e.emulator.note).slice(0, 300))).map((e) => e.id);
+  assert.deepEqual(leaked, [], `这些条目的 note 全文漏进 md 了（应由 summarize() 裁剪）：${leaked.join(' ')}`);
+});

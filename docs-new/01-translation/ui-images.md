@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 界面图片汉化（AGF / AGERC）
 
 ## 1. 流程（AGF→PNG→改图→有头注入）

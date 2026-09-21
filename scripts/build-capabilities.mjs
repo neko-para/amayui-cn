@@ -46,7 +46,29 @@ const MARK = {
   'n/a-known': '➖ n/a',
 };
 
+/**
+ * ★**渲染用一句话**：从 `emulator.note` 派生的**裁剪摘要**（≤ `n` 字）。
+ *
+ * `note` 是**真源的审计轨**（本工程现状 + 逐轮沿革，136 条合计 ≈ 60 KB，占实体数据 43%）。
+ * 逐字铺进 md 会让生成物里混进大量"当初怎么想错了"的沿革。⇒ **md 只给一句话，全文留在 JSON**：
+ * `node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --show <id>`。
+ */
+function summarize(note, n = 200) {
+  // ★2026-09 文档模型：**沿革话术不进生成物** —— 摘要开头常见的「★审计 P1 订正：」「2026-09 更新：」
+  //   这类前缀是“当初怎么想错了”，对“现在是什么”没有导航价值 ⇒ 剥掉（全文仍在 JSON 的 note 里）。
+  const strip = (x) => x.replace(/^★?\s*(?:审计[^：:]{0,40}订正|订正|20\d\d-\d\d[^：:]{0,24})[：:]\s*/, '').replace(/^★\s*/, '');
+  const s = strip(String(note ?? '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim());
+  return s.length > n ? `${s.slice(0, n)}…` : s;
+}
+
 const L = [];
+L.push('---');
+L.push('kind: generated');
+L.push('state: live');
+L.push('home: analysis/engine-capabilities.json');
+L.push('generated_by: scripts/build-capabilities.mjs');
+L.push('---');
+L.push('');
 L.push('# 引擎「常态能力」台账（第二层）');
 L.push('');
 L.push('> 由 `analysis/engine-capabilities.json` 生成：`node scripts/build-capabilities.mjs`。');
@@ -54,6 +76,8 @@ L.push('> 这些能力**无法靠枚举 opcode 发现**：它们是引擎自己�
 L.push('> 缺失时**不会报错、只会表现不对**（例如版权页文字不淡入 ⇒ 才发现缺了逐帧颜色插值）。');
 L.push('> 因此单列一张可核对清单 —— **出现症状时先查这里**，避免每次从零研究。');
 L.push('>');
+L.push('> ★缺口明细只给**一句话**（`emulator.note` 裁到 200 字）：`note` 是审计轨（现状 + 逐轮沿革，136 条 ≈ 60 KB），');
+L.push('> 逐字铺进 md 会混进大量"当初怎么想错了"的沿革。**全文**：`capabilities.js --show <id>` 或直接读 JSON。');
 L.push('> `emulator` 列的判定口径见下；`E0–E4` 是证据等级（E0 未读体 / E1 已读体 / E2 合成单测 / E3 场景断言 / E4 真机对照）。');
 L.push('');
 L.push('## 统计');
@@ -92,7 +116,7 @@ for (const e of entries.filter((x) => x.emulator.status === 'absent' || x.emulat
   L.push(`- **缺失时为什么静默**：${e.whySilent}`);
   L.push(`- **引擎**：${e.engine.fns.join(', ')} @ raw ${e.engine.raw}`);
   if (e.reads.length) L.push(`- **读的字段**：${e.reads.join(', ')}`);
-  L.push(`- **emulator 现状**：${e.emulator.note}`);
+  L.push(`- **emulator 现状**：${summarize(e.emulator.note)}`);
   L.push('');
 }
 

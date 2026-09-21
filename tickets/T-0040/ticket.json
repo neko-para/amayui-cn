@@ -34,25 +34,18 @@
       "note": "守卫：四条边/负坐标/极矮窗口/档位解析"
     }
   ],
-  "notes": "实测（2026-09，`npm run shot -- --gamestart --name t17edge2`）：\n```\n[window] 贴边档=bottom 位置=(224,1085) 可用区=1728x1084@(0,33) 窗口=1280x720（只留 32px 可见；showInactive 不抢焦点）\n[window] 贴边档=bottom 位置=(614,1085) 可用区=1728x1084@(0,33) 窗口=500x720（只留 32px 可见；showInactive 不抢焦点）\n```\n可用区下缘 = 33+1084 = 1117 ⇒ y=1085 = 1117−32 ⇒ 只有标题栏在屏内、窗口其余部分在屏幕下方。截图（`capturePage`）不受位置影响，仍与居中时逐像素一致。",
   "id": "T-0040",
   "status": "done",
   "history": [
     {
       "at": "2026-09-15",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-15",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "open → done —— 已实现并实测：贴边档+不抢焦点+位置日志；纯几何单测 5 条；--centered 可关"
-    },
-    {
-      "at": "2026-09-15",
-      "what": "改字段：evidence"
+      "what": "open → done —— 已实现并实测：贴边档+不抢焦点+位置日志；纯几何单测 5 条；--centered 可关",
+      "kind": "status"
     }
   ],
   "tests": [

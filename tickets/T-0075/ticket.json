@@ -5,7 +5,7 @@
   "area": "docs/03-engine",
   "why": "用户要求：在继续改 emulator 之前，把现有全部指令与能力文档逐个读完并核实，找出所有凭空编造/推测的实现点。做法：① 从引擎构造函数按 `opcode = (字节偏移 − 675996) / 4` 重建 dispatch 表（544 个已映射），与 opcode-table.md 的 574 行、emulator 的 OPS/NATIVE_OPS/ENGINE_INTERNAL_OPS 三方对齐；② 每条断言都要打开 handler 体 raw 行号（不信文档转述）并核对 emulator 实际实现；③ 每条 finding 由另一个 agent 做对抗性复核（重新开行号、重新 grep 语料与字段读写点），被推翻的剔除、需改判的按复核值入账。覆盖：574 行 opcode（122 finding → 保留 95，剔 9）、130 条 capabilities（98 → 84，剔 9）、17 份机制文档（102 → 67，剔 13）。结论：P0 6 条、P1 22 条，其中 100 条属「凭空/无据」类（host-invented 11 / overreach 53 / no-evidence 34 / name-inference 2）。",
   "acceptance": [
-    "总览 docs-new/03-engine/audit-2026-09.md + 三份明细（audit-2026-09-opcodes.md / -capabilities.md / -docs.md）落地，逐条带 raw 行号或代码 file:line",
+    "总览 docs-new/99-records/2026-09-audit/audit-2026-09.md + 三份明细（audit-2026-09-opcodes.md / -capabilities.md / -docs.md）落地，逐条带 raw 行号或代码 file:line",
     "每份报告都写明方法、覆盖、kind×severity 统计、复核通过率、以及「已排除的误报」清单（便于别人复核审计本身）",
     "P0/P1 按主题分派到后续票：T-0076（零注册指令）、T-0077（凭空/错读实现）、T-0078（capabilities 台账失真）、T-0079（机制文档陈旧）",
     "未覆盖边界写清楚（docs-new/04-app、functions/fields/scripts 三层台账的逐条核对、真机 E4 类问题）",
@@ -14,31 +14,31 @@
   "tests": [],
   "evidence": [
     {
-      "file": "docs-new/03-engine/audit-2026-09.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09.md",
       "anchor": "# 03-engine · 文档×实现 凭空/推测点审计（2026-09）",
       "note": "总览：方法、三方对照计数、P0/P1 一览、凭空实现专项清单、未覆盖边界、处置批次"
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-2-01 — 0x2E9 未实现，ADV 时间基准字段永不写入",
       "note": "opcode 明细（95 条）的 P0 首条；同文件含 P1/P2/P3 与误报清单",
       "line": 50
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-capabilities.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-capabilities.md",
       "anchor": "### l2d-node-draw-gate — Live2D 节点出画门其实已被两个宿主每帧消费，台账仍自称「没被调用」",
       "note": "capabilities 明细（84 条）的 P0 首条"
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-docs.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-docs.md",
       "anchor": "### `docs-new/03-engine/flow-control.md:181` — emulator 不停在 ScriptReset（文档陈旧且与同文档他节冲突）",
       "note": "机制文档明细（67 条）的 P0 首条"
     },
     {
-      "file": "docs-new/README.md",
-      "anchor": "audit-2026-09.md      ← **文档×实现 凭空/推测点审计总览**",
-      "note": "索引已挂进 03-engine 目录树",
-      "line": 65
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09.md",
+      "anchor": "# 03-engine · 文档×实现 凭空/推测点审计（2026-09）",
+      "note": "审计总览（★2026-09 文档模型：已移入历史记录区 docs-new/99-records/，state=consumed，只作本票证据锚点）",
+      "line": 1
     }
   ],
   "links": {
@@ -51,25 +51,21 @@
       "T-0079"
     ],
     "docs": [
-      "docs-new/03-engine/audit-2026-09.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
-      "docs-new/03-engine/audit-2026-09-capabilities.md",
-      "docs-new/03-engine/audit-2026-09-docs.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-capabilities.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-docs.md",
       "docs-new/03-engine/opcode-table.md",
       "docs-new/03-engine/engine-capabilities.md"
     ]
   },
-  "notes": "方法学副产品（对后续审计有用）：① 判断「某字段是不是死写」必须自己 grep 全文件的读写点 —— 本次一个 P0 与一个 P1 都源自旧文档把「有读者的字段」写成死写（0x238 / 0xD9 的 0x1000 位）；② 台账/文档里的「已实现/未实现」不能互相信任，必须打开代码与测试（本次实证：台账说「两宿主没接线」实际每帧都在消费；说「完全没接」实际 7 条参数面 + 面名映射都已落地）。③ opcode-table.md 里「已核对但无 raw 引用」的 37 行是历史遗留（算术族 0x50-0x5F 等），多数语义正确但没有行号锚点。",
   "id": "T-0075",
   "status": "open",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "创建",
+      "kind": "created"
     }
   ]
 }

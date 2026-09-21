@@ -3,7 +3,7 @@
   "type": "bug",
   "priority": "P1",
   "area": "emulator/render",
-  "why": "引擎侧确证（本次逐行读体）：`0x223` 的 handler `sub_423F00`（raw 31936-31958，argc 8、arity 槽 17）读 op1..op8 后调 `sub_4ADDB0(Scene, op1, op2, .., op8)`；而 `sub_4ADDB0`（raw 132590-132635）把记录写进 **`sub_4AAE10(_this + 262, &a2)`** —— `_this + 262` 是 **dword 下标 262 = 字节 1048**，即**转场记录表 `Scene+1048`**（与 `0x24f`/`0x250`/`0x251` 同一张 `std::map<int, 96B>`），并且第一格写 `[0] = 0` ⇒ **类别 0 = 全屏交叉淡化**（帧渲染器 `sub_4B06D0` 按 `[0]` 分四类，见 `docs-new/03-engine/transition-render-spec-2026-09.md`）。写集 = `[0]=0, [1]=0, [2]=op7, [3]=op8, [4]=op2, [5]=op3, [6]=op5, [7]=op4, [8]=op6`（键 = op1），随后置脏 `Scene[11627]=1`。\n\nemulator 现状（`handlers/gfx-item.ts`）：把同样这 9 个数**逐格原样**存进 `Engine.itemRegions`（`engine.ts:466` 的 `Map<number, number[]>`）—— **数据是对的，容器是错的**：① 生产代码**没有任何地方读它**（唯一读者是它自己的测试 `test/op-223-item-region.test.ts`），是一个 `check:dead-writes` 覆盖不到的**死模型**；② 转场记录表 `SceneState.render4.transitions` 才是 `0x24f`/`0x250`/`0x251` 走的容器 ⇒ **类别 0 的转场（语料 178 处／178 个文件，每个脚本一处）对渲染端完全不可见**，一旦按转场规格实现渲染就会漏掉这一类；③ 记录只写 9 格而引擎是先 `sub_4AAAF0` 建默认记录（24 格，`[4] = -1`，见 `sub_49A640` raw 117059-117077）再覆盖前 9 格 ⇒ 现状连 `[9..13]` 的默认值与 `[4]` 的默认值都丢了。\n\n★这是「按引擎字段逐格抄下来」但**没有识别容器**导致的错：数据对、语义标签（「图元区域记录」）与落点都错。",
+  "why": "引擎侧确证（本次逐行读体）：`0x223` 的 handler `sub_423F00`（raw 31936-31958，argc 8、arity 槽 17）读 op1..op8 后调 `sub_4ADDB0(Scene, op1, op2, .., op8)`；而 `sub_4ADDB0`（raw 132590-132635）把记录写进 **`sub_4AAE10(_this + 262, &a2)`** —— `_this + 262` 是 **dword 下标 262 = 字节 1048**，即**转场记录表 `Scene+1048`**（与 `0x24f`/`0x250`/`0x251` 同一张 `std::map<int, 96B>`），并且第一格写 `[0] = 0` ⇒ **类别 0 = 全屏交叉淡化**（帧渲染器 `sub_4B06D0` 按 `[0]` 分四类，见 `docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md`）。写集 = `[0]=0, [1]=0, [2]=op7, [3]=op8, [4]=op2, [5]=op3, [6]=op5, [7]=op4, [8]=op6`（键 = op1），随后置脏 `Scene[11627]=1`。\n\nemulator 现状（`handlers/gfx-item.ts`）：把同样这 9 个数**逐格原样**存进 `Engine.itemRegions`（`engine.ts:466` 的 `Map<number, number[]>`）—— **数据是对的，容器是错的**：① 生产代码**没有任何地方读它**（唯一读者是它自己的测试 `test/op-223-item-region.test.ts`），是一个 `check:dead-writes` 覆盖不到的**死模型**；② 转场记录表 `SceneState.render4.transitions` 才是 `0x24f`/`0x250`/`0x251` 走的容器 ⇒ **类别 0 的转场（语料 178 处／178 个文件，每个脚本一处）对渲染端完全不可见**，一旦按转场规格实现渲染就会漏掉这一类；③ 记录只写 9 格而引擎是先 `sub_4AAAF0` 建默认记录（24 格，`[4] = -1`，见 `sub_49A640` raw 117059-117077）再覆盖前 9 格 ⇒ 现状连 `[9..13]` 的默认值与 `[4]` 的默认值都丢了。\n\n★这是「按引擎字段逐格抄下来」但**没有识别容器**导致的错：数据对、语义标签（「图元区域记录」）与落点都错。",
   "acceptance": [
     "`0x223` 改为按引擎写进 `Scene+1048` 的转场记录表（emulator = `SceneState.render4.transitions`）：以 24 格默认记录为底（`[4] = -1`，同 `scTransitionDefaultRecord()`），再写 `[0]=0, [1]=0, [2]=op7, [3]=op8, [4]=op2, [5]=op3, [6]=op5, [7]=op4, [8]=op6`，键 = op1",
     "删掉 `Engine.itemRegions`（写而不读的死模型）与其注册；`test/op-223-item-region.test.ts` 改写成转场记录守卫（断言 24 格、前 9 格值、`[9..13]` 保持默认）",
@@ -45,7 +45,7 @@
   ],
   "links": {
     "docs": [
-      "docs-new/03-engine/transition-render-spec-2026-09.md",
+      "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md",
       "docs-new/03-engine/opcode-table.md"
     ],
     "analysis": [
@@ -57,29 +57,18 @@
       "T-0076"
     ]
   },
-  "notes": "★发现路径：`T-0084` 的引擎侧规格复核（subagent）时，它报「台账现误标 0x223=给绘制项登记区域记录，实为类别 0 写入端」；我逐行读 `sub_4ADDB0` + `sub_423F00` 独立确认：`sub_4AAE10(_this + 262, &a2)` 的 `_this + 262` = 字节 1048，且写 `[0]=0`。数据本身与引擎逐格一致（`[0,0,op7,op8,op2,op3,op5,op4,op6]`），所以「抄错了数据」不成立 —— **错的是容器与语义标签**。\n口语料形态（178 处高度一致）：`i223 (local-int 0) (local-ptr 2) (local-int 3) 1 (local-ptr 4) 1 (global-int f8042) (global-int f8043)` ⇒ op1(key)=0、op2=工作纹理槽、op7/op8 = 延迟/时长（取自**池外全局** f8042/f8043，与 T-0071 的池外全局同族）。\n同族未实现的一条：`0x24D` = 类别 1（`sub_4ADEE0` raw 132637-132683），**语料 0 处** ⇒ 本轮不登记、不实现（按纪律：没读过/没用到的不要硬加）。",
   "id": "T-0087",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → done —— 修复落地：handler `op_set_item_region` → `op_set_transition_fade`，改走 `native.setTransition(key, writes)`（与 0x24F/0x250/0x251 同一条宿主缝、同一张 `Scene+1048` 记录表）；写集按体 raw 132618-132635 逐格复核 = `[0]=0`（类别 0）`[1]=0` `[2]=op7` `[3]=op8` `[4]=op2` `[5]=op3` `[6]=op5` `[7]=op4` `[8]=op6`；记录长度由 `scTransitionDefaultRecord()` 保证 **24 格**且 `[9..13]` 保持默认（此前只有 9 格、默认值全丢）。死模型 `Engine.itemRegions` 已删（全仓无生产引用）。旧测试 `op-223-item-region.test.ts` 删除，新守卫 `test/op-223-transition-fade.test.ts`（4 条：类别 0 + 前 9 格逐格 deepEqual + `length===24` + `[9..13]` 默认 + `itemRegions===undefined` + 与 0x24F 同表不串格）。★实现要点（写进注释）：8 个操作数**必须先读进局部量**再调用 —— 内联进 `setTransition?.(…)` 实参表会因可选调用短路而整批不读（StubNative 无该缝），`opcode-operands` 会红。★独立复核：我逐行读了 `sub_4ADDB0`(类别 0) 与 `sub_4ADEE0`(类别 1)，确认 `[13]=a10` 只属类别 1（并订正了 `transition-render-spec` §2.3 里把类别 0 的 `[13]` 误记为 `a10` 的那一格）。★仍未建模（另记缺口）：`sub_4ADDB0` 头部的惰性（重）建纹理层分支（`sub_4A2C10`，0x460 对象内部未读完）——属渲染端缺口，非本票判据。"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 修复落地：handler `op_set_item_region` → `op_set_transition_fade`，改走 `native.setTransition(key, writes)`（与 0x24F/0x250/0x251 同一条宿主缝、同一张 `Scene+1048` 记录表）；写集按体 raw 132618-132635 逐格复核 = `[0]=0`（类别 0）`[1]=0` `[2]=op7` `[3]=op8` `[4]=op2` `[5]=op3` `[6]=op5` `[7]=op4` `[8]=op6`；记录长度由 `scTransitionDefaultRecord()` 保证 **24 格**且 `[9..13]` 保持默认（此前只有 9 格、默认值全丢）。死模型 `Engine.itemRegions` 已删（全仓无生产引用）。旧测试 `op-223-item-region.test.ts` 删除，新守卫 `test/op-223-transition-fade.test.ts`（4 条：类别 0 + 前 9 格逐格 deepEqual + `length===24` + `[9..13]` 默认 + `itemRegions===undefined` + 与 0x24F 同表不串格）。★实现要点（写进注释）：8 个操作数**必须先读进局部量**再调用 —— 内联进 `setTransition?.(…)` 实参表会因可选调用短路而整批不读（StubNative 无该缝），`opcode-operands` 会红。★独立复核：我逐行读了 `sub_4ADDB0`(类别 0) 与 `sub_4ADEE0`(类别 1)，确认 `[13]=a10` 只属类别 1（并订正了 `transition-render-spec` §2.3 里把类别 0 的 `[13]` 误记为 `a10` 的那一格）。★仍未建模（另记缺口）：`sub_4ADDB0` 头部的惰性（重）建纹理层分支（`sub_4A2C10`，0x460 对象内部未读完）——属渲染端缺口，非本票判据。",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -1,0 +1,40 @@
+{
+  "title": "文档模型收尾：机制叙述与台账的重复段清理 + copyright-effect 无台账落点",
+  "type": "docs",
+  "priority": "P3",
+  "area": "docs/03-engine",
+  "why": "2026-09 文档模型重构（docs-new/00-overview/authority.md 附录）落地了 A–F+H 期；G 期（机制叙述瘦身）只做了有界的一遍：已剥掉 4 份文档的「2026-09 订正」话术与生成物摘要的历史前缀，但**逐条判重**没做。审计（只读子代理，2026-09）抽 8 条 capabilities 条目，判定 6 条是**真重复**（同 raw、同不变量、机制文档与台账各写一遍）：text-line-pitch-font-1380←adv-text-rendering.md:204、drawitem-world-matrix-composition←rendering.md:125、music-number-table-lifecycle←sound-system.md:169、append-pack-discovery-and-activation←resource-loading.md:13、live2d-node-matrix-compose←live2d.md:150、scene-3d-weather-effects-rain-snow-leaf←stub-reaudit-2026-09.md:103（后者在 99-records 里，已过期）。另有单向回链（resource-loading.md / gallery-and-unlock-flags.md 被 caps 引用但 caps 不引回）与一处**未落库**：copyright-effect.md（LOGO 版权页 ~5s 动画）没有专属 capabilities 条目，结论只在 tickets/T-0024 + 该文档里。",
+  "acceptance": [
+    "① 上述 6 条重复：机制文档保留「整体机制」，逐条 raw/不变量改成回链 `engine-capabilities.json#<id>`；抽查这 6 条不再有重复句",
+    "② 补 `engine-capabilities.json` 的 `narrative` 字段（可选）到至少这 6 条，形成双向回链",
+    "③ 给 copyright-effect 补一条 capabilities 条目（引擎侧 trigger/reads/whySilent 必须带 raw 行号，不许凭空）",
+    "④ 同批清掉 docs-new/03-engine/*.md 里剩余的「订正」话术（grep -c）",
+    "npm run verify 全绿（含 test/doc-model.test.ts）；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/00-overview/authority.md",
+      "anchor": "沿革只留三处",
+      "note": "本票依据的模型条目（A4）"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "text-line-pitch-font-1380",
+      "note": "重复抽查样本 1"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "live2d-node-matrix-compose",
+      "note": "重复抽查样本 5（连「轮 8 落地」叙述都是双份）"
+    }
+  ],
+  "id": "T-0105",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-21",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

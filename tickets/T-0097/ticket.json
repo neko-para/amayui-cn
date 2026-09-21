@@ -19,7 +19,7 @@
       "line": 243
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "| op-4-11 | cross-source-mismatch |",
       "note": "0x2EE 的审计条（raw 33590-33603；字符串常量 4380）",
       "line": 473
@@ -55,44 +55,21 @@
     ],
     "docs": [
       "docs-new/03-engine/runtime-memory.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md"
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md"
     ]
   },
-  "notes": "来源 = 轮 6 分诊报告（`tickets/T-0093/deferred-triage-report.md` B 段 + §D-1）。★③ 是「同一语义两处口径」类问题（T-0057 的同族），最容易被两套实现都留下。",
   "id": "T-0097",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：why, notes"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → done —— ①②③ 由实施子代理落地、④ 由主 agent 落地：① op_set_message_fade（字段 + SetConfig 双写，守卫写后读回 + onConfigChanged）；② 0x141/0x135 改 unsigned（并同形订正 0x136/0x13F，已申报），错误串分支 = c.log + 不写目标 + 不抛；③ 读口径统一到 ref.ts 的 decIntSlot（缺槽 = 引擎 enc_zero ⇒ 0），删掉 0x12E 的本地 hasRefValue 绕法，hasRefValue 只剩 0x2C9 写侧（判据含四处 raw 体）；④ Engine/0x408 = Input 管理器（错 scope 条目删除并改写）、同族 Engine/0x428 mesh_container 改为 Scene/0x428、第一层 12 处块内定点替换 + 两处文档同步。派生发现已开 T-0098。npm run verify 全绿"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— ①②③ 由实施子代理落地、④ 由主 agent 落地：① op_set_message_fade（字段 + SetConfig 双写，守卫写后读回 + onConfigChanged）；② 0x141/0x135 改 unsigned（并同形订正 0x136/0x13F，已申报），错误串分支 = c.log + 不写目标 + 不抛；③ 读口径统一到 ref.ts 的 decIntSlot（缺槽 = 引擎 enc_zero ⇒ 0），删掉 0x12E 的本地 hasRefValue 绕法，hasRefValue 只剩 0x2C9 写侧（判据含四处 raw 体）；④ Engine/0x408 = Input 管理器（错 scope 条目删除并改写）、同族 Engine/0x428 mesh_container 改为 Scene/0x428、第一层 12 处块内定点替换 + 两处文档同步。派生发现已开 T-0098。npm run verify 全绿",
+      "kind": "status"
     }
   ],
   "tests": [

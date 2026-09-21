@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 00-overview · 需求 / 缺陷单（票据台账）
 
 > **一句话**：`tickets/` 是"**还要做什么**"的**唯一落点**。发现的问题、要做的事、要核实的事，
@@ -62,17 +66,29 @@ tickets/
     "tickets": ["T-0003"]
   },
   "droppedWhy": "（status=dropped 时必填）",
-  "notes": "自由文本（长内容请写进 notes.md）",
-  "history": [{ "at": "2026-09-14", "what": "创建" }]   // 至少一条；由工具自动追加
+  "doneWhy": "（status=done 但确实没有代码守卫时必填，如文档/分析票）",
+  "history": [{ "at": "2026-09-14", "kind": "created", "what": "创建" }]   // 至少一条
 }
+```
+
+**★2026-09 的三条 schema 变更**（`../00-overview/authority.md` 附录 A4）：
+
+| 变更 | 为什么 |
+|---|---|
+| **`notes` 字段废除**（长文一律进 `notes.md`） | 契约本来就写"长内容请写进 notes.md"，但 75 张票把长文内联在 JSON（最大 1,637 字）⇒ 载体错位、`ticket.json` 被 prose 撑大。迁移时已把所有 `notes` 搬进同名 `notes.md` |
+| `history[].kind` 必填：`created \| status \| scope \| decision` | 让"状态流转"与"分析结论"可分（前者可机械生成、后者不可） |
+| **没有 `--note` 就不记 history** | 此前每次 `--edit` 都追加 `改字段：evidence` 这类字段 diff ⇒ 全库 515 条里 **262 条是零信息噪音**。字段级 diff 归版本控制 |
 ```
 
 **`history` 与 `changes.md` 的分工**（别重复记）：
 
 | | 记什么 | 谁写 |
 |---|---|---|
-| `history[]` | **状态/范围级**事件：创建、开工、阻塞、完成、改字段（一句话 + 日期） | 工具自动追加 |
+| `history[]` | **状态/范围级**事件（`created`/`status`/`scope`/`decision`，一句话 + 日期）。**没有 `--note` 不记** | 工具 |
 | `changes.md` | **实现级**改动：第 N 次变更改了哪些文件、行为怎么变、判据是什么、看了哪张截图 | 人/代理手写 |
+| `analysis/journal.jsonl` | **会话级**沿革：本轮几条线、方法论教训、跨票因果 | 人/代理手写 |
+
+> ★**沿革只有这三处**。**不要**把轮次复述进 `handoff` / `plan` / 生成物（`test/doc-model.test.ts` 会查）。
 
 ---
 

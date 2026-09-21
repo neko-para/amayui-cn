@@ -64,7 +64,7 @@
   "links": {
     "docs": [
       "docs-new/03-engine/opcode-table.md",
-      "docs-new/03-engine/transition-render-spec-2026-09.md"
+      "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
     ],
     "analysis": [
       "analysis/engine-capabilities.json"
@@ -73,53 +73,23 @@
       "T-0076"
     ]
   },
-  "notes": "★本票已按验收收口（2026-09 轮 6，状态 done）——现行状态以能力台账 `clock-read-transition-window`（modeled-verified/E3）与 `tickets/T-0084/notes.md` 为准：\n① 记录表 `Scene+1048`（96 B / 24 dword）写入端：`0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）逐格照抄 `sub_4AAE10`，运行期值另存 `render4.transitionRuntime`；\n② 窗口模型 `src/renderer/scene/transition.ts`（首帧锁存 `[1]`、按 clock 算 t、到点杀记录、到点后清空整表，raw 134867-134871 / 136840-136841）；\n③ 12 种条带几何全按 raw 134947-135510；\n④ 渲染端类别 0/2/3 都画进 `[4]` 的离屏槽，类别 0/2 的源 = 记录那两条 item 区间的子集（`presenter.renderItemSubset` + `pixiBackend.#renderRangeCanvas`），旧的「上一帧整屏快照」概念已删除。\n★**仍未建模的四项已转 `T-0091`**（不许用「已 done」掩盖）：类别 3 的 `(2L+1)²` 核逐点权重未复刻（现为已披露近似）、`[4]` 指向非 `create-texture` 槽、`Scene+46508/46512/46516` 三标志本身未建、E4 像素级可达路径缺失。\n★规格文档 = `docs-new/03-engine/transition-render-spec-2026-09.md`；`U3/U4` 已由读 asm 收敛（36/37 = 两条 item 区间；反编译那段 `while(1)` 恢复是错的）。",
   "id": "T-0084",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：links"
+      "what": "open → doing —— 轮 5 开工：窗口模型 + 条带几何 + 类别 0/2 离屏合成落地（见 notes.md）",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：why, tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → doing —— 轮 5 开工：窗口模型 + 条带几何 + 类别 0/2 离屏合成落地（见 notes.md）"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— 轮 6 收口：验收逐条核对 —— ①窗口/条带/类别 0·2·3 的离屏合成有守卫（sc-transition-window / sc-transition-geometry / transition-render-wiring）；②needsRender 接上 Scene+46508（sceneNeedsRender 第三项）；③E3 真语料证据 = transition-corpus-e3.test.ts（SC0010 的 i250/i251 让窗口真的起来、到点清空整表），已补进 tests[]；④能力台账 clock-read-transition-window 由 partial/E2 升为 modeled-verified/E3；⑤E4 像素级对照仍缺（本机无可达路径），已如实写进该能力条 note，并新开 T-0091 承接剩余四项（类别 3 精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E4 可达路径）——不许用「已 done」掩盖缺口。"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：notes"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 轮 6 收口：验收逐条核对 —— ①窗口/条带/类别 0·2·3 的离屏合成有守卫（sc-transition-window / sc-transition-geometry / transition-render-wiring）；②needsRender 接上 Scene+46508（sceneNeedsRender 第三项）；③E3 真语料证据 = transition-corpus-e3.test.ts（SC0010 的 i250/i251 让窗口真的起来、到点清空整表），已补进 tests[]；④能力台账 clock-read-transition-window 由 partial/E2 升为 modeled-verified/E3；⑤E4 像素级对照仍缺（本机无可达路径），已如实写进该能力条 note，并新开 T-0091 承接剩余四项（类别 3 精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E4 可达路径）——不许用「已 done」掩盖缺口。",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -111,17 +111,18 @@
       "T-0026"
     ]
   },
-  "notes": "定因 = configBoot 的「无 INI 早退」把 SAVE.DAT 的装载与回写一起跳过（死循环）；已修并给出 E4 两次运行的日志证据（evidence/run1-* = 首次落盘、run2-* = 重启走 LOADCONFIG+LOADCHARM）。环境：macOS + jp 资源、overlay 为默认 `.tmp/appdata/...`。UI 层复核（改一项→重启→仍在）待用户确认。",
   "id": "T-0030",
   "status": "done",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "open → done —— 修复：loadConfigIni / attachSaveDataPersistence 解耦 + 守卫先红后绿 + E4 两次运行（首次落盘 / 重启 LOADCONFIG+LOADCHARM）"
+      "what": "open → done —— 修复：loadConfigIni / attachSaveDataPersistence 解耦 + 守卫先红后绿 + E4 两次运行（首次落盘 / 重启 LOADCONFIG+LOADCHARM）",
+      "kind": "status"
     }
   ],
   "tests": [

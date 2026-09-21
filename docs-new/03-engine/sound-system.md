@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 声音子系统（设备 / 三模块 / 音量路由 / ADV 语音联动）
 
 > 真源：`engine/天结_unpacked.exe_utf8.c`（行号见每节「证据」）。本文只讲**引擎自身的音频播放能力**（跨脚本的机制），

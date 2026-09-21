@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 04-app · Live2D 支持评估（系统能力 / 依赖路线 / 落地计划）
 
 > **这是什么**：把《天結》的 Live2D 立绘（标题画面 / 角色资料页 / 战斗立绘三处）在 `amayui-emulator` 里做出来**之前**的评估结论。
@@ -136,7 +140,7 @@
 > **进度（2026-09-17）**：**M1（含"渲染最后一公里"）与 M2 已完成**，**M3 与 E4 未做**。
 > 落点：出画几何 `app/amayui-emulator/src/live2d/render.ts`（快照与绘制同源）；
 > L2D 纹理 `src/renderer/pixi/l2dTextures.ts`（普通 PNG）；`presenter.ts` 第四类图元（四路归并）；
-> Electron `readById` 通道；守卫 `test/live2d-render.test.ts`。当前进度快照见仓库根 `CONTEXT.md`，
+> Electron `readById` 通道；守卫 `test/live2d-render.test.ts`。当前进度快照见仓库根 `docs-new/99-records/2026-09-live2d/CONTEXT.md`，
 > 细节见 `tickets/T-0054/notes.md`。
 
 ---
@@ -184,6 +188,6 @@ node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --show T-0054
 ```
 
 - 引擎语义长文：`docs-new/03-engine/live2d.md`
-- 相关既有文档：`docs-new/03-engine/resource-loading.md`（`SO004A` = 静态回落贴图）、`docs-new/03-engine/rendering.md`（四路归并层序）、`docs-new/03-engine/stub-reaudit-2026-09.md`（其"排除项"判断由本评估改判）
+- 相关既有文档：`docs-new/03-engine/resource-loading.md`（`SO004A` = 静态回落贴图）、`docs-new/03-engine/rendering.md`（四路归并层序）、`docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`（其"排除项"判断由本评估改判）
 - 数据层：`analysis/functions.json`（L2D 条目族）、`analysis/engine-capabilities.json`（`live2d-slot-probe` / `lazy-live2d-slot` / `live2d-enabled-config-flag` / `l2d-node-draw-gate` / `live2d-node-draw-advance`）
 - 相关票：**T-0051**（E4 真界面待验证清单）—— 本评估的 E4 项可挂在那里

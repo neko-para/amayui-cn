@@ -1,3 +1,10 @@
+---
+kind: generated
+state: live
+home: analysis/scripts.json
+generated_by: scripts/build-scripts.mjs
+---
+
 # 脚本台账 · `TITLE`
 
 > 由 `analysis/scripts.json` 生成（`node scripts/build-scripts.mjs`）—— **勿手改本文件**。

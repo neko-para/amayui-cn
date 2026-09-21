@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 版权页「frame 效果」机制记录（LOGO.txt — 已收敛）
 
 > 本文档是 `src/LOGO.txt` 版权页（大理石+文字整屏页）"出现→等待→淡出→切影片"效果的**权威机制记录**。

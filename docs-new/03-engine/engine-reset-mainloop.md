@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · `sub_40DF10`(engineInitReset) + `sub_412290`(mainLoop) 拆分分析与 emulator 实现状态对照
 
 > 本文件对引擎**初始化/复位**函数 `sub_40DF10` 与**主循环**函数 `sub_412290` 做逐块拆分，输出**忠实于原始反编译**的伪代码，并在每一块/每个开关旁标注其在当前 `app/amayui-emulator` 中的实现状态，用于防止后续实现时遗漏大量开关控制。

@@ -1,5 +1,5 @@
 /**
- * **操作数口径核验**（`tickets/T-0082` RF-A 的第一步，审计 `docs-new/03-engine/audit-2026-09-opcodes.md`）。
+ * **操作数口径核验**（`tickets/T-0082` RF-A 的第一步，审计 `docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md`）。
  *
  * 审计查出的 13 处「操作数类型/顺序/多写少写」错误里，有一类可以被**机械**发现：
  * handler 只碰了 `argc` 声明的一部分操作数（少读/少写 ⇒ 脚本那一格永远是旧值），或者碰了越界的下标。

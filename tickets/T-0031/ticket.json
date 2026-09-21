@@ -157,21 +157,18 @@
       "T-0026"
     ]
   },
-  "notes": "定因=无 INI 早退使配置注册表改动不落盘；已按「固定顺序全量导出」修完并 E4 验证（写入/读回两半）。证据：evidence/generated-SYS4REG.ini（115 键产物）、run1-first-change-creates-ini.log（[main] config ini <-）、run2-boot-reads-ini.log（引擎字段按 INI 恢复）。★引擎侧订正：INI 只读、导出写 HKCU（见 capability note）。★工具坑：record.cjs 的 --out 按仓库根解析，传 cwd 相对路径会 EPERM 弹窗 —— 见 T-0032。",
   "id": "T-0031",
   "status": "done",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "open → done —— 修复：键表落库 + formatIni 固定顺序全量导出 + 无 INI 也接线；E4 写入/读回两半都验通"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 修复：键表落库 + formatIni 固定顺序全量导出 + 无 INI 也接线；E4 写入/读回两半都验通",
+      "kind": "status"
     }
   ],
   "tests": [

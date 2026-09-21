@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 发布 / 补丁 / 进度
 
 ## 1. 补丁包内容（patch/）

@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 地图 / 单位摆放 / 特殊点位
 
 ## 1. MPINIT（地图地板）

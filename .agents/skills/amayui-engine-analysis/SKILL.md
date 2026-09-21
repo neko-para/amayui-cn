@@ -354,7 +354,7 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - **AGE 助记符不可靠**（`exit`≠程序退出、`ret`≠跨脚本返回），以**读反编译体为准**；**严禁读取/参考 emulator**（产物，非信息源）；凡 `推测`/未读体一律标 `partial`。
 - ★**"反编译里没有函数体" ≠ "二进制里没有"**：`.c` 里只留 `// XXXXXX: using guessed type …`（或 `// XXXXXX: using guessed type …` + 无 `//----- (XXXXXX) -----` 段）时，
   **必须**去 IDA 清单 `engine/天结_unpacked.exe_utf8.lst` 里查该地址：`; Attributes: thunk` / `jmp sub_XXXXXX` 一跳就是真身（例：`0x453530` 是 `jmp sub_453150` 的 thunk，
-  `0x453150` 在 `.c` 里有完整体 —— 曾被误判成"外部弱符号、无法逐行确证"并据此**错误排除**了 opcode `0x324`，见 `docs-new/03-engine/stub-reaudit-2026-09.md` §1 订正）。
+  `0x453150` 在 `.c` 里有完整体 —— 曾被误判成"外部弱符号、无法逐行确证"并据此**错误排除**了 opcode `0x324`，见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §1 订正）。
   **不得**用"外部符号/无实现"作为分类或排除的依据；尾调用（`jmp`）与 `call` 在语义上都要落到真身再下结论。
 - **增长只在一处**（数据层）；渲染层可随时重生成。
 - 不做 git 提交；只写文件。

@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 资源加载（统一文件 id / 启动链 / 纹理·AGF）
 
 ## 1. 统一文件 id 空间

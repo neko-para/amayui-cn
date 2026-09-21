@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 掉落数据（item / rate / 随机池 / 调用链）
 
 > 业务数据域。地址为业务域常量，与引擎机制解耦；仅在有必要处交叉引用 `../03-engine/`。

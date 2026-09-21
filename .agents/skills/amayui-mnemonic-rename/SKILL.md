@@ -1,18 +1,19 @@
 ---
 name: amayui-mnemonic-rename
-description: 指令助记符（mnemonic）改名流程：把某个 opcode 的助记符从旧名改成新名，并保证文档真源（docs-new/03-engine/opcode-table.md 的「名称」列）、指令集 JSON（scripts/asm/opcodes.json，由 build-opcodes.js 生成）、emulator 实现（app/amayui-emulator/src/vm/ops.ts）、src/data 脚本四者端到端一致——先改文档 → build-opcodes.js 生成 JSON → 改 ops.ts 实现名 → rename-mnemonics.mjs 机械替换 → 重建+测试。当用户要求重命名某 opcode/指令助记符、或批量同步改名引用时使用。
+description: 指令助记符（mnemonic）改名流程：把某个 opcode 的助记符从旧名改成新名，并保证机器真源（analysis/opcodes.json 的 `mnemonic` 列）、生成物（docs-new/03-engine/opcode-table.md 与 scripts/asm/opcodes.json，分别由 build-opcode-table.mjs / build-opcodes.js 渲染）、emulator 实现（app/amayui-emulator/src/vm/ops.ts）、src/data 脚本四者端到端一致——先改 analysis/opcodes.json → 重跑 build-opcode-table.mjs 与 build-opcodes.js → 改 ops.ts 实现名 → rename-mnemonics.mjs 机械替换 → 重建+测试。当用户要求重命名某 opcode/指令助记符、或批量同步改名引用时使用。
 ---
 
 # amayui-mnemonic-rename — 指令助记符（mnemonic）改名流程
 
 > 目标：把某个 opcode 的助记符从一个名字改成另一个名字，并保证**文档、指令集 JSON、emulator 实现、src/data 脚本**四者端到端一致。
-> 关键原则：**助记符的唯一真源是 `docs-new/03-engine/opcode-table.md` 的「名称（age-shared）」列**；`scripts/asm/opcodes.json` 由 `build-opcodes.js` 从它**生成**；emulator 的汇编/反汇编都经 `opcodes.json` 的 `name` 工作。所以改名的顺序必须是**先改文档，再生成 JSON，再改实现，最后机械替换脚本**。
+> 关键原则：**助记符的唯一真源是 `analysis/opcodes.json` 的 `mnemonic` 列**（★2026-09 从 `opcode-table.md` 迁出）；`docs-new/03-engine/opcode-table.md` 由 `build-opcode-table.mjs` 渲染、`scripts/asm/opcodes.json` 由 `build-opcodes.js` 渲染；emulator 的汇编/反汇编都经 `opcodes.json` 的 `name` 工作。所以改名的顺序必须是**先改 JSON 真源，再重建两份生成物，再改实现，最后机械替换脚本**。
 
 ---
 
 ## 0. 数据流（看懂它就不会改错）
 ```
-docs-new/03-engine/opcode-table.md  ← 唯一的 name/handler/argc 真源
+analysis/opcodes.json               ← 唯一的 name/handler/argc 真源
+  ↳ docs-new/03-engine/opcode-table.md  （生成物：build-opcode-table.mjs）
         │  node scripts/asm/build-opcodes.js
         ▼
 scripts/asm/opcodes.json            ← { opcode, argc, name, handler, status, aliases[] }
@@ -60,7 +61,7 @@ cd app/amayui-emulator && npm run build && npm test
 - 重点看 xval 的 `SYSTEM4/TITLE/INIT2/LOGO … 逐条一致` 测试：它把 **BIN 反汇编名**（来自 opcodes.json 的 name）与 **src txt 名**逐条比对。改名后若 src 未同步或 opcodes.json 没重生成，这里立刻失败。**通过即视为改名端到端一致。**
 
 ### ⑥ 更新其它文档 + 打包副本
-- 若 `docs-new/03-engine/instruction-directions.md`、`vm-opcodes.md`、`docs/re/engine/06-opcode到handler映射表.md` 等引用旧名，一并替换为新的（保留历史注记可选）。
+- 若 `docs-new/03-engine/instruction-directions.md` 等引用旧名，一并替换为新的（保留历史注记可选）。
 - 同步打包副本：`cp scripts/asm/opcodes.json app/amayui-emulator/dist/opcodes.json`。
 
 ## 3. 验证清单
@@ -87,7 +88,7 @@ cd app/amayui-emulator && npm test
 执行：改 `opcode-table.md` name 列 → `build-opcodes.js` → 改 `ops.ts` handler 名 → rename-mnemonics.mjs 替换（`string-lookup-set→load-int`、`i1a2→save-int`、`i1a9→save-string`、`i1aa→load-string`）→ 重建+测试全绿。
 
 ## 5. 相关文件
-- `docs-new/03-engine/opcode-table.md`（真源）
+- `analysis/opcodes.json`（真源）
 - `scripts/asm/opcodes.json`、`scripts/asm/build-opcodes.js`
 - `app/amayui-emulator/src/opcodes.ts`、`src/vm/ops.ts`
 - `.agents/skills/amayui-mnemonic-rename/scripts/rename-mnemonics.mjs`（可复用替换脚本）

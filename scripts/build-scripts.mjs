@@ -51,6 +51,13 @@ const clip = (s, n) => (s.length > n ? `${s.slice(0, n)}…` : s);
 /** 每个脚本一页。 */
 function pageFor(e) {
   const L = [];
+  L.push('---');
+  L.push('kind: generated');
+  L.push('state: live');
+  L.push('home: analysis/scripts.json');
+  L.push('generated_by: scripts/build-scripts.mjs');
+  L.push('---');
+  L.push('');
   L.push(`# 脚本台账 · \`${e.id}\``);
   L.push('');
   L.push(`> 由 \`analysis/scripts.json\` 生成（\`node scripts/build-scripts.mjs\`）—— **勿手改本文件**。`);
@@ -118,6 +125,13 @@ function pageFor(e) {
 /** 索引页。 */
 function indexPage() {
   const L = [];
+  L.push('---');
+  L.push('kind: generated');
+  L.push('state: live');
+  L.push('home: analysis/scripts.json');
+  L.push('generated_by: scripts/build-scripts.mjs');
+  L.push('---');
+  L.push('');
   L.push('# 脚本台账（`src/*.txt` 逐个记）');
   L.push('');
   L.push('> 由 `analysis/scripts.json` 生成：`node scripts/build-scripts.mjs`。**勿手改。**');

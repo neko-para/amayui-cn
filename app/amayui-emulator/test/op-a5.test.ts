@@ -3,7 +3,7 @@
  *
  * A5 = `0x93` `0x94` `0x97`（消息面/面板表面）+ `0xD9` `0xAD` `0x1AD` `0x1B1`（清位/秒计时器/字段写）
  *      + `0x1BC` `0x1C9`（清消息·声音字段 / 音频设备初始化）。
- * 逐条引擎实证见各 handler 注释；台账见 `docs-new/03-engine/stub-reaudit-2026-09.md` §6。
+ * 逐条引擎实证见各 handler 注释；台账见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §6。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

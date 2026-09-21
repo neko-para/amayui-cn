@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 物品 / 建筑 / 配方
 
 ## 1. ITINIT（物品）

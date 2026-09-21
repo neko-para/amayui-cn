@@ -138,3 +138,7 @@ Electron digest 的实际时间线（`t0 = 进 SN0000`）：`t0` 时 `items=0`�
 
 `binOp` 的读序已核对（`arithmetic.ts`：先 `readIntOperand(op2)`/`(op3)` 再 `writeIntOperand(op1)`）⇒ 我们的模拟器对"dst == src2"的取反算得正确，
 不需要为此改代码。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+定因=0x256（区间立即平移）未实现；LOCK 开关 = `global 139a`（非错误源）。修复实现见 changes.md，排查全过程（含 G3 复核与 A/B 排除）见 notes.md；证据截图在 evidence/（t0028-* = 修复前，fix-* = 修复后）。★本票是 T-0016 验收 1 的收窄复现。

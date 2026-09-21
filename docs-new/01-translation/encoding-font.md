@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 编码与字体（中文显示层）
 
 ## 1. 引擎字体加载两层（关键）

@@ -4,7 +4,7 @@
 
 ### 轮 7 复核：`op-1/0x100-push-return-point` = **stale（已修复），勿再当待办**
 
-`docs-new/03-engine/audit-2026-09-opcodes.md` 的 `### op-1/0x100-push-return-point` 条在**审计当时**成立，但已在更早一轮落地（`tickets/T-0077/notes.md` §「B4 第三条」）：`app/amayui-emulator/src/vm/handlers/input.ts` 现在按两条分支**不对称**实现 —— `pushReturn(plusOne)`（现 `:163-167`），掩码分支 `pushReturn(false)`（现 `:186`，`ret` 回到 0x100 继续扫下一个键）、默认键分支 `pushReturn(true)`（现 `:196`）；扫描游标 `ENGINE_FIELD.keyScanCursor`（`Engine[cur+122287]`，写 `b+1`）也已建模（现 `:181`）。
+`docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md` 的 `### op-1/0x100-push-return-point` 条在**审计当时**成立，但已在更早一轮落地（`tickets/T-0077/notes.md` §「B4 第三条」）：`app/amayui-emulator/src/vm/handlers/input.ts` 现在按两条分支**不对称**实现 —— `pushReturn(plusOne)`（现 `:163-167`），掩码分支 `pushReturn(false)`（现 `:186`，`ret` 回到 0x100 继续扫下一个键）、默认键分支 `pushReturn(true)`（现 `:196`）；扫描游标 `ENGINE_FIELD.keyScanCursor`（`Engine[cur+122287]`，写 `b+1`）也已建模（现 `:181`）。
 
 已在审计正文该条下加 **★订正（轮 7 复核）** 段说明「已落地 + 旧行号已漂 + 残留近似是扫描游标复位没有帧泵钩子」。
 
@@ -27,3 +27,7 @@
 取证用 `.lst` 复核完毕（`T-0102` 的白底取证）：`sub_43B070` 的错误串是 `"関数：ddSetColor エラー：不正なsurface"`、尾调用 `mov eax,[ecx+74h]` = 表面 vtable+0x74 = **SetColorKey**（参 8 = `DDCKEY_SRCBLT`），`.lst:97104` 起；`ddFillSurface` 是 `sub_43E260`（`.lst:102245` 起）。
 ⇒ **能力台账对，`app/amayui-emulator/src/vm/msgwin.ts` 的注释是凭空点**。已订正两处（都在本批）：`src/vm/msgwin.ts` 的 `WinGeom.background`（原「← `sub_43B070`…用窗口底色填面」）与 `src/renderer/text/raster.ts` 的填面分支（原「引擎 dd 路径 `ddFillSurface(surfaces[20+win], 底色)`」）；两处都补了 `.lst` 级证据与「该字段恒 `null`、全 `src/` 无写入点、分支是死码」的结论。
 ★顺带一条**同类风险的提醒**：`Scene+1560` 曾被当成"窗底色缓存"，实际是**像素格式掩码**（`sub_43B260` `.lst:97339` 写 `0x00FF0000/0x0000FF00/0x000000FF` 到 `+1556/+1560/+1564`）⇒ **引擎没有"窗自己的底色字段"**。凡是把"某个 Scene/Font 偏移"直接命名成语义字段的地方，都该按这个教训复核一遍（正是本票的活）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+方法学副产品（对后续审计有用）：① 判断「某字段是不是死写」必须自己 grep 全文件的读写点 —— 本次一个 P0 与一个 P1 都源自旧文档把「有读者的字段」写成死写（0x238 / 0xD9 的 0x1000 位）；② 台账/文档里的「已实现/未实现」不能互相信任，必须打开代码与测试（本次实证：台账说「两宿主没接线」实际每帧都在消费；说「完全没接」实际 7 条参数面 + 面名映射都已落地）。③ opcode-table.md 里「已核对但无 raw 引用」的 37 行是历史遗留（算术族 0x50-0x5F 等），多数语义正确但没有行号锚点。

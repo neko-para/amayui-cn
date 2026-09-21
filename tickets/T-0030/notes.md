@@ -46,3 +46,7 @@ overlay 目录**不存在**。而这次运行确实执行了 `INITCONFIG`/`INITC
 无 INI 时 `e.config` 保持 undefined（`cfgInt` 已有缺省回退，现有测试已覆盖"无配置"路径），
 但 SAVE.DAT 的装载与回写必须照常接线。改完补一条"无 INI 也能装载+回写"的守卫，并在
 `save-data-tables-persistence` 的 note 里写清这条前提。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+定因 = configBoot 的「无 INI 早退」把 SAVE.DAT 的装载与回写一起跳过（死循环）；已修并给出 E4 两次运行的日志证据（evidence/run1-* = 首次落盘、run2-* = 重启走 LOADCONFIG+LOADCHARM）。环境：macOS + jp 资源、overlay 为默认 `.tmp/appdata/...`。UI 层复核（改一项→重启→仍在）待用户确认。

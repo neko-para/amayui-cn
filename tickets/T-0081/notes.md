@@ -19,3 +19,7 @@
 3. **md 新增 §6「已评估、按当前范围不实现（deferred）」**：此前 31 条 deferred 在生成物里完全不可见（只活在 JSON），与「任何不实现都必须有一条可查」的纪律不符。编号排在最后以免打乱 §2–§5 的既有引用（审计报告引用过 §5）。
 
 另修一条**相邻**的工具陷阱（同类：CLI 校验比守卫测试松）：`capabilities.js --set emulator.note=a, b` 会把值按 ASCII 逗号拆成**数组**，而旧 `validate` 只查语义（只有 n/a-known 才读 note）⇒ 数组型 note 一路"校验通过"，直到 `test/capability-ledger.test.ts` 才炸。现在 `validate` 先做类型检查（`emulator.note` 必须是字符串，并提示 `--set` 的逗号陷阱）。反证：注入 `emulator.note=a, b` ⇒ `--validate` 报「必须是字符串（当前 数组）」exit 1。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+命名与落点沿用既有三层数据层纪律：真源进 `analysis/`，md 是渲染物（勿手改），守卫进 `app/amayui-emulator/test/`，CLI/生成脚本与 `scripts/build-capabilities.mjs` 同风格。★本票是 B0，先于任何「补指令」工作：否则补完一批又会出现新的静默 no-op。

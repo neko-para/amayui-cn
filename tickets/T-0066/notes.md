@@ -22,3 +22,7 @@
 2. 「背景绘制点 = NOVEL `draw-texture 186a0`（line 55）」：那条在 `global 3f90 != 0` 门后，而 `3f90` 全语料只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ 正式脚本里**从不执行**（handle 0x186A0 从未被画出）。
 
 ⇒ 本票与 `T-0083` 的解法一致：**还原 body 的绘制项清单**（+ 装载点清上一屏的项）。判定与锚点见 `T-0083/notes.md` 的同日段与 `analysis/engine-capabilities.json` 的 `save-load-drawitem-clear-and-restore`。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+探针（已删）：读档后逐帧打印模型计数与所有 configureDrawItem 调用；200 帧内只有 DRAWCHARM.BIN 的侧栏项。

@@ -81,12 +81,31 @@ test('票据 schema：目录名=id、枚举合法、title/area/why/acceptance �
     }
     assert.ok(Array.isArray(t.acceptance) && t.acceptance.length > 0, `${d}: 没有判据的单不算单（acceptance 空）`);
     assert.ok(Array.isArray(t.history) && t.history.length > 0, `${d}: history 至少一条`);
-    for (const h of t.history!) assert.equal(typeof h.at === 'string' && typeof h.what === 'string', true, `${d}: history 条目缺 at/what`);
+    const HISTORY_KINDS = ['created', 'status', 'scope', 'decision'];
+  for (const h of t.history!) {
+    assert.equal(typeof h.at === 'string' && typeof h.what === 'string', true, `${d}: history 条目缺 at/what`);
+    assert.ok(HISTORY_KINDS.includes(h.kind as string), `${d}: history 条目的 kind 非法（${h.kind}）`);
+  }
     if (t.status === 'dropped') {
       const why = (t.droppedWhy ?? '').trim() || (/why[:：]/.test(t.notes ?? '') ? 'notes' : '');
       assert.notEqual(why, '', `${d}: status=dropped 必须写 droppedWhy（不许静默关单）`);
     }
   }
+});
+
+test('★history 不许是"字段变更噪音"（2026-09 文档模型）', () => {
+  // 背景：此前每次 `--edit` 都追加一条 `改字段：evidence`，全库 515 条 history 里 262 条是零信息噪音。
+  // 现在规则是"没有 --note 就不记"，本守卫防止回归。
+  const bare: string[] = [];
+  let total = 0;
+  for (const [d, t] of load()) {
+    for (const h of t.history ?? []) {
+      total++;
+      if (/^改字段：/.test(String(h.what)) && !/——|—/.test(String(h.what))) bare.push(`${d}: ${h.what}`);
+    }
+  }
+  assert.ok(total >= 200, `history 样本太少（${total}）`);
+  assert.deepEqual(bare, [], `这些 history 条目是纯字段 diff（应由"没有 --note 就不记"的规则挡掉）：\n  ${bare.slice(0, 5).join('\n  ')}`);
 });
 
 test('★done 必须带真实存在的守卫（代码票给 tests[]，文档/分析票给 doneWhy）', () => {

@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 存档与「设置」的真正归处：`SAVE.DAT`（表持久化）
 
 > **本文结论全部来自 raw 读体 + 真存档验证**：`engine/天结_unpacked.exe_utf8.c`（行号即 raw 行号）、

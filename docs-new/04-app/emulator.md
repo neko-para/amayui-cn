@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 04-app · amayui-emulator
 
 用 **TypeScript + Electron + PixiJS** 重写《天結いキャッスルマイスター》的 AGE 引擎（脚本 VM + 场景合成 + 文本 + 音频），把 `engine/天结_unpacked.exe_utf8.c` 的逻辑以干净 TS 语义实现，替换原 Win32 调用为 H5/IPC，获得**可调试性、可观测性、可插件化与跨平台**。

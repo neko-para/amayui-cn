@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 翻译流水线（src 源文件 + 翻译语法）
 
 ## 1. 分层

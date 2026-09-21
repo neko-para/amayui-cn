@@ -77,7 +77,7 @@ node .agents/skills/amayui-script-analysis/scripts/brief.js --list        # 已�
 
 | 脚本里出现的东西 | 去读 |
 |---|---|
-| 任意指令助记符 | `opcode-table.md`（名称列 = 真源）、`vm-opcodes.md` |
+| 任意指令助记符 | `analysis/opcodes.json`（真源） / `opcode-table.md`（生成物） |
 | 操作数形态（`(local-ptr 3)` / `(global-int …)` / `lookup-array`） | `operands.md`、`flow-control.md` |
 | `i12e` / `i0cd` / `i308` / 鼠标键盘回调 / 悬停 | `input-system.md` |
 | `show-text` / `i070` / `i071` / `i073` / `i300` / `i301` / 逐字显现 | `adv-text-rendering.md`、`message-config-gates.md` |

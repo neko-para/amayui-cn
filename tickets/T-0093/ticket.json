@@ -38,37 +38,23 @@
       "docs-new/03-engine/opcode-gaps.md"
     ]
   },
-  "notes": "分诊报告 = `tickets/T-0093/deferred-triage-report.md` A 段（已归档进票据目录）。★纪律：note 必须写清「哪一行体证明不碰 VM」，否则就是把缺口重新藏起来。",
   "id": "T-0093",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：tests"
+      "what": "open → doing —— ① **SETWEATHER 族 5 条已落地**（本票主体、用户可见）：`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 登记进 `ENGINE_INTERNAL_OPS`（`stubs.ts` 带块注释：逐条体的被调 + 为什么不建模 + 扩展点）+ 缺口台账 5 条 `deferred → engine-internal`（有据 no-op 8 → **13**、deferred 29 → **24**）；守卫 `test/op-327-32e-setweather-noop.test.ts`(3)：① 五条都在 `ENGINE_INTERNAL_OPS`；② 带非平凡实参跑一步**不抛错**且 ip 照常 +1；③ 台账里这五条是 `engine-internal` 且带票（防止有人把硬停改回来）；凭据（不是\"看起来安全\"）：逐条机械扫描五个体，`sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0` **零命中**（不回写操作数）、不改 ip/cur ⇒ 跳过与\"读了再丢\"对脚本可观测行为一致（后者还会引入死读）；`opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 加 5 条（理由 = 缺消费端：emulator 无 3D 子系统；★不是引擎死读 —— 引擎确实消费这些操作数）；文档同步：`opcode-table.md` 的 5 行（0x329/0x32C/0x32E 由「仅映射」升「已核对」并写清语义 + emulator 现状；0x327/0x328 的「根本没注册 handler」段落划掉并订正）+ `scripts/asm/opcodes.json` 重建；② **仍未做**：`0x147`/`0x2f2` 纯几何命中测试（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion` → op1，各 1 处语料）—— 本票保持 doing 直到它落地",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "open → doing —— ① **SETWEATHER 族 5 条已落地**（本票主体、用户可见）：`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 登记进 `ENGINE_INTERNAL_OPS`（`stubs.ts` 带块注释：逐条体的被调 + 为什么不建模 + 扩展点）+ 缺口台账 5 条 `deferred → engine-internal`（有据 no-op 8 → **13**、deferred 29 → **24**）；守卫 `test/op-327-32e-setweather-noop.test.ts`(3)：① 五条都在 `ENGINE_INTERNAL_OPS`；② 带非平凡实参跑一步**不抛错**且 ip 照常 +1；③ 台账里这五条是 `engine-internal` 且带票（防止有人把硬停改回来）；凭据（不是\"看起来安全\"）：逐条机械扫描五个体，`sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0` **零命中**（不回写操作数）、不改 ip/cur ⇒ 跳过与\"读了再丢\"对脚本可观测行为一致（后者还会引入死读）；`opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 加 5 条（理由 = 缺消费端：emulator 无 3D 子系统；★不是引擎死读 —— 引擎确实消费这些操作数）；文档同步：`opcode-table.md` 的 5 行（0x329/0x32C/0x32E 由「仅映射」升「已核对」并写清语义 + emulator 现状；0x327/0x328 的「根本没注册 handler」段落划掉并订正）+ `scripts/asm/opcodes.json` 重建；② **仍未做**：`0x147`/`0x2f2` 纯几何命中测试（`CreatePolygonRgn`/`CreateEllipticRgnIndirect` + `PtInRegion` → op1，各 1 处语料）—— 本票保持 doing 直到它落地"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：why, notes"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— ①②两半全部落地：①半（SETWEATHER 族 5 条 engine-internal no-op）轮 6；②半（0x147/0x2f2 纯几何命中）轮 7 —— 新增 src/vm/handlers/region-hittest.ts + 注册进 OPS，守卫 test/op-147-2f2-region-hittest.test.ts（13 条）；★推翻筛体「op4/op5 顺带写回」（源数组只读，唯一写回是 op1）+ 由全库仅有两个调用点反证 op4/op5 是**池中连续槽的起始**；缺口台账 deferred 24→22、已实现 34→36；opcode-table 两行补全 + opcodes.json 重建；npm run verify = 873/872 pass/0 fail、死写 0；四份台账 --validate 绿"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— ①②两半全部落地：①半（SETWEATHER 族 5 条 engine-internal no-op）轮 6；②半（0x147/0x2f2 纯几何命中）轮 7 —— 新增 src/vm/handlers/region-hittest.ts + 注册进 OPS，守卫 test/op-147-2f2-region-hittest.test.ts（13 条）；★推翻筛体「op4/op5 顺带写回」（源数组只读，唯一写回是 op1）+ 由全库仅有两个调用点反证 op4/op5 是**池中连续槽的起始**；缺口台账 deferred 24→22、已实现 34→36；opcode-table 两行补全 + opcodes.json 重建；npm run verify = 873/872 pass/0 fail、死写 0；四份台账 --validate 绿",
+      "kind": "status"
     }
   ],
   "tests": [

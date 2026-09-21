@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 01-translation · 数据格式与工具链
 
 ## 1. 文件体系（SYS4.5 / S4IC450）

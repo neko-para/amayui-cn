@@ -118,3 +118,7 @@ if ( v8 > a3 && a3 >= 0 ) {                       // ★门：a3 = 记录下标�
   以及 `emitWin`/`scMsgWinSync` 能否按「单条记录 + 指定颜色」重发布（若不能，需要新的宿主缝 —— 按先例五处同步）。
 - 判据 ③（票面）：真实 `CONFIG` 路径上「文本窗被重新发布」的场景级不变量；判据 ④：`analysis/opcode-gaps.json`
   的 disposition 改 `implemented` + `opcode-table.md` 的 `0x82` 行同步；判据 ⑤：E4 用户口径。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+来源 = 用户轮 8 实测（硬停）。★临时处置只保证不硬停，**不是**实现 —— 别把 STUB 当完成。

@@ -3,7 +3,7 @@
   "type": "bug",
   "priority": "P0",
   "area": "emulator/ops",
-  "why": "审计（docs-new/03-engine/audit-2026-09-opcodes.md）确认：下列指令在引擎里都有真实 handler 体，而 emulator 三张注册表（OPS / NATIVE_OPS / ENGINE_INTERNAL_OPS）里没有它们 ⇒ 命中即 `NotImplementedOp`（`run.ts:72-75` / `renderer/app/session.ts:466-485` 停下等人工桩），或按桩跳过 ⇒ 操作数保持旧值让后续 `eq/jcc` 走错分支。它们都在真实脚本路径上：0x2E9（480 处/330 脚本，体写 `_this[122464]` = ADV 时间基准字段，7 个读点）、0x228（1097 处，回写 op1/op3/op4/op5 的 getter）、0x20B（204 处/187 文件）、0x235（158 处）、0x028（32 处）、0x132/0x133、0x0C1/0x2CF/0x32E、0x7C local-ret（668 处/334 文件）、0x243（341 行/338 文件）、0x233、0x23A（回写 op1）、0x337、0x307（`0x306` getter 的唯一写入端）、0x23F（回写 op1）、0x1D1（HISTORY 回看的数据源）、0x32C（SETWEATHER 6 浮点）、0x025（STAGERAID 4 处）、0x191（`op1=|op2|`，13 处）、0x222（SETPOLYGON/INFOxx 10 处，被 capabilities 台账误标 n/a-known）。",
+  "why": "审计（docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md）确认：下列指令在引擎里都有真实 handler 体，而 emulator 三张注册表（OPS / NATIVE_OPS / ENGINE_INTERNAL_OPS）里没有它们 ⇒ 命中即 `NotImplementedOp`（`run.ts:72-75` / `renderer/app/session.ts:466-485` 停下等人工桩），或按桩跳过 ⇒ 操作数保持旧值让后续 `eq/jcc` 走错分支。它们都在真实脚本路径上：0x2E9（480 处/330 脚本，体写 `_this[122464]` = ADV 时间基准字段，7 个读点）、0x228（1097 处，回写 op1/op3/op4/op5 的 getter）、0x20B（204 处/187 文件）、0x235（158 处）、0x028（32 处）、0x132/0x133、0x0C1/0x2CF/0x32E、0x7C local-ret（668 处/334 文件）、0x243（341 行/338 文件）、0x233、0x23A（回写 op1）、0x337、0x307（`0x306` getter 的唯一写入端）、0x23F（回写 op1）、0x1D1（HISTORY 回看的数据源）、0x32C（SETWEATHER 6 浮点）、0x025（STAGERAID 4 处）、0x191（`op1=|op2|`，13 处）、0x222（SETPOLYGON/INFOxx 10 处，被 capabilities 台账误标 n/a-known）。",
   "acceptance": [
     "每条按三种处置之一落地：① 真实现；② 按 `stubs.ts:150-152` 的纪律登记为带 raw 依据的 engine-internal；③ 在 ticket 与本文件中显式登记为缺口（禁止静默 no-op 或静默跳过）",
     "优先补「会回写操作数」的 getter（它们让脚本分支直接走错）：0x228、0x23F、0x23A、0x191、0x2E9",
@@ -26,7 +26,7 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-2-01 — 0x2E9 未实现，ADV 时间基准字段永不写入",
       "note": "P0 首条：0x2E9 体写 Engine[122464]（字节 489856），emulator 全库无 0x2e9/745/122464",
       "line": 50
@@ -90,38 +90,28 @@
       "T-0078"
     ],
     "docs": [
-      "docs-new/03-engine/audit-2026-09.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "处置纪律提醒：`stubs.ts:150-152` 明写「登记成 no-op 反而把缺口藏起来」——因此 0x243/0x233/0x337 这类『有体但影响面不明』的指令，宁可登记成带 raw 依据的 engine-internal 并在报告里留缺口，也不要静默跳过。另：0x7C(local-ret) 的缺口早在 flow-control.md:427 披露过，只需按 raw 25778-25824 实现。",
   "id": "T-0076",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → doing —— B1 开工：0x2E9（ADV 自动翻页行基准 _this[122464]，ENGINE_FIELD_STORE + autoMessageBaseline 字段）与 0x228（绘制项当前平移 getter，宿主缝 getDrawItemTranslation）已落地；新增守卫 test/game-start-chain.test.ts 的 0x228 用例与 test/engine-field-store.test.ts 的 0x2E9 用例；opcode-table.md 两行已补语义与 emulator 现状。0x2E9 的消费端（自动翻页）仍是缺口，已在该行与字段注释里标明。"
+      "what": "open → doing —— B1 开工：0x2E9（ADV 自动翻页行基准 _this[122464]，ENGINE_FIELD_STORE + autoMessageBaseline 字段）与 0x228（绘制项当前平移 getter，宿主缝 getDrawItemTranslation）已落地；新增守卫 test/game-start-chain.test.ts 的 0x228 用例与 test/engine-field-store.test.ts 的 0x2E9 用例；opcode-table.md 两行已补语义与 emulator 现状。0x2E9 的消费端（自动翻页）仍是缺口，已在该行与字段注释里标明。",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— 轮 6 收口：验收逐条核对通过；① 21 条全部有处置（18 条 implemented / 0x28·0x2cf·0x32e·0x23a·0x1d1·0x32c·0x25·0x222 共 8 条 deferred 带扩展点）；② 会回写操作数的 getter 0x228/0x23f/0x191/0x2E9 已实现；0x23a 因 `_this+91322` 表在 emulator 侧无对应物而 deferred（扩展点写在该条 note）；③ 0x307/0x306 成对 + **核对出真不一致并修掉**：`system:EffectSkipOnClick` 的引擎内建默认 = **0**（注册表对象构造 `sub_491880` 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`，raw 111578-111579），而 0x306 handler 的「缺配置兜底」写成字面量 1、测试也断言 1 ⇒ 改为向 `registryDefault()` 取，测试改断言 0 并新增「配置值 1 必须压过默认」一条；④ 覆盖棘轮 = `test/opcode-gaps.test.ts`（+ 各条专项守卫，见 tests[]）；⑤ capabilities 的 `render-3d-layer-dual-commit` 已由 n/a-known 改 absent/E1（带 T-0076 note）；⑥ 顺带登记本轮最后一条「无注册也无登记」的静默项 `0x337`（3D 层节点平移，体 raw 34271-34285 → `sub_4AE8E0` raw 133084-133105；语料 0 处）为 deferred ⇒ 缺口台账 deferred 28 → 29"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：history"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 轮 6 收口：验收逐条核对通过；① 21 条全部有处置（18 条 implemented / 0x28·0x2cf·0x32e·0x23a·0x1d1·0x32c·0x25·0x222 共 8 条 deferred 带扩展点）；② 会回写操作数的 getter 0x228/0x23f/0x191/0x2E9 已实现；0x23a 因 `_this+91322` 表在 emulator 侧无对应物而 deferred（扩展点写在该条 note）；③ 0x307/0x306 成对 + **核对出真不一致并修掉**：`system:EffectSkipOnClick` 的引擎内建默认 = **0**（注册表对象构造 `sub_491880` 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`，raw 111578-111579），而 0x306 handler 的「缺配置兜底」写成字面量 1、测试也断言 1 ⇒ 改为向 `registryDefault()` 取，测试改断言 0 并新增「配置值 1 必须压过默认」一条；④ 覆盖棘轮 = `test/opcode-gaps.test.ts`（+ 各条专项守卫，见 tests[]）；⑤ capabilities 的 `render-3d-layer-dual-commit` 已由 n/a-known 改 absent/E1（带 T-0076 note）；⑥ 顺带登记本轮最后一条「无注册也无登记」的静默项 `0x337`（3D 层节点平移，体 raw 34271-34285 → `sub_4AE8E0` raw 133084-133105；语料 0 处）为 deferred ⇒ 缺口台账 deferred 28 → 29",
+      "kind": "status"
     }
   ]
 }

@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 引擎内部内存布局（this / 帧 / 调用栈）
 
 > 本文件只列**引擎内部**（解释器/`this` 对象/脚本帧/调用栈）的布局说明。**游戏业务数据地址不在此**（见 `../02-data/`）。
@@ -43,4 +47,4 @@
 
 ## 4. 交叉引用
 
-- opcode 分发概览见 `./vm-opcodes.md`（已归档）；**opcode 全表/语义见 `./opcode-table.md`**；操作数速记见 `./operands.md`；进程读取工具见 `../04-app/inspector.md`。
+- **opcode 全表/语义见 `./opcode-table.md`**；操作数速记见 `./operands.md`；进程读取工具见 `../04-app/inspector.md`。

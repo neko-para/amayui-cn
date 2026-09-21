@@ -30,7 +30,7 @@
 8 个操作数**必须先读进局部量**再调用：写成内联 `setTransition?.(id, [[2, o(7)], …])` 时，**可选调用在宿主没有该缝时不会求值实参**（`StubNative` 无 `setTransition`）⇒ 8 个操作数**一个都不读**，`test/opcode-operands.test.ts` 直接红（第一版即如此）。
 
 ### 顺带订正（不在本票范围但相关）
-`docs-new/03-engine/transition-render-spec-2026-09.md` §2.3 的 `[13]` 行把**类别 0** 的来源误记为 `a10`：`a10` 属**类别 1 的写入端 `sub_4ADEE0`**（12 参 `a2..a12`，raw 132679）；类别 0 的 `sub_4ADDB0` 只有 `a2..a9` 且**不写 `[13]`**。已订正该格。
+`docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md` §2.3 的 `[13]` 行把**类别 0** 的来源误记为 `a10`：`a10` 属**类别 1 的写入端 `sub_4ADEE0`**（12 参 `a2..a12`，raw 132679）；类别 0 的 `sub_4ADDB0` 只有 `a2..a9` 且**不写 `[13]`**。已订正该格。
 
 ### 仍记缺口（不掩盖）
 `sub_4ADDB0` 头部的**惰性（重）建纹理层**分支（`sub_4A2C10`，`operator new(0x460)` 的对象内部）未读完 ⇒ 未建模；属**渲染端**缺口，不是本票判据。

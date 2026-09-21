@@ -52,21 +52,18 @@
       "T-0043"
     ]
   },
-  "notes": "修法：把 data 里新增的**控制行**（全是 `label_*` 定义）按位置插回 src，**保留译文**；★不能用 `scripts/sync-data-to-src.js --apply` —— 它的策略是「骨架不一致就整文件用 data 重置」，会把这 6 个脚本的译文全丢掉（MENU 的「要返回标题画面吗？」等）。补齐这件事的工具是 `scripts/resync-control-lines.mjs`（`npm run resync-control-lines [-- --apply]`，默认只报告；前提是\"src 控制行是 data 的子序列且缺的全是 label_*\"，否则拒绝改）；长期棘轮是 `scripts/check-skeleton.mjs`。",
   "id": "T-0044",
   "status": "done",
   "history": [
     {
       "at": "2026-09-16",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-16",
-      "what": "open → done —— 六个脚本的 label 定义已按 data 基线插回（保留译文）；assemble 骨架校验通过、回读 N/N；全量构建 941/941；新增 scripts/check-skeleton.mjs 棘轮"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 六个脚本的 label 定义已按 data 基线插回（保留译文）；assemble 骨架校验通过、回读 N/N；全量构建 941/941；新增 scripts/check-skeleton.mjs 棘轮",
+      "kind": "status"
     }
   ]
 }

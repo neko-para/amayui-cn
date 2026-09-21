@@ -61,30 +61,28 @@
       "T-0078"
     ],
     "docs": [
-      "docs-new/03-engine/repair-plan-2026-09.md",
+      "docs-new/03-engine/plan-2026-09.md",
       "docs-new/03-engine/save-data.md",
-      "docs-new/03-engine/audit-2026-09-capabilities.md"
+      "docs-new/99-records/2026-09-audit/audit-2026-09-capabilities.md"
     ]
   },
-  "notes": "为什么排在 B5：撤销 clear 之后画面会先变黑（模型里没有背景项），必须等 B2/B3 把「读档续跑路径上的指令语义」补齐、并按引擎语义重建槽之后，才能得到正确画面。先做 B0–B4 再动这里，避免又一次「修一处、坏一处」。",
   "id": "T-0083",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "源码级订正：(B) 的前提被推翻 —— sub_410160 行内清 Scene+0x408 并从 body 还原 740B 绘制项清单；acceptance 重写"
+      "what": "源码级订正：(B) 的前提被推翻 —— sub_410160 行内清 Scene+0x408 并从 body 还原 740B 绘制项清单；acceptance 重写",
+      "kind": "decision"
     },
     {
       "at": "2026-09-20",
-      "what": "done：源码级判定 + 实现落地 —— sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 新 engineDrawItem.ts + 清单步长修正(1+size) + 宿主缝 native.restoreDrawItems（清上一屏+装存档清单）；verify 787/775/12/0；E4 阶梯消失（evidence/after-itemrestore-*.png）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "done：源码级判定 + 实现落地 —— sub_410160 raw 19810-19832 清 Scene+1032 并从 body 还原 740B 绘制项清单；emulator 新 engineDrawItem.ts + 清单步长修正(1+size) + 宿主缝 native.restoreDrawItems（清上一屏+装存档清单）；verify 787/775/12/0；E4 阶梯消失（evidence/after-itemrestore-*.png）",
+      "kind": "status"
     }
   ]
 }

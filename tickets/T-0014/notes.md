@@ -38,3 +38,10 @@ export function pickHoverLabel(e: Engine): number {
 - `why` 补一句"票面写于 B1 之前；1–3 已由 B1/`T-0008` 完成，本条只剩测试门面";
 - `priority` 可降 **P3**（无行为风险、只在 test/ 里动）；`area` 保持 `emulator/deadcode` 或改 `emulator/test`。
 - ★注意：动完第 4 条后，本票 evidence 里 `pickHoverLabel` 这个锚点会消失 ⇒ 必须同步改锚点（换 `hoverDispatchAllowed`）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+（2026-09-14 B1）三项的准确情况，别照原描述盲删：
+1. `interpreter.run()` / `RunResult` **已删**（全仓无导入者，且没有任何每帧服务）——这是 B1 的一部分。
+2. `Engine.pickHoverLabel()` **只被测试调用**（`adv-msgwin.test.ts` 5 处 + `route-dispatch.test.ts` 5 处）。它不是纯死代码，而是"产品路径已改走 `serviceAdvanceWait` 内部"之后留下的**测试门面**；删它要同步改写那 10 条断言（并会丢掉这 10 条里对 `hoverDispatchAllowed()` 门控的覆盖）⇒ 单独一次小改动做，别混在 B1 里。
+3. `PixiBackend.waitFlags` 的粘滞是**缺陷**不是死代码 ⇒ 归 T-0008（needsRender 判据），删字段要跟它一起做。

@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # AGERC.DLL 内部能力地图（模块功能归类）
 
 > **本文回答「AGERC 里到底有什么」**——模块接口（谁加载它、脚本怎么用、版本锁）见 [`agerc-module.md`](./agerc-module.md)。
@@ -220,7 +224,7 @@ AGERC 另外导出 17 个地图/地块/碰撞函数，是一套**自足的多边
 ⇒ 这 17 个导出在《天結》里**没有任何调用者**（AGERC 自己也不调它们）。
 它们是「ARCGameEngine Resource」这一共享模块给**同期别的 Eushully 作品/工具链**复用的部分，
 本作把碰撞逻辑放在引擎自己里。**结论：emulator 不需要实现这 17 个导出**（这也直接缩小了
-[`stub-reaudit-2026-09.md`](./stub-reaudit-2026-09.md) 里 A6 批次的范围）。
+[`stub-reaudit-2026-09.md`](../99-records/2026-09-audit/stub-reaudit-2026-09.md) 里 A6 批次的范围）。
 
 ## 7. 对 emulator 的意义（建模 / 忽略清单）
 

@@ -31,7 +31,7 @@ const ROOT = path.join(HERE, '..', '..', '..');
 
 const GAPS = path.join(ROOT, 'analysis/opcode-gaps.json');
 const TABLE = path.join(ROOT, 'docs-new/03-engine/opcode-table.md');
-const DOC = path.join(ROOT, 'docs-new/03-engine/route-c-text-metrics-2026-09.md');
+const DOC = path.join(ROOT, 'docs-new/99-records/2026-09-route-c/route-c-text-metrics-2026-09.md');
 
 interface GapEntry {
   opcode: number;

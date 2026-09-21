@@ -71,3 +71,25 @@
 ## 2026-09-13
 
 收口：changes.md 顶部补"14 条工单总表"（每条 → 结果 → 落在哪一批/票据 → 证据），并按 acceptance 三条自查：① 对照表齐 ② report sha256 FBC05509… 逐字节不变（B1/B2 每批后复跑）③ §1.2 十四条里第 10 条（悬停）按设计归 B3。B2 到此结束，后续按 T-0003 → T-0004 → T-0005 推进。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+代理清单的 5 条未确认项在这里落成实测（见 .tmp/frame-loop-divergence.md §7 的方法）：① PixiBackend.waitFlags 粘滞是否有意；② chains 不推进窗是否已影响现有断言；③ report 的 SLEEP_GATE 是否真永不满足；④ headless 快照里是否出现 cell；⑤ refactor-plan 里的旧行号是否要重算。
+
+（2026-09-14 B1）两张 chain 的「无条件清 0x400 / 不推进动画窗 / ADV 分支吞异常」这些行为**没有改变**，只是从各家手写的 for 循环搬进了 `src/frame/loop.ts` 的驱动配置（`gates.anim='clear'`、`advErrors='swallow'`、帧末钩子里没有 `advance()`）。本票要决策的对象因此变成"驱动的那几个档位该不该保留"——证据锚点可从 chain 文件上移到驱动。
+
+（2026-09-14 B2 第 1 批）进度与**实测结论**：
+- ✅ **A2 已修**：`scAnimationsDone` 原先只查窗 0，与 `advanceWindows`（5 窗）不自洽 ⇒ 改为复用 `itemAnimationsPending`。
+  过程中的两个发现：① 我第一版把极性写反了（`itemAnimationsPending` 本身就是"还有窗没走完"），**新写的守卫当场抓住**；
+  ② 窗起点用的是 `animStart === 0` 哨兵，而 headless 虚拟时钟**从 0 起** ⇒ 在 clock=0 那刻配的动画会反复重锁、永不结束
+  （真实使用都在若干帧之后配置；测试从 T0=16 起算。这条属于时钟域问题 D1，已记在守卫文件头）。
+- ✅ **A1 已做**：`FrameHost` 增 `advanceModel(nowMs)`（帧末推进模型）与 `animationsDone(nowMs)`；`report` 用 `present: 'never'`
+  保留自己的指令驱动粒度；两份 chain 现在**每帧推进一次模型**（修前从不推进）。
+- ⏸ **门统一（G1/G2/G3）暂缓**——实测它不只是记账差异，会改变**脚本执行路径**：把两份 chain 的 `0x400` 从
+  "每帧无条件清"改成"等 `animationsDone()`"后，`mesh-vertex-quad.test.ts` 的 ②（ADV 暗幕 0x19640 的 state0 应为 #80000000（50% 黑））
+  变成 #00000000。已隔离验证：**只做 A1、不动门** ⇒ 该测试通过；**只把门改成 wait** ⇒ 变红。
+  ⇒ 门策略通过"时钟节奏"间接影响脚本里读时间的分支（0x1F4/0x1F5/i1c7/i1cc 一族）与 `0x323` 窗的完成时刻。
+  下一步：用 `.tmp/dump-report.mts` 那套 before/after 探针，把"哪几条指令的路径变了"逐条查清，再决定门的收敛方式
+  （候选：统一成 `animationsDone` 但让 headless 的**虚拟时钟按脚本进度**推进、或在报告里同时给出"as-written 端点色 / 当前求值色"）。
+- ✅ 顺带修了一处**顺序依赖**：`gameStartChain` 的 mesh 映射原先在 `calcDiffuse`（**窗末有烘焙副作用** `state0 ← state1`）
+  **之后**才读 `state0/state1/flags` ⇒ 报告里的"脚本写的两端色"会被求值污染。现在先抓后算。

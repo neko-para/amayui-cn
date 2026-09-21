@@ -33,19 +33,13 @@
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）"
+      "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
+      "kind": "created"
     },
     {
       "at": "2026-09-13",
-      "what": "改字段：evidence, doneWhy, tests, links"
-    },
-    {
-      "at": "2026-09-13",
-      "what": "open → done"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done",
+      "kind": "status"
     }
   ],
   "doneWhy": "链路级悬停已跑通：`runGameStartChain` 默认 `gates.advance:\"pump\"` + `Scenario` 驱动 InputManager；E3 实测 SN0000 出现 2 次 `hover-enter`、`routes.cursor` 由 −1 → 0 → 12 → −1、`routes.shown` 1 → 0（右侧面板真的被悬停打开）。`advance:\"force\"` 对照：零悬停派发、cursor 恒 −1。两段式（进入 labelA/离开 labelB、一帧一个）由 `route-dispatch.test.ts` 判据①③ 用合成表钉死（SN0000 自己的面板在进入后即被脚本重置，观测不到自身 leave —— 已在该断言的注释里写明）。",

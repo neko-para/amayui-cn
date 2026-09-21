@@ -49,29 +49,23 @@
       "line": 208
     }
   ],
-  "notes": "旧档（修前存的）里那一格是配置值（本机 Music=2）⇒ 读档会尝试播曲号 2（= OP.BIN）并失败静音，日志可见；用新版本重存一次即可。",
   "id": "T-0064",
   "status": "done",
   "history": [
     {
       "at": "2026-09-18",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-18",
-      "what": "open → doing —— 根因=两半（运行态字段 + CALLBACK_LOAD 的 i0b7 0）；实现已落，待用户实机重存验证"
+      "what": "open → doing —— 根因=两半（运行态字段 + CALLBACK_LOAD 的 i0b7 0）；实现已落，待用户实机重存验证",
+      "kind": "status"
     },
     {
       "at": "2026-09-18",
-      "what": "doing → done —— 用户实测：读档后音乐播放正常（SN0000 的 BGM013 复原）"
-    },
-    {
-      "at": "2026-09-18",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 用户实测：读档后音乐播放正常（SN0000 的 BGM013 复原）",
+      "kind": "status"
     }
   ],
   "tests": [

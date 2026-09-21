@@ -38,53 +38,27 @@
       "T-0076"
     ],
     "docs": [
-      "docs-new/03-engine/route-c-text-metrics-2026-09.md",
+      "docs-new/99-records/2026-09-route-c/route-c-text-metrics-2026-09.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "分诊报告 A 段 #7 + §D-4（写端体未读 = 唯一前置）。★动手第一件事 = 读 `sub_45D660`/`sub_45EC60`。",
   "id": "T-0095",
   "status": "done",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：why"
+      "what": "open → doing —— 实现 + 守卫(14/14) + E3 + 台账结算全部落地；仅剩结算的「npm run verify 全绿」这一步（当前被 T-0096 在飞的 4 条 Live2D 测试挡住）⇒ 转 done",
+      "kind": "status"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：why"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：acceptance"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → doing —— 实现 + 守卫(14/14) + E3 + 台账结算全部落地；仅剩结算的「npm run verify 全绿」这一步（当前被 T-0096 在飞的 4 条 Live2D 测试挡住）⇒ 转 done"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "doing → done —— 全量 npm run verify 绿（909/909 pass、0 fail、死写 0）⇒ 收口。实现（textItems/pages+双游标/pageAt+moveCursor+clearBacklog、0x1d0/0x85 进 OPS、0x70 无门 push+组首、0x71 真门）、14+5 条守卫、E3（install/CONFIG.BIN 426 条、下标 14、实参 local-int 5/6/7，含\"无前奏⇒合理 -1/-1\"的诚实对照）、缺口台账（deferred 22→20、已实现 36→38）+ opcode-table 四行 + 生成物 全部落地"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "doing → done —— 全量 npm run verify 绿（909/909 pass、0 fail、死写 0）⇒ 收口。实现（textItems/pages+双游标/pageAt+moveCursor+clearBacklog、0x1d0/0x85 进 OPS、0x70 无门 push+组首、0x71 真门）、14+5 条守卫、E3（install/CONFIG.BIN 426 条、下标 14、实参 local-int 5/6/7，含\"无前奏⇒合理 -1/-1\"的诚实对照）、缺口台账（deferred 22→20、已实现 36→38）+ opcode-table 四行 + 生成物 全部落地",
+      "kind": "status"
     }
   ],
   "tests": [

@@ -17,12 +17,12 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/repair-plan-2026-09.md",
+      "file": "docs-new/03-engine/plan-2026-09.md",
       "anchor": "**RF-A 操作数读取计划**",
       "note": "重构判定：为什么逐条补丁会反复、目标形态（计划层 + arity 槽）"
     },
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-6-01 — 0x34B 的操作数类型被整体错读（delay 当缩放百分数、三个 float 丢弃）",
       "note": "操作数类型错位的最典型条",
       "line": 158
@@ -41,30 +41,23 @@
       "T-0081"
     ],
     "docs": [
-      "docs-new/03-engine/repair-plan-2026-09.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/03-engine/plan-2026-09.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "计划层不追求「一次性覆盖全部 574 条」，而是先覆盖：① 审计列出的 13 条错读；② 所有回写操作数的 getter 族；③ 新增实现。其余按批迁移（迁移期间允许两条路径并存，但**新写的 handler 必须走计划层**）。",
   "id": "T-0082",
   "status": "doing",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "open → doing —— B2 第一步（可机械化的那一半）落地：① 新增守卫 test/opcode-operands.test.ts —— 用 args 的 Proxy 记录每个已注册 opcode 到底碰了哪几格操作数，对照 scripts/asm/opcodes.json 的 argc 判「越界 / 漏读」；白名单 ALLOW_UNDERRUN 只许存量且每条写原因+票。② 覆盖 253 个语料 opcode / 300+ 注册项，查出 29 处漏读：其中 3 条与审计独立命中（0x1F9 丢颜色、0x20F 丢 op2/op3、0x34B 丢 op4..op6），其余为「无-op 桩 / 合成指令提前返回 / 待复核」三类（已逐条写明）。③ 顺手修掉 0x20F：按体（raw 31604-31670，arity=7 ⇒ argc=3）读 op1(id)/op2(影片槽)/op3(音量模式)，宿主缝 playMovie(id,slot,mode) 三处同步；白名单条目已删除（测试即证明修好）。剩余：把 handler 迁移到声明式操作数计划、arity 槽（95805）建模、以及白名单里其余条目逐条核体。"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → doing —— B2 第一步（可机械化的那一半）落地：① 新增守卫 test/opcode-operands.test.ts —— 用 args 的 Proxy 记录每个已注册 opcode 到底碰了哪几格操作数，对照 scripts/asm/opcodes.json 的 argc 判「越界 / 漏读」；白名单 ALLOW_UNDERRUN 只许存量且每条写原因+票。② 覆盖 253 个语料 opcode / 300+ 注册项，查出 29 处漏读：其中 3 条与审计独立命中（0x1F9 丢颜色、0x20F 丢 op2/op3、0x34B 丢 op4..op6），其余为「无-op 桩 / 合成指令提前返回 / 待复核」三类（已逐条写明）。③ 顺手修掉 0x20F：按体（raw 31604-31670，arity=7 ⇒ argc=3）读 op1(id)/op2(影片槽)/op3(音量模式)，宿主缝 playMovie(id,slot,mode) 三处同步；白名单条目已删除（测试即证明修好）。剩余：把 handler 迁移到声明式操作数计划、arity 槽（95805）建模、以及白名单里其余条目逐条核体。",
+      "kind": "status"
     }
   ]
 }

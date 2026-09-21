@@ -157,29 +157,18 @@
       "T-0007"
     ]
   },
-  "notes": "定因=0x256（区间立即平移）未实现；LOCK 开关 = `global 139a`（非错误源）。修复实现见 changes.md，排查全过程（含 G3 复核与 A/B 排除）见 notes.md；证据截图在 evidence/（t0028-* = 修复前，fix-* = 修复后）。★本票是 T-0016 验收 1 的收窄复现。",
   "id": "T-0028",
   "status": "done",
   "history": [
     {
       "at": "2026-09-14",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-14",
-      "what": "open → done —— 修复：0x256 区间立即平移（scSetSlotParams 真应用）+ 守卫先红后绿 + E4 截图（进场景即收起）"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：evidence"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 修复：0x256 区间立即平移（scSetSlotParams 真应用）+ 守卫先红后绿 + E4 截图（进场景即收起）",
+      "kind": "status"
     }
   ],
   "tests": [

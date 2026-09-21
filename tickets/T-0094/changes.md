@@ -34,7 +34,7 @@ node --env-file=test/options.test.env --import tsx --test test/op-3-004-furigana
 ```
 子代理另跑：`op-3-004` 8/8、相关五文件 63/63、八文件 73/73、`config1-chain` 10/10。
 
-**文档同步（主 agent）**：`docs-new/03-engine/audit-2026-09-opcodes.md` 的 `### op-3-004` 节末句已换成「轮 7 已落地 + 三具体证 + 实测可观测时序 + 守卫位置」。
+**文档同步（主 agent）**：`docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md` 的 `### op-3-004` 节末句已换成「轮 7 已落地 + 三具体证 + 实测可观测时序 + 守卫位置」。
 
 **锚点申报**：未删除/改写任何被锚定字面串（`op_display_furigana` ✔、`缺口棘轮` ✔、`*(_DWORD *)(_this + 489988) |= 0x10000u;` 在 `.c` 里未动 ✔）。被删的整段是**轮 6 自己写的**「未建模」注释与那条「断言尚未建模」的断言，二者都不是锚点。
 

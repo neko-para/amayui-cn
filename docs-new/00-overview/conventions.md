@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 00-overview · 目录纪律与数据分层
 
 ## 1. 目录地图
@@ -20,7 +24,7 @@ E:\Games\Eushully\天結\
 ├── app\        三子工程（amayui-emulator / amayui-inspector / amayui-toolkit）
 ├── docs-new\   ★ 本文档体系：唯一新来源
 ├── data\src 之外：manifest（install-manifest.json、raw-manifest.json）
-└── 根注释：CONTEXT.md / PROGRESS.md 为会话/工作临时快照，非正式文档（待办一律开票进 tickets\）
+└── 根注释：docs-new/99-records/2026-09-live2d/CONTEXT.md / PROGRESS.md 为会话/工作临时快照，非正式文档（待办一律开票进 tickets\）
 ```
 
 > ⚠️ `raw/`、`install/` 被 `.gitignore` 排除。`install/` 是本体独立真拷贝（无硬链接），对 ALF/AGF 重打包

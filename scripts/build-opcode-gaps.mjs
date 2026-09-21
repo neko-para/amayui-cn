@@ -139,7 +139,10 @@ function syncCountsFile(root, entries) {
 /** 计算报告 + 校验，返回 { report, problems }。`opts.syncCounts` = 回填真源的 `counts`（写模式）。 */
 export function buildGapReport(root, opts = {}) {
   const registry = JSON.parse(fs.readFileSync(path.join(root, 'analysis/opcode-gaps.json'), 'utf8'));
-  const ops = JSON.parse(fs.readFileSync(path.join(root, 'scripts/asm/opcodes.json'), 'utf8'));
+  // ★2026-09：opcode 映射的真源已从 `opcode-table.md` 迁到 `analysis/opcodes.json`
+  //   （md 与 `scripts/asm/opcodes.json` 都是它的生成物）。这里只取 name/argc/status，
+  //   `handler` 仍以 .c 的 dispatch 表实读为准（可交叉校验 JSON 里的记录）。
+  const ops = JSON.parse(fs.readFileSync(path.join(root, 'analysis/opcodes.json'), 'utf8')).entries;
   const byOp = new Map(ops.map((o) => [o.opcode, o]));
   const corpus = scanCorpus(root);
   const { registered, internal } = scanRegistrations(root);
@@ -166,7 +169,7 @@ export function buildGapReport(root, opts = {}) {
     const c = corpus.get(op);
     entries.push({
       ...e,
-      name: byOp.get(op)?.name ?? '',
+      name: byOp.get(op)?.mnemonic ?? '',
       argc: byOp.get(op)?.argc ?? null,
       docStatus: byOp.get(op)?.status ?? '',
       handler: handlerByOp.get(op) ?? '',
@@ -236,15 +239,45 @@ export function buildGapReport(root, opts = {}) {
 
 const fmtCall = (e) => `${e.mnemonic}${e.name ? ' ' + e.name : ''}`;
 
+/** 表格单元格转义（`|` 会冲掉列数）。 */
+const esc = (s) => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+
+/**
+ * ★**渲染用一句话**：从 `note` 派生的**裁剪摘要**（≤ `n` 字）。
+ *
+ * 为什么裁剪：`note` 是**真源的审计轨**（体证叙事 + 逐轮沿革，71 条合计 ≈ 80 KB）。
+ * 把它逐字铺进 md 会让生成物 92.8% 的字节都是它 —— 而其中大部分是"当初怎么想错了"的沿革，
+ * 对"现在该怎么处置"没有导航价值。⇒ **md 只给一句话索引，全文留在 JSON，一条命令可取**
+ * （`node .agents/skills/amayui-engine-analysis/scripts/gaps.js --show 0x140`）。
+ */
+export function summarize(note, n = 120) {
+  // ★2026-09 文档模型：**沿革话术不进生成物** —— 摘要开头常见的「★审计 P1 订正：」「2026-09 更新：」
+  //   这类前缀是“当初怎么想错了”，对“现在是什么”没有导航价值 ⇒ 剥掉（全文仍在 JSON 的 note 里）。
+  const strip = (x) => x.replace(/^★?\s*(?:审计[^：:]{0,40}订正|订正|20\d\d-\d\d[^：:]{0,24})[：:]\s*/, '').replace(/^★\s*/, '');
+  const s = strip(String(note ?? '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim());
+  return s.length > n ? `${s.slice(0, n)}…` : s;
+}
+
 /** 渲染 md（纯函数，便于测试断言"文件是最新的"）。 */
 export function renderGapMd(report) {
   const L = [];
+  L.push('---');
+  L.push('kind: generated');
+  L.push('state: live');
+  L.push('home: analysis/opcode-gaps.json');
+  L.push('generated_by: scripts/build-opcode-gaps.mjs');
+  L.push('---');
+  L.push('');
   L.push('# 03-engine · opcode 缺口台账（生成物，勿手改）');
   L.push('');
   L.push('> 真源 = `analysis/opcode-gaps.json`（人工登记 `disposition`/备注/票）；本文件由 `scripts/build-opcode-gaps.mjs` 渲染。');
   L.push('> 语料命中数与注册状态**实时计算**：`^\\s*iXX\\b` 扫 `src/*.txt`（941 个脚本），注册表扫 `app/amayui-emulator/src/vm/handlers/*.ts`。');
-  L.push('> 纪律（审计 `docs-new/03-engine/audit-2026-09.md` §1「不静默跳过」）：**任何不实现/近似都必须在这里有一条**，');
+  L.push('> 纪律（审计 `docs-new/99-records/2026-09-audit/audit-2026-09.md` §1「不静默跳过」）：**任何不实现/近似都必须在这里有一条**，');
   L.push('> 否则 `test/opcode-gaps.test.ts` 会红。');
+  L.push('>');
+  L.push('> ★**本表只给一句话**（从真源 `note` 裁到 120 字）：`note` 是审计轨（体证叙事 + 逐轮沿革，71 条 ≈ 80 KB），');
+  L.push('> 逐字铺进 md 会让生成物 92.8% 的字节都是它，而对"现在该怎么处置"没有导航价值。**全文取法**：');
+  L.push('> `node .agents/skills/amayui-engine-analysis/scripts/gaps.js --show 0x140`（或直接读 `analysis/opcode-gaps.json`）。');
   L.push('');
   L.push('## 1. 结论速览');
   L.push('');
@@ -261,36 +294,36 @@ export function renderGapMd(report) {
   L.push('');
   L.push('## 2. 未实现（按语料命中数排序）');
   L.push('');
-  L.push('| opcode | 助记符 | 语料 | 文件 | argc | 引擎 handler | 体起始行 | 文档状态 | 票 | 备注 |');
+  L.push('| opcode | 助记符 | 语料 | 文件 | argc | 引擎 handler | 体起始行 | 文档状态 | 票 | 一句话（全文见 JSON） |');
   L.push('|---|---|---|---|---|---|---|---|---|---|');
   for (const e of report.unimpl) {
     L.push(
-      `| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.corpusFiles} | ${e.argc ?? '?'} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.docStatus || '?'} | ${e.ticket || '—'} | ${e.note} |`,
+      `| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.corpusFiles} | ${e.argc ?? '?'} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.docStatus || '?'} | ${e.ticket || '—'} | ${esc(summarize(e.note))} |`,
     );
   }
   L.push('');
   L.push('## 3. 已注册为 no-op，但体内有真实效果（必须改：补实现或显式缺口）');
   L.push('');
-  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 票 | 体内真实效果 |');
+  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 票 | 体内真实效果（一句话） |');
   L.push('|---|---|---|---|---|---|---|');
   for (const e of report.unjust) {
-    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${e.note} |`);
+    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${esc(summarize(e.note))} |`);
   }
   L.push('');
   L.push('## 4. 已注册为 no-op，且已读体确认对 VM 不可观测（有据跳过）');
   L.push('');
-  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 依据 |');
+  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 依据（一句话） |');
   L.push('|---|---|---|---|---|---|');
   for (const e of report.internalOk) {
-    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.note} |`);
+    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${esc(summarize(e.note))} |`);
   }
   L.push('');
   L.push('## 5. 已实现（曾登记为缺口）');
   L.push('');
-  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 票 | 说明 |');
+  L.push('| opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 票 | 说明（一句话） |');
   L.push('|---|---|---|---|---|---|---|');
   for (const e of report.implemented) {
-    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${e.note} |`);
+    L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${esc(summarize(e.note))} |`);
   }
   L.push('');
   L.push('## 6. 已评估、按当前范围不实现（`deferred`：每条都必须写清扩展点）');
@@ -298,11 +331,11 @@ export function renderGapMd(report) {
   L.push('> 这些**不是"没做"**，而是「按当前重写范围不做 / 需要先建某个模型」—— 每条 note 里都写了扩展点。');
   L.push('> 编号排在最后是为了不打乱 §2–§5 的既有引用（审计报告引用过 §5）。');
   L.push('');
-  L.push('| opcode | 助记符 | 语料 | 文件 | argc | 引擎 handler | 体起始行 | 票 | 扩展点 / 理由 |');
+  L.push('| opcode | 助记符 | 语料 | 文件 | argc | 引擎 handler | 体起始行 | 票 | 扩展点 / 理由（一句话） |');
   L.push('|---|---|---|---|---|---|---|---|---|');
   for (const e of report.deferred) {
     L.push(
-      `| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.corpusFiles} | ${e.argc ?? '?'} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${e.note} |`,
+      `| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${e.corpusFiles} | ${e.argc ?? '?'} | ${e.handler || '?'} | ${e.handlerBodyLine ?? '?'} | ${e.ticket || '—'} | ${esc(summarize(e.note))} |`,
     );
   }
   L.push('');

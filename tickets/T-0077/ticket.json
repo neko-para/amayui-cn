@@ -3,7 +3,7 @@
   "type": "bug",
   "priority": "P1",
   "area": "emulator/ops",
-  "why": "审计（docs-new/03-engine/audit-2026-09.md §3 与 audit-2026-09-opcodes.md 的 P2 表）确认：以下实现在引擎体里找不到依据（host-invented）或把操作数类型/顺序读错（overreach），属于「为解决问题凭空实现」：① `0x34B`（live2d.ts:191 `op_l2d_node_scale_win`）把 `op2`(delay) 当缩放百分数、`op4..op6` 三个 float 整个丢弃（操作数类型整体错位一格，体 raw 34643-34650）；② `0x323`（gfx-item.ts:419）把 op2/op3 命名并当 delay/count，体里只是原样透传给 `sub_4AE330`（raw 33898-33921）；③ `0x203`（gfx-item.ts）自造 `(alpha & 0xff)` 组装 α，丢掉 clamp 与「负值回退取当前色」两条分支（raw 131893-131918）；④ `0x2E7` 把任意「非 1」idx 静默映射成 Pitch0（体里其它值走错误分支）；⑤ `0x2FC` 无触点路径多写 op2..op5（体只写 op1=0）；⑥ `0x1A0` 写序与体相反（体：op3..op9 先、op1 最后）；⑦ `0x20F` 只读 op1，丢弃 op2(slot)/op3(模式)；⑧ `0x100` 真按键分支返回点多加 1（体：`(ip-ip_base)>>2`，无 +1，raw 25039-25040）；⑨ `0x305` 未清 `Engine[122497]`（体三条出口都清，raw 26083/26095/26099）；⑩ `0x348` 当缩放，实为轴角旋转（轴 +464/468/472、角 +488）；⑪ `stubs.ts` 把 `0x325`/`0x10C`/`0x324` 注册成无条件 no-op，但体分别写效果销毁判据、引擎每帧扫描的按键表、释放效果对象（raw 34000-34012 / 30623-30632 / 33930）；⑫ `0x1CE` 在 v==0 分支对所有窗整段收尾（体只清部分状态）；⑬ `0x1F9` set-texture 丢掉第 3 操作数（颜色）。",
+  "why": "审计（docs-new/99-records/2026-09-audit/audit-2026-09.md §3 与 audit-2026-09-opcodes.md 的 P2 表）确认：以下实现在引擎体里找不到依据（host-invented）或把操作数类型/顺序读错（overreach），属于「为解决问题凭空实现」：① `0x34B`（live2d.ts:191 `op_l2d_node_scale_win`）把 `op2`(delay) 当缩放百分数、`op4..op6` 三个 float 整个丢弃（操作数类型整体错位一格，体 raw 34643-34650）；② `0x323`（gfx-item.ts:419）把 op2/op3 命名并当 delay/count，体里只是原样透传给 `sub_4AE330`（raw 33898-33921）；③ `0x203`（gfx-item.ts）自造 `(alpha & 0xff)` 组装 α，丢掉 clamp 与「负值回退取当前色」两条分支（raw 131893-131918）；④ `0x2E7` 把任意「非 1」idx 静默映射成 Pitch0（体里其它值走错误分支）；⑤ `0x2FC` 无触点路径多写 op2..op5（体只写 op1=0）；⑥ `0x1A0` 写序与体相反（体：op3..op9 先、op1 最后）；⑦ `0x20F` 只读 op1，丢弃 op2(slot)/op3(模式)；⑧ `0x100` 真按键分支返回点多加 1（体：`(ip-ip_base)>>2`，无 +1，raw 25039-25040）；⑨ `0x305` 未清 `Engine[122497]`（体三条出口都清，raw 26083/26095/26099）；⑩ `0x348` 当缩放，实为轴角旋转（轴 +464/468/472、角 +488）；⑪ `stubs.ts` 把 `0x325`/`0x10C`/`0x324` 注册成无条件 no-op，但体分别写效果销毁判据、引擎每帧扫描的按键表、释放效果对象（raw 34000-34012 / 30623-30632 / 33930）；⑫ `0x1CE` 在 v==0 分支对所有窗整段收尾（体只清部分状态）；⑬ `0x1F9` set-texture 丢掉第 3 操作数（颜色）。",
   "acceptance": [
     "逐条改回 handler 体里的语义（操作数类型、读取顺序、写入范围、分支覆盖），每条都在代码注释里附 raw 行号依据",
     "0x325/0x10C/0x324 三个 no-op：要么按体实现，要么在 `stubs.ts` 里改成带 raw 依据的 engine-internal 并写清「体里真实效果是什么、为什么不建模」",
@@ -20,7 +20,7 @@
   ],
   "evidence": [
     {
-      "file": "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-6-01 — 0x34B 的操作数类型被整体错读（delay 当缩放百分数、三个 float 丢弃）",
       "note": "host-invented 的首条；同文件 P2 表列出其余 12 处",
       "line": 158
@@ -62,30 +62,23 @@
       "T-0076"
     ],
     "docs": [
-      "docs-new/03-engine/audit-2026-09.md",
-      "docs-new/03-engine/audit-2026-09-opcodes.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09.md",
+      "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "docs-new/03-engine/opcode-table.md"
     ]
   },
-  "notes": "与 T-0076 的分工：T-0076 = 引擎有体而 emulator 没有（缺口，命中即停/陈旧值）；本票 = emulator 有实现但与体不符（凭空/错读）。多数条目是局部改动（操作数类型/顺序/多写少写），但 0x34B 与 0x100 会影响可见行为（立绘缩放窗、按键派发次数），应优先。",
   "id": "T-0077",
   "status": "done",
   "history": [
     {
       "at": "2026-09-19",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "open → done —— 轮 6 收口（13 处剩余条目全部落地，守卫全绿）；① 0x12E 按体重写（sub_42F230 raw 39199-39252：首项 = op1+1、两道边界门 raw 39230-32/39248-49、四点判据 raw 39242、x/y 平面按记录下标 j 步进 raw 39245-46、margin 基址==记录基址⇒跳过 raw 39239-44）⇒ ALLOW_UNDERRUN 里最后一条「确认是 bug」条目已删，守卫仍绿（= 机械证明）；② Live2D 节点族 7 条按体订正：0x348 **是轴角旋转**（轴 +464/468/472、角 +488，sub_4AFE90 raw 134058-134100）不再复用缩放 handler；0x347/0x349/0x34A/0x34B/0x34C/0x34D 改按体读 float 与正确 delay/dur/分量顺序（0x34B 的 op2/op3 是 int、op4..op6 是 float 三分量）；补窗门 record[0]&1。真语料收益：i34d 12 处（BTL）此前 delay/dur 与平移分量整体错位；③ 0x203 按体补 clamp（α>255⇒255）与负值回退（α<0⇒当前 α、color<0⇒当前 ARGB，取 sub_4ADD60 = DrawItem+0x60）；新增宿主缝 native.getDrawItemColor（五处同步）；④ 0x323 的裸命名订正（op2/op3 只是透传给 sub_4AE330 的记录窗参数字段，raw 132826-132846；clamp/回退在 scene/ops.ts 的 vertexColorArg，已有 test/mesh-vertex-quad.test.ts）；⑤ 0x325/0x10C/0x324 的 no-op 定性（此前已完成）；★仍未做（另立票）：Live2D 节点矩阵合成器 sub_4A07F0（raw 121131-121520）未实现 ⇒ 节点变换字段暂无消费端（语料下不可观测）；0x33f 的效果常量通路仍缺消费端（回链 T-0017）"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 轮 6 收口（13 处剩余条目全部落地，守卫全绿）；① 0x12E 按体重写（sub_42F230 raw 39199-39252：首项 = op1+1、两道边界门 raw 39230-32/39248-49、四点判据 raw 39242、x/y 平面按记录下标 j 步进 raw 39245-46、margin 基址==记录基址⇒跳过 raw 39239-44）⇒ ALLOW_UNDERRUN 里最后一条「确认是 bug」条目已删，守卫仍绿（= 机械证明）；② Live2D 节点族 7 条按体订正：0x348 **是轴角旋转**（轴 +464/468/472、角 +488，sub_4AFE90 raw 134058-134100）不再复用缩放 handler；0x347/0x349/0x34A/0x34B/0x34C/0x34D 改按体读 float 与正确 delay/dur/分量顺序（0x34B 的 op2/op3 是 int、op4..op6 是 float 三分量）；补窗门 record[0]&1。真语料收益：i34d 12 处（BTL）此前 delay/dur 与平移分量整体错位；③ 0x203 按体补 clamp（α>255⇒255）与负值回退（α<0⇒当前 α、color<0⇒当前 ARGB，取 sub_4ADD60 = DrawItem+0x60）；新增宿主缝 native.getDrawItemColor（五处同步）；④ 0x323 的裸命名订正（op2/op3 只是透传给 sub_4AE330 的记录窗参数字段，raw 132826-132846；clamp/回退在 scene/ops.ts 的 vertexColorArg，已有 test/mesh-vertex-quad.test.ts）；⑤ 0x325/0x10C/0x324 的 no-op 定性（此前已完成）；★仍未做（另立票）：Live2D 节点矩阵合成器 sub_4A07F0（raw 121131-121520）未实现 ⇒ 节点变换字段暂无消费端（语料下不可观测）；0x33f 的效果常量通路仍缺消费端（回链 T-0017）",
+      "kind": "status"
     }
   ]
 }

@@ -6,7 +6,7 @@
  *      + 读取端 `0x1D3` `0x1D4` `0x2F3`
  * 另含接线项：`0x199`（`0x7B` 的读取端；此前命中即硬报错）与语音记录 push（`0xC4`/`0x1BD`/`0x2F4`）。
  *
- * 台账见 `docs-new/03-engine/stub-reaudit-2026-09.md`；逐条引擎实证写在各 handler 的注释里。
+ * 台账见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`；逐条引擎实证写在各 handler 的注释里。
  * raw 行号 = `engine/天结_unpacked.exe_utf8.c`。
  */
 import { test } from 'node:test';

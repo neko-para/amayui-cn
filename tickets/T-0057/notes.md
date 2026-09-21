@@ -163,3 +163,7 @@ REPO_ROOT 派生 13 处、3 种基准（建议单一 `src/arch/repoRoot.ts`）�
 
 **后继（已定位、本轮不做）**：A1–A5、A8–A17；B5/B8–B12；C2（0x308 语义）/C3–C16；D1–D4、D6、D8–D16、D19；E5–E20。
 其中**最高杠杆**是 D1（6 份 boot 装配收敛，顺带吃掉 D4/D13 的一半）与 A1–A4（脏位/present 单一真源）。
+
+## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
+
+本票是一次跨层审计的落点：结论与逐条 proposed model 见 notes.md（全部发现，含未在本轮实施的后继项），设计决策见 design.md，实施记录见 changes.md。

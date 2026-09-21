@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 数据提取口径（以 amayui-toolkit metadata 为准）
 
 ## 1. 统一来源与 schema

@@ -43,19 +43,13 @@
   "history": [
     {
       "at": "2026-09-17",
-      "what": "创建"
+      "what": "创建",
+      "kind": "created"
     },
     {
       "at": "2026-09-19",
-      "what": "改字段：tests"
-    },
-    {
-      "at": "2026-09-19",
-      "what": "open → done —— 三条判据全部满足：① 第一层已录入 sub_4243F0（0x231 handler，槽 9、读 op1..op4 → sub_4AD690）与族内 5 个 setter；② 0x231 按体实现为 GFX_ITEM_OPS 的 op_set_flipbook_loop（置 Item.flags bit2、+0x540 起点、+0x560 周期、+0x568 总格数、+0x572 每行列数），守卫 test/draw-item-loop-anim.test.ts（14 tests）；③ **真槽续跑链不再命中 0x231** —— slot-load-transfer 的诊断从「最高频 0x231@RESETREIGNAN.BIN×333434」变为「被跳过的未实现 opcode 0 个」，轨迹正常推进（CALLBACK_LOAD.BIN → SYSTEM4.BIN → LOADCONFIG.BIN → SYSTEM4.BIN → LOADCHARM.BIN → SYSTEM4.BIN，走栈完成）；slot-load-resume 的续跑轨迹 REIGN.BIN → SETADVFLAG.BIN → SETGARDEN.BIN，同样 0 个被跳过。★与票面旧记载的差异：根因不是「0x231 语义不明」，而是它当时零注册 ⇒ 命中即被跳过 ⇒ RESETREIGNAN 的退出条件永不成立。"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "open → done —— 三条判据全部满足：① 第一层已录入 sub_4243F0（0x231 handler，槽 9、读 op1..op4 → sub_4AD690）与族内 5 个 setter；② 0x231 按体实现为 GFX_ITEM_OPS 的 op_set_flipbook_loop（置 Item.flags bit2、+0x540 起点、+0x560 周期、+0x568 总格数、+0x572 每行列数），守卫 test/draw-item-loop-anim.test.ts（14 tests）；③ **真槽续跑链不再命中 0x231** —— slot-load-transfer 的诊断从「最高频 0x231@RESETREIGNAN.BIN×333434」变为「被跳过的未实现 opcode 0 个」，轨迹正常推进（CALLBACK_LOAD.BIN → SYSTEM4.BIN → LOADCONFIG.BIN → SYSTEM4.BIN → LOADCHARM.BIN → SYSTEM4.BIN，走栈完成）；slot-load-resume 的续跑轨迹 REIGN.BIN → SETADVFLAG.BIN → SETGARDEN.BIN，同样 0 个被跳过。★与票面旧记载的差异：根因不是「0x231 语义不明」，而是它当时零注册 ⇒ 命中即被跳过 ⇒ RESETREIGNAN 的退出条件永不成立。",
+      "kind": "status"
     }
   ],
   "tests": [

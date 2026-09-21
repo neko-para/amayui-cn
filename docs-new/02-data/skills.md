@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 技能表结构与数值字段
 
 ## 1. 三段并列定长数组

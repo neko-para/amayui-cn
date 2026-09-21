@@ -1,3 +1,7 @@
+---
+kind: narrative
+state: live
+---
 # 03-engine · 消息 / ADV 路径上的配置门（未走到分支清单）
 
 > 为什么单独一份：ADV 相关 handler 里有大量 `if (GetConfig("..."))` 分支。**随包 `SYS4REG.INI` 的取值

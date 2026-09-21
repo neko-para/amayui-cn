@@ -5,7 +5,7 @@
  *      导出表按 PE 实读的 21 个名字建，其中只有 `_SetNameLenMax@20` 有行为实现。
  * A4 = 13 条：`0x238`/`0x258` 建模（写引擎状态），其余 11 条走宿主缝（渲染侧）。
  *
- * 台账见 `docs-new/03-engine/stub-reaudit-2026-09.md` §5；逐条引擎实证见各 handler 的注释。
+ * 台账见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §5；逐条引擎实证见各 handler 的注释。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

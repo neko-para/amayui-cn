@@ -1,3 +1,7 @@
+---
+kind: procedure
+state: live
+---
 # 02-data · 训练所 / 单位字段 / 说话人 id / 存档
 
 ## 1. DRINIT（训练所）

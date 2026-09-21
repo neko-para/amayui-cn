@@ -90,33 +90,33 @@
       "T-0018"
     ]
   },
-  "notes": "过程笔记见 notes.md（含「为什么引擎不会崩」的完整推导：脚本侧 `e=4` 重登记 vs 控制转移两条口径）。★残余缺口（已写进 `SLOT_GAPS`）：真槽里「存档记录的脚本名 + 帧 ip 表」没有解析 ⇒ 读档后落到**根脚本（启动链 → 标题）**，**不能续到存档当时的场景位置**；那是 T-0018 的剩余工作。",
   "id": "T-0056",
   "status": "done",
   "history": [
     {
       "at": "2026-09-17",
-      "what": "创建（用户报：加载存档立刻报 Depth が不正です 51 != 54，且控制面版没显示）"
+      "what": "创建（用户报：加载存档立刻报 Depth が不正です 51 != 54，且控制面版没显示）",
+      "kind": "created"
     },
     {
       "at": "2026-09-17",
-      "what": "定位：0xCC 每次登记改写 owner（SBUNKI 54 覆盖 SAVE 51）+ 引擎 0x1A1/a6=1 段是控制转移（cur=0 + 装载存档记录的脚本）+ emulator 未实现该转移 ⇒ 调用方脚本继续跑 ⇒ 撞 0xCD 守卫"
+      "what": "定位：0xCC 每次登记改写 owner（SBUNKI 54 覆盖 SAVE 51）+ 引擎 0x1A1/a6=1 段是控制转移（cur=0 + 装载存档记录的脚本）+ emulator 未实现该转移 ⇒ 调用方脚本继续跑 ⇒ 撞 0xCD 守卫",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "修 ①：handlers/save-slot.ts 实现控制转移（transferToRootAfterLoad；cur=0 + 置「正在读档」门 + 重载根脚本），并停止用空表覆盖 SAVE.DAT 表/已使用文件标志；新增守卫 test/slot-load-transfer.test.ts（3 条，E3 真槽）"
+      "what": "修 ①：handlers/save-slot.ts 实现控制转移（transferToRootAfterLoad；cur=0 + 置「正在读档」门 + 重载根脚本），并停止用空表覆盖 SAVE.DAT 表/已使用文件标志；新增守卫 test/slot-load-transfer.test.ts（3 条，E3 真槽）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "修 ②：控制面版横幅粘住硬错误（session.ts 的 #errorText + 纯函数 controlErrorText）；新增守卫 test/control-error-banner.test.ts（3 条）"
+      "what": "修 ②：控制面版横幅粘住硬错误（session.ts 的 #errorText + 纯函数 controlErrorText）；新增守卫 test/control-error-banner.test.ts（3 条）",
+      "kind": "decision"
     },
     {
       "at": "2026-09-17",
-      "what": "台账/文档：functions.json#0x410160、能力台账 save-slot-chain、SLOT_GAPS、docs-new/03-engine/save-data.md；全仓 604 测试 603 通过 0 失败 ⇒ open → done"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "台账/文档：functions.json#0x410160、能力台账 save-slot-chain、SLOT_GAPS、docs-new/03-engine/save-data.md；全仓 604 测试 603 通过 0 失败 ⇒ open → done",
+      "kind": "status"
     }
   ],
   "tests": [

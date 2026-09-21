@@ -39,28 +39,21 @@
     ],
     "docs": [
       "docs-new/03-engine/opcode-table.md",
-      "docs-new/03-engine/route-c-text-metrics-2026-09.md"
+      "docs-new/99-records/2026-09-route-c/route-c-text-metrics-2026-09.md"
     ]
   },
-  "notes": "来源 = 用户轮 8 实测（硬停）。★临时处置只保证不硬停，**不是**实现 —— 别把 STUB 当完成。",
   "id": "T-0104",
   "status": "open",
   "history": [
     {
       "at": "2026-09-20",
-      "what": "创建（来源：轮 8 用户实测硬停）"
+      "what": "创建（来源：轮 8 用户实测硬停）",
+      "kind": "created"
     },
     {
       "at": "2026-09-20",
-      "what": "轮 8 收口：登记 STUB_NATIVE_OPS 放行 + 新增 test/op-0104-gdi-repaint-stub.test.ts（4 条）+ 鉴别力验证（撤表项 4/4 红、还原 sha256 一致）；★真语义（GDI 重绘口径）仍未实现，status 保持 open"
-    },
-    {
-      "at": "2026-09-20",
-      "what": "改字段：history"
-    },
-    {
-      "at": "2026-09-21",
-      "what": "改字段：evidence"
+      "what": "轮 8 收口：登记 STUB_NATIVE_OPS 放行 + 新增 test/op-0104-gdi-repaint-stub.test.ts（4 条）+ 鉴别力验证（撤表项 4/4 红、还原 sha256 一致）；★真语义（GDI 重绘口径）仍未实现，status 保持 open",
+      "kind": "decision"
     }
   ],
   "tests": [
