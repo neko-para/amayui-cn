@@ -16,7 +16,7 @@
     {
       "file": "native/host-input/tools/build-prebuild.cjs",
       "anchor": "--CDCMAKE_OSX_ARCHITECTURES=",
-      "line": 65,
+      "line": 112,
       "note": "★构建入口：cmake-js 的 --CD 只有 --CDKEY=VALUE 这一种写法（空格分隔会被静默忽略，第一次实测就产出过单架构且无报错）；脚本编译完当场校验 lipo -archs 与 minos"
     },
     {

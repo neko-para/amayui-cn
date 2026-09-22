@@ -9,7 +9,8 @@
     "`npm run smoke` ⇒ `available=true supported=true platform=win32`；`getSystemMetrics`/`getAsyncKeyState` 给出数值；`postMouseMove`（darwin 专有缺失）⇒ `false`；`AMAYUI_HOST_INPUT_MOVE_TEST=1` 时 +3px 读回一致再复位",
     "**产品宿主**：跑一次 Electron（`npm run shot` 或 `npm run electron`），日志里必须出现 `[native] host-input available=true supported=true path=…` ⇒ 延迟加载钩子生效（这是合并后最需要重新确认的一条）",
     "`AMAYUI_CURSOR_VERIFY=1 npx electron tools/verify-cursor.cjs` ⇒ DIP→物理那一跳仍然正确（本机缩放 ≠ 100% 时读回一致）",
-    "把实测数字（缩放档位、读回的物理坐标、日志行原文）写回本票 `changes.md`；若失败则按「不许删证据消红」的口径记录现象与定因，并回链 `T-0119`"
+    "把实测数字（缩放档位、读回的物理坐标、日志行原文）写回本票 `changes.md`；若失败则按「不许删证据消红」的口径记录现象与定因，并回链 `T-0119`",
+    "★政策裁定（用户，2026-09-23）：win32-x64 的预置产物**也随仓库分发**（`.gitignore` 例外覆盖整个 `prebuilds/`，例外那一行原文未动）⇒ `npm run build:prebuild` 按平台分支产出它（win32 落 `prebuilds/win32-<arch>/`）；守卫 `test/native-host.test.ts` 钉住「在库 + PE `Machine=0x8664` + Windows 上按预置落点真能加载」，`.gitignore`/`native/README.md`/模块 README/`docs-new/04-app/native-addon.md` 的理由同步改写"
   ],
   "evidence": [
     {
@@ -28,7 +29,10 @@
       "note": "产品宿主核验的那行日志（本票的判据之一）"
     }
   ],
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/native-host.test.ts",
+    "native/host-input/tools/smoke.cjs"
+  ],
   "blockedBy": [],
   "links": {
     "docs": [
@@ -45,12 +49,28 @@
     ]
   },
   "id": "T-0120",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— Windows 侧实机核验完成：构建/模块 smoke/产品宿主延迟加载钩子/DIP→物理 全部实测通过，原始输出见 changes.md；产物已复制到 prebuilds/win32-x64/（兜底路径实测命中）。剩余口径与卫生问题见 notes.md §3（prebuilds 该不该进库 / 遗留 native/win32-input / 守卫跨平台红=T-0121）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段：acceptance, tests, doneWhy —— 收单：Windows 侧核验 + win32 预置产物进库与棘轮，证据见 changes.md（两轮变更）与 notes.md"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— 五条 acceptance + 政策裁定项全部落地"
     }
-  ]
+  ],
+  "doneWhy": "Windows 侧五条 acceptance 全部实测通过（构建 / smoke 只读+移动 / 产品宿主 [native] host-input available=true supported=true / 125% 缩放下 DIP(447,390)→物理(559,488) 读回一致 / 实测数字写回 changes.md）；win32-x64 预置产物进库并由 native-host.test.ts 的 win32 棘轮钉住（T-0121 修好了同文件那条跨平台必红的用例）"
 }

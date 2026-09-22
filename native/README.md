@@ -11,7 +11,7 @@
 
 | 模块 | 用途 | 状态 |
 |---|---|---|
-| [`host-input/`](./host-input/README.md) | 移动真实系统光标（`SetCursorPos` / `CGWarpMouseCursorPosition`）、读光标/虚拟屏、平台专有的键态与授权态 | ✅ 两个平台都接入 + **预编译通用二进制随仓库分发**（`tickets/T-0053` / `T-0058` / `T-0116` / `T-0117` / `T-0119`） |
+| [`host-input/`](./host-input/README.md) | 移动真实系统光标（`SetCursorPos` / `CGWarpMouseCursorPosition`）、读光标/虚拟屏、平台专有的键态与授权态 | ✅ 两个平台都接入 + **两平台的预编译产物都随仓库分发**（darwin 通用二进制 / win32-x64；`tickets/T-0053` / `T-0058` / `T-0116` / `T-0117` / `T-0119` / `T-0120`） |
 
 ## 统一口径（新增模块时照抄）
 
@@ -27,11 +27,16 @@
    macOS 没有这个坑（那是 `node.lib` 把导入记录写成 `node.exe` 造成的，Windows 独有）。
 3. **产物默认不进 git**（`/native/*/build/`、`/native/*/build-*/`、`/native/*/prebuilds/` 已在 `.gitignore`）：
    按需构建；没构建时**必须**能优雅降级（`index.js` 的 `available/reason` + 全函数返回 `null`/`false`）。
-   ★**唯一的例外是 macOS 的预编译通用二进制**（`/native/host-input/prebuilds/`，`tickets/T-0117`）：
-   纯 N-API 的 ABI 稳定性 + fat Mach-O（一份文件服务 arm64/x86_64）+ macOS 上「装了 Xcode CLT」
-   并非必然，三条合起来才让预置站得住 —— **开新例外要按这三条逐项论证**，别顺手把 `.node` 都塞进 git。
+   ★**预置产物进 git 要逐条论证**（本仓现在有两条：darwin 的通用二进制 `tickets/T-0117`、
+   win32-x64 的按 arch 产物 `tickets/T-0120`），论证要按下面三条走；三条合起来站得住，才开例外：
+   ① **纯 N-API 的 ABI 稳定性**（一份产物跨 Node/Electron，没有"换 Node 版本必须重编"的腐坏面）；
+   ② **落点与加载链对齐**（darwin 有 fat Mach-O ⇒ `prebuilds/<platform>-universal/`；win32 的 PE
+   **没有** fat 等价物 ⇒ 只能按 arch 放 `prebuilds/<platform>-<arch>/`）；
+   ③ **缺了它是静默降级**（`host-cursor-warp` 的 `whySilent`），而那个平台的编译器在玩家机器上
+   **不是必然存在**（macOS 未必装 Xcode CLT / Windows 未必装 VS Build Tools + CMake）。
    存储走 **git-lfs**（`.gitattributes` 的 `*.node`，与 `*.png`/`*.exe`/`*.DAT` 同口径）。
-   预置产物必须能被守卫钉住（存在性 + 架构 + 最低系统版本），见 `test/native-host.test.ts`。
+   预置产物必须能被守卫钉住（存在性 + 架构 + 平台特有的最低版本/target），见 `test/native-host.test.ts`；
+   怎么重跑见各模块 README 与 `npm run build:prebuild`（按平台分支）。
 4. **`index.js` 是唯一加载点**：候选路径顺序（env → `build/Release` → `build/Debug` → VS 多配置 →
    `prebuilds/<platform>-<arch>/` → `prebuilds/<platform>-universal/`）对所有模块一致，
    将来接 `prebuildify` 时不用改调用方。★最后一条 `-universal` 是**通用/fat 二进制**的兜底落点

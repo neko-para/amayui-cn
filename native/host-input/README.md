@@ -5,8 +5,9 @@
 `CGWarpMouseCursorPosition`；缺口归口 `tickets/T-0053`，Windows 落地 `T-0058`、macOS 落地 `T-0116`）。
 
 - 技术栈：**CMake + C++17 + node-addon-api（N-API）**
-- 产物：`build/Release/host_input.node`（开发回路）+ `prebuilds/darwin-universal/host_input.node`
-  （★**预编译通用二进制，随仓库分发**，见下面「预置产物」）
+- 产物：`build/Release/host_input.node`（开发回路，本机架构）+ **两份随仓库分发的预编译产物**
+  （见下面「预置产物」）：`prebuilds/darwin-universal/host_input.node`（fat Mach-O）与
+  `prebuilds/win32-x64/host_input.node`（PE；win32 没有 fat 等价物 ⇒ 按 arch 分目录）
 - 调用方：`app/amayui-emulator/electron/nativeAddon.ts`（主进程，经 IPC 供渲染进程调用）
 
 ## 一个 addon、两个平台实现
@@ -53,7 +54,9 @@ npm install                 # 只装 devDependencies：cmake-js + node-addon-api
 npm run build               # = cmake-js build --release ⇒ build/Release/host_input.node（本机架构）
 npm run smoke               # 只读烟测（状态/光标/虚拟屏/平台专有查询）
 AMAYUI_HOST_INPUT_MOVE_TEST=1 npm run smoke    # 额外验证"真能挪动"（+3px 再挪回原位）
-npm run build:prebuild      # ★只在 macOS 上有意义：产出通用二进制并写进 prebuilds/darwin-universal/
+npm run build:prebuild      # ★产出本平台的预编译产物并写进 prebuilds/：
+                            #   darwin → prebuilds/darwin-universal/（通用二进制，当场校验 lipo/minos）
+                            #   win32  → prebuilds/win32-<arch>/（当场校验 PE Machine = 本机 arch）
 ```
 
 `cmake-js` 会自己下载/定位 Node 的头文件与 `node.lib`（缓存在 `~/.cmake-js/`），并把变量注进 CMake：
@@ -137,13 +140,14 @@ host.isAccessibilityTrusted();       // boolean
 
 ## 预置产物（二进制怎么随应用走）
 
-**现状：darwin 的通用二进制已经随仓库分发**（`tickets/T-0117`），落点
-`prebuilds/darwin-universal/host_input.node`（加载器的最后一条兜底）：
+**现状：两个平台的预编译产物都随仓库分发** —— darwin 的通用二进制（`tickets/T-0117`）落
+`prebuilds/darwin-universal/host_input.node`（加载器的最后一条兜底），win32-x64 的 PE（`tickets/T-0120`）落
+`prebuilds/win32-x64/host_input.node`（加载链第 4 条 `prebuilds/<platform>-<arch>/`）：
 
 | 形态 | 做法 |
 |---|---|
-| **从源码树跑**（`npm run electron`） | **darwin：什么都不用做** —— `build/Release/…` 有就用本地产物（**优先**），没有就用预置的通用二进制（**不需要** CMake/Xcode）。**win32：按需构建**（`npm run build`），没构建就降级（游戏照旧可玩） |
-| **打安装包**（electron-builder / Electron Forge） | ① `.node` **不能进 asar**（asar 里不是真实路径，`process.dlopen` 打不开）⇒ `asarUnpack: ["**/*.node"]`（packager：`asar.unpack`）；② 把 `build/Release/host_input.node`（win32）或 `prebuilds/darwin-universal/host_input.node`（darwin）放进 `extraResources`；③ 加载器已认 `AMAYUI_HOST_INPUT_NODE`，指向 `app.asar.unpacked/...` 即可 |
+| **从源码树跑**（`npm run electron`） | **两平台都是"什么都不用做"** —— `build/Release/…` 有就用本地产物（**优先**），没有就用预置产物（**不需要** CMake/Xcode/VS）。缺了也只是降级（游戏照旧可玩） |
+| **打安装包**（electron-builder / Electron Forge） | ① `.node` **不能进 asar**（asar 里不是真实路径，`process.dlopen` 打不开）⇒ `asarUnpack: ["**/*.node"]`（packager：`asar.unpack`）；② 按平台把 `build/Release/host_input.node`（本地产物）或 `prebuilds/darwin-universal/`、`prebuilds/win32-<arch>/` 里的那份放进 `extraResources`；③ 加载器已认 `AMAYUI_HOST_INPUT_NODE`，指向 `app.asar.unpacked/...` 即可 |
 
 ★**存储走 git-lfs**：`.gitattributes` 里 `*.node filter=lfs diff=lfs merge=lfs -text`，与本仓其余二进制
 （`*.png`/`*.exe`/`*.DAT` … 现有 100+ 个）同口径。
@@ -152,9 +156,11 @@ host.isAccessibilityTrusted();       // boolean
 
 1. **纯 N-API（`NAPI_VERSION=8`）⇒ ABI 稳定**：一份 `.node` 跨 Node 16+ 与 Electron 14+ 通用，
    没有「换 Node 版本必须重编」的腐坏面（用 V8/NAN C++ API 的模块才有）；
-2. **macOS 支持 fat Mach-O**：一份 123 KB 的文件同时服务 arm64 与 x86_64，不需要按 arch 放两份；
-3. **缺了它不会崩，只会静默降级**（`host-cursor-warp` 的 `whySilent`）—— 而 macOS 上「装了 Xcode CLT」
-   并非必然（只装 Node + Electron 的机器跑 `npm install` 不会顺手带上 CMake）⇒ 预置是唯一能让
+2. **落点与二进制格式对齐**：macOS 支持 fat Mach-O ⇒ 一份 123 KB 的文件同时服务 arm64 与 x86_64
+   （落 `-universal`）；Windows 的 PE **没有** fat 等价物 ⇒ 只能按 arch 分目录（`prebuilds/win32-x64/`），
+   别的架构（arm64 Windows）没有预置，走 `build/` 或降级；
+3. **缺了它不会崩，只会静默降级**（`host-cursor-warp` 的 `whySilent`）—— 而两个平台的编译器在玩家机器上
+   都**不是必然存在**（macOS 未必装 Xcode CLT；Windows 未必装 VS Build Tools + CMake）⇒ 预置是唯一能让
    「没编译器的机器」也拿到这条观感的办法。
 
 ### ★什么时候必须重跑 `npm run build:prebuild`
@@ -163,23 +169,29 @@ host.isAccessibilityTrusted();       // boolean
 - 改了 `CMakeLists.txt`（编译选项 / 最低系统版本 / `NAPI_VERSION`）；
 - 换了工具链或 Node 头文件（`~/.cmake-js/`）；
 - 任何时候你**不确定**它是不是最新的 —— 重跑一遍是幂等的。
+- ★**每个平台各跑一次**：产物只在跑它的那个平台上生成（darwin 产 fat Mach-O、win32 产 PE），
+  所以改了源码后要么两台机器都跑，要么由 CI 矩阵跑。
 
-守卫 `app/amayui-emulator/test/native-host.test.ts` 会钉住三件事：**预置产物必须存在**、
-**必须双架构**（`lipo -archs` = `arm64 x86_64`）、**每个 slice 的 `minos` 必须 = 11.0**
-⇒ 用单架构的本地构建覆盖它、或抬高 deployment target 都会红。
+守卫 `app/amayui-emulator/test/native-host.test.ts` 钉住两件事：**预置产物必须存在**、
+**架构必须对**（darwin：`lipo -archs` = `arm64 x86_64` + 每个 slice 的 `minos` = 11.0；
+win32：PE `Machine` = `0x8664`，且在 Windows 上还能**按预置落点真的加载**）
+⇒ 用单架构/别的架构的本地构建覆盖它、或抬高 deployment target 都会红。
 
 手工核对：
 
 ```bash
+# darwin
 lipo -archs native/host-input/prebuilds/darwin-universal/host_input.node
 otool -l native/host-input/prebuilds/darwin-universal/host_input.node | grep -A4 LC_BUILD_VERSION
+# win32（PE Machine 在 COFF 头里；`npm run build:prebuild` 会打印同一件事）
+node -e "const b=require('fs').readFileSync('native/host-input/prebuilds/win32-x64/host_input.node');console.log('0x'+b.readUInt16LE(b.readUInt32LE(0x3c)+4).toString(16))"   # 期望 0x8664
 ```
 
 ## 排障
 
 | 症状 | 原因 / 处理 |
 |---|---|
-| 光标不动，日志里 `[native] host-input available=false` | 没构建（或打包漏了）⇒ `cd native/host-input && npm install && npm run build`（darwin 正常 checkout 不该出现：预置产物在库里，看同一行的 `reason`） |
+| 光标不动，日志里 `[native] host-input available=false` | 没构建（或打包漏了）⇒ `cd native/host-input && npm install && npm run build`（darwin/win32-x64 的正常 checkout 不该出现：预置产物在库里，看同一行的 `reason`；别的 arch 走构建或降级） |
 | 日志里 `available=true supported=false` | 本平台没有实现（Linux）⇒ 属于预期，引擎侧坐标照旧生效 |
 | 日志里连 `[native]` 都没有 | `initNativeAddon()` 没跑（`main.ts` 的装配次序）或日志还没就绪（必须在 `registerLogIpc()` 之后） |
 | Electron 里报 `Module did not self-register` | 缺延迟加载钩子（Windows；见「四个坑」第 1 条）——确认 `CMAKE_JS_SRC` 确实进了 target |
@@ -196,6 +208,7 @@ otool -l native/host-input/prebuilds/darwin-universal/host_input.node | grep -A4
 
 - 工程口径：[`native/README.md`](../README.md)（多模块之家）、[`docs-new/04-app/native-addon.md`](../../docs-new/04-app/native-addon.md)
 - 票据：`tickets/T-0053`（宿主缺口 + 四条路线评估）、`T-0058`（Windows 落地）、`T-0116`（macOS 落地）、
-  `T-0117`（预置产物）、`T-0119`（两个平台实现合并成一个 addon）
+  `T-0117`（darwin 通用二进制预置进仓库）、`T-0119`（两个平台实现合并成一个 addon）、
+  `T-0120`（win32 侧实机核验 + win32-x64 预置产物与它的棘轮）
 - 引擎侧语义：`docs-new/03-engine/input-system.md`、`docs-new/03-engine/opcode-table.md` 的 `0x10A`
 - 能力台账：`analysis/engine-capabilities.json#host-cursor-warp`

@@ -19,7 +19,8 @@
  *     必须给出合理数值（**只读**：写方向的验证在 `native/host-input/tools/smoke.cjs`，需要显式环境变量）；
  *  5. **平台专有函数在别的平台上不存在** ⇒ 门面兜成 `null`/`false`（调用方不必分平台）；
  *  6. **预置产物棘轮**（`tickets/T-0117`）：darwin 通用二进制必须在库、必须双架构、`minos` 必须 11.0
- *     —— 防"用单架构本地构建覆盖它"与"deployment target 被悄悄抬高"；
+ *     —— 防"用单架构本地构建覆盖它"与"deployment target 被悄悄抬高"；win32 那份（`tickets/T-0120`）
+ *     同样进库 ⇒ 钉"在库 + x64 PE + win32 上按预置落点真能加载"（win32 没有 fat binary，按 arch 分目录）；
  *  7. **接线**：`0x10A` 把**同一对虚拟坐标**交给宿主缝；两个 headless 宿主把该缝实现成 no-op
  *     （否则闸门 A 会把语料 1678 处 `i10a` 全记成"宿主缺口"，纯噪声）。
  *
@@ -256,26 +257,106 @@ test('★预置产物棘轮：darwin 通用二进制（arm64 + x86_64）必须�
   }
 });
 
+/** `_loadAddon` 的结果里我们关心的那半（`tried` = 逐条候选的「不存在 / 加载失败」记录）。 */
+type LoadResult = { available: boolean; reason: string; addonPath: string | null; tried: string[] };
+
+/**
+ * 加载器**实际落到的候选路径**（不管这个平台的 `dlopen` 能不能成功）。
+ *
+ * ★为什么需要它（`tickets/T-0121`）：`_loadAddon` 的 `platform`/`arch` 参数只决定**搜索哪条路径**，
+ * 而 `require()`（`process.dlopen`）永远跑在**宿主平台**上 ⇒ 「在 Windows 上断言 darwin 的预置产物
+ * 加载成功」是**必红**的。于是把这件事拆成两问：① 搜索链落到哪条候选（平台中立，任何机器都能断言）；
+ * ② 那个文件在本平台能不能真加载（只有平台对得上时才断言）。`tried` 里成功之前的那几条就是答案。
+ */
+function resolvedCandidate(r: LoadResult): string | null {
+  if (r.addonPath) return r.addonPath;
+  const attempted = r.tried.find((t) => !t.includes('(不存在)'));
+  return attempted ? attempted.replace(/ \(加载失败:[\s\S]*$/, '') : null;
+}
+
 test('★预置产物就是"没编译器也能用"的那条路：加载器在 build/ 不存在时会命中 prebuilds/', () => {
   const host = loadFacade();
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'host-input-prebuilt-'));
   try {
     // 只把预置产物按落点约定放好（模拟「clone 下来、没跑过 build」的机器）。
-    // ★平台显式传 darwin：本文件在任何平台上都要跑（Windows 开发机也不该红）。
+    // ★平台显式传 darwin：本文件在任何平台上都要跑；但「加载成功」只有 darwin 上可证（见 `resolvedCandidate`）。
     const dir = path.join(root, 'prebuilds', `darwin-${process.arch}`);
     fs.mkdirSync(dir, { recursive: true });
     fs.copyFileSync(PREBUILD, path.join(dir, 'host_input.node'));
     const r = host._loadAddon({ root, env: {}, platform: 'darwin', arch: process.arch });
-    assert.equal(r.available, true, `按 arch 的落点应能加载：${r.reason}`);
-    assert.equal(r.addonPath, path.join(dir, 'host_input.node'));
+    assert.equal(
+      resolvedCandidate(r),
+      path.join(dir, 'host_input.node'),
+      `按 arch 的落点必须是搜索链的第一命中（env/build/ 都不存在时）：${r.reason}`,
+    );
+    if (process.platform === 'darwin') assert.equal(r.available, true, `darwin 上应真的加载成功：${r.reason}`);
+
     // 通用落点同样认得（`darwin-universal` 不随 process.arch 变）。
+    // ★先把按 arch 的目录**移走**再问同一个 arch —— 这才是「按 arch 的目录不存在 ⇒ 落到 fat 产物」的语义。
+    //   （原版写死问 `arch: 'x64'`，只在 arm64 宿主上成立：x64 宿主的按 arch 目录恰好就叫 `darwin-x64`。）
+    fs.rmSync(dir, { recursive: true, force: true });
     const dir2 = path.join(root, 'prebuilds', 'darwin-universal');
     fs.mkdirSync(dir2, { recursive: true });
     fs.copyFileSync(PREBUILD, path.join(dir2, 'host_input.node'));
-    const r2 = host._loadAddon({ root, env: { AMAYUI_HOST_INPUT_NODE: '' }, platform: 'darwin', arch: 'x64' });
-    assert.equal(r2.addonPath, path.join(dir2, 'host_input.node'), 'x64 上应命中通用落点（按 arch 的目录不存在）');
+    const r2 = host._loadAddon({ root, env: { AMAYUI_HOST_INPUT_NODE: '' }, platform: 'darwin', arch: process.arch });
+    assert.equal(
+      resolvedCandidate(r2),
+      path.join(dir2, 'host_input.node'),
+      `按 arch 的目录不存在时应落到通用落点：${r2.reason}`,
+    );
+    if (process.platform === 'darwin') assert.equal(r2.available, true, `darwin 上应真的加载成功：${r2.reason}`);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 3b) win32 预置产物棘轮（`tickets/T-0120`：用户裁定 win32 产物也随仓库分发）
+// ---------------------------------------------------------------------------
+
+/** 读 PE（COFF）头的 `Machine` 字段：`0x8664` = x64、`0xAA64` = arm64（见 PE 规范；`0x014c` = 32 位）。 */
+function peMachine(file: string): number | null {
+  const b = fs.readFileSync(file);
+  if (b.length < 0x40 || b.readUInt16LE(0) !== 0x5a4d) return null; // 'MZ'
+  const eLfanew = b.readUInt32LE(0x3c);
+  if (b.length < eLfanew + 6 || b.readUInt32LE(eLfanew) !== 0x00004550) return null; // 'PE\0\0'
+  return b.readUInt16LE(eLfanew + 4);
+}
+
+const PREBUILD_WIN32 = path.join(NATIVE_DIR, 'prebuilds', 'win32-x64', 'host_input.node');
+
+test('★win32 预置产物棘轮：prebuilds/win32-x64/ 必须在库、必须是 x64 PE（win32 没有 fat binary ⇒ 按 arch 分目录）', (t) => {
+  assert.ok(
+    fs.existsSync(PREBUILD_WIN32),
+    `win32 预置产物必须在库：${path.relative(REPO, PREBUILD_WIN32)} ⇒ \`cd native/host-input && npm run build:prebuild\`（tickets/T-0120）`,
+  );
+  assert.equal(
+    peMachine(PREBUILD_WIN32),
+    0x8664,
+    '★必须是 x64 PE（0x8664）—— 提交 arm64/32 位产物会让 `prebuilds/win32-x64/` 这个落点名说谎（macOS 那边由 `lipo -archs` 钉同一件事）',
+  );
+  if (process.platform !== 'win32') {
+    t.skip('非 win32：只校验预置产物在库且是 x64 PE（x64 PE 在别的平台 dlopen 不了，口径同 `resolvedCandidate`）');
+    return;
+  }
+  // Windows 上再钉一层：**从预置落点**（没有 build/ 的机器）真能加载。
+  const host = loadFacade();
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'host-input-prebuilt-win32-'));
+  try {
+    const dir = path.join(root, 'prebuilds', `win32-${process.arch}`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.copyFileSync(PREBUILD_WIN32, path.join(dir, 'host_input.node'));
+    const r = host._loadAddon({ root, env: {}, platform: 'win32', arch: process.arch });
+    assert.equal(r.available, true, `win32 上按预置落点必须能加载：${r.reason}`);
+    assert.equal(r.addonPath, path.join(dir, 'host_input.node'));
+  } finally {
+    // ★Windows 上这份 `.node` 已被**本进程 dlopen**（DLL 在进程存活期间被锁）⇒ `rmSync` 必 EPERM。
+    //   这不是断言失败，删不掉的临时目录交给系统清理（`tickets/T-0120`）；POSIX 上正常删除。
+    try {
+      fs.rmSync(root, { recursive: true, force: true });
+    } catch {
+      /* Windows：加载中的 .node 锁定整个目录，忽略 */
+    }
   }
 });
 

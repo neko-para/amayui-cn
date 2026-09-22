@@ -1,0 +1,81 @@
+{
+  "title": "守卫 `test/native-host.test.ts` 在非 darwin 平台必红：预置产物兜底用例 dlopen 了异平台 Mach-O（Windows 上 `npm run verify` 转不绿）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "app/emulator/native",
+  "why": "现象（Windows 11 实测，2026-09-23，见 `tickets/T-0120/changes.md` §顺带实测 1）：`npx tsx --test test/native-host.test.ts` ⇒ 10 pass / **1 fail** / 1 skip，红的是 `★预置产物就是\"没编译器也能用\"的那条路：加载器在 build/ 不存在时会命中 prebuilds/`（`test/native-host.test.ts:259`），断言原文 `按 arch 的落点应能加载：找到文件但加载失败：…\\prebuilds\\darwin-x64\\host_input.node is not a valid Win32 application.`\n\n复现：任意非 darwin 机器上跑 `cd app/amayui-emulator && npx tsx --test test/native-host.test.ts`。\n\n定因（两条都在用例自身，**不是** `T-0119` 合并引入的回归）：① 它把 darwin 的 fat Mach-O 拷进临时目录后用 `require()` **真去 dlopen** —— 传给 `_loadAddon` 的 `platform:'darwin'` 只影响**路径选择**，`process.dlopen` 仍跑在宿主平台上 ⇒ 非 darwin 必红（与该用例自己那句「本文件在任何平台上都要跑（Windows 开发机也不该红）」直接矛盾）；② 后半段「x64 上应命中通用落点」只在 **arm64 宿主**成立：`dir` 用的是 `darwin-${process.arch}`，x64 宿主上按 arch 的目录恰好就是 `darwin-x64`，于是先命中它而不是 `darwin-universal`。\n\n影响面：Windows 是本作的原生平台，而这条红让 `npm run verify`（typecheck + 全量测试 + 死写检测）在 Windows 上**永远红**，于是「本机全绿」这个信号失效 —— 既挡住 `T-0120` 那类 Windows 核验用守卫背书，也会把真实回归埋在这一条已知红里。",
+  "acceptance": [
+    "`★预置产物就是\"没编译器也能用\"的那条路` 改成**平台中立**：非 darwin 上只断言「搜索链落到预置落点且真的去尝试加载了它」（不许 dlopen 异平台 Mach-O），darwin 上仍断言 `available === true` 且 `addonPath === prebuilds/<platform>-<arch>/host_input.node`",
+    "后半段「通用落点」改成**先把按 arch 的目录移走**再问同一个 arch（现在这样只在 arm64 宿主成立）⇒ x64 宿主（Windows / Intel Mac）与 arm64 宿主结论一致",
+    "Windows 上 `cd app/amayui-emulator && npx tsx --test test/native-host.test.ts` ⇒ **12 pass / 0 fail / 1 skip**（skip 的仍是 darwin 的 `lipo`/`otool` 那条）；macOS 上不回归",
+    "★不许削弱既有棘轮：`★预置产物棘轮`（存在 + 双架构 + `minos=11.0`）与其余各条断言原样保留，改前/改后条数写进 changes.md",
+    "`npm run verify` 在 Windows 上 exit 0（若仍有其它平台相关红，按同一口径另立票，不许合并消红）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "按 arch 的落点必须是搜索链的第一命中",
+      "line": 290,
+      "note": "★改后的断言：非 darwin 上只要求「搜索链命中预置落点」（不再要求 dlopen 异平台二进制成功）。改前的锚点是 `按 arch 的落点应能加载` —— 那正是本票要修的那句（锚点已按同义新串 retarget，原句仍留在 tickets/T-0120/changes.md 的实测原文里）"
+    },
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "★win32 预置产物棘轮",
+      "line": 328,
+      "note": "同一次编辑里新增的那条（归属 T-0120 的政策裁定）：在库 + PE Machine=0x8664 + win32 上按预置落点真能加载"
+    },
+    {
+      "file": "tickets/T-0120/changes.md",
+      "anchor": "is not a valid Win32 application",
+      "note": "本机（Windows 11）实测的断言原文与定因"
+    },
+    {
+      "file": "native/host-input/index.js",
+      "anchor": "function tryRequire(file)",
+      "note": "加载器在这里 `require(file)`：`platform` 参数只参与路径选择，dlopen 永远发生在宿主平台上（改法的根据）"
+    }
+  ],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "native/host-input/README.md",
+      "docs-new/04-app/native-addon.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0116",
+      "T-0117",
+      "T-0119",
+      "T-0120"
+    ]
+  },
+  "id": "T-0121",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段：evidence —— 锚点 retarget：修用例时把改前那句断言换成了同义新串 ⇒ evidence[0] 改指新的断言文本（原句仍留在 T-0120/changes.md 的实测原文里），并补进同一次编辑新增的 win32 棘轮"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段：tests —— 守卫文件挂上"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → done —— 改后 Windows 上 13 tests / 12 pass / 0 fail / 1 skip；全量 npm run verify exit 0（1066 tests / 0 fail）；锚点按同义新串 retarget（未删证据）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/native-host.test.ts"
+  ]
+}

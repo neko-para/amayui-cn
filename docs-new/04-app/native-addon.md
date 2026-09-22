@@ -40,12 +40,13 @@ native/
     index.d.ts             ← 给 TS 调用方的类型（含"可能返回 null/false"与平台可用性）
     package.json           ← devDeps: cmake-js + node-addon-api；scripts: build/build:prebuild/smoke
     tools/smoke.cjs        ← 只读烟测（会改状态的动作放环境变量后面，且必须复位）
-    tools/build-prebuild.cjs ← 产出通用二进制并**当场校验**架构与最低系统版本
-    prebuilds/darwin-universal/host_input.node ← ★唯一进 git 的二进制（走 git-lfs）
+    tools/build-prebuild.cjs ← 按平台产出预置产物并**当场校验**架构（darwin：lipo + minos；win32：PE Machine）
+    prebuilds/darwin-universal/host_input.node ← ★进 git 的二进制（fat Mach-O；走 git-lfs）
+    prebuilds/win32-x64/host_input.node        ← ★进 git 的二进制（PE，按 arch 分目录；走 git-lfs）
 ```
 
 统一口径（详见 `native/README.md`）：**只做 OS 一层**、**只用 N-API**、**产物默认不进 git**
-（macOS 的预编译通用二进制是唯一的、逐条论证过的例外）、**`index.js` 是唯一加载点**、
+（**预置产物**是逐条论证过的例外：darwin 的通用二进制 + win32-x64 的按 arch 产物）、**`index.js` 是唯一加载点**、
 **一个模块内同名 API 必须同语义、平台专有的函数只在自己平台注册**。
 
 ★**不要一个平台一个模块**：`tickets/T-0119` 之前这里是 `native/win32-input` + `native/macos-input`
@@ -108,21 +109,23 @@ window.api.setSystemCursor(cx, cy) ──IPC set-system-cursor──▶
 
 | 形态 | 做法 |
 |---|---|
-| **现状：从源码树跑**（`npm run electron`） | **darwin：什么都不用做** —— 仓库里已经预置了通用二进制（`native/host-input/prebuilds/darwin-universal/`，`tickets/T-0117`），没装 CMake/Xcode 也能拿到真实光标。**win32：按需构建**（`npm run build`），没构建就降级（游戏照旧可玩） |
-| **打安装包**（electron-builder / Electron Forge） | ① `.node` **不能进 asar**（asar 里不是真实路径，`process.dlopen` 打不开）⇒ `asarUnpack: ["**/*.node"]`（packager：`asar.unpack`）；② 把 `build/Release/host_input.node`（win32）或 `prebuilds/darwin-universal/host_input.node`（darwin）放进 `extraResources`；③ 加载器已认 `AMAYUI_HOST_INPUT_NODE`，指向 `app.asar.unpacked/...` 即可 |
-| **别人没编译器也想用**（可选 / 部分已做） | [`prebuildify`](https://github.com/prebuild/prebuildify) 产出 `prebuilds/<platform>-<arch>/` + [`node-gyp-build`](https://github.com/prebuild/node-gyp-build) 运行时挑选；**本仓加载器已把这两个落点排进搜索链**（含 `-universal`），接上时不用改调用方。darwin 现在走的是"直接提交预编译产物"而不是 prebuildify（见模块 README 的「预置产物」） |
-| **仓库里怎么存**（darwin 的预置产物） | 走 **git-lfs**（`.gitattributes` 的 `*.node filter=lfs diff=lfs merge=lfs -text`，与 `*.png`/`*.exe`/`*.DAT`/`*.STH` 等同口径）。win32 的 `.node` 既不进 git，也就无所谓 |
+| **现状：从源码树跑**（`npm run electron`） | **两平台都是"什么都不用做"** —— 仓库里已经预置了产物（darwin：`prebuilds/darwin-universal/`，`tickets/T-0117`；win32-x64：`prebuilds/win32-x64/`，`tickets/T-0120`），没装 CMake/Xcode/VS 也能拿到真实光标；`build/Release/…` 存在时**优先**用它（改了源码跑 `npm run build` 即生效）。其它 arch（如 arm64 Windows）没有预置 ⇒ 降级，游戏照旧可玩 |
+| **打安装包**（electron-builder / Electron Forge） | ① `.node` **不能进 asar**（asar 里不是真实路径，`process.dlopen` 打不开）⇒ `asarUnpack: ["**/*.node"]`（packager：`asar.unpack`）；② 按平台把 `build/Release/host_input.node`（本地产物）或 `prebuilds/darwin-universal/`、`prebuilds/win32-<arch>/` 里那份放进 `extraResources`；③ 加载器已认 `AMAYUI_HOST_INPUT_NODE`，指向 `app.asar.unpacked/...` 即可 |
+| **别人没编译器也想用**（**已做**：直接提交预编译产物） | 现在就是这条路：两份预置产物都在库里（darwin fat Mach-O + win32-x64 PE），加载链的 `prebuilds/<platform>-<arch>/` 与 `-universal/` 各自命中 ⇒ 消费者不需要编译器。`prebuildify` + `node-gyp-build` 那套留作将来扩展（加载器已把两个落点排进搜索链，接上时不用改调用方） |
+| **仓库里怎么存**（两份预置产物） | 走 **git-lfs**（`.gitattributes` 的 `*.node filter=lfs diff=lfs merge=lfs -text`，与 `*.png`/`*.exe`/`*.DAT`/`*.STH` 等同口径） |
 | **签名** | win32 的 `.node` 是 DLL、darwin 的是 Mach-O bundle，都随应用一起签；macOS 上**替换预置产物后必须重签**。杀软对原生模块常有启发式拦截，发布说明里写一段 |
 
-**预置产物的腐坏面**（`tickets/T-0117` 的守卫就是为它准备的）：改了 `src/*.cc` / `NAPI_VERSION` /
-工具链后忘记重跑 `npm run build:prebuild`；用单架构的本地构建覆盖通用二进制；deployment target 被
-悄悄抬高。守卫 `app/amayui-emulator/test/native-host.test.ts` 钉住**存在性 + 双架构 + minos=11.0**。
+**预置产物的腐坏面**（守卫就是为它准备的）：改了 `src/*.cc` / `NAPI_VERSION` / 工具链后忘记重跑
+`npm run build:prebuild`（★而且**每个平台都得跑一次**：darwin 产 fat Mach-O、win32 产 PE，一份产物只覆盖
+跑它的那个平台）；用别的架构的本地构建覆盖预置产物；deployment target 被悄悄抬高。
+守卫 `app/amayui-emulator/test/native-host.test.ts` 钉住：darwin ⇒ **存在性 + 双架构 + minos=11.0**；
+win32 ⇒ **存在性 + x64 PE + 在 Windows 上按预置落点真能加载**。
 
 ## 6. 排障速查
 
 | 症状 | 处置 |
 |---|---|
-| 光标不动，日志里 `[native] host-input available=false` | 没构建（或打包漏了）⇒ `cd native/host-input && npm install && npm run build`（darwin 正常 checkout 不该出现：预置产物在库里）|
+| 光标不动，日志里 `[native] host-input available=false` | 没构建（或打包漏了）⇒ `cd native/host-input && npm install && npm run build`（darwin / win32-x64 的正常 checkout 不该出现：预置产物在库里）|
 | 日志里 `available=true supported=false` | 本平台没有实现（Linux）⇒ 属于预期，引擎侧坐标照旧生效 |
 | 日志里连 `[native]` 都没有 | `initNativeAddon()` 没跑（`main.ts` 的装配次序）或日志还没就绪（必须在 `registerLogIpc()` 之后） |
 | Electron 里报 `Module did not self-register` | 缺延迟加载钩子（Windows；见 §3 第 1 条）——确认 `CMAKE_JS_SRC` 确实进了 target |
@@ -137,6 +140,7 @@ window.api.setSystemCursor(cx, cy) ──IPC set-system-cursor──▶
 - 模块 README：[`native/host-input/README.md`](../../native/host-input/README.md)（API / 构建 / 权限 /
   预置产物 / 排障细节）
 - 缺口与决策票：`tickets/T-0053`（宿主缺口 + 四条路线评估）、`T-0058`（Windows 落地）、
-  `T-0116`（macOS 落地）、`T-0117`（darwin 通用二进制预置进仓库）、`T-0119`（两个平台实现合并成一个 addon）
+  `T-0116`（macOS 落地）、`T-0117`（darwin 通用二进制预置进仓库）、`T-0119`（两个平台实现合并成一个 addon）、
+  `T-0120`（win32 实机核验 + win32-x64 预置产物与棘轮）、`T-0121`（预置产物守卫的跨平台口径）
 - 引擎侧语义：`docs-new/03-engine/input-system.md` §6a/§8/§10、`docs-new/03-engine/opcode-table.md` 的 `0x10A`
 - 能力台账：`analysis/engine-capabilities.json#host-cursor-warp`
