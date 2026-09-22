@@ -1,8 +1,8 @@
 {
-  "name": "amayui-win32-input",
+  "name": "amayui-host-input",
   "version": "0.1.0",
   "private": true,
-  "description": "《天結いキャッスルマイスター》模拟器的宿主侧 Win32 能力（N-API 原生模块）：移动真实光标、读光标/虚拟屏/键态",
+  "description": "《天結いキャッスルマイスター》模拟器的宿主侧原生能力（N-API 原生模块，一个 addon 两个平台实现）：移动真实系统光标（Win32 SetCursorPos / CoreGraphics CGWarpMouseCursorPosition）、读光标/虚拟屏/键态/辅助功能授权态",
   "license": "UNLICENSED",
   "main": "index.js",
   "types": "index.d.ts",
@@ -15,6 +15,7 @@
     "build:debug": "cmake-js build --debug",
     "rebuild": "cmake-js rebuild --release",
     "clean": "cmake-js clean",
+    "build:prebuild": "node tools/build-prebuild.cjs",
     "smoke": "node tools/smoke.cjs"
   },
   "devDependencies": {

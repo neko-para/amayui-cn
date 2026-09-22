@@ -1,0 +1,106 @@
+{
+  "title": "把 darwin 原生模块的**预编译通用二进制**（deployment target 11.0 / arm64+x86_64）预置进仓库，并修订「二进制不进 git」的口径",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/hosts",
+  "why": "现状（`tickets/T-0058` 定的口径）是「二进制不进 git，按需 `npm run build`」：`.gitignore` 忽略 `native/*/build/` 与 `native/*/prebuilds/`。代价在 macOS 上比 Windows 大 —— Windows 上玩家/开发者本来就有一半概率装着 VS Build Tools，而 macOS 上「装了 Xcode CLT」并不是必然（只装 Node + Electron 的机器跑 `npm install` 不会顺手带上 CMake 与 `cmake-js` 的两套头文件下载）⇒ 缺产物时 `0x10A` 静默降级成空实现，而**降级本身不报错**（这正是 `host-cursor-warp` 的 `whySilent`：脚本逻辑照跑、只有观感缺失）。\n\n为什么 macOS 侧的预置在本仓是**可行**的（这是本票要研究并落地的结论）：① 模块**纯 N-API**（`NAPI_VERSION=8`）⇒ ABI 稳定，一份 `.node` 跨 Node 16+ 与 Electron 14+ 通用，不存在 node-gyp 那种「换 Node 版本必须重编」的腐坏面；② macOS 支持**通用二进制**（fat Mach-O）⇒ 一份文件同时服务 arm64 与 x86_64，不需要按 `prebuilds/<platform>-<arch>` 放两份；③ 本仓本来就分发 `install/`、`res/` 等大体积资产，一个几百 KB 的 `.node` 不改变仓库量级。\n\n要一并解决的是**腐坏**（预置二进制最容易出的问题：源码改了没人重跑、被单架构本地构建覆盖、deployment target 被悄悄抬高到装不上旧系统）⇒ 本票要求把「怎么重跑」写进文档，并用守卫把「双架构 + minos」钉成棘轮。",
+  "acceptance": [
+    "**可复现的构建脚本**：`native/macos-input` 的 `npm run build:prebuild` 产出**通用二进制**并落 `prebuilds/darwin-universal/macos_input.node`；脚本自己校验并打印 `lipo -archs`（必须是 `x86_64 arm64`）与最低系统版本（必须是 `11.0`），任一不符即非 0 退出（不让「以为编了双架构」蒙混过去）",
+    "**落点与加载链对齐**：加载器最后一条兜底 = `prebuilds/<platform>-universal/<basename>`（win32-input 同步加上这条，保持「统一口径」不破）；有预置产物时**不装 CMake/Xcode 也能用** —— 验收做法：把 `build/` 移走后再 require，`available === true` 且 `supported === true`，只读探测正常",
+    "**`.gitignore` 开例外并写清为什么**：`native/macos-input/prebuilds/` 进 git（win32 维持「按需构建」）；`.gitattributes` 的 `*.node` 走 **git-lfs**（`filter=lfs diff=lfs merge=lfs -text`，与本仓 `*.png`/`*.exe`/`*.DAT`/`*.STH` 等既有二进制**同口径** —— 用户裁定：「没有 git lfs 是极端情况，没必要为此直接让 git 管理二进制」）",
+    "**腐坏棘轮**（守卫 `app/amayui-emulator/test/native-macos.test.ts` 内）：预置产物**必须存在**；`lipo -archs` 必须同时含 `arm64` 与 `x86_64`；`LC_BUILD_VERSION`/`LC_VERSION_MIN_MACOSX` 的 `minos` 必须是 `11.0`（用 `otool -l` 解析，不依赖 GUI 工具）—— 用单架构本地构建覆盖它、或抬高 deployment target 都会红",
+    "**文档**：`native/macos-input/README.md` 的「预置产物」一节写清 ① 什么时候必须重跑 `build:prebuild`（改 `src/*.cc` / 改 `NAPI_VERSION` / 换工具链或 SDK）；② 校验命令（`lipo -archs`、`otool -l | grep -A3 LC_BUILD_VERSION`）；③ 风险与代价（仓库多一个二进制、签名/公证、`npm test` 里多一条平台相关断言）；`docs-new/04-app/native-addon.md` 的「打包」一节同步（现状从「什么都不用做」改为「darwin 已预置通用二进制、win32 仍按需构建」）",
+    "**研究结论成文**（本票 `notes.md`）：为什么这里可以预置而 node-gyp 系模块通常不行（N-API ABI 稳定 / fat binary / 体积），以及被否掉的替代方案（`prebuildify` + `node-gyp-build` 运行时挑选、发布时下载、CI 预编译产物）各自代价"
+  ],
+  "evidence": [
+    {
+      "file": "native/host-input/tools/build-prebuild.cjs",
+      "anchor": "--CDCMAKE_OSX_ARCHITECTURES=",
+      "line": 65,
+      "note": "★构建入口：cmake-js 的 --CD 只有 --CDKEY=VALUE 这一种写法（空格分隔会被静默忽略，第一次实测就产出过单架构且无报错）；脚本编译完当场校验 lipo -archs 与 minos"
+    },
+    {
+      "file": "native/host-input/CMakeLists.txt",
+      "anchor": "set(CMAKE_OSX_DEPLOYMENT_TARGET \"11.0\"",
+      "line": 21,
+      "note": "★deployment target = 11.0，且必须写在第一个 project() 之前（晚设会「看起来生效、其实没进编译器命令行」）"
+    },
+    {
+      "file": ".gitignore",
+      "anchor": "!/native/host-input/prebuilds/",
+      "line": 27,
+      "note": "★唯一一处「二进制进 git」的例外，注释里逐条写了理由（纯 N-API ABI 稳定 / fat binary / 缺了是静默降级 / macOS 上未必有编译器）"
+    },
+    {
+      "file": ".gitattributes",
+      "anchor": "*.node filter=lfs diff=lfs merge=lfs -text",
+      "line": 19,
+      "note": "★存储口径：`*.node` 走 **git-lfs**（与 `.gitattributes` 里既有的 `*.png`/`*.exe`/`*.DAT` 等同口径）。第一版曾以「消费者得先装 git-lfs」为由不走 LFS，2026-09-22 用户裁定那是极端情况 ⇒ retarget 到这一行"
+    },
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "★预置产物棘轮",
+      "line": 237,
+      "note": "★守卫：预置产物必须存在 + 必须双架构 + 每个 slice 的 minos 必须 11.0（用单架构本地构建覆盖它、或抬高 deployment target 都会红）"
+    },
+    {
+      "file": "native/host-input/README.md",
+      "anchor": "## 预置产物（二进制怎么随应用走）",
+      "line": 138,
+      "note": "文档落点：落点/加载优先级/为什么可以预置/什么时候必须重跑 build:prebuild/手工核对命令"
+    }
+  ],
+  "blockedBy": [
+    "T-0116"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/native-addon.md",
+      "native/README.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0058",
+      "T-0116"
+    ]
+  },
+  "id": "T-0117",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— 开工：通用二进制预置（deployment target 11.0 + 双架构）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— darwin 通用二进制（arm64+x86_64 / minos 11.0）预置进 prebuilds/darwin-universal/ + .gitignore 唯一例外 + 三道防腐坏闸；研究结论见 notes.md §5（x86_64 只做静态核验：本机无 Rosetta）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "范围变更：存储口径反转 —— `*.node` 从「git 直接管理 + `binary` 属性」改为走 **git-lfs**（用户裁定：「没有 git lfs 是极端情况，没必要为此直接让 git 管理二进制」；与 `.gitattributes` 里 `*.png`/`*.exe`/`*.DAT` 等既有二进制同口径）。acceptance 的存储条与 `.gitattributes` 的 evidence note 同步，见 changes.md 第 2 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "evidence 锚点 retarget：`.gitattributes` 的 `*.node binary` 随存储口径反转改成 `*.node filter=lfs diff=lfs merge=lfs -text`（同义新串，不删证据）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— 锚点 retarget：T-0119 合并两个平台模块 ⇒ 预置产物搬到 native/host-input/prebuilds/darwin-universal/host_input.node、.gitignore 例外改路径、守卫并成 test/native-host.test.ts。"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/native-host.test.ts"
+  ]
+}

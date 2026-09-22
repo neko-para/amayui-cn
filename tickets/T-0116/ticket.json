@@ -1,0 +1,128 @@
+{
+  "title": "macOS 宿主侧那半件：新增 `native/macos-input`（0x10A 的 `CGWarpMouseCursorPosition`）—— 现在只有 Windows 有真实现",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "`native/win32-input`（`tickets/T-0058`）只在 Windows 上是**真实现**：`src/win32_input.cc` 里 `#ifdef _WIN32` 之外的分支一律返回 `null`/`false`、`supported === false` ⇒ 在 macOS 上（本工程的主要开发与试玩平台，用户实测见 `tickets/T-0027`/`T-0040`）引擎 `0x10A`（`i10a`）的宿主侧动作（`sub_421EA0` 的 `SetCursorPos`，raw 30597）仍然是空实现：主进程只记一行降级诊断，ADV 侧栏那 1470 处「把光标钉进栏内」只生效到下一次 `mousemove`。\n\nmacOS 上的对应原语是 CoreGraphics 两件套：① `CGWarpMouseCursorPosition`（挪真实光标；实测**不需要**辅助功能授权）；② `CGEventCreateMouseEvent(kCGEventMouseMoved)` + `CGEventPost(kCGHIDEventTap, …)`（这正是用户点名的参考实现 [cliclick](https://github.com/BlueM/cliclick) 的 `m:` 口径；**需要**授权，否则事件被静默丢弃）。\n\n所以要的不是「在 win32-input 里再塞一段 `__APPLE__`」——那样一个名字叫 win32 的模块会同时服务两个平台的语义与权限模型；而是**与它同口径的第二个模块** `native/macos-input`（同一套加载链/降级门面/只读烟测），并由主进程按平台选模块。",
+  "acceptance": [
+    "**工程可构建**：`cd native/macos-input && npm install && npm run build` 产出 `build/Release/macos_input.node`；技术栈与 win32-input 同口径（CMake + C++17 + node-addon-api），**纯 N-API**（不碰 `node::` 符号）⇒ 同一份产物在 Node（守卫）与 Electron（产品）都能加载，**不需要 `@electron/rebuild`**；**非 macOS 也能编译**（函数存在但返回 `null`/`false`、`supported === false`）",
+    "**真实现 0x10A 的宿主侧动作**：`setCursorPos(x, y)` = `CGWarpMouseCursorPosition` + `CGAssociateMouseAndMouseCursorPosition(true)`（warp 会让鼠标与光标短暂脱钩，不复位关联会出现「挪完之后鼠标推不动」）；`getCursorPos()` = `CGEventCreate`+`CGEventGetLocation`；`getVirtualScreenRect()` = `CGGetActiveDisplayList` 的 `CGDisplayBounds` 并集。★口径写清：坐标是 **CGEvent 全局显示坐标（点）**，而 macOS 上「点」= Electron 的 DIP ⇒ 主进程**不做** Windows 那种 DIP→物理那一跳（写了就是双重换算）",
+    "**权限口径成文并可诊断**：默认路径（warp）不需要辅助功能授权；cliclick 口径的 `CGEventPost` 只作为显式可选动作 `postMouseMove`，附 `isAccessibilityTrusted()` 与「未授权时事件被静默丢弃」的说明 —— 不许让「投递了但没生效」看起来像成功",
+    "**加载器与降级与 win32-input 同一套**：`index.js` 是唯一加载点，搜索链 `AMAYUI_MACOS_INPUT_NODE` → `build/Release` → `build/Debug` → `build/<Config>` → `prebuilds/<platform>-<arch>/` → `prebuilds/<platform>-universal/`（最后一条是为通用二进制加的兜底，两个模块同时加，保持口径一致）；找不到/加载失败 ⇒ `{available:false, reason}` 且门面所有函数返回 `null`/`false`，调用方零分支",
+    "**接线**：`electron/nativeAddon.ts` 按平台选模块（darwin → `native/macos-input`，win32 → `native/win32-input`），IPC 通道 `set-system-cursor` 与渲染侧换算不变；**`tickets/T-0058` 的两个证据锚点必须保留**（`[native] win32-input available=` 与 `const phys =`）",
+    "**守卫** `app/amayui-emulator/test/native-macos.test.ts`：① 降级契约（空目录 ⇒ available=false + reason + tried 全在 root 下）；② 搜索链顺序；③ 真产物只读探测（本机 macOS：`available`/`supported` 为真、光标落在虚拟屏矩形内，**不动光标**）；④ 门面在不可用时全 `null`/`false` 且不抛；⑤ 接线源码棘轮（darwin 选 macos-input + win32 分支与三跳换算串仍在）",
+    "**两处真机核验**：① `native/macos-input/tools/smoke.cjs` 默认只读，`AMAYUI_MACOS_INPUT_MOVE_TEST=1` 时 +3px 挪一次、**读回一致**、再**复位**；② `app/amayui-emulator/tools/verify-cursor.cjs`（真实 Electron 宿主）在 macOS 上跑通同一条断言（内容区中心 → 读回一致 → 复位），且**不**把 macOS 的 DIP 当物理像素再换算一次",
+    "**文档**：`native/macos-input/README.md`（API/构建/权限/排障）+ `native/README.md` 的模块表与统一口径（补「通用二进制兜底」一条）+ `docs-new/04-app/native-addon.md`（平台分派与「macOS 没有 DIP→物理那一跳」）+ 能力台账 `host-cursor-warp` 的 `emulator.guard`/`note` 同步到「Windows + macOS 两个宿主都真实现」"
+  ],
+  "evidence": [
+    {
+      "file": "native/host-input/src/macos_input.cc",
+      "anchor": "const CGError err = ::CGWarpMouseCursorPosition(CGPointMake(x, y));",
+      "line": 85,
+      "note": "★本票的正身：macOS 上的 setCursorPos = CGWarpMouseCursorPosition（不需要辅助功能授权；warp 后立刻复位 mouse/cursor 关联，见下一行）"
+    },
+    {
+      "file": "native/host-input/src/macos_input.cc",
+      "anchor": "::CGAssociateMouseAndMouseCursorPosition(true);",
+      "line": 87,
+      "note": "★不能省的一步：warp 会让鼠标与光标短暂脱钩，不复位关联的症状是「脚本挪完光标后玩家推不动鼠标」"
+    },
+    {
+      "file": "app/amayui-emulator/electron/nativeAddon.ts",
+      "anchor": "[native] host-input available=",
+      "line": 70,
+      "note": "★主进程按平台分派后的加载摘要（产品宿主核验的那行日志就出自这里；同表保留了 T-0058 的 win32 锚点串）"
+    },
+    {
+      "file": "app/amayui-emulator/electron/nativeAddon.ts",
+      "anchor": "const phys =",
+      "line": 148,
+      "note": "「有则用」的最后一跳：macOS 没有 dipToScreenPoint（它的屏幕坐标本来就是点）⇒ 在那里补这一跳就是双重换算（本文件是 T-0058 与 T-0116 共用的锚点）"
+    },
+    {
+      "file": "native/host-input/index.js",
+      "anchor": "function loadAddon(opts = {}) {",
+      "line": 81,
+      "note": "唯一加载点：搜索链 + 降级（available/reason），门面让调用方零分支 —— 与 win32-input 同一套口径"
+    },
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "★E3：真产物存在时",
+      "line": 177,
+      "note": "★守卫：真产物只读探测（光标落在虚拟屏矩形内，不动光标）；同文件另有降级契约/搜索链/门面空实现/预置产物棘轮/主进程棘轮"
+    },
+    {
+      "file": "app/amayui-emulator/tools/verify-cursor.cjs",
+      "anchor": "AMAYUI_CURSOR_VERIFY",
+      "line": 45,
+      "note": "★真机核验（真实 Electron 宿主 + 真实光标）：macOS 上 DIP(440,392) → 点(440,392) → 读回一致 → 复位（同一支工具在 Windows 上还验 DIP→物理那一跳）"
+    },
+    {
+      "file": "native/host-input/README.md",
+      "anchor": "## 权限（macOS；为什么默认路径不需要授权）",
+      "line": 130,
+      "note": "权限口径：warp 不需要授权（本机实测）、postMouseMove 需要且未授权时事件被静默丢弃"
+    },
+    {
+      "file": "native/host-input/src/win32_input.cc",
+      "anchor": "return Napi::Boolean::New(info.Env(), ::SetCursorPos(x, y) != 0);",
+      "line": 61,
+      "note": "★动机：宿主侧那半件此前**只有** `_WIN32` 分支，`#else` 一律返回 false/null ⇒ macOS 上 i10a 的宿主侧动作是空实现"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return SetCursorPos(Point.x, Point.y);",
+      "line": 30597,
+      "note": "被复现的引擎语义（raw 30597）：0x10A 在宿主侧把系统光标挪到反算出的屏幕坐标"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "host-cursor-warp",
+      "line": 3534,
+      "note": "第二层能力台账的归口条目：emulator.note 已补 macOS 落地段（两跳/权限/取整口径与真机数字）"
+    }
+  ],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "docs-new/04-app/native-addon.md",
+      "native/README.md",
+      "docs-new/03-engine/input-system.md"
+    ],
+    "analysis": [
+      "host-cursor-warp",
+      "analysis/engine-capabilities.json#host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0053",
+      "T-0058"
+    ]
+  },
+  "id": "T-0116",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— 开工：macOS 模块 native/macos-input（CGWarpMouseCursorPosition 路线）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— macOS 模块落地：native/macos-input（CGWarpMouseCursorPosition）+ 主进程按平台分派 + 7 条守卫 + 两处真机核验（smoke / verify-cursor）+ 仅预置产物也跑通；守卫 + E3 见 changes.md"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— 锚点 retarget：T-0119 合并两个平台模块 ⇒ macOS 实现搬到 native/host-input/src/macos_input.cc、守卫并成 test/native-host.test.ts、加载摘要串变成 [native] host-input available=。"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/native-host.test.ts"
+  ]
+}

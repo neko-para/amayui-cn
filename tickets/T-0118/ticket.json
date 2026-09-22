@@ -1,0 +1,68 @@
+{
+  "title": "darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上补一次真机核验",
+  "type": "analysis",
+  "priority": "P3",
+  "area": "analysis/emulator/verify",
+  "why": "`tickets/T-0117` 把 macOS 的**通用二进制**（`lipo -archs` = `arm64 x86_64`、`minos` = 11.0）预置进了仓库，但**只有 arm64 slice 被真正执行过**：本机（Apple Silicon / macOS 26.3）**没装 Rosetta 2**，`arch -x86_64 node -p process.arch` 直接报 `Bad CPU type in executable`（且本机的 Node 是 arm64 单架构，Rosetta 下也没有 x64 slice 可跑）。\n\nx86_64 侧的现有证据全是**静态**的：`lipo -archs`（两个 slice 都在）、`otool -L -arch x86_64`（只链 ApplicationServices/CoreFoundation/CoreGraphics/libc++/libSystem）、`nm -u -arch x86_64`（未定义符号集与 arm64 完全同形，只有 `napi_*`）——「结构上可加载」不等于「在 Intel 机器上能加载并挪动光标」。\n\n为什么这个缺口值得单独一张票：本能力**失效是静默的**（`analysis/engine-capabilities.json#host-cursor-warp` 的 `whySilent`）——若 x86_64 slice 因任何原因加载不上，Intel Mac 用户看到的现象与「这条能力没做」完全一样，而我们会以为「darwin 已经预置好了」。",
+  "acceptance": [
+    "在一台 **Intel Mac**（或「装了 Rosetta 2 且能跑 x64 Node」的 Apple Silicon 机器）上跑 `node native/host-input/tools/smoke.cjs`：`platform/arch` 必须是 `darwin/x64`，`addonPath` 必须命中 `prebuilds/darwin-universal/host_input.node`（按 arch 的 `prebuilds/darwin-x64/` 不存在 ⇒ 走通用落点，这也顺带验了加载链最后一条兜底）",
+    "同一台机器上跑 `AMAYUI_HOST_INPUT_MOVE_TEST=1 node native/host-input/tools/smoke.cjs`：+3px 读回一致、复位一致（exit 0）",
+    "同一台机器上跑 `AMAYUI_CURSOR_VERIFY=1 npx electron tools/verify-cursor.cjs`：内容区中心 → 屏幕点读回一致 → 复位（exit 0）；若该机的 Electron 是 x64 版，这一段同时验了「x64 宿主里加载 x86_64 slice」",
+    "结论写回两处：`tickets/T-0117/notes.md` §5「诚实的边界」删掉「没跑起来」那条（或改成实测数字），`native/host-input/README.md` 的「预置产物」一节补一行「x86_64 已在 <机器/系统/日期> 实跑」",
+    "若实测**失败**：按「不许用删证据消红」的口径处理 —— 保留守卫、把失败现象（dyld 报错原文）写进本票 `changes.md`，并据因决定是改 CMake（架构/最低版本/链接）还是放弃 x86_64（那就要把 `lipo` 棘轮从「必须双架构」改成「必须 arm64」，并说明为什么）"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0117/notes.md",
+      "anchor": "## 5. 诚实的边界",
+      "note": "★缺口的原始记录：x86_64 slice 只做了静态核验（lipo / otool -L / nm -u 三件套），本机无 Rosetta 2",
+      "line": 57
+    },
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "★预置产物棘轮",
+      "note": "守卫只钉「存在 + 双架构 + minos=11.0」——它能证明产物**结构**对，证明不了 x86_64 slice 真能加载（那是本票的事）",
+      "line": 237
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "host-cursor-warp",
+      "note": "为什么本票不能省：这条能力的失效是静默的（只表现成「观感缺失」），所以「以为预置好了」与「真的能用」必须用实跑区分",
+      "line": 3534
+    }
+  ],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "native/host-input/README.md",
+      "docs-new/04-app/native-addon.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0116",
+      "T-0117",
+      "T-0051"
+    ]
+  },
+  "id": "T-0118",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— 锚点 retarget：T-0119 合并守卫 ⇒ 预置产物棘轮那条断言现在住在 test/native-host.test.ts。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— T-0119 合并两个平台模块 ⇒ 本票（未开工）的步骤与锚点全部改指 native/host-input（产物 host_input.node / env AMAYUI_HOST_INPUT_NODE / 守卫 test/native-host.test.ts）"
+    }
+  ]
+}

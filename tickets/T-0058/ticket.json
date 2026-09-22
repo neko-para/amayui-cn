@@ -15,27 +15,27 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
-      "anchor": "[native] win32-input available=",
-      "note": "★主进程加载摘要：这一行就是原先记在 .tmp/amayui-emulator.log 里的实证落点（.tmp 是 gitignore 的临时区，不能当证据锚点）。日志实证本身是 .node 真产物可用时的运行时输出；守卫见 test/native-win32.test.ts。",
-      "line": 83
+      "anchor": "[native] host-input available=",
+      "note": "★主进程加载摘要：这一行就是原先记在 .tmp/amayui-emulator.log 里的实证落点（.tmp 是 gitignore 的临时区，不能当证据锚点）。日志实证本身是 .node 真产物可用时的运行时输出；守卫见 test/native-host.test.ts。",
+      "line": 70
     },
     {
-      "file": "native/win32-input/CMakeLists.txt",
+      "file": "native/host-input/CMakeLists.txt",
       "anchor": "set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS \"/DELAYLOAD:node.exe\")",
       "note": "★Windows + Electron 必需的延迟加载钩子（node.lib 的导入记录写的是 node.exe，而宿主是 electron.exe）",
-      "line": 55
+      "line": 73
     },
     {
-      "file": "native/win32-input/src/win32_input.cc",
-      "anchor": "NODE_API_MODULE(win32_input, Init)",
+      "file": "native/host-input/src/win32_input.cc",
+      "anchor": "void RegisterWin32(Napi::Env env, Napi::Object& exports) {",
       "note": "纯 N-API 模块（只用 napi_*，不引 node:: 符号）⇒ 跨 Node/Electron 通用；非 Windows 也能编译，函数返回 null/false",
-      "line": 163
+      "line": 106
     },
     {
-      "file": "native/win32-input/index.js",
+      "file": "native/host-input/index.js",
       "anchor": "function loadAddon(opts = {}) {",
       "note": "唯一加载点：搜索链 + 降级（available/reason），门面让调用方零分支",
-      "line": 74
+      "line": 81
     },
     {
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
@@ -56,10 +56,10 @@
       "line": 372
     },
     {
-      "file": "app/amayui-emulator/test/native-win32.test.ts",
+      "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "0x10A：宿主缝收到**与引擎侧同一对**虚拟坐标",
       "note": "★守卫：两半件不许各算一套；另有降级契约 / 搜索链顺序 / headless no-op / 换算源码棘轮",
-      "line": 172
+      "line": 318
     },
     {
       "file": "app/amayui-emulator/tools/verify-cursor.cjs",
@@ -67,15 +67,16 @@
       "note": "★真机核验（真实 Electron 宿主 + 真实光标）：DIP(447,390) → 物理(559,488) → 读回一致 → 复位（本机 125% 缩放，正是「少一跳就错」的场景）"
     },
     {
-      "file": "native/win32-input/tools/smoke.cjs",
-      "anchor": "AMAYUI_WIN32_INPUT_MOVE_TEST",
-      "note": "模块级真机核验：默认只读；显式开环境变量才 +3px 并必定复位"
+      "file": "native/host-input/tools/smoke.cjs",
+      "anchor": "AMAYUI_HOST_INPUT_MOVE_TEST",
+      "note": "模块级真机核验：默认只读；显式开环境变量才 +3px 并必定复位",
+      "line": 7
     },
     {
-      "file": "native/win32-input/README.md",
-      "anchor": "## 打包（二进制怎么随应用走）",
+      "file": "native/host-input/README.md",
+      "anchor": "## 预置产物（二进制怎么随应用走）",
       "note": "打包方案",
-      "line": 86
+      "line": 138
     },
     {
       "file": "docs-new/04-app/native-addon.md",
@@ -126,10 +127,15 @@
       "at": "2026-09-17",
       "what": "接入产品：NativeBridge.setSystemCursor 缝 + 0x10A 调用 + PixiBackend 换算 + IPC（preload/主进程）+ 主进程 nativeAddon.ts（三跳换算+诊断+降级）+ headless 显式 no-op + nativeTap 登记；守卫 test/native-win32.test.ts（7 条）；台账/文档：能力 host-cursor-warp 升 modeled-verified/E3、opcode-table 0x10A 行、input-system §10、docs-new/04-app/native-addon.md ⇒ open → done",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— 锚点 retarget：T-0119 把 native/win32-input + native/macos-input 合并成 native/host-input（一个 addon 两个平台实现），守卫并成 test/native-host.test.ts、加载摘要串变成 [native] host-input available=；证据条目不删，只改指向。"
     }
   ],
   "tests": [
-    "app/amayui-emulator/test/native-win32.test.ts",
+    "app/amayui-emulator/test/native-host.test.ts",
     "app/amayui-emulator/test/input.test.ts"
   ]
 }

@@ -1,0 +1,56 @@
+{
+  "title": "Windows 侧在合并后未实机核验：`native/host-input` 的构建与加载（延迟加载钩子）需要在 Windows 上再确认一次",
+  "type": "analysis",
+  "priority": "P2",
+  "area": "analysis/emulator/verify",
+  "why": "`tickets/T-0119` 把 `native/win32-input` + `native/macos-input` 合并成 `native/host-input`（一个 addon 两个平台实现）。合并**只动文件布局与 `Register*` 装配**：`src/win32_input.cc` 的实现体逐行照搬、`CMakeLists.txt` 里 Windows 那三行（`CMAKE_JS_SRC` + `delayimp` + `/DELAYLOAD:node.exe`）逐字未变 —— 但合并后的 CMakeLists 是**重写过的**（三个 TU 一起编、补了 `elseif(MSVC)` 分支），而本机是 macOS ⇒ **Windows 上那份构建与加载没有任何本轮证据**。\n\n为什么值得单独一张票：Windows 是本作的原生平台，而这条能力的失效是**静默的**（`analysis/engine-capabilities.json#host-cursor-warp` 的 `whySilent`）：若延迟加载钩子在合并后的工程里没生效，Electron 里 `require()` 会报 `Module did not self-register`（`nativeAddon.ts` 只记一行诊断、然后降级），玩家只会看到「光标没被钉住」。\n\n与 `T-0118`（darwin 通用二进制的 x86_64 slice 未实跑）同属「需要另一台机器」的遗留核验。",
+  "acceptance": [
+    "在 Windows 上 `cd native/host-input && npm install && npm run build` ⇒ 产出 `build/Release/host_input.node`（三个 TU 都要在 MSVC 下编过；`/utf-8 /permissive- /W4` 不许出 C4819）",
+    "`npm run smoke` ⇒ `available=true supported=true platform=win32`；`getSystemMetrics`/`getAsyncKeyState` 给出数值；`postMouseMove`（darwin 专有缺失）⇒ `false`；`AMAYUI_HOST_INPUT_MOVE_TEST=1` 时 +3px 读回一致再复位",
+    "**产品宿主**：跑一次 Electron（`npm run shot` 或 `npm run electron`），日志里必须出现 `[native] host-input available=true supported=true path=…` ⇒ 延迟加载钩子生效（这是合并后最需要重新确认的一条）",
+    "`AMAYUI_CURSOR_VERIFY=1 npx electron tools/verify-cursor.cjs` ⇒ DIP→物理那一跳仍然正确（本机缩放 ≠ 100% 时读回一致）",
+    "把实测数字（缩放档位、读回的物理坐标、日志行原文）写回本票 `changes.md`；若失败则按「不许删证据消红」的口径记录现象与定因，并回链 `T-0119`"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0119/changes.md",
+      "anchor": "### 未证到的",
+      "note": "★缺口的原始记录：Windows 侧没有实机重跑（合并只动布局，但严格说需要一台 Windows 再确认一次）"
+    },
+    {
+      "file": "native/host-input/CMakeLists.txt",
+      "anchor": "if(CMAKE_JS_SRC)",
+      "note": "需要重新确认的那段：Windows 独有的延迟加载钩子（缺了 Electron 里加载会报 Module did not self-register）"
+    },
+    {
+      "file": "app/amayui-emulator/electron/nativeAddon.ts",
+      "anchor": "[native] host-input available=",
+      "note": "产品宿主核验的那行日志（本票的判据之一）"
+    }
+  ],
+  "tests": [],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "native/host-input/README.md",
+      "docs-new/04-app/native-addon.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0058",
+      "T-0118",
+      "T-0119"
+    ]
+  },
+  "id": "T-0120",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

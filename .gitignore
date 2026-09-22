@@ -14,10 +14,17 @@
 node_modules
 
 # 原生模块的 CMake 构建产物（`.node`/obj/vcxproj）**不进版本库**：
-# 本仓的分发口径是「按需构建」（见 native/win32-input/README.md 的「打包」一节）——缺了它模拟器照旧能跑
+# 本仓的分发口径是「按需构建」（见 native/host-input/README.md 的「预置产物」一节）——缺了它模拟器照旧能跑
 # （加载器降级 + 一行诊断），所以不必像 npm 包那样把二进制塞进 git。
 /native/*/build/
+/native/*/build-*/
 /native/*/prebuilds/
+# ★例外：macOS 侧的**预编译通用二进制**进版本库（`tickets/T-0117`）。
+# 为什么只有这一处开例外：① 模块是纯 N-API ⇒ ABI 稳定，一份产物跨 Node/Electron，没有 node-gyp 那种
+# 「换 Node 版本必须重编」的腐坏面；② macOS 支持 fat Mach-O ⇒ 一份 123 KB 的文件同时服务 arm64 与
+# x86_64；③ macOS 上「装了 Xcode CLT」并非必然，而缺产物时 0x10A 是**静默降级**（只是玩家看不见光标
+# 被挪过去，不报错）⇒ 预置是唯一能让"没编译器的机器"也拿到这条观感的办法。Windows 维持按需构建。
+!/native/host-input/prebuilds/
 
 *exe_extracted
 

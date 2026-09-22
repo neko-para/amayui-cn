@@ -129,8 +129,10 @@ contextBridge.exposeInMainWorld('api', {
   /**
    * 渲染窗→主：**把真实系统光标挪到客户区坐标 (clientX, clientY)**（引擎 `0x10A` 的宿主侧动作）。
    *
-   * 主进程补上内容区原点（`getContentBounds`）并做 DIP→物理（`screen.dipToScreenPoint`），
-   * 最后落到 `native/win32-input` 的 `SetCursorPos`；原生模块缺失时静默降级（只改引擎侧光标）。
+   * 主进程补上内容区原点（`getContentBounds`），再按平台换算（Windows 还要 DIP→物理
+   * `screen.dipToScreenPoint`；macOS 的屏幕坐标本来就是点），最后落到宿主原生模块的
+   * `setCursorPos`（`native/host-input`）；原生模块缺失时静默降级
+   * （只改引擎侧光标）。
    */
   setSystemCursor: (clientX: number, clientY: number) => ipcRenderer.send('set-system-cursor', clientX, clientY),
 

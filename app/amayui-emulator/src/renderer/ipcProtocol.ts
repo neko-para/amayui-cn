@@ -114,8 +114,9 @@ declare global {
        * **把真实系统光标挪到客户区坐标 `(clientX, clientY)` 处**（引擎 `0x10A` 的宿主侧动作）。
        *
        * 渲染进程只交**客户区 CSS 像素**（虚拟坐标 → 客户区是渲染侧的已知换算，见 `pixi/inputAttach.ts`）；
-       * 客户区 → 屏幕（`BrowserWindow.getContentBounds()`）与 DIP → 物理（`screen.dipToScreenPoint()`）
-       * 都在主进程，最后落到原生模块的 `SetCursorPos`（`native/win32-input`，`tickets/T-0053`）。
+       * 客户区 → 屏幕（`BrowserWindow.getContentBounds()`）由主进程做，Windows 还要多一跳
+       * DIP → 物理（`screen.dipToScreenPoint()`，macOS 没有），最后落到宿主原生模块的 `setCursorPos`
+       * （`native/host-input`，`tickets/T-0053`）。
        *
        * ★没有这个通道 / 原生模块没构建时调用方**什么都不用做**：主进程静默降级（只记一行诊断）。
        */

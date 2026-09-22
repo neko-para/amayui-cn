@@ -261,7 +261,7 @@ _this[30*cur + 95805] = 0;
 ## 10. 光标外观 / 位置（渲染子系统）
 
 - **读位置**：`GetCursorPos(&Point)`（raw.c 10024/10041 等）→ `ScreenToClient(hwnd,&Point)` 得客户区坐标；`sub_4771D0` 封装。
-- **设位置**：`SetCursorPos` 全库三处 —— ① `0x10A` 的那次（raw 30597，见 §8 的 0x10A 行）；② 11863 与 ③ 141138：`SetCursorPos(Engine[699168]/2, Engine[699172]/2)` = **把光标居中**（`Engine[699168]/[699172]` = 窗口客户区宽/高、即分辨率）。★**宿主侧已落地（`tickets/T-0053` 的缺口 → `T-0058` 的实现）**：浏览器/Electron 没有移动**真实系统光标**的 API，所以补了一个 N-API 原生模块 `native/win32-input`（CMake + C++ + node-addon-api，`SetCursorPos`），链路 = 渲染进程（虚拟→客户区，`pixi/inputAttach.ts` 的同一套 rect 的逆）→ IPC `set-system-cursor` → 主进程（内容区原点 `getContentBounds` + **DIP→物理** `screen.dipToScreenPoint`）→ `.node`。缺模块时**降级**成"只改引擎侧光标"（旧行为）。工程口径见 [`../04-app/native-addon.md`](../04-app/native-addon.md)。
+- **设位置**：`SetCursorPos` 全库三处 —— ① `0x10A` 的那次（raw 30597，见 §8 的 0x10A 行）；② 11863 与 ③ 141138：`SetCursorPos(Engine[699168]/2, Engine[699172]/2)` = **把光标居中**（`Engine[699168]/[699172]` = 窗口客户区宽/高、即分辨率）。★**宿主侧已落地（`tickets/T-0053` 的缺口 → `T-0058` 的实现）**：浏览器/Electron 没有移动**真实系统光标**的 API，所以补了一个 N-API 原生模块 `native/host-input`（CMake + C++ + node-addon-api；Windows = `SetCursorPos`、macOS = `CGWarpMouseCursorPosition`），链路 = 渲染进程（虚拟→客户区，`pixi/inputAttach.ts` 的同一套 rect 的逆）→ IPC `set-system-cursor` → 主进程（内容区原点 `getContentBounds` + **DIP→物理** `screen.dipToScreenPoint`）→ `.node`。缺模块时**降级**成"只改引擎侧光标"（旧行为）。工程口径见 [`../04-app/native-addon.md`](../04-app/native-addon.md)。
 - **光标外观/显隐**：`SetCursor` 常与 HCURSOR 句柄缓存一起（raw.c 5238/138283 等）；`ShowCursor`（raw.c 4108/139344）。
 - 这些属**输入/渲染**管理器，**不进入脚本 opcode 语义**；脚本只能经 0x108/0x109 读到按钮/位置值。若要在 emulator 复现鼠标，需要在这层注入 `GetCursorPos`/`GetAsyncKeyState` 对应实现。
 

@@ -388,7 +388,7 @@ const op_hover_hittest: OpHandler = (c) => {
  * `SetCursorPos` 正是靠 WM_MOUSEMOVE 让脚本看见这次移动）；位置没变则不重算（引擎同样不会产生移动消息）。
  * 真机那层虚拟→屏幕缩放只在 `display:VirtualFullScreenType == 2` 时生效（随包 INI 无此键 ⇒ 1:1）。
  * ★**宿主缺口已在 Electron 侧补上**（`tickets/T-0053` / `T-0058`）：渲染进程把这次移动经 IPC 交给主进程，
- * 主进程用 `native/win32-input` 的 `SetCursorPos`（**真**移动系统光标）+ `screen.dipToScreenPoint()`
+ * 主进程用 `native/host-input` 的 `setCursorPos`（Windows = `SetCursorPos`、macOS = `CGWarpMouseCursorPosition`，**真**移动系统光标）+ Windows 上的 `screen.dipToScreenPoint()`
  * 做 DIP→物理换算。浏览器/headless 宿主没有真实光标 ⇒ 各自的 `setSystemCursor` 是显式 no-op
  * （不是"缺缝"，否则闸门 A 会把 1678 处 `i10a` 全记成缺口）。
  */

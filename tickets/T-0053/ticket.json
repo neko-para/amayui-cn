@@ -44,14 +44,14 @@
     }
   ],
   "tests": [
-    "app/amayui-emulator/test/native-win32.test.ts"
+    "app/amayui-emulator/test/native-host.test.ts"
   ],
   "links": {
     "docs": [
       "docs-new/03-engine/input-system.md",
       "docs-new/03-engine/opcode-table.md",
       "docs-new/04-app/native-addon.md",
-      "native/win32-input/README.md"
+      "native/host-input/README.md"
     ],
     "analysis": [
       "host-cursor-warp",
@@ -76,6 +76,11 @@
       "at": "2026-09-17",
       "what": "决策：路线 ①（原生模块）；实现与守卫落在 T-0058（原生模块工程 + 0x10A 接线 + 打包方案）；真机核验两处（模块级 smoke / Electron 三跳换算）；观感确认仍挂在 T-0051 的 E4 清单 ⇒ open → done",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "改字段： —— retarget（T-0119 合并两个平台模块）：tests 与 links.docs 指向 native/host-input"
     }
   ]
 }

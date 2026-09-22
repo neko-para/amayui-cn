@@ -1,0 +1,108 @@
+{
+  "title": "把 win32-input / macos-input 合并成 `native/host-input`：一个 addon 两个平台实现（加载器/类型/README/守卫都不该按平台分两份）",
+  "type": "refactor",
+  "priority": "P2",
+  "area": "emulator/hosts",
+  "why": "`T-0058`（Windows）与 `T-0116`（macOS）各建了一个模块：`native/win32-input` 与 `native/macos-input`。两者**逐行同构**——同一份 `index.js` 加载器（~140 行，只差产物名与 env 变量名）、同一份 `index.d.ts`、两份 README 里大段重复的「统一口径」，主进程还多了一处 `HOST_MODULE = win32 ? 'win32-input' : darwin ? 'macos-input' : null` 的分派；守卫也拆成两份（`native-win32.test.ts` / `native-macos.test.ts`，其中降级契约/搜索链/门面三条断言完全重复）。\n\n用户指出：「逻辑上就是一个 native addon 在两个平台上的实现，没必要取两个名字」。这是对的：**模块 = 一个能力，平台实现 = 模块内部的事**。拆成两个模块的代价不止是冗长 —— 它把「平台」编码进了目录名与调用方，于是每加一个平台就要再加一个模块、再改一次主进程分派。\n\n合并后的形态：`src/host_input.cc`（唯一 Init，报 `platform`/`supported`）+ `src/win32_input.cc` / `src/macos_input.cc`（各自 `Register*`，非本平台是空实现）。三个 TU 在任何平台都参与编译，因此另一平台的包装层也会过一遍编译。",
+  "acceptance": [
+    "**目录与命名统一**：模块 = `native/host-input`，产物 = `host_input.node`，env 覆盖 = `AMAYUI_HOST_INPUT_NODE`，预置产物 = `native/host-input/prebuilds/darwin-universal/host_input.node`；`native/win32-input`、`native/macos-input` 两个目录**不再存在**",
+    "**C++ 结构 = 一个 Init + 每平台一个 TU**：`src/host_input.cc` 是唯一 `NODE_API_MODULE(host_input, Init)`，只报 `platform`/`supported` 再调两个 `Register*`；两个平台 TU 各自 `exports.Set` 自己的函数，**非本平台编译成空的 Register**（不是按平台选源文件 —— 三个 TU 都要过编译）；`src/host_input.h` 写清「同名 API 必须同语义、平台专有函数只在自己平台注册」",
+    "**主进程不再分派**：`electron/nativeAddon.ts` 只有 `const HOST_MODULE = 'host-input'` 一处常量与一行加载摘要 `[native] host-input available=…`；三跳换算（`getContentBounds` + **Windows 才有**的 `dipToScreenPoint`「有则用」）与降级路径不变",
+    "**守卫合并成一份**：`app/amayui-emulator/test/native-host.test.ts` 覆盖原两份的全部断言（降级契约 / 搜索链含 `-universal` 兜底 / 门面空实现与抛错兜底 / 真产物只读探测 / 预置产物双架构+minos 棘轮 / 预置路径可加载 / `0x10A` 宿主缝同一对坐标 / headless no-op / 主进程与渲染侧换算棘轮），**并新增一条**：平台专有函数在对方平台上由门面兜成 `null`/`false`（`darwin` 上 `getSystemMetrics`/`getAsyncKeyState`/`showCursor` → `null`，`win32` 上 `postMouseMove`/`isAccessibilityTrusted` → `false`，Linux 上全 `null`/`false` 且 `supported === false`）",
+    "**锚点棘轮如实 retarget（不许删证据）**：`T-0053` 的 `tests`/`links.docs`、`T-0058` 的 7 条、`T-0116` 的 7 条、`T-0117` 的 5 条、`T-0118` 的 1 条 evidence，以及第二层能力台账 `host-cursor-warp` 的 `guard` 全部指向新路径；`--validate` 与 `test/ticket-ledger.test.ts` 必须零红（本票 `changes.md` 列出逐条映射）",
+    "**平台特有的坑一处不丢**：合并后的模块 README 必须同时保留 Windows 的延迟加载钩子（`CMAKE_JS_SRC` + `/DELAYLOAD:node.exe` + `delayimp.lib`）、macOS 的 `CMAKE_OSX_DEPLOYMENT_TARGET` 早设 + `-undefined dynamic_lookup`、以及 cmake-js `--CD` 的拼写坑；`CMakeLists.txt` 里的 `if(CMAKE_JS_LIB)`/`if(CMAKE_JS_SRC)` 守卫与 Apple frameworks 链接不变",
+    "**真机核验（macOS）**：`npm run build` 三个 TU 全编过；`tools/smoke.cjs` 只读 + `AMAYUI_HOST_INPUT_MOVE_TEST=1`（+3px 读回一致、复位一致）；`AMAYUI_CURSOR_VERIFY=1 npx electron tools/verify-cursor.cjs` 在真实 Electron 宿主里一致；产品宿主日志出现 `[native] host-input available=true supported=true`",
+    "**文档**：`native/README.md`（一条模块 + 「一个模块可以有多个平台实现，不要一个平台一个模块」的口径）、`native/host-input/README.md`（两份 README 合并，平台列成表）、`docs-new/04-app/native-addon.md`、`native/host-input/index.d.ts`、`analysis/opcodes.json`（0x10A 的 semantics）与 `analysis/engine-capabilities.json` 同步"
+  ],
+  "evidence": [
+    {
+      "file": "native/host-input/src/host_input.cc",
+      "anchor": "RegisterWin32(env, exports);",
+      "note": "★合并后的唯一 Init：报 platform/supported，再调两个 Register*（非本平台的是空实现）——平台差异从此只在 .node 内部，调用方不再分派",
+      "line": 41
+    },
+    {
+      "file": "native/host-input/src/host_input.h",
+      "anchor": "void RegisterWin32(Napi::Env env, Napi::Object& exports);",
+      "note": "两个平台 TU 的注册钩子声明 + 「同名 API 必须同语义、平台专有函数只在自己平台注册」的口径",
+      "line": 34
+    },
+    {
+      "file": "native/host-input/src/macos_input.cc",
+      "anchor": "void RegisterMacos(Napi::Env env, Napi::Object& exports) {",
+      "note": "macOS 实现 TU（原 native/macos-input/src/macos_input.cc）；非 macOS 上是空的 RegisterMacos",
+      "line": 155
+    },
+    {
+      "file": "native/host-input/src/win32_input.cc",
+      "anchor": "void RegisterWin32(Napi::Env env, Napi::Object& exports) {",
+      "note": "Win32 实现 TU（原 native/win32-input/src/win32_input.cc）；非 Windows 上是空的 RegisterWin32",
+      "line": 130
+    },
+    {
+      "file": "app/amayui-emulator/electron/nativeAddon.ts",
+      "anchor": "const HOST_MODULE = 'host-input';",
+      "note": "★主进程只剩一处常量：不再有 HOST_MODULE 三元分派",
+      "line": 63
+    },
+    {
+      "file": "app/amayui-emulator/test/native-host.test.ts",
+      "anchor": "★平台专有函数只在自己平台存在",
+      "note": "★合并后的唯一守卫（11 条）；这条是合并时新增的：平台专有函数在对方平台上由门面兜成 null/false",
+      "line": 194
+    },
+    {
+      "file": "native/host-input/README.md",
+      "anchor": "## 一个 addon、两个平台实现",
+      "note": "两份模块 README 合并后的结构说明：一个 Init + 每平台一个 TU + 同名 API 语义表 + 四个平台特有的坑",
+      "line": 12
+    },
+    {
+      "file": "native/README.md",
+      "anchor": "**一个模块可以有多个平台实现**",
+      "note": "统一口径里的新条目：模块 = 一个能力，平台实现 = 模块内部的事（含「别让目录名绑死平台」的理由）",
+      "line": 8
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/native-host.test.ts"
+  ],
+  "blockedBy": [],
+  "links": {
+    "docs": [
+      "native/host-input/README.md",
+      "native/README.md",
+      "docs-new/04-app/native-addon.md"
+    ],
+    "analysis": [
+      "host-cursor-warp",
+      "analysis/engine-capabilities.json#host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0053",
+      "T-0058",
+      "T-0116",
+      "T-0117",
+      "T-0118"
+    ]
+  },
+  "id": "T-0119",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— 开工：合并两个平台模块（T-0119）"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— 合并完成：一个 addon（src/host_input.cc 唯一 Init + 每平台一个 TU）+ 一份加载器/类型/README + 一份守卫（11 条，新增「平台专有函数在对方平台兜成 null/false」）+ 5 张票的锚点逐条 retarget；未证：Windows 侧实机（转 T-0120）"
+    }
+  ]
+}
