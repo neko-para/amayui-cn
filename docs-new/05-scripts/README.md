@@ -20,14 +20,14 @@ generated_by: scripts/build-scripts.mjs
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 30** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 33** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 10 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 19 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 22 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 1 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **30** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **33** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -36,6 +36,7 @@ generated_by: scripts/build-scripts.mjs
 
 | id | 脚本 | 是什么（摘要） | 段 | 槽 | 状态 | 守卫 |
 |---|---|---|---|---|---|---|
+| [`ALLMAP`](./ALLMAP.md) | `ALLMAP.BIN` | 大地图/章节点入口：登记本场景的请求分派表、置章号 `3f3d`，再走「章节跳转处理链」（`SETADVFLAG` → 跳转表逐个 `call-script… | 3 | 4 | 🟠 部分 | — |
 | [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | `test/append-packs.test.ts` |
 | [`AUTORUN3`](./AUTORUN3.md) | `$3$AUTORUN.BIN` | **扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$… | 4 | 4 | 🟠 部分 | `test/music-table.test.ts` `test/append-packs.test.ts` |
 | [`BUNKIMOVE`](./BUNKIMOVE.md) | `BUNKIMOVE.BIN` | 武器画面的「移动」演出子脚本（`BUNKI` 的演出段）：把一组立绘/图元在**两套句柄基址之间批量搬运/交换**，再逐项设色淡出，最后 `poll-inp… | 2 | 4 | 🟠 部分 | `test/op-214-swap-items.test.ts` |
@@ -59,7 +60,9 @@ generated_by: scripts/build-scripts.mjs
 | [`ROOM`](./ROOM.md) | `ROOM.BIN` | **回想（EU-ROOM）菜单**：一张背景 + 四个按钮（CG鑑賞 / シーン回想 / BGM鑑賞 / 情報画面），每个按钮旁显示 `回収数` 与 `回収… | 5 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
 | [`SAVE`](./SAVE.md) | `SAVE.BIN` | 存档/读档界面（SAVE）：槽列表（每行用 `0x1A0` 读头拿状态/日期/游玩秒数）+ 存/读/删/复制与备注输入。 | 3 | 6 | 🟠 部分 | — |
 | [`SC0330`](./SC0330.md) | `$1$SC0330.BIN` | 剧情脚本（本篇章节）：大量角色立绘的变换/表情/位置调整 + 文本推进。 | 5 | 5 | 🟠 部分 | — |
+| [`SCJUMP`](./SCJUMP.md) | `$1$SCJUMP.BIN` | 章节跳转分派器：读目标章号 `global 3f3d`，按值跳到对应章节的处理段（本文件是包 1 / 序章那一支） | 2 | 5 | 🟠 部分 | `test/clear-slot-records-keeps-bindings.test.ts` |
 | [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
+| [`SETADVFLAG`](./SETADVFLAG.md) | `SETADVFLAG.BIN` | 把 `global f8080` 抬成 INT_MAX（`7fffffff`）的短脚本，并顺带重建两张 1000 长的数组（按 `3f3d` 选 `a1ea… | 3 | 3 | 🟠 部分 | — |
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
 | [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 13 | 10 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |

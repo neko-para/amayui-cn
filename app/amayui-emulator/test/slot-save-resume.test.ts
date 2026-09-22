@@ -260,19 +260,35 @@ test('★BGM 还原：存档带「当前曲 id」、读档重播它（引擎 CAL
   assert.equal(eD.engineValues.get(ENGINE_FIELD.musicField), 0);
 });
 
-test('★0x259（clearSlotRecords）只清槽记录：绘制项与网格都不受影响（口径纠错）', async () => {
+test('★0x259（clearSlotRecords）只复位标志两位：槽→imgid 与绘制项/网格都不受影响（口径纠错）', async () => {
   // ① VM 侧：0x259 必须请求宿主清记录（此前宿主没实现 ⇒ 控制面板报"忽略 clearSlotRecords"）
   const log: string[] = [];
   const e = new Engine(new StubNative((m) => log.push(m)));
   const noop = { opcode: 0x259, name: 'i259', argc: 0, args: [], byteOffset: 0, index: 0 };
+  // `0x258` 先写一位标志（`texSlotFlags`），再由 `0x259` 整表复位 —— 引擎 raw 33156-33185 / 25357-25374。
+  await OPS.get(0x258)!(
+    makeCtx(
+      e,
+      e.curScript(),
+      { opcode: 0x258, name: 'i258', argc: 2, args: [im(5), im(3)], byteOffset: 0, index: 0 } as never,
+      e.native,
+      () => {},
+    ),
+  );
+  assert.equal(e.texSlotFlags.get(5), 3, '0x258 写入 bit0|bit1');
   await OPS.get(0x259)!(makeCtx(e, e.curScript(), noop as never, e.native, () => {}));
   assert.ok(
     log.some((m) => m.includes('clearSlotRecords')),
     `0x259 要请宿主清槽记录；实际日志 ${JSON.stringify(log)}`,
   );
+  // ★`0x259` 就是 `0x258` 的整表复位器：标志位必须归零
+  //   （此前漏了这一步 ⇒ 引擎已复位而 emulator 残留；`texSlotFlags` 目前只写不读，所以只表现成口径不对）
+  assert.equal(e.texSlotFlags.size, 0, '★0x259 必须复位 texSlotFlags（= 0x258 写入的那两位）');
 
-  // ② 宿主侧（headless）：只丢「槽→imgid」记录；**绘制项/网格必须留着**
-  //    （引擎体内只把两张槽表的 [0]/[1] 清 0 ⇒ 画面不受影响；一度误实现成清 `drawItems` ⇒ 读档后全黑）
+  // ② 宿主侧（headless）：只复位标志位；**「槽→imgid」记录、绘制项、网格必须都留着**
+  //    （引擎体内只把两张记录表的 `+8`/`+12` 清 0，**imgid 那一格不动** ⇒ 画面不受影响。
+  //     一度误实现成清 `drawItems` ⇒ 读档后全黑；又一度误实现成清 `slotImgid` ⇒ 槽号→图像索引被掐断，
+  //     `draw-texture` 回落 1×1 白占位块 ⇒ `tickets/T-0102` 的"ADV 窗口白底"）
   const { HeadlessScene } = await import('../src/renderer/headlessScene.js');
   const scene = new HeadlessScene({});
   scene.scene.drawItems.set(0x1234, {} as never);
@@ -280,7 +296,8 @@ test('★0x259（clearSlotRecords）只清槽记录：绘制项与网格都不�
   scene.scene.meshes.set(0x9abc, {} as never);
   scene.slotImgid.set(3, 0x51c3);
   (scene as unknown as { clearSlotRecords(): void }).clearSlotRecords();
-  assert.equal(scene.slotImgid.size, 0, '槽记录清空（引擎：两张表的 [0]/[1] 置 0）');
+  assert.equal(scene.slotImgid.size, 1, '★槽→imgid 记录**保留**（引擎清的是 +8/+12，不是 imgid）');
+  assert.equal(scene.slotImgid.get(3), 0x51c3, '★而且是原值（0x1F9 写的 imgid 不被 0x259 触碰）');
   assert.equal(scene.scene.drawItems.size, 2, '★绘制项**不**受影响（这不是它清的表）');
   assert.equal(scene.scene.meshes.size, 1, '网格也不受影响（那是 0x32B 的表）');
 });

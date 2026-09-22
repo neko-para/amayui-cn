@@ -5,13 +5,19 @@
   "area": "emulator/adv",
   "why": "**用户实测（轮 8）**原话两条：\n① 「从 SN0000 进入到 SC0000 后的 ADV 窗口背景是**白色**的，但是展开收起侧边栏菜单似乎刷新了界面导致其正确变成了**半透明黑色**」—— 即窗口的离屏表面/样式在场景切换后**没有被重新光栅化**，直到某个别的路径（侧边栏菜单）触发一次重绘才正确。\n② 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」—— 角色名文本的颜色不对（青色 ≈ 橘色的 R/B 互换，属可疑的通道顺序问题，但**必须先取证**再下结论）。\n★**当前假设（待验证，不许当结论）**：这两条很可能是**同一个根因**的可见面 —— 与同批修的「逐字不发布」同源：`Engine.serviceTextReveal` 修前漏掉了 `#publishReveal`（`tickets/T-0100` 的改动②）⇒ `msgWinSync` 在整段逐字期间**一次都不发生** ⇒ 宿主既不更新逐字，也可能不更新该窗的**底色/样式**（窗口背景与角色名同属一张窗纹理）。该发布已在本轮恢复（`adv-reveal-under-throttle.test.ts` 两条守卫 + 已证明的辨别力）⇒ **先请用户复验**这两条是否随之消失。",
   "acceptance": [
-    "★复验已完成（用户口径，轮 8 第二批）：「白色背景并没有修复，和之前表现一致」（⇒ 原假设「随 T-0100 的发布修复一并消失」**被推翻**）、角色名仍为青色、**新增**第三条「ADV 文字颜色又开始继承设置界面 ADV 设置中最后一行的颜色（紫色）」⇒ 本票转为**代码点取证**，不再等复验\n★进度（轮 15，**E4 通道打通后的第一次真界面复看**）：`npm run shot -- --load` 跑通，载入槽 79 后取样（`evidence/e4-load-adv.md` + 3 张截图）：**载入后的 ADV 旁白态没有白底面板、正文是白色**（不是紫/青）⇒ 用户报的两条症状在\"能从存档到达的这一态\"**不出现**。观察同时解释了**为什么复现不到用户那一帧**：`e4-load-list.png` 显示**全部存档都在「序章」（SN0000）**（070/078/079 三槽，标题都是「序章 苏醒于现世的女神」）⇒ 「ADV →（侧边栏）设置 → 戻る」那条路（入口在 `SC0000`，`SC0000.txt:604-611`）与\"进入 SC0000 后的 ADV 窗口\"都必须**先推进过序章** —— 与本票判据 2/3 的取值实验（`advReturnProbe` 强制铺 ADV 语境）互补：机制侧已全绿，剩下的只是\"走到那一帧\"，即 `T-0103` 的导航缺口。\n★进度（2026-09-22，用户复验后②，**白底的形状找到了（已修）**）：用户复验「字体颜色已正确 ✅，但白色背景仍在」⇒ 回产品日志（`.tmp/amayui-emulator.log`，10292 行）找到形状：`[call-script] 0x5258 -> LOADCONFIG.BIN` 之后紧接 **28 条** `[present] item h=0x19a28 layer=105000 未绑定纹理槽 → 占位块`（`0x19a28` = **105000** = `SYSTEM4.txt:69` 的 `i213 8 19a28 1f4` 给 win8 登记的**正文行 id 起点**，区间 `[105000,105500)`）。⇒ 根因：引擎里\"屏幕上的字就是 Scene 的 DrawItem\"（正文行 id = 行号 + `win+104`，GDI 排好字后按 id 贴出），而 emulator 的文本另有载体（`textLayer` + `msgWins`）⇒ 这批 id 上的空 DrawItem 被 `presenter.#placeholder` 画成**纯白矩形**，正好盖住 ADV 窗口（用户看到的\"背景是白色\"）；开合侧边栏会触发 `detach-texture` 按区间删项 + 重新发布文本 ⇒ 白块消失、\"变正确\"。**修复**：渲染侧新增判据 —— handle 落在某窗登记的正文区间内（`SceneState.msgRanges`，`0x213`/`0x25D` 登记）**且**没有绑定纹理槽（`imgid === undefined`）⇒ **跳过不画**（文本由文本层画），并留一条一次性日志。落点：新模块 `src/renderer/drawitem/msgTextRange.ts` 的 `inMsgTextRange` + `presenter.itemSprite` 的取值侧。**守卫**：`test/msg-text-range.test.ts`（2 例）—— ①区间判据（左闭右开/跨窗/`count<=0` 视为未登记，用真机登记值 `[105000,105500)`、`[104300,104303)`）；②**源码棘轮**（`itemSprite` 必须在\"无纹理槽\"那一支调用它并 `return null`）。突变已证明：把该判据改成 `if (false)` ⇒ 棘轮 1 fail；还原后 2/2 绿。\n★进度（2026-09-22，用户指路后**已复现 SC0000 那一帧**））：用户口径澄清「白底**只在 SN0000 → SC0000 切章之后**出现，序章内部没有」⇒ 复现口径 = **载入序章末尾的存档（078）→ 点一下 → 再等约 15 s**（过场走完）。本轮已跑通：`npm run shot -- --load 78 --centered --name sc78 --burst 34`（`--burst` 是本轮给 `tools/shot.cjs` 新加的连拍；`--key Up` 已按用户观察移除，改用 `--row <y>` 点行选槽 —— 载入列表会记住上次光标，不点行会重复载入 079）。**现象（像素打点，归档帧 `evidence/e4-sc0000-white-panel.png` = `sc78-16-t34s.png`）**：ADV 窗口本体是**平铺的 `#E3E3E3`**（(640,700) 与 (1300,700) 两点同色）、白字笔画 `#FFFFFF`、黄字 `#E1C700`；★ `#E3E3E3` 正是本项目记录的**文字白电平**（`0xFFFFFF` 经覆盖率合成后的值，见 `raster.ts` 的 `TEXT_FILL_ALPHA` 与能力条目 `text-white-level-on-composite`）⇒ 本体不是\"纯白占位块\"、也不是\"未绑定槽\"。同一帧里**阿瓦罗的角色名已是橘色**（判据 4 的修复生效）——所以\"白底\"与\"名字颜色\"是**两个独立问题**，后者已收口。**已排除**：`#placeholder`（本轮全日志 `未绑定纹理槽`/`但纹理未就位` 各 **0 条**）、上一轮修的正文区间占位块（那是 `_load 79` 那一族 `h=0x19a28…`）、`rasterFrame` 的窗底色分支（语义上恒不执行）。**下一步（需\"干净窗口\"，见 evidence 说明）**：让用户实例停 ~2 min（或用户把白底那一刻的 `.tmp/amayui-emulator.log` 给我），跑一次**窗口区逐项日志**拿到 `1042xx` 那几项的 `handle/src/dst/tint/texture`；候选根因：窗口本体项在\"先设色、后建项\"的顺序下**丢了颜色** —— `0x202` 在 `flags&1==0` 时整笔丢弃（日志 `[created-gated]`），引擎 `sub_4AD0C0` 的写入也全在 `flags&1` 门内，而 `0x203`（`sub_4ACF60`）是\"建项 + 无条件写\"，两侧口径要逐条对齐后定修法。★副作用提醒（本轮实测）：`shot --load` 路径在**载入时也会回写槽**（日志 `save slot 78 -> 1016868 bytes`，其中一次写的是 **base**（真机目录）的 `SAVE78.DAT`）⇒ 已改为只碰 overlay 的槽，并请用户保留备份。",
-    "白底取证（落点已定）：半透明黑底在引擎里由哪段代码画（疑为 op 0x70 之后的 sub_43B070(dd, 表面, 色)）、底色真源是**窗字段还是全局字段**；并解释**为什么展开/收起侧边栏之后会变正确**（正确路径比错误路径多做了什么 = 唯一判决点）。★已确证线索：窗口底色字段 WinGeom.background（src/vm/msgwin.ts:88，默认 null 在 :252）在整个 src/ 里**只有默认值与读取点、无任何写入点**（grep -n 只有 src/tools/diagText.ts:65）\n★进度（轮 14，**四个洞全部有落点**）：①**H1**（`0x249` 未进同步屏障）✅ 屏障覆盖 `0x249`；②**H3**（世代判据把槽打成\"永久无纹理\"）✅ `TextureCache.#healSlot`（\"当前绑定 + 图已在 `#imgCache`\" ⇒ 读侧自愈，`resolve`/`size` 都走它）；③**H4**（迟到到货不置脏）✅ `onReady → pixiBackend.#markDirty()`；④**H2**（屏障 500 ms 默认上限 = **静默截断**）★**本轮修**：`textureCache.ts` 新增共享常量 `BARRIER_GIVEUP_MS=30_000` / `BARRIER_WARN_MS=1_000` / `BARRIER_POLL_MS=64`，`waitIdle(timeoutMs?)` 省略参数 = 安全兜底（不再是 500 ms）、64 ms 轮询 ⇒ 每秒可打「纹理屏障仍在等待 …ms（在途 N 张：0x…）」，到上限打 ★ 行并**点名在途 imgid**；`l2dTextures.waitIdle` 复用同一常量。★为什么不是\"少画一帧\"：屏障后面紧跟的可能是 `0x208`（读尺寸并**写回操作数**）这类 getter ⇒ 载入未完成就放行，脚本按 `0×0` 走**与引擎不同**的分支且**不会回头再看**（引擎的 `set-texture` 是同步的，没有\"超时\"这一说）。守卫 +2（`test/texture-bind-race.test.ts`）：行为（无参 `waitIdle()` 在 **700 ms** 窗口内必须仍在等 —— 窗口特意跨过旧默认 500 ms；`BARRIER_GIVEUP_MS >= 10_000` 值棘轮；显式 `waitIdle(40)` 截断须点名在途 imgid；到货后无参屏障照常结束）+ 源码棘轮（两个纹理库不许再把数字字面量当默认值、`pixiBackend.texturesIdle` 不许传数字上限）。辨别力两次机械证明（还原 `= 500` ⇒ 行为用例 503 ms 红 + 源码棘轮红；收敛路径传 `waitIdle(500)` ⇒ 源码棘轮红），还原后 12/12 绿。★**诚实边界不变**：四个洞都修 ≠ 已复现用户那一帧（\"白的是哪个槽/handle\"仍未证；见 `white-report.md` §4.1），现在的形态是\"机制已修 + 诊断已可见（`[present] … 纹理未就位 → 占位块`，两类都留痕）\"。",
-    "★判据 3 **已判死（轮 12 判决实验）**：①「ADV 设置最后一行」写的是**全局**字段（`CONFIG2.txt:1669` 取色 → `CONFIG.txt:373-404` 的 `i076/i077`）——逐对象字段（`0x25E/0x25F` 的 `+256…+272`）在该路径上完全不参与；②「入队快照被绕过」**不成立**：记录表非空时 `i082` 恰好重画一次，用的就是 `styleOfWin` 取的**实时重派生色**（探针 `restyleByI082.fill == after.fill`、`snapshot=false`）；③紫色的真形状 = `CONFIG.txt:219-225` 的门 `((g0==1)||(g0==6)) && (1397==1)` 为假 ⇒ 重派生块整块跳过 ⇒ `14acda/f807b` 保留 CONFIG2 残留 `bgrToRgb(0xff90b6)=#B690FF`（已订正探针注释里写反的门极性）。**剩余**：用户 GUI 那次「戻る」时 `g0/1397/3f37` 各是多少（决定分歧在\"更早的脚本执行\"而不在取色）⇒ 需 E4 一行 trace。\n★进度（轮 13，**收尾 —— 剩余格关闭**）：新写探针 `.tmp/t0102-adv-trace.mts`（不置任何全局，按脚本状态驱动：TITLE `GAME_START_XY` → 跑帧到 `local 3f7==0` → 按 400 帧 → 松 → GAMESTART `START_GAME_XY` 同法 → 之后 `gates.advance='force'` 自动推进；`onFrameEnd` 每帧采样），在**真语料** `SYSTEM4 → TITLE → GAMESTART → SN0000` 的 **ADV 显示态那一帧（frame 5912）**实测到：`g0 = 6`（`SETFATE.BIN` frame 5228 置）、`1397 = 1`、`3f38 = 1`（`SN0000.BIN` frame 5912 同处分派）、`3f37 = -1`（旁白）、`14acda = 0`、`f807b = 0xffffff`、**文本项记录 2..6 条（非空）** ⇒ **`CONFIG.txt:219-225` 的门在真路径上是开的**（`(g0==6) && (1397==1)`）⇒ 「门没开 ⇒ 整块跳过 ⇒ 紫残留」**不是**真路径的原因；真路径落在「`g0=6` ⇒ `:261` 假分支跳过 `i071 2`+重新入队；但 `:269 i082` 照样执行，且其门（记录表条数 > op2，raw 79502）**过得去**」⇒ 引擎/实现都必须**用重派生后的实时白重画一次**。★据此补守卫（把**组合**钉死）：`test/config1-chain.test.ts`「★T-0102 判据 3 收尾：真路径实测值（g0=6 + 旁白 + 记录表非空）」= `advReturnProbe: { g0: 6, g1397: 1, msg: -1, seedRecords: 3 }` ⇒ `before #b690ff` → `sawI082` → `after.fill #ffffff` → `republishByI082 == 1`（恰好一次，实得 2 ⇒ 红并点名）→ `restyleByI082.fill == #ffffff` → `opsSyncedAfterI076` **不含 `0x6e`**。证据落盘：`tickets/T-0102/evidence/adv-state-trace.txt`。★**边界**：判据 3 到此关闭；用户 GUI 里\"紫还看得见\"若仍存在，只能出在\"重画载荷没到屏幕\"（宿主侧纹理键/光栅化时序 ⇒ `T-0104` 与纹理屏障线）或\"那一刻记录表恰为空\"（引擎里 `i082` 同样不画）——后者需在 GUI 那一刻采 `records`，本探针证明的是 ADV 常态下它非空。",
-    "★判据 4 **已判死（通道顺序）**：引擎写入端 raw 79666 的位表达式（`bgrToRgb` 注释逐字引用）与 emulator 实现**逐位等价**；真机 `SAVE.DAT` 的 `adcd` 调色板（`LOADCONFIG.txt:34-49` 用 `load-int` 读入 1000 条）是 **BGR/COLORREF** 编码，交换后同时含 **青 #00E1FF（下标 4）**与**橘 #FFB184/#FFD871/#DD9B2C（下标 5/7/10）** ⇒ 「橘↔青」不可能由通道顺序产生（正文用的白/暖白是近似中性色，交换前后无差 ⇒ 只有饱和的角色名会显形，与用户描述一致）。⇒ 期望值判据 = `bgrToRgb(adcd[14acda])`，`14acda` 由 `52a49c/14acdc/14b0c4` 按当前消息号 `3f37` 派生；**剩余候选 = 下标选取（`14acda` 派生差一）**，需一张真机 ADV 同一行的截图（或 E4 的 `14acda` 日志）才能定性。守卫：`test/text-style-snapshot.test.ts` 的「判据 4」用例。\n★进度（轮 17，**判据 4 重新打开：唯一判决点收窄到 `i076` 的通道约定**）：用**强制 `msg`**（`advReturnProbe.derivation`，本轮新增的持久取样口）在真语料上把整条链走通，并用**游戏自己的角色数据脚本**做 oracle —— ① **派生链与脚本数据逐值一致**：`CVINIT.txt:37-43` 阿瓦罗那一块写 `14a8f5 = ffe100`（他的默认色）+ **`14b0c5 = 4`**（= `14b0c4[1]`）+ 名字「アヴァロ|阿瓦罗」；探针实测 `14acdc[1] = 1`、`14b0c4[1] = 4`、`14acda = 4` ⇒ 与数据完全一致（菲亚是 `14b0c6 = 5`，同样一致）。② **消息表 `f612[3f37]` 有内容**：`f612[1] = 「阿瓦羅・魯庫雷爾」`、`2 = 菲丞`、`3 = 伊欧露`、`5 = 鷭斯尼爾・裃古里` ⇒ 判据 5 缺的\"有角色名的那一行\"用强制 msg 就能铺出来（**不必**走到 SC0000），判据 5 的取样点问题就此关闭。③ **调色板来源已定**：`adcd` 由 `INITCONFIG4` 从 `CVINIT` 的逐元素默认色推导（`adcd[i] = 14a8f1[i] != 0 ? 14a8f1[i] : adcd[i]-1`），真机 `SAVE.DAT`（**overlay 与 base 两侧**）的 `adcd[0..13]` 与之一致 ⇒ 本机没改过色、\"用户配色被忽略\"这条**排除**；`14b0c4`/`14acdc`/`52a49c` 不在 SAVE.DAT 的 int 表里（脚本数据）。④ **判决量**：阿瓦罗自己的数据值是 **`0xffe100`** —— 按 `0xRRGGBB` 直读 = `#FFE100`（**橘黄**，= 用户\"预期\"）、按 COLORREF→`bgrToRgb`（emulator 现状 / 引擎 raw 79666 的**字面**读法）= `#00E1FF`（**青**，= 用户看到的**症状**）；同法 `adcd[12] = 0xff90b6` 直读 `#FF90B6`（粉）vs 交换 `#B690FF`（**紫**，= 用户报的\"紫\"）。⇒ 两条症状合起来只有一个自洽解释：**这条链上数据是 RGB、而现有实现又交换了一次**；要么引擎在操作数**读取端**已做一次 RGB→COLORREF（emulator 少了那一端），要么数据本身是 COLORREF、用户的\"橘\"来自别处。⑤ **下轮的两条判决路**（都留证据）：**(a) 真机像素** —— `.tmp/t0042-shots/opt-engine.png`（真机 OPTION 屏）里若有有名有色的角色名，取像素与 `#FFE100`/`#00E1FF` 比，一次采样定性（唯一不依赖推断的路）；**(b) 读 `0x76` 的 handler 全文与操作数取法**（`sub_466000` 调用点），确认 `a5` 是脚本原值还是已转换值 ⇒ 若 (a) 成立，修复点在**操作数读取端**而不是 `bgrToRgb`。⑥ 守卫（新文件 `test/adv-name-color-chain.test.ts`，2 例）：`14b0c4` 逐值 == `CVINIT` 正文（独立 oracle；**突变已证明**：把 `14b0c5` 改成 7 ⇒ 1 fail，还原后绿）+ `14acda == 14b0c4[14acdc[msg]]` 且 `f807b == adcd[14acda]`（两条不同角色）。★诚实边界：`fill == bgrToRgb(f807b)` 是自洽检查，通道方向 oracle 仍在 `test/text-style-snapshot.test.ts` 的判据 4。\n★收口（轮 18，**判据 4 关闭：通道约定判死 + 根因修复**）：① **判决证据（引擎原始代码，两条缺一不可）**：`0x76` 的 handler `sub_41F390`（raw **28663-28671**）只有 5 行 —— `v2 = sub_41BF50(_this, 1)` 取**脚本原值**（无前置转换），`_this[21664] = BYTE2(v2) + ((BYTE1(v2) + ((u8)v2 << 8)) << 8)` 翻转一次；而 raw **79241** 把该字段**原样**交给 `sub_455ED0`，后者 raw **68093/68127** 直接 `SetTextColor(hdc, *(Font+1360))` —— GDI 收的是 `COLORREF(0x00BBGGRR)`。⇒ **字段是 COLORREF，屏幕色 = `bgrToRgb(字段)` = 脚本原值**；`0x76` 的翻转是\"脚本 RGB → GDI COLORREF\"的格式转换，**不是**多翻了一次。② **与用户口径逐格对上**：阿瓦罗脚本值 `0xffe100`（CVINIT）→ 字段 `0x00e1ff` → 真机 `SetTextColor(0x00e1ff)` = **`#FFE100` 橘**（= 用户\"预期橘色\"）vs 修前 emulator 把字段当 `0xRRGGBB` ⇒ **`#00E1FF` 青**（= 用户\"变成青色\"）；设置页残留 `0xff90b6` 同法：真机 `#FF90B6` vs 修前 emulator `#B690FF` **紫**（= 用户第三条\"继承最后一行的紫色\"）。⇒ **两条症状同一根因**。③ **修复**：`src/vm/handlers/msgwin.ts` 的 `globalTextStyle()`（文本样式唯一来源，消息窗与 `draw-string`(0x204) 都走它）改为 `fill/outline = hex6(bgrToRgb(v(21664/21665, …)))`；**字段语义不变**（仍逐位等于引擎 `Font+1360`），翻转发生在**取用侧**；两个诊断探针改成报告渲染用色，与实现同口径。④ **期望值变更（同类：把 R/B 互换的旧期望改回脚本原值）**：`test/text-style-snapshot.test.ts` 4 例（`#123456`→`#563412`，只比\"颜色随谁走\"的语义不变）、`test/config1-chain.test.ts` 判据 3 的 3 处（`#b690ff`→`#ff90b6`，门开/门关结论不变）。⑤ **守卫 + 突变证明**：`test/adv-name-color-chain.test.ts` 定点守卫（`engineValues[21664] = 0x00E1FF` ⇒ `#ffe100`；`0xB690FF` ⇒ `#ff90b6`；白 ⇒ `#ffffff`）；去掉那两次 `bgrToRgb` ⇒ 该用例 1 fail（报错文案即\"阿瓦罗必须是橘不是青\"），还原后 3/3 绿。⑥ `npm run verify` 全绿：**1031 测试（1030 通过 / 1 skipped / 0 fail）** + typecheck ×3 + 死写 0。证据 `evidence/channel-convention-fix.md`。",
-    "三条各补守卫（场景级不变量优先；若只能 E4 目视，必须在票里写明为什么无法自动化）；npm run verify 全绿；四份台账 --validate 绿\n★进度（轮 13，探针能力补齐，**剩余未关闭**）：同一条 E4 探针现在能把\"真路径上 `14acda`/`f807b` 到底是几\"实测出来（本轮在旁白态实测 `14acda = 0`、`f807b = 0xffffff` —— 与 `3f37 < 0` 的派生一致，属**已知正确**的那一支）。「青 vs 橘」要定性仍需**有角色名的那一行**（`3f37 >= 0`）：探针只需把停止条件从\"ADV 显示态\"换成 `3f37 >= 0 && 14acda != 0`（或把帧预算加到能跑到 SC0000 的对话段）即可采到，判据仍 = `bgrToRgb(adcd[14acda])`。⇒ 候选已被收窄到**单一量**：`14acda = 52a49c[3f37]` / `14b0c4[14acdc[3f37]]`（`CONFIG.txt:227-257`）的下标派生。\n★进度（轮 16，**判据 5 的取样点被证明\"在这条路上不存在\"**）：把取样口做进库（`src/tools/gameStartChain.ts` 新增 `sampleAdvSpeakerLines` + `advanceAfterTarget`，产出 `advSpeakerLines[] = { frame, script, ip, msg, c14acda, f807b, f807c, fill, outline, text }`），并在**真语料链路**上实测（`evidence/adv-speaker-line-probe.md`）：链路 **279 段**，末段 `SETCHARM → SC0000 → SETWEATHER → NOVEL → SN0000 → DRAWCHARM → CHARMEDIT` —— ① **`SC0000.BIN` 确实被进入**（修正此前\"SC0000 不可达\"的表述：可达的是进入 SC0000，不可达的是它的**对话段**）；② 屏上是**序章旁白**（`win 8` = \"由両个世界融合而生的『迪爾-利菲娜』…\"），`3f37` 全程 `-1` ⇒ **0 条**\"有发言人\"的样本；③ 脚本数据侧根因（新棘轮守卫）：`3f37` 的**设置点** `mov (global-int 3f37)` 全在 `SC*/SG*/SP*/NOVEL/HMODE/GAMECLEAR/DEBUGADV` 里，`SN0000.txt` **0 处**（只有 `sub … 0 1` 递减 1093/2027/2097/3013 与读点）⇒ 序章里不可能有\"有角色名的那一行\"。⇒ 剩余口径收窄为两条（任一即可关闭判据 5）：**(a) 走到 SC0000 的对话段**（`force` 推进会在序章中途被菜单劫持、终态 `CHARMEDIT.BIN` ⇒ 需要\"只推进 ADV、不点侧边栏\"的驱动，与 `T-0103` 同源）；**(b) 强制值 + 消息表 oracle**（`config1Chain.ts` 的 `advReturnProbe` 可设 `cfg.msg = 3f37` 铺出\"一句有发言人的 ADV\"，再用 `f612[3f37]`/`14acdc`/`52a49c` 算**期望下标**与实测 `14acda` 比 —— **不需要**跑到 SC0000）。★踩坑（已写进代码注释）：脚本把旁白存成 `0xFFFFFFFF`，`dec()` 不归一 ⇒ 必须 `| 0`，否则旁白被当成 `msg = 4294967295` 的\"有发言人\"（首跑即中招）。\n★进度（轮 17）：判据 5 的\"取样点存在性\"已解决（`f612[msg]` 有真实角色名，强制 msg 即可铺出\"有发言人的那一行\"）；剩**唯一**未定项 = 通道约定（见判据 4 的轮 17 段），它已不是\"取不到数据\"而是\"两读法选一\"，两条判决路各一次采样/一次读体即可关闭。\n★收口（轮 18，**判据 5 关闭**）：① 取样点存在性已证（`f612[3f37]` 有真实角色名，强制 `msg` 即可铺出\"有发言人的那一行\"）；② 期望值判据 = **脚本原值**（= `bgrToRgb(adcd[14acda])`，与判据 4 的修复一致）：阿瓦罗 `0xffe100` ⇒ `#FFE100`、菲亚 `0x84b1ff` ⇒ `#84b1ff`；③ 守卫两条（CVINIT oracle + 派生链/渲染色自洽）+ 判据 4 定点守卫，三者都在 `test/adv-name-color-chain.test.ts`；突变证明见判据 4 第⑤条。⇒ \"青 vs 橘\"不再是开放项：**它是判据 4 那个 bug 的症状，已修并上锁**。"
+    "★**当前权威结论（2026-09-22，详见 evidence/STATUS.md）**：ADV 窗口「白底」= 窗口模式选择子 `global 0` 被覆盖成 1。`src/SC0000.txt:1292` 已把 6 正确写入（诊断实测 `写 global0 ← 6 @SC0000.BIN ip=972`），随后 `SN0000` 结尾的章节推进链（`ALLMAP` → `SETADVFLAG` → `SCJUMP`）在 `src/$1$SCJUMP.txt:49` 执行 `mov (global-int 0) 1` 把它盖成 1 ⇒ 窗口例程 `eq local0, global0, 6` 判假 ⇒ 走白纸窗支（`src/SN0000.txt:3080` / `src/SC0000.txt:32666`）。**已彻底排除**：纹理槽配置（槽 0x11 全程 0x5260）、占位块（两类日志各 0 条）、`0x259`（另有两份独立取证）。两条路（载入 078 推进 / 从 GAMESTART 推进）日志形态一致，与用户实测吻合。",
+    "**判据（任一路径都必须满足）**：① 走到章节点后、ADV 窗口绘制那一刻，`global 0 == 6`（诊断应打 `global0(解码)=6`）；② 窗口走 `create-mesh + set-vertex-color`（半透明黑幕）而不是 `draw-texture … 11 …`；③ `src/*.txt` 与引擎主题文档一行不改（脚本可靠是前提）。",
+    "**未决（下一轮判死，三选一）**：这条链在此时会不会被真机执行 —— (a) `SCJUMP` 本就不该跑（查 `ALLMAP` 的 `b22a` 门 `src/ALLMAP.txt:35`、`SN0000:2227` 那一带的分支）；(b) 链该跑但四个门量在真机取值不同（`1dd7`/`3318`/`1521`/`2f3c`，**需要真机 oracle**）；(c) 真机之后还有一步把 6 写回（全语料只有 `SC0000:1292` 写 6，已实测在本链**之前**）。★关键分叉：`1dd7` 唯一写点 `src/SC2560.txt:1282`、`3318` 唯一写点 `src/GAMESTART.txt`（下标 701）在 emulator 里都没执行。",
+    "**收尾前必做**：撤掉源码里的四处临时诊断（`arithmetic.ts`/`gfx-texture.ts`/`save-slot.ts`/`control.ts` 的 `[T-0102 诊断]`），并跑 `npm run verify` 全绿 + 四份台账 `--validate` 绿。",
+    "★已完成：`0x259` 口径纠错（imgid 不该清、标志位该清）**独立成立**（引擎逐位复核），已修 + 守卫 + 突变证明；它**不是**白底的成因（白底成因见第 1 条）。落点：`src/renderer/pixi/textureCache.ts`、`src/renderer/headlessScene.ts`、`src/vm/handlers/gfx-misc.ts`；守卫 `test/clear-slot-records-keeps-bindings.test.ts`（4 例）+ `test/slot-save-resume.test.ts`。"
   ],
   "evidence": [
+    {
+      "file": "tickets/T-0102/evidence/STATUS.md",
+      "anchor": "被覆盖成 1",
+      "line": 11,
+      "note": "★本票**当前权威状态**（2026-09-22）：白底 = SCJUMP 的 `mov (global-int 0) 1` 把 SC0000 写好的 6 盖成 1；含 global0 完整时间线、两道门的实测值、已排除项、未决项与临时诊断清单。旧的分节结论（§7/§10/§11）在 §G 集中标注作废"
+    },
     {
       "file": "tickets/T-0100/changes.md",
       "anchor": "坑 A",
@@ -46,7 +52,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "回写丢弃",
       "note": "本批修复点：bind 的异步回写判据（槽表面世代 + 绑定未变）。守卫 `test/texture-bind-race.test.ts`（5 条，判别力已机械证明）。★用户复验：白底仍在 ⇒ 这条不是那次白底的原因（保留）。★**轮 9 追加**：同一文件新增**到货通知 `onReady`**（纹理确实落进该槽时调用；被丢弃的回写不调用），`pixiBackend.ts` 传入 `() => #markDirty()` ⇒ **迟到的图像会让下一帧重新合成 ⇒ 白占位块最多存活一帧**；守卫 +2 条（迟到到货必须通知 / 丢弃不得通知，撤销 `onReady` ⇒ 1 fail，还原 sha256 一致 ⇒ 7/7）。机制取证全文见 `tickets/T-0102/white-report.md`。",
-      "line": 242
+      "line": 281
     },
     {
       "file": "src/CONFIG.txt",
@@ -69,8 +75,8 @@
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "spr.tint = color & 0xffffff;",
-      "note": "★白底的形状：未解析槽的 `draw-texture` 项 = **纯白矩形** —— `#placeholder` 用 `Texture.WHITE`（`appSetup.ts`），而这一行**无条件覆盖**了按 layer 派生的 tint，`color = itemColor(...)` 对新建项恒为 `Item.from = 0xFFFFFFFF`（`drawitem/model.ts`）⇒ 本票原「甲-4（不是纯白，是绿调块）」**是错的，已删**。",
-      "line": 469
+      "note": "★2026-09-22 订正：这一行**无条件覆盖**占位块自己的调试色 ⇒ 白占位块的颜色 = 该项 diffuse；与 `0x203` 给的 alpha(≈0xa0) 相乘即 `#E3E3E3`（与归档帧采样逐点吻合）⇒ **白底 = #placeholder** 这条成立。但**触发原因**不是「槽 11 未绑定」（该结论已判死，见 evidence/texture-slot-identity.md），而是宿主侧 `TextureCache.resolve` 在 `texSlots[17]=0x5260` 已就位时仍返回空纹理。",
+      "line": 486
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
@@ -100,7 +106,7 @@
       "file": "src/CONFIG.txt",
       "anchor": "label_00001ae8",
       "note": "重派生的**取出点**（`:372-407`）：`f807b = ffffff` 起手 → `adcd[14acda]` 按 `a9dd` 的 bit1/bit0 分别写 `f807b`/`f807c`（`a9dd&3 == 3` 时整段跳过、`a9de != 0` 时 `f807c = f807b`）→ `:403-405 i076/i077/i078` 应用。⇒ 用户报的「继承设置界面 ADV 设置最后一行的颜色（紫）」在**门被跳过**时就是 `adcd[14acda=12] = #b690ff` 直接留着（`:229-231`/`:372-389` 都没跑）。",
-      "line": 372
+      "line": 170
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
@@ -124,7 +130,7 @@
       "file": "app/amayui-emulator/test/text-style-snapshot.test.ts",
       "anchor": "判据 4：文本色通道顺序",
       "note": "判据 4 的守卫：**独立**求值引擎那段位运算（不调用被测函数）并逐值比对 `bgrToRgb`，取值 = 真机 `SAVE.DAT` 的 `adcd[0..12]`；再钉「交换两次回到原值」防\"多交换一次\"蒙过。★同时记下真机调色板里**青与橘相邻**（`adcd[4]`⇒#00E1FF 青 / `[5][7][10]`⇒#FFB184/#FFD871/#DD9B2C 橘）⇒ 症状的候选是**下标（`14acda` 派生）**、不是通道。辨别力已机械证明：把 `bgrToRgb` 改成不交换 ⇒ 本用例 1 fail（0xffe100 actual 16769280 / expected 57855）。",
-      "line": 191
+      "line": 188
     },
     {
       "file": "src/LOADCONFIG.txt",
@@ -141,53 +147,62 @@
     {
       "file": "tickets/T-0102/evidence/e4-load-adv.md",
       "anchor": "e4-load-6s.png",
-      "note": "E4（真界面，`npm run shot -- --load`）：载入存档后的 ADV 旁白态无白底、正文白色；且全部存档都在序章 ⇒ SC0000 那条路必须先推进过序章（与 T-0103 共用可达性缺口）。含 3 张截图的 sha256。"
+      "note": "E4（真界面，`npm run shot -- --load`）：载入存档后的 ADV 旁白态无白底、正文白色；且全部存档都在序章 ⇒ SC0000 那条路必须先推进过序章（与 T-0103 共用可达性缺口）。含 3 张截图的 sha256。",
+      "line": 9
     },
     {
       "file": "tickets/T-0102/evidence/adv-speaker-line-probe.md",
       "anchor": "有发言人的样本 0 条",
-      "note": "轮 16 判据 5 取证：链路 279 段的末段（SC0000 可达）+ 序章旁白 + 0 条有发言人样本 + 两条剩余口径"
+      "note": "轮 16 判据 5 取证：链路 279 段的末段（SC0000 可达）+ 序章旁白 + 0 条有发言人样本 + 两条剩余口径",
+      "line": 26
     },
     {
       "file": "app/amayui-emulator/test/game-start-chain.test.ts",
       "anchor": "判据 5：序章（SN0000）没有",
-      "note": "轮 16 新增可达性棘轮（纯脚本数据侧、270 ms）：SN0000 无 `3f37` 设置点 + 设置点必在 SC#### 系里；突变证明：给 SN0000 加一行 `mov (global-int 3f37) 1` ⇒ 该用例 1 fail"
+      "note": "轮 16 新增可达性棘轮（纯脚本数据侧、270 ms）：SN0000 无 `3f37` 设置点 + 设置点必在 SC#### 系里；突变证明：给 SN0000 加一行 `mov (global-int 3f37) 1` ⇒ 该用例 1 fail",
+      "line": 452
     },
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
       "anchor": "advSpeakerLines",
       "note": "轮 16 新增取样口（`sampleAdvSpeakerLines` + `advanceAfterTarget`；含\"旁白 = 0xFFFFFFFF 必须 `| 0`\"的坑）",
-      "line": 199
+      "line": 202
     },
     {
       "file": "tickets/T-0102/evidence/name-color-chain.md",
       "anchor": "角色名颜色的**完整派生链**已核定",
-      "note": "轮 17 取证全文：链条、7 个真实消息号的实测表、CVINIT oracle、adcd 来源、通道约定的两读法与判决路"
+      "note": "轮 17 取证全文：链条、7 个真实消息号的实测表、CVINIT oracle、adcd 来源、通道约定的两读法与判决路",
+      "line": 1
     },
     {
       "file": "app/amayui-emulator/test/adv-name-color-chain.test.ts",
       "anchor": "`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据",
-      "note": "轮 17 新增守卫（独立 oracle + 突变证明）；第二条钉 `14acda == 14b0c4[14acdc[msg]]` 与 `f807b == adcd[14acda]`"
+      "note": "轮 17 新增守卫（独立 oracle + 突变证明）；第二条钉 `14acda == 14b0c4[14acdc[msg]]` 与 `f807b == adcd[14acda]`",
+      "line": 63
     },
     {
       "file": "src/CVINIT.txt",
       "anchor": "mov (global-int 14b0c5) 4",
-      "note": "★判决锚点：阿瓦罗那一块（上方 `set-string \"アヴァロ|阿瓦罗\"` + `14a8f5 = ffe100`）—— 他的调色板下标是 4"
+      "note": "★判决锚点：阿瓦罗那一块（上方 `set-string \"アヴァロ|阿瓦罗\"` + `14a8f5 = ffe100`）—— 他的调色板下标是 4",
+      "line": 43
     },
     {
       "file": "src/INITCONFIG4.txt",
       "anchor": "lookup-array (local-ptr 0) (global-int adcd) (local-int 0)",
-      "note": "调色板的唯一写者：从 `14a8f1[i]`（CVINIT 的逐角色默认色）推导 `adcd[i]` 并 `save-int` 回写"
+      "note": "调色板的唯一写者：从 `14a8f1[i]`（CVINIT 的逐角色默认色）推导 `adcd[i]` 并 `save-int` 回写",
+      "line": 23
     },
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "derivation: {",
-      "note": "轮 17 新增的持久取样口（`AdvReturnProbe.derivation`）"
+      "note": "轮 17 新增的持久取样口（`AdvReturnProbe.derivation`）",
+      "line": 262
     },
     {
       "file": "tickets/T-0102/evidence/channel-convention-fix.md",
       "anchor": "通道约定判死 + 根因修复",
-      "note": "轮 18 判决与修复全文：引擎两处 raw 证据、与用户两条口径的逐格对照、修复点、期望值变更表、守卫与突变证明"
+      "note": "轮 18 判决与修复全文：引擎两处 raw 证据、与用户两条口径的逐格对照、修复点、期望值变更表、守卫与突变证明",
+      "line": 1
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
@@ -198,32 +213,56 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "sub_455ED0(_this, v60 + 20, x, v24, &String, *(_DWORD *)(_this + 1360), *(_DWORD *)(_this + 1364), 0, 1, v48);",
-      "note": "判决证据②：字段被原样交给文字绘制器（→ raw 68093 SetTextColor，COLORREF 语义）"
+      "note": "判决证据②：字段被原样交给文字绘制器（→ raw 68093 SetTextColor，COLORREF 语义）",
+      "line": 79241
     },
     {
       "file": "app/amayui-emulator/src/renderer/drawitem/msgTextRange.ts",
       "anchor": "消息窗正文行的 DrawItem 区间",
-      "note": "新增判据模块：正文区间内的无槽项 = 文本行（交给文本层），不许画成白块；含 E4 日志形状"
+      "note": "新增判据模块：正文区间内的无槽项 = 文本行（交给文本层），不许画成白块；含 E4 日志形状",
+      "line": 2
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "inMsgTextRange(scene.msgRanges.values(), it.handle)",
-      "note": "修复点：itemSprite 的取值侧跳过（此前走 #placeholder 白块）"
+      "note": "修复点：itemSprite 的取值侧跳过（此前走 #placeholder 白块）",
+      "line": 419
     },
     {
       "file": "app/amayui-emulator/test/msg-text-range.test.ts",
       "anchor": "消息窗正文区间判据",
-      "note": "守卫（2 例，含源码棘轮；突变已证明）"
+      "note": "守卫（2 例，含源码棘轮；突变已证明）",
+      "line": 42
     },
     {
       "file": "tickets/T-0102/evidence/e4-sc0000-white-panel.md",
       "anchor": "ADV 窗口本体是**平铺的 `#E3E3E3`**",
-      "note": "本轮 E4 复现全文：命令、连拍帧序列、像素打点表、已排除项、下一步与候选根因"
+      "note": "本轮 E4 复现全文：命令、连拍帧序列、像素打点表、已排除项、下一步与候选根因",
+      "line": 1
     },
     {
       "file": "tickets/T-0102/evidence/e4-sc0000-white-panel.png",
       "anchor": "PNG",
-      "note": "SC0000 稳定态归档帧（sha256 613105E9…F243，= .tmp/sc78-16-t34s.png）"
+      "note": "SC0000 稳定态归档帧（sha256 613105E9…F243，= .tmp/sc78-16-t34s.png）",
+      "line": 1
+    },
+    {
+      "file": "tickets/T-0102/evidence/texture-slot-identity.md",
+      "anchor": "draw-texture 19640 11 0 0 43e 95 5d 22c",
+      "note": "2026-09-22 取证：脚本字面量是 hex（disassembler 的 hex()）⇒ `11`=槽 17；槽 17 由 SYSTEM4.txt:123 开机绑定 0x5260，SAVE78 的 records[17] 也装回 ⇒ 「槽 11 从未绑定」判死。含 564 个 BIN 的槽值直方图（draw-texture 槽17 共 2670 次、十进制槽11 为 0 次）",
+      "line": 40
+    },
+    {
+      "file": "tickets/T-0102/evidence/clear-slot-records-root-cause.md",
+      "anchor": "★二次复核（应要求）",
+      "line": 48,
+      "note": "★根因直证（用户现场日志 .tmp/amayui-emulator.log 第 1862 行）：0x259 被实现成清 #slotImgid，而 resolve/#healSlot 都靠它索引槽 ⇒ 槽17 绑定被抹，窗口落 1×1 白占位块。★二次复核订正：引擎 sub_41A3A0(raw 25357-25374) 清的是**记录表的 flag 两格**（Scene/0x750+0x754 = Engine+324704/324708，正是 0x258 写的那两格），**imgid 一格没碰**；emulator 恰好**清反了**：清多了 imgid、清少了 Engine.texSlotFlags ⇒ 两处一起改。 ★复核后修法也要修正：不只\"不清 #slotImgid\"，还要\"清 texSlotFlags\"。 ★（锚点已 retarget 到 §1.5 的二次复核节 —— 原锚点是旧版日志串，源码修好后其措辞已变。）"
+    },
+    {
+      "file": "tickets/T-0102/evidence/texture-slot-identity.md",
+      "anchor": "占位块已经没有了",
+      "line": 138,
+      "note": "2026-09-22 复验：占位块已消除；剩下的白 = `global 0 == 6` 选中的白纸窗支（日志 4596 行），非缺纹理。含 global 0 的写点枚举与待判问题"
     }
   ],
   "links": {
@@ -312,6 +351,66 @@
       "at": "2026-09-22",
       "kind": "decision",
       "what": "用户澄清\"白底只在 SN0000→SC0000 切章后出现\"⇒ 按\"载入 078 + 点一下 + 等 15 s\"复现成功：ADV 窗口本体是平铺 #E3E3E3（= 本项目记录的文字白电平），而同一帧阿瓦罗的名字已是橘色 ⇒ 白底与名字颜色是两个独立问题。已排除 placeholder/正文区间占位块/窗底色分支；下一步需一次干净窗口的逐项日志定位 1042xx 那几项的归属（候选：0x202 在 flags&1==0 时整笔丢弃 vs 引擎 0x203 的无条件写）。工具：shot.cjs 新增 --burst（连拍）与 --row（点行选槽），移除 --key（用户观察到按键像是一直被按着）。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "判决前提取证：判死「槽 11 从未绑定」（脚本字面量是 hex ⇒ 11=槽17；槽17 由 SYSTEM4.txt:123 开机绑 0x5260；SAVE78 的 records[17]=0x5260 也装回；564 BIN 直方图 draw-texture 槽17=2670 次 / 十进制11=0 次）。白底=#placeholder 这条保留，但触发点改判到宿主侧 TextureCache.resolve；订正 CONTEXT.md §5.2 与 presenter.ts 那条 evidence 的 note。取证 evidence/texture-slot-identity.md"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★根因定位（用户现场日志直证）：白底 = 0x259 清掉宿主 #slotImgid ⇒ 槽17 绑定被抹 + #healSlot 同时失效 ⇒ 1×1 白占位块。引擎 sub_41A3A0（raw 25357-25374）只清 Engine+324704/+344704 两张记录表、不碰 Scene+42456 槽表 ⇒ 修法 = 0x259 不得清 #slotImgid。取证 evidence/clear-slot-records-root-cause.md"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★应要求二次复核 0x259 的其它副作用：逐位重算后订正——0x259 清的是**记录表 flag 两格**（Scene/0x750+0x754 = Engine+324704/324708，即 0x258 的写入点），**imgid 未被清**；⇒ emulator **清反了**：多清 #slotImgid（白底根因）+ 漏清 Engine.texSlotFlags（第二处副作用，0x258 写后不复位）。修法相应改为「保留 imgid、改清标志位」，落点 textureCache.ts:701 / headlessScene.ts:421 + 两处注释。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★修复实施：① textureCache/headlessScene 的 clearSlotRecords 不再清槽→imgid（引擎不清 imgid）；② gfx-misc 的 0x259 新增 texSlotFlags.clear()（引擎清的就是那两位）；③ 三处注释口径改写。守卫：新 test/clear-slot-records-keeps-bindings.test.ts（4 例）+ slot-save-resume 既有用例改写。突变两条均已证明。npm run verify 全绿 1037 测试。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★用户复验（13:04 日志）：0x259 的修复**已生效**（`clearSlotRecords：保留 7/8 条`），且 `未绑定纹理槽→占位块` **0 条**、`slotTex 自愈` 0 条 ⇒ **白底不再是占位块**。白来自脚本自己的分支：`src/SC0000.txt:32662-32686` 的 `global 0 == 6` ⇒ 走 `draw-texture 19640 11 …`（SO001 的窗户图），`!= 6` 才走 `create-mesh`+`set-vertex-color` 的黑幕支；日志第 4596 行确实执行了贴图支。`mov (global-int 0) 6` 全语料只出现一次 = `src/SC0000.txt:1292`。⇒ 待判「那一刻 global 0 应该是几」。另：修掉 presenter 的日志盲区（`if (size>64) clear()` 会把只发生一次的占位块证据抹掉 → 改成一次性键 `#noteMissing`）。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★★真正根因（13:11 日志 + 0x1FB 诊断打点）：窗口绘制时 `global 0 = 1`（诊断 raw=0x4000、key=0 ⇒ 解码 1），而脚本 `eq local0,global0,6` ⇒ local0=0 ⇒ 跳 `label_0006d348` 走白纸窗（`draw-texture 19640 11 …`）；黑幕支在落下句上被跳过。变量为何错：存档池 `int[0]=6`（正确），但**读档续跑重跑了 SC0000 的场景初始化**（`src/SC0000.txt:1023` 的 `mov (global-int 0) 1`，独立铁证=日志 2069/2084 有初始化段的 `createTexture slot=64/65`），把 6 覆盖成 1；而 6 只在序章入口支写（`src/SC0000.txt:1292`）。⇒ 根因在**续跑不该重跑场景初始化**，不在渲染、也不在纹理。修法方向：续跑落在存档点、不执行存档点之前的场景初始化（或保住池里带出来的那份全局）。验收：窗口绘制时 `global0(原始)=0x18000` 且走黑幕支。未证清：hover 后变黑无法从本日志解释（hover 后仍画白纸窗），待修复后复看。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★用户澄清：078/079 **都加载在 SN0000**，白底出现在**继续推进到 SC0000 之后**（与载入哪个档无关）。13:17 的 079 日志证实：载入后 SN0000 里窗口是**对的**（createMesh 0x19640 黑幕支出现在 4502/4828/4958/5222），切章（5493 clearSlotRecords + 5580 clearDrawContainer + 5870 转场）之后 6188 变成白纸窗，且全局诊断显示 `global 0` **全程恒为 1**（0x4000）⇒ 不是\"6 被改成 1\"，而是\"真机那一刻应为 6、emulator 是 1\"⇒ 下一步用两组诊断（写 global0 逐次留痕 + 窗口判决点）定位是谁/该谁写它。渲染与纹理侧已排除。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★关键代数量：两份真槽 78/79 的池都是 `int[0]=6`（= 窗口模式 6），而诊断实测窗口绘制时是 `0x4000`。由 `enc(key,a)=ROL4(key^ROR4(a,7),21)` 反解：`0x4000` 只可能来自 `enc(0x0E000000, 6)`；若 key=0 则 `enc(0,6)=0x18000`（解码 6）、`enc(0,1)=0x4000`（解码 1）。⇒ 三条互斥可能：(a) 池装成 0x18000 后被脚本改写成 1；(b) key 生命周期 bug（回写用 0xE000000、读侧用 0，Engine.key 只在 save-slot.ts:458 的本工程槽分支赋值，真槽分支不赋）；(c) 真槽路径没走池还原。已加三处临时诊断（池还原 / 写 global0 逐次留痕 / 窗口判决点）⇒ 下一份日志即可结案。渲染、纹理、章节重执行均已排除。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★★结案：jcc 级诊断证明两道门的条件**全为 1（都该跳）**，而 `mov global0 1` 仍执行 ⇒ 控制流落到它。映射后：index38 `ne local1,global 3318,1` ⇒ `3318=0` ⇒ local1=1 ⇒ index39 跳走；index40 `gr f8080,10` ⇒ f8080=INT_MAX ⇒ local1=1 ⇒ index41 跳走；但 index42 仍执行。★`global 3318` = \"已开始过新游戏\"标志，**唯一写点** = `src/GAMESTART.txt:1027`（ゲーム開始分支内，前置门 `global a9bc`/`a9c0&2`）；存档池里它是 **0**（真机为 1 ⇒ 第一道门在 index38 就跳走 ⇒ global0 保留 6 ⇒ 黑幕）。⇒ emulator 错在 `3318` 未被置 1（GAMESTART 分支没走到 / 或置 1 后被覆盖）⇒ 白底 = global0 被 SCJUMP 从 6 改成 1 ⇒ 窗口走白纸窗支。渲染、纹理、0x259 全部排除。取证 evidence/clear-slot-records-root-cause.md §11"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★用户指正后重算：§11 因果**推反了**。门的方向是「local7 真 ⇒ 跳走 ⇒ 跳过 mov global0 1」，所以要让 global0 保持 6，第一道门必须为**真**（1dd7==1 && 3318==1 && 1521!=1 && 2f3c!=1）。实测两份存档池：1dd7=0、3318=0、1521=0、2f3c=0 ⇒ local7=0 ⇒ 落下句 ⇒ 再被 f8080(INT_MAX，SETADVFLAG 写的) 打开第二道门 ⇒ mov global0 1 执行。⇒ 真机在存档当时同样是 0，却保持 6 ⇒ **真机根本没走到这段 SCJUMP 处理链**。⇒ 根因方向改为：emulator 在推进到章节点时**多走了章节跳转处理链**（ALLMAP→SETADVFLAG→SCJUMP 本支），应查 ALLMAP 的入口条件与 3f3d 的触发者。渲染/纹理/0x259 的排除仍成立。取证 §12"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★最终收敛（用户订正：13:36 日志是「加载 078 → 推进」）：读档点=3402-3410（池还原 int[0]=6 正确、savedCur=2、CALLBACK_LOAD），续跑收尾=5797（落点 SN0000 ip=2063）；此后 6156 SN0000 写 global0←2、6207-6256 跑 ALLMAP→SETADVFLAG→SCJUMP 链、6261 写 global0←1。★全日志只有这两处写 global0，**没有任何地方写回 6**（写 6 的只有 SC0000:1292，不在续跑收尾这条链上）。⇒ 真机读档后应保留存档的 6；emulator 的错在**读档续跑把章节跳转处理链（ALLMAP/SETADVFLAG/SCJUMP）也跑了**。CALLBACK_LOAD 已通读，不碰 ALLMAP。渲染/纹理/0x259/GAMESTART 全部无关（后者本会话未执行）。下一步：查 ALLMAP 的 b22a 门（读档续跑到 ip=2227 后走这条链是否正常分支）。取证 §13"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "scope",
+      "what": "文档整理：新增 evidence/STATUS.md 作为**当前权威状态**（一句话结论 + 判定点 + 已排除三项 + global0 完整时间线 + 两道门实测 + 未决三选一 + 产出索引 + 临时诊断清单）；acceptance 重写为「当前结论 / 判据 / 未决 / 收尾」四段；§7/§10/§11 的作废结论在 STATUS.md §G 集中留档。用户复测「从 GAMESTART 启动」表现一致：日志显示 SC0000 写 6 之后被 SCJUMP 盖成 1。"
     }
   ],
   "tests": [

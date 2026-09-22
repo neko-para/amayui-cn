@@ -81,16 +81,35 @@ npm run verify → tests 1033 / pass 1032 / fail 0 / skipped 1 + typecheck ×3 +
 - 复现：**只在 SN0000 → SC0000 切章后**出现 ⇒ `--load 78` → **点一下** → 等过场 ~15 s。
   归档帧 `tickets/T-0102/evidence/e4-sc0000-white-panel.png`（sha256 `613105E9…F243`）；
   像素：窗口本体 **`#E3E3E3`**（= 本项目记录的文字白电平）、白字 `#FFFFFF`、黄字 `#E1C700`。
-- 链条（用户侧日志 `.tmp/amayui-emulator.log`）：面板是**片**拼的、全取自**纹理槽 11**（`SC0000.txt:33237-33241`，
-  `draw-texture 19708 11 …`）；`set-draw-color-alpha` **只给 19708 上色**（`0x1970b` 那一片从没被上色）；
-  **槽 11 在 emulator 里从未绑定**（绑定清单 14 槽，日志 `slotTex=14` 对得上；脚本侧 `set-texture` 槽是**十六进制**，
-  全库没有 `… b`）。
+- 链条（用户侧日志 `.tmp/amayui-emulator.log`）：面板是**片**拼的、**全取自同一个纹理槽**（`SC0000.txt:33237-33241`，
+  `draw-texture 19708 11 …`）；`set-draw-color-alpha` **只给 19708 上色**（`0x1970b` 那一片从没被上色）。
+- ★★**2026-09-22 订正（前一句的"槽 11"是错的）**：`src/*.txt` 里**所有裸数字字面量都是十六进制**
+  （`scripts/asm/disassembler.mjs` 走 `age-shared.mjs:335` 的 `(v>>>0).toString(16)`；`rendering.md:48` 也这么写）
+  ⇒ **`11` = 0x11 = 槽 17**，不是槽 11。`0x5260`（= `SO001.AGF` 的 ADV 窗口框）在开机由
+  `set-texture 5260 11`（`src/SYSTEM4.txt:123`）**绑到槽 17**，读档也由存档的 `records[17]=0x5260` 装回。
+  全库 **564 个 BIN** 里 `draw-texture` 引用槽 17 共 **2670** 次、引用十进制槽 11 **0** 次。
+  ⇒ 「槽 11 从未绑定」**不成立**；`0x1970b` 也不是槽，是 `19708+3` 的 **handle**（十进制写法）。
+  取证全文 `tickets/T-0102/evidence/texture-slot-identity.md`。
 - **「占位块」语义**：`itemSprite` 里 `tex ? cropSprite(...) : this.#placeholder(it)`；`#placeholder` 用 `Texture.WHITE`
-  按**源矩形尺寸**铺一块，随后 `spr.tint = color & 0xffffff; spr.alpha = alpha/255;` **覆盖**占位块自己的调试色
-  ⇒ 它的颜色 = **该项的 diffuse**：上过色的（`19708` 黑 α160）像正常面板，**没上过色的（`1970b`）就是不透明白**。
+  （**1×1**，被拉伸到源矩形尺寸）铺一块，随后 `spr.tint = color & 0xffffff; spr.alpha = alpha/255;` **覆盖**占位块自己的调试色
+  ⇒ 它的颜色 = **该项的 diffuse**（所以白占位块 × f807d ≈ `#E3E3E3`，与归档帧采样吻合）。
 - **引擎口径**：`Scene+4*slot+42456`（`CTexture*` 表）为空时**直接不画**（raw **68478-68479**）。
-- **两步修法**：① 立刻 —— 渲染侧改成引擎口径"槽解析不到纹理 ⇒ 跳过不画"（保留日志）；
-  ② 根治 —— 查引擎那张表**由谁填槽 11**，emulator 补绑定。
+- **修法（已修正）**：① 渲染侧改成引擎口径"槽解析不到纹理 ⇒ 跳过不画"（保留日志）；
+  ② 根治 —— **不要再查"谁填槽 11"**（那是个不存在的槽）；改为查宿主侧 `TextureCache` 为什么在
+  `texSlots[17]=0x5260` 已就位时仍 `resolve(it)` 拿到空纹理（`bind` 的世代判据丢弃 / 在途未到 / 自愈未触发）。
+  ★注意 `#missingTexLogged` 是**去重**的（上限 64、满了 `clear()`）⇒ 只发生一帧的占位块可能**一条日志都不留**，
+  取证时要临时改成不去重（跑完即撤）。
+- ★★**2026-09-22 根因已定（用户现场日志直证，`tickets/T-0102/evidence/clear-slot-records-root-cause.md`）**：
+  **`0x259`（`i259`）被实现成清宿主 `TextureCache.#slotImgid`**。现场日志第 1862 行
+  `clearSlotRecords：丢掉 8 条 槽→imgid 记录（保留纹理对象/画布）`，此后**整个日志再没有
+  `bindTexture … slot=17`**；且 `slotTex 自愈` **0 条** —— 因为 `#healSlot` 的第三道门
+  `if (imgid === undefined) return undefined;` 同样依赖 `#slotImgid` ⇒ **两条取纹理的路一起断**，
+  `presenter.#placeholder`（1×1 `Texture.WHITE` 拉伸到源矩形）接管 ⇒ 白色窗口。
+  **引擎口径相反**：`sub_41A3A0`（raw **25357-25374**）只清 `Engine+324704`（`_this+81176`）与
+  `Engine+344704`（`_this+86176`）两张 1000×5-dword **记录表**，**不碰** `Scene+4*slot+42456` 的槽表
+  ⇒ 引擎里槽 17 的 `CTexture*` 原样还在、窗口照常贴出。
+  ⇒ **修法 = `0x259` 不得清 `#slotImgid`**（`textureCache.ts:701` 的 `clearSlotRecords`）；
+  验收 = 合成单测「`bind(s)` ⇒ `clearSlotRecords()` ⇒ `resolve({tex:s})` 仍须给出纹理」+ 突变证明。
 - ⚠️ 验证需要**一次干净窗口**（用户实例关掉 ~2 min）：`shot` 与用户实例**共用** `.tmp/amayui-emulator.log` 与 overlay，会互相覆盖。
 
 ### 5.3 存档页闪一下（`T-0067`，未修）

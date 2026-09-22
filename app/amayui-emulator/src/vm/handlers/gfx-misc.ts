@@ -60,12 +60,31 @@ const op_set_render_cfg_248: OpHandler = (c) => {
 };
 
 /**
- * **`0x259`（sub_41A3A0, raw 25357）：清两张 1000×2 组 5-DWORD 记录表**（`Engine+86176` 起、步长 5 dword，
- * 每项写 +8/+12；对应主/影数组 `+81176`/`+86176`），共 4000 dword = 16 KB。**只清记录、不 delete 对象**
- * （旧文档把它当"纹理槽释放"是错的；真正销毁 42..999 的是 `0x23D`）。
+ * **`0x259`（sub_41A3A0, raw 25357）：复位「每槽记录的标志两位」**（主/影两张镜像表，1000 槽全覆盖）。
+ *
+ * 引擎体逐位（raw 25357-25374）：
+ * ```c
+ * result = _this + 86176;              // Engine+344704 = 影表记录的 [+8]
+ * v2 = 1000;
+ * do {
+ *   *(result - 5000) = 0;   // Engine+324704 = Scene+0x750 = tex_slot_flag_a（0x258 的 bit0 位）
+ *   *result = 0;            // Engine+344704 = 影表同一格
+ *   *(result - 4999) = 0;   // Engine+324708 = Scene+0x754 = tex_slot_flag_b（0x258 的 bit1 位）
+ *   result[1] = 0;          // Engine+344708 = 影表同一格
+ *   result += 5;            // 步长 5 dword = 20 B/槽
+ *   --v2;
+ * } while ( v2 );
+ * ```
+ * `Scene+20*slot` 的 dword 468/469 正是 `0x258`（`sub_425D20` raw 33156-33185）按 op2 的
+ * bit0/bit1 写的那两格（`fields.json` 的 `Scene/0x750`/`Scene/0x754`）。
+ * ⇒ **`0x259` 是 `0x258` 的整表复位器**：它**不碰** imgid（`Scene/0x748`，`0x1F9` 写）
+ * 、也不碰槽对象（`Scene+4*slot+42456`）。旧注"清**前两个** dword / 清 imgid"是**错的**
+ * （`tickets/T-0102` 订正：那条口径让 emulator 抹掉了槽 17 的绑定 ⇒ ADV 窗口回落 1×1 白占位块）。
+ * 真正销毁 42..999 槽对象的是 `0x23D`。
  */
 const op_clear_slot_records: OpHandler = (c) => {
   const plan = planFor(c);
+  c.e.texSlotFlags.clear(); // 引擎清的就是「按槽设置的标志两位」（0x258 写入、此处整表归零）
   c.native.clearSlotRecords?.();
 };
 

@@ -7,6 +7,7 @@
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
+import { decIntSlot } from '../ref.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -191,6 +192,23 @@ const op_draw_texture: OpHandler = (c) => {
   const dstX = (plan.int(7) ?? 0);
   const dstY = (plan.int(8) ?? 0);
   if (!c.e.texSlots.has(slot)) c.e.texSlots.set(slot, 0);
+  // ★**临时诊断（T-0102 白底，跑完即撤）**：ADV 窗口那两笔（handle 0x19640 / 0x19708，槽 0x11）在同一帧里
+  //   是「黑幕支 vs 白纸窗支」的判决点 —— 脚本 `SC0000/SN0000` 的窗口例程是
+  //   `eq local0, global0, 6` / `jcc` ⇒ `global 0 == 6` 走 `draw-texture … 11 …`（白纸窗），
+  //   `!= 6` 走 `create-mesh 19640 + set-vertex-color …(f807d)… 0`（半透明黑幕）。
+  //   把 `global 0` 与槽 0x11 的绑定**在指令本身上**打出来，就能一次定性：
+  //   白纸窗 = `global 0` 真的读到 6（⇒ 查它的赋值路径），还是槽 0x11 没绑上（⇒ 查绑定/清记录）。
+  if ((slot === 0x11 && layer === 0x19640) || (slot === 0x11 && layer === 0x19708)) {
+    const g0 = c.e.globals.int.get(0);
+    // ★关键：把 `eq … 6` 真正会读到的那份值（**解码后**）也打出来 —— 只打原始值无法判读。
+    const g0dec = decIntSlot(c.e.key, g0);
+    c.log(
+      `[T-0102 诊断] draw-texture h=0x${layer.toString(16)} 槽=0x11 ` +
+        `global0(原始)=${g0 === undefined ? '未写过' : '0x' + (g0 >>> 0).toString(16)} ` +
+        `global0(解码)=${g0dec} ` +
+        `texSlots[0x11]=${c.e.texSlots.has(0x11) ? '0x' + (c.e.texSlots.get(0x11) as number).toString(16) : '未绑定'}`,
+    );
+  }
   // ★`ownerFrame`（emulator 记账，引擎无此格）：读档装载点要丢掉"被放弃的调用方那一层 UI"
   //   （`tickets/T-0083` 的 (B) 步）⇒ 这里记下"这一项是哪一帧画的"。见 `Item.ownerFrame` 的依据说明。
   c.native.configureDrawItem?.({

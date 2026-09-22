@@ -415,13 +415,15 @@ export class HeadlessScene implements NativeBridge {
   }
 
   /**
-   * `0x259`（sub_41A3A0 raw 25357-25376）：清 1000×2 条**槽记录**的前两个 dword
-   * （"槽 → 统一文件 id" + 邻居）。**不碰绘制项、不 delete 对象** ⇒ 只丢记录（`tickets/T-0063`）。
+   * `0x259`（sub_41A3A0 raw 25357-25374）：**复位「按槽设置的标志两位」**（主/影两张镜像表全覆盖）。
+   * 引擎循环只写记录表的 `+8`/`+12`（`Scene/0x750`/`0x754` = `0x258` 写的那两位），
+   * **imgid（`Scene/0x748`）与槽对象都不动** ⇒ headless 侧同样**保留 `slotImgid`**
+   * （`tickets/T-0102`：清它会掐断"槽号 → 图像"的唯一索引，见 `TextureCache.clearSlotRecords` 的说明）。
+   * 标志位那半边由 VM handler 清 `Engine.texSlotFlags`。
    */
   clearSlotRecords(): void {
     const n = this.slotImgid.size;
-    this.slotImgid.clear();
-    if (n > 0) this.log(`clearSlotRecords：丢掉 ${n} 条 槽→imgid 记录（保留绘制项与纹理对象）`);
+    if (n > 0) this.log(`clearSlotRecords：保留 ${n} 条 槽→imgid 记录（只复位标志位）`);
   }
 
   /** 取场景呈现态快照（`tickets/T-0063`：读档还原画面用）。 */

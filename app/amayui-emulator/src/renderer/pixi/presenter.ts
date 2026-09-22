@@ -79,6 +79,22 @@ export class ScenePresenter {
    * `imgid === undefined` 时记，于是"imgid 已知但纹理没就位"完全无痕，E4 日志里归因不到项）。
    */
   #missingTexLogged = new Set<string>();
+
+  /**
+   * **记一次「某项回落到占位块」的签名**；返回 true = 这是第一次见到它（调用方据此打日志）。
+   *
+   * ★为什么不直接 `if (!set.has(k)) set.add(k)`（`tickets/T-0102` 2026-09-22 订正）：
+   * 上游曾用 `if (set.size > 64) set.clear()` 来"防刷屏"，那会**把已经记过的键一起抹掉**
+   * ⇒ **只发生一次的占位块**（正是"白底那一帧"的形状）可能在清理之后不再复现、于是**一条日志都不留**
+   * —— 这就是 §5.2 那次复现里"两类日志各 0 条、却确实有白底"的原因。
+   * 现在改为 **一次性键 + 只停止新增**：满了以后不再记新键（不会刷屏），但**已记的永不遗忘**。
+   */
+  #noteMissing(key: string): boolean {
+    if (this.#missingTexLogged.has(key)) return false;
+    if (this.#missingTexLogged.size >= 64) return false; // 满了：不再新增，但也不清空（证据优先）
+    this.#missingTexLogged.add(key);
+    return true;
+  }
   /**
    * **合成间隔的滚动窗口**（诊断"卡顿"用）。
    *
@@ -402,9 +418,7 @@ export class ScenePresenter {
       //   在 E4 日志里的形状（`item h=0x19a28 layer=105000 未绑定纹理槽 → 占位块` ×28）。
       if (imgid === undefined && inMsgTextRange(scene.msgRanges.values(), it.handle)) {
         const key = `text-line h${it.handle.toString(16)}`;
-        if (!this.#missingTexLogged.has(key)) {
-          if (this.#missingTexLogged.size > 64) this.#missingTexLogged.clear();
-          this.#missingTexLogged.add(key);
+        if (this.#noteMissing(key)) {
           this.log(
             `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 在消息窗正文区间内且无纹理槽` +
               ` → **跳过**（文本由文本层画，见 T-0102）`,
@@ -417,16 +431,19 @@ export class ScenePresenter {
       // ★诊断缺口（`tickets/T-0102` 登记的 H4）：修前只在 `imgid === undefined` 时留痕，
       //   而**症状的形状恰恰是"imgid 已知、纹理还没就位"**（异步载入窗口 ⇒ 占位块是纯白矩形，
       //   玩家看到的就是"窗口背景是白的"）⇒ 那一类**完全静默**，E4 日志里归因不到任何一项。
-      //   现在两类都记（按 handle+imgid 去重，避免每帧刷屏）。
+      //   现在两类都记。
+      //
+      // ★★**2026-09-22 修掉「去重把证据吃掉」的坑**（T-0102 的 E4 盲区）：此前是
+      //   `if (size > 64) clear()` —— 上限一到就把**全部**键抹掉，于是**只发生一次的占位块**
+      //   （恰恰就是"白底那一帧"的形状）可能一条日志都不留。现在改为**一次性键 + 只停止新增**
+      //   （满了以后不再记新键，但**已记的永不遗忘**）⇒ 每类只留一条、且不会被后来的键冲掉。
       if (!tex) {
         const key = `h${it.handle.toString(16)}/i${imgid === undefined ? 'none' : imgid.toString(16)}`;
-        if (!this.#missingTexLogged.has(key)) {
-          if (this.#missingTexLogged.size > 64) this.#missingTexLogged.clear();
-          this.#missingTexLogged.add(key);
+        if (this.#noteMissing(key)) {
           this.log(
             imgid === undefined
-              ? `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 未绑定纹理槽 → 占位块`
-              : `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 纹理槽 ${it.tex ?? 0} 绑定了 imgid=0x${imgid.toString(16)} ` +
+              ? `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 未绑定 → 占位块`
+              : `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 绑定了 imgid=0x${imgid.toString(16)} ` +
                 '但纹理未就位 → 占位块（异步载入窗口；T-0102 的自愈/到货置脏会把它收回来）',
           );
         }

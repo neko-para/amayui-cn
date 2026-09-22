@@ -691,17 +691,26 @@ export class TextureCache {
   }
 
   /**
-   * `0x259`（`sub_41A3A0`）：**清槽记录表**（引擎清的是两张 1000×2 组 5 dword 记录表 —— 主/影
-   * `_this[81174]`/`[86174]`，每项字段 0 = 该槽绑定的**统一文件 id**；`tickets/T-0063`）。
+   * `0x259`（`sub_41A3A0`）：**槽记录标志位的整表复位**——引擎清的是主/影两张 1000×2 组 5 dword
+   * 记录表里**按槽设置的那两位标志**（`Scene/0x750` = `Engine+324704`、`Scene/0x754` = `+324708`，
+   * 正是 `0x258` 写入的位），**imgid 与槽对象都不动**（`tickets/T-0102` 的逐位复核）。
    *
-   * 引擎口径是「**只清记录、不 delete 对象**」⇒ 这里只丢 `槽 → imgid` 的登记，**保留**纹理对象与
-   * `create-texture` 出来的画布（`slotTex`/`#canvasSlots`）⇒ 已经在画的东西不会因此消失
-   * （`resolve()` 仍能给出 tex ✓），而尺寸查询/重取缓存要等脚本重新绑定。
+   * ★**为什么这里什么都不清（特别是不能清 `#slotImgid`）**：
+   * 引擎那张记录表的 `[0]` = 该槽绑定的统一文件 id（`Scene/0x748`，`0x1F9` 写），
+   * `0x259` **不碰它**（循环只写 `+8`/`+12`）⇒ 引擎里 `0x259` 之后 `draw-texture` 照样贴得出图。
+   * 而 emulator 的 `resolve()` 与 `#healSlot()` **都**靠 `#slotImgid` 把槽号翻成图像
+   * ⇒ 之前把 `#slotImgid` 清掉等于**同时掐断两条取纹理的路**，表现为 `presenter.#placeholder`
+   * （1×1 `Texture.WHITE` 拉伸到源矩形）接管画面 —— 用户实测的"ADV 窗口白底"
+   * （`tickets/T-0102`：现场日志里 `clearSlotRecords` 之后整个日志再无 `bindTexture … slot=17`，
+   * 且 `slotTex 自愈` 0 条）。标志位那半边改由 VM handler 清 `Engine.texSlotFlags`。
+   *
+   * 引擎里"清记录、不 delete 对象"的语义由此保持：纹理对象/画布（`slotTex`/`#canvasSlots`）
+   * 与本条 `槽 → imgid` 登记**一起**留存，`resolve()`/`size()` 照常工作。
    */
   clearSlotRecords(): number {
+    // ★不再 `this.#slotImgid.clear()`（见上）。保留条数只用于日志诊断。
     const n = this.#slotImgid.size;
-    this.#slotImgid.clear();
-    this.log(`clearSlotRecords：丢掉 ${n} 条 槽→imgid 记录（保留纹理对象/画布）`);
+    this.log(`clearSlotRecords：保留 ${n} 条 槽→imgid 记录（只复位标志位；保留纹理对象/画布）`);
     return n;
   }
 

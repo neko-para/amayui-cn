@@ -10,9 +10,9 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 30,
+    "total": 33,
     "analyzed": 10,
-    "partial": 19,
+    "partial": 22,
     "stub": 1
   },
   "entries": [
@@ -2728,6 +2728,196 @@
       "status": "partial",
       "evidence": "src/NOVEL.txt 的行区间见 layout；帧链/落点见 emulator 的 [slot-load] 与 0xAE 日志（0xAE: 续跑走栈 1 → 2）",
       "notes": "未读：gaps 列的子程序；`i073` 九宫格的参数逐项未核。"
+    },
+    {
+      "id": "SCJUMP",
+      "file": "src/$1$SCJUMP.txt",
+      "bin": "$1$SCJUMP.BIN",
+      "role": "章节跳转分派器：读目标章号 `global 3f3d`，按值跳到对应章节的处理段（本文件是包 1 / 序章那一支）",
+      "entry": "由 `ALLMAP.BIN` 的跳转表循环 `call-script (local-ptr 0)` 调起（`src/ALLMAP.txt:23/58/95/174/219`）；表基址 `global 708996` 由 `INIT2` 登记为 0x5224（`src/INIT2.txt:106`）⇒ 逐脚本入口在 `$1$SCJUMP`。`src/SYSTEM4.txt:429` 只在开机预载时 call 一次 ALLMAP",
+      "layout": [
+        {
+          "anchor": "eq (local-int 1) (global-int 3f3d) 1",
+          "lines": "6-36",
+          "what": "入口分派：一串 `eq local1, global 3f3d, N` + `jcc` 把目标章号路由到各章处理段（3f3d=1 ⇒ label_00000390）"
+        },
+        {
+          "anchor": "label_00000390",
+          "lines": "38-53",
+          "what": "★序章/第 1 章这一支：先用 `1dd7`/`3318`/`1521`/`2f3c` 算出 local5/local7，再用 `gr local1, global f8080, a` 做第二道门；两道都「落下句」才执行 `mov (global-int 0) 1` + `mov (global-int 3f3c) 14a` + `mov (global-int f8080) a`"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 3f3d",
+          "what": "目标章号（分派键）；ALLMAP 在章节点把它设为 1（`src/ALLMAP.txt:37`）"
+        },
+        {
+          "key": "global 0",
+          "what": "★窗口模式选择子：`== 6` ⇒ ADV 窗口走 draw-texture 白纸窗；`!= 6` ⇒ 走 create-mesh 半透明黑幕（窗口例程见 `src/SN0000.txt:3075-3099` / `src/SC0000.txt:32662-32686`）"
+        },
+        {
+          "key": "global f8080 (=1015936)",
+          "what": "★章节点第二道门的闸值：本支条件 `f8080 <= 10` 才放行；放行后立刻被写成 `a`(=10) 作再入锁（同型支写 `0`）"
+        },
+        {
+          "key": "global 3f3c",
+          "what": "被写成本章的章节号（如 `14a`），供 SC0000 的章节分派器 `label_000047c4` 使用"
+        },
+        {
+          "key": "global 1dd7 / 3318 / 1521 / 2f3c",
+          "what": "第 1 章门的前置条件（`1dd7` 与 `3318` 都要 == 1，`1521` 与 `2f3c` 都要 != 1）"
+        }
+      ],
+      "invariants": [
+        "`mov (global-int 0) 1` 只在 `local7 == 0` 且 `f8080 <= 10` 时执行；执行后 `f8080` 必被写成 10（再入锁）",
+        "本文件是**纯分派 + 门控写**：没有 draw/纹理操作，画面变化只能来自它写下的全局量"
+      ],
+      "gotchas": [
+        "★`global f8080` 的写点只有 `SETADVFLAG`（写 `7fffffff`=INT_MAX）与 `SCJUMP*`（写 `a`/`0`）。门是 `f8080 > 10` ⇒ **SETADVFLAG 的 INT_MAX 会让门「真 ⇒ 跳走」、从而跳过 `mov global 0 1`**；而闸值被降到 10（或 0）时才轮到该写执行。两者语义相反，读日志时极易看反",
+        "★`global f8080 = 1015936` **在保存池之外**（两份真槽池长 1015792）⇒ 它不随存档持久化，是「进程内裸量」；读档/装配点若清掉它，`gr f8080, 10` 会读到 0 ⇒ 门放行 ⇒ `global 0` 被改成 1 ⇒ ADV 窗口由半透明黑幕变白纸窗（`tickets/T-0102`）",
+        "本文件有 1044 个 label / 18153 行，是「一个脚本装全部章」的巨型分派（各章支结构同型，改一处要防同型支漏改）"
+      ],
+      "gaps": [
+        "只精读了 3f3d=1 那一支（行 6-53）；其余各章支（行 56 起，同型）未逐支读",
+        "`ALLMAP` 的跳转表循环（`src/ALLMAP.txt:14-59`）只读了入口与 `call label_000065cc` 这两处，未读完"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [
+        "test/clear-slot-records-keeps-bindings.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "src/$1$SCJUMP.txt:6-36（分派）、38-53（3f3d=1 支的门与写）；BIN 索引实解（`parseScriptBytes`）：idx39 `gr local1, global 1015936, 0xa` / idx40 `jcc` / idx41 `mov global 0, 1` / idx42 `mov global f8080, 0xa`；运行期取证见 tickets/T-0102/evidence/clear-slot-records-root-cause.md §10",
+      "notes": "未读：其余各章支（同型结构）、以及 `label_00003c8c` 之后的主体。本条的 `slots`/`gotchas` 是 2026-09-22 白底定位（T-0102）的副产品"
+    },
+    {
+      "id": "ALLMAP",
+      "file": "src/ALLMAP.txt",
+      "bin": "ALLMAP.BIN",
+      "role": "大地图/章节点入口：登记本场景的请求分派表、置章号 `3f3d`，再走「章节跳转处理链」（`SETADVFLAG` → 跳转表逐个 `call-script`）",
+      "entry": "`src/SYSTEM4.txt:429` 的开机预载（`call-script 5265`）；运行期由章节点/大地图触发。它末尾的跳转表循环会 `call-script` 到 `<包>$SCJUMP` 等脚本",
+      "layout": [
+        {
+          "anchor": "label_000001a0",
+          "lines": "28-60",
+          "what": "入口主体：清 `3f50`/`9346a`/`b226`/`5cd87`；按 `b22a` 决定是否置 `3f3d = 1`；随后 `call label_000065cc`（= SETADVFLAG）并按 `global 708996` 的跳转表逐个 `call-script`"
+        },
+        {
+          "anchor": "mov (global-int 3f3d) 1",
+          "lines": "35-43",
+          "what": "★置章号：`b22a != 0` 时 `3f3d = 1`，于是后续 SCJUMP 会走「第 1 章」那一支；紧接着 `call label_000065cc`（SETADVFLAG）"
+        },
+        {
+          "anchor": "call label_000065cc",
+          "lines": "43-59",
+          "what": "SETADVFLAG 之后解跳转表：`f807f` 从 0 递增到 20，`lookup-array (global 708996)` 取脚本 id 并 `call-script` ⇒ 这就是 `$n$SCJUMP` 一族被调起的路径"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global 3f3d",
+          "what": "★目标章号：本文件置 1（第 1 章）或 b（另一支，见 :153/:198）"
+        },
+        {
+          "key": "global b22a",
+          "what": "置 `3f3d = 1` 的前置门（`== 0` 时跳过）"
+        },
+        {
+          "key": "global 708996",
+          "what": "跳转表基址（`INIT2.txt:106` 登记；第 12 项 = 0x5224 = SCJUMP）"
+        },
+        {
+          "key": "global f807f",
+          "what": "跳转表游标（0..20）"
+        }
+      ],
+      "invariants": [
+        "`mov (global-int 3f3d) N` 与 `call label_000065cc`（SETADVFLAG）**成对出现**：每置一次章号就先把 `f8080` 抬到 INT_MAX",
+        "跳转表循环上界固定 20（`lt local566, f807f, 20`）"
+      ],
+      "gotchas": [
+        "★`label_000065cc` 就是 `call-script 512f (SETADVFLAG)`，它把 `global f8080` 写成 `INT_MAX` —— 于是 SCJUMP 的第二道门（`gr f8080, 10`）必然放行；配合第一道门（要 `1dd7 && 3318`），决定了 `mov (global-int 0) 1` 会不会执行（`tickets/T-0102`）",
+        "本文件是「大地图 + 章节跳转」共用的入口，读它时要区分 `3f3d=1`（第 1 章）与 `3f3d=b` 两支"
+      ],
+      "gaps": [
+        "只读了入口段（行 28-60）与三处 `call label_000065cc` 的调用点；其余分支（行 60 起，含 `3f3d=b` 支）未读"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [],
+      "status": "partial",
+      "evidence": "src/ALLMAP.txt:28-60（入口 + 置 3f3d + SETADVFLAG + 跳转表循环）；:153/:198（另一支置 3f3d=b）；运行期见 tickets/T-0102/evidence/clear-slot-records-root-cause.md §10-12",
+      "notes": "未读：行 60 之后的全部分支与大地图绘制/选择逻辑。本条是 2026-09-22 白底定位（T-0102）的副产品"
+    },
+    {
+      "id": "SETADVFLAG",
+      "file": "src/SETADVFLAG.txt",
+      "bin": "SETADVFLAG.BIN",
+      "role": "把 `global f8080` 抬成 INT_MAX（`7fffffff`）的短脚本，并顺带重建两张 1000 长的数组（按 `3f3d` 选 `a1ea/f8469` 或 `a5d2/f8851`）",
+      "entry": "`src/ALLMAP.txt:44`（以及 :159/:204 两支）的 `call label_000065cc`；运行期在「章节点处理链」上、紧随 ALLMAP 置完 `3f3d` 之后执行",
+      "layout": [
+        {
+          "anchor": "lookup-array (local-ptr 0) (global-int 708976) (local-int 0)",
+          "lines": "14-19",
+          "what": "前 20 项循环：按 `global 708976` 的表逐项取指针并 `call-script`（与 ALLMAP 同型的跳转表）"
+        },
+        {
+          "anchor": "mov (global-int f8080) 7fffffff",
+          "lines": "24-30",
+          "what": "★把 `f8080` 抬到 INT_MAX（= 让 `SCJUMP` 的 `gr f8080, 10` 必定放行）；随后 `76f0 = 0`，并按 `3f3d == c` / `== d` 选一组 `set-array-to`（1000 项）"
+        },
+        {
+          "anchor": "set-array-to (global-int a5d2) (local-int 1) 3e8",
+          "lines": "36-41",
+          "what": "`3f3d == d` 支：清 `a5d2`/`f8851`（1000 项）后 `exit`；上一支 `3f3d == c`（行 28-31）清 `a1ea`/`f8469`。两支都不命中则落到行 41 的 `exit`"
+        }
+      ],
+      "slots": [
+        {
+          "key": "global f8080",
+          "what": "★本文件唯一的写点：抬到 `INT_MAX` —— 它是 ADV 章节跳转的「闸值」，`SCJUMP` 用它做第二道门（`gr f8080, 10`）"
+        },
+        {
+          "key": "global 3f3d",
+          "what": "章号（只读；用来选清哪一组数组）"
+        },
+        {
+          "key": "global 708976",
+          "what": "本文件自己的跳转表基址（前 20 项逐个 call-script）"
+        }
+      ],
+      "invariants": [
+        "`mov (global-int f8080) 7fffffff` 在本文件里**无条件**执行（行 24，不在任何 jcc 之后）"
+      ],
+      "gotchas": [
+        "★本文件把 `f8080` 抬到 INT_MAX ⇒ **`SCJUMP` 的第二道门（`gr f8080, 10`）必然放行**。所以 `mov (global-int 0) 1` 会不会执行，完全由 `SCJUMP` 的第一道门（要 `1dd7 && 3318 && !1521 && !2f3c` 才跳走）决定；两者语义相反，极易看反（`tickets/T-0102` §12）",
+        "`f8080 = 1015936` **在保存池之外**（池长 1015792）⇒ 它不随存档持久化，是进程内裸量"
+      ],
+      "gaps": [
+        "`global 708976` 那张跳转表的内容未核（前 20 项是谁）；`a1ea/f8469`、`a5d2/f8851` 四张 1000 长数组的消费者未查"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/scene-start-flow.md"
+        ]
+      },
+      "guards": [],
+      "status": "partial",
+      "evidence": "src/SETADVFLAG.txt:14-41（全文 41 行，除注释外已通读）；运行期见 tickets/T-0102/evidence/clear-slot-records-root-cause.md §10（日志里 `[call-script] 0x512f -> SETADVFLAG.BIN` 紧随 ALLMAP）",
+      "notes": "本脚本很短（41 行），已通读；未核的是它引用的表与数组。本条是 2026-09-22 白底定位（T-0102）的副产品"
     }
   ]
 }
