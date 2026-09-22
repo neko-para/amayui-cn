@@ -7,24 +7,26 @@
 
 ## 概览
 
-共 **112** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **9** · ✅ done **98** · 🚫 dropped **1**（P0 7 / P1 41）
+共 **114** 张：🔜 doing **5** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **98** · 🚫 dropped **1**（P0 7 / P1 41）
 
-按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/hosts` 4 · `emulator/test` 4 · `emulator/msgwin` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1
+按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/test` 5 · `emulator/hosts` 4 · `emulator/msgwin` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `emulator/tooling` 1
 
-## 🔜 doing（4）
+## 🔜 doing（5）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(13) | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
+| [`T-0114`](./T-0114/ticket.json) | P2 | req | `emulator/tooling` | 控制面板强化为调试器：① 调试查询（已落地）② 断点/表达式日志 ③ 内存快照/恢复 | 8 | — | `notes.md` `changes.md` | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（9）
+## ⬜ open（10）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
+| [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | — | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |

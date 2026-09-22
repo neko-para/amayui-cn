@@ -184,6 +184,181 @@ ui.btnSkipUnknown.addEventListener('click', () => {
   window.api.controlSkipOp(pending.opcode);
 });
 
+// ---- 调试台（`tickets/T-0114`）：输入指令 → 生效（lldb 风格）----
+//
+// 为什么改成"输入指令"而不是点按钮：T-0102 排查里要反复问"某个量现在是多少 / 谁改的它"，
+// 按钮式 UI 每个新问题都要加控件；命令台只要一条输入框，且与 lldb/gdb 的手感一致。
+//
+// 通路：命令行 →（本题在**面板侧**解析，纯字符串）→
+//   · 断点类动作 → `controlBreakCommand` → 主 → 渲染窗；
+//   · 其它一律当**查询** → `debugQuery`（invoke，要回答案）。
+// 状态来源：断点表与"已暂停"由渲染窗**推送**（`onBreakList` / `onBreakPaused`），面板不存副本。
+type BreakRow = { id: number; kind: string; where?: string; condition: string; hits: number };
+type BreakPaused = { id: number; where: string; detail?: string } | null;
+let breakRows: BreakRow[] = [];
+let breakPaused: BreakPaused = null;
+let replSeq = 0;
+/** 控制台转录（保留最近 N 行，避免无限增长）。 */
+const transcript: string[] = [];
+const TRANSCRIPT_MAX = 400;
+
+function pushTranscript(line: string): void {
+  transcript.push(line);
+  while (transcript.length > TRANSCRIPT_MAX) transcript.shift();
+  ui.replOut.textContent = transcript.join('\n');
+  ui.replOut.scrollTop = ui.replOut.scrollHeight;
+}
+
+function renderState(): void {
+  if (breakPaused) {
+    ui.replState.textContent = `⏸ 暂停在断点 #${breakPaused.id} @ ${breakPaused.where}${breakPaused.detail ? `（${breakPaused.detail}）` : ''} —— 输入 c 继续，或直接查询`;
+  } else {
+    ui.replState.textContent = breakRows.length ? `断点 ${breakRows.length} 条` : '';
+  }
+}
+
+function renderBreaks(lines: string[]): void {
+  lines.push(breakRows.length ? `断点 ${breakRows.length} 条：` : '（断点表为空）');
+  for (const b of breakRows) {
+    lines.push(`  #${b.id} ${b.kind === 'step' ? '条件断点' : `事件断点(${b.where})`} ${b.condition || '(无条件)'}  命中 ${b.hits}`);
+  }
+}
+
+/** 执行一行命令（解析在面板侧 —— 纯字符串，不需要引擎）。 */
+async function runRepl(raw: string): Promise<void> {
+  const line = raw.trim();
+  if (line === '') return;
+  pushTranscript(`> ${line}`);
+
+  // 面板侧的命令表（与 `src/vm/debugBreak.ts` 的 `parseDebugCommand` 同形）；
+  // ★为什么不 import 渲染窗的模块：控制窗与渲染窗是**两个编译单元**，
+  //   跨单元 import 会把后者的类型/依赖拖进来（`ipcProtocol.ts` 的 `recordScript` 注释记过同类事故）。
+  const parts = line.split(/\s+/);
+  const cmd = parts[0]!.toLowerCase();
+  const rest = parts.slice(1);
+
+  if (cmd === '?' || cmd === 'help') {
+    pushTranscript(
+      [
+        'b <条件>              条件断点：每条指令**执行前**求一次条件，满足即停',
+        '                      例：b global 0x11 == 5260 ／ b（= 每条都停）',
+        'b event <类型> <条件>  语义事件断点（改状态那一刻停）',
+        '                      类型：global-write / slot-bind',
+        '                      例：b event global-write idx == 0',
+        'bl                    列断点（含命中次数）',
+        'd [id]                删一条；省略 id = 全删',
+        'c                     继续（从当前指令走过去）',
+        '其它                  当查询：global 0 ／ local 1 ／ frame ／ slot 0x11 ／ run',
+        '★数字口径：0x… = 十六进制；含 a-f 的串 = 十六进制；纯数字 = 十进制',
+      ].join('\n'),
+    );
+    return;
+  }
+  if (cmd === 'c' || cmd === 'cont' || cmd === 'continue') {
+    window.api.controlBreakCommand({ kind: 'continue' });
+    pushTranscript('（已请求继续）');
+    return;
+  }
+  if (cmd === 'bl' || cmd === 'breakpoints') {
+    const lines: string[] = [];
+    renderBreaks(lines);
+    pushTranscript(lines.join('\n'));
+    return;
+  }
+  if (cmd === 'd' || cmd === 'delete') {
+    const id = rest[0] === undefined ? undefined : Number.parseInt(rest[0], 10);
+    if (rest[0] !== undefined && !Number.isInteger(id)) {
+      pushTranscript(`✗ delete：id 必须是整数（收到「${rest[0]}」）`);
+      return;
+    }
+    window.api.controlBreakCommand(id === undefined ? { kind: 'clear' } : { kind: 'clear', id });
+    return;
+  }
+  if (cmd === 'b' || cmd === 'break') {
+    if (rest[0]?.toLowerCase() === 'event') {
+      // ★**不在面板侧校验类型**：渲染窗的 `debugBreak.ts` 才是真相源（`EVENT_KINDS`）。
+      //   面板曾硬编码一份列表，结果渲染窗加了 `global-float-write` 之后面板还在拒 —— 用户实测踩到。
+      //   教训：跨编译单元**复制**一份"合法值清单"，守卫（测的是渲染窗那份）**钉不住**它。
+      //   现在一律透传，由渲染窗解析并回一条可读错误（错误会经 `onBreakList.error` 显示在转录区）。
+      window.api.controlBreakCommand({
+        kind: 'set',
+        breakKind: 'event',
+        where: (rest[1] ?? '').toLowerCase(),
+        condition: rest.slice(2).join(' '),
+      });
+      return;
+    }
+    window.api.controlBreakCommand({ kind: 'set', breakKind: 'step', condition: rest.join(' ') });
+    return;
+  }
+
+  // 其它一律当查询（invoke：要回答案）
+  ui.btnReplRun.disabled = true;
+  try {
+    const r = (await window.api.debugQuery({ id: ++replSeq, text: line })) as {
+      ok?: boolean;
+      lines?: unknown;
+    } | null;
+    const body = Array.isArray(r?.lines) ? (r!.lines as unknown[]).map((l) => String(l)).join('\n') : '（无结果）';
+    pushTranscript(r?.ok === false ? `✗\n${body}` : body);
+  } catch (err) {
+    pushTranscript(`✗ 查询通道出错：${(err as Error).message}`);
+  } finally {
+    ui.btnReplRun.disabled = false;
+  }
+}
+
+ui.btnReplRun.addEventListener('click', () => {
+  const v = ui.replInput.value;
+  ui.replInput.value = '';
+  void runRepl(v);
+});
+ui.replInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const v = ui.replInput.value;
+    ui.replInput.value = '';
+    void runRepl(v);
+  }
+});
+ui.btnReplHelp.addEventListener('click', () => void runRepl('?'));
+ui.btnReplCopy.addEventListener('click', () => {
+  const text = transcript.join('\n');
+  const done = (): void => {
+    ui.btnReplCopy.textContent = '已复制';
+    window.setTimeout(() => {
+      ui.btnReplCopy.textContent = '复制全部';
+    }, 1200);
+  };
+  void navigator.clipboard.writeText(text).then(done, () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      done();
+    } catch {
+      ui.btnReplCopy.textContent = '复制失败';
+    }
+    document.body.removeChild(ta);
+  });
+});
+window.api.onBreakList((raw: unknown) => {
+  const p = raw as { list?: BreakRow[]; paused?: BreakPaused; error?: string };
+  breakRows = p.list ?? [];
+  breakPaused = p.paused ?? null;
+  renderState();
+  if (p.error) pushTranscript(`✗ ${p.error}`);
+});
+window.api.onBreakPaused((raw: unknown) => {
+  const q = raw as { id: number; where: string; detail?: string };
+  breakPaused = { id: q.id, where: q.where, ...(q.detail ? { detail: q.detail } : {}) };
+  renderState();
+  pushTranscript(`⏸ 断点 #${q.id} 命中 @ ${q.where}${q.detail ? `（${q.detail}）` : ''} —— 输入 c 继续`);
+});
+
 window.api.onControlStatus((s) => {
   ui.bin.textContent = s.bin || '…';
   traceAll = !!s.traceAll;

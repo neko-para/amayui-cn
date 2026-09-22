@@ -107,6 +107,23 @@ contextBridge.exposeInMainWorld('api', {
   controlForceClose: () => ipcRenderer.send('control-force-close'),
   /** 控制窗→主：把某个未知 opcode 作为桩函数跳过并继续执行。 */
   controlSkipOp: (opcode: number) => ipcRenderer.send('control-skip-op', opcode),
+  /**
+   * 控制窗→主：**调试查询**（`tickets/T-0114` 第 1 步）。
+   *
+   * 走 `invoke` 而不是 `send`：这是一条**要回答案**的请求（控制窗要拿到 `DebugQueryResult` 渲染）。
+   * 主进程把它转发给渲染窗（那里才有 `Engine`），渲染窗用 `session.ts` 的同一个 `id` 回发结果。
+   */
+  debugQuery: (payload: { id: number; text: string }) =>
+    ipcRenderer.invoke('control-debug-query', payload) as Promise<unknown>,
+  /** 渲染窗→主：回一条调试查询结果（主进程按 `id` 配对并 resolve 上面那个 invoke）。 */
+  sendDebugQueryResult: (payload: { id: number; result: unknown }) =>
+    ipcRenderer.send('renderer-debug-query-result', payload),
+  /** 控制窗→主→渲染窗：一条断点指令（set/clear/list/continue，见 `BreakCommand`）。 */
+  controlBreakCommand: (cmd: unknown) => ipcRenderer.send('control-break-command', cmd),
+  /** 渲染窗→主→控制窗：断点命中、已暂停（持续态 ⇒ 推送）。 */
+  sendBreakPaused: (payload: unknown) => ipcRenderer.send('renderer-break-paused', payload),
+  /** 渲染窗→主→控制窗：断点表 + 当前暂停态（全量快照）。 */
+  sendBreakList: (payload: unknown) => ipcRenderer.send('renderer-break-list', payload),
   /** 渲染窗→主：上报状态（供主进程转发给控制窗）。 */
   sendRendererStatus: (s: ControlStatus) => ipcRenderer.send('renderer-status', s),
   /**
@@ -128,6 +145,15 @@ contextBridge.exposeInMainWorld('api', {
   onTraceFilter: (cb: (ops: number[]) => void) => subscribe('renderer-set-trace-filter', cb),
   /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。返回取消订阅函数。 */
   onControlSkipOp: (cb: (opcode: number) => void) => subscribe('renderer-skip-op', cb),
+  /** 主→渲染窗：一条调试查询（含 `id`，渲染窗原样带回）。返回取消订阅函数。 */
+  onDebugQuery: (cb: (payload: { id: number; text: string }) => void) =>
+    subscribe('renderer-debug-query', cb),
+  /** 主→渲染窗：一条断点指令。返回取消订阅函数。 */
+  onBreakCommand: (cb: (cmd: unknown) => void) => subscribe('renderer-break-command', cb),
+  /** 主→控制窗：断点命中、已暂停。返回取消订阅函数。 */
+  onBreakPaused: (cb: (payload: unknown) => void) => subscribe('control-break-paused', cb),
+  /** 主→控制窗：断点表快照。返回取消订阅函数。 */
+  onBreakList: (cb: (payload: unknown) => void) => subscribe('control-break-list', cb),
 });
 
 /** 订阅一个主→窗口频道；返回取消订阅函数（避免重复注册时重复触发）。 */

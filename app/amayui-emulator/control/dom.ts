@@ -30,6 +30,14 @@ export const ui = {
   unknownInfo: el<HTMLDivElement>('unknownInfo'),
   unknownHint: el<HTMLDivElement>('unknownHint'),
   btnSkipUnknown: el<HTMLButtonElement>('btnSkipUnknown'),
+
+  // ---- 调试台（`tickets/T-0114`：输入指令 → 生效；lldb 风格）----
+  replInput: el<HTMLInputElement>('replInput'),
+  replOut: el<HTMLPreElement>('replOut'),
+  replState: el<HTMLSpanElement>('replState'),
+  btnReplRun: el<HTMLButtonElement>('btnReplRun'),
+  btnReplHelp: el<HTMLButtonElement>('btnReplHelp'),
+  btnReplCopy: el<HTMLButtonElement>('btnReplCopy'),
 };
 
 /** 一个"清单"区块的元素三元组（标题计数 + 内容盒 + 复制按钮）。 */

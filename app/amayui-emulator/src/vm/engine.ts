@@ -140,6 +140,13 @@ export class Frame {
 }
 
 /** 全局 variant 数组（索引为 VM 抽象索引，非进程地址）。用 Map 稀疏存储。 */
+/** 调试语义事件的类型（见 `Engine.debugEvent` 的说明：**按池命名**）。 */
+export type DebugEventKind =
+  | 'global-int-write'
+  | 'global-float-write'
+  | 'global-str-write'
+  | 'slot-bind';
+
 export class GlobalArrays {
   int = new Map<number, number>();
   float = new Map<number, number>();
@@ -508,6 +515,34 @@ export class Engine {
    * 0 = 不在指令上下文中。
    */
   currentOpcode = 0;
+
+  /**
+   * **语义事件调试钩子**（`tickets/T-0114` 第 2 步）：VM 在"改状态"的那一刻**同步**回调它。
+   *
+   * ★为什么钩子在 `Engine` 上、而不是让 VM 去 `await` 暂停：
+   * `stepOnce` 是**同步**的（handler 里没有 await 点），而"停在事件上"需要 `await` 一个 Promise 门。
+   * 所以分工是：**VM 只同步记录"刚刚发生了什么"**（调这个钩子），
+   * **主循环在 `stepOnce` 之后 `await` 暂停**（见 `frame/loop.ts` 的 `onAfterStepEvent`）。
+   * 这样"停在事件上"的语义成立，且不需要把整个 VM 改成异步。
+   *
+   * ★★**事件名按"池"显式命名，不写笼统的 `global-write`**：
+   * `GlobalArrays` 是**按类型分池**的（`int`/`float`/`str` + `ptr`/`floatPtr`/`strPtr`），
+   * "写全局"这四个字**不足以**说明写的是哪个池、值是什么类型 —— 条件里 `val == 1` 只在 int 池成立。
+   * 所以：
+   *   - `global-int-write`（`idx` = 池下标，`val` = **解码后的 int**；含数组型与指针穿写）；
+   *   - `global-float-write`（`idx`，`val` = **float 的 int32 位模式**，要用 `f2i` 比整数常量）；
+   *   - `global-str-write`（`idx`，`val` = 字符串**长度**，本条件语言无法比字符串，只用来停）；
+   *   - `slot-bind`（`slot`、`imgid`；`imgid` 恒非负 —— 未绑定用 `undefined` 表示，不发事件）。
+   *
+   * 三个**引用池**（`ptr`/`floatPtr`/`strPtr`）发的是"引用变更"，语义与"值变更"不同，
+   * **当前不发事件**（要停"谁重绑了引用"需要新事件类型 + 新参数，属后续）。
+   */
+  debugEvent: ((ev: { kind: DebugEventKind; values: Record<string, number> }) => void) | null = null;
+
+  /** 供 VM 侧调用：有钩子就回调（无钩子时零开销 —— 只是一个 `if`）。 */
+  emitDebugEvent(kind: DebugEventKind, values: Record<string, number>): void {
+    this.debugEvent?.({ kind, values });
+  }
 
   /** sleep(0xC8) 放行截止(ms)。waitFlags & SLEEP_GATE 期间渲染帧循环每帧 present，到 nowMs>=sleepUntil 才放行（对齐引擎帧让步）。 */
   sleepUntil = 0;

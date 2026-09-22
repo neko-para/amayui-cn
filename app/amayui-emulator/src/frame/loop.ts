@@ -104,6 +104,30 @@ export interface FrameLoopOptions {
   onAdvanceWait?(handled: boolean, e: Engine): void;
   /** 每条指令**之前**（`instr` 可能是 `undefined` = ip 越界）。 */
   onStepStart?(frame: Frame, instr: BinInstruction | undefined, e: Engine): void;
+  /**
+   * **每条指令派发前**的异步闸门（`tickets/T-0114` 第 2 步的断点用它）。
+   *
+   * ★为什么必须是**异步**（而不是在 `onStepStart` 里同步处理）：
+   * 断点命中后要"停住等用户点继续"，而**只能**通过 `await` 一个 Promise 来实现 ——
+   * 若在渲染进程里**同步阻塞**等控制窗指令，会把这个进程自己处理"继续"的那条 IPC 通道也冻住（死锁）。
+   * 本工程已有同一 idiom：`onStep` 就是异步的（Electron 纹理帧屏障挂在它上面）。
+   *
+   * ★为什么用 `onBeforeStep` 而不是复用 `onStep`：
+   * `stepOnce` 查表/抛错阶段**不修改任何 VM 状态**，所以"命中即停"必须发生在**执行之前** ——
+   * 停在 `onStep`（执行之后）时那条指令已经跑掉了，断点就"看得见却停不住"。
+   * 且 `onStep` 在 `stepOnce` **抛错**时不会触发（提前 return），而断点要能停在"即将抛错的那一条"上。
+   */
+  onBeforeStep?(frame: Frame, instr: BinInstruction | undefined, e: Engine): void | Promise<void>;
+  /**
+   * **每条指令执行之后的"语义事件"闸门**（`tickets/T-0114` 第 2 步）。
+   *
+   * 为什么事件暂停要放在**执行之后**（而条件断点在执行之前）：
+   * 事件是 `stepOnce` **内部**发生的（写全局 / 绑槽），同步函数里没有 await 点 ⇒
+   * VM 只能**同步记录**"刚刚发生了什么"（`Engine.debugEvent`），由这里 `await` 落地暂停。
+   * ★因此事件断点的暂停点**略过**那条指令（帧已前进），但**状态已经是写完之后**的 ——
+   * 对"谁把它改成了 1"这类问题这恰恰是我们想要的。
+   */
+  onAfterStepEvent?(frame: Frame, e: Engine): void | Promise<void>;
   /** 每条指令**之后**（成功执行完）。★可以是异步的：Electron 的纹理帧屏障挂在这里（见 `observer.ts`）。 */
   onStep?(t: StepTrace, e: Engine): void | Promise<void>;
   /** 未实现指令的策略；默认 `'throw'`。 */
@@ -210,6 +234,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     const instr = frame.script?.instructions[frame.ip];
     opt.onStepStart?.(frame, instr, e);
     obs?.onStepStart?.({ ...obsMid(), frame, instr });
+    // ★断点闸门：**执行之前**、且在 `stepOnce` 的"查表/抛错"之前（见 `onBeforeStep` 的说明）。
+    //   命中就 await（停在同一条指令上，用户点继续后从这条继续执行）。
+    await opt.onBeforeStep?.(frame, instr, e);
     let t: StepTrace;
     try {
       t = await stepOnce(e);
@@ -229,6 +256,8 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     await opt.onStep?.(t, e);
     await obs?.onStep?.({ ...obsMid(), t });
     if (opt.stopAfterStep?.(t, e) === true) return 'step-stop';
+    // 语义事件闸门：VM 在 `stepOnce` 内记下的"刚发生了事件"在这里落地成暂停。
+    await opt.onAfterStepEvent?.(frame, e);
     return 'ok';
   };
 

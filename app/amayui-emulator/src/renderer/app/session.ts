@@ -17,8 +17,16 @@
  *
  * ★**每一处差异都必须是驱动配置或宿主编排**，不许在这里重新长出帧序（那正是本票要消灭的东西）。
  */
-import { SLEEP_GATE, type Engine, type Frame } from '../../vm/engine.js';
+import { SLEEP_GATE, type DebugEventKind, type Engine, type Frame } from '../../vm/engine.js';
 import { NotImplementedOp, type StepTrace } from '../../vm/interpreter.js';
+import { runQuery } from '../../vm/debugQuery.js';
+import {
+  compileBreak,
+  matchEvent,
+  matchInstruction,
+  type BreakHit,
+  type BreakSpec,
+} from '../../vm/debugBreak.js';
 import type { NativeBridge } from '../../vm/native.js';
 import type { DropRecorder } from '../../vm/nativeTap.js';
 import type { ControlStatus } from '../ipcFileSource.js';
@@ -110,6 +118,32 @@ export class RendererSession {
    * 直接对同一条指令重试即可继续（无需回滚 VM 状态）。
    */
   #pausedOp: ControlStatus['pendingUnknown'] | null = null;
+
+  // -------------------------------------------------------------------------
+  // 调试断点（`tickets/T-0114` 第 2 步）
+  // -------------------------------------------------------------------------
+
+  /** 断点表（由控制面板下发；`control-break-set` / `-clear` 维护）。 */
+  #breaks: BreakSpec[] = [];
+  /** 下一个断点 id（面板只负责显示它）。 */
+  #breakSeq = 1;
+  /**
+   * **断点暂停闸门**：命中时挂起的 Promise + 它的 resolve。
+   *
+   * ★为什么是 Promise 而不是轮询/同步等待：见 `FrameLoopOptions.onBeforeStep` 的说明 ——
+   * 同步阻塞会把渲染进程处理"继续"的那条 IPC 也冻住。
+   */
+  #breakResume: (() => void) | null = null;
+  /** 当前暂停的断点命中信息（未暂停 = null）。面板据此显示"为什么停的"。 */
+  #breakHit: BreakHit | null = null;
+  /** 命中后"同一条指令"的防重入：继续时要能真的走过去，而不是立刻又命中。 */
+  #breakSkipOnce: string | null = null;
+  /**
+   * **最近一次语义事件**（VM 在 `stepOnce` 内同步写入；主循环随后 `await` 落地暂停）。
+   *
+   * 为什么用"记录 + 稍后 await"而不是在 VM 里直接暂停：`stepOnce` 是同步的（见 `Engine.debugEvent`）。
+   */
+  #pendingEventHit: BreakHit | null = null;
 
   /** 累计指令数 / 帧数（**跨多次进入驱动**累加：`#stepBase`/`#frameBase` + 驱动本轮的计数）。 */
   #steps = 0;
@@ -212,6 +246,36 @@ export class RendererSession {
     });
     // 点了「作为桩函数跳过」→ 把该 opcode 登记为用户桩（no-op）并从暂停点继续跑。
     window.api?.onControlSkipOp?.((opcode) => this.#skipOpcode(opcode));
+    // 调试查询（`tickets/T-0114` 第 1 步）：**只读**地回答"某个量现在是多少"。
+    //   ★为什么在这里答：引擎状态在渲染窗；控制窗只能问（见 `electron/ipc/control.ts` 的中转）。
+    //   ★`runQuery` 是纯函数（不改状态、不 eval）⇒ 能上 E2 守卫，见 `test/debug-query.test.ts`。
+    // 语义事件（`tickets/T-0114` 第 2 步）：VM 在写全局/绑槽时**同步**回调（只记录，不暂停）。
+    this.#e.debugEvent = (ev) => this.#onDebugEvent(ev);
+    // 断点（`tickets/T-0114` 第 2 步）：面板下发断点表 + 「继续」。
+    window.api?.onBreakCommand?.((cmd) => {
+      if (cmd.kind === 'set') {
+        const r = this.#addBreak(cmd.breakKind, cmd.where, cmd.condition ?? '');
+        if (r.error) this.#traceLog.line(`[break] ✗ ${r.error}`);
+        this.#reportBreakList(r.error ? { error: r.error } : {});
+      } else if (cmd.kind === 'clear') {
+        this.#breaks = cmd.id === undefined ? [] : this.#breaks.filter((b) => b.id !== cmd.id);
+        this.#traceLog.line(`[break] 清空${cmd.id === undefined ? '全部' : ` #${cmd.id}`}（剩 ${this.#breaks.length} 条）`);
+        this.#reportBreakList({});
+      } else if (cmd.kind === 'list') {
+        this.#reportBreakList({});
+      } else if (cmd.kind === 'continue') {
+        this.#resumeFromBreak();
+      }
+    });
+    window.api?.onDebugQuery?.(({ id, text }) => {
+      let result: unknown;
+      try {
+        result = runQuery(this.#e, String(text ?? ''));
+      } catch (err) {
+        result = { query: String(text ?? ''), ok: false, lines: [`查询抛错：${(err as Error).message}`] };
+      }
+      window.api?.sendDebugQueryResult?.({ id: Number(id), result });
+    });
   }
 
   #skipOpcode(opcode: number): void {
@@ -285,11 +349,132 @@ export class RendererSession {
       advFrame: true,
       advErrors: 'stop',
       maxStepsPerFrame: PRODUCT_FRAME_POLICY.maxStepsPerFrame,
+      // ★断点闸门（`tickets/T-0114`）：条件断点在**执行之前**查（见 `#beforeStep`）；
+      //   语义事件在**执行之后**落地（事件发生在 stepOnce 内部，见 `#afterStepEvent`）。
+      onBeforeStep: (frame, instr) => this.#beforeStep(frame, instr),
+      onAfterStepEvent: () => this.#afterStepEvent(),
       // 引擎式合成：脏/窗未跑完才画（判据在共享层），模型推进与音频 tick 不跳过。
       present: 'needsRender',
       audio: 'host',
       observer,
     };
+  }
+
+  /**
+   * **语义事件钩子**（VM 同步调用）：只负责"记下来"，暂停由 `#afterStepEvent` 落地。
+   *
+   * ★条件在**这里**求值（用事件参数 `idx`/`val`/`slot`/`imgid`），而不是在 `#afterStepEvent` ——
+   * 因为事件值只在这一刻可见。
+   */
+  #onDebugEvent(ev: { kind: DebugEventKind; values: Record<string, number> }): void {
+    if (this.#breaks.length === 0) return;
+    const describe =
+      ev.kind === 'slot-bind'
+        ? `绑定纹理槽 slot=0x${(ev.values.slot ?? 0).toString(16)} imgid=0x${(ev.values.imgid ?? 0).toString(16)}`
+        : `写全局 ${ev.kind} idx=0x${(ev.values.idx ?? 0).toString(16)} val=${ev.values.val ?? 0}`;
+    const hit = matchEvent(this.#breaks, ev.kind, this.#e, ev.values, describe);
+    if (hit && !this.#pendingEventHit) this.#pendingEventHit = hit;
+  }
+
+  /** 主循环在 `stepOnce` 之后调用：上一次派发里若记录了事件命中，就在这里停住。 */
+  async #afterStepEvent(): Promise<void> {
+    const hit = this.#pendingEventHit;
+    if (!hit) return;
+    this.#pendingEventHit = null;
+    await this.#pauseAtBreak(hit);
+  }
+
+  /**
+   * **断点闸门**：每条指令执行之前查一次；命中则挂起，等控制面板点「继续」。
+   *
+   * 返回 Promise ⇒ 主循环 `await` 它 ⇒ 渲染进程仍在转（能收 IPC、能合成、能跑 `#waitForResume` 那套服务），
+   * 但**不再派发下一条指令** —— 这就是"停住"。
+   */
+  async #beforeStep(frame: Frame, instr: BinInstruction | undefined): Promise<void> {
+    if (this.#breaks.length === 0) return;
+    // 指令步断点（事件断点不在这里，它们在写/绑的那一刻触发 —— 见 `#onGlobalWrite` / `#onSlotBind`）
+    const here = `${frame.name}@${frame.ip}`;
+    if (this.#breakSkipOnce === here) {
+      // 「继续」后放行同一条：断点语义与调试器一致 —— 继续 = 从这条**走**过去，
+      // 而不是原地反复命中（否则用户点继续也不动，看起来像死锁）。
+      this.#breakSkipOnce = null;
+      return;
+    }
+    const hit = matchInstruction(this.#breaks, this.#e, frame.name);
+    if (!hit) return;
+    await this.#pauseAtBreak(hit);
+  }
+
+  /** 挂起并上报命中；等 `#resumeFromBreak()`（面板「继续」）。 */
+  async #pauseAtBreak(hit: BreakHit): Promise<void> {
+    this.#breakHit = hit;
+    hit.spec.hits = (hit.spec.hits ?? 0) + 1;
+    const text = `⏸ 断点命中 #${hit.spec.id}（第 ${hit.spec.hits} 次）：${hit.where}`;
+    this.#native.log(`[break] ${text}${hit.detail ? ` ${hit.detail}` : ''}`);
+    this.#traceLog.line(`=== BREAK #${hit.spec.id} ${hit.where}${hit.detail ? ` ${hit.detail}` : ''} ===`);
+    this.#traceLog.flush();
+    // 推送而不是 invoke：暂停是**持续态**，面板只是被告知；用户点「继续」再走另一条通道回来。
+    this.notifyStatus();
+    window.api?.sendBreakPaused?.({
+      id: hit.spec.id,
+      where: hit.where,
+      ...(hit.detail ? { detail: hit.detail } : {}),
+      // 不带 ast（闭包/函数不可跨 IPC 结构化克隆）
+      spec: { id: hit.spec.id, kind: hit.spec.kind, where: hit.spec.where, condition: hit.spec.condition },
+    });
+    await new Promise<void>((resolve) => {
+      this.#breakResume = resolve;
+    });
+    this.#breakHit = null;
+    this.#breakResume = null;
+  }
+
+  /** 面板点「继续」：放行同一条指令。 */
+  #resumeFromBreak(): void {
+    if (!this.#breakResume) {
+      this.#traceLog.line('[break] 忽略「继续」：当前没有断点暂停');
+      return;
+    }
+    const fr = this.#e.curScript();
+    this.#breakSkipOnce = `${fr.name}@${fr.ip}`;
+    const r = this.#breakResume;
+    this.#breakResume = null;
+    r();
+  }
+
+  /** 面板下发的「设置断点」。解析失败**不入表**并回报原因（面向用户）。 */
+  #addBreak(kind: 'step' | 'event', where: string | undefined, condition: string): { id?: number; error?: string } {
+    try {
+      const spec = compileBreak({
+        id: this.#breakSeq,
+        kind,
+        ...(where ? { where: where as NonNullable<BreakSpec['where']> } : {}),
+        condition,
+      });
+      this.#breakSeq++;
+      this.#breaks.push(spec);
+      this.#traceLog.line(
+        `[break] + #${spec.id} ${kind}${where ? `/${where}` : ''} ${condition ? `when ${condition}` : '(无条件)'}`,
+      );
+      return { id: spec.id };
+    } catch (err) {
+      return { error: `断点条件无法解析：${(err as Error).message}` };
+    }
+  }
+
+  /** 把断点表 + 当前暂停态回给面板（面板据此渲染列表与「继续」按钮）。 */
+  #reportBreakList(extra: { error?: string }): void {
+    window.api?.sendBreakList?.({
+      list: this.#breaks.map((b) => ({
+        id: b.id,
+        kind: b.kind,
+        where: b.where,
+        condition: b.condition,
+        hits: b.hits ?? 0,
+      })),
+      paused: this.#breakHit ? { id: this.#breakHit.spec.id, where: this.#breakHit.where, detail: this.#breakHit.detail } : null,
+      ...(extra.error ? { error: extra.error } : {}),
+    });
   }
 
   // -------------------------------------------------------------------------

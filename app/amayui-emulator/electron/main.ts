@@ -47,3 +47,16 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+/**
+ * ★**供外部脚本复用主进程产物**（`tickets/T-0114` 的 adb 式调试服务器 `tools/debugsrv.cjs`）：
+ * 那些脚本 `require('../dist/electron/main.cjs')` 后要拿到**同一个** `windows` 单例与调试发送函数。
+ *
+ * 为什么必须从这里导出、而不是另打一个 `windows.cjs`：
+ * `windows` 是**单例**（持有 game/control 两个 BrowserWindow）。若再打一份 bundle，
+ * 那份会拿到**另一个** `windows` 实例 ⇒ `windows.game` 为 null、`sendToRenderer` 发到空处。
+ * 从同一个 bundle 导出就没有这个问题。
+ */
+export { windows } from './windows.js';
+export { sendBreakCommand, sendDebugQuery } from './ipc/control.js';
+export { app as _electronApp } from 'electron';

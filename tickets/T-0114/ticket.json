@@ -1,0 +1,119 @@
+{
+  "title": "控制面板强化为调试器：① 调试查询（已落地）② 断点/表达式日志 ③ 内存快照/恢复",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/tooling",
+  "status": "doing",
+  "why": "2026-09-22 用户在 T-0102（ADV 窗口白底）排查中提出：「目前调试过于繁琐了」。现状是每验证一个假设都要**改源码加诊断 → 重编 → 从标题推进约 4 分钟**（T-0102 本轮为此打了四轮临时探针、每轮都要用户手动重现）。现有控制面板已是\"半个调试器\"（定向 trace / 停在未知指令 / 结构化上报 / 跳过并继续），快照核心件也已在（scSnapshotPresent + 整套存档序列化）⇒ 值得把这两项能力补齐，作为后续所有 emulator 排查的基础设施。 ★2026-09-22 用户批准「请继续」⇒ 按提案 §4 的三步顺序分步实现，**第 1 步（调试查询）已落地**（见 changes.md 第 1 次变更）：纯函数 `src/vm/debugQuery.ts` + 控制面板查询框 + 控制窗↔渲染窗的 invoke 中转 + 7 例守卫。",
+  "acceptance": [
+    "**分步交付**（提案 §4 的顺序）。当前进度：**第 1 步已完成**，第 2/3 步未开工。",
+    "★**第 1 步（已完成）判据**：控制面板能对运行中的引擎执行只读查询并看到结果 —— `global <下标>`（**解码后**的值 + 原始编码值）、`local`、`frame [n]`、`flocal`、`slot`、`run`、`help`；实现为**纯函数**（跑前后状态不变）且**不 eval**；守卫 `test/debug-query.test.ts` 7/7；`npm run verify` 全绿。**落点**：`src/vm/debugQuery.ts`、`src/renderer/app/session.ts`、`electron/preload.ts`、`electron/ipc/control.ts`、`control/{index.html,dom.ts,control.ts}`。",
+    "★**第 1 步未验证项（待用户 E4）**：控制窗 ↔ 渲染窗的 invoke 中转与面板渲染**没有在真界面上点过**；需跑一次确认能查到值。",
+    "**第 2 步（未开工）**：表达式断点 + 表达式日志（复用第 1 步的求值器）。**硬约束**：暂停**不得同步阻塞 IPC**（用 Promise 门，复用现有 async 主循环 idiom）；求值器仍须白名单子集 / 纯函数。",
+    "**第 3 步（未开工）**：内存快照/恢复。**硬约束**：必须**显式列出并记录\"哪些量不进快照\"**（池外裸量如 `global f8080`、L2D 运行态、纹理在途、音频队列）；优先只在**帧边界**做（避开在途态）。",
+    "全程硬约束：① 求值器**不得 eval**；② 不改 `src/*.txt`（调试器是观测与驱动手段，不碰脚本真源）；③ 缺口要写进票与日志（如\"宿主编槽表未纳入查询\"必须写明）。",
+    "★**第 2 步已完成**（2026-09-22）：条件断点 + 语义事件断点**都可用**。事件名**按池显式命名**（`global-int-write`/`global-float-write`/`global-str-write`/`slot-bind`）—— 依据：操作数层是扁平 variant（tag 写在指令里），运行期存储层是**按类型分池**（fields.json 的 8 个池基址）；「存 int 3318 再读 float 3318」不会冲突（实测两池独立）。三个引用池暂不发事件（已在 Engine.debugEvent 注明）。接线跨三层：VM 同步发事件 / Engine.debugEvent 钩子 / 主循环 onAfterStepEvent（stepOnce **之后** await）。守卫 test/debug-event-break.test.ts（6 例）。★仍待 E4：整条通路未在真界面点过。",
+    "★**adb 式后台调试守护进程已完成**（用户提议：复用\"控制面板本就长期存在\"这一点）：`tools/debugsrv.cjs`（electron 主脚本 + TCP 服务 127.0.0.1:39427，镜像控制窗推送给外部客户端）+ `tools/dbg.cjs`（短连接 CLI）+`main.ts` 导出 `windows`/`sendDebugQuery`/`sendBreakCommand`（**同一单例**，不另打 bundle）+`control.ts` 抽出可复用发送函数 + npm scripts `dbg:srv`/`dbg`。实测：ping → pong/game=true；`global 0` / `run` 真返回；`--quit` 干净退出。★顺带修掉 `run` 查询的**只读副作用**（`gatePending()` 会写 `gateWaitStart`）并把守卫补强（门计时器纳入快照 + 突变证明）。"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-t0114-debugger/session-state-2026-09-22.md",
+      "anchor": "会话中间状态记录（2026-09-22）",
+      "line": 6,
+      "note": "★本会话**交接件**（用户要求\"记录所有中间状态\"产出）：三件事的已证/未证/待办三态 —— T-0102 白底根因与三项排除 + 未决三选一；T-0114 调试器已交付范围与未做项；T-0040 macOS 贴边时序修复与实测数字；T-0115 verify 基线；产出文件清单与仓库状态"
+    },
+    {
+      "file": "tickets/T-0114/changes.md",
+      "anchor": "第 1 步：**调试查询（direct query）** 落地",
+      "line": 7,
+      "note": "第 1 次变更全文：7 个改动文件、命令集、两处刻意口径（解码后的值 / 未写过标注）、判据与守卫、诚实边界（UI 未 E4、宿主槽表未纳入）"
+    },
+    {
+      "file": "tickets/T-0114/notes.md",
+      "anchor": "**两项都能实现，而且工程量比预期小**",
+      "line": 14,
+      "note": "可行性评估报告全文：现状盘点（带落点）+ 能力①快照/恢复 + 能力②断点/日志/查询 + 设计约束 + 推进顺序 + 未决项"
+    },
+    {
+      "file": "app/amayui-emulator/electron/ipc/control.ts",
+      "anchor": "control-set-trace-filter",
+      "line": 56,
+      "note": "已有：定向 trace 白名单（控制面板已能按 opcode 过滤指令日志）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "#pausedOp",
+      "line": 119,
+      "note": "已有：渲染进程\"停在未知指令等面板指令继续\"—— 断点链路的地基，已被真机验证过"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/present.ts",
+      "anchor": "export function scSnapshotPresent",
+      "line": 40,
+      "note": "已有：画面快照/恢复（绘制项/网格/文本窗/槽模式）—— 能力①的核心件之一"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugQuery.ts",
+      "anchor": "export function runQuery",
+      "line": 82,
+      "note": "第 1 步的实现：纯函数只读查询 + 白名单解析（不 eval）；口径见文件头注释"
+    },
+    {
+      "file": "app/amayui-emulator/test/debug-query.test.ts",
+      "anchor": "★纯只读：查询前后引擎状态不变",
+      "line": 105,
+      "note": "守卫（7 例）：值口径 / 未写过 / 批量 / 帧栈 / 失败给用法 / 纯只读 / 源码棘轮（不 eval）"
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0102"
+    ]
+  },
+  "tests": [],
+  "id": "T-0114",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing：用户批准「请继续」⇒ 按提案 §4 分步实现。**第 1 步（调试查询）已落地**：`src/vm/debugQuery.ts`（纯函数、白名单、不 eval）+ 控制面板查询框 + 控制窗↔渲染窗 invoke 中转（含 5s 超时兜底）+ 7 例守卫；`npm run verify` 1044 测试全绿。待用户 E4 验证面板通路。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "第 1 步**用户实测通过**（查询通路已打通：拿到 global 0 = 1 / 1dd7 未写过 / 帧栈）。据反馈修两处：① 面板加「复制结果」按钮（clipboard + execCommand 回退）；② `frame` 改只列活帧（判据 script!==null || scriptId>=0）、空槽折叠成一行汇总、新增 `frame all` 强制全列。★顺带订正我自己的测试夹具错误：新建 Engine 的 frames[i] 默认 scriptId=-1/script=null，首版判据会把真活帧判成空壳。守卫已改为真断言折叠行为；verify 1044 全绿。取证 changes.md 第 2 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "第 2 步**核心件**交付（IPC/UI/暂停闸门未接）：新增 `src/vm/debugBreak.ts`（手写递归下降+白名单、**不 eval**）+ `test/debug-break.test.ts`（8 例）。表达式语法定稿（`0x`=hex / 含字母=hex / 纯数字=十进制；事件参数 idx/val/slot/imgid ⇒ 可写 `idx == 0` 表达\"任何写 global 0 都停\"）。两处刻意缩范围：表达式不支持 `frame[i].local`（改查 `flocal` 查询）；只读不写状态。过程中靠测试修掉 4 个自己的 bug（漏 token/漏推进下标/夹具错/用例语法不存在）。verify 1052 全绿。★未接：暂停闸门（loop 的 async 门）/ IPC / 面板 UI + 继续按钮。取证 changes.md 第 3 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "第 2 步**接线完成**（指令步断点可用）：loop 新增异步 `onBeforeStep`（在 stepOnce 之前）+ session 的断点表/暂停闸门（await Promise，绝不阻塞 IPC）/继续放行同一条 + 6 条 IPC 通道 + 面板断点区（含命中次数与「继续」按钮）。★未接：语义事件断点的**引擎侧调用点**（matchEvent 已实现+有守卫，但写全局/绑槽两处缝未接，需经 Engine 钩子回渲染窗）；★未做 E4（整条通路未在真界面点过）。verify 1052 全绿。取证 changes.md 第 4 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "交互改为 **lldb 风格命令台**（用户要求输入指令→生效，不要按钮）：新增 `parseDebugCommand`（纯函数，b/b event/bl/d/c/?，其它一律当查询）；面板删掉查询框+断点下拉/按钮，换成单输入框+转录区+状态行。★术语订正（用户问「指令步」）：不是\"执行后\"而是**每条指令执行前**用此刻状态求条件，已全量改名为「条件断点」并在文件头写明易误读点。面板侧自带一份命令表（不跨编译单元 import），一致性由守卫钉住。verify 1053 全绿。取证 changes.md 第 5 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★事件断点**接线完成**（b event … 真能用）+ 池语义订正：用户质疑「global 能放任意类型」促使核对 —— 操作数层是扁平 variant（tag 在指令里）、运行期存储层按类型分池（fields.json 8 个池基址）；两者都对但不是同一层；「存 int 3318 读 float 3318」不冲突（实测独立）。据此事件名按池显式命名（不再有笼统 global-write）。接线：operand.ts/gfx-texture.ts 发事件 → Engine.debugEvent 钩子 → loop 的 onAfterStepEvent（stepOnce 之后 await）→ session 求条件并暂停。★修掉三处自己的 bug：f32 写错视图（应经 Int32 视图写位模式）、float 事件用 |0 截断、测试把 operandArg 当 0-based（实际 1-based）与 float-mov opcode 写错。verify 1059 全绿。取证 changes.md 第 6 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★新增 **adb 式后台调试守护进程**（用户提议）：tools/debugsrv.cjs + tools/dbg.cjs；main.ts 导出 windows/调试发送函数（单例安全）；control.ts 抽出可复用发送函数；npm run dbg:srv / dbg。解决了我先前列的两条限制（单次调用超时、上次窗口无人接管）—— 长期守护 + 短连接。★顺带修掉 `run` 查询的只读副作用（gatePending() 会写 gateWaitStart；且它是方法、插值会打出函数源码），并把 debug-query 的纯只读守卫**补强**（纳入门计时器）+突变证明（★第一次突变用 gatePending(0) 复现不出，改用真实时钟才红 —— 教训：突变要构造成真能触发副作用的形态）。环境：本机 Chromium 沙箱初始化失败 ⇒ 守护脚本 no-sandbox（仅回环 + 只读查询 + 白名单断点）。取证 changes.md 第 7 次变更"
+    }
+  ]
+}

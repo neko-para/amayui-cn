@@ -92,6 +92,8 @@ const op_load_texture_by_id: OpHandler = (c) => {
   const slot = (plan.int(2) ?? 0);
   const color = (plan.int(3) ?? 0);
   e.texSlots.set(slot, imgid);
+  // 语义事件（`tickets/T-0114`）：`imgid` 恒非负（未绑定用 undefined 表示、不发事件）
+  e.emitDebugEvent('slot-bind', { slot, imgid });
   e.markFileUsed(imgid); // 引擎按 id 打开文件 ⇒ 写 FileDB 的「已使用」表（鉴赏解锁的判据）
   c.native.bindTexture?.(imgid, slot);
   // raw 32750-32757：读 op3 ⇒ 归一化 ⇒ 作 `color` 传 `sub_4A3800(..., color, 1)`（负值也是 0，不是跳过）
@@ -249,6 +251,8 @@ const op_set_texture: OpHandler = (c) => {
   //   传递方式与 `0x249`（同一函数的"重型兄弟"）一致：走宿主的纹理对象参数缝。
   const color = p.int(3) ?? 0;
   c.e.texSlots.set(slot, imgid);
+  // 语义事件（`tickets/T-0114`）：同上（`0x1F9` / `0x249` 两条绑定路径都要发）
+  c.e.emitDebugEvent('slot-bind', { slot, imgid });
   // ★引擎在这里 `sub_4559C0` 按 id 打开图像文件 ⇒ 写 FileDB 的「已使用」表（`sub_454960`）。
   //   这正是「回想的 CG 鉴赏」判定某张 CG 是否解锁的途径（见 handlers/resource-usage.ts 的 0x19D）。
   c.e.markFileUsed(imgid);

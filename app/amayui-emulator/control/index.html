@@ -12,6 +12,13 @@
       .row-head .mini { margin-left: auto; }
       .label { color: #8a8a8a; font-size: 12px; margin-right: 6px; }
       .value { color: #7cfc00; font-family: ui-monospace, monospace; }
+      /* 调试查询的结果块：等宽、可换行、可滚动（长 dump 不撑破面板） */
+      .queryout {
+        font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.45;
+        background: #161616; border: 1px solid #333; border-radius: 4px;
+        padding: 8px; margin: 0; max-height: 260px; overflow: auto; white-space: pre-wrap;
+        color: #dcdcdc;
+      }
       button {
         background: #333; color: #eee; border: 1px solid #555; border-radius: 4px;
         padding: 6px 12px; font-size: 13px; cursor: pointer; margin-right: 8px;
@@ -58,6 +65,17 @@
       <button id="btnTraceApply" class="mini">应用</button>
     </div>
     <div class="row"><span class="label">当前 BIN</span><span class="value" id="bin">…</span></div>
+    <div class="row row-head">
+      <span class="label">★ 调试台（输入指令 → 生效）</span>
+      <button id="btnReplHelp" class="mini">帮助</button>
+      <button id="btnReplCopy" class="mini">复制全部</button>
+    </div>
+    <div class="row"><pre class="queryout" id="replOut">（输入 `?` 看命令；查询直接打 `global 0` 之类）</pre></div>
+    <div class="row">
+      <input id="replInput" type="text" placeholder="b global 0x11 == 5260   |   bl   |   c   |   global 0   |   ?" />
+      <button id="btnReplRun" class="mini">执行</button>
+      <span class="value" id="replState"></span>
+    </div>
     <div class="row"><div class="error" id="error"></div></div>
     <div class="row unknown" id="unknownBlock" hidden>
       <div class="title">⏸ 遇到不认识的指令，已停住</div>

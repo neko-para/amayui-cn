@@ -15,7 +15,7 @@ generated_by: scripts/build-doc-index.mjs
 > ★**读文档前先看 `state`**：`live` 才是现行结论；`record` 是**一次性取证的历史快照**（结论已落台账，
 > 只作票据证据锚点用）；`generated` 一律勿手改，改真源后重跑生成器。
 
-共 **99** 份：📋 流程 18 · ⚙️ 生成物 36 · 📖 叙述 28 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 12；按 state：live 87 · consumed 12
+共 **103** 份：📋 流程 18 · ⚙️ 生成物 39 · 📖 叙述 28 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 13；按 state：live 90 · consumed 13
 
 ## `00-overview/`（7）
 
@@ -97,10 +97,11 @@ generated_by: scripts/build-doc-index.mjs
 | [`04-app/README.md`](./../04-app/README.md) | 🧭 索引 | ✅ | — | 04-app · app 工具（三大子工程） |
 | [`04-app/toolkit.md`](./../04-app/toolkit.md) | 📖 叙述 | ✅ | — | 04-app · amayui-toolkit |
 
-## `05-scripts/`（31）
+## `05-scripts/`（34）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
+| [`05-scripts/ALLMAP.md`](./../05-scripts/ALLMAP.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · ALLMAP |
 | [`05-scripts/AUTORUN1.md`](./../05-scripts/AUTORUN1.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · AUTORUN1 |
 | [`05-scripts/AUTORUN3.md`](./../05-scripts/AUTORUN3.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · AUTORUN3 |
 | [`05-scripts/BUNKIMOVE.md`](./../05-scripts/BUNKIMOVE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · BUNKIMOVE |
@@ -125,7 +126,9 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/ROOM.md`](./../05-scripts/ROOM.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · ROOM |
 | [`05-scripts/SAVE.md`](./../05-scripts/SAVE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SAVE |
 | [`05-scripts/SC0330.md`](./../05-scripts/SC0330.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SC0330 |
+| [`05-scripts/SCJUMP.md`](./../05-scripts/SCJUMP.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SCJUMP |
 | [`05-scripts/SELFONT.md`](./../05-scripts/SELFONT.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SELFONT |
+| [`05-scripts/SETADVFLAG.md`](./../05-scripts/SETADVFLAG.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETADVFLAG |
 | [`05-scripts/SETFATE.md`](./../05-scripts/SETFATE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETFATE |
 | [`05-scripts/SETMEMOIR.md`](./../05-scripts/SETMEMOIR.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETMEMOIR |
 | [`05-scripts/SN0000.md`](./../05-scripts/SN0000.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SN0000 |
@@ -133,7 +136,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/SYSTEM4.md`](./../05-scripts/SYSTEM4.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SYSTEM4 |
 | [`05-scripts/TITLE.md`](./../05-scripts/TITLE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · TITLE |
 
-## `99-records/`（12）
+## `99-records/`（13）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
@@ -148,6 +151,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`99-records/2026-09-live2d/CONTEXT.md`](./../99-records/2026-09-live2d/CONTEXT.md) | 🗄 历史记录 | 📤 已消费 | — | CONTEXT — Live2D（TITLE）实现进度快照（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-live2d/live2d-deform-semantics.md`](./../99-records/2026-09-live2d/live2d-deform-semantics.md) | 🗄 历史记录 | 📤 已消费 | — | Live2D（Cubism 2.0.06 for DirectX）变形与顶点生成 + 每帧求值语义（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-route-c/route-c-text-metrics-2026-09.md`](./../99-records/2026-09-route-c/route-c-text-metrics-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 扩展路线 C「字形度量」实测：0x1D0 / 0x1D1 的真身与处置（结论已落 `analysis/opcode-gaps.json`） |
+| [`99-records/2026-09-t0114-debugger/session-state-2026-09-22.md`](./../99-records/2026-09-t0114-debugger/session-state-2026-09-22.md) | 🗄 历史记录 | 📤 已消费 | — | 会话中间状态记录（2026-09-22）（结论已落 `tickets/T-0102/evidence/STATUS.md`） |
 | [`99-records/2026-09-transition/transition-render-spec-2026-09.md`](./../99-records/2026-09-transition/transition-render-spec-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 转场渲染规格（T-0084 · 引擎侧算法 → emulator 实现手册）（结论已落 `analysis/engine-capabilities.json`） |
 
 ## `README.md/`（1）

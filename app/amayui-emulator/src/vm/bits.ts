@@ -26,6 +26,23 @@ export function asI32(v: number): number {
 }
 
 /** 把一个 32 位无符号位模式按 int32 解释（用于 DEC 后的有符号量）。 */
+/**
+ * **int32 位模式 → float 数值**（IEEE754 单精度）。
+ *
+ * 为什么需要它：调试条件语言只比**整数**（没有浮点字面量），而 `global-float-write` 事件里的
+ * `val` 是 float 的**位模式** ⇒ 用户写 `f2i(val) == 10` 才能表达"值等于 10.0"。
+ * 用 `Float32Array` 而不是手写位运算：语义与 JS 引擎一致，且不会在 NaN/非规格化数上出错。
+ */
+export function f32(bits: number): number {
+  // ★必须**经 Int32 视图写入**（存的是位模式），再从 Float32 视图读出；
+  //   若写成 `F32[0] = bits`，JS 会把 `bits` 当**数值**去做单精度舍入 ——
+  //   位模式就被"再舍入"一次，`f32(1069547520)` 会返回 1069547520 而不是 1.5（实测踩过）。
+  F32B_I32[0] = bits | 0;
+  return F32B[0]!;
+}
+const F32B = new Float32Array(1);
+const F32B_I32 = new Int32Array(F32B.buffer);
+
 export function i32(v: number): number {
   return v | 0;
 }

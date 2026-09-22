@@ -174,10 +174,18 @@ function floatBits(bits: number): number {
 }
 
 /** 写第 n 个操作数为字符串（set-string / concat 目标串槽）。 */
+/** 复用的位模式缓冲（把 float 编成 int32 位模式；模块级避免每次分配）。 */
+const F32B = new Float32Array(1);
+const I32B = new Int32Array(F32B.buffer);
+
 export function writeStringOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number, s: string): void {
   const a = operandArg(instr, n);
   switch (a.type) {
-    case TYPE_GLOBAL_STRING: e.globals.str.set(a.raw, s); return;
+    case TYPE_GLOBAL_STRING:
+      e.globals.str.set(a.raw, s);
+      // 事件里带字符串**长度**（条件语言不能比字符串；见 `Engine.debugEvent` 的说明）
+      e.emitDebugEvent('global-str-write', { idx: a.raw, val: s.length });
+      return;
     case TYPE_LOCAL_STRING:
     case TYPE_LOCAL_STRING2: frame.locals.str.set(a.raw, s); return;
     case TYPE_GLOBAL_STRING_PTR:
@@ -205,7 +213,15 @@ export function readFloatOperand(e: Engine, frame: Frame, instr: BinInstruction,
 export function writeFloatOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number, v: number): void {
   const a = operandArg(instr, n);
   switch (a.type) {
-    case TYPE_GLOBAL_FLOAT: e.globals.float.set(a.raw, v); return;
+    case TYPE_GLOBAL_FLOAT:
+      e.globals.float.set(a.raw, v);
+      // ★事件里带 **float 的 int32 位模式**（用 `Math.fround` 取单精度位模式，**不是** `| 0`）：
+      //   `| 0` 是**截断**（1.5 → 1），那样 `f2i(val)` 就没有意义了；`Math.fround` 才能让
+      //   `f2i(val) == 1.5` 成立，与调试条件语言里的 `f2i(...)` 配套。
+      //   （本条件语言只比整数，所以 float 值必须先编码成位模式才能带进事件。）
+      F32B[0] = v;
+      e.emitDebugEvent('global-float-write', { idx: a.raw, val: I32B[0]! | 0 });
+      return;
     case TYPE_LOCAL_FLOAT: frame.locals.float.set(a.raw, v); return;
     default: writeIntOperand(e, frame, instr, n, v | 0);
   }
@@ -309,6 +325,8 @@ export function writeIntOperand(e: Engine, frame: Frame, instr: BinInstruction, 
   switch (a.type) {
     case TYPE_GLOBAL_INT:
       e.globals.int.set(a.raw, enc(e.key, value));
+      // 语义事件（`tickets/T-0114`）：**给出解码后的值**，面板条件里写 `val == 1` 才直观
+      e.emitDebugEvent('global-int-write', { idx: a.raw, val: value });
       return;
     case TYPE_GLOBAL_FLOAT:
       e.globals.float.set(a.raw, value);
@@ -328,6 +346,7 @@ export function writeIntOperand(e: Engine, frame: Frame, instr: BinInstruction, 
       return;
     case TYPE_GLOBAL_INT_ARRAY:
       e.globals.int.set(a.raw, enc(e.key, value));
+      e.emitDebugEvent('global-int-write', { idx: a.raw, val: value });
       return;
     case TYPE_LOCAL_INT_ARRAY:
       frame.locals.int.set(a.raw, enc(e.key, value));

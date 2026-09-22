@@ -46,6 +46,11 @@
       "at": "2026-09-15",
       "what": "open → done —— 已实现并实测：贴边档+不抢焦点+位置日志；纯几何单测 5 条；--centered 可关",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "★macOS 贴边失效已修（用户实测：\"只在 Windows 可用，macOS 上依然在屏幕内\"）。根因是**时序**而非坐标系：`main.cjs` 在**窗口还隐藏**时就 `setPosition`（`edgeOptions()` 传了 `show:false`），而 **macOS 会丢弃隐藏窗口上的 setPosition**。实测（macOS，workArea 1728x1084@(0,33)，窗口 1280x752）：隐藏时 setPosition(224,1085) + showInactive ⇒ 实际 (224,**365**)（用的是居中 y）；显示后再 setPosition(224,1085) ⇒ 实际 (224,**1085**)，且 1.2s 后仍是。修法：`applyEdge` 改为\"先摆一次（Windows 够用、防中间闪一下）→ `showInactive()` → 显示后再摆一次\"（`setImmediate` + 300ms 兜底各一次）；★**不订阅 `move`**（那会把用户手动挪窗也拽回来）；日志只打最终那次（先前每次摆都打、刷三遍同样的行）。验证：探针实测 `y=1085 = 期望`，屏幕内可见高度 **正好 32px**。"
     }
   ],
   "tests": [

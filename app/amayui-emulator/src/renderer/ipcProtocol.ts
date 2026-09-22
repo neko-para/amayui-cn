@@ -138,6 +138,35 @@ declare global {
       controlForceClose(): void;
       /** 控制窗→主→渲染窗：把某个未知 opcode 登记为 no-op 桩函数并继续执行（见 Engine.unknownOpStubs）。 */
       controlSkipOp(opcode: number): void;
+      /**
+       * 控制窗→主→渲染窗：**调试查询**（`tickets/T-0114` 第 1 步）。
+       *
+       * 走 `invoke`：这是一条**要回答案**的请求（控制窗要拿到 `DebugQueryResult` 渲染）。
+       * 结果形状见 `src/vm/debugQuery.ts` 的 `DebugQueryResult`（`unknown` 以避免两窗的编译单元互相拉依赖）。
+       */
+      debugQuery(payload: { id: number; text: string }): Promise<unknown>;
+      /** 渲染窗→主：回一条调试查询结果（主进程按 `id` 配对 `debugQuery` 的 invoke）。 */
+      sendDebugQueryResult(payload: { id: number; result: unknown }): void;
+      /** 控制窗→主→渲染窗：一条断点指令（set/clear/list/continue）。 */
+      controlBreakCommand(cmd: BreakCommand): void;
+      /**
+       * 渲染窗→主→**控制窗**：**断点命中、已暂停**（`tickets/T-0114` 第 2 步）。
+       *
+       * ★为什么是推送（而不是像 `debugQuery` 那样 invoke）：暂停是**持续态** ——
+       * 面板只是"被告知"，用户在面板上点「继续」再走另一条通道回来（`controlBreakCommand`）。
+       */
+      sendBreakPaused(payload: unknown): void;
+      /** 渲染窗→主→控制窗：断点表 + 当前暂停态（set/clear/list 后的全量快照）。 */
+      sendBreakList(payload: unknown): void;
+      /**
+       * **主→控制窗**：断点命中、已暂停（**订阅**，与上面的 `sendBreakPaused` 是相反方向）。
+       *
+       * ★载荷用 `unknown`：控制窗与渲染窗是**两个编译单元**，写死形状会把一边的类型拖进另一边
+       *   （`recordScript` 那条老注释记过同一类事故）；面板侧自己做窄化。
+       */
+      onBreakPaused(cb: (payload: unknown) => void): () => void;
+      /** **主→控制窗**：断点表快照（订阅；面板侧做窄化）。 */
+      onBreakList(cb: (payload: unknown) => void): () => void;
       // 主→窗口 的推送：均返回**取消订阅函数**。
       /** 主→控制窗：收到渲染器上报的状态。 */
       onControlStatus(cb: (s: ControlStatus) => void): () => void;
@@ -147,6 +176,10 @@ declare global {
       onTraceFilter(cb: (ops: number[]) => void): () => void;
       /** 主→渲染窗：控制窗点了「作为桩函数跳过」→ 携带要跳过的 opcode。 */
       onControlSkipOp(cb: (opcode: number) => void): () => void;
+      /** 主→渲染窗：一条调试查询（含 `id`，渲染窗原样带回）。 */
+      onDebugQuery(cb: (payload: { id: number; text: string }) => void): () => void;
+      /** 主→渲染窗：一条断点指令（set / clear / list / continue）。 */
+      onBreakCommand(cb: (cmd: BreakCommand) => void): () => void;
       /** 渲染窗→主：上报状态，供主进程转发给控制窗。 */
       sendRendererStatus(s: ControlStatus): void;
       /** 渲染窗→主：把一条**结构化 trace**（JSON 行）追加到 `.tmp/scene-trace.jsonl`。 */
@@ -224,6 +257,18 @@ export interface PendingUnknown {
 }
 
 /** 渲染器上报给控制窗的状态。 */
+/**
+ * **一条断点指令**（控制窗 → 主 → 渲染窗；`tickets/T-0114` 第 2 步）。
+ *
+ * 为什么是一个联合而不是四条通道：四段的载荷高度同形（都带 kind+id），
+ * 一条通道少三处 IPC 接线与三处类型声明，也便于以后加 `'disable'` 这类动作。
+ */
+export type BreakCommand =
+  | { kind: 'set'; breakKind: 'step' | 'event'; where?: string; condition?: string }
+  | { kind: 'clear'; id?: number }
+  | { kind: 'list' }
+  | { kind: 'continue' };
+
 export interface ControlStatus {
   bin: string;
   /**
