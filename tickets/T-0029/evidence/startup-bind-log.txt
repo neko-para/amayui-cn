@@ -1,0 +1,29 @@
+# T-0029 证据：四条原预载 id 里被本场景用到的那一条（0x5272）在**首次绑定处**按需装载
+#
+# 来源：`.tmp/amayui-emulator.log`（2026-09-22 的 `npm run shot -- --gamestart` 会话；
+#       `.tmp/` 已 gitignore ⇒ 按 T-0057 R6 归档）。行号 = 原日志 1-based。
+# 口径：grep 全文，四条原预载 id 里只有 0x5272 出现一次（本条），0x5245/0x5246/0x5273 **0 次**；
+#       且它出现在 TITLE.BIN 已进入之后、紧跟在 `bindTexture imgid=0x5272 slot=4` 之后 ⇒ 是
+#       `0x1F9` 绑定驱动的按需装载（TextureCache 异步 + texturesIdle 屏障），不是启动期预载。
+#
+# 归档范围：原日志第 296..315 行（bind 行 = 第 310 行）。
+  [call-script] 0x5000221 -> $5$OPINIT1.BIN (1 instr)
+  [call-script] 0x5000222 -> $5$OPINIT2.BIN (1 instr)
+  [call-script] 0x5000223 -> $5$GSINIT.BIN (1 instr)
+  [call-script] 0x5000224 -> $5$EUINIT.BIN (1 instr)
+  [call-script] 0x5000225 -> $5$CGINIT.BIN (325 instr)
+  [call-script] 0x5000226 -> $5$SPINIT.BIN (7 instr)
+  [call-script] 0x5000227 -> $5$MUINIT.BIN (1 instr)
+  [call-script] 0x5000228 -> $5$FAINIT.BIN (36 instr)
+  [call-script] 0x5000229 -> $5$VIINIT.BIN (1 instr)
+  [call-script] 0x500022a -> $5$CIINIT.BIN (17 instr)
+  [call-script] 0x500022b -> $5$BTANINIT2.BIN (1 instr)
+  [call-script] 0x5263 -> INIT.BIN (13 instr)
+  [call-script] 0x5264 -> TITLE.BIN (622 instr)
+[audio] bgm#31(id=23) 流式起播 loop=true
+bindTexture imgid=0x5272 slot=4
+[audio] AudioContext 建立（state=running, 48000Hz, 流式=on）
+[audio] <audio> 事件 waiting amayui-audio://audio/23
+image 5272 -> SO004.AGF (1664x1536)
+  [call-script] 0x522d -> SETL2DMOC.BIN (1275 instr)
+  [call-script] 0x10001a4 -> $1$SETL2DMOC.BIN (49 instr)

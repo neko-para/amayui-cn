@@ -385,13 +385,12 @@ export class MsgWindow {
    *   （见 `handlers/text-items.ts`）、`0x71` 的 `a3 >= 0` 门（raw 74267）与主循环
    *   `*(int*)(this+388220) < 0`（raw 20319）。
    * - ★**只有一份真源**：`ENGINE_FIELD.textBaseGate`（= `engineValues` 的 97055 格）。
-   *   下面这个 `textSlotArg` 字段是**历史遗留的第二个副本** —— 它全库只被初始化
+   *   `T-0095` 之前这里还有一个 `textSlotArg` 字段当"第二个副本"：它全库只被初始化
    *   （构造默认值 + `reset()`）、**从未被赋值**，于是旧实现 `if (m.textSlotArg >= 0)` 恒真：
    *   `i1bb 0` 期间 `0x71` 照样记回看页（`T-0095` 订正的既有缺陷）。
-   *   ⇒ 现在的 0x71 直接用 `engineValues.get(ENGINE_FIELD.textBaseGate)`；本字段**无任何读取者**，
-   *   保留仅为兼容可能按字段名快照的调用方（`advState` 的快照按名搬数值）。**不要**再拿它当门。
+   *   `T-0101` 的 D6 已把该字段**整条删除**（删前核过：无任何读取者，`advState` 的按名快照也不含它）
+   *   —— 当年"保留仅为兼容按名快照"的顾虑经核实不成立。
    */
-  textSlotArg = 0;
 
   // ---- 运行期配置覆盖 ----
 
@@ -820,7 +819,7 @@ export class MsgWindow {
     this.advEnter = 0;
     this.hold = 0;
     // 引擎复位把 `Engine[97055]` 清 0（raw 17962）⇒ 记账门回到"正常记账"
-    this.textSlotArg = 0;
+    // （`textSlotArg` 已于 `T-0101` 的 D6 删除；真源是 `engineValues[97055]`）
     this.slots.clear();
     this.objects.clear();
     this.wins.clear();

@@ -6,14 +6,28 @@
  */
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, readFloatOperand, writeFloatOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { asI32 } from '../bits.js';
 import type { OpTable } from './shared.js';
 
+/**
+ * 取本族的操作数计划视图；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"VM 纯计算族"）**28 条一次迁完**：形状由两个工厂统一
+ * （`binOp` 15 条 + `floatBinOp` 5 条），所以真源只有这几处 + 若干单条。
+ */
+function planOfArith(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：VM 纯计算族走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 function binOp(apply: (l: number, r: number) => number): OpHandler {
   return (c) => {
-    const l = readIntOperand(c.e, c.frame, c.instr, 2);
-    const r = readIntOperand(c.e, c.frame, c.instr, 3);
-    writeIntOperand(c.e, c.frame, c.instr, 1, apply(l, r));
+    const p = planOfArith(c);
+    const l = p.int(2) ?? 0;
+    const r = p.int(3) ?? 0;
+    p.setInt(1, apply(l, r));
   };
 }
 
@@ -53,22 +67,23 @@ const op_gre = binOp((l, r) => (asI32(l) >= asI32(r) ? 1 : 0));
 
 // ---- mov (0x55) ----
 const op_mov: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, v);
+  const p = planOfArith(c);
+  p.setInt(1, p.int(2) ?? 0);
 };
 
 /** op_mov (0x55) */
 const op_fmov: OpHandler = (c) => {
-  const v = readFloatOperand(c.e, c.frame, c.instr, 2);
-  writeFloatOperand(c.e, c.frame, c.instr, 1, v);
+  const p = planOfArith(c);
+  p.setFloat(1, p.float(2) ?? 0);
 };
 
 /** float 双目：readFloat(2) [op] readFloat(3) -> writeFloat(1)。 */
 function floatBinOp(apply: (l: number, r: number) => number): OpHandler {
   return (c) => {
-    const l = readFloatOperand(c.e, c.frame, c.instr, 2);
-    const r = readFloatOperand(c.e, c.frame, c.instr, 3);
-    writeFloatOperand(c.e, c.frame, c.instr, 1, apply(l, r));
+    const p = planOfArith(c);
+    const l = p.float(2) ?? 0;
+    const r = p.float(3) ?? 0;
+    p.setFloat(1, apply(l, r));
   };
 }
 
@@ -100,8 +115,8 @@ function floatBinOp(apply: (l: number, r: number) => number): OpHandler {
  * 三条语料都是 **0 处**（`i135`/`i136`/`i13f` 全库无使用）⇒ 不可见，但口径必须与体一致 ——
  * 且三条**共用**这一处判据，避免同一形状出现两种写法。
  */
-function bitIndexGate(c: StepCtx, operand: number, mnemonic: string): number | null {
-  const v = readIntOperand(c.e, c.frame, c.instr, operand);
+function bitIndexGate(c: StepCtx, p: PlannedOperands, operand: number, mnemonic: string): number | null {
+  const v = p.int(operand) ?? 0;
   if ((v >>> 0) > 0x1f) {
     // 引擎的错误串分支：打印后继续，op1 原样不动
     c.log(`${mnemonic}: bit ${v}（无符号 ${v >>> 0}）> 0x1F ⇒ 按引擎打错误串分支（不写 op1）`);
@@ -111,35 +126,39 @@ function bitIndexGate(c: StepCtx, operand: number, mnemonic: string): number | n
 }
 
 const op_bit_set: OpHandler = (c) => {
-  const bit = bitIndexGate(c, 2, '0x135(SETBIT)'); // 引擎 raw 39411：unsigned v2 > 0x1F ⇒ 错误串（aSetbit）
+  const p = planOfArith(c);
+  const bit = bitIndexGate(c, p, 2, '0x135(SETBIT)'); // 引擎 raw 39411：unsigned v2 > 0x1F ⇒ 错误串（aSetbit）
   if (bit === null) return;
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
-  writeIntOperand(c.e, c.frame, c.instr, 1, v | (1 << bit));
+  const v = p.int(1) ?? 0;
+  p.setInt(1, v | (1 << bit));
 };
 const op_bit_reset: OpHandler = (c) => {
-  const bit = bitIndexGate(c, 2, '0x136(REMBIT)'); // 引擎 raw 39433：错误串 aRembit
+  const p = planOfArith(c);
+  const bit = bitIndexGate(c, p, 2, '0x136(REMBIT)'); // 引擎 raw 39433：错误串 aRembit
   if (bit === null) return;
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
-  writeIntOperand(c.e, c.frame, c.instr, 1, v & ~(1 << bit));
+  const v = p.int(1) ?? 0;
+  p.setInt(1, v & ~(1 << bit));
 };
 const op_check_bit: OpHandler = (c) => {
-  const bit = bitIndexGate(c, 3, '0x13F(GETBIT)'); // 引擎 raw 39558：错误串 aGetbit
+  const p = planOfArith(c);
+  const bit = bitIndexGate(c, p, 3, '0x13F(GETBIT)'); // 引擎 raw 39558：错误串 aGetbit
   if (bit === null) return;
-  const v = readIntOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, ((1 << bit) & v) !== 0 ? 1 : 0);
+  const v = p.int(2) ?? 0;
+  p.setInt(1, ((1 << bit) & v) !== 0 ? 1 : 0);
 };
 
 const op_random: OpHandler = (c) => {
-  const mod = readIntOperand(c.e, c.frame, c.instr, 2);
+  const p = planOfArith(c);
+  const mod = p.int(2) ?? 0;
   if (mod === 0) throw new Error('random: 模数为 0（引擎会抛除零异常）');
   // 近似引擎 rand()%mod：rand() 返回 [0,2^31)，与 Math.random() 近似（M0 非确定性，后续可换 LCG）。
-  writeIntOperand(c.e, c.frame, c.instr, 1, ((Math.random() * 0x80000000) | 0) % mod);
+  p.setInt(1, ((Math.random() * 0x80000000) | 0) % mod);
 };
 
 /** int→float（0x2D6）：`op1 = (float)op2`。 */
 const op_int_to_float: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 2);
-  writeFloatOperand(c.e, c.frame, c.instr, 1, v);
+  const p = planOfArith(c);
+  p.setFloat(1, p.int(2) ?? 0);
 };
 
 /**
@@ -151,8 +170,8 @@ const op_int_to_float: OpHandler = (c) => {
  * （审计 P1 `op-1/0x191-fabs-missing`，`tickets/T-0076` 的 B3）。
  */
 const op_fabs: OpHandler = (c) => {
-  const v = readFloatOperand(c.e, c.frame, c.instr, 2);
-  writeFloatOperand(c.e, c.frame, c.instr, 1, Math.abs(v));
+  const p = planOfArith(c);
+  p.setFloat(1, Math.abs(p.float(2) ?? 0));
 };
 
 /** 算术 / 位 / 比较 / 浮点 / 随机（VM 纯计算族）。 */

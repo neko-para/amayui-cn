@@ -12,21 +12,38 @@
   ],
   "evidence": [
     {
+      "file": "tickets/T-0103/notes.md",
+      "anchor": "### 复现配方：存档 78",
+      "note": "★本轮（轮 9）用户实测补充：四段现象逐段对照（真机 vs emulator）+ 可复现存档 78 + 现象→归票初判 + 脚本/日志锚点。这是本票判据 ① 的取证条目（帧级连拍仍缺）。"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i250 (local-int 0) (global-int 3f5c) (global-int f8025) 1 (local-int 1) (local-int 2) (local-int 4) (local-int 6) 0 9c4",
+      "line": 3036,
+      "note": "第 1/4 段\"横向模糊\"的脚本侧落点：类别 3/类型 0 的滑动模糊（`i250`），源项 = 紧跟 `create-texture (global-int 3f5c)` 的全屏 draw-texture"
+    },
+    {
+      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
+      "anchor": "setTransition id=0x18b02",
+      "note": "章头演出的现场日志（原日志在 .tmp，已摘录归档）：AE910AA.AGF(256×128)→slot 44；`setTransition id=0x18b02` = 类别 3 / `[13]=1`(ZoomBlur) / `[3]=1500`ms / 目标槽 `[4]=64`（该槽确实是 createTexture slot=64 1280×720 mode=1）"
+    },
+    {
       "file": "tickets/T-0091/notes.md",
       "anchor": "G2 不能直接 import",
-      "note": "转场侧的 G1/G2 与实现陷阱（最近的相关工作）"
+      "note": "转场侧的 G1/G2 与实现陷阱（第 1/4 段的最可能归属）"
     },
     {
       "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
       "anchor": "SC0000",
-      "note": "同一次切换的现场日志证据（边界 7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）"
+      "note": "同一次切换的完整边界（7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）"
     }
   ],
   "links": {
     "tickets": [
       "T-0091",
       "T-0099",
-      "T-0102"
+      "T-0102",
+      "T-0090"
     ],
     "docs": [
       "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md",
@@ -40,6 +57,16 @@
       "at": "2026-09-20",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "scope",
+      "what": "范围级：判据 ① 的取证条目已补齐（用户给出四段逐段对照 + 存档 78 复现配方 + 现象→归票初判 + 脚本/日志锚点）；★保持\"最后再处理\"——帧级连拍与任何实现动作都等 T-0091/T-0090/T-0102 的相关项收敛后再做"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → open —— 轮 12（副产物登记）：E4 通道打通——本机可跑 Electron（shot 连拍 / record --centered + replay），本票判据①的'存档78连拍取帧级证据'现在可做；仍按用户要求留到最后处理。详见 notes"
     }
   ]
 }

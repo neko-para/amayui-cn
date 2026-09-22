@@ -11,6 +11,7 @@
  * 与 `PixiBackend` 的关系：两者共用 `sceneModel.ts` + `drawItem.ts` 的语义（唯一一份），
  * 只有副作用不同（画到 Pixi / 记进快照）。
  */
+import { agfSizeOf } from '../arch/agfSize.js';
 import {
   scAdvance,
   scPoolPending,
@@ -97,10 +98,18 @@ export interface HeadlessOptions {
   /** 日志回调（默认丢弃；CLI 里可指向 stdout）。 */
   onLog?: (msg: string) => void;
   /**
-   * 图像尺寸解析器（`0x208` getter 用）。不给时 `getTextureSize` 返回 0/0 —— 并**记一条缺口事件**，
-   * 因为"恒返回 0×0"是 headless 的已知局限，不能让它静默变成"脚本收到的尺寸就是 0"。
+   * 图像尺寸解析器（`0x208` getter 用）。**优先级最高**（`replay` 用它喂"录下来的答案"）。
+   * 返回 `null` ⇒ 落到下一档（`T-0025` 的自解析缓存），因此"清空 tex 字段的回放"仍然有答案。
    */
   imageSize?: (imgid: number) => { w: number; h: number } | null;
+  /**
+   * **图像字节来源**（`tickets/T-0025`）：给了它 ⇒ headless 在 `0x208` 时**同步**读 AGF 头解析尺寸
+   * （`agfSizeOf`），不再依赖录制轨迹。`NodeFileSource` 提供 `readHeaderSync`。
+   * ★为什么必须**同步**：脚本可能在**绑定后的同一条指令批**里就问尺寸（实测回放里就是这样），
+   *   异步预取赶不上；而引擎的 `set-texture` 本来就是同步读+解码 ⇒ 同步答案才是忠实等价物。
+   * ★与 `imageSize` 的分工：`imageSize` = 外部喂进来的答案（录制/测试），**优先**；本项 = 自带解析兜底。
+   */
+  sizeSource?: { readHeaderSync?(id: number, maxBytes?: number): { name: string; data: Uint8Array; total: number } | null };
   /**
    * **音频宿主**（可选；`tickets/T-0006`/`T-0003`）。给了 ⇒ 本宿主实现 `audio`，里面跑**真 `AudioEngine`**
    * ⇒ 帧驱动每帧的 `tick` 会真的推进"SE 延迟到期 / 语音排队与占线 / ADV 寄存冲刷 / BGM 淡变"。
@@ -165,6 +174,8 @@ export class HeadlessScene implements NativeBridge {
   texSizeLog: { slot: number; w: number; h: number }[] = [];
   /** 回放时"录下来的 `0x208` 答案"队列（见 `setTextureSizeAnswers`）。 */
   #texSizeQueue: { slot: number; w: number; h: number }[] | null = null;
+  /** `tickets/T-0025`：**自解析**的图像尺寸缓存（`imgid → {w,h} | null`；`null` = 取不到/不是 AGF）。 */
+  #sizeCache = new Map<number, { w: number; h: number } | null>();
 
   constructor(private readonly opt: HeadlessOptions = {}) {
     if (opt.audioHost) {
@@ -230,6 +241,20 @@ export class HeadlessScene implements NativeBridge {
     this.proceduralSlots.delete(slot); // 绑定了文件图像 ⇒ 不再是程序化纹理
   }
 
+  /**
+   * `tickets/T-0025`：**同步**解析该 imgid 的尺寸（缓存；`null` = 取不到/不是 AGF）。
+   * 只在第一次问到时读一次头部（默认 64 KB）——`0x208` 之后重复问是纯查缓存。
+   */
+  #sizeOfImgid(imgid: number): { w: number; h: number } | null {
+    if (this.#sizeCache.has(imgid)) return this.#sizeCache.get(imgid)!;
+    let out: { w: number; h: number } | null = null;
+    const head = this.opt.sizeSource?.readHeaderSync?.(imgid);
+    // ★`total` 必须带上：无头 AGF 的 plan 判定要用**真实文件大小**做边界校验（只喂头部切片会全被否掉）。
+    if (head) out = agfSizeOf(head.data, head.total);
+    this.#sizeCache.set(imgid, out);
+    return out;
+  }
+
   releaseTexture(slot: number): void {
     this.slotImgid.delete(slot);
     this.proceduralSlots.delete(slot);
@@ -293,11 +318,14 @@ export class HeadlessScene implements NativeBridge {
       return this.#logTexSize(slot, { w: 0, h: 0 });
     }
     const sz = this.opt.imageSize?.(imgid) ?? null;
-    if (!sz) {
-      this.note('getTextureSize(headless 未解析图像尺寸)', `slot=${slot} imgid=0x${imgid.toString(16)}`);
-      return this.#logTexSize(slot, { w: 0, h: 0 });
-    }
-    return this.#logTexSize(slot, sz);
+    if (sz) return this.#logTexSize(slot, sz);
+    // ★`tickets/T-0025`：外部没给答案（或给了 null）⇒ **同步自解析** AGF 尺寸（引擎的 set-texture
+    //   本来就是同步读+解码；脚本可能在绑定后的同一条指令批里就问尺寸）。
+    //   仍取不到（不是 AGF / 索引未就绪）⇒ 0×0 并记缺口（与 Electron "图还没到就是 0×0" 同口径）。
+    const own = this.#sizeOfImgid(imgid);
+    if (own) return this.#logTexSize(slot, own);
+    this.note('getTextureSize(headless 未解析图像尺寸)', `slot=${slot} imgid=0x${imgid.toString(16)}`);
+    return this.#logTexSize(slot, { w: 0, h: 0 });
   }
 
   /** 记一次 `0x208` 的答案（`--record` 录进轨迹；回放时由 `replayTextureSizes` 喂回来）。 */

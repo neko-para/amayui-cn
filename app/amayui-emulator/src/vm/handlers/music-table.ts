@@ -53,9 +53,20 @@
  * 里按需建立 —— 所以 emulator 的 `groups` 也从 `[]` 起。
  */
 import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import type { AudioResource } from '../../audio/audioEngine.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：音乐表族（music-table），3 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：音乐表族（music-table）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /** 组内第 0 槽是**占位槽**：引擎所有访问器都从下标 1 起算（`sub_48A040` 返回 `len−1`、`sub_48A080` 拒 `index<1`）。 */
 const PLACEHOLDER = 0;
@@ -84,9 +95,10 @@ function truncateGroupTo1(arr: number[]): void {
  * 扩展包用它在基础曲号表后面接自己的文件 id。
  */
 const op_music_append_flat: OpHandler = (c) => {
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const value = (plan.int(2) ?? 0);
   c.e.musicTable.base.push(value);
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.musicTable.base.length + 1);
+  plan.setInt(1, c.e.musicTable.base.length + 1);
 };
 
 /**
@@ -94,21 +106,22 @@ const op_music_append_flat: OpHandler = (c) => {
  * 见文件头：`op2 < 0` ⇒ −1；已有该组 ⇒ 0；需要新建 ⇒ `新组数 − 1`。
  */
 const op_music_group_ensure: OpHandler = (c) => {
-  const n = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const n = (plan.int(2) ?? 0);
   const g = c.e.musicTable.groups;
   if (n < 0) {
-    writeIntOperand(c.e, c.frame, c.instr, 1, -1);
+    plan.setInt(1, -1);
     return;
   }
   if (n <= g.length) {
     // 引擎 else 分支：`(*(vtable+48))(this, op2)`，其返回值（越界时 −1）被丢弃 ⇒ 本 op 恒返回 0
     if (n >= 1) truncateGroupTo1(g[n - 1]!);
-    writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+    plan.setInt(1, 0);
     return;
   }
   growGroups(g, n);
   truncateGroupTo1(g[g.length - 1]!); // 引擎：扩容后 `(*(vtable+48))(this, v2)`，v2 == 新组数
-  writeIntOperand(c.e, c.frame, c.instr, 1, g.length - 1);
+  plan.setInt(1, g.length - 1);
 };
 
 /**
@@ -116,11 +129,12 @@ const op_music_group_ensure: OpHandler = (c) => {
  * 见文件头：追加 ⇒ `(组号 << 24) | (新长度 − 1)`；填洞 ⇒ 槽下标（≥ 1）。
  */
 const op_music_group_add: OpHandler = (c) => {
-  const group = readIntOperand(c.e, c.frame, c.instr, 2);
-  const value = readIntOperand(c.e, c.frame, c.instr, 3);
+  const plan = planFor(c);
+  const group = (plan.int(2) ?? 0);
+  const value = (plan.int(3) ?? 0);
   const g = c.e.musicTable.groups;
   if (group < 1 || group > g.length) {
-    writeIntOperand(c.e, c.frame, c.instr, 1, -1);
+    plan.setInt(1, -1);
     return;
   }
   const arr = g[group - 1]!;
@@ -129,13 +143,13 @@ const op_music_group_add: OpHandler = (c) => {
     for (let i = 1; i < arr.length; i++) {
       if (arr[i] === 0) {
         arr[i] = value;
-        writeIntOperand(c.e, c.frame, c.instr, 1, i);
+        plan.setInt(1, i);
         return;
       }
     }
   }
   arr.push(value);
-  writeIntOperand(c.e, c.frame, c.instr, 1, ((group << 24) | (arr.length - 1)) | 0);
+  plan.setInt(1, ((group << 24) | (arr.length - 1)) | 0);
 };
 
 /** 音乐表指令族（`OPS`：纯 VM 状态，不经 NativeBridge）。 */

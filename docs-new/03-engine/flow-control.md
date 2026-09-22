@@ -17,6 +17,7 @@ state: live
 ## 0. 帧模型速记（所有 handler 共用）
 
 - 第 `cur` 个脚本帧基址 = `_this + 120*cur + 383104`（`_this[383104]`=cur_script，120 字节/帧）。
+  ★**口径**：本节 `_this[N]` 一律指**字节**偏移（反编译里 `_this` 的类型随函数而异：`int _this` 时是字节偏移，`_DWORD *_this` 时要除以 4）。换算：`cur_script` 的字节偏移 `383104` = dword 下标 **95776** —— handler 里的操作数记数槽写法 `_this[30*_this[95776] + 95805]`（raw 28667 等）用的就是这个下标。
 - **帧局部池的生命周期**（2026 补，`sub_40ED40` raw 18577-18874）：**每次载入脚本都重建局部池**
   （`local_int` 等容量取自脚本头 `local_vars`，内容填 `enc_zero`）。
   ⇒ 帧槽被复用（脚本 `exit` 之后又被调用方 `call-script` 调回来最典型）时，**看不见上一次调用的局部量**；
@@ -26,7 +27,7 @@ state: live
   而新一页最大起点只有 3 ⇒ 拇指顶算到轨道外，**滚动条溢出轨道**。
   台账条目 `script-frame-local-pool-lifecycle`；emulator 落点 `loadScriptIntoFrame` 的 `frame.locals.clear()`。
 - 帧内槽（相对 383104，单位字节）：
-  - `frame+0x04`(383108)=`call_ret`（跨脚本返回层，亦全局 `_this[383108]`）。
+  - `frame+0x04`(383108)=`call_ret`（跨脚本返回层，亦全局字节 `383108` = dword 下标 95777）。
   - `frame+0x14`(383124)=当前指令**起始**字节位（`_this[120*cur+383124]`）。
   - `frame+0x18`(383128)=当前**opcode/ip**字节位（`_this[120*cur+383128]`，主循环取其 disp）。
   - `frame+0x4C`(383180)=本帧**返回目标/调用方**（`_this[120*cur+383180]`，=emulator `Frame.caller`）。
@@ -186,7 +187,7 @@ int sub_428A60(int _this) {
 - **emulator 现状**：引擎**重载根脚本 0 并继续跑**，emulator 也已经这样做 —— `op_exit_script`（`control.ts:401-406`）读回根脚本 INDEX0、装进帧 0、`cur=0` 后 `jump(0)`，**不再停在 `ScriptReset`**（全 `app/amayui-emulator/src` 里已无 `ScriptReset` 这个符号）。 `[已实现]`
   - 遗留缺口：
   - `sub_40DF10`（整体复位）、内存池/memflip、对象/纹理释放、`_this+676732` 回调 → `[平台无关/未建模]`。
-- **关键字段**：`cur`、`call_ret`、`draw-mode`(0xA30D0)、`_this[387932]`、`_this[699244]`、`_this[497380/497384]`、`sub_40ED40`（重载）。
+- **关键字段**：`cur`（字节 383104 / dword 95776）、`call_ret`（字节 383108 / dword 95777）、`draw-mode`(0xA30D0)、`_this[387932]`（**字节** 387932 = dword 下标 **96983**，即 `0x130` 相关的 `Engine.engineValues` 那一格）、`_this[699244]`、`_this[497380/497384]`、`sub_40ED40`（重载）。
 
 ---
 
@@ -428,4 +429,4 @@ call-script 5264  // TITLE
 | 负派发生产侧（主循环 `-v29`, `_this[430796]`） | **未定位** | `_this[430796]` 仅 reset 为 -1，无其它写入 → 疑非负请求来源 |
 | `sub_41C7C0`(0x6) 预装载校验（`388236/388240`） | 未解 | 脚本 key/版本校验语义 |
 | 帧 `arg`(383184)/帧设置细节（`sub_40ED40` 内） | 部分 | 局部池/`argc` 重建 |
-| emulator 侧缺口 | 部分 | **已实现**：`call-frame(0x8)`(op_call_frame，`test/call-frame.test.ts`)、`load-frame(0x6)`(op_load_into_frame)、`call(0x8F)`、`ret/exit/call-script/exit-script/jmp/jcc`、**`i143`(0x143) 扩展包 `$n$AUTORUN` 派发**(op_dispatch_script_requests，`test/append-packs.test.ts`)。**2026-09 订正（原文的未完项现已全部落地）**：`local-ret(0x7C)` 已实现（`FRAME_OPS` 的 `op_redisplay_return`：`0x199` 重显示的返回端，含深度校验与 `effect_flags` 还原）；`0xAE`(存档续档) 已实现（`op_save_version_branch`）；`exit` 的 `-11` 分支已实现（`control.ts` 的 `caller === -11` 分支：装记录 0 的脚本并 `jump(0)`），`-10` 的派发哨兵分支同样在册 |
+| emulator 侧缺口 | 部分 | **已实现**：`call-frame(0x8)`(op_call_frame，`test/call-frame.test.ts`)、`load-frame(0x6)`(op_load_into_frame)、`call(0x8F)`、`ret/exit/call-script/exit-script/jmp/jcc`、**`i143`(0x143) 扩展包 `$n$AUTORUN` 派发**(op_dispatch_script_requests，`test/append-packs.test.ts`)。**其余项均已落地**：`local-ret(0x7C)` 已实现（`FRAME_OPS` 的 `op_redisplay_return`：`0x199` 重显示的返回端，含深度校验与 `effect_flags` 还原）；`0xAE`(存档续档) 已实现（`op_save_version_branch`）；`exit` 的 `-11` 分支已实现（`control.ts` 的 `caller === -11` 分支：装记录 0 的脚本并 `jump(0)`），`-10` 的派发哨兵分支同样在册 |

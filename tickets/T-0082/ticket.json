@@ -5,18 +5,21 @@
   "area": "emulator/vm",
   "why": "审计（`audit-2026-09-opcodes.md` P2 表 + `audit-2026-09.md` §3）列出 13 处「操作数类型/顺序/多写少写」错误：`0x34B` 把 `op2`(delay) 当缩放百分数并丢弃 `op4..op6` 三个 float；`0x203` 自造 `(alpha & 0xff)` 且丢掉 clamp 与「负值回退取当前色」；`0x100` 真按键分支返回点多加 1（体是 `(ip-ip_base)>>2`，无 `+1`）；`0x1A0` 写序与体相反；`0x2FC` 无触点路径多写 `op2..op5`；`0x1CE` 对全部窗整段收尾；`0x1F9` 丢第 3 操作数（颜色）；`0x305` 未清 `Engine[122497]`；`0x348` 把轴角旋转当缩放。同源问题还有 37 行「文档标已核对但无 raw 引用」与多处 argc 与体不符（`0x1E` 文档 8 / 体只读 7）。根因是**每个 handler 各自手写 `readXOperand` 顺序**，且引擎每条指令都写的 arity 槽 `_this[30*cur + 95805]` 在 emulator 侧没有建模 —— 于是「读几位、什么类型、写哪几位」没有任何单一真源，改一处就可能带出另一处。",
   "acceptance": [
-    "引入 per-opcode **操作数计划**（声明 `argc` + 逐位类型 int/float/ptr/str + 读写方向），由共享层统一执行；handler 通过计划结果访问操作数，不再各自手写读取顺序（至少覆盖审计列出的 13 条与所有「已核对」行）",
-    "把引擎的 **arity 槽**（`_this[30*cur + 95805]`，每条 handler 都写 `2*argc + 1` 或等效值）建模为帧字段，并据此**自动核验**：文档 argc、计划 argc、handler 实际读位数三者必须一致（不一致即测试红）",
-    "顺带修掉 `0x1A0` 写序、`0x2FC` 多写、`0x203`、`0x100` 返回点、`0x1F9` 丢操作数，每条给出 raw 依据",
-    "等价性守卫：对已通过的 opcode 做 before/after 对照（同一合成脚本 ⇒ 同一结果），确保重构不改既有正确行为",
-    "`opcode-table.md` 的 argc 列全部有据（无据的行补 raw 行号或降级状态）",
+    "引入 per-opcode **操作数计划**（声明 `argc` + 逐位类型 int/float/ptr/str + 读写方向），由共享层统一执行；handler 通过计划结果访问操作数，不再各自手写读取顺序（至少覆盖审计列出的 13 条与所有「已核对」行）\n★进度（轮 22 累计，**判据 1 收尾**）：计划层已覆盖 **347 条**（棘轮 347）—— `已核对` 行的**可覆盖面全部落定**，只剩策略排除。**完整分母（守卫恒等校验）**：`已核对 375 = 已计划 347 + A 引擎内部 13（引擎不消费操作数）+ B 未注册 12（属缺口台账；语料用到的 5 条已登记 deferred）+ C 引擎读·实现无消费端 3（`0x14D` AGERC 导出不转发 op5/op6、`0x308` 输入触摸桩、`0x33F` 混合/效果通路未建模）`。批次：Live2D 7 / 槽转送 1 / 纹理·影片 2 / 绘制项着色 3 / `0x82` / 引擎字段写入 14 / 配置读取 7 / 字符串 13 / 审计点名 7 / 共用 handler 两族 12 / VM 纯计算 28 / 音频整表 20 / 绘制项·场景变换 31 / 引擎字段·getter 杂项 20 / 帧控制 10 + 取址·数组 9 / 控制流·队列 15 / 消息窗整表 51 / 场景·图元状态 18 + 输入 11 / 纹理·杂项·文本项·面板·存档槽 35 / **收尾族 27**。**两处点名的操作数条 11/11**。★模型扩展 3 次：`index`/`setPtr`/`unused`。",
+    "把引擎的 **arity 槽**（`_this[30*cur + 95805]`，每条 handler 都写 `2*argc + 1` 或等效值）建模为帧字段，并据此**自动核验**：文档 argc、计划 argc、handler 实际读位数三者必须一致（不一致即测试红）\n★进度（轮 10）：**三方一致已经全部有守卫**——①文档 argc ⟷ 体 `N=2*argc+1`（`opcode-arity`，541 条机械核验）；②计划 argc ⟷ 文档 argc（`operand-plan` 第 1 条）；③handler 实际读位数 ⟷ 计划（`opcode-operands` + `operand-plan` 的「计划 ⟷ 实现」）。**覆盖空洞已收尾并加棘轮**：核验不到的只能是数据层 `fallbackDefault` 的 30 条（引擎无体）或已登记原因的 3 条（`0x1/0x4/0x9`），541+30+3 = 574 = 完整空间；新增空洞即红。",
+    "顺带修掉 `0x1A0` 写序、`0x2FC` 多写、`0x203`、`0x100` 返回点、`0x1F9` 丢操作数，每条给出 raw 依据\n★进度（轮 23，**收尾**）：五条**逐条**有 raw 依据 + 命名守卫 —— ①`0x1A0` 写序（体 raw 38390-38397：成功分支先写 op3..op9、**最后**才 `op1=0`；失败 raw 38387/38401 只写 op1）⇒ ★本轮新增 `test/op-underun-fixups.test.ts`「★0x1A0 成功分支的**写序**…」（记录写入顺序的池 Map：`order == [op3..op9, op1]` + 两条失败路径 `order == [op1]`）；②`0x2FC` 多写（raw 40798-40799：无触点路径写 `op1=0` 后立即 return，`op2..op5` 不动）⇒ ★本轮新增同文件「★0x2FC 无触点路径**只写 op1**…」（预置哨兵 ⇒ 写入集合恰为 `{op1}`）；③`0x203` ⇒ `test/op-203-draw-color-alpha.test.ts`（clamp raw 31439-31442 / `<0` 回退 31433-31447 / 回退读在写 31450 之前）；④`0x100` 返回点（raw 25029-25048：压 `(ip-ip_base)>>2`、**无 +1**）⇒ `test/keyboard-mask.test.ts` ③（:75-100）；⑤`0x1F9` 丢操作数 ⇒ `test/op-underun-fixups.test.ts` 前两条（三格全读 + `ALLOW_UNDERRUN` 条目**已删**的机械证明）。★`0x2FC`/`0x1A0` 此前**没有行为守卫**（只有计划层注释与终值断言 —— 而\"写序提前\"恰恰是终值看不出来的错），本轮补齐并**三次变异证明**（补回 `setInt(2..5)` / 把 `op1=0` 提前 / 失败分支多写一格 ⇒ 各自红且点名）。★`0x1A0`/`0x2FC` 的 `ALLOW_UNDERRUN` 条目**保留**的理由：那条守卫只分\"碰没碰\"、分不清读/写，而这两条按引擎语义就是\"某些位在该路径上不碰\" —— 方向由计划层 `io` 承担、行为由本轮两条守卫承担。",
+    "等价性守卫：对已通过的 opcode 做 before/after 对照（同一合成脚本 ⇒ 同一结果），确保重构不改既有正确行为\n★进度（轮 23，**说明**）三个轴向：①**操作数面** —— `test/operand-plan.test.ts`「★计划 ⟷ 实现」用 **raw args Proxy** 观测每条 handler *真的碰了哪几格*，这与**迁移前**就存在的 `test/opcode-operands.test.ts` **同一手法**、且**不经过计划层自己的 touched 记账**（守卫注释点明了\"不能拿 `operandsFor()` 返回的 view 的 touched，那是另一个 Set\"）；观测集合与计划声明**双向相等**（`r/rw` 必须被碰、声明外不许碰、越界不许），347 条逐条对照，且同一合成指令**跑两遍**（种子 0/1 取并集）⇒ 值相关分支也覆盖。②**行为面** —— 迁移**不动 handler 的输出语义**，故既有行为用例**不改期望值**即全绿：与本批次直接相关的 12 组 + 全量 `npm test`（1006 → **1008**，+2 = 本轮两条守卫）；`check:dead-writes`（`no-dead-writes.test.ts`）另外保证没有\"写了没人读\"的新增 ⇒ 重构的**唯一**行为差异只能来自判据 3 那五条**有意**的修正。③**例外清单** —— 判据 3 五条以**引擎 raw 行**为准绳、逐条由守卫钉死：它们的\"与旧实现不等价\"是**被证明的修正**（断言值取自引擎体，不取自旧实现），不是回归。",
+    "★**已完成（轮 10 机械核验）**：`opcode-table.md` 共 **574** 行数据，`argc` 列**全部为数字**（空/非数字 = 0 行；表头 `| opcode | argc | 名称（age-shared） | 引擎位置（handler） | 分析状态 | 已知语义 |`）。其中 541 条的 argc 由**引擎 arity 槽**逐条机械核验（`test/opcode-arity.test.ts` 的「文档 argc ⟷ 体 N」），30 条是 `fallbackDefault`（引擎 dispatch 表里没有体，来源与归属见 evidence），3 条无 arity 体（已登记原因）。⇒ 判据 5 原话「无据的行补 raw 行号或降级状态」已无待办。",
     "npm run verify 全绿"
   ],
   "tests": [
     "app/amayui-emulator/test/operand-plan.test.ts",
     "app/amayui-emulator/test/opcode-operands.test.ts",
     "app/amayui-emulator/test/opcode-arity.test.ts",
-    "app/amayui-emulator/test/l2d-node-transform-ops.test.ts"
+    "app/amayui-emulator/test/l2d-node-transform-ops.test.ts",
+    "app/amayui-emulator/test/op-underun-fixups.test.ts",
+    "app/amayui-emulator/test/op-203-draw-color-alpha.test.ts",
+    "app/amayui-emulator/test/keyboard-mask.test.ts"
   ],
   "evidence": [
     {
@@ -35,6 +38,276 @@
       "anchor": "_this[30 * _this[95776] + 95805] = 11;",
       "note": "arity 槽的写法示例（0x228 的体；argc=5 ⇒ 2*5+1）：每条 handler 都写它，可做 argc 的自动核验真源",
       "line": 27087
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**引擎字段写入族**",
+      "note": "批次「引擎字段写入族」= 共用 `op_engine_field_store` 的 **14 条**（`0x76/0x77/0x78/0x8b/0x10f/0x1a4/0x1cf/0x21b/0x24e/0x252/0x25b/0x261/0x2db/0x2e9`）一次性迁到计划层（形状全同：读 op_n(int) → 写一个 `ENGINE_FIELD`，方向全 `r`）。★`argc`/`kinds` 不是猜的：`test/opcode-arity.test.ts`（文档 argc ⟷ 体 `_this[30*cur+95805]=N`，N=2*argc+1）与 `test/opcode-operands.test.ts`（已注册 handler 必须碰满 1..argc，本族 14 条**都不在白名单**）两条既有守卫已把这三方焊死。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "★字段写入族：`ENGINE_FIELD_STORE` 推导出的每条都必须有计划",
+      "note": "★**派生守卫**：计划的应有名单不靠人工维护 —— `fieldStorePlanOps()`（`handlers/engine-fields.ts` 从**同一张表**推导「谁走该 handler、最大位号是几」）逐条比对 `planOf()`，再核 `argc`/全 int/全只读。⇒ 「加了 spec 忘了声明计划」在 CI 立即红；handler 侧同时改成**缺计划直接抛**（不再\"静默按老路读\"）。辨别力已机械证明：注释掉 `declarePlan(0x261,…)` ⇒ 本用例 1 fail（`0x261 在 ENGINE_FIELD_STORE 里但没声明操作数计划（argc 应为 1）`）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**配置读取族**",
+      "note": "批次「配置读取族」（7 条：`0xc5/0xc7/0x1b8/0x2cc/0x2e6/0x2ea/0x2ed`）：形状 = 读配置键 → **写回脚本操作数** ⇒ 计划表**第一次用到 `io`**（结果位 `w`、选择器位 `r`；此前 27 条全是只读）。出处 = `handlers/config-read.ts` 头部实证表（逐条 handler + raw 行区间 + 读法/写回列）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**字符串 → 整型/字符串回写族**",
+      "note": "批次「字符串回写族」（6 条：`0x2c5/0x2c6/0x1a6` 写 int、`0x194/0x195` 比较结果写 int、`0x2eb` 写 **string**）：计划表**首次出现 `str` 类型位**与\"字符串写目标\"。⇒ 守卫的合成实参改成**按计划类型构造**（str 位给字符串型实参），否则 `writeStringOperand` 会在非字符串目标上抛。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "★配置读取族：推导出的每条都必须有计划",
+      "note": "第二条**派生守卫**（与字段写入族同思路）：`cfgReadPlanOps()` 从 `CFG_READ` + `0x194/0x195/0x2eb` **同一张表**推导应有计划与「结果位/读取位」，再核 `argc` 与 `io` 方向。辨别力已机械证明两次：①把 `declarePlan(0x2ed,…)` 改成 `0x12ed` ⇒ 报 `0x2ed 在配置读取族里但没声明操作数计划（argc 应为 1）`；②把 `0x2cc` 的 io 由单元素 w 改成单元素 r ⇒ 报 `0x2cc 结果位 1 应为 w，实为 r`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**字符串核心族 + 字符串表族**",
+      "note": "批次「字符串核心族 + 字符串表族」（13 条）：`0x192`(set-string)/`0x193`(concat)/`0x1c8`(to-string)/`0x2c7`(SBSubstr 字节)/`0x2c8`(substr 字符)/`0x2ec`(atoi)/`0x1b2`/`0x1b3`/`0x1b4`(文本缓冲) + `0x1a2`/`0x1a3`(save/load-int)/`0x1a9`/`0x1aa`(save/load-string)。★表族把操作数当**槽号**用（引擎 `sub_418A30/sub_418AE0`）⇒ 计划层为此新增 **`index(n)` 访问器**（`int(n)` 读槽里的值、`index(n)` 读槽号本身，二者本质不同）。出处 = `analysis/opcodes.json` 的 handler 名 + 语义列，逐条写进 evidence。"
+    },
+    {
+      "file": "app/amayui-emulator/test/opcode-operands.test.ts",
+      "anchor": "实参类型**跟着操作数计划走**",
+      "note": "★本批最有价值的一刀：那条守卫的合成实参**改成按计划声明的类型构造**（str→字符串、ptr→指针槽、其余→int 槽；无计划时沿用 int 槽）。因为 `0x192/0x2eb/0x2c7/0x2c8/0x1c8` 这类\"写字符串\"与 `0x1a9/0x1aa`\"读字符串下标\"的指令，拿 int 槽当实参时 handler 会**直接抛**（`writeStringOperand` 的类型检查）⇒ 那一格永远算\"没被碰\" ⇒ 只能挂白名单豁免。改完后**删掉 9 条豁免**（`0x192/0x193/0x1a9/0x1aa/0x2c7/0x2c8/0x1b2/0x1c8/0x2eb`）且守卫仍绿。耦合性已机械证明：把实参构造退回\"一律 int 槽\" ⇒ 该用例 1 fail，报 `0x192：writeStringOperand: dest 非字符串型 0x9 for opcode 0x192`（`0x193/0x1c8/0x2c7/0x2c8` 同）⇒ 说明这 9 条豁免此前**确实是承重的**，不是陈旧条目。"
+    },
+    {
+      "file": "app/amayui-emulator/test/arityScan.ts",
+      "anchor": "★1b：Hex-Rays 有时给赋值加",
+      "note": "★解析口径补两种写法（原本白丢 13 条 ⇒ 自动核验覆盖 528 → **541**）：①`_this[… + 95805] = (int *)11;`（Hex-Rays 给赋值加了**类型转换**；实测 `0x82`/`0x1d1`/`0x2ef`/`0x2f0`/`0x2f1`/`0x2f2`/`0x2f6` 七条）；②`*(_DWORD *)&_this[120 * … + 383220] = 5;`（取址+下标的另一种写法，`]` 而非 `)`；实测 `0x60`/`0x236`/`0x240`/`0x241`/`0x24d`/`0x2c9` 六条）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/opcode-arity.test.ts",
+      "anchor": "★arity 覆盖空洞棘轮",
+      "note": "判据 2 的收尾守卫：核验不到的 opcode 必须**恰好**是两类已登记项 —— ①`noHandler` ⟷ 数据层 `analysis/opcodes.json.fallbackDefault.entries`（**从数据层推导**，不手抄名单；其 `_doc` 写明这些 opcode 在 dispatch 表里\"没被覆盖（`rep stosd` 填充后保持默认 `sub_418E30`）\"，属 age-shared 其他作品的定义 ⇒ 本作引擎没有它们的体、语料 0 处使用）；②体里不写 arity 槽的 3 条（`0x1` `__noreturn` 抛异常 / `0x4` 走调用路径 / `0x9` 逐行搜过无）。⇒ 541 + 30 + 3 = 574 = 完整 opcode 空间。辨别力两次机械证明：退回旧正则 ⇒ 报 `未登记：0x82 0x1d1 0x2ef 0x2f0 0x2f1 0x2f2 0x2f6`；把 dispatch 扫描范围收窄到 `0x100` ⇒ 报「多出」并列出全部本该有 handler 的 opcode。"
+    },
+    {
+      "file": "analysis/opcodes.json",
+      "anchor": "rep stosd",
+      "note": "★这 30 条\"无 handler\"的**权威解释**（数据层自带）：\"这些 opcode 在 dispatch 表里没有被覆盖（`rep stosd` 填充后保持默认 `sub_418E30`），属于 age-shared 其他作品的定义\"，并逐条给出 `owner`（Amayui 2 / Hyakusen / Tenmei no Conquista / Fuukan no …）。⇒ arity 自动核验对它们**原理上**不适用（没有体可读），不是解析缺陷。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**审计点名的\"操作数类型/顺序/多写少写\"条**",
+      "note": "批次「审计点名的操作数条」7 条：`0x100`/`0x305`（**argc 0**：计划层要能表达\"这条没有操作数\"，`kinds: []`）/`0x1ce`（只读 op1）/`0x1a0`（argc 9：op2 读、op1+op3..op9 写）/`0x1b9`/`0x2e7`（idx 严格 0/1，两格只读）/`0x2fc`（**五位全 `w`**：引擎无触点路径只写 op1，op2..op5 保持不动）。⇒ `tickets/T-0082` 的 `why` 与 `docs-new/03-engine/plan-2026-09.md` 的 RF-A 行**两处点名的 opcode 全部计划化**（11/11，机械统计）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x2fc': '读触摸触点",
+      "note": "迁移台账里本批的 7 条（棘轮下限 53→60）。★`0x1a0`/`0x2fc` 在 `test/opcode-operands.test.ts` 的白名单条目**必须留着**：那条守卫只能看\"碰没碰\"、分不清读/写，而这两条按引擎语义就是\"某些位不碰\"（`0x2fc` 无触点路径不写 op2..op5；`0x1a0` 失败路径不写 op3..op9）—— 这正是 `io` 方向要进计划层的原因。辨别力已机械证明：把 `0x2fc` 的 `io` 由全 `w` 改成全 `r` ⇒「计划 ⟷ 实现」1 fail，报 `0x2fc 的第 1 位操作数方向为 r，不能写（计划：…）`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**共用 handler 的两族**",
+      "note": "批次「共用 handler 的两族」12 条：**配置/字段 getter 族**（`0x106`/`0x130`/`0x131`/`0x201`，全是「读字段/配置 → **写回 op1**」⇒ 计划的 io 只有单元素 w、无读位 —— 与\"引擎字段写入族\"正相反：那边 w 是写**引擎字段**、操作数是读）+ **音频起播/寄存族**（`0xb5`/`0xba`/`0xb7`/`0xb9`/`0xc4`/`0x1bd`，只读 op1）+ **语音排队族**（`0x2c0` argc 3 / `0x2f5` argc 4，全读）。机械分组依据：**未迁计划的 315 条已核对行里，按引擎 handler 分组已无 ≥3 条的族；按 emulator handler 只剩 6 个共用函数**，本批吃掉其中 5 个。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/audio.ts",
+      "anchor": "SE 起播走操作数计划层",
+      "note": "音频侧四处迁移（`op_se_play`/`op_bgm_slot`/`op_play_voice`/`op_voice_queue`）：全部改成 `operandsFor(c)` 取计划视图，缺计划直接抛。★`op_voice_queue` 的两条 argc 不同（`0x2c0` 3 / `0x2f5` 4），且**只有 `0x2f5` 读 op4** —— 计划把 op4 只在 `0x2f5` 的 kinds 里声明，正好与 handler 的 `opcode === 0x2f5 ? p.int(4)` 对上（越界/漏读两侧都红）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x131': 'GetMesWinAlpha",
+      "note": "迁移台账里本批 12 条（棘轮 60→72）。★getter 族提供了 io 的第四种形态：**只写不读**（`0x131` 从配置注册表按名直读、不碰任何 `Engine` 字段，却把结果写进 op1）。辨别力已机械证明：把 `0x131` 的 io 由单元素 w 改成单元素 r ⇒「计划 ⟷ 实现」1 fail，报 `0x131 的第 1 位操作数方向为 r，不能写（计划：…GetMesWinAlpha…）`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**VM 纯计算族**",
+      "note": "批次「VM 纯计算族」**28 条一次到位**（`handlers/arithmetic.ts` 全表）：int 双目 15（`0x50..0x5F` 去 `mov`，计划 `w,r,r`）+ float 双目 5（`0x2D0..0x2D4`）+ `mov`/`fmov`/`random`/`int→float`/`fabs` 5（`w,r`）+ 位族 3（`0x135`/`0x136` 的 **op1 是 `rw`**、`0x13F` 的位号是 op3）。★形状由**两个工厂**统一（`binOp`/`floatBinOp` 覆盖 20 条）⇒ 迁移只需改工厂 + 若干单条。另记两条口径：`0x135` 越界路径**不碰 op1**（引擎打错误串后继续）、`0x2D6` 是计划表里唯一**写 float 读 int** 的一条。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/arithmetic.ts",
+      "anchor": "VM 纯计算族走操作数计划层",
+      "note": "本族新增 `planOfArith(c)` 取计划视图（缺计划直接抛）；`binOp`/`floatBinOp` 两个工厂各改一处即覆盖 20 条 handler，位族的 `bitIndexGate` 改成收计划视图。行为不变：`0x53/0x54` 除零、`0x60` 模 0 仍照旧抛（计划层只改\"怎么读位\"）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "★计划覆盖账：已核对行",
+      "note": "★判据 1 的**分母守卫**（本轮新增）：把\"所有已核对行\"变成**从既有真源推导**的三分区 —— A `ENGINE_INTERNAL_OPS`（引擎不消费操作数 ⇒ 计划层语义不适用，**按策略排除**）+ B 三张注册表都没有（属缺口台账那条线）+ C 真 handler（**真实分母**，棘轮只减不增）。实测 `已核对 375 = 已计划 100 + A 13 + B 12 + C 250`，等式在守卫里恒等校验。★另附实测：B 的 12 条里**语料用到的 5 条**（`0x140`/`0x1c4`/`0x1d1`/`0x23a`/`0x2cf`）**都已在** `analysis/opcode-gaps.json` 登记为 `deferred`；其余 7 条语料 0 处、按该台账自己的 `_doc`（\"语料用到但三张表都没有\"）**不在其收录范围** ⇒ **没有台账漏洞**（这条假设被机械核对推翻，见 notes）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**音频族整表**",
+      "note": "批次「音频族整表」**20 条一次到位**（`handlers/audio.ts`）：除三条 argc 0（`0xb8` 停 BGM / `0xc1` BGM 暂停翻转 / `0x1bc` 清消息声音字段）外**全是\"读 op1..opN → 交给宿主音频\"**，没有任何一条写操作数 ⇒ 计划里没有 w/rw（这是形状最单一的一族，故用表驱动 `AUDIO_READ_OPS` 批量声明）。★出处：`analysis/opcodes.json` 的语义列逐条写明操作数含义（本族不必另读体）；argc 由 `opcode-arity` 的\"文档 ⟷ 体 N\"背书。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/audio.ts",
+      "anchor": "音频指令族走操作数计划层",
+      "note": "音频侧新增 `planFor(c)`（缺计划直接抛），20 个 handler 的 `readIntOperand(c.e, c.frame, c.instr, n)` 全部换成计划层读取。★**这批是脚本化迁移**（形状单一）——正因为验证强（typecheck + 「计划 ⟷ 实现」逐位核对 + 6 个音频行为测试文件 71 条）才敢这么做；脚本留下的 `p.int()` 可空性由一处 `?? 0` 补齐。★`0x1c9`（音频设备/驱动初始化）原本**不读 op1**（= 驱动 id，重写侧没有驱动层）：按引擎顺序补读并**报进日志**（`驱动 id=…`）—— 这不是\"读了再丢\"，而是把引擎确实读、而本工程不建模的输入变成可观测的（该 op 是这条纪律下唯一被守卫点名的一条，见 notes）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0xb4': 'SE 装载",
+      "note": "迁移台账里本批 20 条（棘轮 100→120；覆盖账棘轮同步：已计划 ≥120、C ≤230）。实测分区 `已核对 375 = 已计划 120 + A 引擎内部 13 + B 未注册 12 + C 待迁移 230`。辨别力已机械证明：把 `AUDIO_READ_OPS` 里 `0xb4` 的 argc 由 2 改成 1 ⇒「计划表自洽」1 fail（计划 argc 与文档 argc 不符）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**绘制项/场景变换族**",
+      "note": "批次「绘制项/场景变换族」**31 条一次到位**（`handlers/gfx-item.ts`）：①**全读 23 条**（变换/动画窗/循环层/顶点色；`kinds` 里 int handle 与 float 分量混排，÷100 的分量仍是 float 位）；②**getter 5 条**（`0x215`/`0x216` 写 op1；`0x218`/`0x21a` 写 op2/3/4 且是 **float** 位；`0x228` 写 op1(int)+op3/4/5(float)，且失败分支不写 op3..5）；③**指针位 1 条**（`0x320` 的 op2..op8 是 `refFromOperand` 的顶点数组 ⇒ `kinds` 用 `ptr`）；④argc 0 两条（`0x1f6`/`0x244`）。形状与方向逐条来自语义列 **+ 原 handler 的实际读法**。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/gfx-item.ts",
+      "anchor": "绘制项/场景变换族走操作数计划层",
+      "note": "本族新增 `planFor(c)`（缺计划直接抛），31 个 handler 的 `readIntOperand/readFloatOperand/writeIntOperand/writeFloatOperand/refFromOperand` 全部换成计划层调用（视图名用 `plan`；为此把两处局部 `p` 改名 `pivot`/`pos` 避免遮蔽）。★迁移同样是脚本化的（形状已逐条定死 + 验证强）；code 面残留的直接读写调用扫描为 0（剩下的 9 处都在注释里）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "指针位要**初始化**",
+      "note": "★守卫的**第三次\"输入必须对声明类型合法\"修法**（前两次：round 9 的 `str` 位给字符串实参、round 13 的合成输入抛错只忽略异常）：`ptr` 位若给**空引用槽**，`refFromOperand` 会抛「空/未初始化引用被取址」⇒ handler 停在第一个指针位，后面的位全被判\"漏读\"。本批 `0x320` 正是这样被点名的（报告 `3,4,5,6,7,8 没被碰`），实测探针确认 `touched = 1,2,9,10` 后抛。修法 = 造实参时给指针槽塞一个合法 `Ref`。★这条经验对未来 `0x61/0x63/0x64/0x6C/0x12C` 那几个**取址/数组族**（backlog 里 argc 2..5）直接可用。 ★★**两处守卫都要改**：`opcode-operands.test.ts` 的实参构造（round 9 起也按计划类型造）同样要给指针槽塞合法 Ref —— 只改 `operand-plan.test.ts` 时**全量 verify 抓到**了它（`0x320：空/未初始化引用被取址：指针池槽 65`）。教训：**引入一种新的 `kinds` 类型时，所有\"按计划类型造实参\"的守卫都要一起改**。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**引擎字段/getter 杂项族**",
+      "note": "批次「引擎字段/getter 杂项族」**20 条**（`handlers/engine-fields.ts` 的剩余）：形状只有两种 —— **写 op1 的 getter 5 条**（`0xc0` 当前曲 id / `0xd0` 墙钟毫秒 / `0x148` 全局槽 / `0x247` 引擎布尔 / `0x2ce` 显示模式 / `0x306` EffectSkipOnClick ⇒ `io: [w]`；★注意这与\"字段写入族\"正相反：那边 w 是写引擎字段、操作数是读）+ **只读 1..2 位 14 条**（`0xfe`/`0x107`/`0x10b`/`0x141`/`0x142`/`0x149`/`0x1b1`/`0x25a`/`0x2ee`/`0x307` …）+ **argc 0 四条**（`0xad`/`0xd9`/`0x1ad`/`0x1bf`）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
+      "anchor": "引擎字段/getter 族走操作数计划层",
+      "note": "本族新增 `planFor(c)`（缺计划直接抛），20 个 handler 的 int 读写全部换成计划层调用（本族**没有** float/str/ptr 位 ⇒ 是迄今最干净的一批：守卫**首跑即绿**，无需迭代）。code 面 `readIntOperand/writeIntOperand` 残留 0。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0xc0': 'getter：op1 = 当前曲 id",
+      "note": "迁移台账里本批 20 条（棘轮 151→171；覆盖账棘轮同步：已计划 ≥171、C ≤179）。实测分区 `已核对 375 = 已计划 171 + A 引擎内部 13 + B 未注册 12 + C 待迁移 179`。辨别力：把 `0xc0` 的 io 由单元素 w 改成单元素 r ⇒「计划 ⟷ 实现」1 fail 并点名 `0xc0 计划声明要读的位 1 没被碰`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**帧控制族**",
+      "note": "批次「帧控制族」10 条（`handlers/frame.ts`）：八条 **argc 0**（`0x7c` 重显示返回 / `0xae` 存档版本分支 / `0x199` 重显示文本 / `0x1f4` 进停靠锁 / `0x1f5` 退停靠锁 / `0x20c` 绘图帧控制 / `0x21c` 置动画等待位 / `0x23c` 帧毫秒时钟）+ 两条只读（`0x7b` 回退游标 2 位、`0xc8` 睡眠 1 位；★`0xc8` 在 ADV 激活时引擎**不读**操作数，但计划按引擎形状声明为读位——实现侧 `advActive` 时提前返回，合成指令下为假 ⇒ 仍读到）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**取址/数组/批量搬运族**",
+      "note": "批次「取址/数组/批量搬运族」9 条（`handlers/memory.ts`）：计划层 `ptr` 位的**主战场** —— `0x61`(lookup-array，写指针) / `0x63`(lea，写指针) / `0x2C9`(可变数组元素引用，写指针) / `0x12c`(二维取址，写指针) 四条**写指针位**；`0x64`/`0x6c`/`0x12f`/`0x1b0`/`0x2d8` 五条只读（`0x64` 的目标位是**读**：写的是\"透过引用\"的槽）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "写第 n 位为**引用**（指针型目标）",
+      "note": "★计划层新增**第二个访问器** `setPtr(n, ref)`（第一个是 `index(n)`）：取址族的结果是\"元素地址\"，写的是**指针操作数** —— `setInt/setStr` 都表达不了。它与 `setStr` 同形（方向检查 + 记账），落在 `setRefOperand`。⇒ 计划层的访问器面现在是：读 `int/float/str/ptr/index`、写 `setInt/setFloat/setStr/setPtr`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/memory.ts",
+      "anchor": "取址/数组族走操作数计划层",
+      "note": "memory.ts 9 个 handler 迁移（`refFromOperand` → `plan.ptr`、`setRefOperand` → `plan.setPtr`、`readIntOperand` → `plan.int`）；code 面残留的直接调用为 0（唯一命中在注释里）。★配上 round 15 的守卫修正（指针槽要初始化），本族是**首跑即绿**的批次。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x61': 'lookup-array",
+      "note": "迁移台账里本批 19 条（棘轮 171→190；覆盖账棘轮同步：已计划 ≥190、C ≤160）。实测分区 `已核对 375 = 已计划 190 + A 引擎内部 13 + B 未注册 12 + C 待迁移 160`。辨别力：把 `0x61` 的 io 由 w,r,r 改成 r,r,r ⇒「计划 ⟷ 实现」1 fail 并点名 `0x61 计划声明要读的位 1 没被碰`（`setPtr` 的方向被锁住）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**控制流 + 队列族**",
+      "note": "批次「控制流 + 队列族」15 条（`handlers/control.ts`）：`0x1` abort / `0x2` exit / `0x3` call-script / `0x5` ret / `0x6` load-frame / `0x8` call-frame / `0x9` exit-script / `0x8c` jmp / `0x8f` call / `0xa0` jcc / `0x132`-`0x134` Queue_int 三连 / `0x143` 派发 AUTORUN / `0x1a8` 写步长槽。★**label 口径（迁移前专门核过）**：引擎取 label 也走 `readIntOperand`（`sub_41BF50`）—— `0x8c` jmp 的 `t === -1`（落下句）与 `0xa0` jcc 的\"分支目标可为**变量** label\"都印证计划层 `int(n)` 是正确读法。★`0x134` 的 op2/op3 是**写**（成功位/值），越界分支不写。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "anchor": "控制流/队列族走操作数计划层",
+      "note": "15 个 handler 迁移（新增 `planFor(c)`；`readIntOperand/writeIntOperand/operandArg` 在该文件的 code 面残留为 0）。★`0x8f` call 顺带**订正了读法**：原来用 `operandArg(c.instr, 1).raw` 判 `0xFFFFFFFF` 哨兵，改成计划层 `int(1)`（立即数两者等价，而**变量 label** 存的是 ENC 过的值 ⇒ 只有解码才对；哨兵也统一成解码后的 `-1`，与 `0x8C` jmp 同口径）。★`0x1a7`（comment）**按策略排除**：体就是 nop、handler 是零参数 `() => undefined` ⇒ \"声明它读 op1\"与现实不符（该条本就在 `opcode-operands` 白名单里）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "两遍合成执行",
+      "note": "★守卫的**第 4 次输入质量修正**：改成**两遍合成执行**（把各 int 槽先 seed 0、再 seed 1）并**并集**\"碰过的位\"。动因 = `0xa0` jcc 是**按值分支读**：条件为假只读 op3、为真只读 op2 ⇒ 单遍合成输入必然漏一支（本轮正是它被点名 `0xa0 计划声明要读的位 2 没被碰`）。两遍之后判据**不放松**（声明的读位仍须全被碰），而\"按值分支\"这一整类（含选择器 0 非法 / 1 合法的 `0xc7` 一族）都自动覆盖。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x134': 'Queue_int 队·弹出",
+      "note": "迁移台账里本批 15 条（棘轮 190→205；覆盖账棘轮同步：已计划 ≥205、C ≤145）。实测分区 `已核对 375 = 已计划 205 + A 引擎内部 13 + B 未注册 12 + C 待迁移 145`。辨别力：把 `0x134` 的 io 由 r,w,w 改成 r,r,w ⇒「计划 ⟷ 实现」1 fail 并点名 `0x134 计划声明要读的位 2 没被碰`（写回方向被锁住）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**消息窗族整表**",
+      "note": "批次「消息窗族整表」**51 条一次到位**（`handlers/msgwin.ts`）—— 全库最大的一族。形状：**只读 44 条**（`0x6e` show-text / `0x70` 窗口几何 / 文本原点·换行·对齐 / 窗对象字段…）+ **写 op1 的 getter 9 条**（`0x7f` 消息速度 / `0x19a` 跳读模式 / `0x1b6` 共存态 / `0x1c7` ADV 激活 / `0x1cb` 跳读态 / `0x1cc` 是否有消息 / `0x2dc` 字体数 / `0x2dd` 字体名（**写字符串**）/ `0x2de` 字体名→下标）+ 混合位（`0x6e` int+str、`0x196` int+str+str、`0x204` 3×int+str、**`0x205` 的 op2 是 `rw`**、`0x1a5`/`0x2fe` str、`0x2dd`/`0x2de` str↔int）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "消息窗族走操作数计划层",
+      "note": "51 个 handler 迁移（新增 `planFor(c)`；该文件的 `readIntOperand/readStringOperand/writeIntOperand/writeStringOperand` import 与 code 面调用**清零**）。★**三条用变量 n 的辅助读法**（`0x73` 的 `rd = (n) => readIntOperand(…, n)`、`0x90`/`0x25c` 的 `[1..N].map((n) => readIntOperand(…, n))`）：机械正则把它们误看成\"只读 1 位\"，**逐条读体**才确认是全读（10/7/8 位）⇒ 教训记进 notes：**形状不能只看正则**。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "但**计划层自己抛的违规**不许吞",
+      "note": "★★**守卫硬化（本轮变异实验发现）**：round 13 为\"合成输入的合法抛错\"加的 try/catch **把计划层的违规也吞了** —— 于是「计划声明 r、handler 却在写」这类**方向错误不会被发现**（把 `0x205` 的 `op2` 由 `rw` 改成 `r` 时，本用例**依然全绿**）。修法：catch 里按消息区分 —— 命中 `操作数计划|不能按|不能写` 的**计划层违规**记进 `bad` 并中断，其余（除零/非法选择器/缺 fileSource 等业务抛错）照旧忽略。修完同一条变异立刻红并点名 `0x205 计划层违规：…方向为 r，不能写`。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x6e': 'show-text",
+      "note": "迁移台账里本批 51 条（棘轮 205→256；覆盖账棘轮同步：已计划 ≥256、C ≤94）。实测分区 `已核对 375 = 已计划 256 + A 引擎内部 13 + B 未注册 12 + C 待迁移 94`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**场景/图元状态族 + 输入族**",
+      "note": "批次「场景/图元状态族 18 + 输入族 11」= 29 条。`gfx-state.ts`：图元变换 / 槽→槽 StretchRect / 转场记录（`0x24f`/`0x250` 各 10 位、`0x251` **12 位**）/ 绘制模式 / 槽标志 / 网格属性…，除 `0x229`/`0x256` 是 `2 int + 3 float` 混排外基本全 int 只读 + 三条 argc 0。`input.ts`：五个 getter（写 op1..op2）+ `0x12e` 悬停命中（**op2/op5/op6/op7 四个指针位**、**op1 是 `rw`**）+ 三个 argc 0。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "★**`0x33f` 按策略排除**",
+      "note": "★**第三类策略排除**（前两类：engine-internal 的 A 类 13 条、`0x1a7` 的\"体是 nop + 零参数 handler\"）：`0x33f` 引擎**三格全读**（op2 = α 带钳位/回退、op3 = 颜色带回退），但本工程**没有消费端** —— 绘制项 `Item+96` 当前 α/当前色与 `Scene+1264` 效果常量通路都未建模，写个只写不读的字段即死写 ⇒ 实现按\"有据豁免\"只读 op1（该条在 `opcode-operands` 白名单里有长注、回链 T-0017）。计划若如实声明三读位就会与实现冲突 ⇒ **不纳入**。判据：**引擎读了、但实现无消费端的条目**不进计划层（与\"引擎不读\"的 A 类并列）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "输入族走操作数计划层",
+      "note": "输入族 11 个 handler 迁移（新增 `planFor(c)`）。★`0xcc`/`0xfb` 的 op2 是 **label**（鼠标/手柄跳转目标），原来读 `operandArg(c.instr, 2).raw` ⇒ 与 `0x8f` call 同样改成计划读取（立即数等价、**变量 label** 只有解码才对）。★`0x12e` 的 8 个位里 **4 个是 ptr**（margin/盒表/平面）⇒ 走 `plan.ptr`，配 round 15 的守卫修正（指针槽要初始化）首跑即绿。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x12e': '悬停命中",
+      "note": "迁移台账里本批 29 条（棘轮 256→285；覆盖账棘轮同步：已计划 ≥285、C ≤65）。实测分区 `已核对 375 = 已计划 285 + A 引擎内部 13 + B 未注册 12 + C 待迁移 65`。★辨别力：把 `0x12e` 的 `io[0]` 由 `rw` 改成 `r` ⇒「计划 ⟷ 实现」1 fail 并点名 `0x12e 计划层违规：…方向为 r，不能写` —— **这正是 round 19 修好的那条硬化在起作用**（round 13 的旧 catch 会把它吞掉）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**纹理/杂项/文本项/面板/存档槽族**",
+      "note": "批次「纹理/杂项/文本项/面板/存档槽」35 条：`gfx-texture.ts` 10（含两条 **getter 写回**：`0x208` 写 op2/op3 = 宽/高、`0x23f` 写 op1 = 尺寸×1000）+ `gfx-misc.ts` 6（三条 argc 0）+ `text-items.ts` 7（四条**查询写回、且读位在后面**）+ `panel.ts` 5 + `save-slot.ts` 7（存档/读档/删/复制/写读 `.STH`，形状都是「op2..op3 读、**op1 写结果码**」）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "**`unused` = 指令里有这一格但**没人消费**",
+      "note": "★计划层新增**第三个方向 `unused`**（前两个模型扩展是 round 9 的 `index`（读**槽号**）与 round 21 的 `setPtr`（写**引用**））。动因：守卫逐位点名出三处**死格** —— `0x1D3` 的 op3（引擎 `sub_457960(Font,&out,op3,op4,op5)` 的 op3 **未用**）、`0x1D4` 的 op3（注释原文\"**op3 是死读**\"）、`0x2F3` 的 op4。没有这个方向时只有两条烂路：谎报成 `w`（会被方向判据当成写出目标）或把整条指令排除（丢掉真实形状）。★**语义边界**：`unused` = **引擎与实现都不消费**；\"引擎读、我们没消费端\"（如 `0x33F`）**不是** `unused`，那类条目不进计划层（见上一批的 C 类判据）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/text-items.ts",
+      "anchor": "文本项族（text-items）",
+      "note": "文本项族 7 个 handler 迁移。★这一族的特点是**读位不在前面**：`0x1D0` 只读 op3、`0x1D3` 读 op4/op5、`0x1D4` 读 op4、`0x2F3` 读 op5/op6，而结果写 op1..op3 —— 计划必须逐条对照，不能按\"前 N 位都是读\"套。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "存档槽族走操作数计划层",
+      "note": "存档槽族 7 条全部纳入（含此前按策略排除的 **`0x1A1`**）：它的 op1 现在**声明为 `unused`**（引擎不调 `sub_42B4B0` ⇒ 既不读也不写，`test/save-slot.test.ts` 有专门断言）⇒ **`unused` 方向让一条\"策略排除\"退回成\"可声明\"** —— 模型变丰富后排除面自然缩小。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x1a1': '读档（全量）",
+      "note": "迁移台账里本批 35 条（棘轮 285→320；覆盖账棘轮同步：已计划 ≥320、C ≤30）。实测分区 `已核对 375 = 已计划 320 + A 引擎内部 13 + B 未注册 12 + C 待迁移 30`。★守卫同步：`want` 的计算排除 `w` **与 `unused`**（两者都不要求被碰）。辨别力：把 `0x1a1` 的 op1 由 `unused` 改成 `r` ⇒「计划 ⟷ 实现」1 fail 并点名 `0x1a1 计划声明要读的位 1 没被碰`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "批次：**收尾族**",
+      "note": "批次「收尾族」**27 条**（判据 1 的最后一批）：`menu` 3 + `stage` 3（阶梯动画时间表，含 `0xD5` 那条 `ZERO_LENGTH_OPS`）+ `region-hittest` 2（**op4/op5 指针位**）+ `agerc` 2 + `resource-usage` 1 + `music-table` 3 + `gfx-cg` 2 + `control` 1（`0x1A7` 改判）+ `live2d` 10。⇒ 判据 1 的 C 类**降到 3**（只剩策略排除）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "★本批又识别出 **2 条 C 类排除**",
+      "note": "C 类（**引擎读了、实现无消费端**）本轮新增 2 条，合计 3 条：①`0x14D`（call-agerc-export，argc 6）—— 引擎把 op5（数组）与 op6 一起传给 DLL 导出函数 `(*槽表[op1])(Engine[96981], buf, len, op5 数组, op6)`，而 emulator 的 AGERC 宿主缝不转发这两个操作数；②`0x308`（输入触摸注册）—— 引擎读 op1 调 `sub_407B20`，emulator 是 `op_stub_unhandled` 桩（白名单里写着\"op1/Engine[1954] 未建模\"）；③上批已有的 `0x33F`。⇒ 判据 1 的**完整分母**至此定型：`375 = 347 已计划 + 13 A（引擎不消费）+ 12 B（未注册，属缺口台账）+ 3 C（引擎读、实现无消费端）`，四类都由守卫恒等校验。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/agerc.ts",
+      "anchor": "按引擎顺序先读满操作数",
+      "note": "★守卫本轮点名 `0x14C` **少读 op1**：handler 原来先读 op2 再校验，而\"模块未加载\"会在读到 op1 之前**抛错** ⇒ 合成指令下 op1 永远读不到。修法 = **按引擎顺序把操作数读满再校验**（引擎每个 handler 体开头 `sub_41BF50` ×N）—— 与 `0x1C9`（音频）、`0x1A0`（读槽头）同一条纪律：**读是纯的，必须发生在任何分支/抛错之前**。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/gfx-cg.ts",
+      "anchor": "rec.push(plan.int(k) ?? 0);",
+      "note": "`0x2DA` 的 op2..op8 由 `for (let k = 2; k <= 8; k++)` **循环读**（变量 n）⇒ 机械形状提取器把它误判成\"只读 op1\"，逐条读体后改正为 8 位全读（同 `0x73`/`0x90`/`0x25C` 的教训：**形状不能只看正则**）。"
+    },
+    {
+      "file": "app/amayui-emulator/test/operand-plan.test.ts",
+      "anchor": "'0x1a7': 'comment",
+      "note": "迁移台账里本批 27 条（棘轮 320→347；覆盖账棘轮同步：已计划 ≥347、**C ≤3**）。实测分区 `已核对 375 = 已计划 347 + A 引擎内部 13 + B 未注册 12 + C 待迁移 3`。★`0x1A7` 本轮**从\"策略排除\"改判为可声明**（体是 nop ⇒ op1 用 `unused` 如实声明）—— 与 `0x1A1` 一样：**模型变丰富后排除面缩小**。辨别力：把 `0x1A7` 的 op1 由 `unused` 翻 `r` ⇒「计划 ⟷ 实现」1 fail 并点名 `0x1a7 计划声明要读的位 1 没被碰`。"
     }
   ],
   "links": {
@@ -50,7 +323,7 @@
     ]
   },
   "id": "T-0082",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-19",
@@ -66,6 +339,91 @@
       "at": "2026-09-21",
       "kind": "scope",
       "what": "改字段：tests —— 计划层落地（12/574 迁移）；新增守卫 operand-plan.test.ts 4 条绿；票保持 doing（判据 1 的『已核对』全覆盖未完成）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 批次推进：把**引擎字段写入族 14 条**（共用 op_engine_field_store）一次迁到计划层 —— 计划表 13→27 条，棘轮下限 12→27；新增**派生守卫**（fieldStorePlanOps 从 ENGINE_FIELD_STORE 同一张表推导应有计划，逐条比对 argc/类型/方向；撤销一条计划 ⇒ 1 fail）；handler 改成走计划层并在缺计划时**直接抛**（消灭\"静默双路径\"）。本族 argc/类型由既有两条守卫背书（opcode-arity 的文档⟷体、opcode-operands 的碰满 1..argc 且本族不在白名单），因此不是新猜测。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第二批：**配置读取族 7 条 + 字符串回写族 6 条**迁到计划层（27→40 条，棘轮 27→40）；首次覆盖 `io` 的 `w`/`rw` 方向与 `str` 类型位，守卫的合成实参改为按计划类型构造（int/float→int 槽、str→字符串、ptr→指针槽）。新增第二条**派生守卫** `cfgReadPlanOps()`（从 CFG_READ 同表推导，核 argc + 结果位 w + 读取位 r），handler 缺计划直接抛；`config-read.ts` 的四个 operand 读写函数已无人使用 ⇒ 删掉死 import。辨别力两次机械证明（改计划号 / 翻 io 方向各 1 fail 且消息点名）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第三批：**字符串核心族 9 + 字符串表族 4** 迁到计划层（40→53，棘轮 40→53）；为表族给计划层新增 `index(n)` 访问器（槽号 vs 槽值）。副产物：`opcode-operands.test.ts` 的合成实参改成**按计划类型构造**（str/ptr/int），据此**删掉 9 条白名单豁免**（0x192/0x193/0x1a9/0x1aa/0x2c7/0x2c8/0x1b2/0x1c8/0x2eb）且守卫仍绿；耦合性机械证明（退回一律 int 槽 ⇒ 1 fail 且报 `writeStringOperand: dest 非字符串型`）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第四批（收尾 arity 自动核验）：①解析口径补两种 Hex-Rays 写法（类型转换形态 7 条 + 取址下标形态 6 条）⇒ 核验覆盖 528→**541**；②新增**覆盖空洞棘轮**守卫：核验不到的 opcode 必须恰好是数据层 `fallbackDefault` 的 30 条（`rep stosd` 默认 `sub_418E30`，属 age-shared 其他作品）或已登记无 arity 体的 3 条（0x1/0x4/0x9）⇒ 541+30+3 = 574 = 完整空间，新增空洞即红（两次变异证明：退回旧正则报「未登记 0x82…」、收窄 dispatch 扫描报「多出…」）。③判据 5 机械核验完成：`opcode-table.md` 574 行的 argc 列全部为数字（0 空行）。④顺手核过 `已核对` 行里的\"无 raw 引用\"：现为 0 条（该顾虑已消失）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第五批：**审计点名的操作数条 7 条**计划化（60 条计划，棘轮 53→60）—— `0x100`/`0x305`（argc 0，计划层首次表达\"无操作数\"）、`0x1ce`、`0x1a0`（argc 9，op2 读 + op1/op3..op9 写）、`0x1b9`/`0x2e7`（共用 helper，改成把计划视图传进去）、`0x2fc`（五位全 w）。⇒ 票的 why 与 plan-2026-09 的 RF-A 行两处点名条**全部计划化（11/11）**。变异证明：`0x2fc` 的 io 翻成 r ⇒「计划 ⟷ 实现」红并点名。另记录：`0x1a0`/`0x2fc` 的 `opcode-operands` 白名单条目**必须留**（该守卫分不清读/写，而这两条语义上就是\"某些位不碰\"）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第六批：**共用 handler 两族 12 条**（60→72，棘轮 60→72）—— 配置/字段 getter 族 4（计划首次出现\"只写不读\"）+ 音频起播/寄存族 6 + 语音排队族 2。机械分组确认：剩余 303 条已核对行基本\"一 op 一 handler\"（引擎侧无 ≥3 条族、emulator 侧只剩 1 个共用函数）⇒ 之后的批次按形状挑。变异证明：`0x131` 的 io 由 w 翻 r ⇒「计划 ⟷ 实现」红并点名。行为侧 60 条（audio-opcodes/audio-engine/bgm-naming/gallery/op-2ed-and-bit-index/engine-field-ops）全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第七批：**VM 纯计算族 28 条**（72→100，棘轮 72→100；`arithmetic.ts` 全表，靠 `binOp`/`floatBinOp` 两个工厂覆盖 20 条 handler）。新增**计划覆盖账守卫**把判据 1 的\"所有已核对行\"变成可辩护分母：375 = 100 已计划 + 13 A(ENGINE_INTERNAL_OPS) + 12 B(未注册) + 250 C(待迁移)，等式恒等校验 + 棘轮。另机械核对：B 的 12 条里语料用到的 5 条**都已在** `opcode-gaps.json` 登记 deferred、其余 7 条语料 0 处且按台账 `_doc` 不属其范围 ⇒ **无台账漏洞**（假设被推翻）。守卫补一处：合成输入让 handler 抛（除零等）时只忽略异常、仍核\"碰过哪几格\"。变异证明：`0x135` 计划号改 `0x1135` ⇒ 报「0x135 在 MIGRATED 里但没有计划」。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第八批：**音频族整表 20 条**（100→120，棘轮 100→120；覆盖账 C 250→230）—— 本族形状最单一（三条 argc 0、其余全只读），故用表驱动批量声明 + **脚本化**改 20 个 handler（验证：typecheck + 「计划 ⟷ 实现」逐位核对 + 音频行为测试 71 条全绿）。守卫点名一条并要求修正：`0x1c9` 原本不读 op1（驱动 id），已按引擎顺序补读并报进日志（不是死读，是把不建模的输入变可观测）。变异证明：`0xb4` 的 argc 由 2 改 1 ⇒「计划表自洽」红。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第九批：**绘制项/场景变换族 31 条**（120→151，棘轮 120→151；覆盖账 C 230→199）—— 三类形状（全读 23 / getter 写过 5 含 float 位 / `0x320` 的 7 个指针位）+ argc 0 两条；脚本化迁移 31 个 handler。★守卫第三次\"输入要对声明类型合法\"的修法：`ptr` 位给空引用槽会让 `refFromOperand` 抛 ⇒ 造实参时塞合法 Ref（本批 `0x320` 就是被这样点名出来的，探针实测 `touched=1,2,9,10` 后抛）。变异证明：`0x215` 的 io 由 w,r 翻 r,r ⇒「计划 ⟷ 实现」红。行为侧 9 个文件 71 条全绿（draw-item-* / mesh-vertex-quad / op-214 / op-223 / op-22a-22f ×2）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十批：**引擎字段/getter 杂项族 20 条**（151→171，棘轮 151→171；覆盖账 C 199→179）—— 形状最干净的一批（5 条写 op1 的 getter + 14 条只读 + 4 条 argc 0，无 float/str/ptr），守卫**首跑即绿**。变异证明：`0xc0` 的 io 由单元素 w 翻单元素 r ⇒「计划 ⟷ 实现」红并点名。行为侧 5 个文件 41 条全绿（engine-field-ops / op-2ed-and-bit-index / op-d0-wallclock / config-version-substr / opc-306-307-effect-skip）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十一批：**帧控制族 10 + 取址/数组/批量搬运族 9**（171→190，棘轮 171→190；覆盖账 C 179→160）。★为取址族给计划层新增**第二个访问器 `setPtr`**（写指针操作数；第一个是 round 9 的 `index`）。两族都是**首跑即绿**（无守卫迭代）。变异证明：`0x61` 的 io 由 w,r,r 翻 r,r,r ⇒「计划 ⟷ 实现」红并点名。行为侧 6 个文件 31 条全绿（ptr / frame-digest / frame-loop / op-10-002-adv-sleep-order / call-frame / save-slot）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十二批：**控制流 + 队列族 15 条**（190→205，棘轮 190→205；覆盖账 C 160→145）。★先核清 round 17 留下的**label 口径**疑点：引擎取 label 也走 `readIntOperand` ⇒ 计划层 `int(n)` 正确（`0x8f` call 顺带从 `operandArg().raw` 改成计划读取，变量 label 时才是对的）。`0x1a7` 按策略排除（nop + 零参数 handler）。★守卫第 4 次输入质量修正：**两遍合成执行**（seed 0/1 并集）覆盖\"按值分支读\"（`0xa0` jcc 被点名后促成）。变异证明：`0x134` 的 io 由 r,w,w 翻 r,r,w ⇒「计划 ⟷ 实现」红并点名。行为侧 6 个文件 30 条全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十三批：**消息窗族整表 51 条**（205→256，棘轮 205→256；覆盖账 C 145→94）—— 全库最大一族，首跑即绿。★侦察发现 3 条（`0x73`/`0x90`/`0x25c`）用**变量 n 的辅助读法**（`rd(n)`/`.map`），机械正则误判为\"只读 1 位\"，读体后确认全读。★★**变异实验暴露并修好一处守卫漏洞**：round 13 的 try/catch 把**计划层违规**（`deny`/`denyIo`）也吞了 ⇒「声明 r 却在写」不会被发现（`0x205` 的 op2 由 rw 改 r 后仍全绿）；现按消息区分，计划层违规记 `bad` 并中断。行为侧 6 个文件 56 条全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十四批：**场景/图元状态族 18 + 输入族 11**（256→285，棘轮 256→285；覆盖账 C 94→65）—— 首跑即绿。★新增**第三类策略排除** `0x33f`（引擎三格全读但本工程无消费端 ⇒ 实现有据豁免只读 op1，判据：**引擎读了但实现无消费端的条目不进计划层**）。★`0xcc`/`0xfb` 的 label 位（原 `operandArg().raw`）与 `0x8f` 同口径改成计划读取。变异证明：`0x12e` 的 io[0] 由 rw 翻 r ⇒「计划 ⟷ 实现」红并点名（**round 19 的守卫硬化生效**）。行为侧 7 个文件 53 条 + hover/keyboard 14 条全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 第十五批：**5 族 35 条**（285→320，棘轮 285→320；覆盖账 C 65→30）—— `gfx-texture` 10 + `gfx-misc` 6 + `text-items` 7 + `panel` 5 + `save-slot` 7（含此前排除的 `0x1A1`）。★新增计划层**第三个方向 `unused`**：守卫点名出三处死格（`0x1D3` op3 / `0x1D4` op3\"死读\" / `0x2F3` op4）⇒ 与其谎报 `w` 或整条排除，不如把它声明成可核验的事实；语义边界写清（\"引擎读、我们无消费端\" ≠ `unused`）。变异证明：`0x1a1` 的 op1 由 `unused` 翻 `r` ⇒「计划 ⟷ 实现」红并点名。行为侧 6 个文件 45 条全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing 收尾批：**27 条**（320→347，棘轮 320→347；覆盖账 C 30→**3**）—— 判据 1 的可覆盖面**全部落定**。★新增 2 条 C 类排除（`0x14D`/`0x308`，类 C 判据：引擎读了但实现无消费端）⇒ 完整分母 `375 = 347 + 13 A + 12 B + 3 C` 由守卫恒等校验。★守卫点名并修好 `0x14C` 的**读序**（原来在\"模块未加载\"抛错前读不到 op1 ⇒ 改成\"先读满再校验\"，同 `0x1C9`/`0x1A0` 的纪律）。★`0x1A7` 从策略排除改判为可声明（`unused`）⇒ 排除面随模型丰富而缩小。变异证明：`0x1A7` 的 op1 由 unused 翻 r ⇒「计划 ⟷ 实现」红并点名。行为侧 12 个文件 85 条全绿。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → done —— 判据 3 五条行为修复逐条落 raw 依据 + 命名守卫（★本轮补 0x1A0 写序 / 0x2FC 只写 op1 两条行为守卫，三次变异证明）；判据 4 等价性说明（操作数面 raw Proxy 双向相等 / 行为面既有用例不改期望值 / 例外清单为有意修正）；计划 347、覆盖账 375=347+13+12+3 不变；收尾三连 + 全量 verify"
     }
   ]
 }

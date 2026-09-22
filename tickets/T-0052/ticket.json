@@ -7,7 +7,7 @@
   "acceptance": [
     "建模 VK→虚拟位表（引擎 `_this[1176+VK]`）：默认 7 项 = VK 38/39/40/37/13/32/8 → 位 0..6（其余 VK = −1/未映射）；表可由 `0x107`/`0x10B`/`0x10C` 那族『按键绑定』指令改写（先只做默认值即可，改写路径记为缺口）",
     "键盘事件（宿主 KeyboardEvent）→ 掩码位 0..6：按下沿与按住态都进（与鼠标同样的两把刷子语义：`flushPending` 只给按下沿、`flushHeld` 含按住态），并把 `keyEdge` 换成真实位",
-    "E3：在真实 ADV 场景里用键盘把侧栏菜单走一遍（↑/↓ 移动、Enter 确认、BackSpace 取消）——`joy-callback 0..4` 的 handler 必须被派发到（可先用 SN0000/菜单脚本的既有 label 断言）",
+    "E3：在真实 ADV 场景里用键盘把侧栏菜单走一遍（↑/↓ 移动、Enter 确认、BackSpace 取消）——`joy-callback 0..4` 的 handler 必须被派发到（可先用 SN0000/菜单脚本的既有 label 断言）\n★进度（轮 12，**已完成**）：判据 ③ 原先卡在\"`ScenarioSpec` 没有键盘事件\" ⇒ 本轮给统一 Scenario 加了 `keydown`/`keyup`（`vk` = Windows 虚拟键码；`src/frame/scenario.ts` 的 `ScenarioEvent` + `applyScenarioEvent`，落到 `InputManager.pressKey/releaseKey` = 引擎 `GetAsyncKeyState` 的等价物）。E3 守卫 `app/amayui-emulator/test/keyboard-scenario-menu.test.ts`：**真实 `src/TITLE.txt` 菜单只用键盘走通** —— `↓`（VK40 ⇒ 位2 ⇒ `joy-callback 2`）→ `Enter`（VK13 ⇒ 位4 ⇒ `label_00000eec` → `menu-dispatch (local 3f7)`）⇒ **TITLE → GAMESTART**；对照组\"只按 Enter\"仍在 TITLE（证明关键是移动键而非 Enter 是全局热键）；并断言 TITLE 期间的选中项 `local 3f7` 被 `↓` 改动过。★辨别力机械证明：注释掉 `pressKey` 的 `keyEdge |= 1 << bit`（只留按住态）⇒ 该用例 1 fail 并点名；还原后 2/2 绿。节拍口径（踩过）：**按下只保持 ~4 帧、松开后留 ~1 s** —— 长按会让 `0x100` 每帧重复扫同一位、落点不确定。证据：`evidence/keyboard-title-e3.md`。",
     "不破坏鼠标路径：`npm run verify` 全绿（现有 0..c 的鼠标/手柄语义与 `test/input.test.ts` 的两把刷子断言不能变）",
     "配套更新：`docs-new/03-engine/input-system.md` §5/§7 标注 emulator 现状（键盘位已接入/仍缺的部分）、`capabilities.js` 补一条『键盘→掩码位』能力（现无任何条目提到键盘）"
   ],
@@ -40,11 +40,22 @@
       "anchor": "keyEdge = 0;",
       "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6",
       "line": 133
+    },
+    {
+      "file": "tickets/T-0052/evidence/keyboard-title-e3.md",
+      "anchor": "TITLE → GAMESTART.BIN",
+      "note": "判据 ③ 的 E3：真实 TITLE 菜单键盘走通的链路/实测落点表/节拍坑/辨别力证明（含\"只按 Enter 作对照\"）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/scenario.ts",
+      "anchor": "kind: 'cursor' | 'press' | 'release' | 'wheel' | 'keydown' | 'keyup' | 'note';",
+      "note": "判据 ③ 的能力本身：统一 Scenario 的键盘事件种类（两宿主同义；回放的输入快照本来就带 keyEdge/keysHeld）。"
     }
   ],
   "tests": [
     "app/amayui-emulator/test/keyboard-mask.test.ts",
-    "app/amayui-emulator/test/input.test.ts"
+    "app/amayui-emulator/test/input.test.ts",
+    "app/amayui-emulator/test/keyboard-scenario-menu.test.ts"
   ],
   "links": {
     "docs": [
@@ -61,7 +72,7 @@
       "T-0051"
     ]
   },
-  "status": "doing",
+  "status": "done",
   "id": "T-0052",
   "history": [
     {
@@ -78,6 +89,11 @@
       "at": "2026-09-21",
       "kind": "status",
       "what": "open → doing —— 判据 1/2/4/5 达成；判据 3 只到合成脚本级（真 ADV 键盘 E3 需给 ScenarioSpec 加键盘事件）⇒ 保持 doing"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "done → done —— 轮 12 收尾：判据 ③ 完成 —— 给统一 Scenario 加 keydown/keyup + vk（判据原先卡的正是这条能力），并用真实 TITLE 菜单做 E3：↓（位2/joy-callback 2）→ Enter（位4/label_00000eec→menu-dispatch）⇒ TITLE→GAMESTART；对照（只按 Enter）仍在 TITLE；断言 local 3f7 被 ↓ 改动。节拍口径：按下 4 帧、松开后 1 s（长按会让 0x100 每帧重复扫同一位导致落点不确定）。辨别力机械证明：注释掉 pressKey 的 keyEdge ⇒ 用例红并点名；还原后 2/2 绿（同批 keyboard-mask/input/scenario/scenario-replay 26 条全绿）。证据 evidence/keyboard-title-e3.md"
     }
   ]
 }

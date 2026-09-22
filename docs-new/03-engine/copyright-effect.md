@@ -142,7 +142,7 @@ if (flags&2) {                     // bit1 门控
 | draw-item 渲染 | `sub_4AEEA0` 131306 |
 | draw-texture 处理器 | `sub_422E70` 30846 → `sub_4ACE50` 129796 |
 | image 绘制器 | `sub_4A2D50` 121065 → texture-slot vtable+20 |
-| 0x400 等待门 | `sub_407E20` 12679（图形池 pending `_this[369348]`）★**2026-09 订正**：行号应为 **12762-12786**，且返回值 = **池挂起位 `_this[11629]`（= 字节 369348）叠加一个等待计时器**（起点 `_this[11630]`=369352、时长 `_this[11631]`=369356，配 `_this[11625]`=369332 毫秒时钟）。**计时器的装载者是 `0x238`**（`sub_4248C0` raw 32303-32312：`Engine[92338]=0; Engine[92339]=op1`）⇒ 脚本里 `i238 N` + `wait` 就是"等 N 毫秒"（见 `tickets/T-0024`、`opcode-table.md` 的 0x238 行）。★**emulator 已实现**（`T-0024`）：`Engine.gatePending`；本页版权页那 5 s 由 §4 的 mesh 颜色窗（`LOGO.txt:44` 的 `set-vertex-color-alpha 1194 1f4` = delay 4500 + dur 500）驱动，与计时器无关 —— 实测门驻留 5000 ms、`gateWaitMs=0` |
+| 0x400 等待门 | `sub_407E20`（图形池 pending `_this[369348]`）**12762-12786**：返回值 = **池挂起位 `_this[11629]`（= 字节 369348）叠加一个等待计时器**（起点 `_this[11630]`=369352、时长 `_this[11631]`=369356，配 `_this[11625]`=369332 毫秒时钟）。**计时器的装载者是 `0x238`**（`sub_4248C0` raw 32303-32312：`Engine[92338]=0; Engine[92339]=op1`）⇒ 脚本里 `i238 N` + `wait` 就是"等 N 毫秒"（见 `tickets/T-0024`、`opcode-table.md` 的 0x238 行）。★**emulator 已实现**（`T-0024`）：`Engine.gatePending`；本页版权页那 5 s 由 §4 的 mesh 颜色窗（`LOGO.txt:44` 的 `set-vertex-color-alpha 1194 1f4` = delay 4500 + dur 500）驱动，与计时器无关 —— 实测门驻留 5000 ms、`gateWaitMs=0` |
 | 淡出后的硬切 | `release-texture` 0x1FA `sub_422E00` 30822、`play-movie` 0x20F `sub_4237B0` 31165 |
 
 ---

@@ -239,7 +239,7 @@ test('0xAE：非读档流程（门控 0）严格 no-op；门控置位时按版�
 
 test('0x1D2 → 0x1D3：文本项 push + 按 key 查询（含组首停止、越界返回 0）', () => {
   const { e, f, step } = mk();
-  step(0x80, [im(8)]); // 默认窗 = 8（0x80 同时写 Engine[21631] 与 msgwin.defaultWin）
+  step(0x80, [im(8)]); // 默认窗 = 8（唯一真源 msgwin.defaultWin = 引擎 Font+1228；T-0101 D5）
   const rd = (slot: number): number => dec(e.key, f.locals.int.get(slot) ?? 0) | 0;
   const q = (o1: number, o2: number, o3: number, start: number, key: number) => {
     step(0x1d3, [loc(o1), loc(o2), im(o3), im(start), im(key)]);

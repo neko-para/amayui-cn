@@ -22,6 +22,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Engine } from '../src/vm/engine.js';
@@ -432,4 +433,39 @@ test('E3 判据⑥：点「ゲーム開始」后下一条 SE 由 GAMESTART 发�
     false,
     '0x51e3 之前不得出现 SN0000 的 SE002（0x32）',
   );
+});
+
+/**
+ * ★**`T-0102` 判据 5 的可达性棘轮**：序章（`SN0000`）里**不可能**出现"有发言人"的 ADV 行。
+ *
+ * 为什么要把这条写成测试：判据 5（"角色名是青还是橘"）的判决量是 `bgrToRgb(adcd[14acda])`，
+ * 而 `14acda` 的派生输入是**消息号 `3f37`** —— 旁白恒 `-1`（走 `14acda = 0` 那一支，没有辨别力）。
+ * 本轮实测（`tickets/T-0102/evidence/adv-speaker-line-probe.md`）在真语料链路上把 ADV 跑到了序章，
+ * `3f37` 全程 `-1`，**0 条**"有发言人"的样本 ⇒ 取样点必须先证明存在。
+ *
+ * 本棘轮锁的是**脚本数据侧**的事实（便宜、不需要跑链路）：
+ *   ① `SN0000.txt` **没有** `mov (global-int 3f37)`（设置点），只有 `sub`（递减）+ 读点；
+ *   ② 全库的设置点分布在 `SC*`/`SG*`/`SP*`/`NOVEL`/`HMODE`/`GAMECLEAR`/`DEBUGADV` 等**对话/剧情**脚本里。
+ * ⇒ 下一轮要找"有角色名的那一行"，只能去这些脚本的**对话段**（如 `SC0000.txt:1688` 起），
+ *   而不是想办法把序章多推几页。
+ */
+test('★T-0102 判据 5：序章（SN0000）没有「有发言人」的行 —— `3f37` 的设置点只在对话脚本里', () => {
+  const srcDir = path.join(ROOT, 'src');
+  const read = (f: string): string => fs.readFileSync(path.join(srcDir, f), 'utf8');
+  const count = (text: string, needle: string): number => text.split(needle).length - 1;
+
+  // ① 序章：0 个设置点，≥1 个递减点（递减也是写，但它不产生"有发言人"的语义）
+  const sn = read('SN0000.txt');
+  assert.equal(count(sn, 'mov (global-int 3f37)'), 0, 'SN0000 不该有 `3f37` 的设置点（序章全是旁白）');
+  assert.ok(count(sn, 'sub (global-int 3f37) 0 1') >= 1, 'SN0000 应有 `3f37` 的递减点（实测 3 处）');
+
+  // ② 设置点必须存在，且落在对话/剧情脚本里（不是序章）
+  const files = fs.readdirSync(srcDir).filter((f) => f.endsWith('.txt'));
+  const setters = files.filter((f) => count(read(f), 'mov (global-int 3f37)') > 0);
+  assert.ok(setters.length >= 10, `应有多个脚本设 3f37；实际 ${setters.length} 个`);
+  assert.ok(
+    setters.some((f) => /SC\d{4}/.test(f)),
+    `SC#### 系脚本里必须有设置点；实际 ${setters.slice(0, 8).join(', ')}`,
+  );
+  assert.equal(setters.includes('SN0000.txt'), false, 'SN0000 不得出现在设置点列表里');
 });

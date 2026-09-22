@@ -5,12 +5,12 @@
   "area": "emulator/adv",
   "why": "**用户实测（轮 8）**：从 ADV 进设置界面、右键退出时命中未知指令 `i082` 而**硬停**（`source: corpus-unregistered` + `deferred` ⇒ 未注册 ⇒ `NotImplementedOp`）。\n**已做的临时处置**（本轮）：按 `0x308` 的先例把 `0x82` 登记进 `STUB_NATIVE_OPS`（`[0x82, op_stub_unhandled]`）⇒ **记录后放行、不再硬停**；`test/opcode-operands.test.ts` 的 `ALLOW_UNDERRUN` 补了对应条目（理由：桩不读操作数）。\n**体证据**（raw 28808-28826）：`arity 槽 = 11`；`v6=op5, v5=op4, v4=op3, v3=op2, v2=op1`（全是 `sub_41BF50` 读）→ `sub_466000(_this + 21324, v2, v3, v4, v5, v6, _this + 21032)`；`_this+21324` = byte 85296 = **`Font`**；`_this+21032` = byte **84128** = 另一个文本侧对象（`analysis/fields.json` 的未知子对象表里把 84128 标为「文本」）。**不写任何操作数** ⇒ VM 态不可观测；未被建模的是**这次 GDI 重绘的可见效果**。\n**语料**：全库仅 **1 处** —— `src/CONFIG.txt:269` 的 `i082 (local-int 5) (local-int 6) 2 (global-int f807b) (global-int f807c)`，位于 `label_000014a8`（设置界面的重画/退出路径，紧跟 `i071 2` + `call label_00001d38`）。",
   "acceptance": [
-    "读全 `sub_466000`（raw 79319 起，几百行）并定性：**它把什么文本重绘到哪里** —— 是重画某个消息窗的排版、还是往 `Font` 的离屏表面贴一段字、还是别的；给出 op1..op5 各自的语义（注意语料实参：op1/op2 是本帧局部量、op3 = 立即数 2、op4/op5 是全局量 f807b/f807c）",
-    "判定 emulator 的等价物：最可能的是「把相应文本窗重新发布」（`scMsgWinSync`/`emitWin`）—— 若是，映射到既有机制并写清「哪个窗」；若需要新宿主缝，按先例五处同步并登记",
-    "守卫：至少在合成指令上断言「命中 0x82 读满 op1..op5 且不改变 VM 可见状态」，以及在真实 `CONFIG` 路径上断言**不再硬停**且文本窗被重新发布（若能定义场景级不变量）",
-    "把 `0x82` 的 disposition 按实际改（若真实现 ⇒ `implemented`；若确认只是重绘、由既有路径覆盖 ⇒ 写明等价性）并重跑 `node scripts/build-opcode-gaps.mjs`；`opcode-table.md` 的 0x82 行同步（现为「仅映射」空行）",
-    "E4（用户口径）：ADV → 设置界面 → 右键退出不再命中断言，且界面文字正确",
-    "npm run verify 全绿；四份台账 --validate 绿"
+    "读全 `sub_466000`（raw 79319 起，几百行）并定性：**它把什么文本重绘到哪里** —— 是重画某个消息窗的排版、还是往 `Font` 的离屏表面贴一段字、还是别的；给出 op1..op5 各自的语义（注意语料实参：op1/op2 是本帧局部量、op3 = 立即数 2、op4/op5 是全局量 f807b/f807c）\n★进度（轮 11：判据 1）**已落地**：`sub_466000`（raw 79319-80311）的语义已定性并写进 `docs-new/03-engine/opcode-table.md` 的 `0x82` 行 —— `v8 = (Font+3368 − Font+3364)/72` = 该窗的 **72 B 文本项记录条数**；门 `if (v8 > a3 && a3 >= 0)`（越界什么都不做）；`a2` = 窗索引；窗 `+112 == 1` ⇒ 走 `sub_462040`；否则按记录走 GDI（`sub_45BBF0` + `SelectObject`×12 / `GetTextExtent`×2），`op3 & 2` 时用 `op4`/`op5` 设填充/描边色。⇒ `op1` = 窗、`op2` = 起始记录下标、`op3` = 模式（语料传常量 `2`）、`op4`/`op5` = 填充色 / 描边色（语料实参 = 刚重算的 `f807b`/`f807c`）。过程文档：`notes.md` §「轮 9」。",
+    "判定 emulator 的等价物：最可能的是「把相应文本窗重新发布」（`scMsgWinSync`/`emitWin`）—— 若是，映射到既有机制并写清「哪个窗」；若需要新宿主缝，按先例五处同步并登记\n★进度（轮 11：判据 2）**已落地**：等价物 = 「按 `op4`/`op5` 覆盖全局填充/描边色（`bgrToRgb`，与 `0x76`/`0x77` 同字段同口径）后**重新发布该窗**」（既有通路 `emitWin`，与 `0x20A` 同一条发布路径），不需要新宿主缝。实现 = `src/vm/handlers/msgwin.ts` 的 `op_gdi_repaint_window`（注册进 `MSGWIN_OPS`，计划层 5 格全 int）；「哪个窗」= `op1`（`e.msgwin.resolveWin`），「哪条记录」= `op2`（只用于引擎那道越界门）。守卫 `test/op-0104-gdi-repaint.test.ts`（6 条）。",
+    "守卫：至少在合成指令上断言「命中 0x82 读满 op1..op5 且不改变 VM 可见状态」，以及在真实 `CONFIG` 路径上断言**不再硬停**且文本窗被重新发布（若能定义场景级不变量）\n★进度（轮 11）：①**可自动化的一半（硬停必须彻底消失）已补守卫** —— 用户实测原话是「ADV → 设置界面 → 右键退出 ⇒ 命中未知指令 `i082` 而**硬停**」，而那条退出链跑的**就是** `CONFIG.txt:269` 那一笔 ⇒ \"不再硬停\"等价于**该链的未实现指令清单为空**：`test/config1-chain.test.ts` 的同一用例新增 `assert.deepEqual(real.unimplemented, [], …)`。★辨别力机械证明：把 `MSGWIN_OPS` 的 `[0x82, op_gdi_repaint_window]` 注释掉（退回未注册）⇒ 该用例 3 条断言红（含这一条，点名 `T-0104 判据 4`）；还原后 19/19 绿。②**场景级正向用例已落地**（原文登记为\"要在链路里先显示一条 ADV 消息，本轮未做\"）：`test/config1-chain.test.ts` 的「★T-0102 判据 3 收尾：真路径实测值（g0=6 + 旁白 + 记录表非空）」= 真实 `CONFIG` 退出链 + `seedRecords: 3` ⇒ `sawI082 = true`、**`republishByI082 == 1`**（恰好一次）、`restyleByI082.fill == #ffffff`（用**重派生后的实时色**重画）⇒ 「文本窗被重新发布」在**记录表非空**（= 真 ADV 路径的实测形态，实测 2..6 条）时成立。",
+    "把 `0x82` 的 disposition 按实际改（若真实现 ⇒ `implemented`；若确认只是重绘、由既有路径覆盖 ⇒ 写明等价性）并重跑 `node scripts/build-opcode-gaps.mjs`；`opcode-table.md` 的 0x82 行同步（现为「仅映射」空行）\n★进度（轮 11，**复核全绿**）：①`analysis/opcode-gaps.json` 的 `0x82` = `disposition: \"implemented\"`（旧 STUB 记录降级为「旧记录（保留对照）」）；②`node scripts/build-opcode-gaps.mjs` ✓（未实现 0 / unjustified no-op 0 / 有据 no-op 13 / **已实现 39** / deferred 19，`opcode-gaps.md` 无漂移）；③`docs-new/03-engine/opcode-table.md` 的 `0x82` 行已是**完整行**（argc 5 / handler `sub_41F720` / 状态**已核对** / `sub_466000` 的语义 + emulator 实现口径 + 登记的近似 + 守卫名），不再是原来的「仅映射」空行。",
+    "E4（用户口径）：ADV → 设置界面 → 右键退出不再命中断言，且界面文字正确\n★进度（轮 11，**拆成两半**）：①**可自动化的一半**（= 本条目\"不再命中断言\"）由 `real.unimplemented` 为空的断言承担（见判据 3 的 ★进度①），已机械证明其辨别力；②**目视的一半写明为什么不能自动化**：用户那条路的入口是 **`SC0000` 的侧边栏**（`src/SC0000.txt:604-611` 的 `lookup-array 13b0[f8019] == 0xf → call-script 34 // CONFIG`），headless 从 `SN0000` 走到 `SC0000` **需要交互式导航**（`advance:force` 会停在 `CHARMEDIT` 这类菜单上；实测 **205 230 帧**仍未进 `SC0000`）—— 那正是 `T-0103`（按用户要求**留到最后**）的题目。⇒ 本票只钉\"机制上不可能再硬停 + 重画用的是正确颜色\"，`界面文字正确`这一半的目视确认留给 `T-0103` 打通后的同一份导航 + 用户复验。",
+    "npm run verify 全绿；四份台账 --validate 绿\n★进度（轮 11）：`tickets.js --validate` ✅ / `capabilities.js --validate` ✅（137 条）/ `scripts.js --validate` ✅（30 条）/ `build-opcode-gaps.mjs` ✅（覆盖 + 处置纪律）；`npm run verify`（typecheck ×3 + 全量 test + `check:dead-writes`）✅。"
   ],
   "evidence": [
     {
@@ -47,7 +47,7 @@
     ]
   },
   "id": "T-0104",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
@@ -68,6 +68,11 @@
       "at": "2026-09-21",
       "kind": "status",
       "what": "open → doing —— 0x82 转真实现（判据 1/2/3前半/4 落地，verify 全绿 960 pass）；剩判据 5 的 E4（真界面用户口径）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → done —— 轮 11 收尾：判据逐条核对 —— ①判据 1/2 已在轮 9/10 落地（sub_466000 语义 + 等价物 = emitWin 重新发布，无新宿主缝），本轮补 ★进度指针；②判据 3 复核全绿（gaps disposition=implemented、build-opcode-gaps ✓、opcode-table 0x82 行为完整行）+ 场景级正向用例已由 config1-chain 的「T-0102 判据 3 收尾」用例承担（真实 CONFIG 退出链 + seedRecords=3 ⇒ republishByI082==1 且用重派生实时色）；③判据 4 拆两半：可自动化的一半（硬停彻底消失）新增 real.unimplemented 为空断言，辨别力机械证明（注释掉 0x82 注册 ⇒ 3 条红并点名；还原后 19/19 绿）；目视的一半写明不可自动化的原因（入口是 SC0000 侧边栏，headless 从 SN0000 到 SC0000 需交互式导航，实测 205230 帧未进 ⇒ 属 T-0103，按用户要求留到最后）；④判据 5：tickets/capabilities/scripts 三份 --validate 绿 + build-opcode-gaps ✓ + npm run verify 全绿。仍未建模（登记不阻塞）：op2 重画粒度、op3 其它位、mode==1 走 sub_462040"
     }
   ],
   "tests": [

@@ -27,8 +27,14 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Texture } from 'pixi.js';
-import { TextureCache } from '../src/renderer/pixi/textureCache.js';
+import { BARRIER_GIVEUP_MS, TextureCache } from '../src/renderer/pixi/textureCache.js';
+
+/** 仓库根（源码棘轮用：本文件在 `app/amayui-emulator/test/`）。 */
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 /** 假纹理：`TextureCache` 只把它当不透明对象存进 `slotTex`，不读任何字段。 */
 interface FakeTex {
@@ -262,4 +268,78 @@ test('T-0102 H3：无 DOM 时 create() 不建画布槽（记录边界，防止�
   const tc = new GatedCache(() => {});
   tc.create(51, 64, 32, 0);
   assert.equal(tc.slotTex.has(51), false, 'Node 里 create() 没有画布 ⇒ 该槽仍是"无纹理"态（真宿主会建）');
+});
+
+/**
+ * ★★`T-0102` 登记的 **H2**（本轮修 —— 白底四个洞里的最后一个）：
+ * **帧屏障的 500 ms 默认上限是"静默截断"，必须换成安全兜底**。
+ *
+ * 为什么这不是"少画一帧"的小事：屏障后面紧跟的可能不是画一笔，而是 `0x208`
+ * （`sub_4302E0` 读纹理尺寸并**写回操作数**）这类 getter —— 在载入完成前放行，脚本就按
+ * `0×0` 走**与引擎不同**的分支，而且**不会回头再看**（唯一自愈是脚本再跑一次同一段 =
+ * 用户实测的"开合侧边栏才对"）。引擎的 `set-texture` 是同步的，压根没有"超时"这一说。
+ *
+ * 本守卫钉三件事：①无参默认**不是**小上限；②显式小上限截断时必须**点名在途 imgid**
+ * （E4 归因）；③图到货后无参屏障照常结束（没有把"等"写成"永远等"的死锁）。
+ */
+test('★T-0102 H2：屏障无参上限 = 安全兜底（不是 500 ms 静默截断），截断时点名在途 imgid', async () => {
+  const logs: string[] = [];
+  const tc = new GatedCache((m) => logs.push(m));
+  const g = tc.prepare(0x5a5a, 'big-bg');
+  tc.bind(0x5a5a, 64);
+  assert.equal(tc.pendingCount, 1, '前提：确实有一张在途');
+
+  // ①无参默认不许是"小上限"：给它 700 ms，必须还在等。
+  //   ★为什么是 700：旧默认 500 ms —— 这个窗口必须**跨过**它，否则"静默截断"这一类回归不会被抓住
+  //   （500 ms 只是量级，不是精确值：旧代码在这里会于 ~500 ms 返回 `done` ⇒ 断言红）。
+  const p = tc.waitIdle();
+  const raced = await Promise.race([
+    p.then(() => 'done'),
+    new Promise((r) => setTimeout(() => r('waiting'), 700)),
+  ]);
+  assert.equal(raced, 'waiting', '★无参 `waitIdle()` 不得用小程序上限（旧 500 ms 的静默截断正是白底/0×0 的来源）');
+  assert.ok(
+    BARRIER_GIVEUP_MS >= 10_000,
+    `★安全兜底必须是"防真挂死"的量级（实得 ${BARRIER_GIVEUP_MS} ms；500 ms 那档已判定为缺陷）`,
+  );
+
+  // ②显式小上限 = 调用方自担后果：到点返回 + 点名在途 imgid（E4 要能直接看出卡在哪张图上）
+  await tc.waitIdle(40);
+  assert.equal(tc.pendingCount, 1, '显式小上限到点即返回（这条路径是"故意truncate"，不是默认行为）');
+  assert.ok(
+    logs.some((l) => l.includes('放弃等待') && l.includes('5a5a')),
+    `★截断必须点名在途 imgid：${JSON.stringify(logs)}`,
+  );
+
+  // ③到货后无参屏障必须自己结束（防"改成无限等"引入挂死）
+  g.open({ name: 'big-bg' } as unknown as FakeTex);
+  await tick();
+  await p;
+  assert.equal(tc.pendingCount, 0, '到货之后屏障必须结束');
+  assert.equal((tc.slotTex.get(64) as unknown as FakeTex).name, 'big-bg', '且纹理照常落盘');
+});
+
+/**
+ * ★H2 的**源码棘轮**：两个纹理库的 `waitIdle` 都不许再把"默认上限"写成一个小的字面量，
+ * 收敛路径（`pixiBackend.texturesIdle`）也不许传小上限 —— 否则这次的修会被下一次"顺手加个兜底"抹掉。
+ */
+test('★T-0102 H2（源码棘轮）：屏障默认值只能是共享常量，收敛路径不得传小上限', () => {
+  const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  for (const rel of ['app/amayui-emulator/src/renderer/pixi/textureCache.ts', 'app/amayui-emulator/src/renderer/pixi/l2dTextures.ts']) {
+    const src = read(rel);
+    assert.equal(
+      /waitIdle\([^)]*=\s*\d/.test(src),
+      false,
+      `★${rel}：\`waitIdle\` 不许再把数字字面量当默认上限（用 BARRIER_GIVEUP_MS）`,
+    );
+    assert.ok(src.includes('BARRIER_GIVEUP_MS'), `${rel} 必须用共享的安全兜底常量`);
+  }
+  const backend = read('app/amayui-emulator/src/renderer/pixiBackend.ts');
+  const call = /texturesIdle\(\)[\s\S]{0,400}?waitIdle\(([^)]*)\)/.exec(backend);
+  assert.ok(call, '找不到 `pixiBackend.texturesIdle()` 里的 `waitIdle(...)` 调用（守卫结构变了？）');
+  assert.equal(
+    /\d/.test(call[1]!),
+    false,
+    `★帧屏障（收敛路径）不得传数字上限（实得 \`waitIdle(${call[1]})\`）—— 传了就等于把 H2 又打开`,
+  );
 });

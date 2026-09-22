@@ -78,10 +78,14 @@ export function scanArity(): ArityScan {
     while (end < src.length && !/^\/\/----- \(/.test(src[end]!)) end++;
     const body = src.slice(at, end).join('\n');
     // 形态 1：`_this[30 * _this[95776] + 95805] = N;`
-    // 形态 2：`*(_DWORD *)(_this + 120 * ... + 383220) = N;`（可能带 cur 变量，只认常量 N）
+    //   ★1b：Hex-Rays 有时给赋值加**类型转换**：`_this[30 * (_DWORD)_this[95776] + 95805] = (int *)11;`
+    //        （实测 `0x82`/`0x1d1`/`0x2ef`/`0x2f0`/`0x2f1`/`0x2f2`/`0x2f6` 都是这一形态 ⇒ 不认它就白丢 7 条）
+    // 形态 2：`*(_DWORD *)(_this + 120 * ... + 383220) = N;`（字节形式）
+    //   ★2b：同族的另一种写法是**取址+下标**：`*(_DWORD *)&_this[120 * ... + 383220] = 5;`
+    //        （这里是 `]` 不是 `)`；实测 `0x60`/`0x236`/`0x240`/`0x241`/`0x24d`/`0x2c9` 六条 ⇒ 不认它就白丢 6 条）
     let step: number | undefined;
-    const m1 = /95805\]\s*=\s*(\d+)\s*;/.exec(body);
-    const m2 = /383220\)\s*=\s*(\d+)\s*;/.exec(body);
+    const m1 = /95805\]\s*=\s*(?:\([^)]*\)\s*)?(\d+)\s*;/.exec(body);
+    const m2 = /383220[\)\]]\s*=\s*(\d+)\s*;/.exec(body);
     if (m1) step = Number(m1[1]);
     else if (m2) step = Number(m2[1]);
     if (step === undefined) {

@@ -20,22 +20,22 @@ generated_by: scripts/build-capabilities.mjs
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 54 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 21 | 引擎有、emulator 完全没有 |
-| `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **137** | 需要关注（非 n/a 且非已核验）= **59** |
+| `modeled-verified` | 58 | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 32 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 19 | 引擎有、emulator 完全没有 |
+| `n/a-known` | 23 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
+| **合计** | **138** | 需要关注（非 n/a 且非已核验）= **57** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
 | 3D | 17 | 4 |
-| Live2D | 7 | 2 |
+| Live2D | 7 | 1 |
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
-| 帧循环 | 16 | 8 |
+| 帧循环 | 17 | 8 |
 | 消息窗 | 30 | 18 |
 | 渲染 | 29 | 13 |
 | 资源 | 18 | 4 |
@@ -83,7 +83,7 @@ generated_by: scripts/build-capabilities.mjs
 | `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | 🟡 已建模未核验 | E1 · `test/scene-report.test.ts` |
 | `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ❌ 缺失 | E0 |
 | `script-frame-refresh-opcode-20c` | 帧循环 | opcode 0x20C 脚本帧刷新并提交 | ✅ 已核验 | E2 · `test/engine-config.test.ts` |
-| `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ❌ 缺失 | E1 |
+| `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ✅ 已核验 | E3 · `test/l2d-render-pending.test.ts` |
 | `vertex-buffer-lock-scale` | 渲染 | 顶点缓冲 Lock/Unlock + 视口缩放改写 | ❌ 缺失 | E0 |
 | `world-matrix-identity-refresh` | 3D | 每帧世界/投影矩阵复位与链乘 | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
 | `sprite-2d-draw-layer` | 渲染 | 无脚本/标题态额外 2D 层绘制 | ❌ 缺失 | E0 |
@@ -96,7 +96,7 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-texture-slot` | 资源 | CTexture 槽（1000）释放-重建 | 🟡 已建模未核验 | E2 · `test/texture-slot-resolve.test.ts` |
 | `lazy-mesh-slot` | 3D | mesh 槽（1000）释放-重建 + 惰性分配器单例 | ➖ n/a | E1 |
 | `lazy-mesh-alloc-hierarchy-singleton` | 3D | D3DX 网格加载分配器单例 | ➖ n/a | E1 |
-| `lazy-live2d-slot` | Live2D | Live2D 槽（10）释放-重建 | 🟡 已建模未核验 | E3 · `test/live2d-chain.test.ts` |
+| `lazy-live2d-slot` | Live2D | Live2D 实例槽表（`Scene+55812`，**10** 槽）与「槽非空先析构再建」 | ✅ 已核验 | E3 · `test/live2d-chain.test.ts` |
 | `lazy-vram-query-32` | 资源 | 显存容量查询惰性缓存（32 位） | ➖ n/a | E1 |
 | `lazy-vram-query-64` | 资源 | 显存容量查询惰性缓存（64 位 QWORD） | ➖ n/a | E1 |
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
@@ -107,10 +107,10 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ❌ 缺失 | E0 |
 | `lazy-drawitem-map-node` | 渲染 | DrawItem 表节点惰性插入（表头 eager 130312） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `lazy-mesh-map-node` | 3D | MeshEntry 表节点惰性插入（表头 eager 130348） | 🟡 已建模未核验 | E1 |
-| `lazy-572b-node-map` | 渲染 | 572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384） | ❌ 缺失 | E0 |
+| `lazy-572b-node-map` | 渲染 | 572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384） | 🟠 部分 | E3 · `test/live2d-chain.test.ts` |
 | `lazy-scene-effect-release-gap` | 3D | Scene+46492 / +46496 两张 effect 的释放缺口 | ➖ n/a | E1 |
 | `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | 🟠 部分 | E1 |
-| `chained-3d-layer-commit` | 3D | 3D 场景层四路归并与扫描带绘制 | ➖ n/a | E1 |
+| `chained-3d-layer-commit` | 3D | 572B「立绘 / 变换节点」层的归并与提交（原被误标为「3D 场景层」） | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
 | `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
 | `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
@@ -183,6 +183,7 @@ generated_by: scripts/build-capabilities.mjs
 | `live2d-node-matrix-compose` | Live2D | 572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进 | ✅ 已核验 | E3 · `test/l2d-node-compose.test.ts` |
 | `texture-bind-async-stale-writeback` | 资源 | 纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面 | ✅ 已核验 | E3 · `test/texture-bind-race.test.ts` |
 | `input-keyboard-to-mask-bits` | 输入 | 键盘 VK → 掩码位 0..6（每帧 GetAsyncKeyState 轮询） | ✅ 已核验 | E2 · `test/keyboard-mask.test.ts` |
+| `copyright-effect` | 帧循环 | 版权页（LOGO）的 frame 效果：mesh 顶点色窗 + draw-item diffuse-alpha 窗 + timeGetTime 时钟 | ✅ 已核验 | E2 · `test/mesh-vertex-quad.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -200,9 +201,9 @@ generated_by: scripts/build-capabilities.mjs
 - **能力**：Scene 逐帧提交（四路归并 + 绘制）
 - **触发**：主循环帧提交门放开，或脚本执行 opcode 0x20C，或其它子系统直调
 - **缺失时为什么静默**：脏标志为 0 或 `Scene+1056==0` 时内部各分支自然不成立，函数正常返回，无日志
-- **引擎**：sub_4B4040, sub_4B06D0 @ raw 136742-136966
+- **引擎**：sub_4B4040, sub_4B06D0, sub_41A1A0 @ raw 134417-136966
 - **读的字段**：Scene+46508, Scene+46516, Scene+46512, Scene+46500, Scene+1860, Scene+46456, Scene+46676, Scene+1056
-- **emulator 现状**：四路归并里的三路已接（DrawItem + MeshEntry 黑罩 + Live2D 572B 立绘节点，见 live2d-mesh-batches）；另一张 572B 节点表（特效/精灵层）仍未建模 ⇒ 该层缺失。
+- **emulator 现状**：声明已按审计收窄（2026-09-21，收口 T-0075 审计的 no-evidence）：本条的 `guard`（`test/draw-item-slot-coverage.test.ts`）只断言「`draw-texture` 绘制项按槽绑定（比例 ≥0.95、存在 tex≠layer 项）」，不覆盖"四路归并"这条声明；原 note 里的「MeshEntry 黑罩」是已作废的旧近似（`re…
 
 ### `scene-3d-effect-level-writer`（partial）
 
@@ -321,15 +322,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+497380, Engine+497384, Engine+497376, Engine+497400, Engine+387924
 - **emulator 现状**：引擎的脚本派发队列（sub_40FB60，由帧末/unlock/0x143 驱动）未建模 ⇒ 依赖"延迟派发"的流程在 emulator 里不会发生（0x143 是 no-op）
 
-### `live2d-slot-probe`（absent）
-
-- **能力**：Live2D 10 槽探测（强制重画理由之一）
-- **触发**：`Scene+55812..55848` 任一非零（探测本体 raw 121777-121790；调用点 sub_40BE10 = raw 16025）
-- **缺失时为什么静默**：全为 0 时返回 0，只是少一条重画理由，无报错
-- **引擎**：sub_4A1AF0, sub_40BE10 @ raw 121777-121790
-- **读的字段**：Scene+55812, Scene+55848
-- **emulator 现状**：仍未做（T-0054 M3）：引擎 `sub_40BE10` 的重画判据里有一项是"10 个 L2D 槽里有没有活的模型"（有 ⇒ 强制重画）。运行态现在有了（`Engine.l2dSlots`，2026-09），但判据还没接进 `sceneNeedsRender` ⇒ 站在 L2D 立绘前不动时可能不重画。另注：`Engine.l2dSlots` 在 VM 层，而 `sceneNeedsRend…
-
 ### `vertex-buffer-lock-scale`（absent）
 
 - **能力**：顶点缓冲 Lock/Unlock + 视口缩放改写
@@ -411,14 +403,14 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Scene+1048, Scene+1052
 - **emulator 现状**：转场表未建模
 
-### `lazy-572b-node-map`（absent）
+### `lazy-572b-node-map`（partial）
 
 - **能力**：572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384）
-- **触发**：任意精灵/特效 opcode 首次触碰某个 key
+- **触发**：任意 572B 节点 opcode 首次触碰某个 key（`sub_4AAEC0` 取/建记录 + `sub_4A9D70`）
 - **缺失时为什么静默**：默认全 0 记录，调用方按 `*result & 1` 判定未激活
 - **引擎**：sub_4AAEC0, sub_4A9D70 @ raw 129394-129427
 - **读的字段**：Scene+1080, Scene+1084, Scene+1096, Scene+1100
-- **emulator 现状**：572B 节点表（精灵/特效/立绘）未建模
+- **emulator 现状**：立绘那一半已建模：`Scene+1096` 的 572B 立绘节点表 = `Engine.l2dNodes`（`src/vm/engine.ts`），节点模型在 `src/live2d/runtime.ts`（`l2dCreateNode` = `0x344` 的 op1=key/op2=槽），出画门 `l2dNodeDrawable`；守卫用真实 TITLE 资产（`test/live2d-ch…
 
 ### `bullet-dirty-from-freeze-or-pending`（partial）
 
@@ -580,7 +572,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：管理器与三个效果对象都不在脚本可见状态里：漏掉它**不报错、不改控制流**，只是**雨/雪/落叶完全不出现或永远不更新**（`0x324`/`0x325`/`0x326` 当 no-op 时），而 `0x327`/`0x328` 因为**没有注册 handler** 会以 `NotImplementedOp` 的形式暴露 —— 两条路都不指向"真正的缺陷是缺了整个子系统"
 - **引擎**：sub_4A6EE0, sub_4530B0, sub_453280, sub_453330, sub_453410, sub_453150, sub_4535F0, sub_453540 @ raw 126522-126570
 - **读的字段**：Engine+0x5B320（= Scene+50704）3D 效果管理器指针, Manager[258] Rain / [259] Snow / [260] Leaf, Manager[262..309] 三组 16-dword 参数块 / [310]/[311] / [312] 清空标记, Scene+46668 3D 特效等级门槛 / Scene+46496 共享 ID3DXEffect(资源 202), Scene+4*mesh+50708 网格层级槽表
-- **emulator 现状**：emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场…
+- **emulator 现状**：emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义见 live 表格 `docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行（`opcode-table.md` 是生成…
 
 ### `passive-camera-and-effect-render-state`（absent）
 
@@ -621,11 +613,11 @@ generated_by: scripts/build-capabilities.mjs
 ### `live2d-enabled-config-flag`（partial）
 
 - **能力**：Live2D 开关（`global a9d0`）与静态贴图回落
-- **触发**：TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）
-- **缺失时为什么静默**：开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障
-- **引擎**：sub_4209B0 @ raw 29615-29639
-- **读的字段**：global a9d0(Live2D 关标志), global f8c46(要装的 MOC 文件 id), global f8c47(L2D 槽号)
-- **emulator 现状**：部分实现（2026-09，T-0054 M2）：`i341/i345/i34E` 已从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），所以"L2D 支"本身已经能装载。缺口：`global a9d0` 仍没有被真读（M3）—— 门控分叉在脚本侧（`jcc (global-int a9d0)…
+- **触发**：TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）。★**开关本身只在脚本层**：`a9d0`/`f8c46`/`f8c47` 是**脚本 global 槽号**，整个反编译产物里 **0 命中**（没有引擎读点）⇒ 引擎侧能引的只有"被它门控的那条 L2D 装载支"的入口。
+- **缺失时为什么静默**：开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障。★**订正（2026-09-21，收口 T-0075 审计的 no-evidence）**：原 `engine.fns=[sub_4209B0]`/`raw=29615-29639` 是**错的** —— `sub_4209B0` 是派发表项 676636 的 handler，即 opcode `(676636-675996)/4 = 0xA0`（jcc 条件跳转），体内只 `sub_41BF50` 取值/改 ip。现改为引**被门控的 L2D 装载入口**：0x341 → `sub_427BA0`（派发表 raw 23249 `*(_DWORD *)(_this + 679328) = sub_427BA0;`，`(679328-675996)/4 = 0x341`），体 raw **34460-34495**（读文件 id/槽号 → 建模型实例）。
+- **引擎**：sub_427BA0 @ raw 34460-34495
+- **读的字段**：脚本 global a9d0(Live2D 关标志；脚本层开关，非引擎字段), 脚本 global f8c46(要装的 MOC 文件 id), 脚本 global f8c47(L2D 槽号)
+- **emulator 现状**：L2D 支已能装载并有场景级证据（2026-09，`tickets/T-0054` M2/M3）：`i341/i345/i34E` 从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），真 TITLE 资产的装载/纹理绑定/动作入队/节点出画都有 E3 守卫（test/live2d-chain…
 
 ### `scene-teardown-on-load-point`（partial）
 

@@ -5,11 +5,11 @@
   "area": "emulator/adv",
   "why": "**用户实测（轮 8）**原话两条：\n① 「从 SN0000 进入到 SC0000 后的 ADV 窗口背景是**白色**的，但是展开收起侧边栏菜单似乎刷新了界面导致其正确变成了**半透明黑色**」—— 即窗口的离屏表面/样式在场景切换后**没有被重新光栅化**，直到某个别的路径（侧边栏菜单）触发一次重绘才正确。\n② 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」—— 角色名文本的颜色不对（青色 ≈ 橘色的 R/B 互换，属可疑的通道顺序问题，但**必须先取证**再下结论）。\n★**当前假设（待验证，不许当结论）**：这两条很可能是**同一个根因**的可见面 —— 与同批修的「逐字不发布」同源：`Engine.serviceTextReveal` 修前漏掉了 `#publishReveal`（`tickets/T-0100` 的改动②）⇒ `msgWinSync` 在整段逐字期间**一次都不发生** ⇒ 宿主既不更新逐字，也可能不更新该窗的**底色/样式**（窗口背景与角色名同属一张窗纹理）。该发布已在本轮恢复（`adv-reveal-under-throttle.test.ts` 两条守卫 + 已证明的辨别力）⇒ **先请用户复验**这两条是否随之消失。",
   "acceptance": [
-    "★复验已完成（用户口径，轮 8 第二批）：「白色背景并没有修复，和之前表现一致」（⇒ 原假设「随 T-0100 的发布修复一并消失」**被推翻**）、角色名仍为青色、**新增**第三条「ADV 文字颜色又开始继承设置界面 ADV 设置中最后一行的颜色（紫色）」⇒ 本票转为**代码点取证**，不再等复验",
-    "白底取证（落点已定）：半透明黑底在引擎里由哪段代码画（疑为 op 0x70 之后的 sub_43B070(dd, 表面, 色)）、底色真源是**窗字段还是全局字段**；并解释**为什么展开/收起侧边栏之后会变正确**（正确路径比错误路径多做了什么 = 唯一判决点）。★已确证线索：窗口底色字段 WinGeom.background（src/vm/msgwin.ts:88，默认 null 在 :252）在整个 src/ 里**只有默认值与读取点、无任何写入点**（grep -n 只有 src/tools/diagText.ts:65）",
-    "紫色回归取证：设置界面「ADV 设置」最后一行的指令序列（仓库根 src/CONFIG*.txt）写的是**全局字段**（21664/21665，op 0x76/0x77）还是**逐对象字段**（0x25E/0x25F 的 +256/+260/+264/+268/+272）；并指出「文本入队时快照 MsgSlot.fontStyle」这条历史上修过「颜色溢出」的机制**哪一环又被绕过**（首要嫌疑：src/vm/msgwin.ts:695 把快照置 null ⇒ 光栅化回退到当前全局样式）",
-    "角色名青色取证（原判据保留）：把「橘色 vs 青色」的通道顺序查清（0x76/0x77 的 BGR→RGB 交换、FontStyleSnapshot 的入队时机、光栅化取色），给出与引擎一致的判据（角色名用哪个颜色字段、期望值来源）",
-    "三条各补守卫（场景级不变量优先；若只能 E4 目视，必须在票里写明为什么无法自动化）；npm run verify 全绿；四份台账 --validate 绿"
+    "★复验已完成（用户口径，轮 8 第二批）：「白色背景并没有修复，和之前表现一致」（⇒ 原假设「随 T-0100 的发布修复一并消失」**被推翻**）、角色名仍为青色、**新增**第三条「ADV 文字颜色又开始继承设置界面 ADV 设置中最后一行的颜色（紫色）」⇒ 本票转为**代码点取证**，不再等复验\n★进度（轮 15，**E4 通道打通后的第一次真界面复看**）：`npm run shot -- --load` 跑通，载入槽 79 后取样（`evidence/e4-load-adv.md` + 3 张截图）：**载入后的 ADV 旁白态没有白底面板、正文是白色**（不是紫/青）⇒ 用户报的两条症状在\"能从存档到达的这一态\"**不出现**。观察同时解释了**为什么复现不到用户那一帧**：`e4-load-list.png` 显示**全部存档都在「序章」（SN0000）**（070/078/079 三槽，标题都是「序章 苏醒于现世的女神」）⇒ 「ADV →（侧边栏）设置 → 戻る」那条路（入口在 `SC0000`，`SC0000.txt:604-611`）与\"进入 SC0000 后的 ADV 窗口\"都必须**先推进过序章** —— 与本票判据 2/3 的取值实验（`advReturnProbe` 强制铺 ADV 语境）互补：机制侧已全绿，剩下的只是\"走到那一帧\"，即 `T-0103` 的导航缺口。",
+    "白底取证（落点已定）：半透明黑底在引擎里由哪段代码画（疑为 op 0x70 之后的 sub_43B070(dd, 表面, 色)）、底色真源是**窗字段还是全局字段**；并解释**为什么展开/收起侧边栏之后会变正确**（正确路径比错误路径多做了什么 = 唯一判决点）。★已确证线索：窗口底色字段 WinGeom.background（src/vm/msgwin.ts:88，默认 null 在 :252）在整个 src/ 里**只有默认值与读取点、无任何写入点**（grep -n 只有 src/tools/diagText.ts:65）\n★进度（轮 14，**四个洞全部有落点**）：①**H1**（`0x249` 未进同步屏障）✅ 屏障覆盖 `0x249`；②**H3**（世代判据把槽打成\"永久无纹理\"）✅ `TextureCache.#healSlot`（\"当前绑定 + 图已在 `#imgCache`\" ⇒ 读侧自愈，`resolve`/`size` 都走它）；③**H4**（迟到到货不置脏）✅ `onReady → pixiBackend.#markDirty()`；④**H2**（屏障 500 ms 默认上限 = **静默截断**）★**本轮修**：`textureCache.ts` 新增共享常量 `BARRIER_GIVEUP_MS=30_000` / `BARRIER_WARN_MS=1_000` / `BARRIER_POLL_MS=64`，`waitIdle(timeoutMs?)` 省略参数 = 安全兜底（不再是 500 ms）、64 ms 轮询 ⇒ 每秒可打「纹理屏障仍在等待 …ms（在途 N 张：0x…）」，到上限打 ★ 行并**点名在途 imgid**；`l2dTextures.waitIdle` 复用同一常量。★为什么不是\"少画一帧\"：屏障后面紧跟的可能是 `0x208`（读尺寸并**写回操作数**）这类 getter ⇒ 载入未完成就放行，脚本按 `0×0` 走**与引擎不同**的分支且**不会回头再看**（引擎的 `set-texture` 是同步的，没有\"超时\"这一说）。守卫 +2（`test/texture-bind-race.test.ts`）：行为（无参 `waitIdle()` 在 **700 ms** 窗口内必须仍在等 —— 窗口特意跨过旧默认 500 ms；`BARRIER_GIVEUP_MS >= 10_000` 值棘轮；显式 `waitIdle(40)` 截断须点名在途 imgid；到货后无参屏障照常结束）+ 源码棘轮（两个纹理库不许再把数字字面量当默认值、`pixiBackend.texturesIdle` 不许传数字上限）。辨别力两次机械证明（还原 `= 500` ⇒ 行为用例 503 ms 红 + 源码棘轮红；收敛路径传 `waitIdle(500)` ⇒ 源码棘轮红），还原后 12/12 绿。★**诚实边界不变**：四个洞都修 ≠ 已复现用户那一帧（\"白的是哪个槽/handle\"仍未证；见 `white-report.md` §4.1），现在的形态是\"机制已修 + 诊断已可见（`[present] … 纹理未就位 → 占位块`，两类都留痕）\"。",
+    "★判据 3 **已判死（轮 12 判决实验）**：①「ADV 设置最后一行」写的是**全局**字段（`CONFIG2.txt:1669` 取色 → `CONFIG.txt:373-404` 的 `i076/i077`）——逐对象字段（`0x25E/0x25F` 的 `+256…+272`）在该路径上完全不参与；②「入队快照被绕过」**不成立**：记录表非空时 `i082` 恰好重画一次，用的就是 `styleOfWin` 取的**实时重派生色**（探针 `restyleByI082.fill == after.fill`、`snapshot=false`）；③紫色的真形状 = `CONFIG.txt:219-225` 的门 `((g0==1)||(g0==6)) && (1397==1)` 为假 ⇒ 重派生块整块跳过 ⇒ `14acda/f807b` 保留 CONFIG2 残留 `bgrToRgb(0xff90b6)=#B690FF`（已订正探针注释里写反的门极性）。**剩余**：用户 GUI 那次「戻る」时 `g0/1397/3f37` 各是多少（决定分歧在\"更早的脚本执行\"而不在取色）⇒ 需 E4 一行 trace。\n★进度（轮 13，**收尾 —— 剩余格关闭**）：新写探针 `.tmp/t0102-adv-trace.mts`（不置任何全局，按脚本状态驱动：TITLE `GAME_START_XY` → 跑帧到 `local 3f7==0` → 按 400 帧 → 松 → GAMESTART `START_GAME_XY` 同法 → 之后 `gates.advance='force'` 自动推进；`onFrameEnd` 每帧采样），在**真语料** `SYSTEM4 → TITLE → GAMESTART → SN0000` 的 **ADV 显示态那一帧（frame 5912）**实测到：`g0 = 6`（`SETFATE.BIN` frame 5228 置）、`1397 = 1`、`3f38 = 1`（`SN0000.BIN` frame 5912 同处分派）、`3f37 = -1`（旁白）、`14acda = 0`、`f807b = 0xffffff`、**文本项记录 2..6 条（非空）** ⇒ **`CONFIG.txt:219-225` 的门在真路径上是开的**（`(g0==6) && (1397==1)`）⇒ 「门没开 ⇒ 整块跳过 ⇒ 紫残留」**不是**真路径的原因；真路径落在「`g0=6` ⇒ `:261` 假分支跳过 `i071 2`+重新入队；但 `:269 i082` 照样执行，且其门（记录表条数 > op2，raw 79502）**过得去**」⇒ 引擎/实现都必须**用重派生后的实时白重画一次**。★据此补守卫（把**组合**钉死）：`test/config1-chain.test.ts`「★T-0102 判据 3 收尾：真路径实测值（g0=6 + 旁白 + 记录表非空）」= `advReturnProbe: { g0: 6, g1397: 1, msg: -1, seedRecords: 3 }` ⇒ `before #b690ff` → `sawI082` → `after.fill #ffffff` → `republishByI082 == 1`（恰好一次，实得 2 ⇒ 红并点名）→ `restyleByI082.fill == #ffffff` → `opsSyncedAfterI076` **不含 `0x6e`**。证据落盘：`tickets/T-0102/evidence/adv-state-trace.txt`。★**边界**：判据 3 到此关闭；用户 GUI 里\"紫还看得见\"若仍存在，只能出在\"重画载荷没到屏幕\"（宿主侧纹理键/光栅化时序 ⇒ `T-0104` 与纹理屏障线）或\"那一刻记录表恰为空\"（引擎里 `i082` 同样不画）——后者需在 GUI 那一刻采 `records`，本探针证明的是 ADV 常态下它非空。",
+    "★判据 4 **已判死（通道顺序）**：引擎写入端 raw 79666 的位表达式（`bgrToRgb` 注释逐字引用）与 emulator 实现**逐位等价**；真机 `SAVE.DAT` 的 `adcd` 调色板（`LOADCONFIG.txt:34-49` 用 `load-int` 读入 1000 条）是 **BGR/COLORREF** 编码，交换后同时含 **青 #00E1FF（下标 4）**与**橘 #FFB184/#FFD871/#DD9B2C（下标 5/7/10）** ⇒ 「橘↔青」不可能由通道顺序产生（正文用的白/暖白是近似中性色，交换前后无差 ⇒ 只有饱和的角色名会显形，与用户描述一致）。⇒ 期望值判据 = `bgrToRgb(adcd[14acda])`，`14acda` 由 `52a49c/14acdc/14b0c4` 按当前消息号 `3f37` 派生；**剩余候选 = 下标选取（`14acda` 派生差一）**，需一张真机 ADV 同一行的截图（或 E4 的 `14acda` 日志）才能定性。守卫：`test/text-style-snapshot.test.ts` 的「判据 4」用例。\n★进度（轮 17，**判据 4 重新打开：唯一判决点收窄到 `i076` 的通道约定**）：用**强制 `msg`**（`advReturnProbe.derivation`，本轮新增的持久取样口）在真语料上把整条链走通，并用**游戏自己的角色数据脚本**做 oracle —— ① **派生链与脚本数据逐值一致**：`CVINIT.txt:37-43` 阿瓦罗那一块写 `14a8f5 = ffe100`（他的默认色）+ **`14b0c5 = 4`**（= `14b0c4[1]`）+ 名字「アヴァロ|阿瓦罗」；探针实测 `14acdc[1] = 1`、`14b0c4[1] = 4`、`14acda = 4` ⇒ 与数据完全一致（菲亚是 `14b0c6 = 5`，同样一致）。② **消息表 `f612[3f37]` 有内容**：`f612[1] = 「阿瓦羅・魯庫雷爾」`、`2 = 菲丞`、`3 = 伊欧露`、`5 = 鷭斯尼爾・裃古里` ⇒ 判据 5 缺的\"有角色名的那一行\"用强制 msg 就能铺出来（**不必**走到 SC0000），判据 5 的取样点问题就此关闭。③ **调色板来源已定**：`adcd` 由 `INITCONFIG4` 从 `CVINIT` 的逐元素默认色推导（`adcd[i] = 14a8f1[i] != 0 ? 14a8f1[i] : adcd[i]-1`），真机 `SAVE.DAT`（**overlay 与 base 两侧**）的 `adcd[0..13]` 与之一致 ⇒ 本机没改过色、\"用户配色被忽略\"这条**排除**；`14b0c4`/`14acdc`/`52a49c` 不在 SAVE.DAT 的 int 表里（脚本数据）。④ **判决量**：阿瓦罗自己的数据值是 **`0xffe100`** —— 按 `0xRRGGBB` 直读 = `#FFE100`（**橘黄**，= 用户\"预期\"）、按 COLORREF→`bgrToRgb`（emulator 现状 / 引擎 raw 79666 的**字面**读法）= `#00E1FF`（**青**，= 用户看到的**症状**）；同法 `adcd[12] = 0xff90b6` 直读 `#FF90B6`（粉）vs 交换 `#B690FF`（**紫**，= 用户报的\"紫\"）。⇒ 两条症状合起来只有一个自洽解释：**这条链上数据是 RGB、而现有实现又交换了一次**；要么引擎在操作数**读取端**已做一次 RGB→COLORREF（emulator 少了那一端），要么数据本身是 COLORREF、用户的\"橘\"来自别处。⑤ **下轮的两条判决路**（都留证据）：**(a) 真机像素** —— `.tmp/t0042-shots/opt-engine.png`（真机 OPTION 屏）里若有有名有色的角色名，取像素与 `#FFE100`/`#00E1FF` 比，一次采样定性（唯一不依赖推断的路）；**(b) 读 `0x76` 的 handler 全文与操作数取法**（`sub_466000` 调用点），确认 `a5` 是脚本原值还是已转换值 ⇒ 若 (a) 成立，修复点在**操作数读取端**而不是 `bgrToRgb`。⑥ 守卫（新文件 `test/adv-name-color-chain.test.ts`，2 例）：`14b0c4` 逐值 == `CVINIT` 正文（独立 oracle；**突变已证明**：把 `14b0c5` 改成 7 ⇒ 1 fail，还原后绿）+ `14acda == 14b0c4[14acdc[msg]]` 且 `f807b == adcd[14acda]`（两条不同角色）。★诚实边界：`fill == bgrToRgb(f807b)` 是自洽检查，通道方向 oracle 仍在 `test/text-style-snapshot.test.ts` 的判据 4。\n★收口（轮 18，**判据 4 关闭：通道约定判死 + 根因修复**）：① **判决证据（引擎原始代码，两条缺一不可）**：`0x76` 的 handler `sub_41F390`（raw **28663-28671**）只有 5 行 —— `v2 = sub_41BF50(_this, 1)` 取**脚本原值**（无前置转换），`_this[21664] = BYTE2(v2) + ((BYTE1(v2) + ((u8)v2 << 8)) << 8)` 翻转一次；而 raw **79241** 把该字段**原样**交给 `sub_455ED0`，后者 raw **68093/68127** 直接 `SetTextColor(hdc, *(Font+1360))` —— GDI 收的是 `COLORREF(0x00BBGGRR)`。⇒ **字段是 COLORREF，屏幕色 = `bgrToRgb(字段)` = 脚本原值**；`0x76` 的翻转是\"脚本 RGB → GDI COLORREF\"的格式转换，**不是**多翻了一次。② **与用户口径逐格对上**：阿瓦罗脚本值 `0xffe100`（CVINIT）→ 字段 `0x00e1ff` → 真机 `SetTextColor(0x00e1ff)` = **`#FFE100` 橘**（= 用户\"预期橘色\"）vs 修前 emulator 把字段当 `0xRRGGBB` ⇒ **`#00E1FF` 青**（= 用户\"变成青色\"）；设置页残留 `0xff90b6` 同法：真机 `#FF90B6` vs 修前 emulator `#B690FF` **紫**（= 用户第三条\"继承最后一行的紫色\"）。⇒ **两条症状同一根因**。③ **修复**：`src/vm/handlers/msgwin.ts` 的 `globalTextStyle()`（文本样式唯一来源，消息窗与 `draw-string`(0x204) 都走它）改为 `fill/outline = hex6(bgrToRgb(v(21664/21665, …)))`；**字段语义不变**（仍逐位等于引擎 `Font+1360`），翻转发生在**取用侧**；两个诊断探针改成报告渲染用色，与实现同口径。④ **期望值变更（同类：把 R/B 互换的旧期望改回脚本原值）**：`test/text-style-snapshot.test.ts` 4 例（`#123456`→`#563412`，只比\"颜色随谁走\"的语义不变）、`test/config1-chain.test.ts` 判据 3 的 3 处（`#b690ff`→`#ff90b6`，门开/门关结论不变）。⑤ **守卫 + 突变证明**：`test/adv-name-color-chain.test.ts` 定点守卫（`engineValues[21664] = 0x00E1FF` ⇒ `#ffe100`；`0xB690FF` ⇒ `#ff90b6`；白 ⇒ `#ffffff`）；去掉那两次 `bgrToRgb` ⇒ 该用例 1 fail（报错文案即\"阿瓦罗必须是橘不是青\"），还原后 3/3 绿。⑥ `npm run verify` 全绿：**1031 测试（1030 通过 / 1 skipped / 0 fail）** + typecheck ×3 + 死写 0。证据 `evidence/channel-convention-fix.md`。",
+    "三条各补守卫（场景级不变量优先；若只能 E4 目视，必须在票里写明为什么无法自动化）；npm run verify 全绿；四份台账 --validate 绿\n★进度（轮 13，探针能力补齐，**剩余未关闭**）：同一条 E4 探针现在能把\"真路径上 `14acda`/`f807b` 到底是几\"实测出来（本轮在旁白态实测 `14acda = 0`、`f807b = 0xffffff` —— 与 `3f37 < 0` 的派生一致，属**已知正确**的那一支）。「青 vs 橘」要定性仍需**有角色名的那一行**（`3f37 >= 0`）：探针只需把停止条件从\"ADV 显示态\"换成 `3f37 >= 0 && 14acda != 0`（或把帧预算加到能跑到 SC0000 的对话段）即可采到，判据仍 = `bgrToRgb(adcd[14acda])`。⇒ 候选已被收窄到**单一量**：`14acda = 52a49c[3f37]` / `14b0c4[14acdc[3f37]]`（`CONFIG.txt:227-257`）的下标派生。\n★进度（轮 16，**判据 5 的取样点被证明\"在这条路上不存在\"**）：把取样口做进库（`src/tools/gameStartChain.ts` 新增 `sampleAdvSpeakerLines` + `advanceAfterTarget`，产出 `advSpeakerLines[] = { frame, script, ip, msg, c14acda, f807b, f807c, fill, outline, text }`），并在**真语料链路**上实测（`evidence/adv-speaker-line-probe.md`）：链路 **279 段**，末段 `SETCHARM → SC0000 → SETWEATHER → NOVEL → SN0000 → DRAWCHARM → CHARMEDIT` —— ① **`SC0000.BIN` 确实被进入**（修正此前\"SC0000 不可达\"的表述：可达的是进入 SC0000，不可达的是它的**对话段**）；② 屏上是**序章旁白**（`win 8` = \"由両个世界融合而生的『迪爾-利菲娜』…\"），`3f37` 全程 `-1` ⇒ **0 条**\"有发言人\"的样本；③ 脚本数据侧根因（新棘轮守卫）：`3f37` 的**设置点** `mov (global-int 3f37)` 全在 `SC*/SG*/SP*/NOVEL/HMODE/GAMECLEAR/DEBUGADV` 里，`SN0000.txt` **0 处**（只有 `sub … 0 1` 递减 1093/2027/2097/3013 与读点）⇒ 序章里不可能有\"有角色名的那一行\"。⇒ 剩余口径收窄为两条（任一即可关闭判据 5）：**(a) 走到 SC0000 的对话段**（`force` 推进会在序章中途被菜单劫持、终态 `CHARMEDIT.BIN` ⇒ 需要\"只推进 ADV、不点侧边栏\"的驱动，与 `T-0103` 同源）；**(b) 强制值 + 消息表 oracle**（`config1Chain.ts` 的 `advReturnProbe` 可设 `cfg.msg = 3f37` 铺出\"一句有发言人的 ADV\"，再用 `f612[3f37]`/`14acdc`/`52a49c` 算**期望下标**与实测 `14acda` 比 —— **不需要**跑到 SC0000）。★踩坑（已写进代码注释）：脚本把旁白存成 `0xFFFFFFFF`，`dec()` 不归一 ⇒ 必须 `| 0`，否则旁白被当成 `msg = 4294967295` 的\"有发言人\"（首跑即中招）。\n★进度（轮 17）：判据 5 的\"取样点存在性\"已解决（`f612[msg]` 有真实角色名，强制 msg 即可铺出\"有发言人的那一行\"）；剩**唯一**未定项 = 通道约定（见判据 4 的轮 17 段），它已不是\"取不到数据\"而是\"两读法选一\"，两条判决路各一次采样/一次读体即可关闭。\n★收口（轮 18，**判据 5 关闭**）：① 取样点存在性已证（`f612[3f37]` 有真实角色名，强制 `msg` 即可铺出\"有发言人的那一行\"）；② 期望值判据 = **脚本原值**（= `bgrToRgb(adcd[14acda])`，与判据 4 的修复一致）：阿瓦罗 `0xffe100` ⇒ `#FFE100`、菲亚 `0x84b1ff` ⇒ `#84b1ff`；③ 守卫两条（CVINIT oracle + 派生链/渲染色自洽）+ 判据 4 定点守卫，三者都在 `test/adv-name-color-chain.test.ts`；突变证明见判据 4 第⑤条。⇒ \"青 vs 橘\"不再是开放项：**它是判据 4 那个 bug 的症状，已修并上锁**。"
   ],
   "evidence": [
     {
@@ -76,7 +76,129 @@
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "getTextureSize slot=",
       "note": "★唯一判决点的另一半（探针实测真 `TextureCache`，`.tmp/t0102w/probe-slot-size.mts`）：**第一遍** `bind` 异步 ⇒ `size()` = 0×0 / `resolve` 无纹理；载入落地后才真值；**第二遍**同一 `bind` 命中 `#imgCache` ⇒ **同步**命中 ⇒ `size` 与 `draw-texture` 当帧正确。⇒ 「开合侧边栏才对」= 它把同一条 `set-texture` 又发了一次（引擎 `set-texture` 同步，所以引擎第一次就对）。",
-      "line": 439
+      "line": 504
+    },
+    {
+      "file": "src/CONFIG.txt",
+      "anchor": "call label_00001d38",
+      "note": "★判据 3 判决实验的**关键发现**：「回 ADV」路径在 `:265 i071 2`（清该窗文本 + 把 `MsgSlot.fontStyle` 置 null）之后 **:266 会 call 本子程序**，而它末尾 `:437 show-text 2 (global-string d5d)` = **把当前消息号 `3f37` 的文本重新入队** ⇒ ①新快照按**重派生之后**的全局色钉（顺序：`:260 call label_00001ae8`(i076/i077) 在前）；②内容由**脚本**给的，不是宿主缓存 ⇒ 「窗口内容归谁重建」有脚本级答案。",
+      "line": 266
+    },
+    {
+      "file": "src/CONFIG.txt",
+      "anchor": "show-text 2 (global-string d5d)",
+      "note": "上述重新入队的本体（`label_00001d38:437`）：文本取 `global-string f612[3f37]`（`a9e2&1 && 3f3a==0`）或 `f9fa[3f37][3f3a]`（`3f3a ∈ [0,6)`），否则 `\"？？？？\"`。★它只 push **页**（`pushPage` += `markGroupStart`），**不** push 72B 文本项记录 ⇒ `0x82` 的越界门（`records.length > op2`）在这条链上仍然不过 —— 记录表只由 0x1D2/0xC4 族填。",
+      "line": 437
+    },
+    {
+      "file": "src/CONFIG.txt",
+      "anchor": "jcc (local-int 10) ffffffff label_000014ec",
+      "note": "★门（`:219-225`）的**真极性**：`10 = ((g0==1)||(g0==6)) && (1397==1)` ⇒ `10` 真 ⇒ `jcc` 的真分支 = `-1` = **落下句**（重派生块跑）；`10` 假 ⇒ 跳 `14ec` **整块跳过**。⇒「重派生块跑不跑」= `g0` 与 `1397` **两个继承来的全局**的与。⚠`config1Chain.ts` 里该门曾写成「`1397 == 1` ⇒ 跳过」，极性是反的（把 `jcc cond,trueLabel,falseLabel` 读成了别的顺序），本批已订正。",
+      "line": 225
+    },
+    {
+      "file": "src/CONFIG.txt",
+      "anchor": "label_00001ae8",
+      "note": "重派生的**取出点**（`:372-407`）：`f807b = ffffff` 起手 → `adcd[14acda]` 按 `a9dd` 的 bit1/bit0 分别写 `f807b`/`f807c`（`a9dd&3 == 3` 时整段跳过、`a9de != 0` 时 `f807c = f807b`）→ `:403-405 i076/i077/i078` 应用。⇒ 用户报的「继承设置界面 ADV 设置最后一行的颜色（紫）」在**门被跳过**时就是 `adcd[14acda=12] = #b690ff` 直接留着（`:229-231`/`:372-389` 都没跑）。",
+      "line": 372
+    },
+    {
+      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "anchor": "★T-0102 判决实验",
+      "note": "判决实验的守卫（3 组，含 `seedRecords` 正向组）：记录表非空 ⇒ `i082` 必须**恰好重画一次**且用**重派生后的实时色**（`restyleByI082.fill == after.fill`、`snapshot === false`、`snapFill === null`）；`g0=6` ⇒ 走 `:262` 假分支、**不**重新入队（无 0x6E）；`g0=1 && 3f37>=0`（剧情里按「戻る」）⇒ **有** `0x71`+`0x6E` 重新入队。辨别力已机械证明：摘掉 `op_gdi_repaint_window` 那道越界门 ⇒ 本用例 1 fail（`g0=6` 组 actual 1 / expected 0）。",
+      "line": 431
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/textItems.ts",
+      "anchor": "pushText(win: number, key: number, value: number): void {",
+      "note": "★「记录表只有谁能填」的**实现级答案**：`records` 仅由 `pushText`（`0x1D2`）与 `pushVoice`（`0xC4`/`0x1BD`/`0x2F4`）push；`show-text`(0x6E) 只 append 到槽、`i071` 只 push **页**。⇒ 探针链路上（从未有过 ADV 文本项）`records.length = 0` 是**正确**状态，`0x82` 不画与引擎同 —— 别把它读成\"实现没做\"（正向用例在 test/op-0104-gdi-repaint.test.ts）。",
+      "line": 173
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "BYTE2(a5)",
+      "note": "★判据 4 的**引擎依据**（`bgrToRgb` 的注释引了同一行，raw 79666）：引擎写入端 `Font+1360 = BYTE2(a5) + ((BYTE1(a5) + ((u8)a5 << 8)) << 8)` —— 输入按 **COLORREF（0x00BBGGRR）** 读、写成 `0xRRGGBB`。emulator 的 `bgrToRgb` 与它**逐位等价** ⇒ 「橘↔青」这类 R/B 互换**不可能**来自通道顺序（同一次交换作用全表；白/暖白那几条近似中性、交换前后几乎无差 ⇒ 正文看着正常而角色名一眼偏，与用户描述一致）。",
+      "line": 69
+    },
+    {
+      "file": "app/amayui-emulator/test/text-style-snapshot.test.ts",
+      "anchor": "判据 4：文本色通道顺序",
+      "note": "判据 4 的守卫：**独立**求值引擎那段位运算（不调用被测函数）并逐值比对 `bgrToRgb`，取值 = 真机 `SAVE.DAT` 的 `adcd[0..12]`；再钉「交换两次回到原值」防\"多交换一次\"蒙过。★同时记下真机调色板里**青与橘相邻**（`adcd[4]`⇒#00E1FF 青 / `[5][7][10]`⇒#FFB184/#FFD871/#DD9B2C 橘）⇒ 症状的候选是**下标（`14acda` 派生）**、不是通道。辨别力已机械证明：把 `bgrToRgb` 改成不交换 ⇒ 本用例 1 fail（0xffe100 actual 16769280 / expected 57855）。",
+      "line": 191
+    },
+    {
+      "file": "src/LOADCONFIG.txt",
+      "anchor": "lookup-array (local-ptr 0) (global-int adcd) (local-int 0)",
+      "note": "★「调色板数据是**真机的**」这条链：`:34-49` 是 `for i in 0..0x3e8`（1000 次）循环，每次 `lookup-array … adcd … i` + `load-int (local-ptr 0)` ⇒ **`adcd[0..999]` 逐个从 overlay `SAVE.DAT` 读入**（键 = `\\x03`+hex8(0xADCD+i)，见 `handlers/strings.ts` 的 `op_load_int`）。⇒ 值与真机同源、不是 emulator 自己编的；青/橘都在里面这件事因此是**真机数据**的性质。",
+      "line": 47
+    },
+    {
+      "file": "tickets/T-0102/evidence/adv-state-trace.txt",
+      "anchor": "★ADV 显示态（1397=1 且 3f38=1）= true",
+      "note": "E4 真路径实测（非强制置值）：frame 5912 的 ADV 显示态 = g0=6 / 1397=1 / 3f38=1 / 3f37=-1 / 14acda=0 / f807b=0xffffff / 文本项记录 2（600 帧后 6）⇒ CONFIG.txt:219-225 的门在真路径上是开的。产出命令与探针口径写在文件头（`npx tsx .tmp/t0102-adv-trace.mts 40000`；探针是临时件，不入库）。",
+      "line": 57
+    },
+    {
+      "file": "tickets/T-0102/evidence/e4-load-adv.md",
+      "anchor": "e4-load-6s.png",
+      "note": "E4（真界面，`npm run shot -- --load`）：载入存档后的 ADV 旁白态无白底、正文白色；且全部存档都在序章 ⇒ SC0000 那条路必须先推进过序章（与 T-0103 共用可达性缺口）。含 3 张截图的 sha256。"
+    },
+    {
+      "file": "tickets/T-0102/evidence/adv-speaker-line-probe.md",
+      "anchor": "有发言人的样本 0 条",
+      "note": "轮 16 判据 5 取证：链路 279 段的末段（SC0000 可达）+ 序章旁白 + 0 条有发言人样本 + 两条剩余口径"
+    },
+    {
+      "file": "app/amayui-emulator/test/game-start-chain.test.ts",
+      "anchor": "判据 5：序章（SN0000）没有",
+      "note": "轮 16 新增可达性棘轮（纯脚本数据侧、270 ms）：SN0000 无 `3f37` 设置点 + 设置点必在 SC#### 系里；突变证明：给 SN0000 加一行 `mov (global-int 3f37) 1` ⇒ 该用例 1 fail"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "advSpeakerLines",
+      "note": "轮 16 新增取样口（`sampleAdvSpeakerLines` + `advanceAfterTarget`；含\"旁白 = 0xFFFFFFFF 必须 `| 0`\"的坑）",
+      "line": 199
+    },
+    {
+      "file": "tickets/T-0102/evidence/name-color-chain.md",
+      "anchor": "角色名颜色的**完整派生链**已核定",
+      "note": "轮 17 取证全文：链条、7 个真实消息号的实测表、CVINIT oracle、adcd 来源、通道约定的两读法与判决路"
+    },
+    {
+      "file": "app/amayui-emulator/test/adv-name-color-chain.test.ts",
+      "anchor": "`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据",
+      "note": "轮 17 新增守卫（独立 oracle + 突变证明）；第二条钉 `14acda == 14b0c4[14acdc[msg]]` 与 `f807b == adcd[14acda]`"
+    },
+    {
+      "file": "src/CVINIT.txt",
+      "anchor": "mov (global-int 14b0c5) 4",
+      "note": "★判决锚点：阿瓦罗那一块（上方 `set-string \"アヴァロ|阿瓦罗\"` + `14a8f5 = ffe100`）—— 他的调色板下标是 4"
+    },
+    {
+      "file": "src/INITCONFIG4.txt",
+      "anchor": "lookup-array (local-ptr 0) (global-int adcd) (local-int 0)",
+      "note": "调色板的唯一写者：从 `14a8f1[i]`（CVINIT 的逐角色默认色）推导 `adcd[i]` 并 `save-int` 回写"
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "derivation: {",
+      "note": "轮 17 新增的持久取样口（`AdvReturnProbe.derivation`）"
+    },
+    {
+      "file": "tickets/T-0102/evidence/channel-convention-fix.md",
+      "anchor": "通道约定判死 + 根因修复",
+      "note": "轮 18 判决与修复全文：引擎两处 raw 证据、与用户两条口径的逐格对照、修复点、期望值变更表、守卫与突变证明"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "fill: hex6(bgrToRgb(v(21664, 0xffffff))),",
+      "note": "修复点：取用侧把 COLORREF 字段翻回 RGB（唯一文本样式来源，消息窗与 0x204 都走它）",
+      "line": 179
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_455ED0(_this, v60 + 20, x, v24, &String, *(_DWORD *)(_this + 1360), *(_DWORD *)(_this + 1364), 0, 1, v48);",
+      "note": "判决证据②：字段被原样交给文字绘制器（→ raw 68093 SetTextColor，COLORREF 语义）"
     }
   ],
   "links": {
@@ -115,10 +237,53 @@
       "at": "2026-09-21",
       "kind": "status",
       "what": "open → doing —— 轮 10：H3 自愈 + H4 诊断补齐（守卫 10 条，辨别力已证明）；剩余 = 判据 3 的 ADV 入口判决实验与判据 4 的角色名取证"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "decision",
+      "what": "判据 3 判决实验完成（进度：机制全部落定、剩\"哪条分支\"待 E4 日志）：①「ADV 设置最后一行」写的是**全局字段**（`f807b/f807c` → `:373-404 i076/i077` → `Font+1360/1364`），不是逐对象 `+256/+260`；②「入队快照被绕过」这条嫌疑**判死** —— 记录表非空时 `i082` 确实重画恰好一次，用的就是 `styleOfWin` 取的**实时**重派生色（探针实测 fill=#ffffff == after.fill、snapshot=false），取色环没有错；③紫色的真形状 = `CONFIG.txt:219-225` 的门 `((g0==1)||(g0==6)) && (1397==1)` 为假 ⇒ 重派生块整块跳过 ⇒ `14acda/f807b` 保留 CONFIG2 残留 `adcd[12]=#b690ff`；④该门极性在探针注释里曾写反，已订正；⑤`:265/:266/:437` 证明「回 ADV」的窗口内容与样式快照是**脚本**在 `i071 2` 之后重新入队钉的（`show-text 2 (global-string d5d)`），且该 show-text **不**填 72B 记录表。⇒ 剩余问题收窄为一句话：用户 GUI 那次 戻る 的三个继承全局（`g0`/`1397`/`3f37`）各是多少（若门的开法与真机不同，分歧在**更早的脚本执行**，不在取色）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "decision",
+      "what": "判据 4（角色名青色 vs 橘色）取证完成、通道顺序判死：引擎写入端 raw 79666 的位运算（COLORREF→0xRRGGBB）与 emulator 的 bgrToRgb 逐位等价（新守 independent 求值 + 交换两次回原值；撤销交换 ⇒ 1 fail）；真机 SAVE.DAT 调色板由 LOADCONFIG.txt:34-49 用 load-int 读入 1000 条（BGR 编码），交换后**青在下标 4、橘在下标 5/7/10**⇒ 症状不是通道错而是**下标（14acda 派生）**问题；顺带订正 text-style-snapshot.test.ts 里\"0xb690ff = 紫\"的注释错误（紫是 0xff90b6 交换后的 #B690FF）。"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 13：判据 3 剩余格关闭 —— 新探针（真语料 TITLE→GAMESTART→SN0000，不置任何全局）实测 ADV 显示态 = g0=6 / 1397=1 / 3f38=1 / 3f37=-1 / 14acda=0 / f807b=0xffffff / 文本项记录 2..6（非空）⇒ CONFIG.txt:219-225 的门在真路径上是**开**的（推翻「门没开⇒整块跳过」作为真路径解释）；真路径落在 g0=6 ⇒ 跳过重新入队、但 i082 的门过得去 ⇒ 必须用实时白重画一次。补守卫 test/config1-chain.test.ts「判据 3 收尾」（g0=6+旁白+seedRecords=3 ⇒ republishByI082 恰好 1），辨别力已证明（多画一次 ⇒ 红并点名）。证据 tickets/T-0102/evidence/adv-state-trace.txt。判据 4 未关闭：探针已能实测 14acda，但青/橘需有角色名的那一行（3f37>=0）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 14：白底四洞的最后一个 H2 修掉（屏障 500 ms 静默截断 ⇒ 共享安全兜底 30 s + 每秒告警 + 截断点名在途 imgid；l2d 同一语义），守卫 +2 且两次变异证明；核实 H1/H3/H4 + presenter 诊断缺口此前已落地 ⇒ 白底四个洞全部有落点。票保持 doing：用户那一帧白的槽/handle 仍未证；紫色侧'GUI 里是否仍可见'归 T-0104 宿主侧重画载荷"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 15：E4 通道打通后第一次真界面复看 —— npm run shot --load（载入槽 79）取样：ADV 旁白态无白底面板、正文白色（非紫/青）⇒ 症状在可存档到达的这一态不出现；e4-load-list.png 显示全部存档都在序章 SN0000 ⇒ 用户那条路（ADV→侧边栏设置→戻る，入口在 SC0000）必须先推进过序章，与 T-0103 共用可达性缺口。证据归档 tickets/T-0102/evidence/e4-load-adv.md + 3 张截图"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → doing —— 轮 16：判据 5 的可达性取证。取样口做进库（gameStartChain 的 advSpeakerLines）；真语料链路 279 段实测：SC0000 被进入、屏上是序章旁白（3f37 全程 -1）、0 条有发言人样本；脚本侧根因 = `3f37` 设置点只在 SC*/SG*/SP*/NOVEL/HMODE/GAMECLEAR/DEBUGADV，SN0000 0 处 ⇒ 加纯源棘轮守卫（突变已证明）。剩余收窄为 (a) 走到 SC0000 对话段 / (b) advReturnProbe 强制 msg + 消息表 oracle。证据 tickets/T-0102/evidence/adv-speaker-line-probe.md"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "轮 17：判据 4 重新打开 —— 用强制 msg + `CVINIT` 角色数据做 oracle 把角色名颜色链核定到\"唯一判决点 = i076 的通道约定\"。新事实：阿瓦罗的数据值是 `0xffe100`、调色板下标 4（`14b0c5 = 4`）；`f612[1]` 有真实角色名（判据 5 取样点关闭）；`adcd` 由 `INITCONFIG4` 从 `CVINIT` 默认色推导、真机 SAVE.DAT 两侧一致（排除\"用户配色被忽略\"）。两读法：RGB 直读 `#FFE100`（橘=用户预期）vs COLORREF→交换 `#00E1FF`（青=用户症状）；紫 `0xff90b6` 的两种读法同理。新增持久取样口 `AdvReturnProbe.derivation` + 守卫 `test/adv-name-color-chain.test.ts`（突变已证明）。下轮两条判决路：真机像素（`.tmp/t0042-shots/opt-engine.png`）/ 读 `0x76` handler 的操作数取法。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "decision",
+      "what": "轮 18：判据 4/5 关闭。用 `0x76` handler（raw 28663-28671，脚本原值只翻一次）+ `raw 79241 → 68093 SetTextColor(COLORREF)` 判死通道约定：字段是 COLORREF，屏幕色 = bgrToRgb(字段) = 脚本原值。根因 = `globalTextStyle` 把 COLORREF 当 0xRRGGBB 交给渲染器（R/B 互换）⇒ 阿瓦罗 橘 0xffe100 显示成青、残留色 0xff90b6 显示成紫（= 用户三条实测）。修复：取用侧加 bgrToRgb（字段语义不变）；探针同口径；4+3 处期望值按\"脚本原值\"更新。守卫 test/adv-name-color-chain.test.ts（3 例，突变已证明）；npm run verify 全绿（1031 测试）。"
     }
   ],
   "tests": [
     "app/amayui-emulator/test/config1-chain.test.ts",
-    "app/amayui-emulator/test/texture-bind-race.test.ts"
+    "app/amayui-emulator/test/texture-bind-race.test.ts",
+    "app/amayui-emulator/test/texture-frame-barrier.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts",
+    "app/amayui-emulator/test/adv-name-color-chain.test.ts"
   ]
 }

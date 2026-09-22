@@ -4,10 +4,20 @@
  * 这些在 emulator 里没有对应的可视模型（无 3D 灯光、无 Live2D、无影片），
  * 但仍按引擎语义**读写 emulator 侧的槽表与渲染配置**，所以不算 no-op 插桩。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：图形杂项族（gfx-misc），6 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：图形杂项族（gfx-misc）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * `0x32F`（sub_4272B0, raw 34117）：**D3D 灯光开关**（原判为"网格项清除"是错的）。
@@ -17,7 +27,8 @@ import type { OpTable } from './shared.js';
  * emulator 无灯光模型 → 记录式转发（不影响 2D 图元绘制）。
  */
 const op_light_enable: OpHandler = (c) => {
-  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const idx = (plan.int(1) ?? 0);
   c.native.setLight?.(idx, false);
 };
 
@@ -28,6 +39,7 @@ const op_light_enable: OpHandler = (c) => {
  * ⇒ **会让引用这些槽的图元不再绘制**（是"合法的整批释放"，不是停靠标志）。
  */
 const op_release_movie_slots: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.releaseMovieSlots?.();
 };
 
@@ -36,12 +48,14 @@ const op_release_movie_slots: OpHandler = (c) => {
  * 引擎经 `sub_4A0750 → sub_479A50` + delete 逐项释放（与 0x23D、0x259 都不同族）。
  */
 const op_clear_mesh_slots: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.clearMeshSlots?.();
 };
 
 /** `0x248`（sub_4252E0, raw 32705）：`dword_55052C = op1`（渲染配置全局）。 */
 const op_set_render_cfg_248: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   c.e.engineValues.set(-248, v); // 负键：专用全局槽（非 _this 字段），避免与引擎字段号冲突
 };
 
@@ -51,6 +65,7 @@ const op_set_render_cfg_248: OpHandler = (c) => {
  * （旧文档把它当"纹理槽释放"是错的；真正销毁 42..999 的是 `0x23D`）。
  */
 const op_clear_slot_records: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.clearSlotRecords?.();
 };
 
@@ -59,7 +74,8 @@ const op_clear_slot_records: OpHandler = (c) => {
  * 引擎：写渲染状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22）。
  */
 const op_set_render_state: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   c.native.setRenderState?.(22, v);
 };
 

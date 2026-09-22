@@ -3903,8 +3903,8 @@
       "argc": 0,
       "mnemonic": "",
       "handler": "sub_41A420",
-      "status": "仅映射",
-      "semantics": ""
+      "status": "已核对",
+      "semantics": "**文本块开始**（`0x305` 的配对方，argc 0）：置 `Engine[122497] = 1`（= `msgwin.flags`，**赋值不是 |=**）→ 取当前窗 `v1 = Engine[122371]`（= 最近一次 `0x6E`/`show-text` 的槽号；为 0 时退回默认窗 `Engine[21631]`）→ 从窗表 `Engine[v1 + 21585]` 取窗对象，非空则 **`win+296 = win+132`**（把\"当前行游标\"存进 +296）。handler=sub_41A420（raw 25385-25399）。★**方向**：`0x304` 是 `+296 ← +132`（**保存**）、`0x305` 是 `+132 ← +296`（**取回**）—— 一对\"存/取行游标\"，语料里成对出现（如 `$1$SG0331.txt:1719 i304` → `:1724 i305`）。emulator：`MSGWIN_OPS` 的 `op_text_block_begin`（用 `lineCursorSave` 存 `reveal.shown`；`0x305` 是 `op_text_block_end`），两半的对称性由 `test/char-reveal.test.ts` 钉住。★本条此前 `仅映射`/空语义，而运行时早已注册 ⇒ 四方口径不一（`T-0111`）。"
     },
     {
       "opcode": 773,

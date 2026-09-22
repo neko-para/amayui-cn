@@ -1,0 +1,54 @@
+# T-0067 · 证据：撤幕留帧被"一笔 256×128 的转场贴片"提前解除（真跑日志原文）
+#
+# 来源：`.tmp/amayui-emulator.log`（2026-09-22 00:48 的一次完整 boot 会话；`.tmp/` 已 gitignore
+#       ⇒ 按 T-0057 R6「证据不放 .tmp/」的纪律归档到这里）。行号 = 原文件的 1-based 行号。
+# 抓取：node 读该日志，以**含 `draw-texture → 解除留帧` 的那一行**为锚取前后若干行
+#       （★不能按 `-> SC0000.BIN` 取——日志里该脚本被进入多次，会截到别的段）。
+#
+# 为什么它是 T-0067 的决定性证据：
+#   ① `[frame-hold] 满屏幕布 0x19258 被撤 → 留帧最多 60 帧` —— 留帧机制按设计启动了；
+#   ② 紧接着几笔之后出现 `[frame-hold] draw-texture → 解除留帧（剩 60 帧）`，
+#      而紧跟其后的 `configureDrawItem h=0x18b00 layer=101120 (0,0,256x128)` 说明
+#      **解除留帧的那一笔只有 256×128**（转场贴片；`setTransition` 还没执行）；
+#   ③ ⇒ 旧实现"任何 draw-texture 都解除留帧"会把"幕已撤、新一屏还没铺"的中间态如实呈现
+#      = 用户报的「存档时/章节切换时闪一帧、露出下面的界面」。
+#
+# 归档范围：原日志第 2325..2362 行（锚行 = 第 2337 行）。
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+detachTexture h=0x1976c count=3 RANGE-REMOVE [0x1976c,0x1976f) (drawItems=0, meshes=0)
+detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=0, meshes=0)
+detachTexture h=0x1a9c8 count=100 RANGE-REMOVE [0x1a9c8,0x1aa2c) (drawItems=0, meshes=0)
+unhandled 0x308 i308
+  [call-script] 0x73 -> SC0000.BIN (24501 instr)
+clearSlotRecords：丢掉 1 条 槽→imgid 记录（保留纹理对象/画布）
+[frame-hold] 满屏幕布 0x19258 被撤 → 留帧最多 60 帧（等新内容）
+detachTexture h=0x19258 count=1 REMOVE (drawItems=0, meshes=1)
+setDrawPivot h=0x18b00 (640,720,0) [建空项]
+bindTexture imgid=0x76 slot=44
+image 76 -> AE910AA.AGF (256x128)
+[frame-hold] draw-texture → 解除留帧（剩 60 帧）
+configureDrawItem h=0x18b00 layer=101120 (0,0,256x128)
+setDrawPos h=0x18b00 (272,152,0)
+setDrawPivot h=0x18b00 (400,280,0)
+setDrawTranslation h=0x18b00 (0,0,0)
+setDrawPivot h=0x18b00 (400,216,0)
+createTexture slot=64 1280x720 mode=1 @1.25x (新建空白表面)
+configureDrawItem h=0x18b02 layer=101122 (0,0,1280x720)
+setTransition id=0x18b02 writes=[[0,3],[1,0],[2,0],[3,1500],[4,64],[5,101120],[7,1],[13,1],[16,64],[17,500],[18,216],[19,0],[20,0],[21,400],[22,216],[23,0]]
+setDrawColorAlpha h=0x18b00 from=0xffffffff blend=2
+setDrawColorAlpha h=0x18b02 from=0xffffff blend=2
+setDrawColor h=0x18b02 d=0 c=1500 to=0x-1
+setDrawPivot h=0x18b14 (640,720,0) [建空项]
+bindTexture imgid=0x77 slot=45
+image 77 -> AE910AB.AGF (768x256)
+configureDrawItem h=0x18b14 layer=101140 (0,0,768x256)
+setDrawPos h=0x18b14 (16,254,0)
+setDrawPivot h=0x18b14 (400,510,0)
+setDrawTranslation h=0x18b14 (0,0,0)
+setDrawPivot h=0x18b14 (400,382,0)
+createTexture slot=65 1280x720 mode=1 @1.25x (新建空白表面)
+configureDrawItem h=0x18b16 layer=101142 (0,0,1280x720)
+setTransition id=0x18b16 writes=[[0,3],[1,0],[2,0],[3,1500],[4,65],[5,101140],[7,1],[13,1],[16,64],[17,500],[18,382],[19,0],[20,0],[21,400],[22,382],[23,0]]
+setDrawColorAlpha h=0x18b14 from=0xffffffff blend=2
+setDrawColorAlpha h=0x18b16 from=0xffffff blend=2
+setDrawColor h=0x18b16 d=0 c=1500 to=0x-1

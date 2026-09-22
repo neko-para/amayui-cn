@@ -1,0 +1,16 @@
+# T-0029 证据：G3 record/replay —— 删掉启动期预载之后，两宿主仍逐帧相等
+#
+# 命令（★两条都在 `app/amayui-emulator` 下跑，但 `--out` 按**仓库根**解析）：
+#   ① 录制（Electron 真界面）：
+#      npm run record -- --scenario tools/scenarios/gamestart.json --out .tmp/t0029-record-centered.jsonl --centered
+#      ★`--centered` 是必需的：默认档会把窗口贴到屏幕外（只留 32px），`record.cjs` 就"未找到游戏窗口"、
+#        录不到帧（第一次跑就是这个结果：trace 只有 1565 B）。
+#   ② 回放（headless）：
+#      npm run replay -- ../../.tmp/t0029-record-centered.jsonl      # 路径按**包目录的 cwd** 解析
+#
+# 轨迹：.tmp/t0029-record-centered.jsonl（198582 B，gzip）—— `.tmp/` 已 gitignore，按 T-0057 R6 只归档输出。
+#
+# 判据 ④（"texturesIdle 帧屏障覆盖这些绑定：改动后 record+replay 仍 engine 段逐帧相等"）就是下面这两行：
+
+[replay] ../../.tmp/t0029-record-centered.jsonl（gzip）：scenario=gamestart 帧=2614
+[replay] ✅ engine 段逐帧相等（比对 2614 帧；录制 2614 / 回放 2622，回放多跑 8 帧（未比对））

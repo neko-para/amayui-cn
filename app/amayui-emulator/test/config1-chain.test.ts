@@ -377,11 +377,11 @@ test('★T-0102：退出设置页的重派生会改全局文字色（旁白 ⇒ 
   const narration = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g1397: 1, msg: -1 } });
   const a = narration.advReturn;
   assert.ok(a, '应给出 advReturn 探针结果');
-  assert.equal(a!.before.fill, '#b690ff', '前提：角色设定页跑完时全局被留在紫色（本机可复现）');
+  assert.equal(a!.before.fill, '#ff90b6', '前提：角色设定页跑完时全局被留在最后一行那个角色色（脚本 `0xff90b6`）');
   assert.equal(a!.before.c14acda, 12, '前提：进退出路径前的角色号是角色页最后一行那个');
   assert.ok(a!.sawI082, '旁白路径必须执行到 CONFIG.txt:269 的 i082（= 用户报的那条未知指令）');
   assert.equal(a!.after.c14acda, 0, '旁白（3f37 < 0）必须把角色号重派生为 0');
-  assert.equal(a!.after.fill, '#ffffff', '旁白 ⇒ adcd[0] = 白 ⇒ Engine[21664] 必须从紫变回 #ffffff');
+  assert.equal(a!.after.fill, '#ffffff', '旁白 ⇒ adcd[0] = 白 ⇒ Engine[21664] 必须从角色色变回 #ffffff');
   // ★`T-0104`：`i082` 不是 stub —— 它必须与引擎那道门**一致**：
   //   引擎 `if (v8 > op2 && op2 >= 0)`（记录表条数 > op2）⇒ 记录表为空时**引擎也什么都不做**，
   //   非空则必须重发布一次。本链路（CONFIG 页，无 ADV 消息历史）通常为空 ⇒ 先把它记下来，
@@ -405,6 +405,117 @@ test('★T-0102：退出设置页的重派生会改全局文字色（旁白 ⇒ 
   const g = gated.advReturn!;
   assert.equal(g.sawI082, false, '1397 != 1 ⇒ CONFIG.txt:225 的门把整块跳过 ⇒ i082 不得被执行');
   assert.equal(g.republishByI082, 0, 'i082 没执行 ⇒ 不得有它触发的重发布（对照）');
-  assert.equal(g.after.fill, '#b690ff', '门没开 ⇒ 全局保持进页前的紫（记下这个形态，别当成"重派生算错"）');
+  assert.equal(g.after.fill, '#ff90b6', '门没开 ⇒ 全局保持进页前的角色色（脚本 `0xff90b6`；别当成"重派生算错"）');
   assert.equal(g.after.c14acda, 12, '门没开 ⇒ 角色号也不得被重派生');
 });
+
+/**
+ * ★`tickets/T-0102` 判据 3 的**判决实验**：`i082` 到底会不会重画、用**哪个**颜色重画。
+ *
+ * 判据 3 原本的首要嫌疑是「文本入队时的样式快照（`MsgSlot.fontStyle`）又被绕过 ⇒ 光栅化回退到
+ * 当前全局样式」。本用例用两组把这条嫌疑**判死**：
+ *  - 记录表非空（`seedRecords` = 模拟「ADV 侧已有文本项」）⇒ 引擎那道门（`v8 > op2`，raw 79502）打开
+ *    ⇒ `i082` 必须**恰好重发布一次**，且载荷里的正文色 = **重派生后的实时色**（不是快照里的旧色）。
+ *    本链路该窗没有入队快照（`snapFill === null`）⇒ `styleOfWin` 走的就是 `globalFontSnapshot` 回退
+ *    ⇒ 「快照绕过」在**取色**这一环不成立。
+ *  - `g0 = 6`（`src/SC0000.txt:1292` 的真实值）⇒ `CONFIG.txt:262` 的假分支跳 `label_000014a8`
+ *    ⇒ **跳过** `:265 i071 2` + `:266 call label_00001d38`（后者末尾 `:437 show-text 2 (global-string d5d)`
+ *    会把当前消息文本**重新入队**）⇒ 记录表仍空 ⇒ `i082` 的门不过。
+ *  - `g0 = 1` 且 `3f37 >= 0`（= 用户在剧情里按「戻る」的那条路）⇒ **会**走重新入队（`0x71` + `show-text`）
+ *    ⇒ 新快照是按**重派生之后**的全局色钉的（脚本顺序：`:260 call label_00001ae8` 在前、`:266` 在后）。
+ *
+ * ★为什么必须钉住这三条：判据 3 的结论是"取色环没有错、错在**哪条分支**被走到"，而分支完全由
+ * `g0`/`1397`/`3f37` 这三个**继承来的全局**决定 —— 守卫把它们钉死，后人就不会再把
+ * "退出后仍紫"误判成取色 bug（真凶是脚本被跳过时 `14acda`/`f807b` 保留了 CONFIG2 的残留）。
+ */
+test('★T-0102 判决实验：记录表非空 ⇒ i082 用重派生后的实时色重画一次；g0=6 走跳过分支（不重新入队）', async () => {
+  // 一：记录表非空 ⇒ 门开 ⇒ 必须重画恰好一次，且用**实时**色
+  const seeded = await runConfig1Chain({
+    previewProbe: true,
+    advReturnProbe: { g1397: 1, msg: -1, seedRecords: 3 },
+  });
+  const s = seeded.advReturn!;
+  assert.equal(s.recordsAtI082, 3, '种子必须落进记录表（门读的就是它）');
+  assert.equal(s.republishByI082, 1, '★记录表非空 ⇒ i082 必须重发布该窗**恰好一次**');
+  assert.ok(s.restyleByI082, 'i082 那一笔的发布载荷必须被探针捕获（窗口号 + 颜色 + 是否有快照）');
+  assert.equal(s.restyleByI082!.win, 9, '重画的窗必须是那个 ADV 窗口');
+  assert.equal(
+    s.restyleByI082!.fill,
+    s.after.fill,
+    '★重画用的必须是**重派生后的实时色**（与 after.fill 一致 ⇒ 取色环没有绕过）',
+  );
+  assert.equal(s.restyleByI082!.snapshot, false, '该窗此刻没有入队快照 ⇒ styleOfWin 走 globalFontSnapshot 回退');
+  assert.equal(s.restyleByI082!.snapFill, null, '★快照的"没有"是 null 而不是 undefined（判 `!== undefined` 会误判）');
+  assert.equal(s.restyleByI082!.liveFill, s.after.fill, '载荷色 == 那一刻的实时全局色（同一来源，互为印证）');
+
+  // 二：`g0 = 6`（真实 ADV 值之一）⇒ `:262` 假分支 ⇒ 跳过 `i071 2` + 重新入队 ⇒ i082 仍然不画
+  const six = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g0: 6, g1397: 1, msg: -1 } });
+  const x = six.advReturn!;
+  assert.equal(x.sawI082, true, '`g0 = 6` 同样满足 `:220-225` 的重派生门 ⇒ 必须跑到 i082');
+  assert.equal(x.after.fill, '#ffffff', '`g0 = 6` + 旁白 ⇒ 仍必须重派生为白');
+  assert.equal(x.republishByI082, 0, '跳过重新入队 ⇒ 记录表仍空 ⇒ 引擎那道门也不过（与引擎同）');
+  assert.ok(
+    !x.opsSyncedAfterI076.includes(0x6e),
+    '★`g0 = 6` 不得出现 `show-text`（0x6E）：`:262` 假分支跳过了 `:265/:266` 的重新入队',
+  );
+
+  // 三：`g0 = 1` 且 `3f37 >= 0`（= 剧情里按「戻る」）⇒ **会**重新入队，且新快照按重派生后的色钉
+  const inScene = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g0: 1, g1397: 1, msg: 0 } });
+  const y = inScene.advReturn!;
+  assert.equal(y.after.fill, '#ffffff', '剧情路线（g0=1、有当前消息号）也必须重派生为白');
+  assert.ok(y.opsSyncedAfterI076.includes(0x71), '★该分支必须先 `i071 2` 清窗（`:265`）');
+  assert.ok(y.opsSyncedAfterI076.includes(0x6e), '★然后 `:437 show-text 2` 把当前消息文本重新入队（脚本自己填内容）');
+  assert.equal(
+    y.republishByI082,
+    0,
+    '★`show-text` **不** push 文本项记录（记录表只由 0x1D2/0xC4 族填）⇒ 该链路上 i082 仍不画',
+  );
+});
+
+/**
+ * ★`tickets/T-0102` 判据 3 的**收尾**：把上面三组"强制置值"换成**真路径实测的那一组**。
+ *
+ * 实测出处（E4，`.tmp/t0102-adv-trace.mts`：真语料 `SYSTEM4 → TITLE → GAMESTART → SN0000`，
+ * 在 **ADV 显示态那一帧（frame 5912）**采样）：
+ * ```
+ * g0 = 6      （`SETFATE.BIN` frame 5228 置；另一处 `SC0000.txt:1292` 的 `mov (global-int 0) 6` 同值）
+ * 1397 = 1    （`SN0000.BIN` frame 5912 置 —— 与 `3f38` 同一处分派设置）
+ * 3f38 = 1
+ * 3f37 = -1   （旁白：`SETFATE.BIN` frame 5228 置）
+ * 14acda = 0 / f807b = 0xffffff
+ * 文本项记录 = 2（600 帧后 6）⇒ **非空**
+ * ```
+ * ⇒ 真路径落在「`g0=6` + 旁白 + 记录表**非空**」这一组合上：门是**开**的（`(6==6) && (1397==1)`）、
+ * `:262` 走假分支（跳过 `i071 2` + 重新入队）、但 `:269 i082` 的门（`记录表条数 > op2`）**过得去**
+ * ⇒ 引擎/实现都必须**用重派生后的实时白重画一次**。这三条各自都有守卫，但**组合**此前没钉住
+ * —— 而"门没开 ⇒ 整块跳过"那条（组一/组二的反面）正是最容易被误当成真凶的假设。
+ */
+test('★T-0102 判据 3 收尾：真路径实测值（g0=6 + 旁白 + 记录表非空）⇒ 门开、色转白、i082 用实时白重画**一次**', async () => {
+  const real = await runConfig1Chain({
+    previewProbe: true,
+    advReturnProbe: { g0: 6, g1397: 1, msg: -1, seedRecords: 3 },
+  });
+  const r = real.advReturn!;
+  assert.equal(r.before.fill, '#ff90b6', '前提：角色设定页跑完时全局被留在最后一行那个角色色（脚本 `0xff90b6`）');
+  // ★`T-0104` 判据 4 的**可自动化那一半**（用户实测原话：「ADV → 设置界面 → 右键退出 ⇒ 命中未知指令 i082 而硬停」）：
+  //   这条退出链跑的**就是** `CONFIG.txt:269` 那一笔（`sawI082` 在下一条断言），所以"它不再硬停"
+  //   等价于"这条链的未实现指令清单为空"。谁把 `0x82` 从真实现表里挪走（退回桩/删注册），这里立即红。
+  assert.deepEqual(
+    real.unimplemented,
+    [],
+    '★ADV 语境的退出链不得有未实现指令 —— 用户实测的 `i082` 硬停必须彻底消失（T-0104 判据 4）',
+  );
+  assert.equal(r.sawI082, true, '★门开（g0=6 ∈ {1,6} 且 1397=1）⇒ 必须跑到 CONFIG.txt:269 的 i082');
+  assert.equal(r.after.c14acda, 0, '旁白（3f37 < 0）⇒ 角色号必须重派生为 0');
+  assert.equal(r.after.fill, '#ffffff', 'adcd[0] = 白 ⇒ 全局填充色必须从紫变白');
+  assert.equal(r.recordsAtI082, 3, '种子落进记录表（真路径实测 2..6 条 ⇒ 非空）');
+  assert.equal(r.republishByI082, 1, '★记录表非空 ⇒ i082 必须重画该窗**恰好一次**（与引擎 raw 79502 的门同口径）');
+  assert.ok(r.restyleByI082, '重画载荷必须被捕获');
+  assert.equal(r.restyleByI082!.fill, '#ffffff', '★重画用的是**重派生后的实时白**（不是入队快照里的紫）');
+  assert.equal(r.restyleByI082!.snapshot, false, '该窗此刻没有入队快照 ⇒ styleOfWin 走 globalFontSnapshot 回退');
+  assert.ok(
+    !r.opsSyncedAfterI076.includes(0x6e),
+    '★`g0 = 6` ⇒ `:262` 假分支跳过 `show-text`（所以"重画"这一笔只能靠 i082，不能靠重新入队）',
+  );
+});
+

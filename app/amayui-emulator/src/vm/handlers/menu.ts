@@ -10,13 +10,25 @@
  * 「menuBind/menuReset 没有实现」的**假缺口**（2026-09 用户实测）。宿主确实无事可做：
  * 菜单项由脚本自己画（`set-font`/`draw-string`），宿主只认文本/绘制指令。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand } from '../operand.js';
 import { labelPos } from './shared.js';
 import type { OpTable } from './shared.js';
 
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：菜单派发族（menu），3 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：菜单派发族（menu）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
+
 /** 0xA1 (sub_433A40)：菜单派发表复位。`sub_415530(_this+107679, 0xFFF)` 清空菜单字符串哈希表(容量 0xFFF)。 */
 const op_menu_reset: OpHandler = (c) => {
+  const plan = planFor(c);
   c.e.menuMap.clear();
 };
 
@@ -24,15 +36,17 @@ const op_menu_reset: OpHandler = (c) => {
  *  引擎以字符串(sub_41B640)读 key；TITLE 用菜单项序号(-1/0/1/2/3/4)为键 → emulator 取 op1 的 **DEC 值**再字符串化（不能用
  *  readStringOperand，其对 local-int 会返回局部下标，是既有 bug）。 */
 const op_menu_bind: OpHandler = (c) => {
-  const key = String(readIntOperand(c.e, c.frame, c.instr, 1));
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const key = String((plan.int(1) ?? 0));
+  const value = (plan.int(2) ?? 0);
   c.e.menuMap.set(key, value);
 };
 
 /** 0xA3 (sub_429830)：按 key 查表派发。`sub_428E00(_this+107679, key)` 查；命中 `ip=str_table+4*值`(跳转)，未命中 `ip=str_table+4*op2`(回退 label)。等效 jmp 到目标指令。 */
 const op_menu_dispatch: OpHandler = (c) => {
-  const key = String(readIntOperand(c.e, c.frame, c.instr, 1));
-  const fallback = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const key = String((plan.int(1) ?? 0));
+  const fallback = (plan.int(2) ?? 0);
   const target = c.e.menuMap.get(key) ?? fallback;
   const p = labelPos(c.frame, target);
   if (p === null) return;

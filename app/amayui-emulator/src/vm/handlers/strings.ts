@@ -5,10 +5,14 @@
  * 给出（引擎 sub_418A30/sub_418AE0 语义），索引恒落在**全局池下标空间**，见 operand.ts 注释。
  */
 import type { OpHandler } from '../step.js';
-import { readIntOperand, writeIntOperand, readStringOperand, writeStringOperand, readIndexOperand, readStringIndexOperand } from '../operand.js';
+// ★迁移到计划层后，本文件只剩**一处**直接用操作数读：`readStringIndexOperand`
+//   （字符串表族要的是**字符串索引**，与计划层 `index(n)` 的 int 槽号是两套索引空间）。
+//   其余五个读写函数在迁完后已无使用者 ⇒ 已删（`noUnusedLocals` 没开，这类残留不会自己报出来）。
+import { readStringIndexOperand } from '../operand.js';
 import { atoi } from '../bits.js';
 import { sjisSubstr, sjisSubstrChars } from '../../text/sjis.js';
 import { sjisByteLength } from '../../text/layout.js';
+import { operandsFor } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -16,14 +20,16 @@ import type { OpTable } from './shared.js';
  * （SJIS：ASCII/半角片假名 1、其余 2）。★此前与 `0x2C6` 共用 `s.length`（字符数）⇒ 日文串长度一律偏小一半。
  */
 const op_strlen_bytes: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, sjisByteLength(s));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2c5：strlen 走操作数计划层，但没有声明计划');
+  p.setInt(1, sjisByteLength(p.str(2) ?? ''));
 };
 
 /** `0x2C6`（`sub_430940` raw 40073-40084）：**`op1 = _mbstrlen(op2)`** —— 多字节**字符数**。 */
 const op_strlen_chars: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, s.length);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2c6：strlen（字符数）走操作数计划层，但没有声明计划');
+  p.setInt(1, (p.str(2) ?? '').length);
 };
 
 /**
@@ -34,8 +40,9 @@ const op_strlen_chars: OpHandler = (c) => {
  * ★语料 **217 处 / 215 个脚本**；此前未注册 ⇒ 命中即 `NotImplementedOp`（`tickets/T-0076`）。
  */
 const op_halve_strlen: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, sjisByteLength(s) >> 1);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1a6：halve-strlen 走操作数计划层，但没有声明计划');
+  p.setInt(1, sjisByteLength(p.str(2) ?? '') >> 1);
 };
 
 /**
@@ -48,8 +55,9 @@ const op_halve_strlen: OpHandler = (c) => {
  * `%d` 对齐 ⇒ 超过 2^31 的值按**有符号 32 位**打印（与引擎一致）。
  */
 const op_to_string: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 2);
-  writeStringOperand(c.e, c.frame, c.instr, 1, String(v | 0));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1c8：to-string 走操作数计划层，但没有声明计划');
+  p.setStr(1, String((p.int(2) ?? 0) | 0));
 };
 
 /**
@@ -60,7 +68,9 @@ const op_to_string: OpHandler = (c) => {
  * ★语料 3 处（`opcode-gaps.md` 的未实现清单）。
  */
 const op_text_append: OpHandler = (c) => {
-  c.e.textBuffer += readStringOperand(c.e, c.frame, c.instr, 1);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1b2：文本缓冲追加走操作数计划层，但没有声明计划');
+  c.e.textBuffer += p.str(1) ?? '';
 };
 
 /**
@@ -70,6 +80,7 @@ const op_text_append: OpHandler = (c) => {
  * raw 4320（`char asc_51EE84[3] = "\r\n";`）⇒ 就是**两字节的 CRLF**（语料 2 处）。
  */
 const op_text_append_crlf: OpHandler = (c) => {
+  if (!operandsFor(c)) throw new Error('0x1b3：文本缓冲追加 CRLF 走操作数计划层，但没有声明计划');
   c.e.textBuffer += '\r\n';
 };
 
@@ -81,6 +92,7 @@ const op_text_append_crlf: OpHandler = (c) => {
  * ★不写任何操作数（语料 1 处）⇒ emulator 的观测面 = 一条日志 + 缓冲复位。
  */
 const op_text_flush: OpHandler = (c) => {
+  if (!operandsFor(c)) throw new Error('0x1b4：文本缓冲取出走操作数计划层，但没有声明计划');
   if (c.e.textBuffer.length > 0) {
     c.log(`0x1B4: 取出文本缓冲 ${c.e.textBuffer.length} 字符 ${JSON.stringify(c.e.textBuffer.slice(0, 120))}`);
   }
@@ -89,21 +101,23 @@ const op_text_flush: OpHandler = (c) => {
 
 /** atoi (0x2ec)：`op1 = atoi(string op2)`（字符串→整数）。 */
 const op_atoi: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, atoi(s));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2ec：atoi 走操作数计划层，但没有声明计划');
+  p.setInt(1, atoi(p.str(2) ?? ''));
 };
 
 /** set-string (0x192)：`string op1 = op2`（写全局/局部串槽；**VM 核心，非 native stub**）。 */
 const op_set_string: OpHandler = (c) => {
-  const s = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeStringOperand(c.e, c.frame, c.instr, 1, s);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x192：set-string 走操作数计划层，但没有声明计划');
+  p.setStr(1, p.str(2) ?? '');
 };
 
 /** concat (0x193)：`string op1 = op2 + op3`（字符串拼接；VM 核心）。 */
 const op_concat: OpHandler = (c) => {
-  const a = readStringOperand(c.e, c.frame, c.instr, 2);
-  const b = readStringOperand(c.e, c.frame, c.instr, 3);
-  writeStringOperand(c.e, c.frame, c.instr, 1, a + b);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x193：concat 走操作数计划层，但没有声明计划');
+  p.setStr(1, (p.str(2) ?? '') + (p.str(3) ?? ''));
 };
 
 /**
@@ -117,12 +131,14 @@ const op_concat: OpHandler = (c) => {
  * `0x2EC`(atoi) + `0x23B`(CG 数字条) 画成 "Version X.YY.ZZZZ"。
  */
 const op_substr: OpHandler = (c) => {
-  const src = readStringOperand(c.e, c.frame, c.instr, 2);
-  const start = readIntOperand(c.e, c.frame, c.instr, 3);
-  const len = readIntOperand(c.e, c.frame, c.instr, 4);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2c7：SBSubstr 走操作数计划层，但没有声明计划');
+  const src = p.str(2) ?? '';
+  const start = p.int(3) ?? 0;
+  const len = p.int(4) ?? 0;
   // 引擎的两种"切在全角中间"警告（raw 42331/42346）只进调试日志，不改语义 ⇒ 这里只取文本；
   // 修正逻辑本身在 `sjisSubstr` 里（纯函数，可单测，见 test/sjis-substr.test.ts）。
-  writeStringOperand(c.e, c.frame, c.instr, 1, sjisSubstr(src, start, len).text);
+  p.setStr(1, sjisSubstr(src, start, len).text);
 };
 
 /**
@@ -138,10 +154,9 @@ const op_substr: OpHandler = (c) => {
  * 实现它主要是为了补全"按字符"这条语义并消除"命中即硬报错"的隐患。
  */
 const op_substr_chars: OpHandler = (c) => {
-  const src = readStringOperand(c.e, c.frame, c.instr, 2);
-  const start = readIntOperand(c.e, c.frame, c.instr, 3);
-  const len = readIntOperand(c.e, c.frame, c.instr, 4);
-  writeStringOperand(c.e, c.frame, c.instr, 1, sjisSubstrChars(src, start, len));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2c8：按字符取子串走操作数计划层，但没有声明计划');
+  p.setStr(1, sjisSubstrChars(p.str(2) ?? '', p.int(3) ?? 0, p.int(4) ?? 0));
 };
 
 // ---- 字符串表族（save/load-int=str→int 表 `_this+5452`；save/load-string=str→str 表 `_this+5472`；见 opcode-table.md）----
@@ -153,8 +168,11 @@ function stringTableKey(sentinel: number, idx: number): string {
 
 /** 0x1A2 save-int (sub_434F60)：把 op1 的值登记到引擎 `_this+5452` 字符串→整型表，键 = stringTableKey(3, op1 索引)。 */
 const op_save_int: OpHandler = (c) => {
-  const value = readIntOperand(c.e, c.frame, c.instr, 1);
-  const key = stringTableKey(3, readIndexOperand(c.e, c.frame, c.instr, 1));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1a2：save-int 走操作数计划层，但没有声明计划');
+  // ★值用 `int(1)`（槽里的值）、键用 `index(1)`（槽号本身）—— 引擎 `sub_41BF50` vs `sub_418A30` 的区别
+  const value = p.int(1) ?? 0;
+  const key = stringTableKey(3, p.index(1) ?? 0);
   c.e.stringIndexTable.set(key, value);
   // 表变了 ⇒ 通知宿主把两张表落盘（`SAVE.DAT`；引擎在关窗/存档槽保存时写，见 saveData.ts）
   c.e.onSaveDataChanged?.();
@@ -162,14 +180,18 @@ const op_save_int: OpHandler = (c) => {
 
 /** 0x1A3 load-int (sub_42DF40)：按 op1 索引查 `_this+5452` 表，命中取 *v3、未命中取 0，写回 op1（VM 可见）。 */
 const op_load_int: OpHandler = (c) => {
-  const key = stringTableKey(3, readIndexOperand(c.e, c.frame, c.instr, 1));
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1a3：load-int 走操作数计划层，但没有声明计划');
+  const key = stringTableKey(3, p.index(1) ?? 0);
   const value = c.e.stringIndexTable.get(key) ?? 0;
-  writeIntOperand(c.e, c.frame, c.instr, 1, value);
+  p.setInt(1, value);
 };
 
 /** 0x1A9 save-string (sub_434FE0)：把 op1 的字符串登记到引擎 `_this+5472` 字符串→字符串表，键 = stringTableKey(5, op1 字符串索引)。 */
 const op_save_string: OpHandler = (c) => {
-  const str = readStringOperand(c.e, c.frame, c.instr, 1);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1a9：save-string 走操作数计划层，但没有声明计划');
+  const str = p.str(1) ?? '';
   const key = stringTableKey(5, readStringIndexOperand(c.e, c.frame, c.instr, 1));
   c.e.stringTable.set(key, str);
   c.e.onSaveDataChanged?.();
@@ -177,9 +199,11 @@ const op_save_string: OpHandler = (c) => {
 
 /** 0x1AA load-string (sub_433A70)：按 op1 字符串索引查 `_this+5472` 表，命中取字符串、未命中取空串，写回 op1（VM 可见）。 */
 const op_load_string: OpHandler = (c) => {
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1aa：load-string 走操作数计划层，但没有声明计划');
   const key = stringTableKey(5, readStringIndexOperand(c.e, c.frame, c.instr, 1));
   const str = c.e.stringTable.get(key) ?? '';
-  writeStringOperand(c.e, c.frame, c.instr, 1, str);
+  p.setStr(1, str);
 };
 
 /** ★注意：`0x2DE` **不是**字符串资源 id 查询，而是**字体名→字体表下标**（见 `handlers/msgwin.ts`）：

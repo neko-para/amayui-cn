@@ -47,3 +47,7 @@
 - 判据 3 的"真实 CONFIG 路径上文本窗被重新发布"只在**记录表非空**时才可能为真；要造出非空记录表的
   场景级正向用例，需要在链路里先显示一条 ADV 消息（本轮未做，登记在此）。
 - `mode == 1` 走 `sub_462040` 的专用路径、`op3` 其它位、`op2` 的重画粒度（emulator 整窗重排）仍是登记的近似。
+
+## 2026-09-21
+
+轮 11（收尾）：判据逐条核对。①判据 1/2 已在轮 9/10 落地（`sub_466000` 语义 + 等价物 = `emitWin` 重新发布，无新宿主缝），本轮补 ★进度指针。②判据 3 —— `analysis/opcode-gaps.json` 的 `0x82` = `implemented`（旧 STUB 记录降级为对照）、`build-opcode-gaps.mjs` ✓（未实现 0 / unjustified 0 / 有据 no-op 13 / 已实现 39 / deferred 19）、`opcode-table.md` 的 `0x82` 行已是完整行（已核对 + 语义 + 实现口径 + 近似 + 守卫名）；场景级正向用例由 `test/config1-chain.test.ts` 的「T-0102 判据 3 收尾」用例承担（真实 CONFIG 退出链 + `seedRecords: 3` ⇒ `republishByI082 == 1` 且 `restyleByI082.fill == #ffffff`）。③判据 4 **拆两半**：可自动化的一半 = 「硬停彻底消失」，新增断言「ADV 语境的退出链未实现指令清单为空」（该链就是 `CONFIG.txt:269` 那一笔），辨别力机械证明（注释掉 `MSGWIN_OPS` 的 `0x82` 注册 ⇒ 3 条红并点名 T-0104 判据 4；还原后 19/19 绿）；**目视的一半写明不能自动化** —— 入口是 `SC0000` 的侧边栏（`SC0000.txt:604-611`），headless 从 `SN0000` 走到 `SC0000` 需交互式导航（`advance:force` 会停在 `CHARMEDIT` 这类菜单上；实测 205230 帧未进 `SC0000`）⇒ 属 `T-0103`（按用户要求留到最后）。④判据 5：tickets/capabilities/scripts 三份 `--validate` 绿 + `build-opcode-gaps.mjs` ✓ + `npm run verify` 全绿。⑤仍未建模（登记、不阻塞）：`op2` 重画粒度、`op3` 其它位、`mode == 1` 走 `sub_462040`。

@@ -63,7 +63,7 @@ int sub_40DF10(int _this) {
   // ---- ② 绘制模式 / 布尔标志 / 动画时间槽复位 ----
   _this + 667856 = 0;               // draw-mode 字段 (0xA30D0=comsetdrawmode) [字段未知/未建模]
   _this + 429752 = 0; _this + 429756 = 0;                           // (0x68EB8/0x68EBC) [字段未知/未建模]
-  _this + 667860 = 0;               // engine_bool_flag (0xA30D4)   [字段已确认；emulator 未建模该字段]
+  _this + 667860 = 0;               // engine_bool_flag (0xA30D4)   [字段已确认；emulator **已建模**：engineFieldIds.engineBool=166965]
   _this + 675964 = 0; _this + 675968 = 0; _this + 675972 = 0;        // (0xA507C/A5080/A5084) [字段未知/未建模]
   _this + 489484 = 0;               // (0x7780C) [字段未知/未建模]
   for (b = 0x77980; b <= 0x779FC; b += 4) _this+b = 0;   // (489856..489980) 大块时间/动画槽 [字段未知/未建模]
@@ -122,9 +122,9 @@ int sub_40DF10(int _this) {
 `sub_40DF10` 共触碰约 **133 处偏移**（含子对象基址）。对照 `fields.json`（用 `scripts` 校验脚本统计）：
 
 - **命中已知字段（12）**：`call_ret`(0x5D884)、`cur_script`(0x5D880)、`effect_flags`(0xAAB44)、`global_slot_97058`(0x5EC88)、`engine_bool_flag`(0xA30D4)、`config_registry`(0xAA514)、`music_field`/`music_slot`、`sound_directsound`/`sound_manager`、`input_manager`(0x408)、`input_state_mask`。
-  - ★**轮 7 订正**：此处原写 `draw_item_container` —— 那是 `fields.json` 里一条 **scope 错的重复条目**（`Engine/0x408`）。`Engine+1032` 实为 **Input(DInput) 管理器对象**：`sub_40DF10` 自己在 raw **18058/18060** 调 `sub_478090(_this + 1032, …)` / `sub_477220(_this + 1032, &v18)`（后者是 `GetAsyncKeyState` 轮询，体 raw ~91562-91635），引擎 ctor raw **22461** `sub_477DD0(_this + 1032)` 构造它。绘制项容器在 **`Scene+0x408`**（Scene = `Engine+0x4ED10` = byte 322832）。旧条目已删、改写为 `Engine/0x408 input_manager`。
+  - ★`Engine/0x408` = **Input(DInput) 管理器对象**（`fields.json` 的 `input_manager`）：`sub_40DF10` 自己在 raw **18058/18060** 调 `sub_478090(_this + 1032, …)` / `sub_477220(_this + 1032, &v18)`（后者是 `GetAsyncKeyState` 轮询，体 raw ~91562-91635），引擎 ctor raw **22461** `sub_477DD0(_this + 1032)` 构造它。绘制项容器在 **`Scene+0x408`**（Scene = `Engine+0x4ED10` = byte 322832）。
   - 其中 emulator **已复位**的：`cur=0`、`effectFlags=0`、`globalSlot97058=0`、`callRet=-1`。
-  - `engine_bool_flag`(0xA30D4) **字段已确认但 emulator 未建模**（`engineValues` 里也没有）。
+  - `engine_bool_flag`(0xA30D4) 字段已确认，**emulator 已建模**：`engineFieldIds.engineBool = 166965`，`0x21B`（写 `(op1!=0)`）/`0x247`（读回）在 `handlers/engine-fields.ts` 注册（`:149`/`:295`/`:512`/`:521`），复位点见下方 `sub_40DF10`。
 - **未知偏移（121 处）**：多为三类——
   1. 大块**时间/动画槽**区（`0x489xxx`/`0x7780C..0x779FC`、`0x77A14..0x77A38`、`0x430xxx`、`0x675xxx`）。
   2. **子对象基址**：`0x4ED10`(322832 绘制)、`0x1EE8`(7912 文本)、`0x4E824`(321572)、`0x14D30`(85296)、`0x143BC`(82876)、`0x148A0`(84128)、`0x69208`(430600)、`0x69064`(430180)、`0xAA0E4`(696548)、`0x5EC9C`(388252 Queue 区)、`0x5ECC4`(388292 Stack 区)、`0x5C73C`(378684 电影)、`0x5C740`(378688 1000 对象数组)。这些传给构造器/析构器，emulator **不建模**任何场景/渲染对象。
@@ -413,7 +413,7 @@ i0d5 ffffffff                          ; 起表：起计时器 + 排序 + 置 0x
 
 ## Part D · 后续实现风险点（用户重点）
 
-1. **`engine_bool_flag`(0xA30D4) 未落进 emulator**：`0x21B` 写 `_this[166965]=(op1!=0)`、`0x247` 写回 op1、`sub_40DF10` 清 0、`sub_412290` LABEL_56 门控。四个引用点都已证据化，但 emulator 尚无该字段。建议：`Engine.engineValues` 增加 `166965` 项，`0x21B/0x247` 建模，复位时清 0（与 `0x148/0x149` 的 `global_slot_97058` 同类做法）。
+1. ~~**`engine_bool_flag`(0xA30D4) 未落进 emulator**~~ **已建模（2026-09）**：`0x21B` 写 `_this[166965]=(op1!=0)`、`0x247` 读回、`sub_40DF10` 清 0、`sub_412290` LABEL_56 门控。落地位置：`engineFieldIds.engineBool = 166965`；`handlers/engine-fields.ts` 的 `[0x21b, {map:{1: engineBool}, transform: v => v!==0?1:0}]`（`:149`）与 `0x247` 的 getter（`:295`，注册 `:512`/`:521`）。（本条此前写"emulator 尚无该字段"，与代码相反 —— 照它做会重复实现。）
 2. **`effect_flags` 位掩码巨大**：主循环的 `0x1/0x8/0x10/0x20/0x80/0x100/0x200/0x800/0x1000/0x2000/0x4000/0x400000/0x1000000/0x100000/0x4000000/0x40000000/0x10000000/0x2000000/0x800000` 全部 `[未建模]`（`0x40` 已完成，见 §B.6）。若只做脚本 VM，多数位对应的“系统效果/电影/渲染/消息”是平台职责，**可按“记录+跳过”**；但 `0x4000000`（跳转/call 还原帧栈）与 `0x2400`（LABEL_56 推进）是**脚本语义**，更接近 VM 层，需注意是否复用现成的 `retStack`/`cur` 建模。
 3. **`draw-mode`(0xA30D0) 与 `engine_bool_flag` 的 LABEL_56 联动**：`*(`_this+667856`)==1` 才进入推进判定，`0xA30D0` 目前 `[字段未知]`，若要精确复刻 LABEL_56 需先确认它的生产者（`sub_423170` 的 opcode 族写入的地方）。
 4. **多处“成对 get/set 槽”**：`0x148/0x149`(`global_slot_97058`)、`0x21B/0x247`(`engine_bool_flag`)、`0x149/0x1A3` 等都是脚本可读写的引擎槽，各自 `[字段未知]` 只在需要时补，避免一次性铺开。

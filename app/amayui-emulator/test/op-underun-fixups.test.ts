@@ -28,7 +28,9 @@ import { StubNative } from '../src/vm/native.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { normalizeTextureColor } from '../src/vm/handlers/gfx-texture.js';
-import { dec } from '../src/vm/bits.js';
+import { dec, enc } from '../src/vm/bits.js';
+import { SAVE_ENGINE_VERSION, SAVE_HEADER_BYTES, SAVE_MAGIC } from '../src/save/saveData.js';
+import type { FileSource } from '../src/arch/fileSource.js';
 import type { BinArg } from '../src/script/bin.js';
 import { im, instr, loc } from './harness.js';
 
@@ -260,4 +262,138 @@ test('★0x33F：op2/op3（α/颜色）引擎确实读（raw 34423-34446）⇒ �
   assert.match(reason, /T-0017/, '必须回链混合模式/效果通路的票');
   assert.match(reason, /3442[0-9]|3443[0-9]|3444[0-9]/, '必须带 raw 行号证据');
   assert.match(reason, /缺消费端|未建模|没有/, '必须点明缺什么（而不是"未定论"）');
+});
+
+// ---------------------------------------------------------------------------
+// 0x2FC / 0x1A0：同属 `ALLOW_UNDERRUN` 那一节，但病不是"漏读"而是"**多写**/写序"
+//   （这两条白名单条目**必须留着**：引擎自己在某些路径上也不碰那几格）
+// ---------------------------------------------------------------------------
+
+/** 记录**写入顺序**的池 Map（顺序与集合都是断言对象时，光看终值不够）。 */
+class WriteLog extends Map<number, number> {
+  readonly order: number[] = [];
+  override set(k: number, v: number): this {
+    this.order.push(k);
+    return super.set(k, v);
+  }
+  /** 预置种子值后清零，让 `order` 只含本次 handler 的写。 */
+  clear0(): void {
+    this.order.length = 0;
+  }
+}
+
+/** global-int 操作数（池槽、可写）；引擎的 `writeIntOperand` 只认池类型，立即数写不了。 */
+const gInt = (slot: number): BinArg => ({ type: 3, raw: slot }) as unknown as BinArg;
+
+/** 合成 292 B 槽头（`parseSlotHeader` 只校验 长度/魔数/引擎版本串 三项）。 */
+function slotHeaderBytes(now: Date, playSeconds: number): Uint8Array {
+  const b = new Uint8Array(SAVE_HEADER_BYTES);
+  const dv = new DataView(b.buffer);
+  const put = (s: string, at: number): void => {
+    for (let i = 0; i < s.length; i++) b[at + i] = s.charCodeAt(i) & 0xff;
+  };
+  put(SAVE_MAGIC, 0);
+  put(SAVE_ENGINE_VERSION, 4);
+  dv.setUint16(264, now.getFullYear(), true);
+  dv.setUint16(266, now.getMonth() + 1, true);
+  dv.setUint16(270, now.getDate(), true);
+  dv.setUint16(272, now.getHours(), true);
+  dv.setUint16(274, now.getMinutes(), true);
+  dv.setUint16(276, now.getSeconds(), true);
+  dv.setInt32(280, playSeconds, true);
+  return b;
+}
+
+test('★0x2FC 无触点路径**只写 op1**、op2..op5 一格都不碰（引擎 raw 40798-40799 = 写 op1=0 后立即 return）', () => {
+  const native = new StubNative(() => {});
+  const e = new Engine(native);
+  const f = new Frame();
+  const log = new WriteLog();
+  e.globals.int = log;
+  // 预置 op1..op5：op2..op5 用哨兵值 ⇒ 只要被写就会露出来
+  const SEED = [0x0bad0001, 0x0bad0002, 0x0bad0003, 0x0bad0004];
+  for (let i = 0; i < 5; i++) log.set(0x200 + i, enc(e.key, i === 0 ? 0x0bad0000 : SEED[i - 1]!));
+  log.clear0();
+  const h = OPS.get(0x2fc) ?? NATIVE_OPS.get(0x2fc);
+  assert.ok(h, '0x2fc 应注册');
+  h!(
+    makeCtx(
+      e,
+      f,
+      instr(
+        0x2fc,
+        [0, 1, 2, 3, 4].map((k) => gInt(0x200 + k)),
+      ),
+      native,
+      () => {},
+    ),
+  );
+  // 口径同 `touched()`：只碰 op1（审计 `op-10-003` 的"此前多写了 4 个槽"）
+  assert.deepEqual(log.order, [0x200], '★无触点路径只允许写 op1；op2..op5 连碰都不许碰');
+  assert.equal(dec(e.key, log.get(0x200)!), 0, '无触点 ⇒ op1 = 0');
+  for (let i = 1; i < 5; i++) {
+    assert.equal(dec(e.key, log.get(0x200 + i)!), SEED[i - 1], `op${i + 1} 必须保持不动（引擎无触点路径不写它）`);
+  }
+  assert.equal(e.input.touchId, 0, '无触点 ⇒ 触摸项 dwID = 0（不是"光标存在即触点存在"）');
+});
+
+test('★0x1A0 成功分支的**写序**按引擎（raw 38390-38397）：op3..op9 全写完才写 op1=0；失败分支只写 op1', async () => {
+  const OK = slotHeaderBytes(new Date(2026, 4, 8, 23, 55, 13), 4242);
+  const run = async (bytes: Uint8Array | null, noSource = false): Promise<{ log: WriteLog; e: Engine }> => {
+    const native = new StubNative(() => {});
+    const e = new Engine(native);
+    const f = new Frame();
+    const log = new WriteLog();
+    e.globals.int = log;
+    e.fileSource = noSource ? null : ({ readSaveSlot: async () => bytes } as unknown as FileSource);
+    const h = OPS.get(0x1a0);
+    assert.ok(h, '0x1a0 应注册');
+    await h!(
+      makeCtx(
+        e,
+        f,
+        instr(0x1a0, [gInt(0x100), im(3), gInt(0x102), gInt(0x103), gInt(0x104), gInt(0x105), gInt(0x106), gInt(0x107), gInt(0x108)]),
+        native,
+        () => {},
+      ),
+    );
+    return { log, e };
+  };
+  const rd = (r: { log: WriteLog; e: Engine }, slot: number): number => dec(r.e.key, r.log.get(slot) ?? -1) | 0;
+
+  // ①成功：op3..op9 全部就绪后，才写 op1=0（把 `op1=0` 提前就是分叉 —— 读到 op1=0 时 op3..op9 还没值）
+  const ok = await run(OK);
+  assert.deepEqual(
+    ok.log.order,
+    [0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x100],
+    '★写序 = 年/月/日/时/分/秒/游玩秒数 → op1（引擎 raw 38390-38397 的最后一条才是 op1=0）',
+  );
+  assert.equal(rd(ok, 0x100), 0, 'op1 = 0（成功）');
+  assert.equal(rd(ok, 0x102), 2026, 'op3 = 年');
+  assert.equal(rd(ok, 0x103), 5, 'op4 = 月');
+  assert.equal(rd(ok, 0x104), 8, 'op5 = 日（★不是星期）');
+  assert.equal(rd(ok, 0x105), 23, 'op6 = 时');
+  assert.equal(rd(ok, 0x106), 55, 'op7 = 分');
+  assert.equal(rd(ok, 0x107), 13, 'op8 = 秒');
+  assert.equal(rd(ok, 0x108), 4242, 'op9 = 游玩秒数');
+
+  // ②打不开（`readSaveSlot` 返回 null）：只写 op1=1，op3..op9 **一格都不碰**（引擎 raw 38387）
+  const gone = await run(null);
+  assert.deepEqual(gone.log.order, [0x100], '打不开 ⇒ 只写 op1');
+  assert.equal(rd(gone, 0x100), 1, '打不开 ⇒ op1 = 1');
+  for (const slot of [0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108]) {
+    assert.equal(gone.log.has(slot), false, `失败分支不得写 0x${slot.toString(16)}（引擎那条路径没有这些写）`);
+  }
+
+  // ③宿主没有该能力：与"打不开"同码，同样只写 op1
+  const none = await run(null, true);
+  assert.deepEqual(none.log.order, [0x100], '无宿主能力 ⇒ 只写 op1');
+  assert.equal(rd(none, 0x100), 1, '无 fileSource ⇒ op1 = 1');
+
+  // ④头校验失败（魔数坏）：只写 op1=2（引擎 raw 38401）
+  const bad = OK.slice();
+  bad[0] = 0x58; // 'X'
+  const broke = await run(bad);
+  assert.deepEqual(broke.log.order, [0x100], '头校验失败 ⇒ 只写 op1');
+  assert.equal(rd(broke, 0x100), 2, '头校验失败 ⇒ op1 = 2');
 });

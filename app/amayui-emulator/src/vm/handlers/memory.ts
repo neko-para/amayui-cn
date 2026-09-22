@@ -4,39 +4,56 @@
  * 这一族是 ADR-010 §10.2 点名的**高危信号**（数据/状态操作），任何 opcode 都不得列为
  * `engine-internal` 跳过，必须精确实现 —— 因此它们集中在一个文件里，便于对照 docs/07 复核。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, refFromOperand, setRefOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { refAt, readRef, writeRef, hasRefValue, STRIDE_INT, STRIDE_STR } from '../ref.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"取址/数组/批量搬运族"）**9 条**：`ptr` 位的主战场，
+ * 也是计划层新增 `setPtr` 的原因（`0x61`/`0x63`/`0x2C9` 写的是**指针操作数**）。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：取址/数组族走操作数计划层，但没有声明计划`);
+  return p;
+}
 
 // ---- 取址/数组（ADR-011：指针=带标记引用，读解引用/写写穿）----
 
 /** lea (0x63)：`op1 = &op2`。dest 恒为指针型；setRefOperand 写 Ref（直接型=槽引用，指针型=别名拷贝）。 */
 const op_lea: OpHandler = (c) => {
-  setRefOperand(c.e, c.frame, c.instr, 1, refFromOperand(c.e, c.frame, c.instr, 2));
+  const plan = planFor(c);
+  plan.setPtr(1, plan.ptr(2)!);
 };
 
 /** lookup-array (0x61)：`op1 = &op2[op3]`（基址 Ref + 索引偏移）。 */
 const op_lookup_array: OpHandler = (c) => {
-  const base = refFromOperand(c.e, c.frame, c.instr, 2);
-  const idx = readIntOperand(c.e, c.frame, c.instr, 3);
-  setRefOperand(c.e, c.frame, c.instr, 1, { scope: base.scope, kind: base.kind, index: base.index + idx, stride: base.stride });
+  const plan = planFor(c);
+  const base = plan.ptr(2)!;
+  const idx = (plan.int(3) ?? 0);
+  plan.setPtr(1, { scope: base.scope, kind: base.kind, index: base.index + idx, stride: base.stride });
 };
 
 /** lookup-array-2d (0x12C)：`op1 = &op2[row*colStride + col]`（二维基址）。 */
 const op_lookup_array_2d: OpHandler = (c) => {
-  const base = refFromOperand(c.e, c.frame, c.instr, 2);
-  const row = readIntOperand(c.e, c.frame, c.instr, 3);
-  const colStride = readIntOperand(c.e, c.frame, c.instr, 4);
-  const col = readIntOperand(c.e, c.frame, c.instr, 5);
-  setRefOperand(c.e, c.frame, c.instr, 1, { scope: base.scope, kind: base.kind, index: base.index + row * colStride + col, stride: base.stride });
+  const plan = planFor(c);
+  const base = plan.ptr(2)!;
+  const row = (plan.int(3) ?? 0);
+  const colStride = (plan.int(4) ?? 0);
+  const col = (plan.int(5) ?? 0);
+  plan.setPtr(1, { scope: base.scope, kind: base.kind, index: base.index + row * colStride + col, stride: base.stride });
 };
 
 
 const op_memcpy: OpHandler = (c) => {
-  const dest = refFromOperand(c.e, c.frame, c.instr, 1);
-  const src = refFromOperand(c.e, c.frame, c.instr, 2);
-  const n = readIntOperand(c.e, c.frame, c.instr, 3);
+  const plan = planFor(c);
+  const dest = plan.ptr(1)!;
+  const src = plan.ptr(2)!;
+  const n = (plan.int(3) ?? 0);
   if (dest.kind !== src.kind || dest.stride !== src.stride) {
     throw new Error(`memcpy: 源/目标类型或步长不一致 src=${src.kind}/${src.stride} dest=${dest.kind}/${dest.stride}`);
   }
@@ -45,7 +62,8 @@ const op_memcpy: OpHandler = (c) => {
 
 /** copy-local-array (0x64)：把 op2 索引的字面数组（dataArray）逐项编码拷入 op1 指向数组。 */
 const op_copy_local_array: OpHandler = (c) => {
-  const dest = refFromOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const dest = plan.ptr(1)!;
   const data = c.instr.args[1]?.dataArray;
   if (!data) throw new Error('copy-local-array: 缺字面数组数据（dataArray）');
   for (let i = 0; i < data.length; i++) writeRef(c.e, c.frame, refAt(dest, i), data[i]!);
@@ -60,8 +78,9 @@ const op_copy_local_array: OpHandler = (c) => {
  *  ⇒ 语义 = 从 op1 起的 `count` 个连续槽**置 0**（bulk 零初始化 / memset 式），与 mov 的单值复制不同。
  */
 const op_copy_to_global: OpHandler = (c) => {
-  const base = refFromOperand(c.e, c.frame, c.instr, 1);
-  const count = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const base = plan.ptr(1)!;
+  const count = (plan.int(2) ?? 0);
   if (count <= 0) return;
   for (let i = 0; i < count; i++) writeRef(c.e, c.frame, refAt(base, i), 0);
 };
@@ -73,9 +92,10 @@ const op_copy_to_global: OpHandler = (c) => {
  *  - 填 `count` 个连续槽为 `ENC(op2)`（回读=op2 值）。
  */
 const op_set_array_to: OpHandler = (c) => {
-  const dest = refFromOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
-  const count = readIntOperand(c.e, c.frame, c.instr, 3);
+  const plan = planFor(c);
+  const dest = plan.ptr(1)!;
+  const value = (plan.int(2) ?? 0);
+  const count = (plan.int(3) ?? 0);
   if (count <= 0) return;
   for (let i = 0; i < count; i++) writeRef(c.e, c.frame, refAt(dest, i), value);
 };
@@ -112,11 +132,12 @@ const op_set_array_to: OpHandler = (c) => {
  * —— `36df` 是描述符源表、`179f` 是主键（`(type顺序<<16)|value顺序`）、`273f` 是次键（该页全 0）。
  */
 const op_sort_index_arrays: OpHandler = (c) => {
+  const plan = planFor(c);
   const { e, frame } = c;
-  const a = refFromOperand(e, frame, c.instr, 1); // A：索引数组（排序对象 + 写回目标）
-  const b = refFromOperand(e, frame, c.instr, 2); // B：主键数组（**按 A 里存的索引取值**）
-  const cc = refFromOperand(e, frame, c.instr, 3); // C：次键数组（同上）
-  const n = readIntOperand(e, frame, c.instr, 4);
+  const a = plan.ptr(1)!; // A：索引数组（排序对象 + 写回目标）
+  const b = plan.ptr(2)!; // B：主键数组（**按 A 里存的索引取值**）
+  const cc = plan.ptr(3)!; // C：次键数组（同上）
+  const n = (plan.int(4) ?? 0);
   if (n <= 0) return;
   // `readRef` 已经给出 DEC 视角（写侧 ENC）——**不要再 dec/enc 一层**，见 docs/07 §4.4
   const A = (i: number): number => readRef(e, frame, refAt(a, i));
@@ -169,13 +190,14 @@ const op_sort_index_arrays: OpHandler = (c) => {
  *  索引越界（负）与引擎一致地**抛错**（引擎抛的是 ShowMessage 异常，emulator 用 Error 表达）。
  */
 const op_array_element_ref: OpHandler = (c) => {
+  const plan = planFor(c);
   const { e, frame } = c;
-  const idx = readIntOperand(e, frame, c.instr, 3);
+  const idx = (plan.int(3) ?? 0);
   if (idx < 0) {
     // 引擎 raw 42488：可変配列のインデックス %d は不正です
     throw new Error(`可変配列のインデックス ${idx} は不正です（0x2C9 数组下标为负）`);
   }
-  const base = refFromOperand(e, frame, c.instr, 2); // 数组基址（含 0x8003 族数组操作数）
+  const base = plan.ptr(2)!; // 数组基址（含 0x8003 族数组操作数）
   // 引擎的 switch 只认 `0x8003/0x8009`（4 字节元素）与 `0x8005/0x800B`（28 字节元素 = std::string），
   // 其余 tag（如 float 数组 0x8004/0x800A）走 `default:` ⇒ 抛 `Command_Type_Exception`。
   if (base.stride !== STRIDE_INT && base.stride !== STRIDE_STR) {
@@ -189,7 +211,7 @@ const op_array_element_ref: OpHandler = (c) => {
     const r = refAt(base, i);
     if (!hasRefValue(e, frame, r)) writeRef(e, frame, r, fill); // 只补缺失槽（等价于引擎的 ENC(0) 初始化）
   }
-  setRefOperand(e, frame, c.instr, 1, refAt(base, idx));
+  plan.setPtr(1, refAt(base, idx));
 };
 
 /** 取址 / 数组 / 批量搬运 / 索引排序（真实现；ADR-011）。 */

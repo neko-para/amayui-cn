@@ -28,7 +28,7 @@ import { assertFlags, type DrawItemLoopRequest, type DrawStringStyle, type MeshC
 import type { InputManager } from '../vm/input.js';
 import { AudioEngine, type AudioDebugState, type AudioIntent } from '../audio/audioEngine.js';
 import { WebAudioHost } from './audio/webAudioHost.js';
-import { advanceWindows, calcDiffuse, itemColor, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
+import { advanceWindows, calcDiffuse, itemColor, itemCoversView, itemRotationRad, itemScale, itemSrcRect, itemTranslation, meshColor, type DrawItemConfig, type Item, type MeshObj, type Vec3 } from './drawItem.js';
 import {
   newSceneState,
   scAdvance,
@@ -375,9 +375,13 @@ export class PixiBackend implements NativeBridge {
 
   configureDrawItem(cfg: DrawItemConfig): void {
     this.#markDirty();
-    this.#releaseFrameHold('draw-texture');
     // 语义（建/覆盖 + 置 bit0 + 覆盖描画位置）在共享模型层；两侧（此处与 HeadlessScene）只有一份。
     const it = scConfigureDrawItem(this.scene, cfg);
+    // ★**解除留帧**要等"新内容又铺满一屏"（`tickets/T-0067`）—— 不是"画了任何一项"就算。
+    //   证据：真机日志里"满屏幕布被撤"之后紧跟的那一笔 `draw-texture` 只有 256×128（转场贴片，
+    //   且 `setTransition` 还没执行）⇒ 旧实现（无条件解除）会把"幕没了、新一屏还没铺"的中间态
+    //   如实呈现出来 = 用户报的"闪一帧、露出下面的界面"。判据见 `itemCoversView`。
+    this.#releaseFrameHoldIfCovers(`draw-texture 0x${cfg.handle.toString(16)}`, it);
     assertFlags('drawitem', it.handle, it.flags);
     this.#pushLog(`configureDrawItem h=0x${cfg.handle.toString(16)} layer=${cfg.layer} (${cfg.srcX},${cfg.srcY},${cfg.srcW}x${cfg.srcH})`);
   }
@@ -874,6 +878,26 @@ export class PixiBackend implements NativeBridge {
       return;
     }
     this.#pushLog(`[frame-hold] ${what} → 新内容可见，解除留帧（剩 ${this.#holdFrames} 帧）`);
+    this.#holdFrames = 0;
+  }
+
+  /**
+   * **只在"新内容又铺满一屏"时解除留帧**（`draw-texture` 专用；`tickets/T-0067`）。
+   *
+   * 与 `#releaseFrameHoldIfVisible`（幕：只看有没有颜色）**分开写**是有意的：幕是"一整块盖住屏幕"的
+   * 东西，颜色一落地就等于新内容建立；而 `draw-texture` 可能是**任何大小的贴片**（转场贴片、图标、
+   * 数字条…）⇒ 必须看**覆盖面**。判据只读建项时的 `flags`/`srcW`/`srcH`（无时钟、无副作用），
+   * 见 `itemCoversView` 的说明；`HOLD_MAX_FRAMES` 仍然兜住"新内容一直铺不满"的极端情形。
+   */
+  #releaseFrameHoldIfCovers(what: string, it: Item): void {
+    if (this.#holdFrames <= 0) return;
+    if (!itemCoversView(it, VIEW_W, VIEW_H)) {
+      this.#pushLog(
+        `[frame-hold] ${what} 只覆盖 ${it.srcW}x${it.srcH}（视口 ${VIEW_W}x${VIEW_H}）→ 继续留帧（剩 ${this.#holdFrames} 帧）`,
+      );
+      return;
+    }
+    this.#pushLog(`[frame-hold] ${what} 铺满一屏 → 解除留帧（剩 ${this.#holdFrames} 帧）`);
     this.#holdFrames = 0;
   }
 

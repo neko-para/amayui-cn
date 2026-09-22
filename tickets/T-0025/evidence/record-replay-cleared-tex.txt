@@ -1,0 +1,28 @@
+# T-0025 证据：**清掉轨迹里的 `tex` 字段后回放仍逐帧相等**（判据 ②/③）
+
+轨迹（`.tmp/` 已 gitignore，按 T-0057 R6 纪律只归档输出）：
+- 原始：`.tmp/t0029-record-centered.jsonl`（Electron `npm run record -- --scenario tools/scenarios/gamestart.json --centered` 录，198582 B）
+- 清 `tex`：`.tmp/t0029-record-cleared.jsonl` —— 把唯一一条 `tex`（frame 1607 / slot 4 / **2048×1152**）删掉
+  （清法：gzip 解 → 逐行 `delete obj.tex` → 重压；临时脚本已删）
+
+## ① 原始轨迹（回归对照：改动前后的既有行为不变）
+```
+[replay] ../../.tmp/t0029-record-centered.jsonl（gzip）：scenario=gamestart 帧=2614
+[replay] ✅ engine 段逐帧相等（比对 2614 帧；录制 2614 / 回放 2622，回放多跑 8 帧（未比对））
+```
+
+## ② 清掉 `tex` 的轨迹（★判据：尺寸必须由 headless 自己解析出来）
+```
+[replay] ../../.tmp/t0029-record-cleared.jsonl（gzip）：scenario=gamestart 帧=2614
+[replay] ✅ engine 段逐帧相等（比对 2614 帧；录制 2614 / 回放 2622，回放多跑 8 帧（未比对））
+```
+
+⇒ headless 用 `NodeFileSource.readHeaderSync`（同步读头 64 KB）+ `agfSizeOf(data, total)`
+（`src/arch/agfSize.ts`）自己算出 `BG050ABL.AGF`（**无头**容器）的 2048×1152，与录制侧那一笔逐值相同，
+于是 2614 帧的 engine 段 digest 逐帧相等 —— **回放不再依赖"录下来的尺寸答案"**。
+
+★两个踩过的坑（守卫已覆盖）：
+1. **同步是必需的**：脚本在**绑定后的同一条指令批**里就问尺寸（实测 `[diag] 0x208 问 0xb37 → pending=true`），
+   异步预取 + 帧屏障赶不上；引擎的 `set-texture` 本来就是同步读+解码。
+2. **无头容器必须传真实文件大小**：只喂 64 KB 切片时 plan 的 `bodyHdrPos+hdr+pak <= fileSize` 会被全否掉
+   ⇒ `agfSizeOf(cut)` 返回 null（守卫 `test/agf-size.test.ts` 把这条也断言了）。

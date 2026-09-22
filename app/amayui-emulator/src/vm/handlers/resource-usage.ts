@@ -37,11 +37,22 @@
  * 文件头带随机密钥校验：`sub_404B20` 写 `key ^ 0x87912345`）；emulator 目前只做**会话内**
  * 打点（不读 `$$SAVE.DAT`）⇒ 全新会话的鉴赏进度从零开始累积（与真机"新档"一致，但不会继承玩家的旧档）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
 import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：资源使用查询族（resource-usage），1 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：资源使用查询族（resource-usage）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * `0x19D`：`op1 ← 统一文件 id op2 是否已被打开过`（0/1）。
@@ -49,16 +60,17 @@ import type { OpTable } from './shared.js';
  * （引擎的"旧存档不认扩展包资源"门，raw 38275-38281）。
  */
 const op_file_used_query: OpHandler = (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const id = (plan.int(2) ?? 0);
   if ((id & 0xff000000) !== 0) {
     const v1 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion1, 0) : 0;
     const v2 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion2, 0) : 0;
     if (v1 < 3 || (v1 === 3 && v2 < 10)) {
-      writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+      plan.setInt(1, 0);
       return;
     }
   }
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.isFileUsed(id) ? 1 : 0);
+  plan.setInt(1, c.e.isFileUsed(id) ? 1 : 0);
 };
 
 /** 「已使用文件」查询族（纯 VM 状态，不经 NativeBridge）。 */

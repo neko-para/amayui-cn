@@ -64,6 +64,23 @@ export function canvasPixelSize(w: number, h: number, res: number): { cw: number
   return { cw: Math.max(1, Math.ceil(w * res)), ch: Math.max(1, Math.ceil(h * res)) };
 }
 
+/**
+ * 帧屏障的**安全兜底**上限（`TextureCache.waitIdle` / `L2dTextureLibrary.waitIdle` 省略参数时用）。
+ *
+ * ★为什么不沿用旧版的 500 ms（`tickets/T-0102` 的 H2）：屏障后面紧跟的可能不是"画一笔"，
+ * 而是 `0x208`（`sub_4302E0` 读纹理尺寸并**写回操作数**）这类 getter —— 一旦在载入完成前返回，
+ * 脚本会按 `0×0` 走**与引擎不同**的分支，而且**不会回头再看**（用户实测的白底/尺寸错位即此形状）。
+ * 引擎的 `set-texture` 是同步的（没有"超时"这个概念），所以这里取"够大、只用于防止真挂死"的量级：
+ * 冷启动读大 AGF 有实测超过 500 ms 的情形，30 s 足以覆盖，同时仍能在 IPC 真死掉时收敛。
+ */
+export const BARRIER_GIVEUP_MS = 30_000;
+
+/** 屏障等待期间的**告警间隔**：超过这么久还没等到就在日志里报一次（E4 能看出"这次等了多久"）。 */
+export const BARRIER_WARN_MS = 1_000;
+
+/** 屏障的轮询粒度（等 `Promise.allSettled` 与这个定时器赛跑，取先到者）。 */
+export const BARRIER_POLL_MS = 64;
+
 export class TextureCache {
   /** `slot → Texture`（已绑定且已载入）。 */
   readonly slotTex = new Map<number, Texture>();
@@ -143,21 +160,43 @@ export class TextureCache {
    * 就会出现「新一屏的文本已经画上来、背景还没切换（旧背景/空白）」的时序错位（2026 实测：
    * 首次从主界面进设置时 ADV 样例文案先出现，CONFIG 背景晚几帧）。
    *
-   * @param timeoutMs 兜底上限（载入异常时不至于把帧循环挂死）
+   * ★**上限的语义（`tickets/T-0102` 的 H2，本轮修）**：参数**省略**时用
+   * {@link BARRIER_GIVEUP_MS}（30 s）这个**安全兜底**，而**不是**旧版的 500 ms ——
+   * 旧默认的危害不是"少画一帧"：紧跟屏障的可能是 `0x208`（读尺寸并**写回操作数**）这类
+   * getter，脚本按 0×0 走错分支后**不会再看第二眼**（白底/尺寸错位就是这么来的，见
+   * `tickets/T-0102/white-report.md` §4.2 的 H2）。显式传小上限只留给"调用方自担后果"的场合。
+   *
+   * @param timeoutMs 显式等待上限；**省略 = 安全兜底**（{@link BARRIER_GIVEUP_MS}）
    */
-  async waitIdle(timeoutMs = 500): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
+  async waitIdle(timeoutMs?: number): Promise<void> {
+    const started = Date.now();
+    const ceiling = timeoutMs ?? BARRIER_GIVEUP_MS;
+    let nextWarn = started + BARRIER_WARN_MS;
     while (this.#inflight.size > 0) {
-      const left = deadline - Date.now();
+      const now = Date.now();
+      const left = started + ceiling - now;
       if (left <= 0) {
-        this.log(`texturesIdle 超时（仍有 ${this.#inflight.size} 张在载入）→ 本帧先合成`);
+        const names = this.#inflightNames();
+        this.log(
+          `★纹理屏障放弃等待（已 ${now - started} ms，仍有 ${this.#inflight.size} 张在载入：${names}）` +
+            '—— 后续帧靠 `#healSlot`/到货置脏自愈，但**此刻**读尺寸/绑定号的操作数可能已按 0×0 分支（T-0102 H2）',
+        );
         return;
+      }
+      if (now >= nextWarn) {
+        nextWarn = now + BARRIER_WARN_MS;
+        this.log(`纹理屏障仍在等待 ${now - started} ms（在途 ${this.#inflight.size} 张：${this.#inflightNames()}）`);
       }
       await Promise.race([
         Promise.allSettled([...this.#inflight.values()]),
-        new Promise((resolve) => setTimeout(resolve, left)),
+        new Promise((resolve) => setTimeout(resolve, Math.min(BARRIER_POLL_MS, left))),
       ]);
     }
+  }
+
+  /** 在途图像的 imgid 清单（屏障日志用：E4 要能直接看出"卡在哪几张图上"）。 */
+  #inflightNames(): string {
+    return [...this.#inflight.keys()].map((id) => `0x${id.toString(16)}`).join(' ');
   }
 
   /** `slot → imgid`（未绑定返回 undefined）。 */

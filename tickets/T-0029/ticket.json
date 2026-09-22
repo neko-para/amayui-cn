@@ -5,11 +5,11 @@
   "title": "删掉 boot 里的 PRELOAD_IMAGES：统一走 0x1F9 绑定时的按需加载（TextureCache + 帧屏障）",
   "why": "现状：`src/renderer/app/boot.ts` 在跑脚本前硬编码预载 4 张图 —— `const PRELOAD_IMAGES = [0x5245, 0x5246, 0x5272, 0x5273]`（实测映射：0x5245→`SO006.AGF` 1280×720、0x5246→`SO005.AGF` 1280×720、0x5272→`SO004.AGF` **1664×1536**、0x5273→`SO004A.AGF` 740×700；见 `.tmp/amayui-emulator.log` 启动段）。\n\n问题：① **重复的第二套加载入口** —— 图像本来就有正统的按需路径：脚本 `0x1F9 set-texture` → `PixiBackend.bindTexture` → `TextureCache.bind`（缓存未命中即 `void this.preloadImage(imgid).then(...)` 异步取图）→ 帧末 `PixiBackend.texturesIdle()`（纹理帧屏障）等到位再合成。boot 里这份清单等于在「脚本会自己加载」之外又写了一遍「谁在什么时候加载」，而它**没有**任何引擎依据（不是 `0x1F9`/`0x1F8`，也不是引擎启动流程里的动作）。\n② **两宿主加载时机不一致**：headless（`bootHeadless`/两份 chain/scenario）**不预载**，只有 Electron 预载 ⇒ 同一份脚本在两侧的图文就绪时机不同，属于 `T-0002` 那类\"宿主漂移\"的温床。\n③ **白付启动成本**：`SO004.AGF` 是 1664×1536 的大图，启动期无条件解码/占显存，哪怕本次流程根本用不到。\n④ 预载掩盖了真实缺陷：`texture-bind-synchronous-then-query` 那条能力缺口（异步装载 ⇒ 紧随的 `0x208` 读到 0×0）正是被预载盖住过 —— 预载在时看不出，去掉后才会暴露「哪一处没走屏障」。\n\n目标：删掉 `PRELOAD_IMAGES` 与那段循环，让这 4 张图和其它图一样在 `0x1F9` 绑定时按需加载；若发现某张图确实「绑定前就要用」（例如启动期直接 `draw-texture` 而不经 `0x1F9`），把该需求写进 `analysis/engine-capabilities.json` 的对应条目（能力面清单）而不是留在 boot 的硬编码列表里。",
   "acceptance": [
-    "`src/renderer/app/boot.ts` 的 `PRELOAD_IMAGES` 常量与预载循环删除；全仓（含 electron/）不再有该常量或启动期预载清单",
-    "这 4 张图在脚本 `0x1F9` 绑定时按需装载：启动日志里不再有启动段的 `image 0x5245/0x5246/0x5272/0x5273 -> …`，而是在首次绑定前后出现，且 `bindTexture` 未命中缓存时仍走 `TextureCache` 的异步装载",
-    "首帧不缺图：`npm run shot -- --gamestart` 的 TITLE / GAMESTART / SN0000 三屏与改动前逐像素目视一致（若因异步装载出现一帧缺图，必须由 `texturesIdle` 屏障消除，而不是靠预载掩盖）",
-    "`texturesIdle` 帧屏障覆盖这些绑定：G3 `npm run record` + `npm run replay` 在改动后仍 `engine 段逐帧相等`（两宿主一致），headless 侧不因缺预载而分叉",
-    "若确认某张图必须在启动期就绪：把\"启动期必需图像\"的依据（引擎 raw / 脚本调用点）登记进 `analysis/engine-capabilities.json` 的对应能力条目，而不是恢复 boot 里的硬编码清单"
+    "`src/renderer/app/boot.ts` 的 `PRELOAD_IMAGES` 常量与预载循环删除；全仓（含 electron/）不再有该常量或启动期预载清单\n★进度（轮 12）：代码面早已达成（守卫 `test/no-boot-preload.test.ts` 4 条，撤销常量/循环即红）；本轮把 E4 补齐后一并结票。",
+    "这 4 张图在脚本 `0x1F9` 绑定时按需装载：启动日志里不再有启动段的 `image 0x5245/0x5246/0x5272/0x5273 -> …`，而是在首次绑定前后出现，且 `bindTexture` 未命中缓存时仍走 `TextureCache` 的异步装载\n★进度（轮 12，**E4 日志证据**）：`evidence/startup-bind-log.txt` = `npm run shot -- --gamestart` 会话里 `.tmp/amayui-emulator.log` 的原文摘录 —— 全文 grep 四条原预载 id：**只有 `0x5272` 出现一次**，且紧跟在 `bindTexture imgid=0x5272 slot=4`（此时已在 `TITLE.BIN` 内）之后 ⇒ 走的是 `0x1F9` 绑定驱动的按需装载（TextureCache 异步 + `texturesIdle` 屏障）；**0x5245/0x5246/0x5273 本场景 0 次**（用哪张载哪张）。",
+    "首帧不缺图：`npm run shot -- --gamestart` 的 TITLE / GAMESTART / SN0000 三屏与改动前逐像素目视一致（若因异步装载出现一帧缺图，必须由 `texturesIdle` 屏障消除，而不是靠预载掩盖）\n★进度（轮 12，**E4 三屏**）：本机 `npm run shot -- --gamestart --name t0029-gs` 跑通（Electron 真界面，1603×903）⇒ `evidence/e4-title.png` / `e4-gamestart.png` / `e4-sn0000-first-text.png` / `e4-sn0000-next.png`（索引与 sha256 见 `evidence/e4-screenshots.md`）。TITLE 与**改动前基准** `.tmp/b5E-0-title.png`（2026-09-19）目视一致（同构图、立绘/背景/按钮/版权全在；字节数差 0.08% = PNG 编码/AA 噪声）；GAMESTART 面板+立绘+三按钮全在；SN0000 背景全屏出图、推进一页后正文与等待光标正常。★无缺图。",
+    "`texturesIdle` 帧屏障覆盖这些绑定：G3 `npm run record` + `npm run replay` 在改动后仍 `engine 段逐帧相等`（两宿主一致），headless 侧不因缺预载而分叉\n★进度（轮 12，**G3**）：`evidence/record-replay.txt` —— `npm run record -- --scenario tools/scenarios/gamestart.json --out .tmp/t0029-record-centered.jsonl --centered`（★`--centered` 必需：默认贴边档会把窗口挪到屏幕外，`record.cjs` 就\"未找到游戏窗口\"、trace 只有 1565 B）→ `npm run replay -- ../../.tmp/t0029-record-centered.jsonl` ⇒ **`✅ engine 段逐帧相等（比对 2614 帧；录制 2614 / 回放 2622）`** ⇒ 屏障覆盖了这些绑定、headless 侧不因缺预载而分叉。",
+    "若确认某张图必须在启动期就绪：把\"启动期必需图像\"的依据（引擎 raw / 脚本调用点）登记进 `analysis/engine-capabilities.json` 的对应能力条目，而不是恢复 boot 里的硬编码清单\n★进度（轮 12，**无需登记**）：本场景只用到 `0x5272` 且按需装载即可 ⇒ 没有\"绑定前就要用\"的图被确认；`analysis/engine-capabilities.json` 的 `texture-bind-synchronous-then-query` 已覆盖\"绑定后同帧读尺寸\"的机制（`T-0102` 轮 14 的 H2 修的就是它）。"
   ],
   "evidence": [
     {
@@ -36,6 +36,21 @@
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "texturesIdle",
       "note": "产品合成路径在 present 之前等纹理（帧屏障的调用点）"
+    },
+    {
+      "file": "tickets/T-0029/evidence/startup-bind-log.txt",
+      "anchor": "bindTexture imgid=0x5272 slot=4",
+      "note": "判据 ②：四条原预载 id 里本场景只用到 0x5272，它出现在 TITLE.BIN 内、紧跟其 bindTexture 之后 ⇒ 按需装载；0x5245/0x5246/0x5273 全程 0 次。来源 .tmp/amayui-emulator.log（原日志 296..315 行）。"
+    },
+    {
+      "file": "tickets/T-0029/evidence/e4-screenshots.md",
+      "anchor": "e4-title.png",
+      "note": "判据 ③：Electron 真界面三屏截图索引（含 sha256）+ 与改动前 TITLE 基准的对照结论。"
+    },
+    {
+      "file": "tickets/T-0029/evidence/record-replay.txt",
+      "anchor": "✅ engine 段逐帧相等",
+      "note": "判据 ④（G3）：删除启动期预载后 record+replay 仍逐帧相等（2614 帧），含 `--centered` 这个必需参数的口径。"
     }
   ],
   "links": {
@@ -50,7 +65,7 @@
     ]
   },
   "id": "T-0029",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-14",
@@ -71,6 +86,11 @@
       "at": "2026-09-21",
       "kind": "status",
       "what": "open → doing —— 判据 ① 达成、② 代码面达成；判据 ③（首帧三屏目视）与 ②④ 的 Electron 面需 E4 真跑 ⇒ 保持 doing"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "done → done —— 轮 12 收尾：本机 Electron E4 通道打通（npm run shot --gamestart 跑通；record 需 --centered，否则窗口贴边到屏幕外导致未找到游戏窗口）⇒ 判据 ②③④ 全部补齐：②启动日志显示四条原预载 id 只有 0x5272 出现一次且紧跟其 bindTexture（TITLE.BIN 内）⇒ 按需装载；③三屏真界面截图与改动前 TITLE 基准目视一致、无缺图；④record+replay engine 段逐帧相等（2614 帧）。⑤无启动期必需图需登记。证据归档 tickets/T-0029/evidence/（4 张截图 + 日志摘录 + record/replay 输出 + 索引）。副作用口径：产品路径会回写 overlay 的 SAVE.DAT（SAVE00 等真实槽未动），SYS4REG.INI sha256 逐字节不变"
     }
   ],
   "tests": [

@@ -1,0 +1,73 @@
+# T-0102 判据 3 的 E4 trace（真路径实测，非强制置值）
+# 产出命令（仓库根）：`npx tsx .tmp/t0102-adv-trace.mts 40000`
+# 探针要点：不置任何全局，只按脚本状态驱动输入 —— TITLE `GAME_START_XY` → 跑帧到 `local 3f7 == 0`
+#   → 按 400 帧 → 松 → GAMESTART `START_GAME_XY` 同法 → 之后 `gates.advance = 'force'` 自动推进；
+#   `onFrameEnd` 每帧采样 `g0/1397/3f38/3f37/14acda/f807b/f8019` 与文本项记录数。
+# 结论（见 notes.md「轮 13」）：真路径的 ADV 显示态 = g0=6、1397=1、3f38=1、3f37=-1、14acda=0、
+#   f807b=0xffffff、记录表 **2..6 条（非空）** ⇒ `CONFIG.txt:219-225` 的门**是开的**。
+[options] resources: version=cnjp path=E:\Games\Eushully\天結\install（来源=默认）
+SYS4REG.INI -> C:\Users\liaoh\AppData\Local\Eushully\天結いキャッスルマイスター.overlay\SYS4REG.INI (overlay)
+[config] C:\Users\liaoh\AppData\Local\Eushully\天結いキャッスルマイスター.overlay\SYS4REG.INI（overlay）键=120 个
+[options] boot.showLogo=true ⇒ _this[96983]=1（cold boot 播 LOGO/版权页，真游戏行为）
+[options] audio.enabled=true ⇒ 宿主正常出声（WebAudioHost 建 AudioContext / 起播 / 流式 BGM）
+[options] resources.version=cnjp ⇒ 字体面名落到 Amayui CN（SJIS 占位编码的简体还原字体）
+SAVE\SAVE.DAT -> C:\Users\liaoh\AppData\Local\Eushully\天結いキャッスルマイスター.overlay\SAVE\SAVE.DAT (overlay)
+[save] 并入另一份 SAVE.DAT（engine-new）：int=5444 str=251
+[save] 已使用文件（两侧并集）：11107 个（emulator:11106 + engine-new:11107）
+[save] 5444 个 int / 251 个 string，已使用文件 11107 个
+[music] 曲号表 59 条
+[append] APPEND01.AAI -> pack#1（1 归档 APPEND01.ALF / 678 文件）
+[append] APPEND02.AAI -> pack#2（1 归档 APPEND02.ALF / 261 文件）
+[append] APPEND03.AAI -> pack#3（1 归档 APPEND03.ALF / 1689 文件）
+[append] APPEND04.AAI -> pack#4（1 归档 APPEND04.ALF / 425 文件）
+[append] APPEND05.AAI -> pack#5（1 归档 APPEND05.ALF / 918 文件）
+[boot] index 0 -> SYSTEM4.BIN
+
+===== scripts（23 次进入）=====
+1 LOADCONFIG.BIN
+3 PLINIT.BIN
+4 ALINIT.BIN
+5 IMINIT.BIN
+6 EBINIT.BIN
+10 ITINIT.BIN
+12 SKINIT.BIN
+13 RTINIT.BIN
+14 CDINIT2.BIN
+15 CGINIT.BIN
+16 BIINIT.BIN
+17 $1$MIINIT.BIN
+18 $3$IMINIT.BIN
+19 $3$ITINIT.BIN
+20 $4$ITINIT.BIN
+21 INIT2.BIN
+23 LOGO.BIN
+325 TITLE.BIN
+4727 GAMESTART.BIN
+5224 UNITECH.BIN
+5225 SETFATE.BIN
+5230 SN0000.BIN
+6142 CHARMEDIT.BIN
+
+===== phases =====
+325 到达 TITLE
+4326 TITLE 悬停命中第 0 项（Game Start）
+4727 到达 GAMESTART = true
+4730 GAMESTART 悬停命中第 0 项（ゲーム開始）
+5230 到达 SN0000 = true
+5912 ★ADV 显示态（1397=1 且 3f38=1）= true；脚本 = SN0000.BIN；快照 = {"g0":6,"g1397":1,"g3f38":1,"g3f37":-1,"c14acda":0,"f807b":16777215,"f8019":25}；文本项记录 = 2
+6512 再过 600 帧：记录 = 6；快照 = {"g0":6,"g1397":1,"g3f38":1,"g3f37":-1,"c14acda":0,"f807b":16777215,"f8019":9}
+46512 到达 SC0000 = false（进入时 = {"g0":6,"g1397":1,"g3f38":1,"g3f37":-1,"c14acda":0,"f807b":16777215,"f8019":9}；记录 = 6）
+
+===== 关键全局变化（8 条，末 80 条）=====
+3 PLINIT.BIN f807b: 0 -> 16777215
+5224 UNITECH.BIN f8019: 0 -> 5
+5228 SETFATE.BIN g0: 0 -> 6
+5228 SETFATE.BIN g3f37: 0 -> -1
+5912 SN0000.BIN g1397: 0 -> 1
+5912 SN0000.BIN g3f38: 0 -> 1
+5912 SN0000.BIN f8019: 5 -> 25
+6142 CHARMEDIT.BIN f8019: 25 -> 9
+
+===== 终局 =====
+frames=46512 stop=n/a
+最终 = {"g0":6,"g1397":1,"g3f38":1,"g3f37":-1,"c14acda":0,"f807b":16777215,"f8019":9}

@@ -26,7 +26,6 @@
  * 文本内容按槽保存（足够让 `wait-for-input` 的挂起/推进成立）。
  */
 import type { OpHandler, StepCtx } from '../step.js';
-import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
 import { ADV_ACTIVE, CHAR_REVEAL_ACTIVE, SLEEP_GATE, type Engine } from '../engine.js';
 import { cfgInt } from '../../engineConfig.js';
 import {
@@ -42,9 +41,22 @@ import {
 } from '../../text/layout.js';
 import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS } from '../msgwin.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"消息窗族整表"）**51 条一次迁完** —— 全库最大的一族。
+ * 三条（`0x73`/`0x90`/`0x25c`）用的是**变量 n 的辅助读法**（`rd(n)` / `.map((n) => readIntOperand(…, n))`），
+ * 迁移时按同一口径替换（机械侦察一开始把它们误看成"只读 1 位"）。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：消息窗族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
@@ -99,8 +111,11 @@ export function setConfigValue(e: Engine, key: string, value: number): void {
 /**
  * 把引擎字段里的**全局**样式（颜色/描边）读成 `#rrggbb`。
  *
- * `0x76`/`0x77` 的 handler 在引擎里把 COLORREF(BGR) 翻成 RGB 后存入 `_this[21664]/[21665]`
- * （raw 28669/28680），emulator 的 `ENGINE_FIELD_STORE` 做了同样的重排 ⇒ 这里直接读即可。
+ * ★`0x76`/`0x77`（raw 28663-28682）把**脚本的 RGB 值**翻成 **COLORREF** 存进 `_this[21664]/[21665]`，
+ * 引擎随后把该字段**原样交给 GDI**（raw 79241 → 68093 `SetTextColor(hdc, *(Font+1360))`）
+ * ⇒ 字段是 COLORREF（`0x00BBGGRR`），**取用时必须再翻一次**才是屏幕上的 RGB
+ * （见 `globalTextStyle` 的注释与 `tickets/T-0102` 判据 4）。`bgrToRgb` 是逐字节对合 ⇒
+ * `bgrToRgb(bgrToRgb(v)) === v`，于是"字段→屏幕色"就是脚本原值。
  */
 const hex6 = (rgb: number): string => '#' + (rgb & 0xffffff).toString(16).padStart(6, '0');
 
@@ -153,8 +168,16 @@ export function globalTextStyle(e: Engine): {
       weight: m.font.mainBold ? 700 : 400,
       // ★填充/描边**不再压暗颜色**：引擎的"偏灰"是字形覆盖率的合成结果（见上 `TEXT_FILL_ALPHA`），
       //   由光栅化侧按 `globalAlpha` 复现 ⇒ 这里必须给出脚本/config 的**原色**。
-      fill: hex6(v(21664, 0xffffff)),
-      outline: hex6(v(21665, 0x000000)),
+      //
+      // ★★**字段是 COLORREF，取用时要换回 RGB**（`tickets/T-0102` 判据 4，2026-09 修）：
+      //   引擎 `0x76`（`sub_41F390` raw 28663-28671）把**脚本的 RGB 值**翻成 COLORREF 存进
+      //   `Font+1360`，然后**原样喂给 GDI**：raw 79241 `sub_455ED0(..., *(Font+1360), *(Font+1364), ...)`
+      //   → raw 68093 `SetTextColor(hdc, color)` —— `SetTextColor` 收的是 `COLORREF(0x00BBGGRR)`。
+      //   ⇒ 屏幕上看到的颜色 = **COLORREF 读法**下的那个字段 = `bgrToRgb(字段)` = 脚本原值。
+      //   修前这里直接把字段当 `0xRRGGBB` 交给渲染器 ⇒ R/B 互换：阿瓦罗（脚本 `0xffe100` 橘）
+      //   渲染成 `#00E1FF` 青、角色设定页残留色（`0xff90b6`）渲染成 `#B690FF` 紫（用户实测两条症状）。
+      fill: hex6(bgrToRgb(v(21664, 0xffffff))),
+      outline: hex6(bgrToRgb(v(21665, 0x000000))),
       // ★抗锯齿（`Font+1352` = Engine[21662]，`tickets/T-0035`）：配置门（`set:EnableAntiFont`）
       //   在真机 INI 里是关的，但**实测像素只可能来自覆盖率路径**（1bpp 路径的 α 恒满 ⇒ 255）。
       //   ⇒ 以"像素判据"为准开 AA；配置门的推导见 `TEXT_FILL_ALPHA` 的注释。
@@ -424,10 +447,11 @@ function advanceReveal(e: Engine): boolean {
  * 注音/内嵌模式（`122497` bit0）走引擎的 `sub_46BE30` 分支。
  */
 const op_show_text: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const text = readStringOperand(e, c.frame, c.instr, 2);
+  const slot = (plan.int(1) ?? 0);
+  const text = (plan.str(2) ?? '');
   m.lastArg = slot;
   // ★入队即钉住当前字体/颜色（引擎 `sub_46BE30` 排版时把字形连颜色画进该窗离屏表面）
   captureFontStyle(e, slot);
@@ -471,8 +495,9 @@ const op_show_text: OpHandler = (c) => {
 
 /** `0x6F end-text-line`（sub_41ECE0 raw 28389-28397）：结束当前行。 */
 const op_end_text_line: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  const slot = (plan.int(1) ?? 0);
   e.msgwin.endLine(slot);
   emitWin(e, slot);
 };
@@ -499,9 +524,10 @@ const op_end_text_line: OpHandler = (c) => {
  * 不建模：DD 表面的填底（无渲染）与 `frame.state_6C` 返还点槽（emulator 用 `ctx.jump`/`retStack`）。
  */
 const op_message_show: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
-  const slot = readIntOperand(e, c.frame, c.instr, 1); // 窗索引（0 ⇒ 默认窗；1/2/7/8/9…）
+  const slot = (plan.int(1) ?? 0); // 窗索引（0 ⇒ 默认窗；1/2/7/8/9…）
   // ★记下"本帧最后一次开始消息"的位置（`tickets/T-0063`）：本工程槽读档时用它当落点
   //   ⇒ 存档当时那句话会被**重放**（引擎帧记录里那一格 `[259]` 就是 `0x71` 表下标，语义一致）。
   c.frame.lastMsgIp = c.frame.ip;
@@ -559,9 +585,10 @@ const op_message_show: OpHandler = (c) => {
  * ★所以本 handler 只在"这一页的文本还没武装过显现"时才启动显现（`revealArmed`，见其说明）。
  */
 const op_wait_for_input: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
-  m.lastArg = readIntOperand(e, c.frame, c.instr, 1);
+  m.lastArg = (plan.int(1) ?? 0);
   const w = m.resolveWin(m.lastArg);
   // 引擎 `sub_45A940(..., -1, Engine+107705)`：把该窗字格数写进模数槽（字格未设时 win+92 = 0）。
   // ★这条查询同时是"**▼ 图标动画的武装**"：模数 = 精灵表格数 op9；`sub_453A90` 重启节拍 ⇒ 帧号归零。
@@ -611,6 +638,7 @@ const op_wait_for_input: OpHandler = (c) => {
  * ★这条过去**未在任何注册表**里 —— 脚本一旦命中就抛 `NotImplementedOp` 硬报错。
  */
 const op_poll_msg_advance: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // 引擎 raw 24963：这里的 `(mask & 0x40)` 判据来自 `sub_4780D0(..., &v5)` ⇒ **实时刷**；
   //  随后 raw 24983 的 `sub_478090` + `_this[174802]=0` = 消费刷的吸收（emulator 用 consumeEdges 等价）。
@@ -689,13 +717,14 @@ const op_poll_msg_advance: OpHandler = (c) => {
  *    且 emulator 的 `0x305` 目前不查这一位（属既有缺口，登记在此以免被当成"没人读"）。
  */
 const op_display_furigana: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  const slot = (plan.int(1) ?? 0);
   // ★同样是"文本入队"（引擎 `sub_46BE30`）⇒ 追加前钉住当前样式
   //   （口径：**一页的样式 = 最后一次入队那一刻的样式**；引擎严格来说是"每段各自用当时的样式"，
   //    但全库 87324 处文本入队里，页内"文本→改样式→再文本"的出现次数是 **0** ⇒ 两者等价）
   captureFontStyle(e, slot);
-  e.msgwin.addRuby(slot, readStringOperand(e, c.frame, c.instr, 2), readStringOperand(e, c.frame, c.instr, 3));
+  e.msgwin.addRuby(slot, (plan.str(2) ?? ''), (plan.str(3) ?? ''));
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
   // raw 29071 的外层门：bit0 置位（`0x304` 已开文本块）⇒ 走引擎第③路（raw 29104-29109）。
@@ -734,9 +763,10 @@ const op_display_furigana: OpHandler = (c) => {
  * NOVEL / SYSTEM4 才走逐字**；普通 ADV 不开这道门（`sub_45A940` 直接返回）。
  */
 const op_set_char_grid: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
-  const rd = (n: number): number => readIntOperand(e, c.frame, c.instr, n);
+  const rd = (n: number): number => (plan.int(n) ?? 0);
   const win = m.resolveWin(rd(1));
   const tickMs = rd(10);
   m.setCharGrid(win, {
@@ -767,7 +797,9 @@ const op_set_char_grid: OpHandler = (c) => {
 const op_char_reveal_switch: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1ce：逐字开关走操作数计划层，但没有声明计划');
+  const v = p.int(1) ?? 0;
   m.charModeArg = v;
   e.engineValues.set(ENGINE_FIELD.charModeArg, v);
   if (v !== 0) {
@@ -832,9 +864,10 @@ const op_char_reveal_switch: OpHandler = (c) => {
  * 脚本侧 1011 处；★这条过去**未注册**（命中即 `NotImplementedOp` 硬报错）。
  */
 const op_window_relayout: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
-  const win = m.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = m.resolveWin((plan.int(1) ?? 0));
   // 重排（宿主 `scMsgWinSync` 内）+ 按当前游标/当前字格重贴（`emitWin` 的 `revealed` / `cell`）
   // 一次做完 ⇒ 游标不动、内容不变（见上方①/②的逐条对应）。
   emitWin(e, win);
@@ -921,6 +954,8 @@ const op_text_block_begin: OpHandler = (c) => {
 const op_text_block_end: OpHandler = (c) => {
   const e = c.e;
   const m = e.msgwin;
+  // ★argc 0（计划层照声明 `kinds: []`，`tickets/T-0082`）：本指令没有操作数。
+  if (!operandsFor(c)) throw new Error('0x305：文本块结束走操作数计划层，但没有声明计划');
   const win = m.resolveWin(m.lastArg);
   m.lineCursorSave.delete(win);
   for (const w of m.reveal.keys()) m.finishReveal(w);
@@ -937,8 +972,9 @@ const op_text_block_end: OpHandler = (c) => {
  * 非 0 置 `122368 = 1`（跳读态），为 0 清 ADV。
  */
 const op_message_mode: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const v = (plan.int(1) ?? 0);
   e.msgwin.skipMirror = v;
   e.msgwin.skipMode = v;
   if (v !== 0) e.msgwin.skipping = 1;
@@ -947,6 +983,7 @@ const op_message_mode: OpHandler = (c) => {
 
 /** `0x19C adv-enter`（sub_419120 raw 24546-24575）：按 `97050/122455/124331` 条件置/清 ADV。 */
 const op_adv_enter: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const m = e.msgwin;
   m.advEnter = 1;
@@ -966,6 +1003,7 @@ const op_adv_enter: OpHandler = (c) => {
 
 /** `0x19B adv-exit`（sub_4190E0 raw 24532-24542）：清 ADV 并复位字段。 */
 const op_adv_exit: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   clearAdv(e);
   e.msgwin.skipMirror = 0;
@@ -980,7 +1018,8 @@ const op_adv_exit: OpHandler = (c) => {
  * 于是脚本根本无法切换「逐字显示」。
  */
 const op_set_read_text_skip: OpHandler = (c) => {
-  c.e.msgwin.readTextSkip = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  c.e.msgwin.readTextSkip = (plan.int(1) ?? 0);
 };
 
 /**
@@ -1001,7 +1040,8 @@ const op_set_read_text_skip: OpHandler = (c) => {
  * 与 `0x1CA`（写）成对，`Engine` 帧循环 `sub_411900` 收消息时把它写回 0（emulator：`engine.ts` 同点）。
  */
 const op_get_read_text_skip: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, readTextSkipOf(c.e));
+  const plan = planFor(c);
+  plan.setInt(1, readTextSkipOf(c.e));
 };
 
 // ---------------------------------------------------------------------------
@@ -1022,7 +1062,8 @@ const op_get_read_text_skip: OpHandler = (c) => {
  * （`src/DRAWCHARM.txt:1` 等）。
  */
 const op_get_skip_mode: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.msgwin.skipMode);
+  const plan = planFor(c);
+  plan.setInt(1, c.e.msgwin.skipMode);
 };
 
 /**
@@ -1035,12 +1076,14 @@ const op_get_skip_mode: OpHandler = (c) => {
  * emulator 把 97052 放在 `Engine.advFields`（与 `0x1B7` 成对，可往返测试）。
  */
 const op_get_coexist_state: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.advFields.get(97052) ?? 0) !== 0 ? 1 : 0);
+  const plan = planFor(c);
+  plan.setInt(1, (c.e.advFields.get(97052) ?? 0) !== 0 ? 1 : 0);
 };
 
 /** `0x1B7`（sub_41FF20 raw 29181-29189）：`Engine[97052] = (op1 != 0)`（`0x1B6` 的写入端）。 */
 const op_set_coexist_state: OpHandler = (c) => {
-  c.e.advFields.set(97052, readIntOperand(c.e, c.frame, c.instr, 1) !== 0 ? 1 : 0);
+  const plan = planFor(c);
+  c.e.advFields.set(97052, (plan.int(1) ?? 0) !== 0 ? 1 : 0);
 };
 
 /**
@@ -1052,7 +1095,8 @@ const op_set_coexist_state: OpHandler = (c) => {
  * 循环按错误的状态走（提前跳读或永不推进）。
  */
 const op_get_adv_active: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.effectFlags & ADV_ACTIVE) !== 0 ? 1 : 0);
+  const plan = planFor(c);
+  plan.setInt(1, (c.e.effectFlags & ADV_ACTIVE) !== 0 ? 1 : 0);
 };
 
 /**
@@ -1062,7 +1106,8 @@ const op_get_adv_active: OpHandler = (c) => {
  * 语料同 `0x1C7`（`i1cc f7ff6`，与 `i1c7` 的 `or` 一起作为"要不要接着等"的判据）。
  */
 const op_get_msg_showing: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.msgwin.showing);
+  const plan = planFor(c);
+  plan.setInt(1, c.e.msgwin.showing);
 };
 
 /**
@@ -1079,37 +1124,41 @@ const op_get_msg_showing: OpHandler = (c) => {
  * ★这是「等待输入」结束后脚本能继续的**唯一**机制（见 `src/vm/route.ts`）。
  */
 const op_route_push: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const [x, y, w, h, labelA, labelB, labelC] = [1, 2, 3, 4, 5, 6, 7].map((n) => readIntOperand(e, c.frame, c.instr, n));
+  const [x, y, w, h, labelA, labelB, labelC] = [1, 2, 3, 4, 5, 6, 7].map((n) => (plan.int(n) ?? 0));
   const ok = e.routes.push(x!, y!, w!, h!, labelA!, labelB!, labelC!, c.frame.scriptId);
   if (!ok) throw new Error('0x090: 点击热点表已满（引擎上限 100，引擎此处抛 ShowMessage）');
 };
 
 /** `0x212`（sub_423A30 raw 31742-31754）：消息窗对象 `+100 = op2`（op1 = 对象索引）。 */
 const op_msgwin_obj_f100: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const idx = readIntOperand(e, c.frame, c.instr, 1);
-  e.msgwin.object(idx).f100 = readIntOperand(e, c.frame, c.instr, 2);
+  const idx = (plan.int(1) ?? 0);
+  e.msgwin.object(idx).f100 = (plan.int(2) ?? 0);
 };
 
 /** `0x213`（sub_423A80 raw 31758-31775）：消息窗对象 `+104 = op2`、`+108 = op3`。 */
 const op_msgwin_obj_range: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const idx = readIntOperand(e, c.frame, c.instr, 1);
-  const a = readIntOperand(e, c.frame, c.instr, 2);
+  const idx = (plan.int(1) ?? 0);
+  const a = (plan.int(2) ?? 0);
   const o = e.msgwin.object(idx);
   o.f104 = a;
-  o.f108 = readIntOperand(e, c.frame, c.instr, 3);
+  o.f108 = (plan.int(3) ?? 0);
 };
 
 /** `0x25D`（sub_425EF0 raw 33248-33265）：消息窗对象 `+276 = op2`、`+280 = op3`。 */
 const op_msgwin_obj_range2: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const idx = readIntOperand(e, c.frame, c.instr, 1);
-  const a = readIntOperand(e, c.frame, c.instr, 2);
+  const idx = (plan.int(1) ?? 0);
+  const a = (plan.int(2) ?? 0);
   const o = e.msgwin.object(idx);
   o.f276 = a;
-  o.f280 = readIntOperand(e, c.frame, c.instr, 3);
+  o.f280 = (plan.int(3) ?? 0);
 };
 
 // ---------------------------------------------------------------------------
@@ -1134,11 +1183,12 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
  * 语料：win 1 共 506 处（`i07a 1 <x> f`，y 与 0x79 一致）、win 8 共 12 处（序章每页一次）。
  */
 const op_msgwin_obj_pre48: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const o = e.msgwin.object(win);
-  o.pre48a = readIntOperand(e, c.frame, c.instr, 2);
-  o.pre48b = readIntOperand(e, c.frame, c.instr, 3);
+  o.pre48a = (plan.int(2) ?? 0);
+  o.pre48b = (plan.int(3) ?? 0);
   o.pre48Set = true;
 };
 
@@ -1151,10 +1201,11 @@ const op_msgwin_obj_pre48: OpHandler = (c) => {
  * （`+8..+10` 清零）⇒ 即"文本框原点/宽高 + 两个终结哨兵"。emulator 存成数组（渲染层不消费）。
  */
 const op_msgwin_obj_text_block: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const [, o2, o3, o4, o5, o6, o7, o8] = [1, 2, 3, 4, 5, 6, 7, 8].map((n) =>
-    readIntOperand(e, c.frame, c.instr, n),
+    (plan.int(n) ?? 0),
   );
   const o = e.msgwin.object(win);
   o.block224 = [1, o4!, o5!, o6!, o7! + o5!, o8! + o6!, o2!, o3!, 0, 0, 0, -1, -1];
@@ -1162,22 +1213,24 @@ const op_msgwin_obj_text_block: OpHandler = (c) => {
 
 /** `0x25E`（`sub_425F50` raw 33269-33288 → `sub_456590`）：窗对象 `+256=op2`、`+260=op3`、`+272=ARGB`。 */
 const op_msgwin_obj_colors: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const o = e.msgwin.object(win);
-  o.f256 = readIntOperand(e, c.frame, c.instr, 2);
-  o.f260 = readIntOperand(e, c.frame, c.instr, 3);
+  o.f256 = (plan.int(2) ?? 0);
+  o.f260 = (plan.int(3) ?? 0);
   // 引擎：v2 = op4（>255 截断）当 alpha，op5 取 RGB ⇒ `(a<<24)|(b2<<16)|(b1<<8)|b0`
-  o.f272 = packArgb(readIntOperand(e, c.frame, c.instr, 4), readIntOperand(e, c.frame, c.instr, 5));
+  o.f272 = packArgb((plan.int(4) ?? 0), (plan.int(5) ?? 0));
 };
 
 /** `0x25F`（`sub_425FF0` raw 33291-33308 → `sub_4565D0`）：窗对象 `+264=op2`、`+268=ARGB`。 */
 const op_msgwin_obj_colors2: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const o = e.msgwin.object(win);
-  o.f264 = readIntOperand(e, c.frame, c.instr, 2);
-  o.f268 = packArgb(readIntOperand(e, c.frame, c.instr, 3), readIntOperand(e, c.frame, c.instr, 4));
+  o.f264 = (plan.int(2) ?? 0);
+  o.f268 = packArgb((plan.int(3) ?? 0), (plan.int(4) ?? 0));
 };
 
 /**
@@ -1208,12 +1261,13 @@ function packArgb(a: number, c: number): number {
  * 窗 2 = 430×40 @(120,508)、窗 8 = 1280×720 @(0,0)（1280×720 屏）。
  */
 const op_window_geometry: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
-  const w = readIntOperand(e, c.frame, c.instr, 2);
-  const h = readIntOperand(e, c.frame, c.instr, 3);
-  const x = readIntOperand(e, c.frame, c.instr, 4);
-  const y = readIntOperand(e, c.frame, c.instr, 5);
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
+  const w = (plan.int(2) ?? 0);
+  const h = (plan.int(3) ?? 0);
+  const x = (plan.int(4) ?? 0);
+  const y = (plan.int(5) ?? 0);
   const g = e.msgwin.geom(win);
   g.w = w;
   g.h = h;
@@ -1236,50 +1290,61 @@ const op_window_geometry: OpHandler = (c) => {
 
 /** `0x198 <win> <x> <y>`（sub_41FE10 → sub_456400 raw 68263-68279）：窗口屏幕位置。 */
 const op_window_pos: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const g = e.msgwin.geom(win);
-  g.x = readIntOperand(e, c.frame, c.instr, 2);
-  g.y = readIntOperand(e, c.frame, c.instr, 3);
+  g.x = (plan.int(2) ?? 0);
+  g.y = (plan.int(3) ?? 0);
   emitWin(e, win);
 };
 
 /** `0x1C1 <win> <right> <bottom>`（sub_420070 → sub_4563D0 raw 68248-68261）：换行边界。 */
 const op_window_wrap: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const g = e.msgwin.geom(win);
-  g.wrapRight = readIntOperand(e, c.frame, c.instr, 2);
-  g.wrapBottom = readIntOperand(e, c.frame, c.instr, 3);
+  g.wrapRight = (plan.int(2) ?? 0);
+  g.wrapBottom = (plan.int(3) ?? 0);
   emitWin(e, win);
 };
 
 /** `0x79 <win> <x> <y>`（sub_41F490 → sub_4563A0 raw 68233-68246）：文字起点。 */
 const op_text_origin: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const g = e.msgwin.geom(win);
-  g.originX = readIntOperand(e, c.frame, c.instr, 2);
-  g.originY = readIntOperand(e, c.frame, c.instr, 3);
+  g.originX = (plan.int(2) ?? 0);
+  g.originY = (plan.int(3) ?? 0);
   emitWin(e, win);
 };
 
 /** `0x303 <win> <mode> <width>`（sub_426A90 → sub_456600 raw 68405-68418）：对齐模式 + 行宽。 */
 const op_align: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.resolveWin(readIntOperand(e, c.frame, c.instr, 1));
+  const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const g = e.msgwin.geom(win);
-  const mode = readIntOperand(e, c.frame, c.instr, 2);
+  const mode = (plan.int(2) ?? 0);
   g.align = (mode === 1 ? 1 : mode === 2 ? 2 : 0) as 0 | 1 | 2;
-  g.alignWidth = readIntOperand(e, c.frame, c.instr, 3);
+  g.alignWidth = (plan.int(3) ?? 0);
   emitWin(e, win);
 };
 
-/** `0x80 <win>`（sub_41F690 raw 28786-28796）：设默认窗（`Font+1228`）。 */
+/**
+ * `0x80 <win>`（sub_41F690 raw 28786-28796）：设默认窗（`Font+1228` = `Font[307]`）。
+ *
+ * ★**只写一处**（`tickets/T-0101` 的 D5）：引擎那一格就是 `Font+1228`（初值 1，raw 78899），
+ * emulator 对它的建模 = `MsgWindow.defaultWin`；此前这里还顺手写了 `engineValues[21631]`，
+ * 而读侧（`handlers/text-items.ts` 的 `defaultWin`）读的是那一份 ⇒ **同一语义两处真源**、
+ * 且在 `i080` 之前两侧初值不同（1 vs `?? 0`）。现读侧改读 `msgwin.defaultWin`，这行镜像写随之删掉。
+ */
 const op_set_default_window: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const win = readIntOperand(e, c.frame, c.instr, 1);
-  e.engineValues.set(ENGINE_FIELD.defaultWindow, win);
+  const win = (plan.int(1) ?? 0);
   e.msgwin.defaultWin = win;
 };
 
@@ -1291,8 +1356,9 @@ const op_set_default_window: OpHandler = (c) => {
  * 写回并保存。★原实现按助记符猜成 `stringResourceId` ⇒ 永远 -1 ⇒ 每次启动覆盖用户的字体选择。
  */
 const op_font_name_to_index: OpHandler = (c) => {
-  const name = readStringOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, fontListIndex(name));
+  const plan = planFor(c);
+  const name = (plan.str(2) ?? '');
+  plan.setInt(1, fontListIndex(name));
 };
 
 /**
@@ -1308,8 +1374,9 @@ const op_font_name_to_index: OpHandler = (c) => {
  * 于是滚动条几何被写成 Infinity/NaN 而**漂到左边**（用户实测）。
  */
 const op_font_list_count: OpHandler = (c) => {
+  const plan = planFor(c);
   const n = ENGINE_FONT_LIST.length;
-  writeIntOperand(c.e, c.frame, c.instr, 1, n > 0 ? n : -1);
+  plan.setInt(1, n > 0 ? n : -1);
 };
 
 /**
@@ -1321,9 +1388,10 @@ const op_font_list_count: OpHandler = (c) => {
  * 以及 `:567` 把选中项写进 `global-string d5d` 当当前值。
  */
 const op_font_list_name: OpHandler = (c) => {
-  const idx = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const idx = (plan.int(2) ?? 0);
   const name = idx >= 0 && idx < ENGINE_FONT_LIST.length ? ENGINE_FONT_LIST[idx]! : '';
-  writeStringOperand(c.e, c.frame, c.instr, 1, name);
+  plan.setStr(1, name);
 };
 
 /**
@@ -1338,7 +1406,8 @@ const op_font_list_name: OpHandler = (c) => {
  * —— 这才是引擎脚本自己认的默认速度（随包 INI 的 `MessageSpeed=5` 只写字段、不进注册表）。
  */
 const op_set_message_speed: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   c.e.engineValues.set(ENGINE_FIELD.messageSpeed, v);
   setConfigValue(c.e, CFG.messageMessageSpeed, v);
 };
@@ -1355,7 +1424,8 @@ const op_set_message_speed: OpHandler = (c) => {
  * 值会被后续 `0x1B5` 改写而还原不回去。
  */
 const op_set_message_speed_field: OpHandler = (c) => {
-  c.e.engineValues.set(ENGINE_FIELD.messageSpeed, readIntOperand(c.e, c.frame, c.instr, 1));
+  const plan = planFor(c);
+  c.e.engineValues.set(ENGINE_FIELD.messageSpeed, (plan.int(1) ?? 0));
 };
 
 /**
@@ -1367,8 +1437,8 @@ const op_set_message_speed_field: OpHandler = (c) => {
  * ★修前 emulator 用 `idx === 1 ? 1 : 0` ⇒ `idx >= 2` 被**静默写成 0 号键**（审计 P2 `op-10-001`：凭空回退）。
  * 语料只有 0/1，但静默回退会让任何坏脚本静默改错设置。
  */
-function setAutoMessageByIndex(c: StepCtx, kind: 'time' | 'pitch'): void {
-  const idx = readIntOperand(c.e, c.frame, c.instr, 1);
+function setAutoMessageByIndex(c: StepCtx, p: PlannedOperands, kind: 'time' | 'pitch'): void {
+  const idx = p.int(1) ?? 0;
   if (idx !== 0 && idx !== 1) {
     c.log(`自动翻页 idx=${idx} 非法 ⇒ 按引擎走错误串分支（不写任何配置键）`);
     return;
@@ -1382,27 +1452,33 @@ function setAutoMessageByIndex(c: StepCtx, kind: 'time' | 'pitch'): void {
       : idx === 0
         ? CFG.messageAutoMessagePitch0
         : CFG.messageAutoMessagePitch1;
-  setConfigValue(c.e, key, readIntOperand(c.e, c.frame, c.instr, 2));
+  setConfigValue(c.e, key, p.int(2) ?? 0);
 }
 
 /** `0x1B9 <idx> <ms>`（sub_41FF60 raw 29191-29220）：`message:AutoMessageTime{idx}`（自动翻页基础时长）。 */
 const op_set_auto_message_time: OpHandler = (c) => {
-  setAutoMessageByIndex(c, 'time');
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1b9：走操作数计划层，但没有声明计划');
+  setAutoMessageByIndex(c, p, 'time');
 };
 
 /** `0x2E7 <idx> <ms>`（sub_426540 raw 33534-33562）：`message:AutoMessagePitch{idx}`（自动翻页每行附加时长）。 */
 const op_set_auto_message_pitch: OpHandler = (c) => {
-  setAutoMessageByIndex(c, 'pitch');
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2e7：走操作数计划层，但没有声明计划');
+  setAutoMessageByIndex(c, p, 'pitch');
 };
 
 /** `0x2E8 <v>`（sub_4265E0 raw 33565-33577）：`message:AutoMessageOption`。 */
 const op_set_auto_message_option: OpHandler = (c) => {
-  setConfigValue(c.e, CFG.messageAutoMessageOption, readIntOperand(c.e, c.frame, c.instr, 1));
+  const plan = planFor(c);
+  setConfigValue(c.e, CFG.messageAutoMessageOption, (plan.int(1) ?? 0));
 };
 
 /** `0x2CD <v>`（sub_426390 raw 33463-33475）：`message:AdvanceMesOnWheel`（滚轮是否推进消息）。 */
 const op_set_advance_mes_on_wheel: OpHandler = (c) => {
-  setConfigValue(c.e, CFG.messageAdvanceMesOnWheel, readIntOperand(c.e, c.frame, c.instr, 1));
+  const plan = planFor(c);
+  setConfigValue(c.e, CFG.messageAdvanceMesOnWheel, (plan.int(1) ?? 0));
 };
 
 /**
@@ -1415,46 +1491,52 @@ const op_set_advance_mes_on_wheel: OpHandler = (c) => {
  * 脚本想换样式重画时会**重新入队**（`i071` + `show-text`，如 `CONFIG.txt:171-179`）。
  */
 const op_set_main_size: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const size = readIntOperand(e, c.frame, c.instr, 1);
+  const size = (plan.int(1) ?? 0);
   e.engineValues.set(ENGINE_FIELD.fontSize, size); // Font+201684 / 4
   e.msgwin.font.mainSize = size;
 };
 
 /** `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。同上，不重绘。 */
 const op_set_ruby_size: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const size = readIntOperand(e, c.frame, c.instr, 1);
+  const size = (plan.int(1) ?? 0);
   e.engineValues.set(ENGINE_FIELD.rubySize, size); // Font+218584 / 4
   e.msgwin.font.rubySize = size;
 };
 
 /** `0x1A5 <name>`（sub_433290 → sub_4328F0 raw 41344-41565）：主字体面名（全局）。同上，不重绘。 */
 const op_set_main_face: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const face = readStringOperand(e, c.frame, c.instr, 1);
+  const face = (plan.str(1) ?? '');
   e.msgwin.font.mainFace = face;
 };
 
 /** `0x2FE <name>`（sub_4332D0 → sub_432DD0 raw 41568-41798）：注音字体面名（全局）。同上，不重绘。 */
 const op_set_ruby_face: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const face = readStringOperand(e, c.frame, c.instr, 1);
+  const face = (plan.str(1) ?? '');
   e.msgwin.font.rubyFace = face;
 };
 
 /** `0x2BD <flag>`（sub_426200 raw 33384-33402）：主字体加粗（`lfWeight` 700/0，全局）。同上，不重绘。 */
 const op_set_main_bold: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
+  const on = (plan.int(1) ?? 0) !== 0;
   e.engineValues.set(ENGINE_FIELD.fontWeight, on ? 700 : 0); // Font+218516 / 4
   e.msgwin.font.mainBold = on;
 };
 
 /** `0x2BE <flag>`（sub_426260 raw 33404-33422）：注音字体加粗（全局）。同上，不重绘。 */
 const op_set_ruby_bold: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const on = readIntOperand(e, c.frame, c.instr, 1) !== 0;
+  const on = (plan.int(1) ?? 0) !== 0;
   e.engineValues.set(ENGINE_FIELD.rubyWeight, on ? 700 : 0); // Font+218588 / 4
   e.msgwin.font.rubyBold = on;
 };
@@ -1466,14 +1548,15 @@ const op_set_ruby_bold: OpHandler = (c) => {
  * 不经过离屏源矩形 ⇒ **只记录不消费**（见 ADR §7）。
  */
 const op_vertical_rect_pad: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const win = e.msgwin.defaultWin;
   const g = e.msgwin.geom(win);
   g.vPad = {
-    x: readIntOperand(e, c.frame, c.instr, 1),
-    dw: readIntOperand(e, c.frame, c.instr, 2),
-    y: readIntOperand(e, c.frame, c.instr, 3),
-    dh: readIntOperand(e, c.frame, c.instr, 4),
+    x: (plan.int(1) ?? 0),
+    dw: (plan.int(2) ?? 0),
+    y: (plan.int(3) ?? 0),
+    dh: (plan.int(4) ?? 0),
   };
 };
 
@@ -1487,15 +1570,17 @@ const op_vertical_rect_pad: OpHandler = (c) => {
  * 按名直读直写、**不落任何字段**（见 `engineConfig.ts` 的说明）。这里读字段是对的，不要改成读配置表。
  */
 const op_get_message_speed: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(ENGINE_FIELD.messageSpeed) ?? 0);
+  const plan = planFor(c);
+  plan.setInt(1, c.e.engineValues.get(ENGINE_FIELD.messageSpeed) ?? 0);
 };
 
 /** `0x300`（sub_426990）：对象旗标 `_this[122466+v] |= op2`（保留 bit16）、`_this[122476+v] = op3`。 */
 const op_msgwin_slot_flags: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
-  const flags = readIntOperand(e, c.frame, c.instr, 2);
-  const value = readIntOperand(e, c.frame, c.instr, 3);
+  const v = (plan.int(1) ?? 0);
+  const flags = (plan.int(2) ?? 0);
+  const value = (plan.int(3) ?? 0);
   const slot = v + 122466;
   const merged = (flags | ((e.engineValues.get(slot) ?? 0) & 0x10000)) | 0;
   e.engineValues.set(slot, merged);
@@ -1516,8 +1601,9 @@ const op_msgwin_slot_flags: OpHandler = (c) => {
  * 显现状态重新武装到 0。
  */
 const op_msgwin_slot_clear: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const v = (plan.int(1) ?? 0);
   e.engineValues.set(v + 122486, 0);
   e.msgwin.object(v).f132 = 0; // sub_404F80 的清 `+132` 那一步
   // 引擎 sub_404F80 同时 sub_4ABB60 删该窗两段绘制项 ⇒ 重写侧清掉该窗文本
@@ -1552,11 +1638,12 @@ const op_msgwin_slot_clear: OpHandler = (c) => {
  * 与 `msgWinSync` 同一分工）；宿主把字画进该槽的 canvas 纹理（见 `textureCache.drawString`）。
  */
 const op_draw_string: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const x = readIntOperand(e, c.frame, c.instr, 2);
-  const y = readIntOperand(e, c.frame, c.instr, 3);
-  const text = readStringOperand(e, c.frame, c.instr, 4);
+  const slot = (plan.int(1) ?? 0);
+  const x = (plan.int(2) ?? 0);
+  const y = (plan.int(3) ?? 0);
+  const text = (plan.str(4) ?? '');
   if (text.length === 0) return; // 引擎：`*a3` 为 0 直接返回
   const st = globalTextStyle(e);
   c.native.drawString?.(slot, x, y, text, {
@@ -1609,13 +1696,14 @@ const op_draw_string: OpHandler = (c) => {
  * 对"把数字排进离屏槽"的用量（INFO/ALCHEMY 等）只影响像素级位置，不影响脚本状态。
  */
 const op_draw_number_string: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const x = readIntOperand(e, c.frame, c.instr, 2);
-  const y = readIntOperand(e, c.frame, c.instr, 3);
-  const value = readIntOperand(e, c.frame, c.instr, 4);
-  const width = readIntOperand(e, c.frame, c.instr, 5);
-  const flags = readIntOperand(e, c.frame, c.instr, 6);
+  const slot = (plan.int(1) ?? 0);
+  const x = (plan.int(2) ?? 0);
+  const y = (plan.int(3) ?? 0);
+  const value = (plan.int(4) ?? 0);
+  const width = (plan.int(5) ?? 0);
+  const flags = (plan.int(6) ?? 0);
   const halfWidth = (flags & 0x10000) !== 0;
   // 引擎：cy = Engine[71744] ? Engine[71745] : -Engine[21632]（= 一个全角格宽）
   const gridCy = (e.engineValues.get(ENGINE_FIELD.fontMetricsMode) ?? 0) !== 0 ? e.engineValues.get(ENGINE_FIELD.fontSize) ?? 0 : -(e.engineValues.get(ENGINE_FIELD.logfontMain) ?? 0);
@@ -1633,7 +1721,7 @@ const op_draw_number_string: OpHandler = (c) => {
           ? Math.trunc((cell.start * cy) / 2)
           : cell.start * cy;
   const nx = x + advance;
-  writeIntOperand(e, c.frame, c.instr, 2, nx); // ★op2 是 in/out
+  plan.setInt(2, nx); // ★op2 是 in/out
   if (cell.ascii.length === 0) return;
   const st = globalTextStyle(e);
   c.native.drawString?.(slot, nx, y, halfWidth ? cell.ascii : toFullWidth(cell.ascii), {

@@ -11,6 +11,9 @@
  *   I2 `kind=generated` ⇒ 必写 `home` + `generated_by`，且生成器文件真实存在
  *   I3 **沿革不进生成物**：生成物里不得出现 `analysis/journal.jsonl` 任何条目的正文
  *   I8 `kind=record` ⇔ 位于 `docs-new/99-records/`（历史区），且只增不改
+ *   I9 **沿革不进叙述文档**（A4①）：`03-engine/*.md` 的 `kind=narrative` 里不得写「订正/旧句/历史判据」
+ *      —— 旧的直接删、订正落 `journal`。为什么要有它：A4① 此前只有 `--validate` 的人眼纪律，
+ *      实测 13 份机制叙述里积了 28 处「★2026-09 订正（原文写…）」，读者分不清哪句是现行结论。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -103,6 +106,21 @@ test('★文档模型：沿革不进生成物（journal 正文不得出现在任
     }
   }
   assert.deepEqual(problems, [], `沿革漏进生成物：\n  - ${problems.join('\n  - ')}`);
+});
+
+test('★文档模型：沿革不进叙述文档（A4① —— `03-engine` 机制叙述里不得复述「订正」）', () => {
+  const BANNED = ['订正', '旧句', '历史判据'];
+  const target = docs.filter((d) => d.rel.startsWith('03-engine/') && d.fm?.kind === 'narrative');
+  assert.ok(target.length >= 20, `机制叙述样本太少（${target.length}）—— 扫描可能失效`);
+  const problems: string[] = [];
+  for (const d of target) {
+    const lines = fs.readFileSync(path.join(DOCS, d.rel), 'utf8').split('\n');
+    lines.forEach((l, i) => {
+      const hit = BANNED.find((w) => l.includes(w));
+      if (hit) problems.push(`${d.rel}:${i + 1} 「${hit}」`);
+    });
+  }
+  assert.deepEqual(problems, [], `叙述文档里出现沿革话术（A4①：旧的直接删、订正落 journal；数据层的沿革见 tickets/T-0108）：\n  - ${problems.join('\n  - ')}`);
 });
 
 test('★文档模型：docs-new/00-overview/index.md 是最新的', () => {

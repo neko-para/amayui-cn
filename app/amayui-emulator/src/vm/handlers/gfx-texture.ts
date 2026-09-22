@@ -4,10 +4,20 @@
  * 槽表 `Engine.texSlots`（槽号 → imgid）由 `0x1F9` set-texture 建立、`0x1FA` release-texture 清除；
  * `0x1FB` draw-texture 的 **op2 是槽号、op1 才是图元 handle/层序键**（2025 修正，见 README）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：纹理族（gfx-texture），10 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：纹理族（gfx-texture）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * **`0x1F9`/`0x249` 共用的纹理颜色归一化**（两处 raw 逐字相同，`tickets/T-0086`）。
@@ -42,10 +52,11 @@ export function normalizeTextureColor(op3: number): number {
  *   （不只是画面问题）；槽越界/未创建时引擎写 0/0 并只记日志（不改控制流）。
  */
 const op_get_texture_size: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
   const size = slot <= 999 ? c.native.getTextureSize?.(slot) : undefined;
-  writeIntOperand(c.e, c.frame, c.instr, 2, size?.w ?? 0);
-  writeIntOperand(c.e, c.frame, c.instr, 3, size?.h ?? 0);
+  plan.setInt(2, size?.w ?? 0);
+  plan.setInt(3, size?.h ?? 0);
 };
 
 
@@ -74,10 +85,11 @@ const op_get_texture_size: OpHandler = (c) => {
  *   ⇒ 与引擎分叉，`T-0086` 订正为与 `0x1F9` **共用同一处归一化**、负值**仍下发 0**。
  */
 const op_load_texture_by_id: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const imgid = readIntOperand(e, c.frame, c.instr, 1);
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
-  const color = readIntOperand(e, c.frame, c.instr, 3);
+  const imgid = (plan.int(1) ?? 0);
+  const slot = (plan.int(2) ?? 0);
+  const color = (plan.int(3) ?? 0);
   e.texSlots.set(slot, imgid);
   e.markFileUsed(imgid); // 引擎按 id 打开文件 ⇒ 写 FileDB 的「已使用」表（鉴赏解锁的判据）
   c.native.bindTexture?.(imgid, slot);
@@ -93,8 +105,9 @@ const op_load_texture_by_id: OpHandler = (c) => {
  * 语料 0 处，但它是"对象属性面"的一员，且会写宿主可见的对象状态，故不 no-op。
  */
 const op_texture_obj_float: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
+  const value = (plan.int(2) ?? 0);
   c.native.setTextureObjectFloat?.(slot, value);
 };
 
@@ -106,8 +119,9 @@ const op_texture_obj_float: OpHandler = (c) => {
  * 即"对纹理对象的某个子对象下发一个浮点参数"。emulator 同 `0x245`：转发宿主缝。
  */
 const op_texture_obj_param: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
+  const value = (plan.int(2) ?? 0);
   c.native.setTextureObjectParam?.(slot, value);
 };
 
@@ -118,10 +132,11 @@ const op_texture_obj_param: OpHandler = (c) => {
  * emulator：转发 `native.createTexture`（渲染器侧刷新该槽图像缓存）。
  */
 const op_create_texture: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
-  const w = readIntOperand(c.e, c.frame, c.instr, 2);
-  const h = readIntOperand(c.e, c.frame, c.instr, 3);
-  const mode = readIntOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
+  const w = (plan.int(2) ?? 0);
+  const h = (plan.int(3) ?? 0);
+  const mode = (plan.int(4) ?? 0);
   c.e.texSizes.set(slot, [w, h]); // 见 `Engine.texSizes`（0x23F 的尺寸来源）
   c.native.createTexture?.(slot, w, h, mode);
 };
@@ -139,23 +154,26 @@ const op_create_texture: OpHandler = (c) => {
  * emulator 侧尺寸来自 `0x1F8` 建槽时记下的 `Engine.texSizes`（AGF 载入的槽在 VM 侧无尺寸 ⇒ 同样回 −1）。
  */
 const op_get_slot_size: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const slot = (plan.int(2) ?? 0);
   const sz = c.e.texSizes.get(slot);
   if (!sz) {
-    writeIntOperand(c.e, c.frame, c.instr, 1, -1);
+    plan.setInt(1, -1);
     return;
   }
-  writeIntOperand(c.e, c.frame, c.instr, 1, Math.trunc(sz[0] * 1000));
+  plan.setInt(1, Math.trunc(sz[0] * 1000));
 };
 
 const op_release_texture: OpHandler = (c) => {
+  const plan = planFor(c);
   // 0x1FA：op1=layer。
-  const layer = readIntOperand(c.e, c.frame, c.instr, 1);
+  const layer = (plan.int(1) ?? 0);
   c.e.texSizes.delete(layer); // 见 `Engine.texSizes`
   c.native.releaseTexture?.(layer);
 };
 
 const op_draw_texture: OpHandler = (c) => {
+  const plan = planFor(c);
   // `0x1FB`（sub_422E70）draw-texture：**op1 = 图元 handle（= Scene map 的 key，同时就是层序，越小越先画）**、
   // **op2 = 纹理槽号**、op3/4 = 源 x/y、op5/6 = 源 w/h、op7/8 = 目标 x/y。
   //
@@ -164,14 +182,14 @@ const op_draw_texture: OpHandler = (c) => {
   //   - **层序 = map key = op1**，元素内部**不存 layer**。
   //   旧实现在这里把两者**写反了**（把 op1 当槽、op2 当层）→ present() 按"层号"取纹理全部落空 →
   //   退化成占位色块。这是"背景消失、只剩零星方块"的第二半原因（第一半是 present 里用 layer 查槽表）。
-  const layer = readIntOperand(c.e, c.frame, c.instr, 1); // 图元 handle / 层序键
-  const slot = readIntOperand(c.e, c.frame, c.instr, 2); // 纹理槽号
-  const srcX = readIntOperand(c.e, c.frame, c.instr, 3);
-  const srcY = readIntOperand(c.e, c.frame, c.instr, 4);
-  const srcW = readIntOperand(c.e, c.frame, c.instr, 5);
-  const srcH = readIntOperand(c.e, c.frame, c.instr, 6);
-  const dstX = readIntOperand(c.e, c.frame, c.instr, 7);
-  const dstY = readIntOperand(c.e, c.frame, c.instr, 8);
+  const layer = (plan.int(1) ?? 0); // 图元 handle / 层序键
+  const slot = (plan.int(2) ?? 0); // 纹理槽号
+  const srcX = (plan.int(3) ?? 0);
+  const srcY = (plan.int(4) ?? 0);
+  const srcW = (plan.int(5) ?? 0);
+  const srcH = (plan.int(6) ?? 0);
+  const dstX = (plan.int(7) ?? 0);
+  const dstY = (plan.int(8) ?? 0);
   if (!c.e.texSlots.has(slot)) c.e.texSlots.set(slot, 0);
   // ★`ownerFrame`（emulator 记账，引擎无此格）：读档装载点要丢掉"被放弃的调用方那一层 UI"
   //   （`tickets/T-0083` 的 (B) 步）⇒ 这里记下"这一项是哪一帧画的"。见 `Item.ownerFrame` 的依据说明。
@@ -224,8 +242,9 @@ const op_set_texture: OpHandler = (c) => {
 
 /** 0x1F7 detach-texture (sub_422BC0)：纹理/图形子系统方法。op1=handle、op2=count；count≤1 单参(删单)，count>1 双参(删 [handle,handle+count))。 */
 const op_detach_texture: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const count = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const count = (plan.int(2) ?? 0);
   c.native.detachTexture?.(handle, count);
 };
 
@@ -261,14 +280,15 @@ export const GFX_TEXTURE_OPS: OpTable = [
  * ★文档的括注「op4=op2+宽」写反了：体里 `op4/op5` 本身就是宽/高（已同步订正 `opcode-table.md`）。
  */
 const op_fill_texture: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const x = readIntOperand(e, c.frame, c.instr, 2);
-  const y = readIntOperand(e, c.frame, c.instr, 3);
-  const w = readIntOperand(e, c.frame, c.instr, 4);
-  const h = readIntOperand(e, c.frame, c.instr, 5);
-  const a = Math.min(readIntOperand(e, c.frame, c.instr, 6), 255);
-  const rgb = readIntOperand(e, c.frame, c.instr, 7);
+  const slot = (plan.int(1) ?? 0);
+  const x = (plan.int(2) ?? 0);
+  const y = (plan.int(3) ?? 0);
+  const w = (plan.int(4) ?? 0);
+  const h = (plan.int(5) ?? 0);
+  const a = Math.min((plan.int(6) ?? 0), 255);
+  const rgb = (plan.int(7) ?? 0);
   c.native.fillSlotRect?.(slot, x, y, w, h, 0xff000000 | (rgb & 0xffffff), a);
 };
 

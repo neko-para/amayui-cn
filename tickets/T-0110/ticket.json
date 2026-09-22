@@ -1,0 +1,91 @@
+{
+  "title": "B7-B：机制文档残留订正（scene-start-flow / rendering / engine-reset-mainloop / sound-system / adv-text-rendering / save-data …）",
+  "type": "docs",
+  "priority": "P3",
+  "area": "docs/03-engine",
+  "why": "`T-0080` 的 B7 分类（`tickets/T-0080/evidence/b7-coverage.md` §4B）里有一批**文档与代码真源互相矛盾**的残留：审计当时指出的错话在文档里**原话仍在**（同文件别处已写对 ⇒ 自相矛盾）。其中一条是硬数字错误 ——\n`scene-start-flow.md` 把 GAMESTART 三按钮的 `count` 写成 **3**，而 `src/GAMESTART.txt` **全文件只有 1 处**写 `(local-int 0)`（第 69 行 = **17**），且 :115 把它作为 `0x12E` 的 **op8 = count** 传入（签名见同文 :57 与 `input-system.md:288/365`）⇒ 命中区/按钮数直接由该值决定。\n\n这类残留不改行为，但会让后续 agent 基于错误前提工作（审计已实证过一次：把已实现当缺口、把缺口当已建模）。",
+  "acceptance": [
+    "① `scene-start-flow.md`：GAMESTART 的 `count` 改为实测值（`17`，并注明「全文件唯一一处写 `local 0`」的依据）；`0x1AD`「唯一读者在存档序列化」与 §5 的 `#serviceAnimGate`/`scAnimationsDone`（这两个符号在 `src/` 里不存在，真源是 `Engine.waitFlags`/`gatePending`）一并订正\n★进度（轮 1，**完成**）：① `GAMESTART` 的 `count`：`| local 0 | = 3 |` → **17**（实测 `src/GAMESTART.txt:69` 全文件**唯一**一处直接写 `local 0`；base 数组只拷 3 项 `[2cb 3a3 44d]`），并补一段口径说明（count = `i12e` 的 op8 实参、不等于\"按钮数量\"；**指针改写**静态 grep 挡不住 ⇒ 要拿真实命中区个数就在 `i12e` 执行点读 `local 0` 或数 `routes.entries`）；② `0x1AD`：删掉\"唯一读者在存档序列化\"（引擎 raw 25698-25699 `if (Engine[166963] > v13) Engine[166963] = -1;` 就是读者），并写明 emulator **已建模写点**（`engineFieldIds.storedCur` + `op_store_cur_166963`），只是**不序列化**；③ §5 的 `#serviceAnimGate` / `scAnimationsDone()` **在 `src/` 里不存在**（只出现在注释里）⇒ 改成真源 `Engine.waitFlags` + `gatePending`。",
+    "② `rendering.md`：删/改「`_this[11631]`=369356 全文件只被清零、从不设正」（已被 `0x238` raw 32309-32310 证伪）、把逐帧求值从 `sub_49A300` 收到 `sub_49AA30`、把 `0x323`「静态遮罩无逐帧计时」与同文动画窗口径统一、「三路归并」补上漏掉的 `_this+1096`（572B 节点）那一路\n★进度（轮 1，**完成**）：① `_this[11631]`=369356 \"全文件只被清零、从不设正\" → 改正为\"**有置正点**\"（`0x238` 的 handler `sub_4248C0` raw 32303-32312 写 `Engine[92338]/[92339]`，后者 = byte 369356）；② 逐帧动画求值的函数名：`sub_49A300`(115116) → **`sub_49AA30`**(117239 起)（核验：`sub_49A300` 体里只有把 `+52/+56` 清零的**记录初始化**，而 `& 2` 门 + `+96/+100` 插值在 `sub_49AA30` 区间；同文 §7 早已写成 `sub_49AA30`）；③ `0x323` 的\"静态颜色场/遮罩（非渐变动画）… 无计时器/无逐帧插值\" → 改正为\"写顶点色**同时**把 delay/dur 交给颜色窗、窗在每帧渲染里由 `sub_4AF1C0`(raw 131435, 131491-131501)+`sub_4A2050` 求值\"（原文与同文 §4.5 自相矛盾）；④ \"三路归并\" → **四路归并**（另两路 = Live2D/变换 572B 节点；与同文 §7 的\"四路归并\"统一）。\n★收尾（轮 2，**①②③④ 全部完成**）：第三批又改了 6 处 —— ⑤ `adv-text-rendering.md` 的禁则表结论：「行首/行尾禁则表**全文件不存在**」→「**运行期等价于没有禁则处理**（禁则表**存在**：字段 `Font+235084` + 管理器 `sub_45BCD0(_this, char*)` raw 72113；`Font` 析构 `operator delete(*(void**)(Font+235084))` raw 73765-73767、两处清零 73760/78748 都在 —— 只是本作从没往里填过）」；⑥ `flow-control.md` 的**口径混用**：在 §0 写明「本节 `_this[N]` 一律指**字节**偏移（反编译里 `_this` 类型随函数而异：`int _this` 是字节、`_DWORD *_this` 要 ÷4）」并把换算写出来（`cur_script` 字节 `383104` = dword 下标 **95776**，即 handler 里 `_this[30*_this[95776] + 95805]` 那个下标；`call_ret` 字节 383108 = dword 95777；`387932` = dword **96983**），关键字段表同步标注两种写法；⑦ `message-config-gates.md` 题头的**取值来源**：「随包 `SYS4REG.INI`（随包副本）」→「**运行期生效的那一份**：overlay 优先、其次真安装目录 base，仓库副本只是兜底（取法见 `arch/systemPaths.ts` 的 `effectiveIniText`）—— 别拿仓库副本当\"当前配置\"」。",
+    "③ `engine-reset-mainloop.md`：把三处「`engine_bool_flag` 未建模 / 建议增加 `engineValues[166965]`」改成现状（`engineFieldIds.ts` 已有 `engineBool: 166965`、`0x21B`/`0x247` 已注册）\n★进度（轮 1，**完成**）：三处（`:66` 的字段注释、`:127` 的建模状态、`:416` 的\"未落进 emulator\"待办）全部改成 **已建模**，并给出落地位置：`engineFieldIds.engineBool = 166965`；`handlers/engine-fields.ts:149`（`0x21B` 写 `(op1!=0)`）/`:295`（`0x247` getter）/`:512`/`:521` 注册。原文与代码相反 —— 照它做会**重复实现**。",
+    "④ `sound-system.md` §1 的通道分配（「10/11 未分配」与同文「走设备通道 11」）统一；`adv-text-rendering.md` 的 `0x8B`（§5.2 记成第三个颜色位）、`0x204`（§3.5 记成 GDI 一次性整串）、`AutoLineFeed`（`Font+1404` 门）与禁则表结论补齐；`save-data.md`/`flow-control.md`/`instruction-directions.md`/`message-config-gates.md` 的对应残留逐条订正\n★进度（轮 1，**部分完成**）：已完成 —— `sound-system.md` §1「**0..9 = SE，12..14 = 语音**，10/11 未分配」→「**0..9 = SE，11 = BGM（Music/PCM）**、12..14 = 语音，10 = 未用」（同文 §5 自己写\"BGM 走设备通道 11\"）；`adv-text-rendering.md` 的 `0x8B` 行「第三个颜色位」→「**行间距**（`Font+1380`）」；`save-data.md` 的「`0x1A1` 不写操作数…函数体里没有 `sub_42B4B0`」→「**只在该槽文件打开失败的早返回里写** `sub_42B4B0(_this,1,1)`（raw **38424-38425**）⇒ 写回 op1=1，成功路径不写」；`instruction-directions.md` 的 `i0c0` 归类「消息/系统配置字段」→「**声音**（读运行态当前曲 id `Music[259]`；**不是**配置 `sound:Music`）」。**剩余（下一轮，需先核后改）**：`adv-text-rendering.md` 的 `0x204`「GDI 一次性整串」措辞、`AutoLineFeed`（`Font+1404` 门）未补、禁则表结论不完整；`flow-control.md` 的 `387932`/`383104` 两种写法混用；`message-config-gates.md` 题头的取值来源（`SYS4REG.INI` vs 运行期 overlay）。\n★收尾（轮 2，**④ 完成、残余转出**）：第三批把 ④ 的三项里**能一次核实的全核完**（禁则表见②段的⑤；`0x204` 措辞与 `AutoLineFeed` 的字段归属需要**读体**才算核过 ⇒ 转 `T-0112`）；⑤ 逐格待核四项里 **(d) 已核并判定\"文档是对的、无需改\"** —— `set:CreateObject` 的内建默认 = **1**（`src/engineConfig.ts` 的 `configRegistry`：`{ key: \"set:CreateObject\", kind: \"int\", def: 1 }`），`AutoFreeTexture` **不在注册表里**（默认 0）⇒ `CreateObject&2`/`AutoFreeTexture&2` 都为假，`save-data.md` 原文结论成立；**其余三项（字段表 4 处行号 / `copyright-effect.md` §6 索引表 raw / Queue-Stack 构造数）连同 `0x204` 与 `AutoLineFeed` → 已开 `T-0112`**（理由：都得逐格/逐条核 raw，照抄审计会引入新错 —— 本轮已实测\"审计对禁则表的描述只对一半\"）。",
+    "⑤ 一批**逐格待核**项（字段表行号、`copyright-effect.md` §6 索引表行号、Queue/Stack 构造数、`set:CreateObject` 默认值）：核过再改，核不动就在票里写清卡点（**不许照抄审计或猜**）\n★进度（轮 1，**卡点已写明**）：逐格待核的四项**本轮未核完**，卡点如下 —— ① `adv-text-rendering.md` 字段表的 4 处行号（需逐格对 raw，未做）；② `copyright-effect.md` §6 索引表行号（需逐行复核 raw 行号）；③ `engine-reset-mainloop.md` 的 Queue/Stack 构造数（需逐项数构造点）；④ `save-data.md` 的 `set:CreateObject`/`AutoFreeTexture` 默认值（需核 configRegistry 内建默认）。**不许照抄审计或猜** ⇒ 三项转 `T-0112`，**(d) 本轮已核且判\"文档正确\"**（`set:CreateObject` 默认 1、`AutoFreeTexture` 未注册 ⇒ 默认 0）。\n★收尾（轮 2，**已闭环**）：残余不再挂在本票：三项逐格待核 + `0x204` 措辞 + `AutoLineFeed` 已由 `T-0112` 承接，本票判据 ①②③④ 各自标了完成情况。",
+    "npm run verify 全绿（含 `test/doc-model.test.ts`）；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0080/evidence/b7-coverage.md",
+      "anchor": "机制文档残留订正（→ 新票 `T-0110`，纯机械）",
+      "note": "本票的条目清单与依据"
+    },
+    {
+      "file": "docs-new/03-engine/scene-start-flow.md",
+      "anchor": "| GAMESTART 三按钮 |",
+      "note": "硬数字错误所在行（文档 `local 0` = 3 vs 实测 17）"
+    },
+    {
+      "file": "docs-new/03-engine/rendering.md",
+      "anchor": "从不设正",
+      "note": "被 0x238 证伪的残留句"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
+      "anchor": "engineBool: 166965",
+      "note": "文档写「未建模」但代码里已在册的对照点"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "\"id\": \"copyright-effect\"",
+      "note": "同批订正：`copyright-effect` 条目的逐帧求值函数 `sub_49A300`(115116) → **`sub_49AA30`**(117239 起)，`engine.raw` → `117239-131501`（该条目由 `T-0105` 新建，函数名引错；`build-capabilities.mjs` 已重生成）"
+    },
+    {
+      "file": "tickets/T-0112/ticket.json",
+      "anchor": "B7-B 残余：逐格待核",
+      "note": "本票收尾时拆出的残余票（5 项：字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-effect §6 索引表 / Queue-Stack 构造数）"
+    },
+    {
+      "file": "docs-new/03-engine/flow-control.md",
+      "anchor": "本节 `_this[N]` 一律指**字节**偏移",
+      "note": "口径混用的修复（字节 vs dword 下标，含 cur_script 383104/95776 的换算）"
+    },
+    {
+      "file": "docs-new/03-engine/message-config-gates.md",
+      "anchor": "取值来源 = **运行期生效的那一份**",
+      "note": "题头取值来源订正（overlay → base；仓库副本只是兜底）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0080",
+      "T-0075",
+      "T-0097",
+      "T-0105",
+      "T-0112"
+    ]
+  },
+  "id": "T-0110",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建：T-0080 的 B7 分类里「文档残留 / 自相矛盾」那一批（含 GAMESTART count 硬错误）"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → doing"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— 轮 1：按\"逐条对真源核过再改\"完成 12 处订正（GAMESTART count=17 / 0x1AD 读者与建模状态 / §5 两个不存在的符号 / 369356 有置正点 / 逐帧求值 sub_49AA30 / 0x323 是动画窗不是静态遮罩 / 三路→四路 / engine_bool_flag 三处已建模 / 通道 11=BGM / 0x8B=行间距 / 0x1A1 失败早返回写操作数 / i0c0=声音）+ 同批订正 capabilities 的 `copyright-effect` 函数名。剩余：adv-text-rendering 的 0x204/AutoLineFeed/禁则表、flow-control 的两种写法混用、message-config-gates 题头，以及四项\"逐格待核\"（卡点已写进判据 ⑤）。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— 轮 2（收尾）：第三批 6 处（禁则表存在但恒空 / flow-control 字节-vs-dword 口径 / message-config-gates 取值来源）落地；逐格待核 (d) 已核并判\"文档正确\"；残余 5 项开 `T-0112` 承接。本票累计 18 处文档订正 + 1 处台账订正，verify 全绿。"
+    }
+  ],
+  "doneWhy": "B7-B 的机制文档残留按\"**先核真源再改、核不动的写卡点/转票**\"处理完：本票共改 **18 处**（scene-start-flow 的 GAMESTART count=17 / 0x1AD 读者与建模状态 / §5 两个不存在的符号；rendering 的 369356 有置正点 / 逐帧求值 `sub_49AA30` / 0x323 是动画窗 / 三路→四路归并；engine-reset-mainloop 的 engine_bool_flag 三处已建模；sound-system 的通道 11=BGM；adv-text-rendering 的 0x8B=行间距 + 禁则表存在但恒空；save-data 的 0x1A1 失败早返回写操作数；flow-control 的字节/dword 口径；message-config-gates 的取值来源；instruction-directions 的 i0c0=声音），并同批订正了 capabilities 的 `copyright-effect`（逐帧函数 `sub_49A300`→`sub_49AA30`，raw 117239-131501，`build-capabilities.mjs` 已重生成）。逐格待核四项里 (d) 已核（`set:CreateObject` 默认 1、`AutoFreeTexture` 未注册 ⇒ 文档结论正确）；其余 5 项需逐格/逐条核 raw，按\"不许照抄审计\"的原则拆成 `T-0112`。⇒ 判据 ①–④ 全部有着落、残余有承接，`npm run verify` 全绿（1031 测试）。"
+}

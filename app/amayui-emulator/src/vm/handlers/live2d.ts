@@ -40,9 +40,9 @@
  * 每帧每节点推进一次，`live2d/render.ts` 的 `l2dNodeTransform` 读它的结果（不再是恒单位变换）。
  * ★唯一调用方 raw 134347 **丢弃**颜色出参（立刻把它当整数槽下标用）⇒ 颜色窗的输出本作不可观测。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readFloatOperand, readIntOperand, readStringOperand } from '../operand.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 import type { Engine, Frame } from '../engine.js';
 import type { BinInstruction } from '../../script/bin.js';
@@ -67,6 +67,16 @@ import { bindTextureToSlot, loadModelIntoSlot, startMotionOnSlot, type Live2dAss
 import type { FileSource } from '../../arch/fileSource.js';
 
 /**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：Live2D 族（live2d），10 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：Live2D 族（live2d）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
+
+/**
  * 读第 `n` 个 int 操作数；**缺操作数时返回 `undefined`**。
  *
  * 为什么要有这道闸：Live2D 族原先大多是 `engine-internal` 的 **0 实参 no-op**，
@@ -77,7 +87,9 @@ import type { FileSource } from '../../arch/fileSource.js';
  */
 function optInt(c: { e: Engine; frame: Frame; instr: BinInstruction }, n: number): number | undefined {
   if (c.instr.args.length < n) return undefined;
-  return readIntOperand(c.e, c.frame, c.instr, n);
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：Live2D 族走操作数计划层，但没有声明计划`);
+  return p.int(n);
 }
 
 /**
@@ -238,9 +250,10 @@ const op_l2d_reset_motion: OpHandler = (c) => {
 
 /** `0x351` 命名参数（op3 : 0..255 ⇒ 值 = op3/255）。 */
 const op_l2d_named_param: OpHandler = (c) => {
+  const plan = planFor(c);
   const slot = optInt(c, 1);
   if (slot === undefined || c.instr.args.length < 2) return;
-  const name = readStringOperand(c.e, c.frame, c.instr, 2);
+  const name = (plan.str(2) ?? '');
   l2dSetNamedParam(c.e, slotOf(slot), name, optInt(c, 3) ?? 0);
 };
 
@@ -282,17 +295,19 @@ export const LIVE2D_OPS: OpTable = [
  * 报一条假的「意图被丢弃」（实测控制窗显示 `l2dLoadModel` 未实现，而模型其实已装好）⇒ 已删。
  */
 const op_l2d_load_model: OpHandler = async (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const slot = slotOf(readIntOperand(c.e, c.frame, c.instr, 2));
+  const plan = planFor(c);
+  const id = (plan.int(1) ?? 0);
+  const slot = slotOf((plan.int(2) ?? 0));
   const src = assetSource(c);
   if (src) await loadModelIntoSlot(src, c.e, id, slot, (m) => c.native.log(m));
 };
 
 /** `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。同上：无宿主缝。 */
 const op_l2d_bind_texture: OpHandler = async (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const slot = slotOf(readIntOperand(c.e, c.frame, c.instr, 2));
-  const texNo = readIntOperand(c.e, c.frame, c.instr, 3);
+  const plan = planFor(c);
+  const id = (plan.int(1) ?? 0);
+  const slot = slotOf((plan.int(2) ?? 0));
+  const texNo = (plan.int(3) ?? 0);
   // 槽表先在 VM 层落库（"模型内纹理号 → 文件 id"这层语义与图像解码无关）
   l2dBindTexture(c.e, slot, id, texNo);
   const src = assetSource(c);
@@ -301,10 +316,11 @@ const op_l2d_bind_texture: OpHandler = async (c) => {
 
 /** `0x34E` 装 `.MTN`（`op1` = 文件 id、`op2` = 动作槽、`op3` = 实例槽、`op4` = 循环位）。同上：无宿主缝。 */
 const op_l2d_start_motion: OpHandler = async (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const motionSlot = readIntOperand(c.e, c.frame, c.instr, 2);
-  const slot = slotOf(readIntOperand(c.e, c.frame, c.instr, 3));
-  const loop = readIntOperand(c.e, c.frame, c.instr, 4) !== 0;
+  const plan = planFor(c);
+  const id = (plan.int(1) ?? 0);
+  const motionSlot = (plan.int(2) ?? 0);
+  const slot = slotOf((plan.int(3) ?? 0));
+  const loop = (plan.int(4) ?? 0) !== 0;
   const src = assetSource(c);
   if (src) await startMotionOnSlot(src, c.e, id, slot, motionSlot, loop, (m) => c.native.log(m));
 };

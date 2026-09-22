@@ -26,11 +26,22 @@
  * emulator 因此只为 `_SetNameLenMax@20` 写行为实现，其余导出**名字可绑定**（`GetProcAddress` 在真机
  * 也确实成功）但**调用即抛**「未建模」的明确错误 —— 比静默返回 0 更安全（真到了那一步说明有新语料）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, readStringOperand, writeIntOperand } from '../operand.js';
 import { refFromOperand } from '../operand.js';
 import { readRef, refAt, writeRef, STRIDE_INT } from '../ref.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：AGERC 宿主缝族（agerc），2 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：AGERC 宿主缝族（agerc）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /** 语料里唯一会被加载的模块：文件 id `0x5250` = 21072（`src/SAVE.txt:7 i14b 5250`）。 */
 export const AGERC_FILE_ID = 0x5250;
@@ -55,13 +66,14 @@ const EXPORT_SET: ReadonlySet<string> = new Set(AGERC_EXPORTS);
 
 /** `0x14B`（sub_4229D0 raw 31056-31088）：加载（或重载）AGERC 模块。 */
 const op_agerc_load: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   if (e.agerc.loaded) {
     // 引擎：已有句柄 ⇒ FreeLibrary 并清 0（重载语义）
     e.agerc.loaded = false;
     e.agerc.exports.clear();
   }
-  const id = readIntOperand(e, c.frame, c.instr, 1);
+  const id = (plan.int(1) ?? 0);
   if (id !== AGERC_FILE_ID) {
     // 引擎：FileDB.name(id) → LoadLibraryA(名)；除 AGERC.DLL 外一律失败。
     // ★缺口：emulator 运行期没有 id→名字表（FileSource 是异步接口，handler 不能同步查名）
@@ -76,15 +88,19 @@ const op_agerc_load: OpHandler = (c) => {
 
 /** `0x14C`（sub_422AB0 raw 31091-31135）：把导出绑到槽 0..99。 */
 const op_agerc_bind_export: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const name = readStringOperand(e, c.frame, c.instr, 2);
+  // ★**按引擎顺序先读满操作数**（引擎在每个 handler 体开头 `sub_41BF50` ×N）：op1（作者槽号）的用途
+  //   在后面，但读取必须发生在任何校验/抛错之前 —— 否则"合成指令 + 模块未加载"时 op1 永远读不到，
+  //   「计划 ⟷ 实现」会如实点名（本轮正是这样被抓出来的）。
+  const slot = plan.int(1) ?? 0;
+  const name = plan.str(2) ?? '';
   if (!e.agerc.loaded) {
     throw new Error(`0x14C: 模块未加载 ⇒ 无法取 "${name}" 的地址（引擎此处抛 ShowMessage）`);
   }
   if (!EXPORT_SET.has(name)) {
     throw new Error(`0x14C: "${name}"のアドレス取得に失敗しました．（AGERC.DLL 没有这个导出）`);
   }
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
   if (slot < 0 || slot > 99) {
     throw new Error(`0x14C: "${name}"の関数インデックスが不正です．0から99までを指定してください．（槽 ${slot}）`);
   }

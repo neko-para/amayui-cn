@@ -107,11 +107,11 @@ trailerDwords × u32                           ← 尾部块（3.10+ 放 a9/a10/
   **少跳这 4 字节不会报错**：第 1 条会被读成乱码键，并且**静默丢掉最后一条记录**——
   天結真存档里最后一条恰好是字体键 `\x05…bbf`（CONFIG 第 3 行字体），于是表现为
   「五个字体项里第三个回退到默认字体」。
-- ★**`trailerDwords` 的合法窗口 = `4×(v34−1)` … `4×v34`**（2026-09 订正）：写侧用的是**未补齐**的
+- ★**`trailerDwords` 的合法窗口 = `4×(v34−1)` … `4×v34`**：写侧用的是**未补齐**的
   字符串字节数做整除（raw 45294 `v46 = SizeInBytes/4`），而读侧用 `v28 = &v20[v34 + 2]`（raw 45606）
   按 dword 对齐定位下一块 ⇒ 记录区可以比 `4×(v34−1)` 长 1..4 字节（尾巴补零）。
   实测真 `SAVE.DAT`：记录区 4481 字节 ⇒ 声明 1121（= 4481/4+1 整除）。
-  旧口径只认上界 `4×(v34−1)` ⇒ 遇到"记录区不是 4 的倍数"的真存档会**误判解析失败**
+  只认上界 `4×(v34−1)` 会把"记录区不是 4 的倍数"的真存档**误判为解析失败**
   （症状：鉴赏进度整份读不出来）。emulator 侧 `src/vm/saveData.ts` 的 `parseTables(…, engineLayout)`
   用这个窗口做**结构自校验**（宁可如实报错，也不静默丢键）。
 - 写盘触发：**关窗**（`WM_CLOSE`，除非 `set:NoSaveDat`；raw 141189）与**存档槽保存之后**
@@ -120,7 +120,7 @@ trailerDwords × u32                           ← 尾部块（3.10+ 放 a9/a10/
 
 ### 3.5 ★payload 开头的 int 块 = 「已使用文件」标志（= 回想/鉴赏进度）
 
-> 2026-09 订正：这块**不是**"存档槽用的 int 块"，而是 `FileDB`（`Engine+680092`）的
+> 这块**不是**"存档槽用的 int 块"，而是 `FileDB`（`Engine+680092`）的
 > **「已使用文件」表** —— 回想界面四个按钮的 `回収数/回収率`、BGM 鑑賞列表里哪几首显示曲名，全由它决定。
 > 完整机制见 [`gallery-and-unlock-flags.md`](./gallery-and-unlock-flags.md)。
 
@@ -259,9 +259,12 @@ overlay = %LOCALAPPDATA%\Eushully\天結いキャッスルマイスター.overla
   ⇒ 引擎侧：`0x20D`（渲染目标）+ `0x20E`（提交）+ `0x32`（缩放转送）+ `0x1AE`（写 BMP）。
   `0x32` 的语义与夹取见 `opcode-table.md`；emulator 侧像素由宿主做（Pixi 在两张画布间 `drawImage`），
   模型侧记在 `scene.render4.blits`（守卫 `test/op-032-stretch-texture.test.ts`，`tickets/T-0050`）。
-- **`0x1A1` 不写操作数**（与 `0x1A0`/`0x19E`/`0x19F` 不同）：`sub_42DDE0` 函数体里没有 `sub_42B4B0`，
-  且调度器 `(*(void (__thiscall **)(int))(_this + 4 * opcode + 675996))(_this)`（raw 21217）**丢弃 C 返回值**
-  ⇒ 脚本给的 `(global-int f7ffd)` 只是占位；"读档成没成"要靠先 `0x1A0` 验头。
+- **`0x1A1` 会写回操作数 —— 但只在"打开槽文件失败"的早返回里**：`sub_42DDE0` 先拼 `SAVE%2.2d.DAT` 再 `CreateFileA(GENERIC_READ)`，
+  失败（`HANDLE(-1)`）时 `return sub_42B4B0((int)_this, 1, 1);`（raw **38424-38425**）⇒ 写回 **op1 = 1**
+  （emulator 的 `save-slot.ts` 同口径）；成功则走 `sub_410160(...)` 正常装载，不在这一层写操作数。
+  调度器 `(*(void (__thiscall **)(int))(_this + 4 * opcode + 675996))(_this)`（raw 21217）**丢弃 C 返回值**
+  ⇒ "读档成没成"不能靠返回值，要靠 op1（或先 `0x1A0` 验头）。
+  ★此前本行写"函数体里没有 `sub_42B4B0`"，与 raw 38424-38425 相反（漏了早返回分支）。
   ★旧注"`0x1A1` = 存档到槽位"是**误**（存档是 `0x19E`）。
 - 装载后引擎还会把 `pool_int`（`_this[95744]`，`_this[95738]+1` 个 dword）**整体 ENC 一遍**
   （raw 38433-38438 / 38360-38361，`ENC(a) = ROL4(key ^ ROR4(a,7), 21)`、key = `_this[97059]`）
@@ -453,7 +456,7 @@ emulator 侧因此把**本工程槽（`format = 0`）也接到引擎那条路上
 引擎为此在存档里带了**绘制/槽记录**（`_this[81174]`/`[86174]` 两张 1000×2 组 5 dword 表，20000 字节：
 每条 = 统一文件 id + 参数；读档时 raw 19843-19910 按它逐条 `sub_4559C0` + `sub_4A3800` 把图像装回槽）。
 
-> ★★**2026-09 轮 5 以体订正**（`tickets/T-0083`）：
+> ★★**以体核定的存档结构**（`tickets/T-0083`）：
 > 1. 上面那张 `_this[81174]`/`[86174]` 表（20000 字节 / 1000 条 20 B）**不是绘制项**，是**纹理槽记录表**（`Session[5*slot+466]`：id/param/flag），raw 19843-19910 的循环只做「按 flag==1 把图像重新解码进槽」（`sub_4559C0`+`sub_4A3800`）；
 > 2. **绘制项在 body 末段**：`{u32 740、u32 count、(u32 handle + 2960 B 记录区) × count}`（条目步长 = `1 + 740` dword = 2964 B，引擎 raw 19828 `&v67[4*hFile]`；记录区只有前 740 B 被 `memcpy` 进内存里的 DrawItem）。装载段 raw 19810-19820 **先整批清 `Scene+1032` 容器**、raw 19822-19832 再逐条插回 ⇒ 引擎读档后画面 = **存档那一屏**（真槽 79 的 69 条：背景 0x18A88/slot 4/BG050ABL + 侧栏 tex 17 + 消息窗字格 tex 28）；
 > 3. `NOVEL` 的 `draw-texture 186a0`（line 55）那条在 `(global-int 3f90) != 0` 门后，而 `3f90` **全语料只被写成 0** ⇒ 正式脚本里**从不执行**（`i0ae` 在 line 29、背景块在它之后，天然被续跑跳过）；
@@ -638,7 +641,7 @@ emulator 的对应物：`engineValues[174713]`（当前曲 id）/ `[174715]`（�
 | 1 | 第 5 步按 1000 条图像槽表重解码（槽 79 = 槽 4 ← `BG050ABL.AGF`） | 只 `markFileUsed`（图像一个不装） | ✅ 已按表装回 `Engine.texSlots` + 对 `flag==1` 的条目 `bindTexture` |
 | 2 | 第 3 步**只覆盖池内下标**（`0..count`），池外（如 `global 708ada` = 7,375,578、`global f8c48` = 1,018,952）保留旧值 | `globals.int.clear()` 整份清空 ⇒ 池外全局读成 0 | ✅ 只覆盖 `0..池长` |
 | 3 | 第 8/9 步的 `CALLBACK_LOAD.BIN` 那一跳（ADV 退出 / 渲染目标 / 释放 2000 个句柄 / SE·语音复位 / `savemesskip`） | 直接装记录 0 的脚本（只补了 BGM 重播） | ✅ 已按引擎接上（`T-0072`）：按名装回调进帧 0（返回帧 -11），`exit` 走 -11 分支装记录 0；该脚本自身用到的 `0x137`/`0x244` 已登记（评价：`0x2FA` = 只写字段 `Engine[1951]`，全反编译里只有那一次写 ⇒ 等价 no-op 成立；`0x137` = 整型栈复位（`sub_4222B0`，同族 `0x138` push/`0x13B..0x13D`，emulator 未建模该栈）、`0x244` = 窗复位（`sub_41A370 → sub_4AD9F0(Scene,2)` 遍历绘制项复位 `flags&2` 者的窗）⇒ **两条是"未建模缺口"，不是等价 no-op**；语料各 1 处） |
-| 4 | ★★**装载路径会清绘制容器 —— 但是 `sub_410160` 行内做的**（2026-09 轮 5 订正）：raw **19810-19820** 先整批销毁 `Scene+1032` 容器的树（`sub_40BB60` 释放 + `operator delete`）并复位哨兵/计数（`Scene+0x40C` 树根 `next/prev = self`、`Scene+0x410 = 0`），raw **19822-19832** 再把存档 body 末段 `{u32 740、u32 count、(u32 handle + 2960 B 记录区) × count}` 逐条 `sub_49A300`（740 B 记录默认初始化，raw 116879）+ `memcpy` + `sub_40C910`/`sub_40C310`（按键查/建节点后赋值）插回容器。★**旧结论「27 个被调函数里没有清容器」是对的但结论下错了** —— 清容器不是被调函数、而是 `sub_410160` 自己的行内语句；raw **19378-19389** 那两段**配置门**（`CreateObject&2` / `AutoFreeTexture&2`，默认 1/0 ⇒ 假）确实不执行，但它们管的是**1000 个槽对象**与**两个网格容器**（`+1064`/`+1096`），与绘制项容器（`+1032`）无关。raw **19913-19915** 的两个 **仮想ディスプレイ**复位（`sub_403EF0`，体 raw 9958-9971）复位的是**两套点击热点表 + 鼠标游标**（`virtual_display_a/b` = `Engine+0x55D8`/`0xCAC0`），也不是绘制项。⇒ **引擎读档后画面上是「存档那一屏的绘制项」**（如真槽 79 的 69 条：背景 handle 0x18A88/slot 4/BG050ABL 全屏 + ADV 侧栏 tex 17 + 消息窗字格 tex 28） | 单模型：装载点经宿主缝 `native.restoreDrawItems(items)` 一步做完「清上一屏 + 装存档清单」（= 上面 raw 19810-19832 的等价物） | ✅ **2026-09 轮 5 已按引擎口径实现**（`tickets/T-0083`）：`src/vm/engineDrawItem.ts`（740 B → `Item`，矩阵按 D3DX 写入位置取分量）＋ `engineSlot.ts` 的清单解析（**步长修正** `1 + size` = 2964 B）＋ `restoreDrawItems`（两宿主对称）；`Item.ownerFrame`/`dropFrameItems` **降级为「body 无清单」时的回退**。E4：`--load 79` 日志 `清掉上一屏 172 项、按存档装回 69 项`，阶梯/灰块消失（截图 `tickets/T-0083/evidence/after-itemrestore-*.png`）；守卫 `test/engine-slot.test.ts` / `test/slot-load-screen.test.ts` |
+| 4 | ★★**装载路径会清绘制容器 —— 但是 `sub_410160` 行内做的**：raw **19810-19820** 先整批销毁 `Scene+1032` 容器的树（`sub_40BB60` 释放 + `operator delete`）并复位哨兵/计数（`Scene+0x40C` 树根 `next/prev = self`、`Scene+0x410 = 0`），raw **19822-19832** 再把存档 body 末段 `{u32 740、u32 count、(u32 handle + 2960 B 记录区) × count}` 逐条 `sub_49A300`（740 B 记录默认初始化，raw 116879）+ `memcpy` + `sub_40C910`/`sub_40C310`（按键查/建节点后赋值）插回容器。★**清容器不是被调函数、而是 `sub_410160` 自己的行内语句**；raw **19378-19389** 那两段**配置门**（`CreateObject&2` / `AutoFreeTexture&2`，默认 1/0 ⇒ 假）确实不执行，但它们管的是**1000 个槽对象**与**两个网格容器**（`+1064`/`+1096`），与绘制项容器（`+1032`）无关。raw **19913-19915** 的两个 **仮想ディスプレイ**复位（`sub_403EF0`，体 raw 9958-9971）复位的是**两套点击热点表 + 鼠标游标**（`virtual_display_a/b` = `Engine+0x55D8`/`0xCAC0`），也不是绘制项。⇒ **引擎读档后画面上是「存档那一屏的绘制项」**（如真槽 79 的 69 条：背景 handle 0x18A88/slot 4/BG050ABL 全屏 + ADV 侧栏 tex 17 + 消息窗字格 tex 28） | 单模型：装载点经宿主缝 `native.restoreDrawItems(items)` 一步做完「清上一屏 + 装存档清单」（= 上面 raw 19810-19832 的等价物） | ✅ **已按引擎口径实现**（`tickets/T-0083`）：`src/vm/engineDrawItem.ts`（740 B → `Item`，矩阵按 D3DX 写入位置取分量）＋ `engineSlot.ts` 的清单解析（**步长** `1 + size` = 2964 B）＋ `restoreDrawItems`（两宿主对称）；`Item.ownerFrame`/`dropFrameItems` **降级为「body 无清单」时的回退**。E4：`--load 79` 日志 `清掉上一屏 172 项、按存档装回 69 项`，阶梯/灰块消失（截图 `tickets/T-0083/evidence/after-itemrestore-*.png`）；守卫 `test/engine-slot.test.ts` / `test/slot-load-screen.test.ts` |
 
 
 

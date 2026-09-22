@@ -61,9 +61,14 @@ i12e <out> <?> <mouseX> <mouseY> <size盒数组> <baseX数组> <baseY数组> <co
 | 界面 | 脚本 | size 盒 | baseX | baseY | count | 第 0 项中心 |
 |---|---|---|---|---|---|---|
 | TITLE 菜单 | `TITLE.txt:11-17, 100` | `cd`…`dd` = `[0,0x9c,0,0x9c]`（156×156） | `5` = `[44e 3e0 365 2d9 453]` | `69` = `[126 192 1e5 21f 22a]` | `local 0` = 5 | **(1180, 372)** = 右上角 Game Start |
-| GAMESTART 三按钮 | `GAMESTART.txt:64-68, 115` | `5` = `[0,0xc1,0,0x3b]`（193×59） | `195` = `[2cb 3a3 44d]` | `1f9` = `[240 240 240]` | `local 0` = 3 | **(811, 605)** = ゲーム開始 |
+| GAMESTART 三按钮 | `GAMESTART.txt:64-68, 115` | `5` = `[0,0xc1,0,0x3b]`（193×59） | `195` = `[2cb 3a3 44d]` | `1f9` = `[240 240 240]` | `local 0` = **17**（`GAMESTART.txt:69`；全文件**唯一**一处直接写 `local 0`） | **(811, 605)** = ゲーム開始 |
 
 > ⚠盒是**相对 base 的 dx/dy**，不是 x/y/w/h。把 base 当宽高会让整列命中区错位。
+>
+> ⚠上表两行的 `count` 单元格口径 = **`i12e` 的 op8 实参**，不是"按钮数量"：TITLE 是 `local 0 = 5`（与 5 个 base 项一致），
+> GAMESTART 是 `local 0 = 17`（`GAMESTART.txt:69`），而 base 数组只拷了 3 项（`195` = `[2cb 3a3 44d]`）。
+> 文件层面能确定的是"**直接**写 `local 0` 只有那一处、值为 17"；是否有被调子程序**经指针**改写它，静态 grep 挡不住（`lea (local-ptr …) (local-int 0)` 形态）。
+> 若要拿"该屏真实命中区个数"，用运行时读数：在 `i12e` 执行点读 `local 0`（或数 `e.routes.entries`）。
 > 这两个常量在 `src/tools/gameStartChain.ts`（`GAME_START_XY` / `START_GAME_XY`）、
 > `tools/shot.cjs` 与 `src/tools/config1Chain.ts`（`CONFIG_XY` = 第 3 项 (807,621)）里各出现一次 —— 四者同源。
 
@@ -97,7 +102,7 @@ i12e <out> <?> <mouseX> <mouseY> <size盒数组> <baseX数组> <baseY数组> <co
 
 ### 3.2 可以安全跳过（handler 体**既不回写操作数、也不改 ip/cur**）—— 16 条
 
-已连同依据登记进 `ENGINE_INTERNAL_OPS`（`handlers/stubs.ts`）。★这里的 16 条**已全部转真实现**，`ENGINE_INTERNAL_OPS` 现在只剩 9 条（见 `docs-new/03-engine/opcode-gaps.md`）；下表保留作为"当时为什么可以跳过"的历史判据，但 `0x238`/`0xD9` 两类结论已被推翻（见下方订正行）。四类理由：
+已连同依据登记进 `ENGINE_INTERNAL_OPS`（`handlers/stubs.ts`）。★这里的 16 条**已全部转真实现**，`ENGINE_INTERNAL_OPS` 现在只剩 9 条（见 `docs-new/03-engine/opcode-gaps.md`）；下表是这些指令**当初判为可跳过**的四类理由，其中 `0x238`/`0xD9` 两类**不成立**（见表内说明）：
 
 | 理由 | opcode | 依据 |
 |---|---|---|
@@ -105,7 +110,7 @@ i12e <out> <?> <mouseX> <mouseY> <size盒数组> <baseX数组> <baseY数组> <co
 | **等待门计时器加载**（不是死写） | `0x238`（`Engine[92338]/[92339]` = 等待门起点/时长） | raw 32303-32312；读者 `sub_407E20`（raw 12761-12786）与主循环 `0x400` 分支（raw 21109）；`SN0000.txt:1020` 的 `i238 157c` = 5500ms |
 | **引擎做了事，但 emulator 没有对应子系统**（消息面/转场表/3D） | `0x93` `0x94` `0x97`（消息窗面显示态与填矩形）、`0x224`（清 Scene 转场表）、`0x229`（绘制模式）、`0x256` `0x258` `0x242`（渲染侧字段）、`0x32A`（释放 3D 模型槽）、`0x32D`（3D 颜色） | 都是写渲染/3D 子系统状态，VM 不可观测 |
 | **标志位清除**（**有读者**） | `0xD9`（清 `effect_flags` bit 0x1000） | 主派发循环 raw 20841 `if ((v24 & 0x1000) != 0)` 就是读者（随后判 `& 0x800` 并调 `sub_453B60`）；置位端 raw 30368、清除端 raw 24945 |
-| **emulator 的帧循环自己做了 / 无消费者** | `0x20E`（图形提交）、`0x1BC`（清消息/声音字段）、`0x1AD`（`Engine[166963] = cur`，唯一读者在存档序列化，emulator 不序列化该字段） | — |
+| **emulator 的帧循环自己做了 / 无消费者** | `0x20E`（图形提交）、`0x1BC`（清消息/声音字段）、`0x1AD`（`Engine[166963] = cur`；emulator **已建模写点** = `engineFieldIds.storedCur` + `op_store_cur_166963`，**不序列化**该字段。引擎侧读者 raw 25698-25699 `if (Engine[166963] > v13) Engine[166963] = -1;` —— 所以"唯一读者在存档序列化"这句是错的） | — |
 
 **机械闸门**：`test/game-start-chain.test.ts` 里现有的是 **A5 的 7 条**名单棘轮（`A5_IMPLEMENTED` = `0x93/0x94/0x97/0xd9/0x1ad/0x1b1/0x1bc`）+ 注册表断言，**没有**"16 条不写操作数"的棘轮（那 16 条已不在 stub 表里）；"语料用到却未注册"的棘轮在 `test/opcode-gaps.test.ts`。
 
@@ -162,8 +167,7 @@ image b37 -> BG050ABL.AGF (2048x1152)                   ← 图其实载入了�
 
 `0x21C wait` 置 `effect_flags |= 0x400`（= `_this[174801]`；主循环用字节指针写作 `*(_DWORD*)(_this+699204)`，
 两者是同一个字段）。主循环在该位下**不派发脚本指令**，直到 `sub_407E20(Scene)`（转场/动画 pending）为假，
-或玩家按 `system:EffectSkipOnClick` 的跳过键（raw 21109-21152）。emulator 的 `#serviceAnimGate` +
-`scAnimationsDone()` 与之同口径（见第二层 `scene-pending-flag-0x400-gate`）。
+或玩家按 `system:EffectSkipOnClick` 的跳过键（raw 21109-21152）。emulator 侧与之同口径的是 **`Engine.waitFlags`**（`0x400` 位）+ **`gatePending`**（= `sub_407E20` 的等价物）两条（见第二层 `scene-pending-flag-0x400-gate`）——★此前这里写的 `#serviceAnimGate` / `scAnimationsDone()` **在 `src/` 里不存在**（只在注释里被提到过），别按那两个名字找代码。
 SN0000 开场有一条 **80 秒**的背景横移动画窗，所以这个门会真的等 —— 这与真机行为一致。
 
 ## 5. 验证
@@ -171,12 +175,12 @@ SN0000 开场有一条 **80 秒**的背景横移动画窗，所以这个门会�
 | 层 | 证据 |
 |---|---|
 | E1 | 25 条 handler 体逐条读过（raw 行号见 `opcode-table.md` / `functions.json`） |
-| E2 | `test/game-start-chain.test.ts`：**三张名单棘轮**（`IMPLEMENTED_9` 9 条 + `A4_IMPLEMENTED` 9 条 + `A5_IMPLEMENTED` 7 条，各断言"已进 `OPS` 且不在 no-op 表"）+ 9 条语义用例（含 `0x1B6↔0x1B7` 往返、`0x215/0x218/0x21A` 与场景模型往返）★2026-09 订正：原文"16 条不写操作数棘轮"不存在（那 16 条早已转真实现）。 |
+| E2 | `test/game-start-chain.test.ts`：**三张名单棘轮**（`IMPLEMENTED_9` 9 条 + `A4_IMPLEMENTED` 9 条 + `A5_IMPLEMENTED` 7 条，各断言"已进 `OPS` 且不在 no-op 表"）+ 9 条语义用例（含 `0x1B6↔0x1B7` 往返、`0x215/0x218/0x21A` 与场景模型往返）。 |
 | E3 | 同文件的 E3 用例：真实语料跑完整链路 ⇒ `titleHover=0`、进入 `GAMESTART`、`gameStartHover=0`、`gameStartResult=1`、`reachedInitGame`、进入 `SN0000`、**首文案 ip=901 且页面文本含该串**、路径上 `unknown=[]` |
 | E4 | `npm run shot -- --gamestart`：**2026-09 现状 = TITLE / GAMESTART / SN0000 序章都正常出图**（`.tmp/gsLayout-7-sn0000-first-text.png`）。它抓到的两个缺陷都已修：§4.1 纹理同步屏障、§4.2 mesh 全屏黑叠加块；另有"撤幕过渡帧闪一下"由 `pixiBackend.#holdFrameAfterCurtainDrop` 处理 |
 | 工具 | `npm run op:inventory -- --path start`（表 0 = 路径上未实现指令，表 1/2/3 同既有口径） |
 
-`npm run verify` = **380/380**（2026-09 实测；本条写于修复 §4.1/§4.2 之前，当时 326/326。测试数会随功能增长，**以实测为准**）。
+`npm run verify` 全绿（测试数随功能增长，**以实测为准**）。
 
 ## 6. 现状与缺口
 

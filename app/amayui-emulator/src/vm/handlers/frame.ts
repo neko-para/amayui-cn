@@ -11,7 +11,19 @@
  */
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { SLEEP_GATE } from '../engine.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"帧控制族"）**10 条**：八条 argc 0 + 两条只读（`0x7b` 回退游标 / `0xc8` 睡眠）。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：帧控制族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
@@ -40,6 +52,7 @@ function jumpToDword(c: StepCtx, dword: number): void {
  *   调绘制容器的 `sub_4B4040`（帧刷新）——emulator 的渲染帧循环已自行 present，故 `sub_4B4040` 无需复刻。
  */
 const op_frame_tick: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   if (!e.engineValues.get(ENGINE_FIELD.frameTickLock)) {
     e.engineValues.set(ENGINE_FIELD.frameTickLock, 1);
@@ -58,6 +71,7 @@ const op_frame_tick: OpHandler = (c) => {
  * `engineValues` 的键，结果是"帧计数只增不减 + 停靠锁永不释放 + 0x1F4 再不刷新时钟"（静默）。
  */
 const op_frame_countdown: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const left = e.engineValues.get(ENGINE_FIELD.frameCount) ?? 0;
   if (left > 0) {
@@ -71,6 +85,7 @@ const op_frame_countdown: OpHandler = (c) => {
 
 /** `0x20C`（sub_41A1A0, raw 25259）：每帧刷时钟 + `sub_4B4040(_this+80708)`（帧刷新）。 */
 const op_frame_present: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   if (!e.engineValues.get(ENGINE_FIELD.frameTickLock)) {
     e.engineValues.set(ENGINE_FIELD.clockPrev, e.engineValues.get(ENGINE_FIELD.clock) ?? 0);
@@ -87,12 +102,14 @@ const op_frame_present: OpHandler = (c) => {
  * ★与 `0x1F4`（停靠锁）不同：0x1F4 只在**未锁定**时刷时钟，0x23C 无条件刷（raw 25312-25315）。
  */
 const op_frame_clock: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   e.engineValues.set(ENGINE_FIELD.clockPrev, e.engineValues.get(ENGINE_FIELD.clock) ?? 0);
   e.engineValues.set(ENGINE_FIELD.clock, e.nowMs | 0);
 };
 
 const op_set_wait_flag: OpHandler = (c) => {
+  const plan = planFor(c);
   // 0x21C u00416270：置 effect_flags |= 0x400（版权页动画等待）。
   c.native.setWaitFlag?.(0x400);
   c.e.waitFlags |= 0x400;
@@ -105,8 +122,9 @@ const op_set_wait_flag: OpHandler = (c) => {
  * emulator：置 `sleepUntil = nowMs + max(1, n)`、置 `waitFlags |= SLEEP_GATE`；渲染帧循环每帧 present 直到
  *   nowMs >= sleepUntil 才放行（对齐引擎帧让步，避免脚本空转）。 */
 const op_sleep: OpHandler = (c) => {
+  const plan = planFor(c);
   if (c.e.advActive) return; // 引擎：消息/ADV 激活时 sleep 跳过
-  const n = readIntOperand(c.e, c.frame, c.instr, 1);
+  const n = (plan.int(1) ?? 0);
   c.e.sleepUntil = c.e.nowMs + Math.max(1, n);
   c.e.waitFlags |= SLEEP_GATE;
   c.native.sleep?.(n);
@@ -134,9 +152,10 @@ const op_sleep: OpHandler = (c) => {
  * 语料：`i07b` 在 `$1$SC03xx/SC08xx/SG*` 等脚本里有使用（此前注释写"0 处"是漏计）。
  */
 const op_set_rewind_cursor: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  e.engineValues.set(ENGINE_FIELD.rewindMainBase + e.cur, readIntOperand(e, c.frame, c.instr, 1));
-  e.engineValues.set(ENGINE_FIELD.rewindAltBase + e.cur, readIntOperand(e, c.frame, c.instr, 2));
+  e.engineValues.set(ENGINE_FIELD.rewindMainBase + e.cur, (plan.int(1) ?? 0));
+  e.engineValues.set(ENGINE_FIELD.rewindAltBase + e.cur, (plan.int(2) ?? 0));
 };
 
 /**
@@ -163,6 +182,7 @@ const op_set_rewind_cursor: OpHandler = (c) => {
  * `i7b <label> -1`（设回退点）… 若干条 … `i199`（重显示同一段文本）。
  */
 const op_redisplay_text: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const cur = e.cur;
   const mode = e.engineValues.get(ENGINE_FIELD.redisplayMode) ?? 0;
@@ -211,6 +231,7 @@ const op_redisplay_text: OpHandler = (c) => {
  * 引擎里是「重显示期间的光标/选择暂存」，emulator 没有对应消费者（写进去会变成死写）。
  */
 const op_redisplay_return: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const mode = e.engineValues.get(ENGINE_FIELD.redisplayMode) ?? 0;
   if ((mode & 0x2000000) === 0) {
@@ -269,6 +290,7 @@ const SAVE_VERSION_BRANCH: Record<number, { mode: number; setLoadFlag?: boolean;
 };
 
 const op_save_version_branch: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
   if ((e.engineValues.get(ENGINE_FIELD.loadInProgress) ?? 0) === 0) return; // 非读档流程：引擎在此直接返回
   const resume = e.saveResume;

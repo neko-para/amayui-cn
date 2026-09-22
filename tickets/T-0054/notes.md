@@ -415,3 +415,140 @@ cd app/amayui-emulator && npm run verify
 `set-texture 5273 5`；脚本侧写点 = `CONFIG1.txt:1741-1742` 的 `sub a9d0 1 57bb` + `save-int`、
 默认值 = `INITCONFIG0.txt:12-13`）—— 需要 E4 截图对照，本机 headless 不能替代；
 以及 `0x346`–`0x34D` 对节点的控制（语料 0 次使用，节点矩阵恒单位阵）。
+
+## 轮 12：轮 11 那条接线**比体窄**——补上引擎真正的槽探针（`sub_4A1AF0`）
+
+### 1. 复核体：`sub_40BE10` 的那串 `||` 与轮 11 的读法不同
+
+`engine/天结_unpacked.exe_utf8.c` raw **16025**：
+
+```c
+v2 = (_DWORD *)_this[12676];
+if ( v2[258] || v2[259] || v2[260] || sub_4A1AF0(_this) ) return 1;   // ← needs render
+```
+
+`sub_4A1AF0`（raw **121777-121790**）**逐字**：
+
+```c
+v1 = 0;
+for ( i = _this + 13953; !*i; ++i ) { if ( ++v1 >= 10 ) return 0; }   // 13953 dword = 字节 +55812 = Scene+55812
+return 1;
+```
+
+⇒ 判据是「`Scene+55812` 起的 **10 个实例槽里只要有一个非空**」——**与窗在不在跑无关**。
+轮 11 接的是"**可画节点的窗还在跑**"（`l2dNodeWindowsPending`）⇒ 那是**更窄**的一条：立绘动作播完后
+判据就为假，而引擎只要槽里有实例就**每帧**强制重画。
+
+### 2. 差别在哪里会显形（不是"少画一帧"那么轻）
+
+`0x34F`（纹理乘色）/`0x351`（命名参数）/`0x346`/`0x34D`（572B 节点 setter）**都不置任何脏位**
+（它们走 `live2d/runtime.ts`，不经过 `renderer/scene/*` 的置脏路径）⇒ 没有这一项时，
+"静立绘 + 改参数/改乘色/改节点变换"这一类改动**不会重画**（不报错、只是画面不对）——
+正是本能力台账要抓的"缺失时只表现不对"的类别。引擎靠"槽非空 ⇒ 恒重画"兜住。
+
+### 3. 修法（本轮）
+
+- `renderer/scene/ops.ts` 新增 **`scL2dSlotProbe(s)`** = `(s.l2dHost?.l2dSlots.size ?? 0) > 0`（体逐字：
+  只看槽非空，不看 `model`、不看节点可画性），并接进 `sceneNeedsRender` 的第四个 `||`
+  （两个宿主同一份：`headlessScene.ts:787` 与 `pixiBackend.ts:1308` 都调它）。
+- ★与 `0x342` 天然成对：销毁槽 ⇒ 探针转假 ⇒ 合成可以停。
+- ★**不并进冻结分支**：体里这条在冻结门**之前**（raw 16022-16025 同一串 `||`）⇒ 冻结帧也照样强制合成。
+- ★**代价已写进代码注释**：屏上有立绘时 `present:'needsRender'` 档会每帧合成（引擎就是这样）。
+  想省掉它需要"让 L2D 变更型指令自己置脏"，那要在 VM → 宿主窄缝上再加一条（`L2dHost` 目前没有置脏缝）
+  ⇒ 先按体保正确性。
+- 源码棘轮同步：`test/headless-needs-render.test.ts` 的 READ_ONLY 白名单加 `scL2dSlotProbe`
+  （它是**纯判据**，与 `scAnimationsPending` 同类；棘轮先红了一次——正是它该做的事）。
+
+### 4. 守卫（判据 #4 的前半补齐：E2 + E3 两层）
+
+- **E2**（合成对象单测）`test/l2d-render-pending.test.ts` +1 条：空场景不误报；窗跑完后窄判据为假
+  而**槽探针仍为真、`sceneNeedsRender` 为真**；`l2dDestroySlot` 后两者都转假；冻结不豁免。
+  **辨别力已机械证明**：把 `sceneNeedsRender` 里的 `|| scL2dSlotProbe(s)` 去掉 ⇒
+  **1 fail**（点名"★槽非空就必须继续合成"）；还原后 6/6。
+- **E3**（真语料）`test/live2d-chain.test.ts` 的「真实 TITLE 资产装进实例槽 0」用例内新增：真
+  `TITLE.MOC` 装在槽 0 ⇒ `scL2dSlotProbe(sc) == true` **且** `sceneNeedsRender(sc, 10000, false) == true`；
+  `0x342` 销毁后转假。
+
+### 5. 第二层台账同步（判据 #4 的"把能力条目上调"）
+
+- `live2d-slot-probe`：`absent/E1`（无守卫）⇒ **`modeled-verified`/`E3`**，guard =
+  `test/l2d-render-pending.test.ts`；note 重写为"判据 = raw 16025 的 `sub_4A1AF0`" + 为什么必须照体 +
+  两个守卫。
+- `live2d-enabled-config-flag`：保留 `partial`，note 重写为"L2D 支已能装载且有 E3 守卫；仍需 ①
+  `global a9d0` 的引擎侧对应物与显式断言 ② E4 与静图回落支的对照截图"。
+- `node scripts/build-capabilities.mjs` + `capabilities.js --validate` 绿（137 条）。
+
+### 6. 仍未做（票保持 `doing`）
+
+① `global a9d0` 的引擎侧映射与断言（判据 #3 后半）；② 判据 #4 的 **INFOEN L2D 路径** E3（本轮只覆盖
+TITLE；INFOEN 那段在 `src/INFOEN.txt:1589-1596`，用的是表 `528944` 里的模型 id + `i352/i34e/i344/i349`）；
+③ 判据 #4 的 **E4 真界面截图**（Electron，headless 不能替代）。
+
+## 轮 13：把 T-0075 审计里 Live2D 那一簇 finding **逐条收口**（第二层台账口径修正）
+
+**动因**：`tickets/T-0054` 的判据 #4 要求"把 Live2D 能力条目按实际证据级别上调"，而 T-0075 的审计
+（`docs-new/99-records/2026-09-audit/raw/audit-final-capabilities.json`）恰好有 **8 条**与 Live2D 相关的
+finding（3 条 no-evidence / 1 条 cross-source-mismatch / 3 条 contradiction / 1 条 unclear）。逐条核对后：
+
+- **已修（更早轮次）**：`l2d-node-draw-gate`（P0）—— note 已改为"两宿主每帧消费该判据"。
+- **本轮修**（六条，全部有审计给的 raw 依据）：
+  - `live2d-enabled-config-flag`（no-evidence）：原 `engine.fns=[sub_4209B0]` 是 **0xA0(jcc) handler**
+    （`(676636-675996)/4 = 0xA0`）⇒ 改引 `0x341 → sub_427BA0`（派发表 raw 23249；体 **34460-34495**），
+    并写明 `a9d0/f8c46/f8c47` 是**脚本 global、引擎 0 读点**。
+  - `live2d-mesh-batches`（contradiction）：`trigger` 的"按纹理号分组"与 note/实现冲突 ⇒ 改为"**每个网格一批**"
+    （切批锚点 raw **148038-148068**），`engine.raw` 扩到 134277-134416。
+  - `chained-3d-layer-commit`（contradiction）：本条对象是 **572B 立绘节点表**（不是"3D 场景层"）⇒
+    `n/a-known → modeled-verified`/E3。
+  - `lazy-572b-node-map`（contradiction）：`absent → partial` —— 立绘那半已建模（`Engine.l2dNodes` + `0x344`
+    + 真实 TITLE 守卫），只剩精灵/特效半。
+  - `lazy-live2d-slot`（no-evidence）："10 槽"的硬依据在 `sub_4A1AF0`（raw 121784-121787 `>= 10`），
+    "释放"那半是 `sub_4785E0`（def 92745）⇒ `fns` 补齐、`raw` 扩到 **121664-121790**。
+  - `scene-frame-commit`（cross-source-mismatch）：`raw` 扩为 **134417-136966**（覆盖 `sub_4B06D0` +
+    `sub_4B4040`），`fns` 补 `0x20C` 的 handler `sub_41A1A0`（派发表 raw 23051）。
+- **本轮收窄**：`scene-frame-commit:guard` —— guard 覆盖不到"四路归并"这条声明、且原文引了**已作废**的
+  「MeshEntry 黑罩」近似 ⇒ note 改为分层写清"各路出画有守卫 / **跨路提交次序没有守卫**（排序键在 Pixi
+  合成方法里，要可测需抽到共享层）"，并登记为**未做的守卫**。
+- **仍未动**：`live2d-offscreen-node-lifecycle`（unclear —— 无原始 finding 可比对，按纪律不猜）。
+
+★台账口径变化：`已核验 55→57 / 已建模未核验 7→6 / 部分 31→32 / 缺失 20→19 / n/a 24→23`
+（`capabilities.js --validate` 绿 + `build-capabilities.mjs` 重生成）。
+★与判据 #4 的关系：这就是"按实际证据级别上调"的**逐条依据**；`live2d-enabled-config-flag` 仍留
+`partial`（缺引擎侧对应物与 E4 对照），其余 Live2D 条目均已到 `modeled-verified`/E3 或更高。
+
+## 轮 14：INFOEN 支路的 E3 —— **序列**跑通了，**资产 id 表**那一格定位到了真缺口
+
+### 1. 先做探针：INFOEN 的 id 从哪来（结论：headless 里没有）
+
+`src/INFOEN.txt:1568/1590` 用 `lookup-array-2d (local-ptr) (global-int 527d8c|528944) <idx=13c7> 3 0`
+取「角色 → `.MOC` id / `.MTN` id」，再交给 `call-script SETL2DMOC`（`src/SETL2DMOC.txt:6-11` 起是
+**脚本侧的 id → 资产**映射表）。探针 `.tmp/infoen-l2d-table-probe.mts`（boot → 跑到 TITLE 325 帧 → 读全局），
+输出归档 `evidence/infoen-l2d-table-probe.txt`：
+
+| 量 | 值 | 说明 |
+|---|---|---|
+| `global[0x527d8c]`（MOC id 持有槽） | **0** | `lookup-array-2d` 读出来全 0 |
+| `global[0x528944]`（MTN id 持有槽） | **0** | 同上 |
+| `global[0x708ab6]`（**对照**：路由表） | `0x522d` | 有值 —— 因为 `src/INIT2.txt:115` 有显式写点 |
+| `f8c46` / `a9d0` | `0x4f9e`（TITLE 自己设）/ `0` | L2D 默认开 |
+
+⇒ **「角色 → 模型 id」这一步的真源未定位**：全语料对这两个槽 **0 写点**（`grep 527d8c|528944` 只有
+BTL/INFOEN 两个消费者），而对照表有写点 ⇒ 它们是**引擎侧填**的（填哪个数据文件未查）。
+这就是 INFOEN 支路无法像 TITLE 那样在 headless 直接复现的**唯一**原因（不是 L2D 实现的问题）。
+
+### 2. 但"id 已知之后"的 INFOEN 序列可以 E3（本轮补的守卫）
+
+资产真身（`NodeFileSource.readById` 实测）：`0x4c8e → BM750A.MOC`、**`0x4c8f → BM750A.MTN`**、
+`0x4f9a → BM750A01.PNG`、`0x4f9b → BM750A02.PNG`（`0x4c8e` 这一支正是 `SETL2DMOC.txt:8-10` 的映射）。
+⇒ `test/live2d-chain.test.ts` 新增 **「★T-0054：INFOEN 支路的 L2D 装载序列在真资产上跑通」**：
+按 `SETL2DMOC` 的 0x4c8e 分支 + `INFOEN.txt:1589-1596` 的原序列派发真 handler ——
+`i341 4c8e 0` → `i345 4f9a 0 0` → `i345 4f9b 0 1` → `i352 0 0 0` → `i34e 4c8f 0 0 1` →
+`i344 0x1d8a8 0` → `i349 0x1d8a8 -320 0 0`，断言：槽 0 的模型 id / 两个纹理号 / `0x352` 预置被消费 /
+动作 = `BM750A.MTN` 且循环 / 节点 `0x1d8a8` 在槽 0 且可画 / `0x349` 的立即平移 = `[-320,0,0]`。
+**辨别力已机械证明**：把 `0x345` 的 `texNo` 恒置 0（忽略 op3）⇒ 该用例 1 fail，点名
+「纹理号 0 应绑 BM750A01.PNG」；还原后 3/3 绿。
+
+### 3. 仍未做（票保持 `doing`）
+
+① 「角色 → 模型 id」表（`527d8c`/`528944`）的**真源**（引擎侧填；要定位是哪个数据文件/哪条装载路径，
+必要时新开票）；② `global a9d0` 的引擎侧对应物与断言；③ **E4 真界面截图**（Electron）。
+本轮把 ② 之外的 INFOEN 那一格从"未做"推进到"**已定位真缺口 + 序列部分已 E3**"。

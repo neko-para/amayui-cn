@@ -14,6 +14,7 @@
  *  - `waitIdle()` 供帧屏障用：新绑的纹理要在**同一帧**可见（对齐引擎 `set-texture` 的同步语义）。
  */
 import { Texture } from 'pixi.js';
+import { BARRIER_GIVEUP_MS, BARRIER_POLL_MS } from './textureCache.js';
 
 /** 取字节的窄缝（`IpcFileSource.readById` 满足它）。 */
 export interface L2dByteSource {
@@ -80,18 +81,24 @@ export class L2dTextureStore {
     }
   }
 
-  /** 等所有在途纹理载入完成（帧屏障；超时兜底，绝不把帧循环挂死）。 */
-  async waitIdle(timeoutMs = 500): Promise<void> {
-    const deadline = Date.now() + timeoutMs;
+  /** 等所有在途纹理载入完成（帧屏障）。★上限语义与 `TextureCache.waitIdle` **同一份**（见
+   * `BARRIER_GIVEUP_MS` 的说明：旧版的 500 ms 会在"新绑的纹理还没到"时静默放行，而下游可能已经
+   * 按"没有贴图"走过一整段脚本）。省略参数 = 安全兜底；显式传小上限只给调用方自担后果的场合。 */
+  async waitIdle(timeoutMs?: number): Promise<void> {
+    const started = Date.now();
+    const ceiling = timeoutMs ?? BARRIER_GIVEUP_MS;
     while (this.#inflight.size > 0) {
-      const left = deadline - Date.now();
+      const left = started + ceiling - Date.now();
       if (left <= 0) {
-        this.log(`[l2d] 纹理载入超时（仍有 ${this.#inflight.size} 张）→ 本帧先合成`);
+        this.log(
+          `★[l2d] 纹理屏障放弃等待（已 ${Date.now() - started} ms，仍有 ${this.#inflight.size} 张：` +
+            `${[...this.#inflight.keys()].map((id) => `0x${id.toString(16)}`).join(' ')}）`,
+        );
         return;
       }
       await Promise.race([
         Promise.allSettled([...this.#inflight.values()]),
-        new Promise((resolve) => setTimeout(resolve, left)),
+        new Promise((resolve) => setTimeout(resolve, Math.min(BARRIER_POLL_MS, left))),
       ]);
     }
   }

@@ -99,6 +99,39 @@ export function itemUsesWorld(it: Item): boolean {
 }
 
 /**
+ * **撤幕留帧**的解除判据用的覆盖率（`tickets/T-0067`）：新内容按源矩形面积算，
+ * 达到视口的这个比例才算"**又铺满一屏**"。
+ *
+ * 取 0.9 而不是 1.0：`draw-texture` 的源矩形常常是 1280×720 的满屏图，但也见过
+ * 1216×720 / 1280×704 这类"几乎满屏"（历史遗留的边框留白）⇒ 卡在 1.0 会让留帧白白多扛几帧。
+ */
+export const FRAME_HOLD_COVER_RATIO = 0.9;
+
+/**
+ * 这一项**是否铺满一屏**（**无时钟、无副作用** —— 只看建项时定下的 `flags`/`srcW`/`srcH`）。
+ *
+ * ★为什么不能拿 `itemSrcRect(it, clock)` 判：那会求值 flipbook 窗（第 5 个窗）并**锁存窗起点**，
+ * 而帧内的 `clockMs` 还是上一帧的值（`tickets/T-0004` 的 G3 实测就是这类"宿主渲染策略污染共享模型"）。
+ * 留帧只是宿主侧的呈现近似 ⇒ 判据必须只读**建项那一刻的字段**。
+ *
+ * ★用途（`tickets/T-0067`，证据 = 真机日志 `[frame-hold] 满屏幕布 … 被撤` 后紧跟一条
+ * `draw-texture → 解除留帧`，而那一笔只有 **256×128**）：满屏幕布被撤之后，脚本往往先画一小块
+ * 转场用的贴片（`setTransition` 之前）⇒ 旧实现"任何 `draw-texture` 都解除留帧"会把**中间态**
+ * （幕没了、新一屏还没铺）如实呈现出来 = 用户看到的"闪一帧、露出下面的界面"。
+ */
+export function itemCoversView(
+  it: Item,
+  viewW: number,
+  viewH: number,
+  ratio: number = FRAME_HOLD_COVER_RATIO,
+): boolean {
+  if ((it.flags & 1) === 0) return false; // 不可画（引擎渲染门 raw 133361）
+  if (!(it.srcW > 0) || !(it.srcH > 0)) return false;
+  if (!(viewW > 0) || !(viewH > 0)) return false;
+  return it.srcW * it.srcH >= ratio * viewW * viewH;
+}
+
+/**
  * draw-item 的 diffuse 色（full ARGB）。
  *
  * **求值器位置（实证，见文件头"逐帧求值器"一节）**：A 层 = `sub_49AA30` 内 raw 117434-117483

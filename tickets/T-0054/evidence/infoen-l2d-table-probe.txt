@@ -1,0 +1,35 @@
+# T-0054 轮 14 · 探针输出：INFOEN 的 L2D 资产 id 表在 headless 里**没有数据**
+#
+# 产出命令（仓库根）：`npx tsx .tmp/infoen-l2d-table-probe.mts`（探针是临时件，不入库；
+#   它 = bootHeadless(script 0) → 跑帧到 TITLE（325 帧，经过 LOADCONFIG…INIT2/LOGO/TITLE）→ 再读全局）。
+#
+# 结论（见 notes §「轮 14」）：
+#   ① `global[0x527d8c]`（INFOEN 取 MOC id 的**持有槽**）与 `global[0x528944]`（取 MTN id）跑完整条
+#      boot 链之后**仍是 0** ⇒ `lookup-array-2d` 读出来的是全 0；
+#   ② 对照：`global[0x708ab6]`（路由表）**有值** = 0x522d —— 它由 `src/INIT2.txt:115`
+#      `mov (global-int 708ab6) 522d` 显式设置 ⇒ 说明"表要有数据必须有写点"，而那两个**全语料 0 写点**；
+#   ③ 此刻 `f8c46 = 0x4f9e`（= TITLE 的模型 id，由 TITLE 自己设）、`a9d0 = 0`（L2D 默认开）。
+#   ⇒ 「角色页 13c7 → 模型 id」这一步的**真源未定位**（脚本无写点 ⇒ 引擎侧填），这就是 INFOEN 支路
+#      无法像 TITLE 那样在 headless 直接复现的原因；已登记为本票剩余项。
+[append] APPEND03.AAI -> pack#3（1 归档 APPEND03.ALF / 1689 文件）
+[append] APPEND04.AAI -> pack#4（1 归档 APPEND04.ALF / 425 文件）
+[append] APPEND05.AAI -> pack#5（1 归档 APPEND05.ALF / 918 文件）
+[boot] index 0 -> SYSTEM4.BIN
+
+[跑帧] stop=until frames=325 经过脚本：LOADCONFIG.BIN → PLINIT.BIN → ALINIT.BIN → IMINIT.BIN → EBINIT.BIN → ITINIT.BIN → SKINIT.BIN → RTINIT.BIN → CDINIT2.BIN → CGINIT.BIN → BIINIT.BIN → $1$MIINIT.BIN → $3$IMINIT.BIN → $3$ITINIT.BIN → $4$ITINIT.BIN → INIT2.BIN → LOGO.BIN → TITLE.BIN
+
+===== 全局数组基址（INFOEN 用的那两个）=====
+global[0x527d8c] = 0 (0x0)
+global[0x528944] = 0 (0x0)
+global[0x708ab6] = 21037 (0x522d)
+global[0x527d8d] = 0 (0x0)
+global[0x528945] = 0 (0x0)
+f8c46 = 20382 / f8c47 = 0 / a9d0 = 0
+
+===== 按 INFOEN 的取法（idx=0x13c7、stride 3）=====
+base 0x527d8c → [0, 0, 0]（十进制；全 0 ⇒ 该表在 headless 里没数据）
+base 0x528944 → [0, 0, 0]（十进制；全 0 ⇒ 该表在 headless 里没数据）
+
+===== globals.int 里非零槽的规模（抽样）=====
+槽数 = 85669；最大槽 = 0x708abb
+≥ 0x500000 的槽数 = 63060；前 10 个 = 0x5003e3 0x5007cb 0x500bb4 0x500f9c 0x500fb2 0x501384 0x50176c 0x501782 0x501b55 0x501f3d

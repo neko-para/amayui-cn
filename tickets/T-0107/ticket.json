@@ -1,0 +1,47 @@
+{
+  "title": "INFOEN 的 L2D 资产 id 表（全局槽 527d8c / 528944）真源未定位：脚本 0 写点 ⇒ 需要找出引擎侧是谁填的",
+  "type": "analysis",
+  "priority": "P3",
+  "area": "analysis/emulator/live2d",
+  "why": "`src/INFOEN.txt:1568/1590` 用 `lookup-array-2d (local-ptr) (global-int 527d8c|528944) <idx=13c7> 3 0` 取「角色 → `.MOC` id / `.MTN` id」，再交给 `call-script SETL2DMOC`（`src/SETL2DMOC.txt:6-…` 是脚本侧的 id → 资产映射表）。`tickets/T-0054` 轮 14 的探针（`tickets/T-0054/evidence/infoen-l2d-table-probe.txt`）实测：**跑完整条 boot 链到 TITLE（325 帧）之后，两个\"持有槽\"仍是 0**，而同一批里的对照表 `global[0x708ab6]` 有值（`src/INIT2.txt:115` 的 `mov (global-int 708ab6) 522d`）⇒ 说明\"表要有数据必须有写点\"，而这两个槽**全语料 0 写点**（`grep 527d8c|528944` 只有 BTL/INFOEN 的消费者）⇒表由**引擎侧**填（是哪个数据文件/哪条装载路径未查）。后果：INFOEN（角色资料页）的 L2D 路径**没法像 TITLE 那样在 headless 直接复现**（TITLE 的 id 由脚本自己 `mov f8c46 4f9e`），只能覆盖\"id 已知之后\"的序列（`test/live2d-chain.test.ts` 的 INFOEN 支路 E3）。另：`BTL.txt:1610/1636` 用同一对表（战斗立绘），所以这条也是 BTL 立绘的前置。",
+  "acceptance": [
+    "定位这两个表（`527d8c` = 角色→MOC id、`528944` = 角色→MTN id）的**写入方**：是引擎某条装载路径（引用 raw 行号）、某个数据文件（给出文件与偏移）、还是某条我们还没实现的 opcode（给出 opcode）—— 三者必居其一，并写清 idx 的口径（`13c7` 是角色号？图鉴号？）",
+    "按定位结果在 emulator 里建模：headless 下 INFOEN 的 L2D 路径能取到**真 id**（并因此在 `test/l2d-*` 里可断言真实模型/动作文件），或明确判定\"该表不在本工程范围内\"并把判据降级（要写清为什么）",
+    "若新增 opcode/装载路径 ⇒ 补进 `analysis/opcodes.json`（含 argc/语义）与 `analysis/engine-capabilities.json` 的对应能力条目；若只读数据文件 ⇒ 在 `docs-new/02-data/*` 立页并把 raw/文件偏移登记进去",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0054/evidence/infoen-l2d-table-probe.txt",
+      "anchor": "global[0x527d8c] = 0",
+      "note": "探针实测：boot 链到 TITLE 后两个持有槽仍是 0（对照表 708ab6 = 0x522d）⇒ 表由引擎侧填、脚本 0 写点。",
+      "line": 22
+    },
+    {
+      "file": "src/INFOEN.txt",
+      "anchor": "lookup-array-2d (local-ptr 1) (global-int 527d8c) (local-int 13c7) 3 0",
+      "note": "消费者之一（角色资料页取 MOC id；同文件 :1590 取 MTN id）。",
+      "line": 1568
+    },
+    {
+      "file": "src/INIT2.txt",
+      "anchor": "mov (global-int 708ab6) 522d",
+      "note": "对照：另一张全局表**有**显式写点（因此有数据）—— 用来说明\"0 写点\"这条判据本身是有效的。",
+      "line": 115
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0054"
+    ]
+  },
+  "id": "T-0107",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-21",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

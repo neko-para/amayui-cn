@@ -74,7 +74,7 @@ Scene+1096   572 字节「立绘 / 变换节点」表（与 DrawItem / MeshEntry
 | `0x345` | 装纹理：op1=文件 id、**op2=槽**、**op3=模型内纹理号** | `sub_427CF0` → `sub_4A1970`（34518） | 6 文件 |
 | `0x346` | 节点复位（全部变换 → 单位阵） | `sub_427DD0`（34556） | 0 |
 | `0x347` | 节点缩放（**三分量**，各 ÷100） | `sub_427E10`（34567） → `sub_4AFE20`（`D3DXMatrixScaling(rec+80)`） | 0 |
-| `0x348` | ★**节点轴角旋转**（轴 `+464/+468/+472`、角 `+488` 度）—— **不是缩放**（审计 `op-9-op840`，轮 6 订正） | `sub_427EA0`（34584） → `sub_4AFE90` | 0 |
+| `0x348` | ★**节点轴角旋转**（轴 `+464/+468/+472`、角 `+488` 度）—— **不是缩放** | `sub_427EA0`（34584） → `sub_4AFE90` | 0 |
 | `0x349` | 节点平移（像素） | `sub_427F30`（34602） | 2 文件 |
 | `0x34A` | 节点基础平移偏移（+8/+12/+16） | `sub_427FB0`（34618） | 0 |
 | `0x34B` | 缩放目标矩阵（三分量）+ 窗1：op2/op3 = **int** delay/dur、op4..op6 = **float** 分量 | `sub_428030`（34634） → `sub_4B0030` | 0 |
@@ -150,16 +150,19 @@ Scene+1096   572 字节「立绘 / 变换节点」表（与 DrawItem / MeshEntry
 
 补充：`0x34B/0x34C/0x34D` 那族 setter 只写节点里的"目标矩阵 + 窗(delay/dur)"并置 `Scene+46516` pending；真正的矩阵叠乘发生在 `sub_4B0360` 里（raw 134378-134387）。
 
-★**轮 6 订正 + 轮 8 实现**（`tickets/T-0077`/`T-0096`）：`0x347`–`0x34D` 七条已按体改对操作数类型/顺序/落点（含 `0x348` 由「缩放」改为**轴角旋转**、`scale` 扩三分量、补窗门 `record[0] & 1`，raw 134157/134202/134254）；真语料收益 = `i34d` **12 处（BTL）** 此前 delay/dur 与平移分量整体错位。
-★**节点矩阵合成器 `sub_4A07F0` 已实现**（轮 8）：真身体 = raw **121131-121655**（票面旧写的 121131-121520 **是截断的** —— 被截掉的正是第 4 个窗（平移）的全部求值 + 最终 6 次 `D3DXMatrixMultiply` 与 `T(+pivot)`）。它把 4 个窗求值后组合成节点矩阵（`Scene+46536`），再由 `sub_4B0360`（唯一调用点 raw 134341）右乘进世界矩阵：
+★**节点矩阵合成器的机制与全部逐字段/常量口径**（`0x347`–`0x34D` 七条、`sub_4A07F0` 的真身体区间
+`121131-121655`、D3DX **行向量** vs 本工程 `Affine` **列向量**的转置、`T(−p)·M_base·M_scale·M_rot·M_trans·T(+p)`
+的左右序判据、`pivot` 不是不动点、`dbl_51FB50 = 1000.0` / `0xFFFFFFFF` 立即数 / 轴归一化 / `+24 == 0` 哨兵
+这四条实测口径、emulator 侧实现与守卫）**全部在台账 `engine-capabilities.json#live2d-node-matrix-compose`**
+（其 `narrative` 指回本文件）—— 本文件不再重复。
 
-> `a3 = T(−p) · M_base(+508) · M_scale · M_rot · M_trans · T(+p)`（D3DX **行向量** ⇒ 最左边先作用；左右序判据 = `.lst` 266233-266235 的 `push esi; push esi`）
-> ⇒ 对模型点（z≡0）：**`q = (q0 − p)·A + p + t`**，其中 `A = M_base·M_scale·M_rot`
-> ★**`pivot`（`+8/+16`）不是不动点**：`q0 = p` 映到 **`p + t`**，真正的不动点是 `p − t/(s−1)`（用真实 `d3dx9_43.dll` 逐步重放核对：`pivot=(10,20)、A=2I、t=(3,4)` ⇒ `(0,0)→(−7,−16)`、`pivot→(13,24)`、`(100,50)→(193,84)`）
-> ★`Affine`（本工程是**列向量**）必须对 D3DX 左上 2×2 **取转置**、平移取第 4 行；`world = T(居中) · nodeMatrix`
+**本文件只保留整体机制**：4 个窗（缩放/旋转/平移/颜色）在**每帧绘制的那一次调用**里求值并组合成节点矩阵
+（`Scene+46536`），再由 `sub_4B0360` 右乘进世界矩阵；组合链对 z≡0 的模型点等价于
+`q = (q0 − p)·A + p + t`（行向量序，`T(t)` 在 `T(+p)` 之前作用）。
 
-emulator 侧 = `src/live2d/nodeMatrix.ts`（合成器 + 4 个窗的 `advanceXWindow` 纯函数）+ `src/renderer/scene/ops.ts` 的 `scL2dTick`（每帧每可画节点一次，与引擎「推进与出画同一次调用」同构；★首帧 `delta=0` 也必须跑 —— `+24` 的起点锁存在里面）+ `src/live2d/render.ts` 的 `l2dNodeTransform → Affine → affineApply`（居中平移 `dx/dy` 仍在**最后**）；字段在 `src/live2d/runtime.ts` 的 `L2dNode`。
-★四条以体/实测钉死的口径（`design.md` 原列为"未确证"）：`dbl_51FB50` = **1000.0**（不是 100 ⇒ `record+64` 单位 = alpha×1000）；`a2[18]` 的立即数 = **`0xFFFFFFFF`**（Hex-Rays 把它渲染成 `NaN`）；**`D3DXMatrixRotationAxis` 内部会归一化轴**（轴 `(0,0,2)` 与 `(0,0,1)` 结果逐位相同）；**`+24 == 0` 不能单独当"未锁存"哨兵**（0 同时是合法时钟值，emulator 首帧就是 `scL2dTick(s,0)` ⇒ 只按 `==0` 判断会每帧重新锁存、窗永远开不了；emulator 因此加了专有位 `wins.latched`，引擎侧不可观测）。
+**emulator 侧的实现/守卫与四条实测口径**（`src/live2d/nodeMatrix.ts` + `scL2dTick` + `render.ts` 的
+`l2dNodeTransform → Affine → affineApply`、`wins.latched` 专有位、`dbl_51FB50 = 1000.0`、
+`0xFFFFFFFF` 立即数、轴归一化、`+24 == 0` 不能当哨兵）同样见该台账条目，本文件不重复。
 
 ### 5.1 顶点流与摆放（出画几何的最后一公里）
 
@@ -227,6 +230,6 @@ emulator 侧 = `src/live2d/nodeMatrix.ts`（合成器 + 4 个窗的 `advanceXWin
 - `docs-new/04-app/live2d-support-assessment.md`：**重写侧评估正文**（依赖路线 / 工作量 / 计划 / 待拍板）；
 - `resource-loading.md`：统一文件 id、`SO004A` = Live2D 关时的静态替身图；
 - `rendering.md`：四路归并（DrawItem / MeshEntry / 572B 节点 / …）的层序口径；
-- `opcode-table.md` 的 `0x341`–`0x352` 行（**注**：`0x345` 的旧描述"图形/3D 模型加载"应订正为"L2D 纹理装载"；`0x34F/0x350/0x351` 三行仍是"仅映射"）；
-- `stub-reaudit-2026-09.md` §3 把 Live2D 归为"排除项"——本页与 `tickets/T-0054` 把该判断**改判为"要做"**；
+- `opcode-table.md` 的 `0x341`–`0x352` 行（`0x345` = "L2D 纹理装载"；`0x34F`/`0x350`/`0x351` = 纹理乘色 / 复位动作队列 / 命名参数，均已核对）；
+- `stub-reaudit-2026-09.md` §3（历史快照，把 Live2D 归为"排除项"）—— 本页与 `tickets/T-0054`：Live2D **要做**；
 - 数据层：`analysis/functions.json`（L2D 条目族）、`analysis/engine-capabilities.json`（`live2d-slot-probe` / `lazy-live2d-slot` / `live2d-enabled-config-flag` / `l2d-node-draw-gate` / `live2d-node-draw-advance`）。

@@ -43,6 +43,8 @@ import {
 } from '../src/live2d/runtime.js';
 import { loadModelIntoSlot, startMotionOnSlot, type Live2dAssetSource } from '../src/live2d/assetLoader.js';
 import { evaluateModel, flattenDrawOrder, newParamState } from '../src/live2d/deform.js';
+import { newSceneState } from '../src/renderer/scene/state.js';
+import { scL2dSlotProbe, sceneNeedsRender } from '../src/renderer/scene/ops.js';
 import type { BinInstruction } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -145,9 +147,22 @@ test('Live2D E3：真实 TITLE 资产装进实例槽 0（`.MOC` 解析 + 纹理 
     assert.ok(dd.uvs.length === dd.points.length, `${dd.id} UV 数应与顶点数一致`);
   }
 
-  // ── ⑦ 销毁槽 ⇒ 节点变回不可画（引擎 raw 134320 的门控）──
+  // ── ⑥b ★E3（`tickets/T-0054` M3 的 `live2d-slot-probe`）：**真语料的槽非空 ⇒ 合成判据为真** ──
+  //   引擎 raw 16025 的最后一个 `||` 就是 `sub_4A1AF0`（体 raw 121777-121790：10 槽任一非空 ⇒ 1）
+  //   ⇒ 真 TITLE 立绘装在槽 0 期间，`needsRender` 必须恒为真（与"窗还在跑"无关）。
+  const sc = newSceneState();
+  sc.l2dHost = e;
+  assert.equal(scL2dSlotProbe(sc), true, '★真 TITLE 模型在槽里 ⇒ 探针为真（引擎 raw 121784-121789 的 `!*i` 循环）');
+  assert.equal(
+    sceneNeedsRender(sc, 10_000, false),
+    true,
+    '★槽非空 ⇒ 合成判据为真（真语料 E3：不是只有"窗在跑"才合成）',
+  );
+
+  // ── ⑦ 销毁槽 ⇒ 节点变回不可画（引擎 raw 134320 的门控）；探针也随之转假 ──
   assert.equal(l2dDestroySlot(e, 0), true);
   assert.equal(l2dNodeDrawable(e, e.l2dNodes.get(14)!), false, '槽空 ⇒ 节点整块不出画');
+  assert.equal(scL2dSlotProbe(sc), false, '槽被销毁 ⇒ 探针为假（合成可以停）');
 
   await src.dispose?.();
 });
@@ -197,6 +212,81 @@ test('Live2D：0x341/0x344/0x345/0x34E 在真语料上走完整 VM 派发（hand
   assert.ok(node, '0x344 应建出 key=14 的节点');
   assert.equal(node.slot, 0);
   assert.equal(l2dNodeDrawable(e, node), true, '节点应可画（槽 0 有模型）');
+
+  await src.dispose?.();
+});
+
+/**
+ * ★`T-0054` 判据 #4 的 **INFOEN 支路 E3**（`tickets/T-0054` 轮 14）：用**真资产**跑 INFOEN 那段装载序列。
+ *
+ * ## 为什么用这些 id（都是真脚本里的真 id，不是编的）
+ * - `src/SETL2DMOC.txt:6-11` 是 id → 资产 的**脚本侧映射表**：`f8c46 == 0x4c8e` ⇒ `i341 4c8e` +
+ *   `i345 4f9a <slot> 0` + `i345 4f9b <slot> 1`；
+ * - `src/INFOEN.txt:1589-1596` 是角色资料页的 L2D 序列：`i352 0 0 0` → `i34e <mtn> 0 0 1` →
+ *   `i344 <key> 0` → `i349 <key> <y> 0 0`（`key = 0x1d4c0 + 0x3e8 = 0x1d8a8`，`y = -0x140 = -320`）；
+ * - 资产真身（`NodeFileSource.readById` 实测）：`0x4c8e → BM750A.MOC`、**`0x4c8f → BM750A.MTN`**、
+ *   `0x4f9a → BM750A01.PNG`、`0x4f9b → BM750A02.PNG`。
+ *
+ * ## ★仍然开着的那一格（写清楚，别把本守卫当"INFOEN 全链已复现"）
+ * INFOEN 的两个 id **来自全局表**（`lookup-array-2d (global-int 527d8c)` 取 MOC、`(global-int 528944)`
+ * 取 MTN）。实测（`.tmp/infoen-l2d-table-probe.mts`，跑完 boot 链到 TITLE）：那两个**持有槽的值是 0**，
+ * 而语料里**没有任何脚本写它们**（`708ab6` 那张表则由 `INIT2.txt:115 mov (global-int 708ab6) 522d` 设置）
+ * ⇒ 表由引擎侧填（来源未定位）。所以本守卫跑的是"**id 已知**之后的 INFOEN 序列 + SETL2DMOC 映射"，
+ * 「角色 → id」这一步仍缺输入；登记在 `T-0054` 的 notes §「轮 14」。
+ */
+test('★T-0054：INFOEN 支路的 L2D 装载序列在真资产上跑通（BM750A.MOC/MTN + 两张 PNG）', async (t) => {
+  const root = findResourceRoot();
+  if (!root) {
+    t.skip('找不到含 SYS4INI.BIN 的资源根 —— 跳过');
+    return;
+  }
+  const src = new NodeFileSource({ resourceDir: root });
+  const logs: string[] = [];
+  const scene = new StubNative((m) => logs.push(m));
+  const e = mkEngine(scene);
+  e.fileSource = src;
+
+  const dispatch = async (op: number, args: { type: number; raw: number }[]): Promise<void> => {
+    const instr = {
+      opcode: op,
+      name: `i${op.toString(16)}`,
+      argc: args.length,
+      args,
+      byteOffset: 0,
+      index: 0,
+    } as unknown as BinInstruction;
+    const handler = OPS.get(op) ?? NATIVE_OPS.get(op);
+    assert.ok(handler, `0x${op.toString(16)} 应有 handler（不该落到未实现）`);
+    await handler(makeCtx(e, e.curScript(), instr, scene, (m) => logs.push(m)));
+  };
+  const imm = (n: number): { type: number; raw: number } => ({ type: 0, raw: n });
+
+  const KEY = 0x1d8a8; // INFOEN.txt:1592-1593 算出来的节点 key（0x1d4c0 + 0x3e8）
+
+  // ① SETL2DMOC 的 0x4c8e 分支（真脚本 id）
+  await dispatch(0x341, [imm(0x4c8e), imm(0)]);
+  await dispatch(0x345, [imm(0x4f9a), imm(0), imm(0)]);
+  await dispatch(0x345, [imm(0x4f9b), imm(0), imm(1)]);
+  // ② INFOEN.txt:1589-1596 的序列
+  await dispatch(0x352, [imm(0), imm(0), imm(0)]);
+  await dispatch(0x34e, [imm(0x4c8f), imm(0), imm(0), imm(1)]);
+  await dispatch(0x344, [imm(KEY), imm(0)]);
+  await dispatch(0x349, [imm(KEY), imm(-320), imm(0), imm(0)]);
+
+  const inst = e.l2dSlots.get(0);
+  assert.ok(inst?.model, '0x341 后实例槽 0 应有模型（BM750A.MOC）');
+  assert.equal(inst.modelId, 0x4c8e, '模型 id 应是 SETL2DMOC 分支里的 0x4c8e');
+  assert.equal(inst.textures.get(0), 0x4f9a, '纹理号 0 应绑 BM750A01.PNG');
+  assert.equal(inst.textures.get(1), 0x4f9b, '纹理号 1 应绑 BM750A02.PNG');
+  assert.equal(inst.pendingTextureNo, null, '0x352 预置的纹理号应被 0x34E 消费掉');
+  assert.equal(inst.current?.motion.name, 'BM750A.MTN', '0x34E 后当前动作应是 BM750A.MTN');
+  assert.equal(inst.current?.loop, true, 'INFOEN 那一笔 op4 = 1 ⇒ 循环');
+
+  const node = e.l2dNodes.get(KEY);
+  assert.ok(node, `0x344 应建出 key=0x${KEY.toString(16)} 的节点`);
+  assert.equal(node.slot, 0, '节点头 0x34E 的槽号 = 0');
+  assert.equal(l2dNodeDrawable(e, node), true, '槽里有模型 ⇒ 节点可画');
+  assert.deepEqual(node.translate, [-320, 0, 0], '0x349 的立即平移（float 像素）应写到 record+336');
 
   await src.dispose?.();
 });

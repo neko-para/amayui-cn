@@ -1,0 +1,5 @@
+# T-0054 · 过程文档（changes.md）
+
+## 2026-09-21
+
+轮 12：**轮 11 的 slot-probe 接线比体窄** —— 复核 raw 16025 的 `if (v2[258] || v2[259] || v2[260] || sub_4A1AF0(_this)) return 1;` 与 `sub_4A1AF0`（raw 121777-121790：`Scene+55812` 的 **10 槽任一非空 ⇒ 1**，与窗是否在跑**无关**）。轮 11 接的是「可画节点的窗还在跑」（**更窄**）⇒ 立绘动作播完后判据为假，而引擎只要槽里有实例就每帧强制重画；差别在 `0x34F`（纹理乘色）/`0x351`（命名参数）/`0x346`/`0x34D`（572B 节点 setter）这几笔上显形 —— **它们都不置脏位** ⇒ 没有这一项时「静立绘 + 改参数/乘色/节点变换」不会重画（不报错、只是画面不对）。修法：新增 `scL2dSlotProbe(s)` = `l2dSlots.size > 0`（体逐字：不看 `model`、不看节点可画性）并接进 `sceneNeedsRender` 第四个 `||`（两宿主同一份：`headlessScene.ts:787` / `pixiBackend.ts:1308`）；与 `0x342` 销毁成对；**不并进冻结分支**（体里在冻结门之前）。代价已写进代码注释（屏上有立绘时每帧合成，引擎亦然；想省要走「变更型指令自己置脏」= 需新增 `L2dHost` 置脏缝）。守卫两层：**E2** `test/l2d-render-pending.test.ts` +1（窗跑完后窄判据为假而槽探针/`sceneNeedsRender` 为真；`0x342` 销毁后转假；辨别力机械证明：去掉 `|| scL2dSlotProbe(s)` ⇒ 1 fail 并点名，还原后 6/6）；**E3** `test/live2d-chain.test.ts` 真 `TITLE.MOC` 装槽 0 ⇒ 探针与 `sceneNeedsRender` 为真、析构后转假。源码棘轮白名单加 `scL2dSlotProbe`（棘轮先红了一次，正是它该做的）。第二层台账：`live2d-slot-probe` absent/E1 → **modeled-verified/E3**（guard = `test/l2d-render-pending.test.ts`），`live2d-enabled-config-flag` 保留 partial 但 note 重写；`build-capabilities.mjs` + `--validate` 绿。

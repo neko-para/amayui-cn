@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 137,
-    "modeled-verified": 54,
-    "modeled-unverified": 7,
-    "partial": 31,
-    "absent": 21,
-    "n/a-known": 24,
-    "needsAttention": 59
+    "total": 138,
+    "modeled-verified": 58,
+    "modeled-unverified": 6,
+    "partial": 32,
+    "absent": 19,
+    "n/a-known": 23,
+    "needsAttention": 57
   },
   "entries": [
     {
@@ -139,9 +139,10 @@
       "engine": {
         "fns": [
           "sub_4B4040",
-          "sub_4B06D0"
+          "sub_4B06D0",
+          "sub_41A1A0"
         ],
-        "raw": "136742-136966"
+        "raw": "134417-136966"
       },
       "reads": [
         "Scene+46508",
@@ -159,7 +160,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/draw-item-slot-coverage.test.ts",
-        "note": "四路归并里的三路已接（DrawItem + MeshEntry 黑罩 + **Live2D 572B 立绘节点**，见 live2d-mesh-batches）；另一张 572B 节点表（特效/精灵层）仍未建模 ⇒ 该层缺失。"
+        "note": "★**声明已按审计收窄（2026-09-21，收口 T-0075 审计的 no-evidence）**：本条的 `guard`（`test/draw-item-slot-coverage.test.ts`）只断言「`draw-texture` 绘制项按槽绑定（比例 ≥0.95、存在 tex≠layer 项）」，**不覆盖**\"四路归并\"这条声明；原 note 里的「MeshEntry 黑罩」是**已作废的旧近似**（`renderer/pixi/presenter.ts:208-210` 明写旧的全屏黑实现已废弃），已删。\n**当前真实状态（分层写清）**：\n  ① **各路自己的出画**有守卫 —— DrawItem：`test/draw-item-slot-coverage.test.ts`；MeshEntry：`test/mesh-vertex-quad.test.ts`；文字窗：`test/draw-string.test.ts`、`test/text-layout.test.ts`；Live2D：`test/live2d-render.test.ts`（批次几何 + 槽门控）、`test/l2d-node-compose.test.ts`（节点矩阵）；\n  ② **跨路的提交次序**（引擎等键次序 = item → text → mesh → L2D 节点，raw 135560-135614）**只有源码注释，没有守卫** —— 它现在写在 `renderer/pixi/presenter.ts` 的合成方法里（`entries.sort((a,b) => a.key - b.key || a.order - b.order)`），要可测就得把\"排序键\"抽到共享层（`renderer/scene/*`）再断言；本票登记为**未做的守卫**；\n  ③ 另一张 572B 节点表（精灵/特效层）仍未建模 ⇒ 该层缺失（见 `lazy-572b-node-map`）。\n★**锚点订正（2026-09-21，收口 T-0075 审计的 cross-source-mismatch）**：原 `engine.raw = 136742-136966` 只覆盖 `sub_4B4040`（136741-136966），而 `reads` 里的 `+46500`/`+1056`/`+46676` 的证实行全在 `sub_4B06D0`（**134417-136740**，比原起点早 2325 行）⇒ 区间内证据为零；`trigger` 里的「脚本执行 opcode `0x20C`」其 handler 是 `sub_41A1A0`（派发表 raw 23051 `*(_DWORD *)(_this + 678092) = sub_41A1A0;`，`(678092-675996)/4 = 0x20C`；**体 25258-25275**，其中 25271 `result = sub_4B4040((int)(_this + 80708));`）—— 该函数原先既不在 `fns` 也不在区间内。现 `engine.raw` 扩为 **134417-136966**（一趟覆盖 `sub_4B06D0` + `sub_4B4040`），`fns` 补上 `sub_41A1A0`。"
       }
     },
     {
@@ -1039,10 +1040,10 @@
       "whySilent": "全为 0 时返回 0，只是少一条重画理由，无报错",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E1",
-        "guard": "",
-        "note": "仍未做（T-0054 M3）：引擎 `sub_40BE10` 的重画判据里有一项是\"10 个 L2D 槽里有没有活的模型\"（有 ⇒ 强制重画）。运行态现在有了（`Engine.l2dSlots`，2026-09），但**判据还没接进 `sceneNeedsRender`** ⇒ 站在 L2D 立绘前不动时可能不重画。另注：`Engine.l2dSlots` 在 VM 层，而 `sceneNeedsRender` 是共享场景层函数，接线时要把宿主可见的\"槽非空\"信号传进去（见 tickets/T-0054 acceptance #4）。"
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/l2d-render-pending.test.ts",
+        "note": "★已接线（2026-09，`tickets/T-0054` M3 收尾）。判据 = 引擎 raw 16025 那串 `||` 的最后一项 `sub_4A1AF0(_this)`（体 raw 121777-121790：`Scene+55812` 的 **10 个实例槽任一非空 ⇒ 1**）⇒ 实现为 `scL2dSlotProbe`（= `l2dSlots.size > 0`），并接进 `sceneNeedsRender`（两个宿主同一份）。★为什么必须照体这一条：此前只接了\"节点动画窗还在跑\"（`scAnimationsPending` 的 L2D 段）——**更窄**：立绘动作播完后判据就为假，而引擎只要槽里有实例就每帧强制重画；差别在 `0x34F`（纹理乘色）/`0x351`（命名参数）/`0x346`/`0x34D`（572B 节点 setter）这几笔上会显形（它们都不置脏位 ⇒ 没有这一项时改完不重画）。守卫：E2 = test/l2d-render-pending.test.ts（槽非空/销毁槽/空场景不误报，辨别力已证明：去掉 `scL2dSlotProbe` 项 ⇒ 红并点名）；E3 = test/live2d-chain.test.ts（真 TITLE.MOC 装进槽 0 ⇒ `sceneNeedsRender` 为真；`0x342` 销毁后转假）。"
       }
     },
     {
@@ -1360,27 +1361,27 @@
     {
       "id": "lazy-live2d-slot",
       "subsystem": "Live2D",
-      "name": "Live2D 槽（10）释放-重建",
+      "name": "Live2D 实例槽表（`Scene+55812`，**10** 槽）与「槽非空先析构再建」",
       "trigger": "Live2D 模型载入路径进入 `sub_4A1860(Scene, …, slotIdx, …)`",
       "engine": {
         "fns": [
           "sub_4A1860",
-          "sub_478270",
-          "sub_478330"
+          "sub_4785E0",
+          "sub_4A1AF0"
         ],
-        "raw": "121664-121700"
+        "raw": "121664-121790"
       },
       "reads": [
-        "Scene+55812",
-        "Scene+1860"
+        "Scene+55812(10 个 L2D 实例槽)",
+        "节点+4(L2D 槽号)"
       ],
       "whySilent": "旧槽为空时跳过释放；`ReadFile` 失败只 return 0，无日志",
       "confidence": "confirmed",
       "emulator": {
-        "status": "modeled-unverified",
+        "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/live2d-chain.test.ts",
-        "note": "已实现（2026-09，T-0054 M1）：Engine.l2dSlots 就是引擎 Scene+55812 的 10 槽表；attachModel 在装模型时把参数与部件显隐重置回模型缺省（= 引擎 sub_4A1860 里 槽非空先析构再建 的惰性重建语义），0x342 销毁槽。守卫 test/live2d-chain.test.ts（E3：真实 TITLE.MOC/TITLE.MTN 装进槽 0，断言 modelId / 参数缺省 / 部件显隐 / 纹理绑定 / 销毁后节点不可画）。缺口：渲染器还没消费 l2dSlots 出画，故只算 modeled-unverified。"
+        "note": "已实现（`tickets/T-0054` M1/M3）：`Engine.l2dSlots` 就是引擎 `Scene+55812` 的 10 槽表；`attachModel` 在装模型时把参数与部件显隐重置回模型缺省（= 引擎\"槽非空先析构再建\"的惰性重建语义），`0x342` 销毁槽。守卫 `test/live2d-chain.test.ts`（真实 TITLE.MOC/TITLE.MTN 装进槽 0，断言 modelId / 参数缺省 / 部件显隐 / 纹理绑定 / 销毁后节点不可画）。★**订正（2026-09-21，收口 T-0075 审计的 no-evidence）**：①「**10** 槽」的硬依据是兄弟函数 `sub_4A1AF0` 的循环上界 （raw 121784-121787 `for ( i = _this + 13953; !*i; ++i ) { if ( ++v1 >= 10 ) return 0; }`；`13953*4 = 55812`）—— 已列入 `fns`、`raw` 扩到 `121664-121790`；②「释放」那一半由 `sub_4785E0`（def raw 92745；调用点 121678/121753 `operator delete`）完成，`sub_478270` 其实是 Live2D 对象**构造函数**（建 +12/+16 两个子对象、清零若干字段、`++dword_55D9F8` 引用计数）⇒ 已把释放函数补进 `fns`。"
       }
     },
     {
@@ -1643,7 +1644,7 @@
       "id": "lazy-572b-node-map",
       "subsystem": "渲染",
       "name": "572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384）",
-      "trigger": "任意精灵/特效 opcode 首次触碰某个 key",
+      "trigger": "任意 572B 节点 opcode 首次触碰某个 key（`sub_4AAEC0` 取/建记录 + `sub_4A9D70`）",
       "engine": {
         "fns": [
           "sub_4AAEC0",
@@ -1660,10 +1661,10 @@
       "whySilent": "默认全 0 记录，调用方按 `*result & 1` 判定未激活",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★572B 节点表（精灵/特效/立绘）未建模"
+        "status": "partial",
+        "evidence": "E3",
+        "guard": "test/live2d-chain.test.ts",
+        "note": "**立绘那一半已建模**：`Scene+1096` 的 572B 立绘节点表 = `Engine.l2dNodes`（`src/vm/engine.ts`），节点模型在 `src/live2d/runtime.ts`（`l2dCreateNode` = `0x344` 的 op1=key/op2=槽），出画门 `l2dNodeDrawable`；守卫用真实 TITLE 资产（`test/live2d-chain.test.ts`：装槽/建节点/可画性/销毁，`test/l2d-node-compose.test.ts`：节点矩阵合成）。**仍未建模**：同一张表里精灵/特效那一半的语义（哪些 opcode 会建它们、它们的归并与提交路径），文本/AA 也不走这张表。★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：原 `status=absent` + note「★572B 节点表（精灵/特效/立绘）未建模」把\"立绘\"也算进未建模，与实际不符。"
       }
     },
     {
@@ -1718,26 +1719,30 @@
     {
       "id": "chained-3d-layer-commit",
       "subsystem": "3D",
-      "name": "3D 场景层四路归并与扫描带绘制",
-      "trigger": "`sub_4B0360` 在 `sub_4B06D0` 的 6 个调用点（135610/135796/136001/136091/136307/136575/136647）被选中",
+      "name": "572B「立绘 / 变换节点」层的归并与提交（原被误标为「3D 场景层」）",
+      "trigger": "`sub_4B0360`（raw 134277-134416）在**三处调用侧**被选中：`sub_4B06D0`（raw 134417-136740）内的 **7 处**135610/135796/136001/136091/136307/136575/136647、`sub_4B4040` 的兜底 else 支 **136937**、`sub_4B4460` 的 **137253**（grep `sub_4B0360(` 全量 = 9 处 = 定义 134278 + 上述 8 处调用）。体内以 `a1 + 274`（= `Scene+1096`）为表首按 key 查 572B 记录、`qmemcpy(..., 0x23Cu)`（= 572 字节）取快照，再过「节点 bit0 且节点 +4 指向的 L2D 槽非空」的门控（raw 134316-134320）后提交。",
       "engine": {
         "fns": [
-          "sub_4B0360"
+          "sub_4B0360",
+          "sub_4B06D0",
+          "sub_4B4040",
+          "sub_4B4460"
         ],
-        "raw": "134277-134407"
+        "raw": "134277-134416"
       },
       "reads": [
-        "Scene+46500",
-        "Scene+46512",
-        "Scene+46516"
+        "Scene+1096（572B 立绘节点表）",
+        "节点+0(flags bit0=存在)",
+        "节点+4(L2D 槽号)",
+        "Scene+55812(10 个 L2D 实例槽)"
       ],
-      "whySilent": "只在归并选中 572B 节点时才执行；不选中则整段不跑，无报错",
+      "whySilent": "缺这一路 ⇒ 立绘整层在画面上消失，而脚本、槽、节点判据全都照常（没有任何错误串）—— 与 `live2d-mesh-batches` 同一处的两个面。",
       "confidence": "confirmed",
       "emulator": {
-        "status": "n/a-known",
-        "evidence": "E1",
-        "guard": "",
-        "note": "why: 3D 场景层归并，3D 未建模"
+        "status": "modeled-verified",
+        "evidence": "E3",
+        "guard": "test/live2d-render.test.ts",
+        "note": "已建模并参与四路归并（`tickets/T-0054`）：归并键 = `0x344` 的 op1（`node.key`），出画在 `src/live2d/render.ts`，由 `renderer/pixi/presenter.ts` 作为**第四路**并入（order=3），headless 走同一份（`renderer/scene/snapshot.ts:230`）；守卫用真实 TITLE 资产：`test/live2d-render.test.ts`、`test/l2d-node-compose.test.ts`。★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：原 `status=n/a-known` + `why:「3D 场景层归并，3D 未建模」` 与本条对象不符 —— `sub_4B0360` 归并的是 `Scene+1096` 的 572B **Live2D 立绘节点表**，不是 3D 场景层。 ★**订正（2026-09-21，收口 T-0075 审计的 `chained-3d-layer-commit:callsites`）**：原 trigger 写「`sub_4B06D0` 的 **6** 个调用点」却列了 7 个行号，且漏了 `sub_4B4040@136937` 与 `sub_4B4460@137253` ⇒ 已按 grep 全量写清（9 处、跨 3 个函数，`fns` 同步补齐两个调用方所在函数）。"
       }
     },
     {
@@ -2489,7 +2494,8 @@
         "evidence": "E2",
         "guard": "test/draw-item-scale.test.ts",
         "note": "2026 修正三处：(1) 0x1FD 由『记录式转发』改为真实现（写 work+target 并置 useWorld —— emulator 无窗时求值读 target，只写 work 不生效）；(2) pivot 由绝对值改为 pivot − pos 的局部量（raw 117428/117932）；(3) presenter 增加 +0x68 世界矩阵门（raw 123055 读 Scene+46532，而 Scene+46532 ← DrawItem+0x68，raw 133391）。0x21E 的除数同时由 ÷256 订正为 ÷100（dbl_5201F0 = 100.0，raw 4430）。活证据（E3）：CONFIG1 滚动条拇指 27×23 / 27×1→209 / 27×24 首尾相接，见 test/config1-chain.test.ts 的『滚动条拇指』用例。"
-      }
+      },
+      "narrative": "docs-new/03-engine/rendering.md"
     },
     {
       "id": "glyph-raster-direct-to-slot",
@@ -2679,7 +2685,8 @@
         "evidence": "E3",
         "note": "实现（2026-09）：索引侧 `NodeFileSource` **扫资源根下的 `*.AAI`、按 AAI 头 @264 的包号注册**（不再硬编码文件名、也不再限制 5 个包；`alf.ts` 同时支持 `S4AC`(LZSS) 与 `S4AI`(头后整段直读) 两种体、并按引擎口径用高字节判本体/扩展包）；激活侧 `0x143`(`op_dispatch_script_requests`) 按包号升序把 `包号<<24` 入队、逐条装进**帧 37**、脚本 `exit` 走 `-10` 哨兵继续派发、队列排空后还原发起者（INIT2）现场；访问未装载的包抛 `MissingAppendPackError`（措辞照抄引擎「拡張ファイル情報ファイル %d は読み込まれていません．」，经 IPC/主进程同样冒到渲染侧）。守卫 `test/append-packs.test.ts`（9 条）：合成 AAI 的包号/魔数/直读体、临时目录扫描（坏包跳过、包号越界跳过、不递归子目录、改名照收）、i143 的升序派发与现场还原、无扩展包表时静默跳过、缺包抛错；★E3：真实语料跑完 INIT2 的整条派发链（约 10.8 万步）⇒ 5 包 AUTORUN 按 1..5 装载且 `global 7087f5` 第 1..5 位置起。E4：`npm run shot` 标题画面照常出图，左下角 **6 个 INSTALL 徽章**（= 该掩码的可见效果，`.tmp/shot-0-title.png`）。★已补齐（2026-09）：`0x1D6`/`0x1D7`/`0x1D8` 已从 no-op 改为真实现（第一层 `0x42E7C0`/`0x42E800`/`0x42E850`）—— 作用对象 `Engine[698900]` = `Music[271]` = **PCM 播放器**（vtable `0x5291FC`）的两张曲号表：`+1304` 扁平表（曲号 − 2 → 统一文件 id）、`+1320` 分组表（扩展包曲子；组内下标 0 = 占位槽）。真实派发链上 `$3$AUTORUN.txt:67-68` 的 `i1d7 1` / `i1d8 1 30003b2` 产出「组 1 = [0, 0x30003b2]」与 `global 70801e = 0x1000001`（守卫 `test/append-packs.test.ts` 的 E3 段 + `test/music-table.test.ts`）。`0x1F5`/`0x7C` 的「空闲时补派发」仍未建模（本路径不需要：i143 立即派发 + `exit` 链自走）。",
         "guard": "test/append-packs.test.ts"
-      }
+      },
+      "narrative": "docs-new/03-engine/resource-loading.md"
     },
     {
       "id": "audio-module-topology-and-volume-routing",
@@ -2780,7 +2787,8 @@
         "evidence": "E3",
         "guard": "test/music-table.test.ts",
         "note": "实现（2026-09）：宿主启动时 `NodeFileSource.musicTables()` → `parseMusicTables` 从 SYS4INI 尾部灌 `Engine.musicTable.base`（实测 59 条，`base[29] = 23 = BGM031.OGG` ⇔ 曲号 0x1f = 标题曲）；分组表 `groups` 初始为空、由 `MUSIC_TABLE_OPS`（0x1D6/0x1D7/0x1D8，见 `src/vm/handlers/music-table.ts`）按引擎语义增长；`resolveBgmResource` 复刻 `sub_48DB80`（包内曲号 = `groups[(id >>> 24) − 1][id & 0xFFFFFF]`，直接下标、拒占位槽 0），取到的统一 id 可以是包内 id（`0x30xxxxx`），由 `NodeFileSource.resolveEntry` 按高字节分包解析。守卫 `test/music-table.test.ts`（10 条：三条指令的返回值/表内容逐支、真实 SYS4INI 的曲号表、`$3$AUTORUN` 登记链）+ `test/append-packs.test.ts` 的 E3 段（真实 10.8 万步派发链后 `groups = [[0, 0x30003b2]]`、`global 70801e = 0x1000001`）。★残留：`i1d6` 全语料无调用点（语义已读体确证但无真实用例）；`sub_48A280`（vtable+68）无反编译调用点；缺与真机的曲号表 dump 对照（E4 缺）。"
-      }
+      },
+      "narrative": "docs-new/03-engine/sound-system.md"
     },
     {
       "id": "gallery-unlock-file-used-flags",
@@ -2903,8 +2911,9 @@
       "emulator": {
         "status": "absent",
         "evidence": "E1",
-        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义与对象布局见 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` §1.1 A4b；实现它需要先在场景模型里加\"每槽粒子效果\"这一层"
-      }
+        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义见 live 表格 `docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行（`opcode-table.md` 是生成物，真源在 `analysis/opcodes.json`）；实现它需要先在场景模型里加\"每槽粒子效果\"这一层。★`tickets/T-0105` 的订正：`narrative` 原指向 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`（`kind=record` 的历史区，已过期且按文档模型 I8 只增不改）⇒ 改指 live 生成表。"
+      },
+      "narrative": "docs-new/03-engine/opcode-table.md"
     },
     {
       "id": "passive-camera-and-effect-render-state",
@@ -3373,7 +3382,8 @@
         "evidence": "E2",
         "guard": "test/text-layout.test.ts",
         "note": "实现：`MsgWinStyle.lineSpacing`（`globalTextStyle` 读 `engineValues[21669]`，缺省 = 引擎初值 6）+ `layoutWindow` 的换行 `lineStartY += size + st.lineSpacing`；注音 y 也按引擎的 +1（非 D3D）。守卫：`test/text-layout.test.ts`（ADV `i08b 10` ⇒ 行距 46 / 默认 36；不变量「注音顶 ≥ 上一行底部」）+ `test/engine-field-store.test.ts`（0x8B → `globalTextStyle().lineSpacing`，未写时 6）。★未做：D3D 路径（`set:DrawMode=1`）按「行号 × (字号+行距)」给每行 DrawItem 定位 —— 本机 INI 无 `[set]` 段 ⇒ DrawMode=0，不适用。"
-      }
+      },
+      "narrative": "docs-new/03-engine/adv-text-rendering.md"
     },
     {
       "id": "drawitem-mesh-blend-selector",
@@ -3549,25 +3559,25 @@
       "id": "live2d-enabled-config-flag",
       "subsystem": "Live2D",
       "name": "Live2D 开关（`global a9d0`）与静态贴图回落",
-      "trigger": "TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）",
+      "trigger": "TITLE / BTL / INFOEN 在进 L2D 段之前用 `jcc (global-int a9d0)` 判：**== 0 走 Live2D，!= 0 走静态贴图**（TITLE 的回落 = `set-texture 5273 5`，即 740×700 的 SO004A）。脚本侧证据：src/TITLE.txt:526-530 / src/BTL.txt:1609-1616 / src/INFOEN.txt:711；该项由 CONFIG1 写（src/CONFIG1.txt:1483,1741）、LOADCONFIG 读、INITCONFIG0 默认 **0**（= 默认开）。★**开关本身只在脚本层**：`a9d0`/`f8c46`/`f8c47` 是**脚本 global 槽号**，整个反编译产物里 **0 命中**（没有引擎读点）⇒ 引擎侧能引的只有\"被它门控的那条 L2D 装载支\"的入口。",
       "engine": {
         "fns": [
-          "sub_4209B0"
+          "sub_427BA0"
         ],
-        "raw": "29615-29639"
+        "raw": "34460-34495"
       },
       "reads": [
-        "global a9d0(Live2D 关标志)",
-        "global f8c46(要装的 MOC 文件 id)",
-        "global f8c47(L2D 槽号)"
+        "脚本 global a9d0(Live2D 关标志；脚本层开关，非引擎字段)",
+        "脚本 global f8c46(要装的 MOC 文件 id)",
+        "脚本 global f8c47(L2D 槽号)"
       ],
-      "whySilent": "开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障",
+      "whySilent": "开关只在脚本层判：关掉后走静态贴图，画面照样有、只是人物不动；引擎侧没有 L2D 初始化断言 ⇒ 缺 L2D 时不会被当成故障。★**订正（2026-09-21，收口 T-0075 审计的 no-evidence）**：原 `engine.fns=[sub_4209B0]`/`raw=29615-29639` 是**错的** —— `sub_4209B0` 是派发表项 676636 的 handler，即 opcode `(676636-675996)/4 = 0xA0`（jcc 条件跳转），体内只 `sub_41BF50` 取值/改 ip。现改为引**被门控的 L2D 装载入口**：0x341 → `sub_427BA0`（派发表 raw 23249 `*(_DWORD *)(_this + 679328) = sub_427BA0;`，`(679328-675996)/4 = 0x341`），体 raw **34460-34495**（读文件 id/槽号 → 建模型实例）。",
       "confidence": "confirmed",
       "emulator": {
         "status": "partial",
         "evidence": "E1",
         "guard": "",
-        "note": "部分实现（2026-09，T-0054 M2）：`i341/i345/i34E` 已从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），所以\"L2D 支\"本身已经能装载。**缺口**：`global a9d0` 仍没有被真读（M3）—— 门控分叉在脚本侧（`jcc (global-int a9d0)`）本来就会走对，但重写侧没有任何地方把该开关映射成\"跳过 L2D 装载\"的引擎行为，也没有 E3/E4 对照。`why:` 见触发段：缺 L2D 时静默（静态回落支自己有 set-texture，画面照样有）。"
+        "note": "**L2D 支已能装载并有场景级证据**（2026-09，`tickets/T-0054` M2/M3）：`i341/i345/i34E` 从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），真 TITLE 资产的装载/纹理绑定/动作入队/节点出画都有 E3 守卫（test/live2d-chain.test.ts、test/live2d-render.test.ts）。**仍需**：① 重写侧没有任何地方把 `global a9d0` 映射成\"跳过 L2D 装载\"的引擎行为（门控分叉在脚本侧本来就走得对，缺的是开关的引擎侧对应物与显式断言）；② 没有 E4（与真机 `a9d0 != 0` 的静图回落支做对照截图）。"
       }
     },
     {
@@ -3628,18 +3638,14 @@
       "id": "live2d-mesh-batches",
       "subsystem": "Live2D",
       "name": "Live2D 出画几何：顶点/UV/索引流 + 画布居中摆放 + 归并成三角批次",
-      "trigger": "每帧合成时，572B 节点通过「节点 bit0 且槽里真有模型」的门控后：取参数真值 → 求变形几何 → 按纹理号分组成三角批次 → 与 DrawItem / MeshEntry 按同一个键（节点 key = 0x344 的 op1）归并出画",
+      "trigger": "每帧合成时，572B 节点通过「节点 bit0 且槽里真有模型」的门控后：取参数真值 → 求变形几何 → **每个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`，raw 148038-148068）→ 与 DrawItem / MeshEntry 按同一个键（节点 key = `0x344` 的 op1）归并出画。★**不是**按纹理号分组：那条读法已被实测推翻（TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，合并会把整张角色纹理压成透明），逐条见 note 与 `src/live2d/render.ts`。",
       "engine": {
         "fns": [
           "sub_4B0360",
           "sub_4783D0",
-          "sub_4C8BC0",
-          "sub_4C8620",
-          "sub_4C1EA0",
-          "sub_478490",
-          "sub_4784B0"
+          "sub_4C8BC0"
         ],
-        "raw": "134277-134396"
+        "raw": "134277-134416"
       },
       "reads": [
         "Scene+1096（572B 节点表）",
@@ -3656,7 +3662,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/live2d-render.test.ts",
-        "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。"
+        "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。 ★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：本条的 `trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（`src/live2d/render.ts` 一个网格一批）自相矛盾 ⇒ 已按体与实现改写；`engine.raw` 同时扩到 `134277-134416`（覆盖 572B 节点归并那一段），切批粒度的直接锚点 raw **148038-148068** 写在 `trigger` 里。"
       },
       "evidence": "E4"
     },
@@ -3983,7 +3989,8 @@
         "evidence": "E3",
         "guard": "test/l2d-node-compose.test.ts",
         "note": "已实现（2026-09 轮 8 / tickets/T-0096）：合成器 = src/live2d/nodeMatrix.ts（l2dComposeNode + 4 个 advanceXWindow 纯函数）；落点 = src/renderer/scene/ops.ts 的 scL2dTick（每帧每可画节点一次，与引擎「推进与出画同一次调用」同构；★首帧 delta=0 也必须跑 —— record+24 的起点锁存在里面）；消费端 = src/live2d/render.ts 的 l2dNodeTransform → Affine → affineApply（居中平移 dx/dy 仍在最后）；字段 = src/live2d/runtime.ts 的 L2dNode。★**票面旧写的体区间 121131-121520 是截断的**，真身 121131-121655（被截掉的是第 4 个窗（平移）的全部求值 + 最终 6 次 D3DXMatrixMultiply 与 T(+pivot)）。★验证强度：E2 = 矩阵数值 + 对**真实第三方 d3dx9_43.dll** 的逐步重放对照（探针 .tmp/t0096b/，把组合链的每步行与 3 个点的映射钉下来）+ E3 = 真 TITLE.MOC/纹理资产零回归（node.matrix === I 且逐批次 positions/rect 逐字节相同）。★四条以体/实测钉死的口径：dbl_51FB50 = **1000.0**（不是 100，`record+64` 单位 = alpha×1000）；`a2[18]` 的立即数 = **0xFFFFFFFF**（Hex-Rays 渲染成 NaN）；**D3DXMatrixRotationAxis 内部归一化**（轴 (0,0,2) 与 (0,0,1) 结果逐位相同）；**pivot 不是不动点**（q0 = p 映到 p + t；不动点 = p − t/(s−1)）。★未建模/未确证：帧首 alpha 分支（+64/+124，需模型 vtable，本作语料不可达）、合成结果的 alpha 当前无消费端、+504 bit0 语义、+20/+44/+500、M[11625] 无写点、轴反向时 len==0 取单位阵（D3DX 那头是 0 除）。★emulator 专有位 `wins.latched`：引擎用 `+24 == 0` 当未锁存哨兵，而 0 同时是合法时钟值（emulator 首帧就是 scL2dTick(s,0)）⇒ 只按 ==0 判断会每帧重新锁存、窗永远开不了（实测踩到）。"
-      }
+      },
+      "narrative": "docs-new/03-engine/live2d.md"
     },
     {
       "id": "texture-bind-async-stale-writeback",
@@ -4038,6 +4045,40 @@
         "guard": "test/keyboard-mask.test.ts",
         "note": "`src/vm/input.ts` 的 `DEFAULT_VK_TO_BIT`（7 项）+ `pressKey`/`releaseKey`/`releaseAllKeys`；`flushPending` 只并按下沿（`keyEdge`）、`flushHeld` 并按住态 + 沿；DOM 侧 `keydown`/`keyup`/`blur`/`visibilitychange` → `renderer/pixi/inputAttach.ts`（键码用 `KeyboardEvent.keyCode`，`key` 作兜底）。★仍缺：① `0x107`/`0x10B`/`0x10C` 改写这张表（emulator 只做默认值）；② 真 ADV 场景的键盘 E3（本轮只到合成脚本级）。两条都登记在 `tickets/T-0052`。"
       }
+    },
+    {
+      "id": "copyright-effect",
+      "subsystem": "帧循环",
+      "name": "版权页（LOGO）的 frame 效果：mesh 顶点色窗 + draw-item diffuse-alpha 窗 + timeGetTime 时钟",
+      "trigger": "`src/LOGO.txt` 的版权页（大理石+文字两张整屏图 + mesh#1/#2 两个满屏四边形）：L22/38/40 用 `0x322/0x323`（`sub_426C20`→`sub_4AE2C0` raw 130789 / `sub_426CF0`→`sub_4AE330` raw 130806）给 mesh#1 开**顶点色窗**（黑覆盖层淡出 = 揭示）；L34/36 用 `0x203`（`sub_4ACF60` raw 129850）与 `0x202`（`sub_4AD0C0` raw 129936）给文字图 0x30d41 开 **diffuse-alpha 窗**（透明→不透明）。两族都在**每帧渲染**里求值（mesh：`sub_4AF1C0` raw 131435，131491-131501；draw-item：**`sub_49AA30`** raw 117239 起），时钟 = `Engine[92333]`（字节 +369332；池基读法 `[46500]`）/ 上一帧 `[92334]`，由主循环 raw 20465-20576 每帧 `timeGetTime()` 推进（`0x2400` 含版权页等待旗标 `0x400` ⇒ **停脚本时时钟仍走**）。",
+      "engine": {
+        "fns": [
+          "sub_4AE2C0",
+          "sub_4AE330",
+          "sub_4AF1C0",
+          "sub_49AA30",
+          "sub_4ACF60",
+          "sub_4AD0C0",
+          "sub_4A2050"
+        ],
+        "raw": "117239-131501"
+      },
+      "reads": [
+        "Engine+369332(动画时钟 = timeGetTime ms；池基读作 Scene+46500)",
+        "Engine+369336(上一帧时钟)",
+        "DrawItem+48(混合模式)/+52(START)/+56(DELAY)/+76(COUNT)/+96(FROM 色)/+100(TO 色)",
+        "MeshEntry+0(flags bit1 = 启用颜色动画)/+40(窗起点)/+44(start)/+48(count)",
+        "Scene+46512(强制冻结)/Scene+46516(挂起工作旗标)"
+      ],
+      "whySilent": "这类\"呈现期的值\"缺了**不报错、只是画面不对**：动画窗不生效 ⇒ 版权页直接整屏出现/消失（没有淡入淡出），而脚本照跑、日志正常。反向的错法（把时钟当帧计数器、或把窗求值放到指令期而不是每帧渲染期）会让**时长与帧率挂钩** —— 在慢机器/快机器上表现不同，同样静默。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/mesh-vertex-quad.test.ts",
+        "note": "两族都按\"每帧渲染求值\"实现（顶点色窗见 `renderer/drawitem/animWindow.ts` + `mesh-vertex-quad` 守卫；draw-item diffuse-alpha 窗见 `test/op-203-draw-color-alpha.test.ts` 与 `test/anim-window-done.test.ts`），时钟走宿主的毫秒时钟（`tickets/T-0024` 的 `0x238` 计时器与 `0x400` 门）。机制全文：`docs-new/03-engine/copyright-effect.md`（本条目是它的**台账落点**，此前只存在于该文档与 `tickets/T-0024`）。"
+      },
+      "narrative": "docs-new/03-engine/copyright-effect.md"
     }
   ]
 }

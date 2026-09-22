@@ -1,0 +1,43 @@
+{
+  "title": "B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-effect §6 索引表 / Queue-Stack 构造数）",
+  "type": "docs",
+  "priority": "P3",
+  "area": "docs/03-engine",
+  "why": "`T-0110`（B7-B 机制文档残留订正）已把**能一次性核实**的 18 处全部改掉（见其判据的 ★进度），\n剩下的都属于\"**逐格/逐条核 raw 才能改**\"的类别：照着审计的结论改会引入新的错（本轮已实证：审计说\"逐帧求值属 `sub_49AA30`\"是对的，\n但它对 `0x204`/禁则表的描述只对了一半 —— 禁则表**存在**（`Font+235084` + `sub_45BCD0` raw 72113）只是恒空）。\n所以这批 residue 单独立票：**先核后改，核不动就写卡点**。",
+  "acceptance": [
+    "① `adv-text-rendering.md` 的 Font 字段表：逐格核 4 处可疑行号（`FontVWindow` 表的 `90444/90445/90469/78866` 是否应为 `90446/90447/90463-90464/78861`），核到哪条改哪条，核不动的写清卡在哪",
+    "② `adv-text-rendering.md` §3.5 的 `0x204 draw-string` 措辞（\"GDI 一次性整串\"）：读 `sub_456710` 的体（raw 68470-68491 附近）确认\"整串一次光栅化\"还是\"逐字\"，按体改口径",
+    "③ `set:AutoLineFeed`：键确实存在（引擎 raw 4385 字符串 + raw 112578 的比较），把它补进 §6 的配置键表**并核出它写的是哪个字段**（审计说 `Font+1404`，需读体确认后才许写）",
+    "④ `copyright-effect.md` §6 的\"关键代码索引表\"：逐条复核 raw 行号（该文件曾被审计判为\"行号系统性偏低\"，且本轮已发现其中一处函数名引错 ⇒ 索引表整体值得逐行核）",
+    "⑤ `engine-reset-mainloop.md` 的「10 个 Queue_int / 10 个 Stack_int 构造」：在 `sub_40DF10` 体里逐项数构造点，改成实测数或删掉计数",
+    "npm run verify 全绿（含 `test/doc-model.test.ts` 的 I9）；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0110/ticket.json",
+      "anchor": "★进度（轮 1",
+      "note": "本轮已完成的 18 处（口径与改法可直接复用）"
+    },
+    {
+      "file": "docs-new/03-engine/adv-text-rendering.md",
+      "anchor": "运行期等价于没有禁则处理",
+      "note": "本轮实证的\"审计只对一半\"样本（禁则表存在但恒空）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0110",
+      "T-0080",
+      "T-0105"
+    ]
+  },
+  "id": "T-0112",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建：T-0110 收尾时把\"逐格/逐条核 raw\"的 5 项残余拆出（不许照抄审计）"
+    }
+  ]
+}

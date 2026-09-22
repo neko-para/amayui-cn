@@ -22,7 +22,7 @@ state: live
 - 玩家可见表现：故事剧情场景底部半透明台词窗、逐句台词、字体/颜色/自动换行。它是文字描画的后台，故玩家「意识不到」其存在（不是可点功能，而是渲染台词文本的子系统）。
 - ⚠️ 与**配置/接口对象** `_this[174405]`（DWORD 下标，byte `0xAA514`）区分：后者走 vtable 虚函数，以 `"message"`/`"readtex"`/`"MessageAutomes_1"`/`"set:SaveVersion"` 等字符串派发——是引擎的**配置读写/对外接口分发**对象（`0xFE`/`0x25B`/`0x2EE`/`0x1CA`/`0xAE` 等经它），**不是**文字消息窗。两者勿混同。
 
-### 1.2 内嵌子对象基址（★同偏移不同 scope —— 轮 7 订正）
+### 1.2 内嵌子对象基址（★同偏移不同 scope）
 
 `Engine` 里嵌着若干**子对象**，它们**各自从 0 起算**，所以「同一个偏移」在不同 `scope` 下含义完全不同。查字段一律按 `analysis/fields.json` 的 **`scope + offset`** 定位（`report.js --field`），不要只按偏移找。
 
@@ -31,13 +31,13 @@ state: live
 | `Engine` | `0x0` | **Input(DInput) 管理器对象** —— `sub_477DD0(_this + 1032)` 构造（raw 22461）；复位路径 `sub_478090/sub_477220(_this + 1032, …)`（raw 18058/18060）；`GetAsyncKeyState` 轮询（raw 91575）、`[259]` = `set_key_total` 默认 7（raw 92386）、`[a2+1432]` = 键位→VK 表、`[1176]` = VK→掩码位表 |
 | `Scene`（内嵌在 `Engine+0x4ED10`，dword `_this[80708]`） | `0x4ED10`（byte 322832） | **绘制项容器** `std::map<uint32_t,DrawItem>`（= `Scene/0x408 draw_item_map`）；同族 **`Scene+0x428`** 是 mesh 容器（dword `[266]`） |
 
-- ★**轮 7 订正（T-0097④）**：`fields.json` 曾有 `Engine/0x408 draw_item_container` 与 `Engine/0x428 mesh_container` 两条 **scope 错的重复条目** —— 两者都落在 **Scene** 而不是 Engine。已改为 `Engine/0x408 input_manager` + `Scene/0x428 mesh_container`；`0x408` 那条的绘制项语义由本来就存在的 `Scene/0x408 draw_item_map` 承担。
-- ★**推论（scope 判据）**：凡「体内 `_this + 258`（dword）/`_this + 1032`（byte）是绘制项 map、或 `_this + 266` 是 mesh 表」的函数，它的首参就是 **Scene** —— 因为 opcode 侧一律以 `Engine + 80708`（dword）= **byte 322832 = `Engine+0x4ED10`** 传入（raw 31415 `sub_4AD0C0(_this + 80708,…)`、raw 31450 `sub_4ACF60(_this + 80708,…)`）。据此已订正 `sub_4AEEA0`/`sub_4ACF60`/`sub_4AD0C0` 的 `param0`（`Engine*` → `Scene*`）与 `sub_4AAD40`（→ 容器指针本身）。
-- ★**轮 7 订正（基址 hex）**：本节初版把 Scene 基址写成 `Engine+0x4ECD0` —— **偏 64 字节**（0x4ECD0 = 322768；`Eng+80708` dword = **322832 = 0x4ED10**）。`fields.json` 里 12 处 `this->scene(+0x4ECD0)` 与 1 处 `0x4ECE0` 同类写法一并改为 `0x4ED10`。换算规则：**`Engine[i] = Scene[i − 80708]`**（例：`Engine[92333] = Scene[11625] = Scene+46500` 动画时钟 ms、`Engine[92338]/[92339] = Scene+46520/46524` 等待计时器开始/时长）。
+- ★**同偏移的两个 `0x408` 别混**：`Engine/0x408` = `input_manager`（Input 管理器）、`Scene/0x408` = `draw_item_map`（绘制项 map）；`Engine/0x428` **不是** mesh 容器，mesh 容器是 **`Scene/0x428`**（`fields.json` 的 `mesh_container`）。
+- ★**推论（scope 判据）**：凡「体内 `_this + 258`（dword）/`_this + 1032`（byte）是绘制项 map、或 `_this + 266` 是 mesh 表」的函数，它的首参就是 **Scene** —— 因为 opcode 侧一律以 `Engine + 80708`（dword）= **byte 322832 = `Engine+0x4ED10`** 传入（raw 31415 `sub_4AD0C0(_this + 80708,…)`、raw 31450 `sub_4ACF60(_this + 80708,…)`）。据此 `sub_4AEEA0`/`sub_4ACF60`/`sub_4AD0C0` 的 `param0` 类型是 `Scene*`、`sub_4AAD40` 收的是容器指针本身。
+- ★**Scene 基址 hex = `Engine+0x4ED10`**（byte 322832；**别写成 `0x4ECD0`** = 322768，偏 64 字节）。`fields.json` 里 `this->scene(+…)` 一律按 `0x4ED10` 记。换算规则：**`Engine[i] = Scene[i − 80708]`**（例：`Engine[92333] = Scene[11625] = Scene+46500` 动画时钟 ms、`Engine[92338]/[92339] = Scene+46520/46524` 等待计时器开始/时长）。
 
 ## 2. 脚本帧 / 调用栈（字段真源见数据层）
 
-每脚本一帧（`frames[40]`，**帧基址 `0x5D880`**、步长 0x78；★曾误记 0x5D894 —— 那只是 frame0 的 `str_table` 槽 = 帧+0x14）；`call-script` 压帧、`exit`/`ret` 弹回，涉及 `cur_script`(0x5D880)、`call_ret`(0x5D884)、帧内 `caller`(帧+0x4C)/返回栈、`engine_bool_flag`(0xA30D4) 等。字段偏移与语义一律见 `analysis/fields.json`（`Engine`/`ScriptContext` 作用域）；跨帧流程见 `./flow-control.md`。
+每脚本一帧（`frames[40]`，**帧基址 `0x5D880`**、步长 0x78；`frame0+0x14` 是它的 `str_table` 槽，**别把那个当帧基址**）；`call-script` 压帧、`exit`/`ret` 弹回，涉及 `cur_script`(0x5D880)、`call_ret`(0x5D884)、帧内 `caller`(帧+0x4C)/返回栈、`engine_bool_flag`(0xA30D4) 等。字段偏移与语义一律见 `analysis/fields.json`（`Engine`/`ScriptContext` 作用域）；跨帧流程见 `./flow-control.md`。
 
 ## 3. 定位 `this`
 

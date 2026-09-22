@@ -16,13 +16,26 @@
  * ★六条 setter **都没有 `flags & 1` 门控**（缺项即建、不报错）；消费端 = `drawitem/eval.ts`
  *  （`flags & 4` 门 + 每通道 `period > 0` 门）；规格 = `docs-new/03-engine/b3-bit2-model-spec-2026-09.md`。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import type { Engine, Frame } from '../engine.js';
 import type { Ref } from '../ref.js';
 import { readIntOperand, readFloatOperand, writeIntOperand, writeFloatOperand, refFromOperand } from '../operand.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readRef, refAt } from '../ref.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"绘制项/场景变换族"）**31 条一次迁完**：形状虽比音频族杂
+ * （int handle 与 float 分量混排、5 条 getter 会**写操作数**、`0x320` 有 7 个**指针位**），
+ * 但每条的读/写形状都由语义列 + 原 handler 的实际读法逐条定死，再由「计划 ⟷ 实现」逐位核对背书。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：绘制项/场景变换族走操作数计划层，但没有声明计划`);
+  return p;
+}
 
 // ---------------------------------------------------------------------------
 // 绘制项 / 纹理槽的**查询**指令族（`sub_4303xx` / `sub_4304xx`）
@@ -45,9 +58,10 @@ import type { OpTable } from './shared.js';
  * 紧接着 `i216` 用这个槽去查 imgid —— 这一对就是**立绘/图元→资源的反查**。
  */
 const op_get_draw_texture_slot: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const handle = (plan.int(2) ?? 0);
   const slot = c.native.getDrawItemTexSlot?.(handle);
-  writeIntOperand(c.e, c.frame, c.instr, 1, slot === undefined || slot < 0 ? -1 : slot);
+  plan.setInt(1, slot === undefined || slot < 0 ? -1 : slot);
 };
 
 /**
@@ -63,8 +77,9 @@ const op_get_draw_texture_slot: OpHandler = (c) => {
  * 换成 imgid 存起来，供后续 `i2ff`（按 imgid 播语音/取资源）用。
  */
 const op_get_slot_imgid: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 2);
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.texSlots.get(slot) ?? 0);
+  const plan = planFor(c);
+  const slot = (plan.int(2) ?? 0);
+  plan.setInt(1, c.e.texSlots.get(slot) ?? 0);
 };
 
 /**
@@ -78,12 +93,13 @@ const op_get_slot_imgid: OpHandler = (c) => {
  * 语料：`src/SN0000.txt:1030/1040`（取当前 pivot ⇒ 先校正再设回去，做"围绕人物中心"的摆放）。
  */
 const op_get_draw_pivot: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const handle = readIntOperand(e, c.frame, c.instr, 1);
-  const p = c.native.getDrawItemPivot?.(handle) ?? { x: 0, y: 0, z: 0 };
-  writeFloatOperand(e, c.frame, c.instr, 2, p.x);
-  writeFloatOperand(e, c.frame, c.instr, 3, p.y);
-  writeFloatOperand(e, c.frame, c.instr, 4, p.z);
+  const handle = (plan.int(1) ?? 0);
+  const pivot = c.native.getDrawItemPivot?.(handle) ?? { x: 0, y: 0, z: 0 };
+  plan.setFloat(2, pivot.x);
+  plan.setFloat(3, pivot.y);
+  plan.setFloat(4, pivot.z);
 };
 
 /**
@@ -97,12 +113,13 @@ const op_get_draw_pivot: OpHandler = (c) => {
  * 即"把立绘从预置位置挪到目标位置"；跳过 `i21a` 会让偏移量基于 0 计算 ⇒ 立绘位置全错。
  */
 const op_get_draw_pos: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const handle = readIntOperand(e, c.frame, c.instr, 1);
-  const p = c.native.getDrawItemPos?.(handle) ?? { x: 0, y: 0, z: 0 };
-  writeFloatOperand(e, c.frame, c.instr, 2, p.x);
-  writeFloatOperand(e, c.frame, c.instr, 3, p.y);
-  writeFloatOperand(e, c.frame, c.instr, 4, p.z);
+  const handle = (plan.int(1) ?? 0);
+  const pos = c.native.getDrawItemPos?.(handle) ?? { x: 0, y: 0, z: 0 };
+  plan.setFloat(2, pos.x);
+  plan.setFloat(3, pos.y);
+  plan.setFloat(4, pos.z);
 };
 
 /**
@@ -114,10 +131,11 @@ const op_get_draw_pos: OpHandler = (c) => {
  * emulator：转发 `native.setDrawPivot`（渲染器写 DrawItem 的 pivot，供 present 用）。
  */
 const op_set_draw_pos: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const x = readFloatOperand(c.e, c.frame, c.instr, 2);
-  const y = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const z = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const x = (plan.float(2) ?? 0);
+  const y = (plan.float(3) ?? 0);
+  const z = (plan.float(4) ?? 0);
   c.native.setDrawPos?.(handle, x, y, z);
 };
 
@@ -130,12 +148,13 @@ const op_set_draw_pos: OpHandler = (c) => {
  * ★订正：早前 emulator 按 **÷256** 实现（并把 `dbl_5201F0` 误记为 256.0），导致所有缩放窗幅度差 2.56 倍。
  */
 const op_set_scale_matrix: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 4) / 100; // dbl_5201F0 = 100.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 6) / 100;
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const delay = (plan.int(2) ?? 0);
+  const dur = (plan.int(3) ?? 0);
+  const sx = (plan.float(4) ?? 0) / 100; // dbl_5201F0 = 100.0
+  const sy = (plan.float(5) ?? 0) / 100;
+  const sz = (plan.float(6) ?? 0) / 100;
   c.native.setScaleAnim?.(handle, delay, dur, sx, sy, sz);
 };
 
@@ -146,13 +165,14 @@ const op_set_scale_matrix: OpHandler = (c) => {
  * 轴/角存目标 `+0x1F8..0x208`、`D3DXMatrixRotationAxis(元素+0x12C, axis, deg·π/180)`。
  */
 const op_set_rotation_anim: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
-  const ax = readFloatOperand(c.e, c.frame, c.instr, 4);
-  const ay = readFloatOperand(c.e, c.frame, c.instr, 5);
-  const az = readFloatOperand(c.e, c.frame, c.instr, 6);
-  const deg = readFloatOperand(c.e, c.frame, c.instr, 7);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const delay = (plan.int(2) ?? 0);
+  const dur = (plan.int(3) ?? 0);
+  const ax = (plan.float(4) ?? 0);
+  const ay = (plan.float(5) ?? 0);
+  const az = (plan.float(6) ?? 0);
+  const deg = (plan.float(7) ?? 0);
   c.native.setRotationAnim?.(handle, delay, dur, ax, ay, az, deg);
 };
 
@@ -162,12 +182,13 @@ const op_set_rotation_anim: OpHandler = (c) => {
  * → `sub_4AD3C0`：`+68=delay`、`+88=dur`、`+104=1`、`D3DXMatrixTranslation(元素+0x1AC, x, y, z)`。
  */
 const op_set_translation_anim: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
-  const x = readFloatOperand(c.e, c.frame, c.instr, 4);
-  const y = readFloatOperand(c.e, c.frame, c.instr, 5);
-  const z = readFloatOperand(c.e, c.frame, c.instr, 6);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const delay = (plan.int(2) ?? 0);
+  const dur = (plan.int(3) ?? 0);
+  const x = (plan.float(4) ?? 0);
+  const y = (plan.float(5) ?? 0);
+  const z = (plan.float(6) ?? 0);
   c.native.setTranslationAnim?.(handle, delay, dur, x, y, z);
 };
 
@@ -178,12 +199,13 @@ const op_set_translation_anim: OpHandler = (c) => {
  * → `sub_4AD4A0`。逐帧把帧序号写成**源矩形**偏移（引擎 raw 117797-117831），不是 UV。
  */
 const op_set_flipbook: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2);
-  const dur = readIntOperand(c.e, c.frame, c.instr, 3);
-  const frames = readIntOperand(c.e, c.frame, c.instr, 4);
-  const cols = readIntOperand(c.e, c.frame, c.instr, 5);
-  const flags = readIntOperand(c.e, c.frame, c.instr, 6);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const delay = (plan.int(2) ?? 0);
+  const dur = (plan.int(3) ?? 0);
+  const frames = (plan.int(4) ?? 0);
+  const cols = (plan.int(5) ?? 0);
+  const flags = (plan.int(6) ?? 0);
   c.native.setFlipbook?.(handle, delay, dur, frames, cols, flags);
 };
 
@@ -198,10 +220,11 @@ const op_set_flipbook: OpHandler = (c) => {
  * （实测 CONFIG1 右侧滚动条拇指：上盖 27×23 + 中段 27×1 放大到 209 + 下盖 27×24）。
  */
 const op_set_scale: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 2) / 100; // dbl_5201F0 = 100.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 3) / 100;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const sx = (plan.float(2) ?? 0) / 100; // dbl_5201F0 = 100.0
+  const sy = (plan.float(3) ?? 0) / 100;
+  const sz = (plan.float(4) ?? 0) / 100;
   c.native.setScale?.(handle, sx, sy, sz);
 };
 
@@ -214,10 +237,11 @@ const op_set_scale: OpHandler = (c) => {
  * ★与 `0x1FD` 对照：**平移用像素、缩放用百分数**（0x1FD 的 op2..op4 经 `/dbl_5201F0`）。
  */
 const op_set_draw_translation: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const x = readFloatOperand(c.e, c.frame, c.instr, 2);
-  const y = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const z = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const x = (plan.float(2) ?? 0);
+  const y = (plan.float(3) ?? 0);
+  const z = (plan.float(4) ?? 0);
   c.native.setDrawTranslation?.(handle, x, y, z);
 };
 
@@ -242,9 +266,10 @@ const op_set_draw_translation: OpHandler = (c) => {
  * 语料 2 处（`FIELD.txt:14360` / `LOOK.txt:108` ⇒ 缩放 (1,1,1)）。
  */
 const op_scene_scale: OpHandler = (c) => {
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 1) / 100; // dbl_5201F0 = 100.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 2) / 100;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 3) / 100;
+  const plan = planFor(c);
+  const sx = (plan.float(1) ?? 0) / 100; // dbl_5201F0 = 100.0
+  const sy = (plan.float(2) ?? 0) / 100;
+  const sz = (plan.float(3) ?? 0) / 100;
   c.native.setSceneScale?.(sx, sy, sz);
 };
 
@@ -257,9 +282,10 @@ const op_scene_scale: OpHandler = (c) => {
  * work 矩阵（按 handle 查表），本条改的是 **Scene 自己的变换块**。
  */
 const op_scene_translation: OpHandler = (c) => {
-  const x = readFloatOperand(c.e, c.frame, c.instr, 1);
-  const y = readFloatOperand(c.e, c.frame, c.instr, 2);
-  const z = readFloatOperand(c.e, c.frame, c.instr, 3);
+  const plan = planFor(c);
+  const x = (plan.float(1) ?? 0);
+  const y = (plan.float(2) ?? 0);
+  const z = (plan.float(3) ?? 0);
   c.native.setSceneTranslation?.(x, y, z);
 };
 
@@ -272,11 +298,12 @@ const op_scene_translation: OpHandler = (c) => {
  * ★`op1`/`op2` 是**轴/掩码类 int**（语料 `i22d 0 258 …` / `i22d 0 12c …` 的 op1 恒为 0），不是 handle。
  */
 const op_scene_axis_scale: OpHandler = (c) => {
-  const a = readIntOperand(c.e, c.frame, c.instr, 1);
-  const b = readIntOperand(c.e, c.frame, c.instr, 2);
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 3) / 100; // dbl_5201F0 = 100.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
+  const plan = planFor(c);
+  const a = (plan.int(1) ?? 0);
+  const b = (plan.int(2) ?? 0);
+  const sx = (plan.float(3) ?? 0) / 100; // dbl_5201F0 = 100.0
+  const sy = (plan.float(4) ?? 0) / 100;
+  const sz = (plan.float(5) ?? 0) / 100;
   c.native.setSceneAxisScale?.(a, b, sx, sy, sz);
 };
 
@@ -290,11 +317,12 @@ const op_scene_axis_scale: OpHandler = (c) => {
  * 本条体内是 `+387` + **`D3DXMatrixTranslation`**（`sub_49A9C0` 里 `D3DXMatrixScaling` 一次都没有）。
  */
 const op_scene_axis_translation: OpHandler = (c) => {
-  const a = readIntOperand(c.e, c.frame, c.instr, 1);
-  const b = readIntOperand(c.e, c.frame, c.instr, 2);
-  const x = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const y = readFloatOperand(c.e, c.frame, c.instr, 4);
-  const z = readFloatOperand(c.e, c.frame, c.instr, 5);
+  const plan = planFor(c);
+  const a = (plan.int(1) ?? 0);
+  const b = (plan.int(2) ?? 0);
+  const x = (plan.float(3) ?? 0);
+  const y = (plan.float(4) ?? 0);
+  const z = (plan.float(5) ?? 0);
   c.native.setSceneAxisTranslation?.(a, b, x, y, z);
 };
 
@@ -305,6 +333,7 @@ const op_scene_axis_translation: OpHandler = (c) => {
  * `drawItems` + `meshes`（**保留纹理槽**）。★注意：这才是"合法的整批清场"，与"换脚本就清"无关。
  */
 const op_clear_draw_container: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.clearDrawContainer?.();
 };
 
@@ -329,17 +358,18 @@ const op_clear_draw_container: OpHandler = (c) => {
  *   未实现时命中即 `NotImplementedOp`，按桩跳过则 op1 留旧值 ⇒ 分支走错（静默逻辑错误）。
  */
 const op_get_item_translation: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const handle = (plan.int(2) ?? 0);
   const t = c.native.getDrawItemTranslation?.(handle);
   if (t === undefined) {
     // 引擎失败分支：op1 = 1，且**不写** op3/op4/op5（保持旧值）
-    writeIntOperand(c.e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
-  writeFloatOperand(c.e, c.frame, c.instr, 3, t.x);
-  writeFloatOperand(c.e, c.frame, c.instr, 4, t.y);
-  writeFloatOperand(c.e, c.frame, c.instr, 5, t.z);
-  writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+  plan.setFloat(3, t.x);
+  plan.setFloat(4, t.y);
+  plan.setFloat(5, t.z);
+  plan.setInt(1, 0);
 };
 
 /**
@@ -371,18 +401,19 @@ const op_get_item_translation: OpHandler = (c) => {
  * ★类别 0 的**渲染端**仍未建模（记在 `tickets/T-0076`）。
  */
 const op_set_transition_fade: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // ★引擎**无条件读满 op1..op8**（`sub_41BF50` ×8，raw 31949-31956）**且在调用之前** ⇒ 先全读进局部量。
   // 为什么不把 `readIntOperand` 直接写进下面可选调用的实参表：`f?.(…)` 在 `f` 为 `undefined` 时**不求值实参**
   // ⇒ 宿主没有 `setTransition` 缝（`StubNative`）时整批操作数根本不会被读（`test/opcode-operands.test.ts` 会红）。
-  const key = readIntOperand(e, c.frame, c.instr, 1); // op1 = 记录键（引擎 a2）
-  const texSlot = readIntOperand(e, c.frame, c.instr, 2); // op2 → [4]（a3：工作纹理槽，兼惰性建层用）
-  const p3 = readIntOperand(e, c.frame, c.instr, 3); // op3 → [5]（a4）
-  const p4 = readIntOperand(e, c.frame, c.instr, 4); // op4 → [7]（a5）
-  const p5 = readIntOperand(e, c.frame, c.instr, 5); // op5 → [6]（a6）
-  const p6 = readIntOperand(e, c.frame, c.instr, 6); // op6 → [8]（a7）
-  const p7 = readIntOperand(e, c.frame, c.instr, 7); // op7 → [2] = 延迟 ms（a8）
-  const p8 = readIntOperand(e, c.frame, c.instr, 8); // op8 → [3] = 时长 ms（a9）
+  const key = (plan.int(1) ?? 0); // op1 = 记录键（引擎 a2）
+  const texSlot = (plan.int(2) ?? 0); // op2 → [4]（a3：工作纹理槽，兼惰性建层用）
+  const p3 = (plan.int(3) ?? 0); // op3 → [5]（a4）
+  const p4 = (plan.int(4) ?? 0); // op4 → [7]（a5）
+  const p5 = (plan.int(5) ?? 0); // op5 → [6]（a6）
+  const p6 = (plan.int(6) ?? 0); // op6 → [8]（a7）
+  const p7 = (plan.int(7) ?? 0); // op7 → [2] = 延迟 ms（a8）
+  const p8 = (plan.int(8) ?? 0); // op8 → [3] = 时长 ms（a9）
   c.native.setTransition?.(key, [
     [0, 0], // 类别 0 = 全屏交叉淡化（帧渲染器按 [0] 分派）
     [1, 0], // 窗口起点：指令只写 0，首帧由消费端锁存
@@ -404,10 +435,11 @@ const op_set_transition_fade: OpHandler = (c) => {
  * ★与 `0x219`（sub_4ACEE0，写 `+36/+40/+44` = 描画位置）是**两个不同的 float 三元组**，不可混用同一 native 方法。
  */
 const op_set_object_transform: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const a = readFloatOperand(c.e, c.frame, c.instr, 2);
-  const b = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const d = readFloatOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const a = (plan.float(2) ?? 0);
+  const b = (plan.float(3) ?? 0);
+  const d = (plan.float(4) ?? 0);
   c.native.setDrawPivot?.(handle, a, b, d);
 };
 
@@ -425,17 +457,18 @@ const op_set_object_transform: OpHandler = (c) => {
  * 颜色数组来自 INIT2 的 `copy-local-array (global-int f8c48/f8c4c)` = 逐顶点 `0xFFFFFFFF`（不透明白）。
  */
 const op_mesh_create: OpHandler = (c) => {
+  const plan = planFor(c);
   const { e, frame, instr } = c;
-  const handle = readIntOperand(e, frame, instr, 1);
-  const layer = readIntOperand(e, frame, instr, 10);
-  const vcount = readIntOperand(e, frame, instr, 9);
-  const xRef = refFromOperand(e, frame, instr, 2);
-  const yRef = refFromOperand(e, frame, instr, 3);
-  const zRef = refFromOperand(e, frame, instr, 4);
-  const aRef = refFromOperand(e, frame, instr, 5);
-  const cRef = refFromOperand(e, frame, instr, 6);
-  const uRef = refFromOperand(e, frame, instr, 7);
-  const vRef = refFromOperand(e, frame, instr, 8);
+  const handle = (plan.int(1) ?? 0);
+  const layer = (plan.int(10) ?? 0);
+  const vcount = (plan.int(9) ?? 0);
+  const xRef = plan.ptr(2)!;
+  const yRef = plan.ptr(3)!;
+  const zRef = plan.ptr(4)!;
+  const aRef = plan.ptr(5)!;
+  const cRef = plan.ptr(6)!;
+  const uRef = plan.ptr(7)!;
+  const vRef = plan.ptr(8)!;
   const verts = [];
   const baseColors = [];
   for (let i = 0; i < Math.max(0, vcount); i++) {
@@ -477,10 +510,11 @@ function floatBitsOf(bits: number): number {
  * （引擎 raw 33865-33881），且 alpha>255 夹到 255 —— 回退在宿主侧做（见 `scene/ops.ts`）。
  */
 const op_set_vertex_color: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const index = readIntOperand(c.e, c.frame, c.instr, 2);
-  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
-  const rgb = readIntOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const index = (plan.int(2) ?? 0);
+  const alpha = (plan.int(3) ?? 0);
+  const rgb = (plan.int(4) ?? 0);
   c.native.setVertexColor?.(handle, index, alpha, rgb);
 };
 /**
@@ -496,11 +530,12 @@ const op_set_vertex_color: OpHandler = (c) => {
  * 读成「handler 把 op2 当 delay」。语料 `i323` **0 处** ⇒ 用合成指令守（`test/mesh-vertex-quad.test.ts`）。
  */
 const op_set_vertex_color_alpha: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const delay = readIntOperand(c.e, c.frame, c.instr, 2); // 透传 → sub_4AE330 的 record[11]
-  const count = readIntOperand(c.e, c.frame, c.instr, 3); // 透传 → sub_4AE330 的 record[12]
-  const alpha = readIntOperand(c.e, c.frame, c.instr, 4);
-  const rgb = readIntOperand(c.e, c.frame, c.instr, 5);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const delay = (plan.int(2) ?? 0); // 透传 → sub_4AE330 的 record[11]
+  const count = (plan.int(3) ?? 0); // 透传 → sub_4AE330 的 record[12]
+  const alpha = (plan.int(4) ?? 0);
+  const rgb = (plan.int(5) ?? 0);
   c.native.setVertexColorAlpha?.(handle, delay, count, alpha, rgb);
 };
 const op_set_draw_color: OpHandler = (c) => {
@@ -557,8 +592,9 @@ const op_set_draw_color_alpha: OpHandler = (c) => {
  * （`ROOM.txt:83/391`、`MMODE.txt:71/763`），ADV 里也用它复制 CG 图元做缩放绘制。
  */
 const op_copy_scene: OpHandler = (c) => {
-  const src = readIntOperand(c.e, c.frame, c.instr, 1);
-  const dst = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const src = (plan.int(1) ?? 0);
+  const dst = (plan.int(2) ?? 0);
   const r = c.native.copyScene?.(src, dst);
   if (r === false) {
     // 引擎打错误串（可见日志），emulator 同样留痕、不静默。
@@ -587,8 +623,9 @@ const op_copy_scene: OpHandler = (c) => {
  * 再把脚本自己的记账表 `3f54` 的两列也换掉（`$1$SC0330.txt:6324-6336`、`SC0000.txt:6885-6895` 同型）。
  */
 const op_swap_items: OpHandler = (c) => {
-  const a = readIntOperand(c.e, c.frame, c.instr, 1); // 引擎先读 op2 再读 op1（顺序无语义影响）
-  const b = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const a = (plan.int(1) ?? 0); // 引擎先读 op2 再读 op1（顺序无语义影响）
+  const b = (plan.int(2) ?? 0);
   c.native.swapItems?.(a, b);
 };
 
@@ -602,7 +639,8 @@ const op_swap_items: OpHandler = (c) => {
  * ★**不置 Scene 脏位**（该族唯一一条）—— emulator 侧由 `scResetDrawItemLoop` 置脏并写明这一差异。
  */
 const op_reset_draw_item_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
   c.native.setDrawItemLoop?.({ op: 'reset', handle });
 };
 
@@ -613,10 +651,11 @@ const op_reset_draw_item_loop: OpHandler = (c) => {
  * ★`+568/+572` 与 A 层 `0x239` **共用**（两个分支都在 `eval.ts` 里）。
  */
 const op_set_flipbook_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const period = readIntOperand(c.e, c.frame, c.instr, 2);
-  const frames = readIntOperand(c.e, c.frame, c.instr, 3);
-  const cols = readIntOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const period = (plan.int(2) ?? 0);
+  const frames = (plan.int(3) ?? 0);
+  const cols = (plan.int(4) ?? 0);
   c.native.setDrawItemLoop?.({ op: 'flipbook', handle, period, frames, cols });
 };
 
@@ -628,10 +667,11 @@ const op_set_flipbook_loop: OpHandler = (c) => {
  * —— 回退在 `scene/ops.ts` 的 `scSetColorLoop` 里做（只有它持有 `Item.from`）。
  */
 const op_set_color_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const period = readIntOperand(c.e, c.frame, c.instr, 2);
-  const alpha = readIntOperand(c.e, c.frame, c.instr, 3);
-  const rgb = readIntOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const period = (plan.int(2) ?? 0);
+  const alpha = (plan.int(3) ?? 0);
+  const rgb = (plan.int(4) ?? 0);
   c.native.setDrawItemLoop?.({ op: 'color', handle, period, alpha, rgb });
 };
 
@@ -643,11 +683,12 @@ const op_set_color_loop: OpHandler = (c) => {
  * ★订正：旧注写"图元尺寸动画"**是错的**（那是 A 层 `0x21E` 的语义；本条是 B 层缩放通道）。
  */
 const op_set_scale_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const period = readIntOperand(c.e, c.frame, c.instr, 2);
-  const sx = readFloatOperand(c.e, c.frame, c.instr, 3) / 100; // dbl_5201F0 = 100.0
-  const sy = readFloatOperand(c.e, c.frame, c.instr, 4) / 100;
-  const sz = readFloatOperand(c.e, c.frame, c.instr, 5) / 100;
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const period = (plan.int(2) ?? 0);
+  const sx = (plan.float(3) ?? 0) / 100; // dbl_5201F0 = 100.0
+  const sy = (plan.float(4) ?? 0) / 100;
+  const sz = (plan.float(5) ?? 0) / 100;
   c.native.setDrawItemLoop?.({ op: 'scale', handle, period, sx, sy, sz });
 };
 
@@ -662,11 +703,12 @@ const op_set_scale_loop: OpHandler = (c) => {
  *   平移往复是 `0x235`（`+536/+556/+656`）。语料印证：`src/SC0000.txt:16096` 的轴是 `(0,0,±1)`。
  */
 const op_set_rotation_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const period = readIntOperand(c.e, c.frame, c.instr, 2);
-  const ax = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const ay = readFloatOperand(c.e, c.frame, c.instr, 4);
-  const az = readFloatOperand(c.e, c.frame, c.instr, 5);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const period = (plan.int(2) ?? 0);
+  const ax = (plan.float(3) ?? 0);
+  const ay = (plan.float(4) ?? 0);
+  const az = (plan.float(5) ?? 0);
   c.native.setDrawItemLoop?.({ op: 'rotate', handle, period, ax, ay, az });
 };
 
@@ -677,11 +719,12 @@ const op_set_rotation_loop: OpHandler = (c) => {
  * 消费端 raw 118232-118341 = 三角波。
  */
 const op_set_translation_loop: OpHandler = (c) => {
-  const handle = readIntOperand(c.e, c.frame, c.instr, 1);
-  const period = readIntOperand(c.e, c.frame, c.instr, 2);
-  const tx = readFloatOperand(c.e, c.frame, c.instr, 3);
-  const ty = readFloatOperand(c.e, c.frame, c.instr, 4);
-  const tz = readFloatOperand(c.e, c.frame, c.instr, 5);
+  const plan = planFor(c);
+  const handle = (plan.int(1) ?? 0);
+  const period = (plan.int(2) ?? 0);
+  const tx = (plan.float(3) ?? 0);
+  const ty = (plan.float(4) ?? 0);
+  const tz = (plan.float(5) ?? 0);
   c.native.setDrawItemLoop?.({ op: 'translate', handle, period, tx, ty, tz });
 };
 
@@ -699,6 +742,7 @@ const op_set_translation_loop: OpHandler = (c) => {
  * ★语料：全库仅 1 处（`src/CALLBACK_LOAD.txt:18` 的 `i244`，读档收尾那一跳）。
  */
 const op_clear_draw_item_anim_starts: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.clearDrawItemAnimStarts?.(2); // 引擎立即数 2（raw 25353）
 };
 

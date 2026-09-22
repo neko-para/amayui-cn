@@ -1,0 +1,63 @@
+{
+  "title": "B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60）",
+  "type": "docs",
+  "priority": "P3",
+  "area": "emulator/ops",
+  "why": "`T-0080` 的 B7 分类（`tickets/T-0080/evidence/b7-coverage.md` §4C）剩下的都是**低影响但口径不一**的项：\n\n① `opcode-table.md` 与 `analysis/opcodes.json`、运行时的三方口径不一致 —— 典型 `0x304`：文档/真源仍 `仅映射` + 空语义，而运行时 `OPS` 已注册 `op_text_block_begin`；同族 `0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`（**语料 0 处**）可补语义或转 `deferred`；`0x1D3` 的 handler 锚点（表里 `sub_42D4A0` vs `opcodes.json` 的 `sub_457960`）要统一。\n② `0x308`（输入触摸注册）在 `stubs.ts` 仍是 `[0x308, op_stub_unhandled]`（记录后放行）而语料 **31279 处** —— 属「近似放行面」，要么补实现 + 命名守卫、要么把近似口径写成显式登记（含影响面评估）。\n③ `0x1F5` 到 0 时的 `sub_40FB60` 派发尚未接线（`src/frame/frame.ts` 自述「本条尚未接线（`T-0057` 记录）」）。\n\n3D/Live2D 内部面（`passive-camera-and-effect-render-state`/`vertex-buffer-lock-scale`/`lazy-movie-*`）按 `plan-2026-09.md` §1 RF-C 与审计 §4 属**范围外**，本票不碰。",
+  "acceptance": [
+    "① 逐条给出「改文档 / 改真源 / 转 `deferred`」三选一的处置并执行：改动必须走**真源**（`analysis/opcodes.json`）再重跑 `scripts/build-opcode-table.mjs`，不许手改生成物；转 `deferred` 要有语料计数与「为什么不影响」的一句依据\n★进度（轮 1，**样本已做（0x304），其余列出**）：① **`0x304` 四方口径已统一**：`analysis/opcodes.json` 从 `仅映射`/空语义 → **已核对** + 读体语义（handler `sub_41A420` raw **25385-25399**：置 `Engine[122497]=1`（赋值非 `|=`）→ 取 `v1 = Engine[122371]`（= 最近一次 `0x6E` 的槽号；0 ⇒ 退回默认窗 `Engine[21631]`）→ 窗表 `Engine[v1+21585]` → **`win+296 = win+132`**（保存行游标）；与 `0x305` 的 `+132 ← +296` 成对，语料成对出现如 `$1$SG0331.txt:1719 i304` → `:1724 i305`）；`scripts/build-opcode-table.mjs` 已重生成。② **顺带补齐 RF-A 计划层**：`src/vm/operandPlan.ts` 新增 `declarePlan(0x304, { argc: 0, kinds: [], io: [], evidence })`（此前 `0x304` 未计划 ⇒ 一旦它变 `已核对` 就落进\"C 待迁移\"、把 `T-0082` 的覆盖账棘轮顶红 —— 实测正是这条守卫抓到的）。**剩余（下一轮）**：`0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`（语料 0 处）逐条\"补语义或转 `deferred`\"、`0x1D3` 的 handler 锚点（表 `sub_42D4A0` vs `opcodes.json` `sub_457960`）、以及 `0x304` 之外是否还有\"运行时已注册但文档仍 `仅映射`\"的行（需与运行时三表做一次全量对账）。",
+    "② `0x308`：读体确认引擎语义（`sub_407B20` / `_this[1954]`）后，或补真实现 + 命名守卫，或在 `analysis/opcode-gaps.json` 与能力台账里把「近似放行 + 语料 31279 处」写成显式登记（含影响面评估）\n★进度（轮 1）：**未开始**。`0x308` 在 `stubs.ts` 仍是 `[0x308, op_stub_unhandled]`（记录后放行），引擎体 = 读 op1 → `sub_407B20` → 写 `_this[1954]`（语料 31279 处）⇒ 下一轮二选一：补真实现 + 命名守卫，或把\"近似放行 + 影响面\"写进 `opcode-gaps.json`/台账 note。",
+    "③ `0x1F5 → sub_40FB60`：接上线并补守卫（时序类：可断言「派发确实发生、且发生在该帧」），或给出「本路径不需要」的依据（`T-0082` 对 `i143` 已给过同类论证，可复用其判据形状）\n★进度（轮 1）：**未开始**。`src/frame/frame.ts` 自述「`0x1F5` 到 0 时的 `sub_40FB60` 派发尚未接线（`T-0057` 记录）」；下一轮接线上并补时序守卫，或按 `T-0082` 对 `i143` 的同类论证给出\"本路径不需要\"的依据。",
+    "④ 收尾：`scripts/build-opcode-table.mjs` 重生成、`test/doc-model.test.ts` 与 `test/opcode-arity.test.ts` 绿",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0080/evidence/b7-coverage.md",
+      "anchor": "低影响登记 / 派发接线（→ 新票 `T-0111`）",
+      "note": "本票的条目清单与依据"
+    },
+    {
+      "file": "docs-new/03-engine/opcode-table.md",
+      "anchor": "| 0x304 |",
+      "note": "三方口径不一致的样本行（文档仍「仅映射」）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
+      "anchor": "[0x308, op_stub_unhandled]",
+      "note": "0x308 的近似放行点（语料 31279 处）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "declarePlan(0x304, {",
+      "note": "RF-A 计划层补 `0x304`（argc 0 无操作数）；缺它会顶红 T-0082 的\"覆盖账 C 只减不增\"守卫"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0080",
+      "T-0076",
+      "T-0081",
+      "T-0057"
+    ]
+  },
+  "id": "T-0111",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建：T-0080 的 B7 分类里「低影响登记 + 派发接线」那一批"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → doing"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "open → doing —— 轮 1：`0x304` 四方口径统一（真源从\"仅映射\"补成\"已核对\" + 读体语义 raw 25385-25399 + 与 `0x305` 的配对方向；build-opcode-table 重生成），并顺带补齐 `operandPlan` 的 `0x304` 计划（否则 T-0082 的覆盖账棘轮会红 —— 实测被它抓到）。剩余：0 语料那 8 条的 deferred/语义、`0x1D3` 锚点、运行时三表与文档的全量对账、`0x308` 登记、`0x1F5` 接线。"
+    }
+  ]
+}

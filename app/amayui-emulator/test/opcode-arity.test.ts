@@ -14,7 +14,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ArityRow, scanArity } from './arityScan.js';
+import { ROOT } from './arityScan.js';
 
 /**
  * 已知的例外/空洞：**只允许存量**，新增即红。
@@ -68,6 +71,58 @@ test('★arity 槽核验：体里的指令长度 N 必须 = 2*argc+1（N=0 只�
         .slice(0, 12)
         .map((r) => `0x${r.op.toString(16)}=${(r.step - 1) / 2}`)
         .join(' ')} …）`,
+  );
+});
+
+/**
+ * ★**覆盖空洞棘轮**（`tickets/T-0082` 判据 2 的收尾）：arity 自动核验必须**没有未登记的洞**。
+ *
+ * 本守卫把"核验不到的 opcode"钉成两个**可推导/带原因**的集合：
+ *  ① `noHandler`：dispatch 表里没有该项。★真源不是手抄名单，而是数据层的
+ *     `analysis/opcodes.json.fallbackDefault.entries` —— 它的 `_doc` 写明这些 opcode
+ *     在表里"没被覆盖（`rep stosd` 填充后保持默认 `sub_418E30`）"，属于 **age-shared 其他作品**
+ *     （Amayui 2 / Hyakusen / Tenmei no Conquista / Fuukan no …）的定义。⇒ 引擎里**没有**
+ *     它们的独立 handler 体（因此没有 arity 槽可读），而本作语料**0 处**使用。
+ *  ② 体里**不写** arity 槽的：只有 3 条，逐条写原因。
+ *
+ * ⇒ 以后解析口径退化（少认一种写法）或数据层新增/移动 fallback 条目，本守卫立刻红。
+ */
+const NO_ARITY_BODY: Record<string, string> = {
+  '0x1': 'abort（sub_418E60）：体是 `__noreturn` + `_CxxThrowException` ⇒ 根本不写 arity 槽',
+  '0x4': 'call-script 族（sub_41C770）：体先改 `383104/383108` 再走调用路径，无 arity 槽赋值',
+  '0x9': '（sub_428A60）：体较长且不写 arity 槽（逐行搜过 `95805`/`383220` 均无）',
+};
+
+test('★arity 覆盖空洞棘轮：核验不到的 opcode 只能来自数据层 fallbackDefault 或已登记的无 arity 体', () => {
+  const { noHandler, skipped } = scan();
+  const data = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'analysis/opcodes.json'), 'utf8'),
+  ) as { fallbackDefault: { entries: { opcode: number }[] } };
+  const fallback = new Set(data.fallbackDefault.entries.map((e) => e.opcode));
+  // ① noHandler 必须**恰好**等于数据层登记的那批（多一条少一条都红）
+  const noHandlerSet = new Set(noHandler);
+  const extra = [...noHandlerSet].filter((o) => !fallback.has(o)).map((o) => `0x${o.toString(16)}`);
+  const gone = [...fallback].filter((o) => !noHandlerSet.has(o)).map((o) => `0x${o.toString(16)}`);
+  assert.deepEqual(
+    { extra, gone },
+    { extra: [], gone: [] },
+    `dispatch 表覆盖缺口与 analysis/opcodes.json 的 fallbackDefault 不一致：\n` +
+      `  多出（表里本该有 handler 却没有）：${extra.join(' ') || '无'}\n` +
+      `  少掉（数据层说没有 handler，扫描却找到了）：${gone.join(' ') || '无'}`,
+  );
+  // ② skipped 必须**恰好**是登记了原因的那 3 条（别的都该被解析出来）
+  const skipSet = new Set(skipped);
+  const unregistered = [...skipSet].filter((o) => !NO_ARITY_BODY[`0x${o.toString(16)}`]).map((o) => `0x${o.toString(16)}`);
+  const stale = Object.keys(NO_ARITY_BODY).filter((k) => !skipSet.has(Number(k)));
+  assert.deepEqual(
+    { unregistered, stale },
+    { unregistered: [], stale: [] },
+    `体里没解析出 arity 槽的 opcode 与登记不一致：\n` +
+      `  未登记：${unregistered.join(' ') || '无'}（要么修解析口径、要么在 NO_ARITY_BODY 写明原因）\n` +
+      `  已登记但不再跳过：${stale.join(' ') || '无'}（改好了就把它从表里删掉）`,
+  );
+  console.log(
+    `[arity] 覆盖：解析 ${scan().rows.length} 条；dispatch 无 handler ${noHandler.length}（= 数据层 fallbackDefault）；无 arity 体 ${skipped.length}`,
   );
 });
 

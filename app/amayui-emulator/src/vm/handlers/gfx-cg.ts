@@ -5,9 +5,20 @@
  * `[0]` 纹理槽 / `[1]` x0 / `[2]` y0 / `[3]` 单字宽 / `[4]` 字高 / `[5]` 字内空隙 / `[6]` 字距。
  * 消费方 `0x23B` 先删 DrawItem/Mesh 的 `[id, id+digits)` 区间，再逐位建 DrawItem。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand } from '../operand.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：CG 数字条族（gfx-cg），2 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：CG 数字条族（gfx-cg）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * **`0x2DA`（sub_426420, raw 33498，argc=8）：CG 数字条记录登记**。
@@ -17,10 +28,11 @@ import type { OpTable } from './shared.js';
  * `+16` 字高 / `+20` 字内空隙 / `+24` 字距。**纯数据登记**，不碰 Scene、不置脏。
  */
 const op_set_cg_digit_record: OpHandler = (c) => {
-  const n = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const n = (plan.int(1) ?? 0);
   if (n < 0 || n > 0xa) return; // 引擎：越界仅日志
   const rec: number[] = [];
-  for (let k = 2; k <= 8; k++) rec.push(readIntOperand(c.e, c.frame, c.instr, k));
+  for (let k = 2; k <= 8; k++) rec.push(plan.int(k) ?? 0);
   c.e.cgDigits.set(n, rec);
 };
 
@@ -33,13 +45,14 @@ const op_set_cg_digit_record: OpHandler = (c) => {
  * ★记录号以 `round(rec[0]) != 0` 为存在判据，否则只打日志「CG番号…」。
  */
 const op_draw_cg_number: OpHandler = (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const n = readIntOperand(c.e, c.frame, c.instr, 2);
-  const value = readIntOperand(c.e, c.frame, c.instr, 3);
-  const x = readIntOperand(c.e, c.frame, c.instr, 4);
-  const y = readIntOperand(c.e, c.frame, c.instr, 5);
-  const digits = readIntOperand(c.e, c.frame, c.instr, 6);
-  const flags = readIntOperand(c.e, c.frame, c.instr, 7);
+  const plan = planFor(c);
+  const id = (plan.int(1) ?? 0);
+  const n = (plan.int(2) ?? 0);
+  const value = (plan.int(3) ?? 0);
+  const x = (plan.int(4) ?? 0);
+  const y = (plan.int(5) ?? 0);
+  const digits = (plan.int(6) ?? 0);
+  const flags = (plan.int(7) ?? 0);
   if (n < 0 || n > 0xa) return;
   const rec = c.e.cgDigits.get(n);
   if (!rec || !rec[0]) return; // 引擎：未登记的 CG 数字条 → 只打日志

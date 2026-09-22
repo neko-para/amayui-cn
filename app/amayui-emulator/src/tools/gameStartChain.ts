@@ -44,6 +44,9 @@ import { HeadlessScene } from '../renderer/headlessScene.js';
 import { calcDiffuse, meshColor } from '../renderer/drawItem.js';
 import { DropRecorder, withNativeTap, type DroppedIntent } from '../vm/nativeTap.js';
 import { applyConfigToEngine, parseIni } from '../engineConfig.js';
+// ★`bgrToRgb`：`engineValues[21664/21665]` = 引擎的 **COLORREF** 字段（`0x76`/`0x77` 把脚本 RGB 翻成
+//   COLORREF 存进去），屏幕色 = 再翻一次（`tickets/T-0102` 判据 4）⇒ 采样与 `globalTextStyle` 同口径。
+import { bgrToRgb } from '../vm/handlers/msgwin.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -189,6 +192,35 @@ export interface GameStartResult {
   clockMs: number;
   /** 执行过的指令数（仅 `onStep` 未开时也统计）。 */
   steps: number;
+  /**
+   * **ADV 里"有发言人"的那些帧**（`sampleAdvSpeakerLines: true`；`tickets/T-0102` 判据 4/5 的 E3 取证）。
+   *
+   * 为什么要它：判据 4/5 的期望值 = `bgrToRgb(adcd[14acda])`（角色名颜色），而**旁白**（`3f37 = -1`）恒走
+   * `14acda = 0` 那一支 —— 那样采到的样本对"青 vs 橘"**没有辨别力**。本采样只在 `3f37 >= 0`
+   * （= 真有一句"某某说"）时记一行，并按消息号去重（同一条消息的逐字过程只记首帧）。
+   */
+  advSpeakerLines: AdvSpeakerLine[];
+}
+
+/** `GameStartResult.advSpeakerLines` 的一行（全部是**解码后**的脚本语义值）。 */
+export interface AdvSpeakerLine {
+  /** 采样时的累计帧号。 */
+  frame: number;
+  script: string;
+  ip: number;
+  /** 当前消息号（全局 `3f37`；`>= 0` 才是"有发言人"）。 */
+  msg: number;
+  /** 当前角色号（全局 `14acda`；= `adcd` 的下标，旁白恒 0）。 */
+  c14acda: number;
+  /** 脚本写下的样式实参（全局 `f807b` = 填充、`f807c` = 描边；**COLORREF/BGR 编码**）。 */
+  f807b: number;
+  f807c: number;
+  /** `Font+1360`（= `engineValues[21664]`）的应用后填充色（**已 BGR→RGB**）。 */
+  fill: string;
+  /** `Font+1364`（= `engineValues[21665]`）的应用后描边色（**已 BGR→RGB**）。 */
+  outline: string;
+  /** 该窗当前的整页文本（`msgwin.textOf(0)`，截断 120 字）。 */
+  text: string;
 }
 
 export interface GameStartOptions {
@@ -218,6 +250,16 @@ export interface GameStartOptions {
   advance?: 'pump' | 'force';
   /** 到达 SN0000 首文案后是否继续跑到"没事干"（默认在首文案处停）。 */
   continueAfterTarget?: boolean;
+  /**
+   * `continueAfterTarget` 那一段（默认 20000 帧）用的推进档。
+   *
+   * 为什么要能改：`'pump'`（默认 = 真游戏行为）要**每次点击**才翻页，两万帧也只走几条消息；
+   * 而"采到一句有发言人的台词"需要跑很多页 ⇒ 取样时用 `'force'`（旧旁路：不做命中测试、直接推进）
+   * 把 ADV 自动翻下去。**只在取证时用**；判据断言的那条链路仍走 `'pump'`。
+   */
+  advanceAfterTarget?: 'pump' | 'force';
+  /** 是否采样"有发言人的 ADV 帧"（见 `GameStartResult.advSpeakerLines`）。默认关。 */
+  sampleAdvSpeakerLines?: boolean;
   /**
    * 外置选项（`emulator.config.json` 的内容）。**省略 = 真游戏行为**（`boot.showLogo = true`）。
    * 为什么不让 library 自己读文件：`test/game-start-chain.test.ts` 直接调本函数 ⇒ 读本机配置文件会让
@@ -348,6 +390,42 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     gateOpen = null;
   };
 
+  /**
+   * **ADV「有发言人」帧采样**（`tickets/T-0102` 判据 4/5）：只在 `3f37 >= 0` 时记，按消息号去重。
+   *
+   * 取值口径（全部走 `Engine` 的**语义**访问，不碰内存布局）：
+   *  - `f807b/f807c` = 脚本全局（**COLORREF/BGR**）；
+   *  - `fill/outline` = `engineValues[21664/21665]`（`i076/i077` 应用后 = `bgrToRgb(f807b/f807c)`）；
+   *  - `3f37` = 消息号、`14acda` = 角色号（= `adcd` 的下标；旁白恒 0）。
+   * ⇒ 一行样本就能判"角色名取的是哪个下标、应用后是什么色"，这正是"青 vs 橘"的判决量。
+   */
+  const advSpeakerLines: AdvSpeakerLine[] = [];
+  const seenSpeakerMsg = new Set<number>();
+  const sampleAdvSpeakerLine = (): void => {
+    if (!opt.sampleAdvSpeakerLines || advSpeakerLines.length >= 24) return;
+    // ★`| 0` = 按**有符号 32 位**归一：脚本把 `-1`（旁白）存成 `0xFFFFFFFF`，
+    //   不归一会把旁白当成 `msg = 4294967295` 的"有发言人"（实测踩过）。
+    const msg = (dec(e.key, e.globals.int.get(0x3f37) ?? -1) | 0);
+    if (msg < 0 || seenSpeakerMsg.has(msg)) return;
+    seenSpeakerMsg.add(msg);
+    const f = e.curScript();
+    const c14acda = (dec(e.key, e.globals.int.get(0x14acda) ?? 0) | 0);
+    const f807b = dec(e.key, e.globals.int.get(0xf807b) ?? 0) >>> 0;
+    const f807c = dec(e.key, e.globals.int.get(0xf807c) ?? 0) >>> 0;
+    advSpeakerLines.push({
+      frame: harness.frames,
+      script: f.name,
+      ip: f.ip,
+      msg,
+      c14acda,
+      f807b,
+      f807c,
+      fill: `#${(bgrToRgb(e.engineValues.get(21664) ?? 0xffffff) >>> 0).toString(16).padStart(6, '0')}`,
+      outline: `#${(bgrToRgb(e.engineValues.get(21665) ?? 0) >>> 0).toString(16).padStart(6, '0')}`,
+      text: e.msgwin.textOf(0).replace(/\s+/g, ' ').slice(0, 120),
+    });
+  };
+
   // ---- 悬停观察（`T-0003` 验收 3 / `T-0007`）：观察者与 Scenario 必须在 harness 之前建好 ----
   /** 等待泵派发序列（键命中/点击/悬停进入/悬停离开）。 */
   const dispatches: { kind: string; label: number; script: string; ip: number }[] = [];
@@ -375,6 +453,8 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
       if (gateOpen && (eng.waitFlags & 0x400) === 0) closeGate(now);
       // ★文字重放采样（T-0016）：内容没变而显现游标变小 ⇒ 记一次
       sampleReveal();
+      // ★ADV「有发言人」帧采样（T-0102 判据 4/5）：只在 `3f37 >= 0` 时记，按消息号去重
+      sampleAdvSpeakerLine();
     },
     onUnknown: (err, frame, instr) => {
       const key = err.opcode;
@@ -486,7 +566,8 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     if (name() === '') break;
   }
   if (!reachedSn0000) reachedSn0000 = name().startsWith('SN0000') || scriptTrail.some((s) => s.startsWith('SN0000'));
-  if (opt.continueAfterTarget) await run(20000);
+  if (opt.continueAfterTarget)
+    await run(20000, undefined, undefined, { advance: opt.advanceAfterTarget ?? 'pump' });
 
   // ---- ⑤ SN0000：等待态下的**悬停**（`T-0003` 验收 3 / `T-0007`）----
   //   修前 headless 走 `forceAdvance`（不做命中测试、不看 routes.shown）⇒ 游标恒 −1、悬停从不发生。
@@ -603,6 +684,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
     hoverLeaveFrames,
     clockMs: harness.clock,
     steps,
+    advSpeakerLines,
   };
   await src.dispose?.();
   return result;

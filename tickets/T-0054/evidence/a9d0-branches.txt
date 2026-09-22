@@ -1,0 +1,29 @@
+# T-0054 证据：`global a9d0` 的两条支路（探针输出；同等逻辑已落成守卫）
+#
+# 产出：`npx tsx .tmp/a9d0-branch-probe.mts`（探针是临时件，已删）。现在是守卫
+#       `app/amayui-emulator/test/live2d-enabled-flag.test.ts`（跑一次 ~4 s，两条支路各跑一条 boot 链）。
+#
+# 口径（`docs-new/04-app/live2d-support-assessment.md` §2）：TITLE / BTL / INFOEN 在进 L2D 段之前判
+# `global a9d0` —— **== 0 走 Live2D，!= 0 走静态贴图回落**（TITLE 的回落 = `set-texture 5273 5`
+# = 740×700 的 `SO004A.AGF`）。`a9d0` 由 CONFIG1 写（`src/CONFIG1.txt:1741-1742`）+ `save-int`、
+# `INITCONFIG0` 默认 0；**引擎侧没有它的读点**（`grep a9d0` 在整个反编译产物 0 命中 ⇒ 纯脚本开关，
+# 引擎不需要"对应物"，emulator 只需如实执行两条支路各自的指令）。
+#
+# ★两条实测出来的坑（守卫的置位时机正因它们而定）：
+#   ① 在 `bootHeadless` 之后、跑帧之前预设 `a9d0 = 1` **无效** —— boot 链（INITCONFIG0 一脉）会写回 0；
+#      实测：跑完 325 帧到 TITLE 时 `global a9d0 = 0`（守卫里把这条也断言了）。
+#   ② 帧级 `until: 脚本名 == TITLE` 也**晚了** —— 一帧可派发整批指令，`call-script TITLE` 与 TITLE 自己的
+#      L2D 段在同一批里跑完 ⇒ 置 1 之后槽里已经有 `0:0x4f9e`。
+#   ⇒ 必须用**逐条**钩子 `stopAfterStep` 停在"刚进 TITLE"，置位后再继续跑。
+#
+# 结论（下面原文）：
+#   a9d0 = 0 ⇒ `l2dSlots = [0:0x4f9e]`（装 TITLE.MOC），槽 5 **没有** 0x5273；
+#   a9d0 = 1 ⇒ `l2dSlots = []`（一条 L2D 装载都不执行），槽 5 = **0x5273**（回落支生效）。
+a9d0=0 → TITLE 进入于 324 帧（脚本=TITLE.BIN），再跑 400 帧
+   l2dSlots=[0:4f9e]（空 ⇒ 走了静态贴图回落支）
+   纹理槽=[4:0x5272 12:0x5191 15:0x525e 16:0x525f 17:0x5260 42:0x5245 43:0x5246]（回落支应有 5:0x5273）
+   global a9d0=0
+a9d0=1 → TITLE 进入于 324 帧（脚本=TITLE.BIN），再跑 400 帧
+   l2dSlots=[]（空 ⇒ 走了静态贴图回落支）
+   纹理槽=[4:0x5272 5:0x5273 12:0x5191 15:0x525e 16:0x525f 17:0x5260 42:0x5245 43:0x5246]（回落支应有 5:0x5273）
+   global a9d0=1

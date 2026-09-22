@@ -16,7 +16,7 @@
       "note": "★轮 7 已完成：按体接上第①②路（raw 29071 外层门 / 29075 / 29093 / 29095）—— MessageSpeed!=0 且 ADV 未置 ⇒ effect_flags |= SLEEP_GATE(0x20000000) + sleepUntil = now + max(1,MessageSpeed)；复用 0x6E 的同一机制，未新造字段/机制。文档块已从「未建模（节流半边）」改写为已建模（含三具被调函数 raw 区间表 + 0x20000000 全生命周期）",
       "anchor": "op_display_furigana",
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
-      "line": 678
+      "line": 719
     },
     {
       "note": "★轮 7 已翻正向：原第 3 条「断言尚未建模」删除，改为 L87 正向棘轮（必须装门且 sleepUntil == now+SPEED）+ L100/L113（ADV 已置 / MessageSpeed=0 ⇒ 不装门）+ L129 语料 6341 棘轮 + L238/L248 E3 时序；测试名保留「缺口棘轮」四字以不动本锚点",

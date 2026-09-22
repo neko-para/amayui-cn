@@ -122,3 +122,51 @@ if ( v8 > a3 && a3 >= 0 ) {                       // ★门：a3 = 记录下标�
 ## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
 
 来源 = 用户轮 8 实测（硬停）。★临时处置只保证不硬停，**不是**实现 —— 别把 STUB 当完成。
+
+## 轮 11（收尾）：判据 3 / 4 / 5 逐条核对 —— 票可以结了
+
+### 1. 判据 3（数据层 + 生成物）**逐项复核：已全绿**
+
+| 项 | 现状（本轮实测） |
+|---|---|
+| `analysis/opcode-gaps.json` 的 `0x82` | `disposition: "implemented"` + note 写明「已真实现（`MSGWIN_OPS` 的 `op_gdi_repaint_window`）」，旧 STUB 记录降级为「旧记录（保留对照）」 |
+| `node scripts/build-opcode-gaps.mjs` | ✓ 校验通过：**未实现 0 / unjustified no-op 0 / 有据 no-op 13 / 已实现 39 / deferred 19**（`opcode-gaps.md` 无漂移） |
+| `docs-new/03-engine/opcode-table.md` 的 `0x82` 行 | 已是完整行（**不是** 原来的「仅映射」空行）：argc 5 / handler `sub_41F720` / 状态**已核对** / `sub_466000` 的语义 + emulator 实现口径 + 登记的近似 + 守卫名 |
+
+### 2. 判据 3 后半（场景级正向用例）**：已在 `T-0102` 轮 13/23 落地，本条因此关闭
+
+原文登记的缺口是「要造出非空记录表的场景级正向用例，需要在链路里先显示一条 ADV 消息（本轮未做）」。
+`test/config1-chain.test.ts` 的「★T-0102 判据 3 收尾：真路径实测值（`g0=6` + 旁白 + 记录表非空）」
+正是它：`advReturnProbe: { g0: 6, g1397: 1, msg: -1, seedRecords: 3 }` ⇒ **真实 `CONFIG` 退出链**上
+`sawI082 = true`、`after.fill = #ffffff`、**`republishByI082 == 1`**（恰好一次）、
+`restyleByI082.fill == #ffffff`（用**重派生后的实时色**重画，不是入队快照）⇒
+「文本窗被重新发布」这条场景级不变量在**记录表非空**（= 真 ADV 路径的实测形态）时成立。
+
+### 3. 判据 4（E4）**拆成两半**：可自动化那一半本轮补守卫，目视那一半写明为什么不能自动化
+
+- **可自动化的一半（硬停必须彻底消失）**：用户实测的原话是「ADV → 设置界面 → 右键退出 ⇒
+  命中未知指令 `i082` 而**硬停**」。这条退出链跑的**就是** `CONFIG.txt:269` 那一笔
+  （`sawI082`）⇒ "不再硬停" 等价于 **该链的未实现指令清单为空**。
+  ⇒ `test/config1-chain.test.ts` 的同一用例新增断言
+  `assert.deepEqual(real.unimplemented, [], '★ADV 语境的退出链不得有未实现指令 …')`。
+  ★辨别力已机械证明：把 `MSGWIN_OPS` 里的 `[0x82, op_gdi_repaint_window]` 注释掉（退回未注册）
+  ⇒ 该用例 3 条断言红，其中就有这一条（点名 `T-0104 判据 4`）；还原后 19/19 绿
+  （`config1-chain` 13 + `op-0104-gdi-repaint` 6）。
+- **目视的一半（为什么不能自动化）**：用户那条路的入口是 **`SC0000` 的侧边栏**（`src/SC0000.txt:604-611`
+  的 `lookup-array 13b0[f8019] == 0xf → call-script 34 // CONFIG`），而 headless 从 `SN0000` 走到
+  `SC0000` **需要交互式导航**（advance:force 会停在 `CHARMEDIT` 这类菜单上；实测 205 230 帧仍未进
+  `SC0000`）—— 那正是 `T-0103`（按用户要求**留到最后**）的题目。⇒ 本票不把"用户目视一次"当作
+  可自动化判据，只钉"机制上不可能再硬停 + 重画用的是正确颜色"，目视确认留给 `T-0103` 打通后的
+  同一份导航 + 用户复验。
+
+### 4. 判据 5：四份台账 + 全量 verify
+
+- `tickets.js --validate` ✅ / `capabilities.js --validate` ✅（137 条）/ `scripts.js --validate` ✅（30 条）
+  / `build-opcode-gaps.mjs` ✅（覆盖 + 处置纪律）。
+- `npm run verify`（typecheck ×3 + 全量 test + `check:dead-writes`）✅。
+
+### 5. 仍未建模（**登记在案、不再阻塞本票**）
+
+`op2` 的重画粒度（emulator 是"整窗从模型重排"）、`op3` 的其它位（bit0 组首 / bit2-3 记录过滤 /
+bit4-5）、`mode == 1` 走 `sub_462040` 的专用路径。三者都写在 handler 注释、`opcode-gaps.json`
+的 note 与 `opcode-table.md` 的 0x82 行里。

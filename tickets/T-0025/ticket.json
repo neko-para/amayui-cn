@@ -5,9 +5,9 @@
   "area": "emulator/render",
   "why": "G3 回放要逐帧 digest 相等，而 0x208（getTextureSize）的答案是**宿主给出的输入**：pixi 侧走 IPC 异步 ⇒ 图未载入就是 0x0，且脚本拿它算源矩形/描画位置（实测 SN0000 背景的 src/dst 全不同）。现在把答案录进轨迹再喂回 headless（HeadlessScene.setTextureSizeAnswers），代价是\"回放不是独立的\"——换个脚本/场景就得重新录。若 headless 自己能同步回答图像尺寸（真实 AGF 尺寸），回放就只依赖时钟+输入。",
   "acceptance": [
-    "headless 宿主能在**不开录制**的情况下回答 0x208：给出 imgid → {w,h}（真实 AGF 头尺寸），且对\"尚未载入\"的语义与 Electron 一致地表达出来",
-    "同一份 Scenario：headless 自解析尺寸 ⇔ 录制答案 两条路产出的 digest 序列相等（把 trace.ts 里按帧喂答案的那条路变成可选的对照，而不是唯一路）",
-    "实测：`npm run replay -- <trace>` 在**清空 trace 的 tex 字段**后仍逐帧相等（证明答案确实可由 headless 自己得出）"
+    "headless 宿主能在**不开录制**的情况下回答 0x208：给出 imgid → {w,h}（真实 AGF 头尺寸），且对\"尚未载入\"的语义与 Electron 一致地表达出来\n★进度（轮 12，**已完成**）：headless 自带尺寸解析 —— `src/arch/agfSize.ts` 的 `agfSizeOf(bytes, totalSize?)`（ACGF 头 + 无头 plan 扫描，逐段移植自 `scripts/agf/format.js` 并**与它逐值对照**，见守卫）+ `NodeFileSource.readHeaderSync(id, 64 KB)`（**同步**读头，松散文件优先/否则 ALF 切片）+ `HeadlessScene.sizeSource`（`bootHeadless` 默认接上资源源）。★必须在**同步**路径上答：实测脚本会在**绑定后的同一条指令批**里问 `0x208`（异步预取 + 帧屏障赶不上），而引擎的 `set-texture` 本来就是同步读+解码 ⇒ 同步答案才是忠实等价物。\"尚未载入\"的语义与 Electron 一致地保留：**外部答案（`imageSize`/录制的 tex）优先 → 自解析 → 0×0 并记缺口**（取不到/不是 AGF 时不伪造尺寸）。",
+    "同一份 Scenario：headless 自解析尺寸 ⇔ 录制答案 两条路产出的 digest 序列相等（把 trace.ts 里按帧喂答案的那条路变成可选的对照，而不是唯一路）\n★进度（轮 12）：守卫 `app/amayui-emulator/test/agf-size.test.ts`（4 条）—— ①与共享解码器 `decodeAgfRgba`在**真文件**上逐值一致（9 个 ACGF + 5 个无头样例，覆盖两类容器；★这条同时是\"移植代码不许漂移\"的棘轮）；②非 AGF/太短 ⇒ `null`；③只喂头部切片时**必须传 `total`**（无头 plan 的边界校验用它，否则全被否掉——踩过）；④**产品装配**（`bootHeadless`）下绑定即同步答真实尺寸（`0xb37 → 2048×1152`、`0x5272 → 1664×1536`）。★辨别力机械证明：让 `agfSizeOf` 忽略 `totalSize` ⇒ 该文件 **2 条红**（点名\"给上真实 total ⇒ 同一段切片必须解析出与 oracle 相同的尺寸\"），还原后 4/4 绿。",
+    "实测：`npm run replay -- <trace>` 在**清空 trace 的 tex 字段**后仍逐帧相等（证明答案确实可由 headless 自己得出）\n★进度（轮 12，**已完成**）：`evidence/record-replay-cleared-tex.txt` —— 用 `npm run record --scenario tools/scenarios/gamestart.json --centered`录的 2614 帧轨迹，把其中唯一的 `tex` 答案（frame 1607 / slot 4 / **2048×1152**）**删掉**后重放：**`✅ engine 段逐帧相等（比对 2614 帧）`**；同一份**未清**的轨迹也逐帧相等（回归对照）⇒ 尺寸确实由 headless 自己解析出来，回放不再依赖录制的 `tex` 字段。"
   ],
   "evidence": [
     {
@@ -26,7 +26,17 @@
       "file": "app/amayui-emulator/src/arch/nodeFileSource.ts",
       "anchor": "readById",
       "note": "异步取字节 ⇒ 要同步回答必须先预扫/预热（report.ts 的 resolveImages 也卡在这一步）",
-      "line": 339
+      "line": 405
+    },
+    {
+      "file": "tickets/T-0025/evidence/record-replay-cleared-tex.txt",
+      "anchor": "engine 段逐帧相等",
+      "note": "判据 ②/③：清掉轨迹里的 tex 字段后回放仍逐帧相等（2614 帧），原始轨迹作回归对照；含两个踩过的坑（同步是必需的 / 无头容器必须传真实文件大小）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/agfSize.ts",
+      "anchor": "export function agfSizeOf(bytes: Uint8Array, totalSize?: number)",
+      "note": "判据 ①的实现：ACGF 头 + 无头 plan 扫描（移植自 scripts/agf/format.js，src/ 因 rootDir 不能 import 它）；与共享解码器的逐值对照在 test/agf-size.test.ts。"
     }
   ],
   "links": {
@@ -39,12 +49,20 @@
     ]
   },
   "id": "T-0025",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-13",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "done → done —— 轮 12 收尾：headless 自带 AGF 尺寸解析 —— 新增 src/arch/agfSize.ts（ACGF 头 + 无头 plan 扫描，移植自 scripts/agf/format.js，src 因 rootDir 不能 import 仓库根模块）+ NodeFileSource.readHeaderSync（同步读头 64KB，松散文件优先/否则 ALF 切片，回传真实 total）+ HeadlessScene.sizeSource（bootHeadless 默认接上）；getTextureSize 优先级 = 外部答案 → 自解析 → 0x0+缺口。判别两次失败后才定下来的两个坑：①必须同步（脚本在绑定后的同一批里就问 0x208，异步预取赶不上；引擎 set-texture 本就同步）②无头容器必须传真实文件大小（否则 plan 边界校验全否掉，BG050ABL 就是这么踩的）。守卫 test/agf-size.test.ts 4 条（含与 decodeAgfRgba 在真文件上逐值一致 + 变异证明）。证据：清掉轨迹 tex 字段后 npm run replay 仍 2614 帧逐帧相等（evidence/record-replay-cleared-tex.txt）。verify 全绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/agf-size.test.ts"
   ]
 }

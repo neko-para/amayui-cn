@@ -4,7 +4,7 @@ state: live
 ---
 # 03-engine · 消息 / ADV 路径上的配置门（未走到分支清单）
 
-> 为什么单独一份：ADV 相关 handler 里有大量 `if (GetConfig("..."))` 分支。**随包 `SYS4REG.INI` 的取值
+> 为什么单独一份：ADV 相关 handler 里有大量 `if (GetConfig("..."))` 分支。**运行期生效的那一份 `SYS4REG.INI` 的取值
 > 决定了哪些分支走不到**（例如 `message:ReadTextSkip=0` 会让"逐字显示"整条路径不执行）。
 > 这些分支不是"不存在"，而是"当前配置下不执行"；**设置界面能改它们**，所以：
 >
@@ -12,7 +12,7 @@ state: live
 > - 反向：如果某个分支当前走不到，**必须在这里登记**，说明"什么配置会让它走到、走到后要做什么"。
 >
 > 数据层对应条目：`analysis/engine-capabilities.json` 的 `msgwin-config-gates`。
-> 取值来源：`app/amayui-emulator/SYS4REG.INI`（随包副本，与真实安装目录同构）。
+> 取值来源 = **运行期生效的那一份**：overlay（`…\Eushully\<游戏名>.overlay\SYS4REG.INI`，玩家/重写侧写的那份）优先，其次才是真安装目录里的 base；仓库里的随包副本（`app/amayui-emulator/SYS4REG.INI`）只是"两边都没有"时的兜底。生效文本的取法见 `src/arch/systemPaths.ts` 的 `effectiveIniText`（overlay → base），**别拿仓库副本当"当前配置"**（`T-0064` 类问题就是这么来的）。
 > 扫描方式：从 `engine/天结_unpacked.exe_utf8.c` 的字符串常量（779 条 `char aXxx[] = "..."`）
 > 反查各函数里的 `GetConfig` 实参，再人工核对分支体。
 

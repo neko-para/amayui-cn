@@ -17,7 +17,7 @@ import { NodeAudioHost } from '../audio/nodeAudioHost.js';
 import { decideResourceDir } from '../arch/resourceDir.js';
 import { OverlayDir } from '../arch/overlay.js';
 import { effectiveIniText as readEffectiveIni, resolveSystemPaths } from '../arch/systemPaths.js';
-import { Engine } from '../vm/engine.js';
+import { Engine, type Frame } from '../vm/engine.js';
 import { InputManager } from '../vm/input.js';
 import { loadScriptData, stepOnce, NotImplementedOp, type StepTrace } from '../vm/interpreter.js';
 import { readIntOperand, refFromOperand } from '../vm/operand.js';
@@ -32,7 +32,11 @@ import { parseIni, applyConfigToEngine } from '../engineConfig.js';
 import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
 import { dec, enc } from '../vm/bits.js';
 import type { SnapshotMsgWin } from '../renderer/sceneModel.js';
-import { FIELD_MSG_DEFAULT_WIN, FIELD_VERTICAL } from '../vm/engineFieldIds.js';
+import { FIELD_VERTICAL } from '../vm/engineFieldIds.js';
+// ★`bgrToRgb`：`engineValues[21664/21665]` 存的是引擎的 **COLORREF** 字段（`0x76`/`0x77` 把脚本 RGB 翻成
+//   COLORREF 后存进去），屏幕上的颜色 = 再翻一次（`tickets/T-0102` 判据 4；口径见
+//   `handlers/msgwin.ts` 的 `globalTextStyle`）⇒ 探针报告"渲染用色"必须与它同一口径。
+import { bgrToRgb } from '../vm/handlers/msgwin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
@@ -243,6 +247,37 @@ export interface AdvReturnProbe {
   setup: AdvReturnSample;
   /** 退出路径跑完后的同一组量。 */
   after: AdvReturnSample;
+  /**
+   * **`14acda` 的派生链快照**（`tickets/T-0102` 判据 5）。
+   *
+   * 为什么单列：判据 5（「阿瓦罗的名字是青还是橘」）的判决量是 `adcd[14acda]`，而 `14acda` 由
+   * `CONFIG.txt:234-241` 的三张表算出 —— `via = 14acdc[3f37]`、`idx = 14b0c4[via]`
+   * （`idx != 0` ⇒ 取它；`idx == 0` ⇒ 按 `52a49c[3f37]`（单位性别表）回退到 1/2/3）。
+   * 光看一个 `14acda` 判不了对错，必须同时看到：① 这三张表的取值；② 真实调色板 `adcd[idx±1]`；
+   * ③ 这条消息**是谁说的**（消息表 `f612[3f37]` 的文本，取不到就是空串）。
+   *
+   * ★`idxPrev`/`idxNext` 是**"差一"假设**的判决量：若 `idx` 恰与相邻消息号的取值重合，
+   *   「`3f37` 与表的对齐整体偏一格」就有了直接证据（青 vs 橘正是相邻的两条：`adcd[4]` 青 / `adcd[5]` 橘）。
+   */
+  derivation: {
+    /** 被探查的消息号（= 探针铺的 `3f37`；`-1` = 旁白）。 */
+    msg: number;
+    /** `52a49c[msg]`（单位性别表；回退分支的输入）。 */
+    sex: number;
+    /** `14acdc[msg]`（消息 → 中间号）。 */
+    via: number;
+    /** `14b0c4[via]`（中间号 → `adcd` 下标）；**0 ⇒ 走回退分支**。 */
+    idx: number;
+    /** 同一条链在 `msg - 1` / `msg + 1` 上的结果（"差一"判决量）。 */
+    viaPrev: number;
+    idxPrev: number;
+    viaNext: number;
+    idxNext: number;
+    /** 真实 `adcd[idx-1 .. idx+1]`（原值，COLORREF/BGR；越界给 0）。 */
+    palette: number[];
+    /** 消息表 `f612[msg]` 的文本（`global-string`；取不到 = 空串）。 */
+    text: string;
+  };
   /** 路径经过的锚点（按执行顺序，去重前的原始序列）——判「有没有跑到」。 */
   marks: string[];
   /** 是否观察到 `label_00001ae8` 的应用点（`i076` 在退出路径上被再执行一次）。 */
@@ -254,7 +289,8 @@ export interface AdvReturnProbe {
    *
    * 为什么单列：`i082` 的可见效果**只有**这一条通路（用 `op4`/`op5` 把已排版的文本重画一遍）——
    * 属 VM 不可观测类，所以要断言"它真的重画了"只能数发布次数。计数窗口是
-   * **紧邻 `i082` 之后到下一次 hook**（不是整段），否则别的指令（`set-texture`/`0x20A`…）
+   * **`0x82` 那一条指令自己的执行期**（`onStepStart` 置 opcode、`onStep` 清；`onStep` 是执行**之后**
+   * 才回调，用它的前后计数差会恒得 0），否则别的指令（`set-texture`/`0x20A`…）
    * 的发布会把结论淹掉。桩（`STUB_NATIVE_OPS` 放行）时这里恒为 **0**。
    */
   republishByI082: number;
@@ -267,6 +303,52 @@ export interface AdvReturnProbe {
    * >0 ⇒ 必须重发布），否则就是实现与引擎分叉。
    */
   recordsAtI082: number;
+  /**
+   * **`seedRecords`（`tickets/T-0102` 的判决实验）**：把「ADV 侧已经显示过一条消息」这一态铺出来。
+   *
+   * 为什么需要它：`0x82` 的门是 `records.length > op2`（引擎 raw 79502；emulator 同口径，见
+   * `handlers/msgwin.ts` 的 `op_gdi_repaint_window`），而 `records`（引擎 `Font[841..842]` 的 72B 向量）
+   * **只有文本项入队时才 push** ⇒ 「TITLE 菜单 → CONFIG」这条链里它是**空的**（引擎在那里同样什么都不做），
+   * 而真实 **ADV → CONFIG** 路径上它**非空**。⇒ 这个开关就是"把 ADV 路径的差别补上"，
+   * 用来回答「`i082` 到底会不会重画、用哪个颜色重画」。
+   */
+  seedRecords?: number;
+  /**
+   * **`i082` 那一笔重画时用的样式**（`msgWinSync` 载荷里 `style.main.fill/outline` + `revealed`）。
+   *
+   * 形状注意：颜色在 `style.main.*`（`MsgWinStyle` 的正文那一路；`style.ruby` 是注音），**不是** `style.*`。
+   *
+   * `null` = `i082` **执行期间没有**发生重发布（⇒ 那一笔没画：记录表空 / 门没过）。★这是判据 3 的关键数据：
+   * 若这里的 `fill` 是**重派生后的新色**（`#ffffff`）⇒ 文本确实被按新颜色刷新（候选 2 修好了）；
+   * 若仍是旧色（紫）⇒ 重发布用的是**入队时的样式快照**（`MsgSlot.fontStyle`），需要另开一条修法。
+   */
+  restyleByI082: {
+    win: number;
+    fill: string;
+    outline: string;
+    revealed: number;
+    /** `true` ⇒ 该窗有入队快照（`styleOfWin` 的第一选择）。 */
+    snapshot: boolean;
+    /** 快照自己存的正文填充色（`null` = 没有快照）—— 与 `fill` 对照即可判"颜色到底从哪来"。 */
+    snapFill: string | null;
+    /** 那一刻的**实时**全局填充色（`Font+1360`）—— 与 `fill` 对照的另一半。 */
+    liveFill: string;
+  } | null;
+  /**
+   * `i076`（样式重新应用）**之后**发生的 `msgWinSync` 次数（任意窗）。
+   *
+   * ★判据 3 的最后一格：判据 3 问的是"`MsgSlot.fontStyle` 那条机制**哪一环**被绕过"。
+   *   `i082` 那一笔的重画是**有门**的（记录表空就什么都不做，与引擎同口径 raw 79502）⇒ 在
+   *   「TITLE → CONFIG → 戻る」这条链上它**恒不重画**。于是必答的问题是：
+   *   **这条链上还有没有别的发布把新颜色带出去？** 0 ⇒ 该窗纹理在模拟器里根本没被按新色重建
+   *   （⇒ 用户看到的紫 = 拿旧纹理上屏，属**发布触发点缺失**，不是取色错）；> 0 ⇒ 颜色带出去了，
+   *   紫就只能出在宿主侧（光栅化/纹理键）。
+   */
+  syncsAfterI076: number;
+  /** 上述发布里**最后一次**的载荷（`win` + 正文色）；`null` = `i076` 之后一次发布都没有。 */
+  lastSyncAfterI076: { win: number; fill: string; outline: string; op: number } | null;
+  /** 上述发布是**哪些指令**发起的（去重、按首次出现排序）—— 判"新颜色是被哪条指令带出去的"。 */
+  opsSyncedAfterI076: number[];
 }
 
 /** `AdvReturnProbe` 的一次采样（全部是**解码后**的脚本语义值）。 */
@@ -282,7 +364,17 @@ export interface AdvReturnSample {
   msg3f37: number;
   g3f38: number;
   g0: number;
-  /** 全局 `1397`（`CONFIG.txt:223` 的门：== 1 时 `local10 = 1` ⇒ 整个重派生块被跳过）。 */
+  /**
+   * 全局 `1397`（`CONFIG.txt:223` 的门）。
+   *
+   * ★**极性（实测 4×2 矩阵，`tickets/T-0102/notes.md`）**：`CONFIG.txt:219-225` 是
+   *   `f = (1397 == 1)` → `10 = e & f`（`e = (g0==1) || (g0==6)`）→ `jcc 10, -1, label_000014ec`
+   *   ⇒ **`g0 ∈ {1,6}` 且 `1397 == 1` 时重派生块才跑**（`10` 真 ⇒ 真分支 = `-1` = 落下句），
+   *   否则跳 `14ec` **整块跳过** ⇒ `14acda`/`f807b` 保留 CONFIG2 的残留（用户报的紫）。
+   *   ⚠本字段的注释曾写成「== 1 ⇒ 整个重派生块被跳过」，**极性是反的** —— 那是把 `jcc` 的
+   *   操作数顺序读成了 `(cond, 跳转目标, 落下目标)`；真实约定见 `src/vm/handlers/control.ts:66-90`
+   *   （`jcc cond, trueLabel, falseLabel`，`-1` = 该分支落下句）。
+   */
   g1397: number;
   /** 全局 `3f36`（`CONFIG.txt:207` 的 `ne 3f36 2` 决定走不走 `label_00001144`）。 */
   g3f36: number;
@@ -325,13 +417,16 @@ export interface ChainOptions {
    * （`tickets/T-0102` 丁-2/丁-3 的判决实验）。默认关；需要 `previewProbe: true` 才有意义。
    *
    * 给对象时可以铺 **ADV 语境**（TITLE 菜单进 CONFIG 与 ADV 进 CONFIG 的差别就在这几个全局上）：
-   *  - `fromAdv`（默认 true）= 置 `3f38 = 1`（`src/SC0000.txt:999` 的场景入口会置它）；
-   *  - `g0`（默认 1）= 置脚本全局 0（`src/SC0000.txt:1018` 的 `mov (global-int 0) 1`）；
-   *  - `g1397`（默认 0）= 置全局 `1397`（`CONFIG.txt:223` 的门：`1397 == 1 ⇒ local10 = 1 ⇒ 整块被跳过`）；
+   *  - `fromAdv`（默认 true）= 置 `3f38 = 1`（`src/SC0000.txt:998` 的场景入口 `label_00003774` 会置它）；
+   *  - `g0`（默认 1）= 置脚本全局 0（`src/SC0000.txt:1023` 的 `mov (global-int 0) 1`；另一处真实取值是
+   *    `:1292` 的 `6` —— 后者会让 `CONFIG.txt:262` 的 `eq … 1` 走假分支、**跳过重新入队**）；
+   *  - `g1397`（默认 0）= 置全局 `1397`（`CONFIG.txt:223` 的门：**`1397 == 1` 且 `g0 ∈ {1,6}` ⇒ 重派生块才跑**；
+   *    否则 `:225` 跳 `label_000014ec` 整块跳过）。★极性别写反 —— 见 `AdvReturnSample.g1397` 的注释与
+   *    `test/config1-chain.test.ts` 的两组（`g1397: 1` ⇒ 会重派生；`g1397: 0` ⇒ 保持原色）；
    *  - `msg` = 置全局 `3f37`（引擎里它是**当前发言者/消息索引**；`52a49c` 是单位性别表，
    *    见 `docs-new/02-data/training-speakers.md:11`）。
    */
-  advReturnProbe?: boolean | { fromAdv?: boolean; g0?: number; g1397?: number; msg?: number };
+  advReturnProbe?: boolean | { fromAdv?: boolean; g0?: number; g1397?: number; msg?: number; seedRecords?: number };
   /**
    * **字体选择器探针**（默认关）：跑完 CONFIG1 后，把光标移到第一行字体项的「变更」按钮并点击
    * ⇒ 打开 `$1$SELFONT`（`CONFIG1.txt:1049 call-script 51dd`）⇒ 采两份滚动条几何 + 列表里画出的面名。
@@ -475,6 +570,15 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
    * 「`i076`/`i082` 在退出路径上有没有被再执行一次」（`tickets/T-0102` 的判据）。
    */
   let advStepHook: ((opcode: number) => void) | null = null;
+  /**
+   * 同上的**前置**钩子（`onStepStart` 时机 = 指令**尚未执行**）。
+   *
+   * ★为什么非要有它：`onStep` 是**执行之后**才回调（见 `frame/loop.ts:211/229`），所以"某条指令自己
+   * 产生了哪些副作用"不能靠 `onStep` 里的计数差来量 —— 在 `onStep` 里读到的计数**已经含它自己**了。
+   * 要精确圈定"这条指令执行期间发生的宿主同步"，只能在 `onStepStart` 记下当前 opcode、
+   * 在 `onStep` 清掉（窗口 = 该指令的整个执行期，见 `AdvReturnProbe.republishByI082`）。
+   */
+  let advPreHook: ((opcode: number) => void) | null = null;
   const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
     gates: { anim: 'wait', sleep: 'wait', advance: 'force' },
     advFrame: true,
@@ -482,6 +586,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     maxStepsPerFrame: 5000,
     onStepStart: (_f, instr) => {
       lastInstr = instr;
+      advPreHook?.(instr ? instr.opcode : -1);
     },
     onStep: (t) => {
       opt.onStep?.(t);
@@ -598,7 +703,7 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   if (opt.previewProbe) {
     const fillOf = (): string | null => native.scene.msgWins.get(9)?.style.main.fill ?? null;
     const liveFillOf = (): string =>
-      '#' + ((e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0');
+      '#' + (bgrToRgb(e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0');
     const beforeFill = fillOf() ?? '';
     const win9Fills: string[] = [];
     const liveFills: string[] = [];
@@ -634,8 +739,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
   let advReturn: AdvReturnProbe | undefined;
   if (opt.advReturnProbe) {
     const sample = (): AdvReturnSample => ({
-      fill: '#' + ((e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0'),
-      outline: '#' + ((e.engineValues.get(21665) ?? 0) & 0xffffff).toString(16).padStart(6, '0'),
+      fill: '#' + (bgrToRgb(e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0'),
+      outline: '#' + (bgrToRgb(e.engineValues.get(21665) ?? 0) & 0xffffff).toString(16).padStart(6, '0'),
       f807b: dec(e.key, e.globals.int.get(0xf807b) ?? 0),
       f807c: dec(e.key, e.globals.int.get(0xf807c) ?? 0),
       c14acda: dec(e.key, e.globals.int.get(0x14acda) ?? 0),
@@ -655,33 +760,122 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     e.globals.int.set(0x1397, enc(e.key, cfg.g1397 ?? 0));
     if (cfg.msg !== undefined) e.globals.int.set(0x3f37, enc(e.key, cfg.msg));
     const setup = sample();
+    /**
+     * **派生链表**（见 `AdvReturnProbe.derivation`）：`lookup-array (ptr) (global TBL) (idx)` 的读法就是
+     * `globals.int[TBL + idx]`（`GlobalArrays` 以全局下标为键、稀疏存储）⇒ 直接按下标读即可。
+     */
+    const gInt = (i: number): number => dec(e.key, e.globals.int.get(i) ?? 0);
+    const gStr = (i: number): string => e.globals.str.get(i) ?? '';
+    const TBL_SEX = 0x52a49c;
+    const TBL_VIA = 0x14acdc;
+    const TBL_IDX = 0x14b0c4;
+    const TBL_ADCD = 0xadcd;
+    const chainAt = (m: number): { sex: number; via: number; idx: number } => {
+      const via = gInt(TBL_VIA + m);
+      return { sex: gInt(TBL_SEX + m), via, idx: gInt(TBL_IDX + via) };
+    };
+    const derivation = ((): AdvReturnProbe['derivation'] => {
+      const msg = cfg.msg ?? gInt(0x3f37);
+      const cur = chainAt(msg);
+      const prev = chainAt(msg - 1);
+      const next = chainAt(msg + 1);
+      return {
+        msg,
+        sex: cur.sex,
+        via: cur.via,
+        idx: cur.idx,
+        viaPrev: prev.via,
+        idxPrev: prev.idx,
+        viaNext: next.via,
+        idxNext: next.idx,
+        palette: [gInt(TBL_ADCD + cur.idx - 1), gInt(TBL_ADCD + cur.idx), gInt(TBL_ADCD + cur.idx + 1)],
+        text: gStr(0xf612 + msg),
+      };
+    })();
     const marks: string[] = [];
     let sawI082 = false;
     let sawI076 = false;
     let lastScript = '';
     // ★数"`i082` 自己重发布了几次窗"（见 `AdvReturnProbe.republishByI082`）：把宿主的
-    //   `msgWinSync` 包一层计数。窗口 = `i082` 之后到下一次 hook（= 下一条指令），精确到这一笔。
-    let syncCount = 0;
-    let syncAtI082 = -1;
+    //   `msgWinSync` 包一层计数，窗口 = **正在执行的那条指令就是 `0x82`**（`advPreHook` 置、
+    //   `onStep` 清）—— 不能用 `onStep` 前后计数差：`onStep` 在执行**之后**才回调，差值恒为 0。
+    let preOp = -1;
     let republishByI082 = 0;
     let recordsAtI082 = -1;
+    /** `i082` **执行期间**最后一次 `msgWinSync` 的样式载荷（判决实验要看的"重发布用了哪个颜色"）。 */
+    let restyleByI082: AdvReturnProbe['restyleByI082'] = null;
+    /** `i076` 之后的发布计数/末次载荷（见 `AdvReturnProbe.syncsAfterI076`）。 */
+    let syncsAfterI076 = 0;
+    let lastSyncAfterI076: { win: number; fill: string; outline: string; op: number } | null = null;
+    const opsSyncedAfterI076: number[] = [];
+    /** ★`seedRecords`（`tickets/T-0102` 的判决实验）：见下方 `AdvReturnProbe.seedRecords` 的说明。 */
+    if (cfg.seedRecords && cfg.seedRecords > 0) {
+      // 找**真实** `i082` 指令（在任意帧的脚本里），用**它的操作数**决定"给哪个窗、从哪个下标起"有记录
+      //   —— 不能猜：门是 `records.length > op2`，而记录要落在 `op1` 那个窗上才可能被重画。
+      let owner: { frame: Frame; ins: BinInstruction } | null = null;
+      for (const f of e.frames) {
+        const ins = f.script?.instructions.find((x) => x.opcode === 0x82);
+        if (ins) {
+          owner = { frame: f, ins };
+          break;
+        }
+      }
+      const winIdx = owner ? readIntOperand(e, owner.frame, owner.ins, 1) : 2;
+      for (let i = 0; i < cfg.seedRecords; i++) {
+        e.textItems.records.push({ win: winIdx, v20: 0, v24: 0, v32: 0, flags: 0 } as never);
+      }
+      marks.push(`[probe] seedRecords=${cfg.seedRecords}（win=${winIdx}）⇒ records=${e.textItems.records.length}`);
+    }
     const nativeAny = native as unknown as { msgWinSync?: (...a: unknown[]) => void };
     const origSync = nativeAny.msgWinSync?.bind(native);
     nativeAny.msgWinSync = (...a: unknown[]) => {
-      syncCount++;
+      const winArg = Number(a[0]);
+      const input2 = a[1] as
+        | { style?: { main?: { fill?: string; outline?: string } }; revealed?: number }
+        | undefined;
+      const mainStyle = input2?.style?.main;
+      // ★`i076` 之后的每一次发布都记一笔（判据 3 的最后一格：见 `AdvReturnProbe.syncsAfterI076`）
+      if (sawI076 && mainStyle) {
+        syncsAfterI076++;
+        lastSyncAfterI076 = {
+          win: winArg,
+          fill: String(mainStyle.fill ?? '?'),
+          outline: String(mainStyle.outline ?? '?'),
+          op: preOp,
+        };
+        if (!opsSyncedAfterI076.includes(preOp)) opsSyncedAfterI076.push(preOp);
+      }
+      if (preOp === 0x82) {
+        republishByI082++;
+        // 正文色在 `style.main.*`（不是 `style.*`，也不是注音的 `style.ruby`）
+        if (input2?.style) {
+          const snap = e.msgwin.slot(winArg).fontStyle;
+          restyleByI082 = {
+            win: winArg,
+            fill: String(input2.style.main?.fill ?? '?'),
+            outline: String(input2.style.main?.outline ?? '?'),
+            revealed: input2.revealed ?? -1,
+            // ★判决实验的核心：`true` ⇒ 颜色取自 `MsgSlot.fontStyle`（**入队时的快照**，
+            //   `styleOfWin` 的第一选择）；`false` ⇒ 走了 `globalFontSnapshot` 回退（重派生后的实时色）。
+            //   ★注意快照的"没有"是 `null` 而**不是** `undefined`（`vm/msgwin.ts:673` 初始化成 null）
+            //   —— 只判 `!== undefined` 会把"任何存在的槽"都当成有快照（本探针第一版就栽在这）。
+            snapshot: snap !== undefined && snap !== null,
+            snapFill: snap ? snap.main.fill : null,
+            liveFill: '#' + (bgrToRgb(e.engineValues.get(21664) ?? 0xffffff) & 0xffffff).toString(16).padStart(6, '0'),
+          };
+        }
+      }
       origSync?.(...a);
+    };
+    advPreHook = (op) => {
+      preOp = op;
     };
     advStepHook = (op) => {
       const nm = e.curScript().name;
-      // 上一次 hook 之后如果是 `i082`，这里就把它那一笔的发布数结算掉（下一条指令已经进来）
-      if (syncAtI082 >= 0) {
-        republishByI082 = syncCount - syncAtI082;
-        syncAtI082 = -1;
-      }
+      preOp = -1; // 一条指令的执行期到此结束（`i082` 的发布只可能落在它自己那一格里）
       if (op === 0x76) sawI076 = true;
       if (op === 0x82) {
         sawI082 = true;
-        syncAtI082 = syncCount;
         recordsAtI082 = e.textItems.records.length;
       }
       // 只记 CONFIG 系脚本的指令 + 每次脚本切换 ⇒ 退出的那一小段不被 TITLE 的逐帧循环淹掉
@@ -702,17 +896,22 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     await run(1200, () => sawI082 || e.curScript().name.startsWith('SN0000'));
     await run(300); // 让 i082 之后的部分也走完
     advStepHook = null;
-    if (syncAtI082 >= 0) republishByI082 = syncCount - syncAtI082; // `i082` 是最后一条时也要结算
+    advPreHook = null;
     nativeAny.msgWinSync = origSync;
     advReturn = {
       before,
       setup,
       after: sample(),
+      derivation,
       marks: marks.slice(-160),
       reappliedStyle: sawI076,
       sawI082,
       republishByI082,
       recordsAtI082,
+      restyleByI082,
+      syncsAfterI076,
+      lastSyncAfterI076,
+      opsSyncedAfterI076,
     };
   }
 
@@ -809,7 +1008,9 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     unimplemented,
     text: m.textOf(0),
     ruby: m.slot(m.resolveWin(0)).segments.flatMap((s) => s.ruby) as unknown as string[][],
-    pane: e.engineValues.get(FIELD_MSG_DEFAULT_WIN),
+    // ★默认窗的唯一真源 = `msgwin.defaultWin`（= 引擎 `Font+1228`；`tickets/T-0101` 的 D5 收敛后
+    //   `engineValues[21631]` 不再是存放处 ⇒ 这里必须读它，否则恒 `undefined`）。
+    pane: e.msgwin.defaultWin,
     msgField: e.engineValues.get(FIELD_VERTICAL),
     sampleWin,
     snapshotText: sampleText,

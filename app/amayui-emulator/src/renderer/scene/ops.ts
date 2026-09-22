@@ -875,7 +875,39 @@ export function scPoolPending(s: SceneState, clock: number): boolean {
 }
 
 /**
- * **"这一帧该不该合成"** —— 引擎式 present 条件：`场景脏 || 仍有动画在播`。
+ * **引擎的 Live2D 槽探针**（`sub_4A1AF0`，raw 121777-121790）：`Scene+55812` 起的 **10 个实例槽**
+ * 里**只要有一个非空**就返回 1。调用点 = 合成判据 `sub_40BE10` 的 raw 16025：
+ *
+ * ```c
+ * if ( v2[258] || v2[259] || v2[260] || sub_4A1AF0(_this) ) return 1;   // 16025
+ * ```
+ *
+ * ★为什么必须**照体的这一条**（`tickets/T-0054` M3 的缺口，2026-09）：
+ * emulator 此前只把"**节点动画窗还在跑**"接进合成判据（`scAnimationsPending` 里的 L2D 段）——
+ * 那是**更窄**的一条：立绘动作播完（窗 `dur` 到点）后判据就为假，而引擎**只要槽里有实例就一直
+ * 强制重画**。差别在"没有窗在跑、但 L2D 状态被改过"的那类操作上会显形：
+ * `0x34F`（纹理乘色）/`0x351`（命名参数）/**`0x346`/`0x34D`**（572B 节点 setter）**都不置任何脏位**
+ * ⇒ `present:'needsRender'` 档下那几笔改完**不会重画**（不报错、只是画面不对，正是本台账要抓的类别）。
+ * 引擎靠"槽非空 ⇒ 每帧都合成"把这一类兜住。
+ *
+ * ★口径与边界：
+ *  - 判据 = `l2dSlots`（= 引擎 `Scene+55812` 的同一张 10 槽表）**非空**，**不看**`model` 是否存在、
+ *    也不看节点是否可画 —— 与体逐字一致（体只解引用槽指针）；
+ *  - 与 `0x342`（销毁槽）天然成对：析构后槽被删 ⇒ 探针转假，合成可以停；
+ *  - 与**冻结**（`Scene+46512`）无关：体里这条在冻结门**之前**（raw 16022-16025 同一串 `||`），
+ *    所以冻结帧也照样强制合成 —— 别把它并进 `scAnimationsPending` 的冻结分支。
+ *
+ * ★**代价与备选**（写在这里免得后人以为是漏优化）：这一条会让"屏上有立绘"的页面在
+ * `present:'needsRender'` 档下**每帧都合成**（引擎就是这样：原生每帧都重画）。想省掉它需要的是
+ * "让 L2D 的变更型指令自己置脏"（`0x34F`/`0x351`/`0x346`/`0x34D`），但那要在 VM → 宿主的窄缝上
+ * 再加一条（`L2dHost` 目前没有"置脏"缝）⇒ 先按体保正确性，性能另开票再谈。
+ */
+export function scL2dSlotProbe(s: SceneState): boolean {
+  return (s.l2dHost?.l2dSlots.size ?? 0) > 0;
+}
+
+/**
+ * **"这一帧该不该合成"** —— 引擎式 present 条件：`场景脏 || 仍有动画在播 || 有活动转场 || L2D 槽非空`。
  *
  * 为什么做成共享函数（`tickets/T-0008` 的 D3）：这条判据原先只活在 `PixiBackend.needsRender()` 里，
  * 而它**读了宿主自己的 `waitFlags` 镜像**（只置不清 ⇒ 永久为真）⇒ 既测不到（pixi 需要 WebGL/DOM），
@@ -888,7 +920,8 @@ export function sceneNeedsRender(s: SceneState, clock: number, dirty: boolean): 
   // ★第三项：**有活动转场窗**（引擎 `Scene+46508` 的置位点之一就是转场消费端 raw 136718-136719
   //   `if (46512 | 46516) 46508 = 1`，唯一读者 = `sub_40BE10` raw 16022 = needsRender）。
   //   少了这一项，转场期间 `present:'needsRender'` 档会**停止合成**，条带/淡入淡出只画一帧。
-  return dirty || scAnimationsPending(s, clock) || scTransitionsPending(s);
+  // ★第四项：**L2D 槽非空**（`sub_4A1AF0`，raw 16025 的最后一个 `||`）—— 见 `scL2dSlotProbe`。
+  return dirty || scAnimationsPending(s, clock) || scTransitionsPending(s) || scL2dSlotProbe(s);
 }
 // ---------------------------------------------------------------------------
 // 消息窗文本（引擎「每窗一张离屏表面 + 逐行显现」的等价物）

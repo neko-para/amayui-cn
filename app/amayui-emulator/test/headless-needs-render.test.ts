@@ -98,6 +98,7 @@ test('源码棘轮：`scene/ops.ts` 里变更型 sc* 都要置脏，只读的白
   const READ_ONLY = [
     'scAnimationsPending', // 判据
     'scPoolPending', // 判据（池挂起位 Scene+46516；T-0024）
+    'scL2dSlotProbe', // 判据（L2D 10 槽任一非空；引擎 `sub_4A1AF0` raw 121777-121790，`tickets/T-0054` M3）
     'scGetDrawItemPos', // getter
     'scGetDrawItemPivot', // getter
     'scGetDrawItemTexSlot', // getter

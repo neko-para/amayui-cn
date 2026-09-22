@@ -5,10 +5,10 @@
   "area": "emulator/msgwin",
   "why": "轮 8 实现 T-0095（0x1d0 回看页）时顺手读出的两处遗留，**今天都不可观测**，但属静默分歧/死代码：\n**D5 默认窗双真源**：`MsgWindow.defaultWin`（`src/vm/msgwin.ts`，初值 **1**，与引擎 `Font[307]` 初值一致，`resolveWin(0)` 用它）与 `handlers/text-items.ts` 的 `defaultWin(e)`（读 `engineValues.get(21631) ?? 0`，初值 **0**）是**两份**。`0x80` 同时写两者（`handlers/msgwin.ts`）⇒ 任何 `i080` 之后一致；但**在 `i080` 之前**，`i071 0`/`i070 0` push 的回看页 `win=1`，而 `i1d2` push 的记录 `win=0`。目前没有任何路径按 `win` 过滤记录 ⇒ 不可观测；一旦将来有路径按窗过滤，就会静默错配。\n**D6 死字段**：`MsgWindow.textSlotArg` 两处初始化、**零赋值、订正后零读取**（T-0095 之前它还被用来判一个恒真的门 `textSlotArg >= 0`，那是既有缺陷、已改成 `ENGINE_FIELD.textBaseGate`）⇒ 纯死代码；T-0095 只在注释里标为历史遗留并保留（怕影响按名快照的调用方）。",
   "acceptance": [
-    "D5：让两处取「默认窗」的口径收敛成**一处** —— 首选让 `handlers/text-items.ts` 的 `defaultWin(e)` 读 `e.msgwin.defaultWin`（或在引擎初始化处把 `ENGINE_FIELD.defaultWindow` 播成 1，使 `?? 0` 不再生效）；判定前先确证引擎侧的唯一真源（`Font[307]` = `Font+1228`，raw 73148-73152 的 `if (!a2) a2 = *(Font+1228)`）",
-    "D5 守卫：合成指令在**任何 `i080` 之前** `i071 0` + `i1d2`，断言页与记录的 `win` **相同**（现在是 1 vs 0）",
-    "D6：删掉 `MsgWindow.textSlotArg` 及其两处初始化（先确证没有按名快照/回放调用方依赖它 —— `advState` 的按名序列化要核），或写明为什么必须保留（不许只留一句注释）",
-    "npm run verify 全绿；四份台账 --validate 绿"
+    "D5：让两处取「默认窗」的口径收敛成**一处** —— 首选让 `handlers/text-items.ts` 的 `defaultWin(e)` 读 `e.msgwin.defaultWin`（或在引擎初始化处把 `ENGINE_FIELD.defaultWindow` 播成 1，使 `?? 0` 不再生效）；判定前先确证引擎侧的唯一真源（`Font[307]` = `Font+1228`，raw 73148-73152 的 `if (!a2) a2 = *(Font+1228)`）\n★进度（轮 12，**已完成**）：引擎侧唯一真源确证 —— 那一格是 `Font+1228` = `Font[307]`，解析规则 raw **73148-73152**（`if (!a2) a2 = *(Font+1228)`，`0x1D2`/`0x70`/`0x71` 族共用），**初值 1**（raw **78899** `*(_DWORD *)(_this + 1228) = 1;`），写点 `0x80`（raw 28786-28796）。⇒ 取票面首选改法：`handlers/text-items.ts` 的 `defaultWin(e)` 改读 `e.msgwin.defaultWin`（唯一真源）；`0x80` 里那行镜像写 `engineValues[21631]` **删除**；`ENGINE_FIELD.defaultWindow` 只留作\"引擎字段 id\"的文档（注释指明存放处）。",
+    "D5 守卫：合成指令在**任何 `i080` 之前** `i071 0` + `i1d2`，断言页与记录的 `win` **相同**（现在是 1 vs 0）\n★进度（轮 12，**已完成**）：新增守卫 `app/amayui-emulator/test/msgwin-default-window.test.ts` —— ①任何 `i080` 之前 `i071 0` + `i1d2` ⇒ 回看页 `win` == 记录 `win` == **1**（并直接断言两者相等）；②`i080 3` 之后两处**同时**变 3；③源码棘轮（`defaultWin` 不许再读 `engineValues[defaultWindow]`、全 `src/` 代码里不许再有 `textSlotArg`）。★辨别力机械证明：把 `defaultWin` 退回 `?? 0` ⇒ **3 条全红**（点名\"记录的 win，修前 0\"），还原后 3/3 绿。既有断言按唯一真源订正 3 处（`adv-msgwin:838`、`engine-config:313`、`config1Chain` 的 `pane` 观测点）。",
+    "D6：删掉 `MsgWindow.textSlotArg` 及其两处初始化（先确证没有按名快照/回放调用方依赖它 —— `advState` 的按名序列化要核），或写明为什么必须保留（不许只留一句注释）\n★进度（轮 12，**已完成**）：删前核对 —— `textSlotArg` 全仓只有两处初始化（构造默认值 + `reset()`）、零赋值、零读取；`advState` 的按名快照（`AdvStateJson`）**不含**它（grep 0 命中）⇒ 当年\"保留仅为兼容按名快照\"的顾虑不成立。已删除字段与两处初始化，并在原地留历史说明；源码棘轮里加了一条\"代码里不许再出现 `textSlotArg`\"（注释不算）。",
+    "npm run verify 全绿；四份台账 --validate 绿\n★进度（轮 12）：`npm run verify` 全绿（**1020 tests / 1019 pass / 1 skipped / 0 fail** + typecheck ×3 + `check:dead-writes` 无新增死写）；`tickets.js --validate` / `capabilities.js --validate`（137 条）/ `scripts.js --validate`（30 条）绿。"
   ],
   "evidence": [
     {
@@ -21,6 +21,18 @@
       "anchor": "0x1D0",
       "note": "T-0095 把 0x1D0 从「未实现」改成「已转真实现」的同批改动（说明本轮确实读了这一族）",
       "line": 175
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(_this + 1228) = 1;",
+      "note": "D5 的关键证据：默认窗那一格的**初值 = 1**（`Font` 初始化段）⇒ emulator 的 `?? 0` 是错的。",
+      "line": 78899
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "a2 = *(_DWORD *)(_this + 1228);",
+      "note": "解析规则：`win` 参数为 0 时取 `Font+1228`（`0x1D2`/`0x70`/`0x71` 族共用）—— 页与记录走的是同一条规则。",
+      "line": 73150
     }
   ],
   "links": {
@@ -32,12 +44,22 @@
     ]
   },
   "id": "T-0101",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "done → done —— 轮 12 收尾：D5 双真源收敛 + D6 死字段删除。D5 —— 引擎那一格 = Font+1228 = Font[307]，初值 1（raw 78899）、解析规则 raw 73148-73152、写点 0x80；读侧 defaultWin 改读唯一真源 msgwin.defaultWin，0x80 的镜像写 engineValues[21631] 删除（删后即死写）。D6 —— MsgWindow.textSlotArg 与两处初始化删除（删前核过零读取、advState 按名快照不含它）。守卫 +3（test/msgwin-default-window.test.ts：i080 之前页/记录 win 相同且 =1；i080 3 后同时变 3；源码棘轮），变异证明退回 ?? 0 ⇒ 3 条全红。既有断言按唯一真源订正 3 处（adv-msgwin/engine-config/config1Chain 的 pane 观测点）。verify 全绿 1020 tests"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/msgwin-default-window.test.ts",
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/op-1d0-page-index.test.ts"
   ]
 }

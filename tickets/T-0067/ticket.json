@@ -5,8 +5,8 @@
   "area": "emulator/render",
   "why": "用户实测（T-0064 之后仍在）：在 ADV 场景里存档时，存档页面会消失一瞬间并露出 ADV 界面。机制假设：引擎的 present **从不清后备缓冲**（ClearTarget 被恒 0 的 Scene+46460&1 守卫），一次性绘制的内容与旧像素一直留在屏上；而 emulator 每帧从模型**整屏重组**，于是「脚本撤掉 UI、稍后才重画」的中间帧会被如实呈现。现有的补偿是 pixiBackend 的帧保持（holdFrames / HOLD_MAX_FRAMES=60），但 configureDrawItem（每条 draw-texture）会**无条件**解除保持 ⇒ 存档流程里任何一次新绘制都会解除保持。需要先拿到用户复现时的 frame-hold / present 日志确认是哪一步解除的。",
   "acceptance": [
-    "存档全流程（进入存档页 → 选槽 → 确认 → 写盘 → 回到列表）没有任何一帧展示「UI 缺失」的画面",
-    "改动有 before/after 的日志或截图证据；不破坏既有修复（T-0063 的留帧口径、T-0062 的缩略图捕获）",
+    "存档全流程（进入存档页 → 选槽 → 确认 → 写盘 → 回到列表）没有任何一帧展示「UI 缺失」的画面\n★进度（轮 11，**机制已取证 + 已证的缺陷已修**）：拿到真跑日志（`tickets/T-0067/evidence/transition-frame-hold.log`，锚 = 原日志第 2337 行）—— `0x73 -> SC0000.BIN` 那一刻的顺序是「`满屏幕布 0x19258 被撤 → 留帧 60 帧`」→ 几笔之后 `[frame-hold] draw-texture → 解除留帧（剩 60 帧）`，而紧跟其后的 `configureDrawItem h=0x18b00 (0,0,256x128)` 说明**解除留帧的那一笔只有 256×128**（转场贴片，且 `setTransition` 还没执行）⇒ 元凶 = `configureDrawItem` 里那条**无条件**的 `#releaseFrameHold`。已改为按\"**新内容又铺满一屏**\"解除（`itemCoversView`：`flags&1` 且源矩形面积 ≥ 0.9×视口；无时钟无副作用），`HOLD_MAX_FRAMES=60` 上限保留。★**这不是 §2 被打回的\"可见才解除\"**（那条对新建项惰性：`from` alpha 恒 255）——判决实验就是日志那一笔（256×128 = 视口 3.6% ⇒ 继续留帧）。★**本判据仍未结**：与 §3\"底图合成\"的差异（留帧期中小贴片被**推迟**而非叠在旧画面上）与真界面复跑（headless 无留帧机制）见 notes §4。",
+    "改动有 before/after 的日志或截图证据；不破坏既有修复（T-0063 的留帧口径、T-0062 的缩略图捕获）\n★进度（轮 11）：证据已按 T-0057 R6 从 `.tmp/` 搬进票据（`evidence/transition-frame-hold.log`，含原日志行号与抓取口径）；改动前的 before 就是该日志原文（解除留帧那三行），after 由守卫的取值表 + 源码棘轮钉住；既有的 T-0063 留帧口径（`transition-render-wiring.test.ts` 的\"转场活动帧不许被留帧早退\"）与 T-0062 的缩略图捕获路径**未改动**。",
     "npm run verify 全绿"
   ],
   "evidence": [
@@ -27,6 +27,12 @@
       "anchor": "detach-texture 30d40 1",
       "line": 1079,
       "note": "存档流程里的撤图点（背景选择页的副本）"
+    },
+    {
+      "file": "tickets/T-0067/evidence/transition-frame-hold.log",
+      "anchor": "[frame-hold] draw-texture → 解除留帧（剩 60 帧）",
+      "note": "真跑日志原文（来源 .tmp/amayui-emulator.log 第 2325..2362 行）：满屏幕布 0x19258 被撤（留帧启动）之后，一笔 256×128 的转场贴片就把留帧解除了（紧随的 configureDrawItem h=0x18b00 (0,0,256x128)）+ setTransition 尚未执行。⇒ T-0067 的机制取证（原 notes §4 缺的输入 ①）。",
+      "line": 29
     }
   ],
   "links": {
@@ -36,12 +42,26 @@
     ]
   },
   "id": "T-0067",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-18",
       "what": "创建",
       "kind": "created"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 11：拿到真跑日志（归档 evidence/transition-frame-hold.log）确认元凶 = configureDrawItem 的无条件 releaseFrameHold 被一笔 256x128 的转场贴片触发（满屏幕布刚被撤、setTransition 还没执行）；改为按铺满一屏解除（itemCoversView：flags&1 且源矩形面积 >= 0.9 视口，无时钟无副作用），上限 60 帧保留。守卫 +3（test/frame-hold-cover.test.ts：取值表含 256x128 假/阈值边界/无时钟无副作用/源码棘轮），辨别力两次机械证明。残余：与底图合成的差异（小贴片被推迟而非叠加）+ 真界面复跑（headless 无留帧机制）⇒ 票保持 doing"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 12（副产物登记）：E4 通道打通——本机可跑 Electron，shot/record/replay 三件套可用（record 必须 --centered，否则窗口贴边到屏幕外导致未找到游戏窗口；--out 按仓库根、replay 轨迹按包目录 cwd 解析）。残余②只剩'存档流程的输入编排'（现有 gamestart spec 只到 SN0000 第一页，需补走到存档页的 spec）。详见 notes §5"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-hold-cover.test.ts",
+    "app/amayui-emulator/test/transition-render-wiring.test.ts"
   ]
 }

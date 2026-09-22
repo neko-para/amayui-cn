@@ -8,9 +8,9 @@
     "**路线与参考源纪律定案（已达成，留档）**：路线 = **C 自研移值**（用户 2026-09-16 拍板）；评估文档 §3.5 写明参考源纪律 —— **公开规范优先**（`.mtn`/ID/变形器语义查官方文档）、**资产实证兜底**（`.moc` 字节布局无公开规范 ⇒ 用 335 个样本的不变量逼格式）、**反汇编只当 oracle**（不逐行搬运 SDK 结构与标识符）",
     "**M1 静态姿态（格式实证 + 资源直读 + 节点变换）**：① 产出 `docs-new/03-engine/live2d-moc-format.md`（每条格式事实标注来源：官方规范 / 资产实证 / 反汇编 oracle / 社区交叉验证）；② **全量 335 个 `.MOC` 的解析不变量测试**（节数/计数/偏移自洽、UV∈[0,1]、索引不越界、画布尺寸有限）；③ 从游戏资源读 `.MOC` + 对应 PNG 纹理与 `.MTN`（**不依赖 `.model.json`、不依赖网络 CDN、不改 raw 资源**）并在 Electron 里逐帧出画，位置/缩放/旋转/图层序受 `0x346`–`0x34D` 的 572B 立绘节点控制",
     "**M2 语义对齐（装载 / 绑定 / 推进）**：`0x341`(op2=实例槽) / `0x342`(销毁-重建) / `0x345`(op2=槽, op3=纹理号) / `0x352`(op2==0 → 纹理号、!=0 → 动作号) / `0x34E`(op2=动作槽 0/1、op3=槽、op4=循环位，「装载即入队」) 全部按 raw 实现；`0x350` 复位队列可用；**动作推进必须绑在节点绘制那一次调用上**（不得另起独立 tick），`.MTN` 的 `$fps/$fadein/$fadeout` 决定速度与淡入淡出 —— 对应能力条目 `live2d-node-draw-advance`",
-    "**M3 集成与门控**：`Scene+55812` 的 10 槽接进 `sub_40BE10` 的重画判据（`live2d-slot-probe`）；`global a9d0` 被真读（==0 → L2D、!=0 → 静态贴图回落），TITLE/BTL/INFOEN 两条支路都能跑通（`live2d-enabled-config-flag`）",
-    "**E3/E4 + 守卫 + 台账上调**：headless 下 TITLE 与 INFOEN 的 L2D 路径可复现（帧 digest 或 572B 节点快照，**不得依赖 WebGL**）；≥1 张 Electron 真界面截图（E4）并与 `a9d0 != 0` 的静图回落支对照；新增守卫测试填进 `tests[]`；把 3 条 Live2D 能力条目从 `absent/E1` 上调（按实际证据级别），两层守卫测试全绿",
-    "**文档同步**：`docs-new/03-engine/opcode-table.md` 的 `0x345` 语义订正为「L2D 纹理装载」、`0x34F/0x350/0x351` 三行由「仅映射」转「已核对」；`stub-reaudit-2026-09.md` 的 Live2D 排除项加一行改判注记（指向本单）"
+    "**M3 集成与门控**：`Scene+55812` 的 10 槽接进 `sub_40BE10` 的重画判据（`live2d-slot-probe`）；`global a9d0` 被真读（==0 → L2D、!=0 → 静态贴图回落），TITLE/BTL/INFOEN 两条支路都能跑通（`live2d-enabled-config-flag`）\n★进度（轮 12）：**`Scene+55812` 的 10 槽接进重画判据这一半现已与体逐字对齐** —— 复核 raw 16025 `if (v2[258] || v2[259] || v2[260] || sub_4A1AF0(_this)) return 1;` 与 `sub_4A1AF0`（raw 121777-121790：**10 槽任一非空 ⇒ 1**，与窗在不在跑无关）。轮 11 接的是\"可画节点的窗还在跑\"（**更窄**）⇒ 立绘动作播完后判据为假，而引擎只要槽里有实例就每帧强制重画；差别在 `0x34F`/`0x351`/`0x346`/`0x34D` 这几笔上显形（**都不置脏位** ⇒ 没有这一项时\"静立绘 + 改参数/乘色/节点变换\"不会重画）。实现 = 新增 `scL2dSlotProbe(s)`（= `l2dSlots.size > 0`，不看 `model`、不看节点可画性）接进 `sceneNeedsRender` 的第四个 `||`，两宿主同一份；与 `0x342` 销毁成对；**不并进冻结分支**（体里在冻结门之前）。代价（屏上有立绘时每帧合成，引擎亦然）写在代码注释里。★**仍未做**：`global a9d0` 的引擎侧对应物与显式断言（本条目后半）+ 与 `a9d0 != 0` 静图回落支的 E4 对照。\n★进度（轮 15，**两条支路都跑通 ⇒ 本条目关闭**）：`global a9d0` 的引擎侧问题有了确定答案 —— **引擎侧没有它的读点**（`grep a9d0` 在整个反编译产物 0 命中 ⇒ 纯脚本开关，引擎不需要\"对应物\"），emulator 只需如实执行两条支路各自的指令。两条支路已用**真语料**跑通并落成守卫：`app/amayui-emulator/test/live2d-enabled-flag.test.ts`（新增）—— `a9d0 = 0` ⇒ `l2dSlots = [0:0x4f9e]`（装 `TITLE.MOC`）、槽 5 无 `0x5273`；`a9d0 != 0` ⇒ `l2dSlots = []`（一条 L2D 装载都不执行）、**槽 5 = 0x5273**（回落支 `set-texture 5273 5` = `SO004A.AGF` 生效）。★实测两条坑（写进守卫注释与证据头）：①在 `bootHeadless` 之后预设 `a9d0=1` **无效**（boot 链/INITCONFIG0 会写回 0，守卫里也断言了这条）；②帧级 `until: 脚本名==TITLE` **晚了**（一帧可派发整批，`call-script TITLE` 与 TITLE 自己的 L2D 段同批跑完）⇒ 必须用**逐条**钩子 `stopAfterStep`。辨别力机械证明：把 `0x1F9`（`op_set_texture`）的槽号忽略（恒写槽 0）⇒ 该用例 1 fail 并点名「回落支 `set-texture 5273 5` 必须生效（槽 5 = 0x5273）」；还原后 4/4 绿。证据：`evidence/a9d0-branches.txt`。",
+    "**E3/E4 + 守卫 + 台账上调**：headless 下 TITLE 与 INFOEN 的 L2D 路径可复现（帧 digest 或 572B 节点快照，**不得依赖 WebGL**）；≥1 张 Electron 真界面截图（E4）并与 `a9d0 != 0` 的静图回落支对照；新增守卫测试填进 `tests[]`；把 3 条 Live2D 能力条目从 `absent/E1` 上调（按实际证据级别），两层守卫测试全绿\n★进度（轮 12）：**守卫两层 + 台账上调** —— E2 = `test/l2d-render-pending.test.ts` +1 条（空场景不误报；窗跑完后窄判据为假而**槽探针/`sceneNeedsRender` 为真**；`0x342` 销毁后两者转假；冻结不豁免），辨别力机械证明（去掉 `|| scL2dSlotProbe(s)` ⇒ 1 fail 并点名\"槽非空就必须继续合成\"，还原后 6/6）；E3 = `test/live2d-chain.test.ts` 的真 TITLE.MOC 用例新增断言（真模型在槽 0 ⇒ 探针与 `sceneNeedsRender` 为真；析构后转假）。源码棘轮同步（`test/headless-needs-render.test.ts` 的 READ_ONLY 白名单加 `scL2dSlotProbe`）。第二层台账：`live2d-slot-probe` **absent/E1（无守卫）→ `modeled-verified`/E3**（guard = `test/l2d-render-pending.test.ts`），`live2d-enabled-config-flag` 保留 `partial` 但 note 重写为\"L2D 支已能装载且有 E3 守卫 + 仍缺 a9d0 引擎侧对应物与 E4 对照\"；`build-capabilities.mjs` + `--validate` 绿（137 条）。★**仍未做**：INFOEN 的 L2D 路径 E3（本轮只覆盖 TITLE；INFOEN 那段在 `src/INFOEN.txt:1589-1596`）+ **E4 真界面截图**（Electron，headless 不能替代）。\n★进度（轮 13，**台账上调的依据逐条落定**）：把 T-0075 审计里 Live2D 那一簇 **8 条 finding** 逐条对账并修完 6 条（另 1 条更早轮次已修、1 条 unclear 按纪律不动）。修的六条都带审计给的 raw 依据：`live2d-enabled-config-flag`（原引的是 **0xA0(jcc) handler** `sub_4209B0` ⇒ 改引被门控的 `0x341 → sub_427BA0`，派发表 raw 23249 + 体 34460-34495；并写明 `a9d0/f8c46/f8c47` 是**脚本 global、引擎 0 读点**）、`live2d-mesh-batches`（trigger 的\"按纹理号分组\"与 note/实现冲突 ⇒ 改为\"**每个网格一批**\"，切批锚点 raw 148038-148068）、`chained-3d-layer-commit`（对象是 **572B 立绘节点表**不是\"3D 场景层\" ⇒ `n/a-known → modeled-verified`/E3）、`lazy-572b-node-map`（`absent → partial`：立绘半已建模且有真实 TITLE 守卫）、`lazy-live2d-slot`（\"10 槽\"的硬依据 = `sub_4A1AF0` raw 121784-121787 `>= 10`；\"释放\"= `sub_4785E0` def 92745 ⇒ fns 补齐、raw 扩到 121664-121790）、`scene-frame-commit`（raw 扩为 **134417-136966** 覆盖 `sub_4B06D0` + `sub_4B4040`，fns 补 `0x20C` 的 handler `sub_41A1A0`）。另**收窄**一条（`scene-frame-commit:guard`）：guard 覆盖不到\"四路归并\"，原文还引了**已作废**的「MeshEntry 黑罩」近似 ⇒ note 改为分层写清\"各路出画有守卫 / **跨路提交次序没有守卫**\"，并登记为未做的守卫。口径变化：**已核验 55→57 / 已建模未核验 7→6 / 部分 31→32 / 缺失 20→19 / n/a 24→23**（`--recount` + `--validate` + `build-capabilities.mjs` 全绿）。★**仍未做**：INFOEN 的 L2D 路径 E3（`src/INFOEN.txt:1589-1596`）+ **E4 真界面截图** + `live2d-enabled-config-flag` 的引擎侧对应物与 E4 对照（该条留 `partial`）。\n★进度（轮 14，**INFOEN 那一格**）：①**先定位真缺口** —— INFOEN 的模型/动作 id 来自两个**引擎全局表**（`src/INFOEN.txt:1568/1590` 的 `lookup-array-2d (global-int 527d8c|528944) 13c7 3 0`）；探针实测（`evidence/infoen-l2d-table-probe.txt`，boot → 跑到 TITLE 325 帧）**两个持有槽都是 0**，而对照表 `708ab6` 有值（`src/INIT2.txt:115` 有显式写点）⇒ 全语料对这俩 **0 写点** ⇒ 表由**引擎侧**填、真源未定位；**这就是 INFOEN 支路不能在 headless 直接复现的唯一原因**（不是 L2D 实现的问题）。②**\"id 已知之后\"的序列已 E3**：`test/live2d-chain.test.ts` 新增「INFOEN 支路的 L2D 装载序列在真资产上跑通」——按 `SETL2DMOC.txt:8-10` 的 0x4c8e 分支 + `INFOEN.txt:1589-1596` 的原序列派发真 handler，真资产为`0x4c8e → BM750A.MOC`、`0x4c8f → BM750A.MTN`、`0x4f9a/0x4f9b → BM750A01/02.PNG`；断言槽/纹理号/动作循环/节点可画/`0x349` 平移 `[-320,0,0]`。辨别力机械证明：`0x345` 的 `texNo` 恒置 0 ⇒ 1 fail 并点名「纹理号 0 应绑 BM750A01.PNG」；还原后 3/3 绿。★仍未做：表真源、`a9d0` 引擎侧对应物、**E4 真界面截图**。\n★进度（轮 15，**E4 补齐 ⇒ 本条目关闭**）：真界面截图有了 —— `evidence/e4-title-live2d.md` 指向 `tickets/T-0029/evidence/e4-title.png`（sha256 `58595a52…`，`npm run shot -- --gamestart` 产出，1603×903）：TITLE 屏左侧的 Live2D 立绘（`TITLE.MOC` + `TITLE00.PNG` + `TITLE.MTN`）确实出画，同屏 logo/按钮/缎带/版权也正常（不是假阳性）；而\"与 `a9d0 != 0` 的静图回落支对照\"这一半由 headless 守卫承担（见判据 #3 的 ★进度）。★INFOEN 那一格：**序列层已 E3**（`test/live2d-chain.test.ts` 的 INFOEN 支路，真资产 `BM750A.MOC/MTN` + `BM750A01/02.PNG`），但它的**资产 id 表真源**未定位（脚本 0 写点、表由引擎侧填）⇒ 已按纪律**另开票 `T-0107`**（P3 analysis）承接，不再挂在本票判据上。守卫两层：E2 = `test/l2d-render-pending.test.ts`（槽探针）+ `test/live2d-enabled-flag.test.ts`（两条支路）；E3 = `test/live2d-chain.test.ts`（TITLE + INFOEN 支路）。",
+    "**文档同步**：`docs-new/03-engine/opcode-table.md` 的 `0x345` 语义订正为「L2D 纹理装载」、`0x34F/0x350/0x351` 三行由「仅映射」转「已核对」；`stub-reaudit-2026-09.md` 的 Live2D 排除项加一行改判注记（指向本单）\n★进度（轮 15）：复核确认 —— `analysis/opcodes.json` 的 `0x345` = **Live2D 纹理装载**、`0x34F/0x350/0x351` = **已核对（2026-09）**，`docs-new/03-engine/opcode-table.md` 四行同步（与数据层一致）；`docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md` 的 Live2D 排除项已有改判注记（指向本票）。"
   ],
   "evidence": [
     {
@@ -113,6 +113,22 @@
       "anchor": "const UTF8 = new TextDecoder('utf-8');",
       "note": "★真机静默失败 ①：字符串解码曾用 Node 的 `Buffer`，而 `src/live2d/**` 跑在渲染进程（无 Node 集成）⇒ 解析抛异常、槽空、立绘不出画，而 tsx 下的守卫全绿。守卫：`test/live2d-render.test.ts` 的「渲染器安全」源码棘轮",
       "line": 240
+    },
+    {
+      "file": "tickets/T-0054/evidence/infoen-l2d-table-probe.txt",
+      "anchor": "global[0x527d8c] = 0",
+      "note": "INFOEN 的 L2D 资产 id 表在 headless 里没有数据：boot 跑到 TITLE 后 `527d8c`/`528944` 两个持有槽仍是 0，而对照表 `708ab6` = 0x522d（有显式写点 INIT2.txt:115）⇒ 全语料对那两个槽 0 写点、表由引擎侧填（真源未定位）。产出命令与口径写在文件头（探针是临时件，不入库）。",
+      "line": 22
+    },
+    {
+      "file": "tickets/T-0054/evidence/a9d0-branches.txt",
+      "anchor": "a9d0=1 → TITLE 进入于",
+      "note": "判据 #3 后半：两条支路的探针输出（0 ⇒ l2dSlots=[0:0x4f9e]；1 ⇒ l2dSlots=[] 且槽 5 = 0x5273），含\"预设无效 / 帧级 until 太晚 ⇒ 必须逐条 stopAfterStep\"这两条实测坑。"
+    },
+    {
+      "file": "tickets/T-0054/evidence/e4-title-live2d.md",
+      "anchor": "e4-title.png",
+      "note": "判据 #4 的 E4：真界面 TITLE 屏 Live2D 立绘出画（指向 T-0029 归档的截图 + sha256），以及它与 a9d0 回落支对照的落点。"
     }
   ],
   "links": {
@@ -138,7 +154,7 @@
     ]
   },
   "id": "T-0054",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-16",
@@ -164,6 +180,26 @@
       "at": "2026-09-21",
       "kind": "scope",
       "what": "改字段：tests —— 轮 11：M3 的 live2d-slot-probe 接线（节点窗进合成判据），守卫 l2d-render-pending.test.ts 5 条，辨别力已证明"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 12：发现并修掉轮 11 的 slot-probe 接线比体窄 —— 引擎 raw 16025 的 sub_4A1AF0 是「Scene+55812 的 10 槽任一非空 ⇒ 强制重画」（与窗是否在跑无关），轮 11 只接了「可画节点的窗在跑」（更窄）；差别在 0x34F/0x351/0x346/0x34D 这几笔不置脏的 L2D 变更上会显形（静立绘改参数不重画）。新增 scL2dSlotProbe 接进 sceneNeedsRender（两宿主同一份）+ E2/E3 两层守卫（辨别力已机械证明）+ 源码棘轮白名单同步 + 第二层台账把 live2d-slot-probe 由 absent/E1 上调 modeled-verified/E3、live2d-enabled-config-flag note 重写；capabilities 重建与自检绿。票保持 doing：剩 a9d0 引擎侧映射、INFOEN 的 L2D E3、E4 真界面截图"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 13：把 T-0075 审计里 Live2D 那簇 8 条 finding 逐条对账（修 6 条、确认 1 条更早已修、1 条 unclear 按纪律不动），全部落在 analysis/engine-capabilities.json 的口径上：最典型一条是 live2d-enabled-config-flag 原引 sub_4209B0 = 0xA0(jcc) handler（体内无 a9d0/f8c46/f8c47 读点）⇒ 改引被门控的 0x341 -> sub_427BA0；另有 mesh-batches 的 trigger 矛盾、chained-3d-layer-commit 的 3D 误标、lazy-572b-node-map 的整表未建模误判、lazy-live2d-slot 的 10 槽依据缺失、scene-frame-commit 的 raw 区间错位；scene-frame-commit:guard 按审计口径收窄声明并登记未做的守卫。台账口径 已核验 55→57 / 未核验 7→6 / 部分 31→32 / 缺失 20→19 / n/a 24→23，--recount + --validate + build-capabilities 全绿。票保持 doing：剩 INFOEN 的 L2D E3、E4 真界面截图、a9d0 引擎侧对应物"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "doing → doing —— 轮 14：INFOEN 支路——先定位真缺口（模型/动作 id 来自引擎全局表 527d8c/528944，探针实测跑完 boot 链到 TITLE 后两个持有槽仍为 0，而对照表 708ab6 有 INIT2.txt:115 的显式写点 ⇒ 全语料 0 写点、表由引擎侧填、真源未定位），再补可自动化的那一层：test/live2d-chain.test.ts 新增 INFOEN 序列的 E3 守卫（SETL2DMOC 0x4c8e 分支 + INFOEN.txt:1589-1596 原序列，真资产 BM750A.MOC/MTN + BM750A01/02.PNG，断言槽/纹理号/动作循环/节点可画/0x349 平移），辨别力机械证明（0x345 忽略 op3 ⇒ 红并点名）。证据 evidence/infoen-l2d-table-probe.txt。票保持 doing：剩表真源、a9d0 引擎侧对应物、E4 截图"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "done → done —— 轮 15 收尾：①判据 #3 后半关闭 —— a9d0 是纯脚本开关（引擎侧 grep 0 命中读点 ⇒ 无需对应物），两条支路用真语料跑通并落成守卫 test/live2d-enabled-flag.test.ts（0 ⇒ l2dSlots=[0:0x4f9e]；!=0 ⇒ l2dSlots 空且槽 5 = 0x5273），辨别力机械证明（忽略 0x1F9 槽号 ⇒ 红并点名）；②判据 #4 的 E4 补齐（evidence/e4-title-live2d.md 指向 T-0029 归档的真界面 TITLE 截图，Live2D 立绘出画）；③INFOEN 的资产 id 表真源未定位 ⇒ 另开 T-0107 承接，不挂在本票判据上；④判据 #5 复核确认文档同步。tests 增 live2d-enabled-flag.test.ts"
     }
   ],
   "tests": [
@@ -172,6 +208,7 @@
     "app/amayui-emulator/test/live2d-chain.test.ts",
     "app/amayui-emulator/test/live2d-render.test.ts",
     "app/amayui-emulator/test/l2d-render-pending.test.ts",
-    "app/amayui-emulator/test/l2d-node-compose.test.ts"
+    "app/amayui-emulator/test/l2d-node-compose.test.ts",
+    "app/amayui-emulator/test/live2d-enabled-flag.test.ts"
   ]
 }

@@ -6,9 +6,23 @@
  *  - `flushPending()`/`flushHeld()` 生成的输入掩码用 bit4=鼠标左 / bit5=鼠标右 / bit(4+i)=手柄 i
  *    （两把刷子的取舍见 `src/vm/input.ts` 的 flushPending/flushHeld 注释与 `tickets/T-0027`）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readRef, refAt, type Ref } from '../ref.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"输入族"）11 条：五个 getter（`0x108`/`0x109`/`0x10d`/`0x2e5` 写 op1..op2）
+ * + `0x12e` 悬停命中（**4 个指针位**、op1 是 `rw`）+ 三个 argc 0。
+ * ★`0xcc`/`0xfb` 的 op2 是 **label**（跳转目标）：与 `0x8f` call 同口径改成计划读取。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：输入族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import { labelPos } from './shared.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
@@ -17,14 +31,16 @@ import type { OpTable } from './shared.js';
 
 /** `read-mouse-button` (0x108, sub_42EDC0)：`op1 = 鼠标按钮值`。bit0=左、bit1=右（sub_477220 约定）。 */
 const op_read_mouse_button: OpHandler = (c) => {
+  const plan = planFor(c);
   const b = c.e.input.readButtons();
-  writeIntOperand(c.e, c.frame, c.instr, 1, b);
+  plan.setInt(1, b);
 };
 
 /** `read-mouse-pos` (0x109, sub_42EE10)：`op1=X, op2=Y`（虚拟坐标；未初始化/出窗 = -100000）。 */
 const op_read_mouse_pos: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.readX());
-  writeIntOperand(c.e, c.frame, c.instr, 2, c.e.input.readY());
+  const plan = planFor(c);
+  plan.setInt(1, c.e.input.readX());
+  plan.setInt(2, c.e.input.readY());
 };
 
 /**
@@ -41,7 +57,8 @@ const op_read_mouse_pos: OpHandler = (c) => {
  *   故此处不做泵侧联动；若日后要让滚轮推进 ADV 文本，应在那里按 `<0` 消费。
  */
 const op_read_mouse_wheel: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeWheelDelta());
+  const plan = planFor(c);
+  plan.setInt(1, c.e.input.consumeWheelDelta());
 };
 
 /**
@@ -64,7 +81,8 @@ const op_read_mouse_wheel: OpHandler = (c) => {
  * 语料：`i2e5` 只出现在 `src/SAVE.txt:205/304`（存档/读档列表的横滚翻页）。
  */
 const op_read_mouse_hwheel: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.input.consumeHWheelDelta());
+  const plan = planFor(c);
+  plan.setInt(1, c.e.input.consumeHWheelDelta());
 };
 
 /**
@@ -86,8 +104,9 @@ const op_read_mouse_hwheel: OpHandler = (c) => {
  * （`advActive` = `0x8000000` 的 OR 短路只让 ADV 路径旁路节流）。
  */
 const op_mouse_callback: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
-  const target = operandArg(c.instr, 2).raw; // label 值（与 jmp/call 同尺度）
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
+  const target = (plan.int(2) ?? -1); // label 值（与 jmp/call 同尺度）
   c.e.input.mouseSlot = slot;
   c.e.input.mouseJump = target;
   c.e.input.mouseJumpOwner = c.frame.scriptId; // = Engine[107674]
@@ -117,14 +136,16 @@ const op_mouse_callback: OpHandler = (c) => {
  * `0..6` = 可配置键、`4/5` = 鼠标左/右、`4+i` = 手柄按钮 i ⇒ 鼠标左键与"手柄按钮 0"**天然别名**（引擎亦然）。
  */
 const op_joy_callback: OpHandler = (c) => {
-  const maskBit = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const maskBit = (plan.int(1) ?? 0);
   if (maskBit < 0 || maskBit >= 32) throw new Error(`joy_callback: 掩码位 ${maskBit} 越界 [0,32)`);
-  const target = operandArg(c.instr, 2).raw;
+  const target = (plan.int(2) ?? -1);
   c.e.input.joyJump[maskBit] = target; // 索引 = 掩码位 = op1（引擎 raw 30417）
 };
 
 /** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
 const op_input_reset: OpHandler = (c) => {
+  const plan = planFor(c);
   // 引擎（raw 24992-25006）：`_this[174802]=0; sub_4780D0(...)` ⇒ **实时刷**（含按住态）+ 扫描游标归零
   c.e.input.flushHeld();
   c.e.engineValues.set(ENGINE_FIELD.keyScanCursor + c.e.cur, 0);
@@ -155,6 +176,8 @@ const op_input_reset: OpHandler = (c) => {
 const op_input_dispatch: OpHandler = (c) => {
   // 引擎 `sub_419AF0`（0x100，raw 25009）**不调用刷子**，直接读 ADV 分支（`sub_411900` raw 20111）用
   //   `sub_4780D0` 填好的 `_this[174802]` ⇒ 掩码含**按住态**。故这里用实时刷。
+  // ★argc 0（计划层也照声明 `kinds: []`，`tickets/T-0082`）：本指令没有任何操作数，键位全在掩码里。
+  if (!operandsFor(c)) throw new Error('0x100：按键跳读派发走操作数计划层，但没有声明计划');
   const e = c.e;
   const cur = e.cur;
   const mask = e.input.flushHeld();
@@ -199,6 +222,7 @@ const op_input_dispatch: OpHandler = (c) => {
 
 /** 0x101 (poll-input, sub_419CC0)：刷掩码后复位（清待处理输入）。 */
 const op_poll_input: OpHandler = (c) => {
+  const plan = planFor(c);
   // 引擎 raw 25068-25074：`sub_478090(...)` 后 `*v2 = 0` ⇒ **消费刷**（挂起事件，不含按住态）
   c.e.input.flushPending();
   c.e.input.consumeEdges();
@@ -213,6 +237,7 @@ const op_poll_input: OpHandler = (c) => {
  * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
  * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */
 const op_get_input_type: OpHandler = (c) => {
+  const plan = planFor(c);
   const input = c.e.input;
   const target = input.getInputType(c.e.nowMs, c.e.advActive);
   if (target === null) return; // 未到节流/未激活/未注册 → 不推进（也不动鼠标/手把边沿）
@@ -235,12 +260,15 @@ const op_get_input_type: OpHandler = (c) => {
 const op_get_mouse_state: OpHandler = (c) => {
   const im = c.e.input;
   im.touchId = 0; // 无触点（dwID=0）
-  // ★引擎（raw 40798-40799）在**无触点**路径上只写 op1=0 后立即 return：op2..op5 **保持不动**
+  // ★走操作数计划层（`tickets/T-0082` 批次"审计点名的操作数条"）：计划的五位**全是 `w`**、无读位。
+  //   引擎（raw 40798-40799）在**无触点**路径上只写 op1=0 后立即 return：op2..op5 **保持不动**
   //   （只有"有触点"路径才写 op2=虚屏X / op3=虚屏Y / op4=旗标 / op5=dwID）。
   //   emulator 恒无触点（没有触摸缓冲）⇒ **只写 op1**（审计 P2 `op-10-003`：此前多写了 4 个槽）。
   //   坐标/按钮由后续 read-mouse-pos（光标X/Y）+ read-mouse-button（按钮）提供；
   //   不要把「光标存在」当「触点存在」——那会误置 local 3f2=1（左键恒按下），破坏 hover 高亮/回退。
-  writeIntOperand(c.e, c.frame, c.instr, 1, 0);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2fc：读触摸状态走操作数计划层，但没有声明计划');
+  p.setInt(1, 0);
 };
 
 /**
@@ -280,6 +308,7 @@ const op_get_mouse_state: OpHandler = (c) => {
  * 说明：不在此模拟/写死任何按钮坐标；命中矩形完全由脚本的数据数组决定。
  */
 const op_hover_hittest: OpHandler = (c) => {
+  const plan = planFor(c);
   /**
    * 读一个池槽 —— **未写过的槽读 0 由全局口径统一负责**（`ref.ts` 的 `decIntSlot`）：
    * 引擎装载脚本时把局部 int 池整块填成 `enc_zero`（`loadScriptFrame_40ED40` raw 18773-18781；
@@ -292,20 +321,20 @@ const op_hover_hittest: OpHandler = (c) => {
    * 一律"缺槽 = 0"，本指令直接用 `readRef` 即可；棘轮见 `test/operand-missing-slot-zero.test.ts`。
    */
   const rd = (r: Ref): number => readRef(c.e, c.frame, r);
-  const start = readIntOperand(c.e, c.frame, c.instr, 1); // op1 = 起始记录下标
-  const margin = refFromOperand(c.e, c.frame, c.instr, 2); // op2 → 4 个连续 int
-  const x = readIntOperand(c.e, c.frame, c.instr, 3);
-  const y = readIntOperand(c.e, c.frame, c.instr, 4);
-  const box = refFromOperand(c.e, c.frame, c.instr, 5); // op5 → 每记录 4 个 int
-  const planeX = refFromOperand(c.e, c.frame, c.instr, 6); // op6 → 每记录 1 个 int
-  const planeY = refFromOperand(c.e, c.frame, c.instr, 7);
-  const count = readIntOperand(c.e, c.frame, c.instr, 8);
+  const start = (plan.int(1) ?? 0); // op1 = 起始记录下标
+  const margin = plan.ptr(2)!; // op2 → 4 个连续 int
+  const x = (plan.int(3) ?? 0);
+  const y = (plan.int(4) ?? 0);
+  const box = plan.ptr(5)!; // op5 → 每记录 4 个 int
+  const planeX = plan.ptr(6)!; // op6 → 每记录 1 个 int
+  const planeY = plan.ptr(7)!;
+  const count = (plan.int(8) ?? 0);
   const m0 = rd(refAt(margin, 0));
   const m1 = rd(refAt(margin, 1));
   const m2 = rd(refAt(margin, 2));
   const m3 = rd(refAt(margin, 3));
   /** 两道边界门（raw 39231-32 / 39248-49）：写 op1 = -1。 */
-  const miss = (): void => writeIntOperand(c.e, c.frame, c.instr, 1, -1);
+  const miss = (): void => plan.setInt(1, -1);
   /** 记录 j 是否命中（四点判据 raw 39242；`margin` 与记录基址相同 ⇒ 体跳过该记录）。 */
   const hits = (j: number): boolean => {
     const rec = refAt(box, 4 * j); // 记录 = 4 个 int（16 字节）
@@ -321,7 +350,7 @@ const op_hover_hittest: OpHandler = (c) => {
   let j = start + 1; // raw 39230：首项 = op1 + 1
   if (j >= count) return miss(); // raw 39231-39232（引擎是指针无符号比较，两者同步长 ⇒ 等价）
   for (;;) {
-    if (hits(j)) return writeIntOperand(c.e, c.frame, c.instr, 1, j); // raw 39251：返回记录下标
+    if (hits(j)) return plan.setInt(1, j); // raw 39251：返回记录下标
     j += 1;
     if (j >= count) return miss(); // raw 39248-39249
   }
@@ -364,8 +393,9 @@ const op_hover_hittest: OpHandler = (c) => {
  * （不是"缺缝"，否则闸门 A 会把 1678 处 `i10a` 全记成缺口）。
  */
 const op_set_mouse_pos: OpHandler = (c) => {
-  const x = readIntOperand(c.e, c.frame, c.instr, 1);
-  const y = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const x = (plan.int(1) ?? 0);
+  const y = (plan.int(2) ?? 0);
   c.e.input.setCursor(x, y, true);
   // 宿主侧那半件：把**真实光标**也挪过去（引擎 `sub_421EA0` 的 `ClientToScreen` + `SetCursorPos`）。
   // ★坐标是**引擎虚拟坐标**，换算（虚拟→客户区→屏幕、DIP→物理）由宿主做。

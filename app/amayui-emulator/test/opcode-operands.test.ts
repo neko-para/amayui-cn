@@ -30,6 +30,7 @@ import { InputManager } from '../src/vm/input.js';
 import { StubNative } from '../src/vm/native.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
+import { planOf } from '../src/vm/operandPlan.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -109,19 +110,10 @@ const EXPECTED_THROW: Record<string, string> = {
   '0x7c': 'local-ret（重显示返回端）：要求 redisplayMode 的 0x2000000 位置位（合成指令没有上下文 ⇒ 引擎同样抛 aEnd.hwl）',
   '0x14c': 'AGERC 导出绑定：需要先加载模块（合成指令里模块未加载）',
   '0x14d': 'AGERC 槽调用：需要先绑定导出',
-  '0x192': '需要**字符串型**目标操作数（合成指令给的是 int 本地槽）',
-  '0x193': '同 0x192（需要字符串型）',
-  '0x1a9': '需要字符串下标操作数（合成指令给的是 int 本地槽）',
-  '0x1aa': '同 0x1a9',
-  '0x2c7': '同 0x192（需要字符串型）',
-  '0x2c8': '同 0x192（需要字符串型）',
   '0x2c9': '需要**指针型**目标操作数（同 0x61）',
   '0x2dd': '同 0x192（需要字符串型）',
-  '0x2eb': '同 0x192（需要字符串型）',
   // ★B3（`tickets/T-0076`）新注册的两条字符串族：合成指令给不出字符串型操作数（`0x1B2` 读 op1 字符串、
   //   `0x1C8` 写 op1 字符串）⇒ 与 0x192/0x1A9 同因；语义与守卫见 `test/op-1b2-text-buffer.test.ts`。
-  '0x1b2': '需要**字符串型**源操作数（同 0x192）',
-  '0x1c8': '需要**字符串型**目标操作数（同 0x192）',
 };
 
 // 合成指令会触发 async 路径（`exit`/`exit-script` 的脚本退出信号、模块加载等）。本测试只关心操作数口径，
@@ -145,7 +137,24 @@ function runOne(op: number, argc: number, native: StubNative): Row {
   const f = e.curScript();
   const touched = new Set<number>();
   const realArgs: BinArg[] = [];
-  for (let i = 0; i < argc; i++) realArgs.push({ type: 0x9, raw: 0x40 + i } as unknown as BinArg);
+  // ★实参类型**跟着操作数计划走**（`tickets/T-0082`）：有计划时按计划声明的类型造
+  //   （`str` → 字符串操作数、`ptr` → 指针槽、其余 → int 槽），没有计划则沿用 int 槽。
+  //   为什么必须这样：像 `0x192/0x2eb`（写字符串）与 `0x1a9/0x1aa`（读字符串**下标**）这类指令，
+  //   拿 int 槽当实参时 handler 会直接抛（`writeStringOperand` 的目标类型检查）⇒ 那一格永远
+  //   "没被碰" ⇒ 只能挂白名单豁免。改成按类型造实参后，这些豁免就不再需要（本批删掉 9 条）。
+  //   `planOf` 的真源仍是 `src/vm/operandPlan.ts`，不是这份守卫自己维护的名单。
+  const plan = planOf(op);
+  for (let i = 0; i < argc; i++) {
+    const k = plan?.kinds[i];
+    if (k === 'str') realArgs.push({ type: 0x2, raw: 0, str: `s${i}` } as unknown as BinArg);
+    else if (k === 'ptr') {
+      // ★指针位要**初始化**（与 `operand-plan.test.ts` 同一口径）：`refFromOperand` 对**空引用槽**会抛
+      //   `空/未初始化引用被取址`，而空引用在合成指令里是常态（真实语料先 `lea`）⇒ 塞一个合法 Ref。
+      const raw = 0x40 + i;
+      f.locals.ptr.set(raw, { scope: 'global', kind: 'int', index: 0, stride: 4 });
+      realArgs.push({ type: 0xc, raw } as unknown as BinArg);
+    } else realArgs.push({ type: 0x9, raw: 0x40 + i } as unknown as BinArg);
+  }
   const args = new Proxy(realArgs, {
     get(t, p, r) {
       if (typeof p === 'string' && /^\d+$/.test(p)) touched.add(Number(p) + 1); // 1-based

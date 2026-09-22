@@ -32,19 +32,41 @@
  * （`sub_45F090` raw 74360-，调用点 raw 76446/79248/81526 都在渲染层），emulator 不重放文本绘制，
  * 故只建模查询需要的 `+20/+24/+28/+32/+40`。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { ITEM_REFLOW, ITEM_TEXT } from '../textItems.js';
 import type { Engine } from '../engine.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：文本项族（text-items），7 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：文本项族（text-items）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
+
 /** `Engine[97055]`（`0` = 记账、`0x80000000` = 暂停记账）。★唯一真源 = `ENGINE_FIELD.textBaseGate`。 */
 export const TEXT_BASE_GATE = ENGINE_FIELD.textBaseGate;
 
-/** 默认窗（`Font[307]`；`0x80` set-default-window 写 `Engine[21631]`）。 */
+/**
+ * 默认窗（引擎 `Font+1228` = `Font[307]`）。★**唯一真源 = `MsgWindow.defaultWin`**（`tickets/T-0101` 的 D5 收敛）。
+ *
+ * 引擎侧三处实证：
+ *  - **初值 1**：`Font` 初始化段 raw **78899** `*(_DWORD *)(_this + 1228) = 1;`（`Font` 基址 = `Engine + 21324`）；
+ *  - **解析规则**：raw **73148-73152** `if (!a2) a2 = *(_DWORD *)(_this + 1228);`（`0x1D2`/`0x70`/`0x71` 族共用）；
+ *  - **写点**：`0x80` set-default-window（`sub_41F690` raw 28786-28796）。
+ *
+ * ★**修前是双真源**（本函数的 `?? 0` vs `msgwin.defaultWin = 1`）：任何 `i080` 之后两者一致，
+ * 但在 `i080` **之前**同一条 `i071 0` 压的回看页 `win = 1`、而 `i1d2` 压的记录 `win = 0`
+ * —— 今天没有按窗过滤的读端所以不可观测，但一旦有就会静默错配。
+ */
 export function defaultWin(e: Engine): number {
-  return e.engineValues.get(ENGINE_FIELD.defaultWindow) ?? 0;
+  return e.msgwin.defaultWin;
 }
 
 /** `i1bb 0` 期间（`Engine[97055] != 0`）不记账 —— 三个 push 点共用。 */
@@ -63,8 +85,9 @@ export function pushVoiceRecord(e: Engine, id: number, loop: number, sel: number
 
 /** `0x1BB`（`sub_420000` raw 29223-29242）：**SetTB** —— 文本项记账开关。 */
 const op_set_text_base: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const v = (plan.int(1) ?? 0);
   if (v === 1) {
     e.engineValues.set(TEXT_BASE_GATE, 0);
     return;
@@ -79,44 +102,48 @@ const op_set_text_base: OpHandler = (c) => {
 
 /** `0x1D2`（`sub_420380`）：文本项 push（受 `Engine[97055]` 门控）。 */
 const op_text_item_push: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   if (!textRecordingEnabled(e)) return;
-  const key = readIntOperand(e, c.frame, c.instr, 1); // → 记录 +24
-  const value = readIntOperand(e, c.frame, c.instr, 2); // → 记录 +20
+  const key = (plan.int(1) ?? 0); // → 记录 +24
+  const value = (plan.int(2) ?? 0); // → 记录 +20
   e.textItems.pushText(defaultWin(e), key, value);
 };
 
 /** `0x1D3`（`sub_42D4A0`）：文本项查询 → 写 op1（命中）/ op2（`+20`）。 */
 const op_text_item_query: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // 引擎实参顺序：sub_457960(Font, &out, op3, op4, op5) —— op3 未用、op4 起始下标、op5 key
-  const start = readIntOperand(e, c.frame, c.instr, 4);
-  const key = readIntOperand(e, c.frame, c.instr, 5);
+  const start = (plan.int(4) ?? 0);
+  const key = (plan.int(5) ?? 0);
   const r = e.textItems.queryText(start, key);
-  writeIntOperand(e, c.frame, c.instr, 1, r.found ? 1 : 0);
-  writeIntOperand(e, c.frame, c.instr, 2, r.v20);
+  plan.setInt(1, r.found ? 1 : 0);
+  plan.setInt(2, r.v20);
 };
 
 /** `0x1D4`（`sub_42D510`）：语音项查询（选择器恒 0）→ 写 op1（`+20`）/ op2（`+24`）。 */
 const op_voice_item_query0: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // sub_457A20(Font, &a, &b, &c, op3, op4, 0)
-  const start = readIntOperand(e, c.frame, c.instr, 4);
+  const start = (plan.int(4) ?? 0);
   const r = e.textItems.queryVoice(start, 0);
-  writeIntOperand(e, c.frame, c.instr, 1, r.v20);
-  writeIntOperand(e, c.frame, c.instr, 2, r.v24);
+  plan.setInt(1, r.v20);
+  plan.setInt(2, r.v24);
 };
 
 /** `0x2F3`（`sub_431A10`）：语音项查询（带选择器）→ 写 op1/op2/op3 = `+20`/`+24`/`+28`。 */
 const op_voice_item_query: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // sub_457A20(Font, &a, &b, &c, op4, op5, op6)
-  const start = readIntOperand(e, c.frame, c.instr, 5);
-  const sel = readIntOperand(e, c.frame, c.instr, 6);
+  const start = (plan.int(5) ?? 0);
+  const sel = (plan.int(6) ?? 0);
   const r = e.textItems.queryVoice(start, sel);
-  writeIntOperand(e, c.frame, c.instr, 1, r.v20);
-  writeIntOperand(e, c.frame, c.instr, 2, r.v24);
-  writeIntOperand(e, c.frame, c.instr, 3, r.v28);
+  plan.setInt(1, r.v20);
+  plan.setInt(2, r.v24);
+  plan.setInt(3, r.v28);
 };
 
 /**
@@ -135,11 +162,12 @@ const op_voice_item_query: OpHandler = (c) => {
  * 全都是 `i1bb 0` 包住 + 步数**递减**（`sub …,1`）+ 把 op2 直接当 `i1d3` 的第 4 操作数。
  */
 const op_backlog_page_at: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const step = readIntOperand(e, c.frame, c.instr, 3); // op3（raw 38106）
+  const step = (plan.int(3) ?? 0); // op3（raw 38106）
   const r = e.textItems.pageAt(step, ITEM_REFLOW); // 末参 2（raw 38107：字面量，非操作数）
-  writeIntOperand(e, c.frame, c.instr, 1, r.win); // raw 38108
-  writeIntOperand(e, c.frame, c.instr, 2, r.start); // raw 38109
+  plan.setInt(1, r.win); // raw 38108
+  plan.setInt(2, r.start); // raw 38109
 };
 
 /**
@@ -150,6 +178,7 @@ const op_backlog_page_at: OpHandler = (c) => {
  * 清的就是本票的这两张 vector，纯 VM、零 GDI。★清表**不**复位游标/组首标记（见 `clearBacklog` 注释）。
  */
 const op_text_tables_clear: OpHandler = (c) => {
+  const plan = planFor(c);
   c.e.textItems.clearBacklog();
 };
 

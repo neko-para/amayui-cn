@@ -397,3 +397,7 @@ const r = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g1397: 1
 - 判据 4（角色名青 vs 橘）：仍未取证（通道顺序 / 入队时机 / 光栅化取色三处都还没打开看）。
 - H2（`waitIdle` 500 ms 超时后静默按 0×0 走）**未动**：它是"超时策略"这个设计决定（去掉超时 = 可能挂死
   帧循环），要连同 `0x208` 这条会**回写操作数**的 getter 一起拍板，不塞进本轮。
+
+## 2026-09-21
+
+轮 14（白底 H2）：帧屏障的 500 ms 默认上限 = **静默截断**，本轮换成安全兜底。`textureCache.ts` 新增共享常量 `BARRIER_GIVEUP_MS=30000` / `BARRIER_WARN_MS=1000` / `BARRIER_POLL_MS=64`；`waitIdle(timeoutMs?)` 省略参数 = 30 s 兜底（不再是 500 ms），64 ms 轮询 ⇒ 每秒可打一行「纹理屏障仍在等待 …ms（在途 N 张：0x…）」；到上限打 ★ 行并**点名在途 imgid**。`l2dTextures.waitIdle` 复用同一常量；`pixiBackend.texturesIdle()` 本就是无参调用（改的是默认值，收敛路径不动）。危害：屏障后面紧跟的可能是 `0x208`（读尺寸并写回操作数）这类 getter ⇒ 载入未完成就放行会让脚本按 0×0 走与引擎不同的分支，且不会回头再看；引擎的 `set-texture` 是同步的，没有「超时」这一说。守卫 +2（`test/texture-bind-race.test.ts`）：①行为 —— 无参 `waitIdle()` 在 **700 ms** 窗口内必须仍在等（窗口特意跨过旧默认 500 ms）+ `BARRIER_GIVEUP_MS >= 10000` 值棘轮 + 显式 `waitIdle(40)` 到点返回且点名在途 imgid + 到货后无参屏障照常结束；②源码棘轮 —— 两个纹理库不许再把数字字面量当 `waitIdle` 默认值、`pixiBackend.texturesIdle` 不许传数字上限。辨别力两次机械证明（还原 `= 500` ⇒ 行为用例 503 ms 红 + 源码棘轮红；收敛路径传 `waitIdle(500)` ⇒ 源码棘轮红），还原后 12/12 绿。H1/H3/H4 与 presenter 诊断缺口**此前已落地**（见 notes §「轮 14」的清点表）。

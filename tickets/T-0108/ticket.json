@@ -1,0 +1,40 @@
+{
+  "title": "数据层沿革话术：semantics/note 里的「订正/原记/旧写」146 处 → 结论留原文、沿革落 journal[]",
+  "type": "docs",
+  "priority": "P3",
+  "area": "analysis",
+  "why": "T-0105 的清沿革话术只覆盖了 `docs-new/03-engine/*.md` 里手写的 13 份机制叙述（28 处，已清 + 已加守卫 I9），但同族话术在**数据层**还有 146 处 —— `analysis/opcodes.json` 49（渲染进 `opcode-table.md` 的 `semantics` 列 ⇒ 生成物里可见 48 处）、`engine-capabilities.json` 37（渲染进 `engine-capabilities.md` 的 `note`，裁剪后可见 7 处）、`opcode-gaps.json` 31（可见 2 处）、`functions.json` 24、`fields.json` 4、`scripts.json` 1。按 `docs-new/00-overview/authority.md` 附录 **A2**，每个实体有四个面，其中 `journal[]` 才是沿革的家（「原注 X 已订正为 Y」**永不渲染**），`engine`/`emulator` 面只放事实 —— 现在「★2026-09 订正（原记…）」被写进了被渲染的 `semantics`/`note`，读者（和人读生成物）分不清哪句是现行结论。A4① 的禁令同样适用（旧的直接删、沿革落 journal）。",
+  "acceptance": [
+    "① 逐条判定 146 处的性质：**纯沿革**（「原记 X，实为 Y」）⇒ 删掉 X 只留 Y；**结论级订正**（某条结论本身被推翻）⇒ 沿革移进该实体的 `journal[]`；**非沿革**（如 `订正` 当名词用、或指向 t 票的修订记录）⇒ 逐条给出保留理由",
+    "② 六份真源改完后重跑全部生成器（`build-opcode-table.mjs` / `build-capabilities.mjs` / `build-opcode-gaps.mjs` / `build-scripts.mjs`）并确认生成物里 `订正` 计数为 0（`grep -c 订正 docs-new/03-engine/*.md` 只剩手写文档也是 0）",
+    "③ 把 T-0105 的守卫 I9（`test/doc-model.test.ts`：`03-engine` 的 `kind=narrative` 不得含「订正」）扩到生成物：`docs-new/03-engine/{opcode-table,engine-capabilities,opcode-gaps}.md` 也不得含「订正」（这样数据层再漏进来会被打红）",
+    "④ 抽查若干条（各文件至少 3 条）确认**没有丢结论**：只删了沿革、现行事实仍在，且 `functions.json`/`fields.json` 的 `journal[]` 真的接住了被移走的沿革",
+    "npm run verify 全绿（含四条台账 `--validate` 与 `test/doc-model.test.ts`）"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/00-overview/authority.md",
+      "anchor": "沿革只留三处",
+      "note": "A4①（叙述文档禁沿革话术）"
+    },
+    {
+      "file": "docs-new/00-overview/authority.md",
+      "anchor": "永不渲染",
+      "note": "A2：journal 面才是沿革的家（`-- `journal` | 沿革（\"原注 X 已订正为 Y\"） | 每次订正 | ❌ **永不渲染**`）"
+    },
+    {
+      "file": "app/amayui-emulator/test/doc-model.test.ts",
+      "anchor": "沿革不进叙述文档",
+      "note": "T-0105 落的守卫 I9（本票要扩到生成物）"
+    }
+  ],
+  "id": "T-0108",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-22",
+      "kind": "created",
+      "what": "创建：T-0105 判据 ④ 的手写文档部分已完成，数据层 146 处作为边界外残余单独立票"
+    }
+  ]
+}

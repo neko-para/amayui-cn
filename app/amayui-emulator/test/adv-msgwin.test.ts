@@ -835,7 +835,9 @@ test('★0x1D2（文本项记录表 push）：OPS 真实现、push 一条记录�
   assert.ok(h, '0x1D2 应在 OPS 里（曾是 ENGINE_INTERNAL_OPS；读取端没它就没数据）');
   assert.equal(ENGINE_INTERNAL_OPS.has(0x1d2), false, '不得同时留在 ENGINE_INTERNAL_OPS（两表不相交）');
   // 写目标槽（type 0x9 池操作数）：push 不应改动它
-  e.engineValues.set(21631, 8); // 默认窗 = 8
+  // ★`tickets/T-0101` 的 D5：默认窗的**唯一真源**是 `msgwin.defaultWin`（= 引擎 `Font+1228`，
+  //   初值 1、raw 78899）；`engineValues[21631]` 已不再参与（此前这里 set 它，属双真源时代的写法）。
+  e.msgwin.defaultWin = 8; // 默认窗 = 8
   step(0x1d2, [im(0x1234), im(0x5678)]);
   assert.equal(e.textItems.records.length, 1, '0x1D2 应 push 一条记录');
   assert.deepEqual(

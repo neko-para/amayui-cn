@@ -33,11 +33,22 @@
  * - `i093` 有 334 处（SN0000 等 ADV 脚本的 UI 例程），`i094` 有 334 处，`i097` 有 6 处
  *   （`SN0000.txt:79-114` 的 ADV 键盘推进绑定）—— 这三条是**必须有**的。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand } from '../operand.js';
 import type { Engine } from '../engine.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：消息面板族（panel），5 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：消息面板族（panel）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /** 面板对象在 `_this` 里的基址（dword 下标）：`Engine+0x55D8` = `_this + 5494`。 */
 export const PANEL_BASE = 5494;
@@ -70,6 +81,7 @@ function showPanel(e: Engine, step: number): void {
  * （实测 14→33→40），旧的全屏热点（`SN0000.txt:66`）继续遮蔽新登记的一切 ⇒ 派发到过期条目。
  */
 const op_message_surface_off: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   e.effectFlags &= ~0x800000;
   e.routes.reset(); // = sub_403EF0（raw 9958-9971：`[258]=0`、`[959]=-1`、`[960]=0`、`[7464]=0`、`[7466]=0`、`[7467]=-1`、`[7468]=-1`）
@@ -81,6 +93,7 @@ const op_message_surface_off: OpHandler = (c) => {
 
 /** `0x94`（sub_419230 raw 24604）：置「面板已显示」+ `sub_404020(panelA, 10000)`。 */
 const op_message_surface_fill: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   e.routes.shown = 1; // panelA[7463]（= Engine[12957] 的同一个事实，sink 只写这一处）
   showPanel(e, 10000);
@@ -106,12 +119,13 @@ const op_message_surface_fill: OpHandler = (c) => {
  * （在屏幕外），只能被 `sub_403D70` 的**掩码位**命中。⇒ **这就是 ADV「键盘推进」的入口**。
  */
 const op_message_surface_rect: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const x = readIntOperand(e, c.frame, c.instr, 1);
-  const y = readIntOperand(e, c.frame, c.instr, 2);
-  const w = readIntOperand(e, c.frame, c.instr, 3);
-  const h = readIntOperand(e, c.frame, c.instr, 4);
-  const bit = readIntOperand(e, c.frame, c.instr, 5);
+  const x = (plan.int(1) ?? 0);
+  const y = (plan.int(2) ?? 0);
+  const w = (plan.int(3) ?? 0);
+  const h = (plan.int(4) ?? 0);
+  const bit = (plan.int(5) ?? 0);
   e.routes.bindKeyBit(x, y, x + w, y + h, bit); // sub_403D10：无全等项时引擎同样静默
 };
 
@@ -125,6 +139,7 @@ const op_message_surface_rect: OpHandler = (c) => {
  * 显示态派发通路（`sub_4098E0`）**未实现**，登记为缺口。
  */
 const op_panel_show: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const p = e.routes;
   if (p.closePending !== 0) {
@@ -133,7 +148,7 @@ const op_panel_show: OpHandler = (c) => {
     return;
   }
   e.effectFlags = (e.effectFlags & 0xf77fffff) | 0x800000;
-  showPanel(e, readIntOperand(e, c.frame, c.instr, 1));
+  showPanel(e, (plan.int(1) ?? 0));
 };
 
 /**
@@ -141,6 +156,7 @@ const op_panel_show: OpHandler = (c) => {
  * `[7467] = op2`（等待泵的 `sub_4098E0` 读它：没有 enter/leave 也没有点击时派发该 label）。
  */
 const op_panel_show_fallback: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const p = e.routes;
   if (p.closePending !== 0) {
@@ -149,8 +165,8 @@ const op_panel_show_fallback: OpHandler = (c) => {
     return;
   }
   e.effectFlags = (e.effectFlags & 0xf77fffff) | 0x800000;
-  p.fallbackLabel = readIntOperand(e, c.frame, c.instr, 2); // `[7467]`
-  showPanel(e, readIntOperand(e, c.frame, c.instr, 1));
+  p.fallbackLabel = (plan.int(2) ?? 0); // `[7467]`
+  showPanel(e, (plan.int(1) ?? 0));
 };
 
 /** A5 的面板表面族（真实现）。 */

@@ -54,3 +54,30 @@
 - `npx tsx --test test/audit-report-completeness.test.ts` ⇒ 3/3 绿。
 - 全量 `npm test` 绿（见 changes 记录）。
 - 未改动任何被锚定的报告正文行（只在总览里**新增** §6；§5 的引用句与三份明细原样保留）。
+
+## 2026-09-21
+
+## 轮 10：Live2D 那一簇 8 条 finding 的**逐条标注**（按轮 7 的"审计也会陈旧"纪律）
+
+`audit-final-capabilities.json`（已归档 `tickets/T-0075/evidence/`）里与 Live2D 有关的 finding 共 **8 条**；
+本轮把仍未修的按 `analysis/engine-capabilities.json` 的**实际状态**逐条修掉或收窄（改数据层 → `--recount`
+→ `capabilities.js --validate` → `build-capabilities.mjs`），结果如下（`finding id | 类型 | 处置`）：
+
+| finding | 类型 | 处置（2026-09-21） |
+|---|---|---|
+| `l2d-node-draw-gate` | contradiction **P0** | **已修（更早轮次）**：emulator note 已订正为"两宿主每帧都在消费该判据"（Pixi `live2d/render.ts` → `presenter.ts:265/:348`；headless `scene/snapshot.ts:230`），status = `modeled-verified`/E3。本轮复核**确认**该条不再成立。 |
+| `live2d-enabled-config-flag` | no-evidence P2 | **本轮修**：原 `engine.fns=[sub_4209B0]`/`raw=29615-29639` 引的是 **0xA0(jcc) handler**（`(676636-675996)/4 = 0xA0`），体内无 `a9d0/f8c46/f8c47` 读点 ⇒ 改为引**被门控的 L2D 装载入口** `0x341 → sub_427BA0`（派发表 raw 23249，`(679328-675996)/4 = 0x341`；体 **34460-34495**），并在 `trigger`/`whySilent` 写明这三个是**脚本 global（引擎 0 读点）**。 |
+| `live2d-mesh-batches` | contradiction P2 | **本轮修**：`trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（一个网格一批）冲突 ⇒ 按体与实现改写，`engine.raw` 扩到 **134277-134416**，切批粒度的直接锚点 raw **148038-148068** 写进 trigger。 |
+| `chained-3d-layer-commit` | contradiction P2 | **本轮修**：name/trigger/why 全改（本条对象是 `Scene+1096` 的 **572B 立绘节点表**，不是"3D 场景层"），`status: n/a-known → modeled-verified`/E3（guard `test/live2d-render.test.ts`），note 引四路归并 order=3 与 headless 同路径。 |
+| `lazy-572b-node-map` | contradiction P3 | **本轮修**：`absent → partial` —— **立绘那一半已建模**（`Engine.l2dNodes` + `0x344` handler + 真实 TITLE 资产守卫），只剩**精灵/特效那一半**未建模（note 写清边界）。 |
+| `lazy-live2d-slot` | no-evidence P3 | **本轮修**：`fns` 补 `sub_4785E0`（**释放**那一半，def 92745；调用点 121678/121753；原列的 `sub_478270` 其实是构造函数）与 `sub_4A1AF0`（**"10 槽"的硬依据**：raw 121784-121787 `if ( ++v1 >= 10 ) return 0;`），`raw: 121664-121700 → 121664-121790`，status → `modeled-verified`/E3。 |
+| `chained-3d-layer-commit:callsites` | overreach P3 | **本轮修**：原 trigger 写"`sub_4B06D0` 的 **6** 个调用点"却列了 7 个行号、且漏了 `sub_4B4040@136937`/`sub_4B4460@137253` ⇒ 按 grep 全量写清（**9 处 = 定义 + 8 调用，跨 3 个函数**），`fns` 同步补齐。 |
+| `scene-frame-commit` | cross-source-mismatch P2 | **本轮修**：原 `engine.raw=136742-136966` 只覆盖 `sub_4B4040`，而 `reads` 的 `+46500/+1056/+46676` 证实行在 `sub_4B06D0`（**134417-136740**）⇒ 区间内证据为零；`0x20C` 的 handler `sub_41A1A0`（派发表 raw 23051；体 25258-25275，25271 调 `sub_4B4040`）原先既不在 `fns` 也不在区间 ⇒ `raw` 扩为 **134417-136966**、`fns` 补 `sub_41A1A0`。 |
+| `scene-frame-commit:guard` | no-evidence P2 | **本轮收窄（不是把话说圆）**：该 guard（`test/draw-item-slot-coverage.test.ts`）只断言"按槽绑定比例 ≥0.95"，不覆盖"四路归并"；原 note 的「MeshEntry 黑罩」是**已作废的旧近似**（presenter.ts:208-210 自述废弃）⇒ 已删，note 改为分层：①各路自己的出画**有**守卫（DrawItem/Mesh/Live2D 三处列名）；②**跨路提交次序**（`item → text → mesh → L2D`，raw 135560-135614）**只有源码注释、没有守卫**（排序键现在写在 Pixi 合成方法里，要可测需抽到共享层）⇒ 登记为未做的守卫。 |
+| `live2d-offscreen-node-lifecycle` | unclear P2 | **仍 unclear（未动）**：该 id 只出现在对抗性复核输出的 id 清单里，`.tmp/audit2/cap-1..5.json` 五份原始 findings 中无对应条目 ⇒ 缺原始记录可比对；按轮 7 的口径**不猜**，保持 unclear 并在此登记。 |
+
+★统计口径：修完后 `capabilities.js --validate` 绿、`--recount` 后台账为
+**已核验 57 / 已建模未核验 6 / 部分 32 / 缺失 19 / n/a 23**（修前 55/7/31/20/24）。
+★**方法学一条**（与轮 7 同源）：本轮 8 条里有 3 条（`l2d-node-draw-gate`、`live2d-mesh-batches`、
+`lazy-live2d-slot`）是"**结论对、锚点/表述错**"——正是本票认定的最危险形态：读起来毫无异常，
+拿 raw 去核才发现引的是别的函数（`sub_4209B0` = jcc 是最典型的一例）。

@@ -10,22 +10,37 @@
  * 注意：`engineValues` 用**负键**表示「非 `_this` 字段」的专用全局槽（如 0x248 的 `-248`），
  * 与引擎 DWORD 下标空间隔离。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { setConfigValue, bgrToRgb } from './msgwin.js';
 import { ShowMessageError } from '../native.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { cfgInt } from '../../engineConfig.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"引擎字段/getter 杂项族"）**20 条一次迁完**：形状只有两种
+ * （5 条**写 op1** 的 getter + 14 条只读），外加 4 条 argc 0。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：引擎字段/getter 族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import type { OpTable } from './shared.js';
 
 const op_write_global_slot: OpHandler = (c) => {
-  c.e.globalSlot97058 = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  c.e.globalSlot97058 = (plan.int(1) ?? 0);
 };
 
 /** 0x148 (sub_42FEC0)：`op1 = _this[97058]`（读）。 */
 const op_read_global_slot: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.globalSlot97058);
+  const plan = planFor(c);
+  plan.setInt(1, c.e.globalSlot97058);
 };
 
 // ---- 控制流 ----
@@ -44,7 +59,17 @@ const ENGINE_FIELD_GET: Map<number, number> = new Map<number, number>([
 ]);
 
 /** 0x106/0x130/0x131/0x201 等：引擎字段/配置 getter（读 `_this[字段]` 写 op1）。 */
+/**
+ * 共用 handler：**配置/字段 getter 族**（`ENGINE_FIELD_GET` 的四条 + `0x131` 直读配置）。
+ *
+ * ★已迁到操作数计划层（`tickets/T-0082` 批次"共用 handler 的两族"）：本族方向是**单 `w`**
+ * （结果写回 **op1**）——与"引擎字段写入族"正相反（那边 `w` 是写引擎字段、操作数是读）。
+ */
 const op_get_engine_value: OpHandler = (c) => {
+  const p = operandsFor(c);
+  if (!p) {
+    throw new Error(`0x${c.instr.opcode.toString(16)}：getter 族走操作数计划层，但没有声明计划`);
+  }
   let v: number;
   if (c.instr.opcode === 0x131) {
     // 0x131（sub_42F7D0，raw 39350-39356）：**直接读配置注册表** `message:MesWinAlpha` 写 op1
@@ -59,7 +84,7 @@ const op_get_engine_value: OpHandler = (c) => {
     }
     v = c.e.engineValues.get(field) ?? 0;
   }
-  writeIntOperand(c.e, c.frame, c.instr, 1, v);
+  p.setInt(1, v);
 };
 
 /**
@@ -72,7 +97,8 @@ const op_get_engine_value: OpHandler = (c) => {
  *   见 `engineConfig.ts` 的同条说明）。CONFIG.txt 用 `i0c0 (local-int 2)` 读"现在放的是哪首"。
  */
 const op_get_music_field: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, c.e.engineValues.get(ENGINE_FIELD.musicField) ?? 0);
+  const plan = planFor(c);
+  plan.setInt(1, c.e.engineValues.get(ENGINE_FIELD.musicField) ?? 0);
 };
 
 /**
@@ -81,7 +107,8 @@ const op_get_music_field: OpHandler = (c) => {
  *   CONFIG1.txt:1459/1702 读它，且 **1702 的结果立刻被 `ne` 消费** → 当 no-op 跳过会让分支走错。
  */
 const op_get_screen_mode: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(ENGINE_FIELD.screenMode) ?? 0) !== 0 ? 1 : 0);
+  const plan = planFor(c);
+  plan.setInt(1, (c.e.engineValues.get(ENGINE_FIELD.screenMode) ?? 0) !== 0 ? 1 : 0);
 };
 
 /**
@@ -145,8 +172,9 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
  * （负数偏移 ⇒ 写到别的槽），与引擎相反（`tickets/T-0098` ②；同族先例见 `T-0097`）。
  */
 const op_set_key: OpHandler = (c) => {
-  const key = readIntOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const key = (plan.int(1) ?? 0);
+  const value = (plan.int(2) ?? 0);
   if ((key >>> 0) <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTableBase, value);
   else c.log(`0x107 键位越界（op1=${key}；引擎按 unsigned > 0x1F ⇒ 不写表、不报错）`);
 };
@@ -156,8 +184,9 @@ const op_set_key: OpHandler = (c) => {
  * 门同样是对 **unsigned** 的 `result <= 0x1F` ⇒ 口径与 `0x107` 完全同型（值那一侧越界 ⇒ 不写表、不报错）。
  */
 const op_set_key2: OpHandler = (c) => {
-  const value = readIntOperand(c.e, c.frame, c.instr, 1);
-  const key = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const value = (plan.int(1) ?? 0);
+  const key = (plan.int(2) ?? 0);
   if ((value >>> 0) <= 0x1f) c.e.engineValues.set(key + ENGINE_FIELD.keyTable2Base, value);
   else c.log(`0x10B 值越界（op1=${value}；引擎按 unsigned > 0x1F ⇒ 不写表、不报错）`);
 };
@@ -178,7 +207,8 @@ const ENGINE_TEXT_SET_KEY_TOTAL = 'SetKeyTotalの引数が不正です．';
  * 该字段同时是 `0x100` 掩码为空时派发的「默认键」槽下标与掩码扫描上界（`input.ts`）。
  */
 const op_set_key_total: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   if ((v >>> 0) > 0x1f) {
     throw new ShowMessageError(ENGINE_TEXT_SET_KEY_TOTAL, c.instr.opcode, `op1=${v} 越界（unsigned > 0x1F）⇒ 写入被丢弃`);
   }
@@ -186,14 +216,51 @@ const op_set_key_total: OpHandler = (c) => {
 };
 
 /** `ENGINE_FIELD_STORE` 的统一 handler。 */
+/**
+ * 共用 handler：**「读操作数 → 写引擎字段」一族**（`ENGINE_FIELD_STORE` 的 14 条）。
+ *
+ * ★迁移到**操作数计划层**（`tickets/T-0082` RF-A 批次"引擎字段写入族"）：本族 14 条的形状完全一样
+ * （读 op_n 的 int → 写一个 `ENGINE_FIELD`），正是计划层要消灭的"每条 handler 各自手写读法"的形态。
+ * 走计划层之后，「读几格、什么类型、往哪写」的单一真源变成：**计划**（几位/类型/方向）+
+ * **本文件的 spec map**（第 n 位落到哪个字段）。
+ *
+ * ★缺计划 = **编程错误**（不是运行时数据问题）：`test/operand-plan.test.ts` 用
+ * `fieldStorePlanOps()`（从同一张表推导）逐条核验本族每条都有计划 —— 新增一条 spec 却忘了声明计划，
+ * CI 就红；所以这里直接抛，而不是"静默按老路读"（静默双路径正是审计点名的病根）。
+ */
 const op_engine_field_store: OpHandler = (c) => {
   const spec = ENGINE_FIELD_STORE.get(c.instr.opcode);
   if (!spec) return;
+  const p = operandsFor(c);
+  if (!p) {
+    throw new Error(
+      `0x${c.instr.opcode.toString(16)}：本族走操作数计划层，但没有声明计划（见 src/vm/operandPlan.ts 的字段写入族批次）`,
+    );
+  }
   for (const [nStr, field] of Object.entries(spec.map)) {
-    const v = readIntOperand(c.e, c.frame, c.instr, Number(nStr));
+    const v = p.int(Number(nStr));
+    if (v === undefined) continue; // 缺实参的合成指令：与老路 `readIntOperand` 的容错一致
     c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
   }
 };
+
+/**
+ * 共用 `op_engine_field_store` 的 opcode + 各自要读的最大位号（= 该条计划的 `argc`）。
+ *
+ * 用途 = 守卫（`test/operand-plan.test.ts`）**从同一张表推导**该族应有的计划，再逐条比对
+ * `planOf()` ⇒ 「加了 spec 忘了声明计划」这条漏在 CI 里立即可见（不需要人工维护第二份名单）。
+ */
+export function fieldStorePlanOps(): { op: number; argc: number }[] {
+  const out: { op: number; argc: number }[] = [];
+  for (const [op, h] of ENGINE_FIELD_OPS) {
+    if (h !== op_engine_field_store) continue;
+    const spec = ENGINE_FIELD_STORE.get(op);
+    if (!spec) continue;
+    const argc = Math.max(...Object.keys(spec.map).map(Number));
+    out.push({ op, argc });
+  }
+  return out.sort((a, b) => a.op - b.op);
+}
 
 /**
  * `0x2EE <ms>`（`sub_426650` raw 33590-33603）：**消息淡入时长 —— 字段 + 配置双写**。
@@ -219,14 +286,16 @@ const op_engine_field_store: OpHandler = (c) => {
  *   而字段本身不落盘）。同族先例：`0x1B5`（消息速度）也是"字段 + `SetConfig`"，`0x74` 才是只写字段那条。
  */
 const op_set_message_fade: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   c.e.engineValues.set(ENGINE_FIELD.messageFade, v); // _this[80106]
   setConfigValue(c.e, CFG.messageMessageFade, v); // ★与读侧（0x2ED / CONFIG_FIELD_BINDINGS）同一注册表
 };
 
 /** `0x247`（sub_430810, raw 40034）：`op1 = (_this[166965] != 0)` —— 引擎布尔寄存器 getter，与 0x21B 成对。 */
 const op_get_engine_bool: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, (c.e.engineValues.get(ENGINE_FIELD.engineBool) ?? 0) !== 0 ? 1 : 0);
+  const plan = planFor(c);
+  plan.setInt(1, (c.e.engineValues.get(ENGINE_FIELD.engineBool) ?? 0) !== 0 ? 1 : 0);
 };
 
 /**
@@ -242,9 +311,10 @@ const op_get_engine_bool: OpHandler = (c) => {
  * 现改为向注册表取（`registryDefault`），保证「兜底 = 唯一真源」不会再各自漂移。
  */
 const op_get_effect_skip: OpHandler = (c) => {
+  const plan = planFor(c);
   const def = registryDefault(CFG.systemEffectSkipOnClick);
   const v = c.e.config ? cfgInt(c.e.config, CFG.systemEffectSkipOnClick, def) : def;
-  writeIntOperand(c.e, c.frame, c.instr, 1, v);
+  plan.setInt(1, v);
 };
 
 /**
@@ -278,7 +348,8 @@ const op_get_effect_skip: OpHandler = (c) => {
  * ★体也把同一个操作数读了两次（raw 31006 / 31014，同样只是重读）⇒ 读一次复用等价。
  */
 const op_set_meswin_alpha: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   if ((v >>> 0) > 0x10) {
     // 引擎：op1 > 0x10（无符号）⇒ 打错误串（`aGetmeswina`）并返回，**不写配置**
     c.log(`0x141(SETMESWINALPHA): op1=${v}（无符号 ${v >>> 0}）> 0x10 ⇒ 按引擎走错误串分支（不写 ${CFG.messageMesWinAlpha}）`);
@@ -296,12 +367,14 @@ const op_set_meswin_alpha: OpHandler = (c) => {
  * ⇒ 未知指令时会硬停（此前零注册，`tickets/T-0076` 的 B3）。
  */
 const op_set_effect_skip: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   setConfigValue(c.e, CFG.systemEffectSkipOnClick, v); // 统一走 setConfigValue ⇒ 与 0x306 的读侧同一份注册表
 };
 
 export const op_set_engine_flag_174812: OpHandler = (c) => {
-  const v = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const v = (plan.int(1) ?? 0);
   c.e.engineValues.set(ENGINE_FIELD.scriptEngineFlag, v);
 };
 
@@ -320,6 +393,7 @@ export const op_set_engine_flag_174812: OpHandler = (c) => {
  * 跳过它会让"快进时的 BGM 让路"行为与真机相反（语音一来 BGM 就被暂停）。
  */
 const op_set_skip_read_state: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const state = e.engineValues.get(ENGINE_FIELD.skipReadState) ?? 0;
   if ((state & 0x10000) !== 0) e.engineValues.set(ENGINE_FIELD.skipReadState, 0);
@@ -343,8 +417,9 @@ const op_set_skip_read_state: OpHandler = (c) => {
  * 语料 `i25a` 0 处；同族的 `0x25B`（图像）也有 0 处。
  */
 const op_set_media_movie: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const v = (plan.int(1) ?? 0);
   e.engineValues.set(ENGINE_FIELD.mediaMode, 1); // 模式 1 = 影片
   e.engineValues.set(ENGINE_FIELD.mediaId, v);
   // 引擎：模式变化时（92377 == 0）与"非全屏"时各下发一次 Scene 图层；宿主无影片子系统 ⇒ 只记字段。
@@ -356,6 +431,7 @@ const op_set_media_movie: OpHandler = (c) => {
 
 /** `0xD9`（sub_419970 raw 24939）：清 `effect_flags & 0x1000`（派发中时同清 `Engine[95779]` 的该位）。 */
 const op_clear_flag_1000: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   e.effectFlags &= ~0x1000;
   if ((e.engineValues.get(ENGINE_FIELD.dispatchInProgress) ?? 0) !== 0) {
@@ -378,6 +454,7 @@ const op_clear_flag_1000: OpHandler = (c) => {
  * （`Number((274877907n * BigInt(nowMs)) >> 38n)`），避免 JS 双精度在 2^59 量级丢位。
  */
 const op_seconds_timer: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   e.engineValues.set(ENGINE_FIELD.timerSecondsPrev, e.engineValues.get(ENGINE_FIELD.timerSeconds) ?? 0);
   const ms = BigInt(e.nowMs | 0);
@@ -386,6 +463,7 @@ const op_seconds_timer: OpHandler = (c) => {
 
 /** `0x1AD`（sub_4196F0 raw 24806）：`Engine[166963] = cur`（存档序列化用的"当前帧"记忆；语料 1100 处）。 */
 const op_store_cur_166963: OpHandler = (c) => {
+  const plan = planFor(c);
   c.e.engineValues.set(ENGINE_FIELD.storedCur, c.e.cur);
 };
 
@@ -407,13 +485,15 @@ const op_store_cur_166963: OpHandler = (c) => {
  *   `timeGetTime()` 的 DWORD 位模式，重写侧 `Math.trunc(...) | 0` 同口径。
  */
 const op_wall_clock_ms: OpHandler = (c) => {
-  writeIntOperand(c.e, c.frame, c.instr, 1, Math.trunc(c.e.nowMs) | 0);
+  const plan = planFor(c);
+  plan.setInt(1, Math.trunc(c.e.nowMs) | 0);
 };
 
 /** `0x1B1`（sub_41FEA0 raw 29155）：`Engine[21672] = op1`。 */
 const op_set_field_21672: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  e.engineValues.set(ENGINE_FIELD.followTextMode, readIntOperand(e, c.frame, c.instr, 1));
+  e.engineValues.set(ENGINE_FIELD.followTextMode, (plan.int(1) ?? 0));
 };
 
 /** 「读操作数 → 写引擎字段」一族 + 引擎字段读写 getter/setter（真实现）。 */export const ENGINE_FIELD_OPS: OpTable = [  // 注：消息窗字段/对象表（0x7F/0x80/0x300/0x301/0x212/0x213/0x25D）见 msgwin.ts —— 同属引擎状态，但族谱独立。

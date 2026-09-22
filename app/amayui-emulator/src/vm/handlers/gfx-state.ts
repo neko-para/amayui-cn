@@ -31,10 +31,22 @@
  * 因此它们从 VM 视角不可观测；建模/转发的意义是"emulator 侧的渲染模型与引擎一致"，
  * 且从此不再以"无依据的 no-op"出现在 stub 台账里。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readFloatOperand, readIntOperand } from '../operand.js';
-import { operandsFor } from '../operandPlan.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"场景/图元状态族"）18 条；`0x33f` **按策略排除**（引擎三格全读但
+ * 本工程无消费端，见 `src/vm/operandPlan.ts` 本批次头部说明）。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：场景/图元状态族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import type { OpTable } from './shared.js';
 
 /**
@@ -50,8 +62,9 @@ import type { OpTable } from './shared.js';
  * （同一份语义的第二视图，供报告/digest 与 `0x238` 的既有证据锚点使用）。
  */
 const op_load_wait_timer: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const v = readIntOperand(e, c.frame, c.instr, 1);
+  const v = (plan.int(1) ?? 0);
   e.gateWaitStart = 0; // Engine[92338]：起点清零 ⇒ 下一帧由 sub_407E20 锁存
   e.gateWaitMs = v; // Engine[92339]：时长（ms）
   e.engineValues.set(ENGINE_FIELD.waitTimerStart, 0);
@@ -78,6 +91,7 @@ const op_load_wait_timer: OpHandler = (c) => {
  * （与 `0x2FA` 同判据：建一个没人读的字段等于死写）。
  */
 const op_reset_wait_timer: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
   const gate = e.engineValues.get(ENGINE_FIELD.msgField92340) ?? 0;
   if ((gate & 2) !== 0) return; // 门控：bit1 置位时引擎整段跳过
@@ -89,41 +103,45 @@ const op_reset_wait_timer: OpHandler = (c) => {
 
 /** `0x258`（sub_425D20 raw 33156-33185）：纹理槽标志对（bit0/bit1 各写两张镜像表）。 */
 const op_set_slot_flags: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
-  const flags = readIntOperand(e, c.frame, c.instr, 2);
+  const slot = (plan.int(1) ?? 0);
+  const flags = (plan.int(2) ?? 0);
   e.texSlotFlags.set(slot, flags & 0x3);
 };
 
 /** `0x1FC`（sub_422F80）：复位图元的变换（DrawItem 的缩放/旋转/平移字段清零）。 */
 const op_reset_prim_transform: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const handle = readIntOperand(e, c.frame, c.instr, 1);
+  const handle = (plan.int(1) ?? 0);
   c.native.resetPrimTransform?.(handle);
 };
 
 /** `0x1FE`（sub_423060）：图元变换 4 浮点（op2..op5 **原样**，与 0x1FD 的 ÷100 不同）。 */
 const op_prim_transform4: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const handle = readIntOperand(e, c.frame, c.instr, 1);
-  const a = readFloatOperand(e, c.frame, c.instr, 2);
-  const b = readFloatOperand(e, c.frame, c.instr, 3);
-  const d = readFloatOperand(e, c.frame, c.instr, 4);
-  const f = readFloatOperand(e, c.frame, c.instr, 5);
+  const handle = (plan.int(1) ?? 0);
+  const a = (plan.float(2) ?? 0);
+  const b = (plan.float(3) ?? 0);
+  const d = (plan.float(4) ?? 0);
+  const f = (plan.float(5) ?? 0);
   c.native.setPrimTransform4?.(handle, a, b, d, f);
 };
 
 /** `0x207`（sub_423480 raw 31494-31521）：槽→槽 StretchRect（源/目标矩形同尺寸）。 */
 const op_blit_slot_to_slot: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const src = readIntOperand(e, c.frame, c.instr, 1);
-  const dst = readIntOperand(e, c.frame, c.instr, 2);
-  const x = readIntOperand(e, c.frame, c.instr, 3);
-  const y = readIntOperand(e, c.frame, c.instr, 4);
-  const w = readIntOperand(e, c.frame, c.instr, 5);
-  const h = readIntOperand(e, c.frame, c.instr, 6);
-  const dx = readIntOperand(e, c.frame, c.instr, 7);
-  const dy = readIntOperand(e, c.frame, c.instr, 8);
+  const src = (plan.int(1) ?? 0);
+  const dst = (plan.int(2) ?? 0);
+  const x = (plan.int(3) ?? 0);
+  const y = (plan.int(4) ?? 0);
+  const w = (plan.int(5) ?? 0);
+  const h = (plan.int(6) ?? 0);
+  const dx = (plan.int(7) ?? 0);
+  const dy = (plan.int(8) ?? 0);
   // 引擎：src = {op3, op4, op3+op5, op4+op6}、dst = {op7, op8, op7+op5, op8+op6}
   c.native.blitSlotToSlot?.(src, dst, [x, y, x + w, y + h], [dx, dy, dx + w, dy + h]);
 };
@@ -167,6 +185,7 @@ const op_stretch_texture: OpHandler = (c) => {
 
 /** `0x20E`（sub_41A200 raw 25277-25287）：图形提交（渲染状态 38 包裹 + 设备 Clear）。 */
 const op_commit_graphics: OpHandler = (c) => {
+  const plan = planFor(c);
   // 引擎：`if (Engine[80684] == 1 && Engine[92322] == -1)` 才做状态包裹，但**两条路径都会**调 `sub_498B60`。
   c.native.commitGraphics?.();
 };
@@ -178,6 +197,7 @@ const op_commit_graphics: OpHandler = (c) => {
  * **每个节点 delete 掉**再复位头尾（`_this[2] = 0`）⇒ 真的清空，不只是"记一笔"（宿主侧照此清 `transitions`）。
  */
 const op_clear_transitions: OpHandler = (c) => {
+  const plan = planFor(c);
   c.native.clearTransitions?.();
 };
 
@@ -217,17 +237,18 @@ const op_clear_transitions: OpHandler = (c) => {
  * 按 `render4.transitions` 的 24 格实现扫描带 + 让门判据读窗口剩余时间，`Scene+46508` 的置脏同时接上。
  */
 const op_set_blind_wipe: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const id = readIntOperand(e, c.frame, c.instr, 1); // op1 = 记录键（= `[15]` 的目标绘制项 handle）
-  const texSlot = readIntOperand(e, c.frame, c.instr, 2); // op2 = 工作纹理槽
-  const first = readIntOperand(e, c.frame, c.instr, 3); // op3 = 起始绘制项 id
-  const span = readIntOperand(e, c.frame, c.instr, 4); // op4 = 跨度 count
-  const p5 = readIntOperand(e, c.frame, c.instr, 5); // op5
-  const p6 = readIntOperand(e, c.frame, c.instr, 6); // op6
-  const type = readIntOperand(e, c.frame, c.instr, 7); // op7 = 盲式类型（引擎按 **unsigned** 比 0xB）
-  const split = readIntOperand(e, c.frame, c.instr, 8); // op8 = 分割宽度
-  let delay = readIntOperand(e, c.frame, c.instr, 9); // op9 = 延迟
-  let dur = readIntOperand(e, c.frame, c.instr, 10); // op10 = 时长
+  const id = (plan.int(1) ?? 0); // op1 = 记录键（= `[15]` 的目标绘制项 handle）
+  const texSlot = (plan.int(2) ?? 0); // op2 = 工作纹理槽
+  const first = (plan.int(3) ?? 0); // op3 = 起始绘制项 id
+  const span = (plan.int(4) ?? 0); // op4 = 跨度 count
+  const p5 = (plan.int(5) ?? 0); // op5
+  const p6 = (plan.int(6) ?? 0); // op6
+  const type = (plan.int(7) ?? 0); // op7 = 盲式类型（引擎按 **unsigned** 比 0xB）
+  const split = (plan.int(8) ?? 0); // op8 = 分割宽度
+  let delay = (plan.int(9) ?? 0); // op9 = 延迟
+  let dur = (plan.int(10) ?? 0); // op10 = 时长
   let kind = type;
   let splitN = split;
   if (split < 1) {
@@ -261,17 +282,18 @@ const op_set_blind_wipe: OpHandler = (c) => {
 
 /** `0x250` → `sub_4AF880`（raw 133789-133858）：转场记录 `[0]=3`、`[13]=0`（渲染端 `SlideBlur` 分支）。 */
 const op_set_transition_slide_blur: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const id = readIntOperand(e, c.frame, c.instr, 1); // op1 = 记录键
-  const texSlot = readIntOperand(e, c.frame, c.instr, 2); // op2 = 工作纹理槽
-  const first = readIntOperand(e, c.frame, c.instr, 3); // op3 = 起始绘制项 id
-  const span = readIntOperand(e, c.frame, c.instr, 4); // op4 = 跨度 count
-  const p5 = readIntOperand(e, c.frame, c.instr, 5); // op5 → `[16]`（通道 A 起点）
-  const p6 = readIntOperand(e, c.frame, c.instr, 6); // op6 → `[19]`（通道 D 起点）
-  const p7 = readIntOperand(e, c.frame, c.instr, 7); // op7 → `[20]`（通道 A 终点）
-  const p8 = readIntOperand(e, c.frame, c.instr, 8); // op8 → `[23]`（通道 D 终点）
-  const delay = readIntOperand(e, c.frame, c.instr, 9); // op9 = 延迟
-  const dur = readIntOperand(e, c.frame, c.instr, 10); // op10 = 时长
+  const id = (plan.int(1) ?? 0); // op1 = 记录键
+  const texSlot = (plan.int(2) ?? 0); // op2 = 工作纹理槽
+  const first = (plan.int(3) ?? 0); // op3 = 起始绘制项 id
+  const span = (plan.int(4) ?? 0); // op4 = 跨度 count
+  const p5 = (plan.int(5) ?? 0); // op5 → `[16]`（通道 A 起点）
+  const p6 = (plan.int(6) ?? 0); // op6 → `[19]`（通道 D 起点）
+  const p7 = (plan.int(7) ?? 0); // op7 → `[20]`（通道 A 终点）
+  const p8 = (plan.int(8) ?? 0); // op8 → `[23]`（通道 D 终点）
+  const delay = (plan.int(9) ?? 0); // op9 = 延迟
+  const dur = (plan.int(10) ?? 0); // op10 = 时长
   // raw 133830-133856：通道 B/C 两对**显式清零**（`SlideBlur` 只用 A/D 两个自由度）
   c.native.setTransition?.(id, [
     [0, 3],
@@ -295,19 +317,20 @@ const op_set_transition_slide_blur: OpHandler = (c) => {
 
 /** `0x251` → `sub_4AFA30`（raw 133860-133935）：转场记录 `[0]=3`、`[13]=1`（渲染端 `ZoomBlur` 分支）。 */
 const op_set_transition_zoom_blur: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const id = readIntOperand(e, c.frame, c.instr, 1); // op1 = 记录键
-  const texSlot = readIntOperand(e, c.frame, c.instr, 2); // op2 = 工作纹理槽
-  const first = readIntOperand(e, c.frame, c.instr, 3); // op3 = 起始绘制项 id
-  const span = readIntOperand(e, c.frame, c.instr, 4); // op4 = 跨度 count
-  const a = readIntOperand(e, c.frame, c.instr, 5); // op5 → `[16]`（通道 A 起点）
-  const b = readIntOperand(e, c.frame, c.instr, 6); // op6 → `[17]`（通道 B 起点）
-  const cc = readIntOperand(e, c.frame, c.instr, 7); // op7 → `[18]`（通道 C 起点）
-  const d = readIntOperand(e, c.frame, c.instr, 8); // op8 → `[20]`（通道 A 终点）
-  const ee = readIntOperand(e, c.frame, c.instr, 9); // op9 → `[21]`（通道 B 终点）
-  const f = readIntOperand(e, c.frame, c.instr, 10); // op10 → `[22]`（通道 C 终点）
-  const delay = readIntOperand(e, c.frame, c.instr, 11); // op11 = 延迟
-  const dur = readIntOperand(e, c.frame, c.instr, 12); // op12 = 时长
+  const id = (plan.int(1) ?? 0); // op1 = 记录键
+  const texSlot = (plan.int(2) ?? 0); // op2 = 工作纹理槽
+  const first = (plan.int(3) ?? 0); // op3 = 起始绘制项 id
+  const span = (plan.int(4) ?? 0); // op4 = 跨度 count
+  const a = (plan.int(5) ?? 0); // op5 → `[16]`（通道 A 起点）
+  const b = (plan.int(6) ?? 0); // op6 → `[17]`（通道 B 起点）
+  const cc = (plan.int(7) ?? 0); // op7 → `[18]`（通道 C 起点）
+  const d = (plan.int(8) ?? 0); // op8 → `[20]`（通道 A 终点）
+  const ee = (plan.int(9) ?? 0); // op9 → `[21]`（通道 B 终点）
+  const f = (plan.int(10) ?? 0); // op10 → `[22]`（通道 C 终点）
+  const delay = (plan.int(11) ?? 0); // op11 = 延迟
+  const dur = (plan.int(12) ?? 0); // op12 = 时长
   // raw 133905-133932：通道 D 两格**显式清零**（`ZoomBlur` 用 A/B/C 三个自由度 + CenterU/V）
   c.native.setTransition?.(id, [
     [0, 3],
@@ -331,20 +354,22 @@ const op_set_transition_zoom_blur: OpHandler = (c) => {
 
 /** `0x229`（sub_423FE0 raw 31984-32001）：绘制模式 5 元组（2 int + 3 float）。 */
 const op_set_draw_mode: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const a = readIntOperand(e, c.frame, c.instr, 1);
-  const b = readIntOperand(e, c.frame, c.instr, 2);
-  const x = readFloatOperand(e, c.frame, c.instr, 3);
-  const y = readFloatOperand(e, c.frame, c.instr, 4);
-  const z = readFloatOperand(e, c.frame, c.instr, 5);
+  const a = (plan.int(1) ?? 0);
+  const b = (plan.int(2) ?? 0);
+  const x = (plan.float(3) ?? 0);
+  const y = (plan.float(4) ?? 0);
+  const z = (plan.float(5) ?? 0);
   c.native.setDrawModeBlock?.(a, b, x, y, z);
 };
 
 /** `0x242`（sub_4251A0 raw 32649-32658）：写 DrawItem `+720`（与相邻对象的 `+504`）。 */
 const op_set_draw_entry_param: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const entry = readIntOperand(e, c.frame, c.instr, 1);
-  const value = readIntOperand(e, c.frame, c.instr, 2);
+  const entry = (plan.int(1) ?? 0);
+  const value = (plan.int(2) ?? 0);
   c.native.setDrawEntryParam?.(entry, value);
 };
 
@@ -358,28 +383,31 @@ const op_set_draw_entry_param: OpHandler = (c) => {
  *   （= 唯一的"收起摆位"手段）。宿主缝 `setSlotParams` 必须真的应用平移，见 `tickets/T-0028`。
  */
 const op_set_slot_params: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const handle = readIntOperand(e, c.frame, c.instr, 1);
-  const count = readIntOperand(e, c.frame, c.instr, 2);
-  const x = readFloatOperand(e, c.frame, c.instr, 3);
-  const y = readFloatOperand(e, c.frame, c.instr, 4);
-  const z = readFloatOperand(e, c.frame, c.instr, 5);
+  const handle = (plan.int(1) ?? 0);
+  const count = (plan.int(2) ?? 0);
+  const x = (plan.float(3) ?? 0);
+  const y = (plan.float(4) ?? 0);
+  const z = (plan.float(5) ?? 0);
   c.native.setSlotParams?.(handle, count, x, y, z);
 };
 
 /** `0x321`（sub_426BD0 raw 33839-33850）：MeshEntry 属性（`entry[op2 + 7] = op3`）。 */
 const op_set_mesh_entry_attr: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const mesh = readIntOperand(e, c.frame, c.instr, 1);
-  const index = readIntOperand(e, c.frame, c.instr, 2);
-  const value = readIntOperand(e, c.frame, c.instr, 3);
+  const mesh = (plan.int(1) ?? 0);
+  const index = (plan.int(2) ?? 0);
+  const value = (plan.int(3) ?? 0);
   c.native.setMeshEntryAttr?.(mesh, index, value);
 };
 
 /** `0x32A`（sub_426F80 raw 34003-34010）：释放 3D 模型槽。 */
 const op_release_3d_slot: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 1);
+  const slot = (plan.int(1) ?? 0);
   c.native.release3DSlot?.(slot);
 };
 
@@ -390,9 +418,10 @@ const op_release_3d_slot: OpHandler = (c) => {
  * 组装后按四个字节各乘 `dbl_51FA60`（= 1/255）取 `(r,g,b,a)` 四个 float 调 `sub_499DF0(Scene, …)`。
  */
 const op_set_3d_color: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const a = readIntOperand(e, c.frame, c.instr, 1);
-  const rgb = readIntOperand(e, c.frame, c.instr, 2);
+  const a = (plan.int(1) ?? 0);
+  const rgb = (plan.int(2) ?? 0);
   const alpha = (a > 255 ? 255 : a & 0xff) / 255;
   c.native.set3DColor?.(((rgb >>> 0) & 0xff) / 255, ((rgb >>> 8) & 0xff) / 255, ((rgb >>> 16) & 0xff) / 255, alpha);
 };
@@ -408,7 +437,8 @@ const op_set_3d_color: OpHandler = (c) => {
  * 语料用量：841 处（`i20d 2` / `i20d (local-int 0)`）。
  */
 const op_set_render_target: OpHandler = (c) => {
-  const slot = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const slot = (plan.int(1) ?? 0);
   c.native.setRenderTarget?.(slot);
 };
 

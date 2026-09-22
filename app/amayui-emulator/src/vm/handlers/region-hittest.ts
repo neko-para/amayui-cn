@@ -125,11 +125,22 @@
  *    `c.log('… 按引擎走错误串分支 …')`，如 `0x132`/`0x133`/`0x134`）；将来若接入真 GDI/宿主 region，
  *    按同一先例补 `c.log` 即可。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { Engine, Frame } from '../engine.js';
 import { refFromOperand, readIntOperand, writeIntOperand } from '../operand.js';
 import { readRef, refAt, type Ref } from '../ref.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：命中测试族（region-hittest），2 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：命中测试族（region-hittest）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * 读一个池槽 —— **未写过的槽读 0 由全局口径统一负责**（`ref.ts` 的 `decIntSlot`）：
@@ -308,12 +319,13 @@ export function gdiEllipticRegionHit(
  * 就少读 op4/op5：那会让 `test/opcode-operands.test.ts` 的"漏读"棘轮报警，也不符合体。
  */
 const op_polygon_region_hittest: OpHandler = (c) => {
+  const plan = planFor(c);
   const { e, frame, instr } = c;
-  const px = readIntOperand(e, frame, instr, 2);
-  const py = readIntOperand(e, frame, instr, 3);
-  const xs = refFromOperand(e, frame, instr, 4); // op4 = x 数组基址（**只读**）
-  const ys = refFromOperand(e, frame, instr, 5); // op5 = y 数组基址（**只读**）
-  const n = readIntOperand(e, frame, instr, 6);
+  const px = (plan.int(2) ?? 0);
+  const py = (plan.int(3) ?? 0);
+  const xs = plan.ptr(4)!; // op4 = x 数组基址（**只读**）
+  const ys = plan.ptr(5)!; // op5 = y 数组基址（**只读**）
+  const n = (plan.int(6) ?? 0);
   if (n > MAX_POINTS) {
     throw new Error(`i147 点数异常（n=${n}）—— 超过 emulator 上限 ${MAX_POINTS}（引擎此处 operator new[](8*${n})）`);
   }
@@ -323,7 +335,7 @@ const op_polygon_region_hittest: OpHandler = (c) => {
     flat.push(readSlot(e, frame, refAt(xs, i)), readSlot(e, frame, refAt(ys, i)));
   }
   const hit = gdiPolygonWindingHit(flat, n, px, py);
-  writeIntOperand(e, frame, instr, 1, hit ? 1 : 0);
+  plan.setInt(1, hit ? 1 : 0);
 };
 
 /**
@@ -336,18 +348,19 @@ const op_polygon_region_hittest: OpHandler = (c) => {
  * ★操作数恒读满 6 格（同 `0x147` 的理由）。
  */
 const op_elliptic_region_hittest: OpHandler = (c) => {
+  const plan = planFor(c);
   const { e, frame, instr } = c;
-  const px = readIntOperand(e, frame, instr, 2);
-  const py = readIntOperand(e, frame, instr, 3);
-  const rc = refFromOperand(e, frame, instr, 4); // op4 = 矩形四边的基址（**只读**）
-  const offX = readIntOperand(e, frame, instr, 5);
-  const offY = readIntOperand(e, frame, instr, 6);
+  const px = (plan.int(2) ?? 0);
+  const py = (plan.int(3) ?? 0);
+  const rc = plan.ptr(4)!; // op4 = 矩形四边的基址（**只读**）
+  const offX = (plan.int(5) ?? 0);
+  const offY = (plan.int(6) ?? 0);
   const left = offX + readSlot(e, frame, refAt(rc, 0)); // raw 40705：v3 + DEC(v2[0])
   const right = offX + readSlot(e, frame, refAt(rc, 1));
   const top = offY + readSlot(e, frame, refAt(rc, 2));
   const bottom = offY + readSlot(e, frame, refAt(rc, 3));
   const hit = gdiEllipticRegionHit(left, top, right, bottom, px, py);
-  writeIntOperand(e, frame, instr, 1, hit ? 1 : 0);
+  plan.setInt(1, hit ? 1 : 0);
 };
 
 /**

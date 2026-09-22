@@ -32,6 +32,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { runConfig1Chain } from '../src/tools/config1Chain.js';
+import { bgrToRgb } from '../src/vm/handlers/msgwin.js';
 import type { DrawStringStyle } from '../src/vm/native.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import { im, instr, str } from './harness.js';
@@ -67,15 +68,12 @@ function mk(): {
 }
 
 /**
- * `0x76` 的操作数是 COLORREF(BGR)，引擎（与 `ENGINE_FIELD_STORE`）把它翻成 RGB 存字段
- * ⇒ 期望的 `#rrggbb` 要按同一个变换算出来，别把 BGR 字面量当成 RGB。
- */
-/**
- * 引擎 COLORREF(BGR) → **期望的文字填充色** `#rrggbb`。
+ * 引擎 `0x76` 的操作数是**脚本写的 RGB 值**，`0x76` 的 handler 把它翻成 **COLORREF** 存进 `Font+1360`
+ * （raw 28669），而屏幕上的颜色 = 该字段的 COLORREF 读法 = **再翻一次**（= 脚本原值）。
+ * `tickets/T-0102` 判据 4 的修复把最后那一次翻转加到了 `globalTextStyle`（raw 79241 → 68093
+ * `SetTextColor(hdc, *(Font+1360))` 证明引擎把该字段当 COLORREF 用）。
  *
- * ★**不再**按"文字白电平"压色（`tickets/T-0042` 2026-09 定位：引擎文字的"偏灰"来自
- * raster 的**覆盖率 α 合成** `dst = (C*α + dst*(255-α))/255`，样式里保留脚本原色）
- * —— 这样下面的断言仍然只比较**颜色的相对变化**（入队钉住 / 不回溯 / 直绘立即消费）。
+ * ⇒ 断言里的期望色 = **脚本写的那个字面值**（不再是它的 R/B 互换）。
  */
 const rgbOf = (v: number): string => {
   const rgb = (((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff)) >>> 0;
@@ -88,11 +86,11 @@ const win9Fill = (scene: HeadlessScene): string | undefined => scene.scene.msgWi
 
 test('★入队时钉住：先设全局色再 show-text ⇒ 该窗用入队那一刻的颜色', () => {
   const { scene, step } = mk();
-  step(0x76, [im(0x563412)]); // BGR ⇒ RGB 0x123456
+  step(0x76, [im(0x563412)]); // 脚本写的 RGB 色（字段里存 COLORREF `0x123456`）
   step(0x71, [im(9)]); // 开始新消息（清窗 9）
   step(0x6e, [im(9), str('神缘ＳＡＭＰＬＥ')]);
   // ★样式里保留脚本原色（偏灰由 raster 的覆盖率 α 合成负责，见 tickets/T-0042）
-  assert.equal(win9Fill(scene), '#123456', '窗 9 的填充色应 = 入队时的全局色（BGR 0x563412 ⇒ RGB 0x123456）');
+  assert.equal(win9Fill(scene), '#563412', '窗 9 的填充色应 = 入队时的脚本原色（`0x563412`）');
 });
 
 test('★全局色改变不回溯：角色设定页逐行设色后，已排版的 ADV 样例窗保持原色', () => {
@@ -102,13 +100,13 @@ test('★全局色改变不回溯：角色设定页逐行设色后，已排版�
   step(0x75, [im(30)]);
   step(0x71, [im(9)]);
   step(0x6e, [im(9), str('神缘ＳＡＭＰＬＥ')]);
-  assert.equal(win9Fill(scene), rgbOf(0x563412));
-  // —— CONFIG2 的行为：每画一行角色名就改一次全局色（这里模拟最后一行 = 紫 #b690ff）——
-  for (const c of [0x00e1ff, 0x67bf4d, 0xb690ff]) step(0x76, [im(c)]);
+  assert.equal(win9Fill(scene), '#563412');
+  // —— CONFIG2 的行为：每画一行角色名就改一次全局色（这里模拟最后一行；其调色板原值 = 0xff90b6）——
+  for (const c of [0xffe100, 0x4dbf67, 0xff90b6]) step(0x76, [im(c)]);
   step(0x75, [im(28)]);
   assert.equal(
     win9Fill(scene),
-    rgbOf(0x563412),
+    '#563412',
     '窗 9 已被排版 ⇒ 全局改色**不得**回溯（否则就是用户实测的"角色名颜色溢出"）',
   );
   assert.equal(scene.scene.msgWins.get(9)?.style.main.size, 30, '字号同理：不回溯');
@@ -119,11 +117,11 @@ test('新一页才用新样式：`0x71` 之后入队的文本用当时的全局�
   step(0x76, [im(0x563412)]);
   step(0x71, [im(9)]);
   step(0x6e, [im(9), str('第一页')]);
-  assert.equal(win9Fill(scene), rgbOf(0x563412));
+  assert.equal(win9Fill(scene), '#563412');
   step(0x76, [im(0xb690ff)]); // 角色设定页把它改了
   step(0x71, [im(9)]); // 新一页（脚本站点：CONFIG.txt:171-179 的 i300/i071/show-text 模板）
   step(0x6e, [im(9), str('第二页')]);
-  assert.equal(win9Fill(scene), rgbOf(0xb690ff), '新入队的文本应当用**当前**全局色');
+  assert.equal(win9Fill(scene), '#b690ff', '新入队的文本应当用**当前**全局色');
 });
 
 test('draw-string(0x204) 相反：直绘是"立即消费全局样式"', () => {
@@ -131,10 +129,10 @@ test('draw-string(0x204) 相反：直绘是"立即消费全局样式"', () => {
   step(0x76, [im(0x563412)]);
   step(0x204, [im(196), im(6), im(6), str('喚醒了女神的鍛梁師')]);
   assert.equal(draws.length, 1);
-  assert.equal(draws[0]!.style.fill, rgbOf(0x563412), '直绘用写入那一刻的全局色');
+  assert.equal(draws[0]!.style.fill, '#563412', '直绘用写入那一刻的全局色');
   step(0x76, [im(0xb690ff)]);
   step(0x204, [im(196), im(6), im(46), str('另一个角色')]);
-  assert.equal(draws[1]!.style.fill, rgbOf(0xb690ff), '第二次直绘用新的全局色（同槽叠字）');
+  assert.equal(draws[1]!.style.fill, '#b690ff', '第二次直绘用新的全局色（同槽叠字）');
 });
 
 test('★E3 真实语料：切到角色设定页后，ADV 样例窗(win 9)的色 ≠ 最后一个可见角色名的颜色', async () => {
@@ -169,4 +167,50 @@ test('★E3 真实语料：切到角色设定页后，ADV 样例窗(win 9)的色
     liveLast,
     `ADV 样例窗变成了最后一个可见角色名的颜色（${liveLast}）—— 这正是被测缺陷`,
   );
+});
+
+/**
+ * ★`tickets/T-0102` **判据 4**（「阿瓦罗的名字变成青色，预期橘色」）：把**通道顺序**钉在
+ * 引擎写入端的**位表达式**上，而不是钉在"我自己写的另一个同款函数"上。
+ *
+ * 引擎逐字（`sub_466000` raw 79666；`bgrToRgb` 的注释引了同一行）：
+ *   `*(Font + 1360) = BYTE2(a5) + ((BYTE1(a5) + ((unsigned __int8)a5 << 8)) << 8)`
+ * ⇒ 输入按 **COLORREF（`0x00BBGGRR`）** 读、写成 `0xRRGGBB`。本用例**独立**求值这段位运算
+ * （不调用被测函数），逐值比对 `bgrToRgb` ⇒ 「交换方向写反 / 漏交换 / 多交换一次」必红。
+ *
+ * 取值用**真机 `SAVE.DAT` 的调色板**（`adcd[0..12]`，BGR/COLORREF 编码；全表 1000 条、28 种取值，
+ * 转储见 `tickets/T-0042/notes.md`）。★为什么必须记下这组值：真机调色板里**青色与橘色是相邻的几条**
+ * （`adcd[4]` ⇒ `#00E1FF` 青、`adcd[5]/[7]/[10]` ⇒ `#FFB184`/`#FFD871`/`#DD9B2C` 橘）
+ * ⇒ 「青 vs 橘」这个症状**不可能**由通道顺序产生（同一次交换作用在全表上，白/暖白那几条是
+ * 近似中性色、交换前后几乎无差，所以正文看起来正常而角色名一眼就偏）——
+ * 它是**取了下标 4 还是下标 5/7/10**的问题，即 `14acda`（角色号）的派生。
+ */
+test('★T-0102 判据 4：文本色通道顺序 == 引擎 raw 79666 的写入端表达式（真机调色板逐个比对）', () => {
+  /** 逐字照抄 `sub_466000` raw 79666 的写入端表达式（独立实现，不复用被测函数）。 */
+  const engineWrite = (a5: number): number => {
+    const byte0 = a5 & 0xff; // (unsigned __int8)a5
+    const byte1 = (a5 >>> 8) & 0xff; // BYTE1(a5)
+    const byte2 = (a5 >>> 16) & 0xff; // BYTE2(a5)
+    return (byte2 + ((byte1 + (byte0 << 8)) << 8)) & 0xffffff;
+  };
+  /** 真机 `SAVE.DAT` 的 `adcd[0..12]`（原值，BGR/COLORREF 编码）。 */
+  const PALETTE = [
+    0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffe100, 0x84b1ff, 0xdcdcc6,
+    0x71d8ff, 0x00d3c3, 0x4dbf67, 0x2c9bdd, 0xd15e4b, 0xff90b6,
+  ];
+  for (const v of PALETTE) {
+    assert.equal(
+      bgrToRgb(v),
+      engineWrite(v),
+      `0x${v.toString(16).padStart(6, '0')} 的交换必须与引擎写入端表达式逐位相同`,
+    );
+  }
+  // 真机调色板 ⇒ 渲染色（交换后）：青与橘是**相邻**的下标
+  assert.equal(bgrToRgb(0xffe100), 0x00e1ff, 'adcd[4] ⇒ #00E1FF（青）');
+  assert.equal(bgrToRgb(0x84b1ff), 0xffb184, 'adcd[5] ⇒ #FFB184（浅橘）');
+  assert.equal(bgrToRgb(0x71d8ff), 0xffd871, 'adcd[7] ⇒ #FFD871（金橘）');
+  assert.equal(bgrToRgb(0x2c9bdd), 0xdd9b2c, 'adcd[10] ⇒ #DD9B2C（橘）');
+  assert.equal(bgrToRgb(0xff90b6), 0xb690ff, 'adcd[12] ⇒ #B690FF（紫；= 判据 3 里那个残留色）');
+  // 交换的幂等性反面：交换两次必须回到原值（否则"多交换一次"这类改动也能蒙过上面几条）
+  for (const v of PALETTE) assert.equal(bgrToRgb(bgrToRgb(v)), v & 0xffffff);
 });

@@ -81,6 +81,10 @@ export async function bootHeadless(o: HeadlessBootOptions = {}): Promise<Headles
   });
   const scene = new HeadlessScene({
     ...(o.imageSize ? { imageSize: o.imageSize } : {}),
+    // ★`tickets/T-0025`：默认把**资源源**接给 headless ⇒ `0x208`（纹理尺寸）由它自己读 AGF 头解析，
+    //   不再依赖录制轨迹里的 `tex` 答案（`o.imageSize` 仍作为更高优先级的"外部答案"，
+    //   回放时喂录下来的那份；两者都不给时才落到 0×0 + 缺口记录）。
+    sizeSource: src,
     ...(o.audio ? { audioHost: new NodeAudioHost({ source: src, log }), onLog: log } : {}),
   });
   const engineRef: { e?: Engine } = {};

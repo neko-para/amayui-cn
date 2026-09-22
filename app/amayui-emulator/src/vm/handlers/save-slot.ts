@@ -11,8 +11,9 @@
  * `await handler(ctx)`（`interpreter.ts`），所以 handler 自己 await 文件 I/O 是安全的；
  * 屏障那条走钩子是因为它要等的是**宿主 IPC**、且必须发生在"本指令之后、下一条之前"（见 `frame/loop.ts`）。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../../save/saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
@@ -26,6 +27,16 @@ import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { l2dResetHost } from '../../live2d/runtime.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：存档槽族（save-slot；`0x1a1` 按策略排除：引擎不消费 op1），6 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：存档槽族走操作数计划层，但没有声明计划（0x1a1 按策略排除：引擎不消费 op1）`);
+  return p;
+}
+
 
 /**
  * **读档 = 一次控制转移，不是一次普通函数调用**（`tickets/T-0056`）。
@@ -627,20 +638,24 @@ export async function saveSlotFromEngine(e: Engine, slot: number): Promise<numbe
  */
 const op_slot_read_header: OpHandler = async (c) => {
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
+  // ★走操作数计划层（`tickets/T-0082`）：op2 是**读**（槽号）、op1 与 op3..op9 是**写**。
+  //   读取顺序照引擎：**先读 op2** 再尝试打开文件（读是纯的，"读了几位"与"写了几位"是两件事）。
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x1a0：读槽头走操作数计划层，但没有声明计划');
+  const slot = p.int(2) ?? 0;
   const fs = e.fileSource;
   if (!fs?.readSaveSlot) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1); // 打不开（宿主没有该能力 ⇒ 与"文件不存在"同码）
+    p.setInt(1, 1); // 打不开（宿主没有该能力 ⇒ 与"文件不存在"同码）
     return;
   }
   const bytes = await fs.readSaveSlot(slot);
   if (!bytes) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    p.setInt(1, 1);
     return;
   }
   const head = parseSlotHeader(bytes);
   if (!head.ok) {
-    writeIntOperand(e, c.frame, c.instr, 1, 2);
+    p.setInt(1, 2);
     return;
   }
   // ★**写序按引擎**（`sub_42DC70` raw 38390-38397，`tickets/T-0077` 的 B4 项）：成功分支里引擎
@@ -649,14 +664,14 @@ const op_slot_read_header: OpHandler = async (c) => {
   //   此前 emulator 把 `op1 = 0` 写在了最前面（行为上多数脚本看不出来，但"读到 op1=0 时 op3..op9 是否已就绪"
   //   这种观察是会露的）⇒ 现按体对齐。
   const h = head.header;
-  writeIntOperand(e, c.frame, c.instr, 3, h.year);
-  writeIntOperand(e, c.frame, c.instr, 4, h.month);
-  writeIntOperand(e, c.frame, c.instr, 5, h.day);
-  writeIntOperand(e, c.frame, c.instr, 6, h.hour);
-  writeIntOperand(e, c.frame, c.instr, 7, h.minute);
-  writeIntOperand(e, c.frame, c.instr, 8, h.second);
-  writeIntOperand(e, c.frame, c.instr, 9, h.playSeconds);
-  writeIntOperand(e, c.frame, c.instr, 1, 0);
+  p.setInt(3, h.year);
+  p.setInt(4, h.month);
+  p.setInt(5, h.day);
+  p.setInt(6, h.hour);
+  p.setInt(7, h.minute);
+  p.setInt(8, h.second);
+  p.setInt(9, h.playSeconds);
+  p.setInt(1, 0);
 };
 
 /**
@@ -671,7 +686,9 @@ const op_slot_read_header: OpHandler = async (c) => {
  */
 const op_slot_load: OpHandler = async (c) => {
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
+  // ★`tickets/T-0082`：op2 走计划层；**op1 声明为 `unused`**（引擎不读也不写）。
+  const plan = planFor(c);
+  const slot = plan.int(2) ?? 0;
   // 失败静默（引擎同：`sub_410160` 的返回值被调度器丢弃）。
   const { transferredTo } = await loadSlotIntoEngine(e, slot, { full: true });
   // ★控制转移（引擎 `sub_410160` 的 a6=1 段）：`cur` 已切到根脚本并重载 ⇒ 本帧从它的 ip 继续，
@@ -682,11 +699,12 @@ const op_slot_load: OpHandler = async (c) => {
 
 /** `0x19F`（`sub_42DB10` raw 38334-38363）：读档（`a6=a7=0`：不还原字体/额外块）。★写 op1（引擎 raw 38362）。 */
 const op_slot_load_short: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
+  const slot = (plan.int(2) ?? 0);
   // a6=0 ⇒ 引擎此处**不转移**（只还原两张表；语料 0 处）。
   const { code } = await loadSlotIntoEngine(e, slot, { full: false });
-  writeIntOperand(e, c.frame, c.instr, 1, code);
+  plan.setInt(1, code);
 };
 
 /**
@@ -695,36 +713,39 @@ const op_slot_load_short: OpHandler = async (c) => {
  * ★未建模确认框（见 `SLOT_GAPS`）：宿主无对话框 ⇒ 直接覆盖（等价于玩家点了"是"）。
  */
 const op_slot_save: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
-  writeIntOperand(e, c.frame, c.instr, 1, await saveSlotFromEngine(e, slot));
+  const slot = (plan.int(2) ?? 0);
+  plan.setInt(1, await saveSlotFromEngine(e, slot));
 };
 
 /** `0x1AB`（`sub_42DFC0` raw 38462-38483）：删槽（`.DAT` + `.STH`）。`op1`：0 都成功 / 1 `.DAT` 失败 / 2 `.STH` 失败。 */
 const op_slot_delete: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
+  const slot = (plan.int(2) ?? 0);
   const fs = e.fileSource;
   if (!fs?.deleteSaveSlot) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
   const r = await fs.deleteSaveSlot(slot);
-  writeIntOperand(e, c.frame, c.instr, 1, r.dat ? (r.sth ? 0 : 2) : 1);
+  plan.setInt(1, r.dat ? (r.sth ? 0 : 2) : 1);
 };
 
 /** `0x1AC`（`sub_42E0A0` raw 38485-38513）：复制槽（`op2` → `op3`，两个文件都复制）。 */
 const op_slot_copy: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const from = readIntOperand(e, c.frame, c.instr, 2);
-  const to = readIntOperand(e, c.frame, c.instr, 3);
+  const from = (plan.int(2) ?? 0);
+  const to = (plan.int(3) ?? 0);
   const fs = e.fileSource;
   if (!fs?.copySaveSlot) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
   const r = await fs.copySaveSlot(from, to);
-  writeIntOperand(e, c.frame, c.instr, 1, r.dat ? (r.sth ? 0 : 2) : 1);
+  plan.setInt(1, r.dat ? (r.sth ? 0 : 2) : 1);
 };
 
 /**
@@ -742,12 +763,13 @@ const op_slot_copy: OpHandler = async (c) => {
  * 行为与引擎的"该槽是空表面"等价。
  */
 const op_slot_thumb_write: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
-  const texSlot = readIntOperand(e, c.frame, c.instr, 3);
+  const slot = (plan.int(2) ?? 0);
+  const texSlot = (plan.int(3) ?? 0);
   const fs = e.fileSource;
   if (!fs?.writeSlotThumb) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
   const px = c.native.getSlotPixels?.(texSlot) ?? null;
@@ -757,10 +779,10 @@ const op_slot_thumb_write: OpHandler = async (c) => {
   try {
     await fs.writeSlotThumb(slot, payload);
   } catch {
-    writeIntOperand(e, c.frame, c.instr, 1, 2);
+    plan.setInt(1, 2);
     return;
   }
-  writeIntOperand(e, c.frame, c.instr, 1, 0);
+  plan.setInt(1, 0);
 };
 
 /**
@@ -783,29 +805,30 @@ const op_slot_thumb_write: OpHandler = async (c) => {
  * 但那块纹理仍是空的 ⇒ 右侧缩略图永远不显示。
  */
 const op_slot_thumb_read: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const slot = readIntOperand(e, c.frame, c.instr, 2);
-  const texSlot = readIntOperand(e, c.frame, c.instr, 3);
+  const slot = (plan.int(2) ?? 0);
+  const texSlot = (plan.int(3) ?? 0);
   const fs = e.fileSource;
   if (!fs?.readSlotThumb) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
   const bytes = await fs.readSlotThumb(slot);
   if (!bytes || bytes.length === 0) {
-    writeIntOperand(e, c.frame, c.instr, 1, 1);
+    plan.setInt(1, 1);
     return;
   }
   const bmp = decodeBmp(bytes);
   if (bmp) {
     c.native.setSlotPixels?.(texSlot, bmp.width, bmp.height, bmp.rgba);
-    writeIntOperand(e, c.frame, c.instr, 1, 0);
+    plan.setInt(1, 0);
     return;
   }
   // 非 BMP：可能是本工程 T-0018 时期写的自描述空块（4 字节长度前缀 + 载荷）⇒ 认得出来就算"读到了"
   // （引擎格式的槽不会走到这里：它们的 .STH 一定是 BMP）。解不出的其它内容 ⇒ 2（引擎同码）。
   const ok = bytes.length >= 4 && 4 + readU32(bytes, 0) <= bytes.length;
-  writeIntOperand(e, c.frame, c.instr, 1, ok ? 0 : 2);
+  plan.setInt(1, ok ? 0 : 2);
 };
 
 /** 小端 u32（`saveSlot.ts` 里同类读取是私有的，这里就地一份，避免为 4 字节开接口）。 */

@@ -306,11 +306,11 @@ test('消息窗字段一族（0x80 setter / 0x7F getter / 0x300 / 0x301）：真
   const e = new Engine(new StubNative(() => {}));
   const read = (slot: number): number => asI32(dec(e.key, e.curScript().locals.int.get(slot) ?? 0));
 
-  // 0x80：_this[21631] = op1（窗格/部件索引）
+  // 0x80：默认窗（引擎 `_this[21631]` = `Font+1228`）；★建模在 `msgwin.defaultWin`（`tickets/T-0101` 的 D5 唯一真源）
   loadScriptIntoFrame(e.curScript(), nOp(0x80, [0x30], [0x3]), 'TEST.BIN');
   e.globals.int.set(0x30, enc(e.key, 9));
   await stepOnce(e);
-  assert.equal(e.engineValues.get(21631), 9, '0x80 应把 op1(=9) 写进消息窗部件索引');
+  assert.equal(e.msgwin.defaultWin, 9, '0x80 应把 op1(=9) 写进默认窗（唯一真源 msgwin.defaultWin）');
 
   // 0x7F：op1 = _this[21668] = message:MessageSpeed（★不是消息窗 α）
   e.engineValues.set(21668, 8);
@@ -347,7 +347,7 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
   //           引擎内部且 emulator 无事可做 ⇒ 'engine-internal'（纯 no-op）。
   const cases: [number, number, string][] = [
     [0x7f, 1, 'implemented'], // 消息速度读数（真实现：读 engineValues[21668] = message:MessageSpeed）
-    [0x80, 1, 'implemented'], // 消息窗部件索引 setter（真实现：写 engineValues[21631]）
+    [0x80, 1, 'implemented'], // 默认窗 setter（真实现：写唯一真源 msgwin.defaultWin = 引擎 Font+1228；T-0101 D5）
     [0x300, 3, 'implemented'], // 消息窗对象旗标/值（真实现：写 engineValues[122466+v]/[122476+v]）
     [0x301, 1, 'implemented'], // 清消息窗对象项（真实现：写 engineValues[122486+v]=0）
     [0x142, 1, 'implemented'], // 写引擎开关 _this[174812]（真实现：写 engineValues[174812]）

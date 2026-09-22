@@ -22,8 +22,8 @@
  * 因此本族指令是「设置界面 → 脚本回读」闭环的一半（另一半是 CONFIG1 的写入路径）。
  */
 import type { OpHandler, StepCtx } from '../step.js';
-import { readIntOperand, readStringOperand, writeIntOperand, writeStringOperand } from '../operand.js';
 import { cfgInt, cfgStr, DEFAULT_GAME_VERSION } from '../../engineConfig.js';
+import { operandsFor } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
 import { CFG } from '../../configRegistry.js';
 
@@ -84,19 +84,33 @@ const CFG_READ: Record<number, CfgReadSpec> = {
   0x2ed: { operand: 1, key: CFG.messageMessageFade },
 };
 
+/**
+ * 共用 handler：**配置读取族**（`CFG_READ` 的 7 条）。
+ *
+ * ★已迁到**操作数计划层**（`tickets/T-0082` RF-A 批次"配置读取族"）：本族方向是两态的
+ * （选择器 `r` / 结果位 `w`），由 `operandPlan.ts` 的计划声明，这里不再手写"读第几位、写第几位"。
+ * 缺计划 = 编程错误 ⇒ 直接抛（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ */
 const op_cfg_read: OpHandler = (c) => {
   const spec = CFG_READ[c.instr.opcode];
   if (!spec) return;
+  const p = operandsFor(c);
+  if (!p) {
+    throw new Error(
+      `0x${c.instr.opcode.toString(16)}：配置读取族走操作数计划层，但没有声明计划（见 src/vm/operandPlan.ts）`,
+    );
+  }
   let key: string | undefined = spec.key;
   if (spec.selector !== undefined) {
-    const sel = readIntOperand(c.e, c.frame, c.instr, spec.selector);
+    const sel = p.int(spec.selector);
+    if (sel === undefined) return;
     key = spec.keys?.[sel];
     if (key === undefined) return; // 越界：引擎走报错分支（不写操作数）
   }
   if (key === undefined) return;
   let v = cfg(c, key);
   if (spec.bool) v = v !== 0 ? 1 : 0;
-  writeIntOperand(c.e, c.frame, c.instr, spec.operand, v);
+  p.setInt(spec.operand, v);
 };
 
 /**
@@ -122,7 +136,9 @@ const op_cfg_read: OpHandler = (c) => {
  */
 const op_cfg_read_string: OpHandler = (c) => {
   const ini = c.e.config ? cfgStr(c.e.config, CFG.setGameVersion, DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
-  writeStringOperand(c.e, c.frame, c.instr, 1, ini);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x2eb：配置字符串读取走操作数计划层，但没有声明计划');
+  p.setStr(1, ini);
 };
 
 
@@ -141,10 +157,11 @@ const op_cfg_read_string: OpHandler = (c) => {
  * 备份字体名 → `call-script SELFONT` 改字体 → `i194` 比较 → 依结果走恢复/重载分支。
  */
 const op_string_equal: OpHandler = (c) => {
-  const e = c.e;
-  const a = readStringOperand(e, c.frame, c.instr, 2);
-  const b = readStringOperand(e, c.frame, c.instr, 3);
-  writeIntOperand(e, c.frame, c.instr, 1, a === b ? 1 : 0);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x194：字符串相等判定走操作数计划层，但没有声明计划');
+  const a = p.str(2) ?? '';
+  const b = p.str(3) ?? '';
+  p.setInt(1, a === b ? 1 : 0);
 };
 
 /**
@@ -171,10 +188,11 @@ const op_string_equal: OpHandler = (c) => {
  * ⇒ **空名条目也会被处理**，对它们跑 `lookup-array-2d` 的三张表并置 `global def7c[]` 的位。
  */
 const op_string_not_equal: OpHandler = (c) => {
-  const e = c.e;
-  const a = readStringOperand(e, c.frame, c.instr, 2);
-  const b = readStringOperand(e, c.frame, c.instr, 3);
-  writeIntOperand(e, c.frame, c.instr, 1, a === b ? 0 : 1);
+  const p = operandsFor(c);
+  if (!p) throw new Error('0x195：字符串不等判定走操作数计划层，但没有声明计划');
+  const a = p.str(2) ?? '';
+  const b = p.str(3) ?? '';
+  p.setInt(1, a === b ? 0 : 1);
 };
 
 /** 配置读取指令族（`OPS`：读配置键 → 写回脚本操作数）+ 字符串相等/不等判定 + `set:GameVersion` 字符串读。 */
@@ -184,3 +202,23 @@ export const CONFIG_READ_OPS: OpTable = [
   [0x195, op_string_not_equal],
   [0x2eb, op_cfg_read_string],
 ];
+
+/**
+ * 本族每条 opcode + 它**写回哪一位**（结果位）与**读哪几位**（选择器 / 参与比较的串）。
+ *
+ * 用途 = 守卫（`test/operand-plan.test.ts`）**从同一张表推导**该族应有的计划，再逐条比对
+ * `planOf()` ⇒ 「往 `CFG_READ` 加了一条却忘了声明计划」在 CI 里立即可见（handler 侧会直接抛）。
+ */
+export function cfgReadPlanOps(): { op: number; argc: number; operand: number; reads: number[] }[] {
+  const rows = Object.entries(CFG_READ).map(([op, spec]) => ({
+    op: Number(op),
+    operand: spec.operand,
+    reads: spec.selector !== undefined ? [spec.selector] : [],
+  }));
+  rows.push({ op: 0x194, operand: 1, reads: [2, 3] }); // op1 = (op2 == op3)
+  rows.push({ op: 0x195, operand: 1, reads: [2, 3] }); // op1 = (op2 != op3)
+  rows.push({ op: 0x2eb, operand: 1, reads: [] }); // op1（字符串）= set:GameVersion
+  return rows
+    .map((r) => ({ ...r, argc: Math.max(r.operand, ...r.reads) }))
+    .sort((a, b) => a.op - b.op);
+}

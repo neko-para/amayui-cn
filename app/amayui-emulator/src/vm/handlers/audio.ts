@@ -38,6 +38,7 @@
  */
 import type { StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ADV_ACTIVE } from '../engine.js';
 import { pushVoiceRecord } from './text-items.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
@@ -46,6 +47,18 @@ import { cfgEquals, cfgInt } from '../../engineConfig.js';
 import { CFG, cfgSoundVolumeKey } from '../../configRegistry.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { resolveBgmResource } from './music-table.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"音频族整表"）**20 条一次迁完**：形状最单一（除三条 argc 0 外全是
+ * "读 op1..opN → 交给宿主"）⇒ 迁移是机械的，且由「计划 ⟷ 实现」逐位核对 + 行为测试背书。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：音频指令族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import type { OpTable } from './shared.js';
 
 /** 发一条音频意图给宿主（宿主没实现 `audio` ⇒ 静默丢弃，由闸门 A 留痕）。 */
@@ -66,17 +79,22 @@ function voicePlayOrDefer(c: StepCtx, ch: number, id: number, loop: boolean): vo
 
 /** `0xB4` play-sound-effect：op1 = 音效 id、op2 = SE 通道号（0..9）。★只装载，起播要另发 0xB5/0xBA。 */
 const op_se_load: OpHandlerLike = (c) => {
-  emit(c, { kind: 'se-load', id: readIntOperand(c.e, c.frame, c.instr, 1), ch: readIntOperand(c.e, c.frame, c.instr, 2) });
+  const p = planFor(c);
+  emit(c, { kind: 'se-load', id: (p.int(1) ?? 0), ch: (p.int(2) ?? 0) });
 };
 
 /** `0xB5` / `0xBA`：SE 通道起播（循环标志 = 0xB5 为 0、0xBA 为 1；引擎 SoundBuffer `+9296`）。 */
 const op_se_play: OpHandlerLike = (c) => {
-  emit(c, { kind: 'se-play', ch: readIntOperand(c.e, c.frame, c.instr, 1), loop: c.instr.opcode === 0xba });
+  // ★走操作数计划层（`tickets/T-0082` 批次"共用 handler 的两族"）：只读 op1（通道）。
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：SE 起播走操作数计划层，但没有声明计划`);
+  emit(c, { kind: 'se-play', ch: p.int(1) ?? 0, loop: c.instr.opcode === 0xba });
 };
 
 /** `0xB6`：SE 通道停止/释放（引擎 `sub_4B5050` → `sub_4B6390` + 清 `SE[303+ch]`/`[262+ch]`）。 */
 const op_se_stop: OpHandlerLike = (c) => {
-  emit(c, { kind: 'se-stop', ch: readIntOperand(c.e, c.frame, c.instr, 1) });
+  const p = planFor(c);
+  emit(c, { kind: 'se-stop', ch: (p.int(1) ?? 0) });
 };
 
 /**
@@ -92,6 +110,7 @@ const op_se_stop: OpHandlerLike = (c) => {
  * 试听切换时也各停一次（`:462`/`:552`）。
  */
 const op_bgm_stop: OpHandlerLike = (c) => {
+  const p = planFor(c);
   // ★`sub_489B50` 的第一件事就是 `Music[259] = 0`（raw 106185）—— 即"停"同时**清当前曲 id**。
   //   这一点是读档 BGM 还原链的一半：`SAVE.txt:934 i0b8`（确认读档后）清掉 id，读档再把存档里的
   //   id 装回（raw 19911 = 镜像 `[2]`），最后 `CALLBACK_LOAD.BIN:20 i0b7 0` 用它重播。
@@ -106,11 +125,12 @@ const op_bgm_stop: OpHandlerLike = (c) => {
 
 /** `0x2BF`：延迟播 SE —— op1 = 通道、op2 = 循环标志、op3 = 延迟毫秒（引擎武装 + 每帧 `sub_4B5230`）。 */
 const op_se_delay: OpHandlerLike = (c) => {
+  const p = planFor(c);
   emit(c, {
     kind: 'se-delay',
-    ch: readIntOperand(c.e, c.frame, c.instr, 1),
-    loop: readIntOperand(c.e, c.frame, c.instr, 2) !== 0,
-    delayMs: readIntOperand(c.e, c.frame, c.instr, 3),
+    ch: (p.int(1) ?? 0),
+    loop: (p.int(2) ?? 0) !== 0,
+    delayMs: (p.int(3) ?? 0),
   });
 };
 
@@ -210,7 +230,10 @@ function musicSourceSlot(e: StepCtx['e']): number {
 const op_bgm_slot: OpHandlerLike = (c) => {
   const loop = c.instr.opcode === 0xb7;
   setMusicLoop(c.e, loop);
-  const arg = readIntOperand(c.e, c.frame, c.instr, 1);
+  // ★操作数走计划层（`tickets/T-0082`）：只读 op1（曲 id；`0` = 重播当前曲）。
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：BGM 起播走操作数计划层，但没有声明计划`);
+  const arg = p.int(1) ?? 0;
   const id = arg !== 0 ? arg : musicId(c.e);
   if (id === 0) return; // 引擎：当前曲 id 也是 0 ⇒ sub_489B50（此刻本来就没在播）
   if (arg !== 0) setMusicId(c.e, arg);
@@ -227,6 +250,7 @@ const op_bgm_slot: OpHandlerLike = (c) => {
  * 跳读态在时**不做**"给语音让路"的暂停 ⇒ 这里把 `fadeOnVoice` 一并按它收敛，让宿主行为与真机一致。
  */
 const op_play_bgm: OpHandlerLike = (c) => {
+  const p = planFor(c);
   // ★键名曾是拼错的 'set:keepmusicvoice'（raw 0 次）⇒ 恒读 fallback、BGM 让路永不生效；
   //   且引擎判据是 **== 1**（raw 29769-29777），不是"非 0"（T-0057 R1）。
   const cfg = c.e.config;
@@ -244,7 +268,7 @@ const op_play_bgm: OpHandlerLike = (c) => {
   //   ★`Music[261]` 的**旧值**要先取：`sub_489C20` 的"是否重起"判据用的是旧值（`Music[261] != a3`）。
   const oldLoop = musicLoop(c.e);
   setMusicLoop(c.e, true);
-  const arg = readIntOperand(c.e, c.frame, c.instr, 1);
+  const arg = (p.int(1) ?? 0);
   if (arg === 0) {
     const cur = musicId(c.e);
     if (cur !== 0) {
@@ -353,7 +377,8 @@ function switchMusicEnable(c: StepCtx, a2: number): void {
 
 /** `0xBB`：SE 总开关（`sub_420D90` raw 29782-29789：`sub_408D90(this, op1)`）。 */
 const op_se_enable: OpHandlerLike = (c) => {
-  switchSeEnable(c, readIntOperand(c.e, c.frame, c.instr, 1));
+  const p = planFor(c);
+  switchSeEnable(c, (p.int(1) ?? 0));
 };
 
 /**
@@ -367,7 +392,8 @@ const op_se_enable: OpHandlerLike = (c) => {
  * `#enabled.bgm = false`（`bgm-play` 只记 id 不起播）⇒ 语义仍正确。
  */
 const op_bgm_mode: OpHandlerLike = (c) => {
-  const raw = readIntOperand(c.e, c.frame, c.instr, 1);
+  const p = planFor(c);
+  const raw = (p.int(1) ?? 0);
   if (raw > 2) return; // 引擎：`result <= 2` 才动作
   switchMusicEnable(c, raw - 1);
 };
@@ -391,11 +417,12 @@ const op_bgm_mode: OpHandlerLike = (c) => {
  * ★`frames[cur].state = 5` 与全族其它 handler 一样是引擎的"本帧执行态"，本工程整体不建模（见 `0xB4` 一族）。
  */
 const op_set_sound_mode: OpHandlerLike = (c) => {
-  const kind = readIntOperand(c.e, c.frame, c.instr, 1);
+  const p = planFor(c);
+  const kind = (p.int(1) ?? 0);
   // ★raw 里 op2 是**在每个分支内**各读一次（29996/30001/30006/30011），非法类别分支不读它；
   //   这里统一在入口读一次：读操作数是纯取值（`readIntOperand_41BF50` 无副作用），对 VM 不可观测，
   //   但统一读能让 `test/opcode-operands.test.ts` 的「1..argc 全被碰」口径守卫覆盖本指令。
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const value = (p.int(2) ?? 0);
   switch (kind) {
     case 1:
       switchMusicEnable(c, value);
@@ -437,6 +464,7 @@ const op_set_sound_mode: OpHandlerLike = (c) => {
  * 所以这里不做"按槽分派"的假动作，只按槽号判"是否有后端"（`slot < 0` = NoMusic ⇒ 引擎那一步是空桩）。
  */
 const op_bgm_pause_toggle: OpHandlerLike = (c) => {
+  const p = planFor(c);
   const paused = !musicPaused(c.e);
   setMusicPaused(c.e, paused);
   if (musicSourceSlot(c.e) < 0) return; // NoMusic 槽：vtable+12 = sub_4350E0（空桩）
@@ -454,8 +482,9 @@ const op_bgm_pause_toggle: OpHandlerLike = (c) => {
  *    **真正把曲放起来**的那一步（宿主的 `bgmPlay` 自带同曲同循环不重启 ⇒ 正在播时不会被打断）。
  */
 const op_bgm_fade: OpHandlerLike = (c) => {
-  const value = readIntOperand(c.e, c.frame, c.instr, 1);
-  const step = readIntOperand(c.e, c.frame, c.instr, 2);
+  const p = planFor(c);
+  const value = (p.int(1) ?? 0);
+  const step = (p.int(2) ?? 0);
   const id = musicId(c.e);
   if (value <= 0) setMusicId(c.e, 0);
   else if (id !== 0) emit(c, bgmPlayIntent(c.e, id, musicLoop(c.e)));
@@ -474,17 +503,21 @@ const op_bgm_fade: OpHandlerLike = (c) => {
  * 凡走这条习语的场景（SC0000/SC0010/SC0130/… 共 30 处）都会中断。
  */
 const op_set_music_field: OpHandlerLike = (c) => {
+  const p = planFor(c);
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200;
     emit(c, { kind: 'bgm-fade', value: 0, step: 100 });
   }
-  setMusicId(c.e, readIntOperand(c.e, c.frame, c.instr, 1));
+  setMusicId(c.e, (p.int(1) ?? 0));
 };
 
 /** `0xC4`（循环位 0）/ `0x1BD`（循环位 1）：播语音到通道 0（ADV 位在时寄存）。 */
 const op_play_voice: OpHandlerLike = (c) => {
   const loop = c.instr.opcode === 0x1bd;
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
+  // ★操作数走计划层（`tickets/T-0082`）：只读 op1（语音 id）。
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：播语音走操作数计划层，但没有声明计划`);
+  const id = p.int(1) ?? 0;
   voicePlayOrDefer(c, 0, id, loop);
   // 引擎在同一 handler 末尾（raw 29904-29908 / 30058-30062）往**文本项记录表**压一条语音记录：
   //   `if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 循环位, 0, Engine[5053])`
@@ -494,9 +527,10 @@ const op_play_voice: OpHandlerLike = (c) => {
 
 /** `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录。 */
 const op_voice_play_slot: OpHandlerLike = (c) => {
-  const id = readIntOperand(c.e, c.frame, c.instr, 1);
-  const loop = readIntOperand(c.e, c.frame, c.instr, 2) !== 0;
-  const ch = readIntOperand(c.e, c.frame, c.instr, 3);
+  const p = planFor(c);
+  const id = (p.int(1) ?? 0);
+  const loop = (p.int(2) ?? 0) !== 0;
+  const ch = (p.int(3) ?? 0);
   voicePlayOrDefer(c, ch, id, loop);
   // 引擎 raw 33650-33654：`if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 0, op3, Engine[op3+5053])`
   // ⇒ 选择器 = **通道号**（`0x2F3` 就是按它查回语音 id 的）。
@@ -505,41 +539,48 @@ const op_voice_play_slot: OpHandlerLike = (c) => {
 
 /** `0x2C0`（通道 0）/ `0x2F5`（op4 = 通道）：把语音排入通道（带延迟；引擎 `sub_4BBA40`）。 */
 const op_voice_queue: OpHandlerLike = (c) => {
-  const ch = c.instr.opcode === 0x2f5 ? readIntOperand(c.e, c.frame, c.instr, 4) : 0;
+  // ★操作数走计划层（`tickets/T-0082`）：0x2C0 读 op1..3（argc 3）、0x2F5 多读 op4（argc 4）。
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：语音排队走操作数计划层，但没有声明计划`);
+  const ch = c.instr.opcode === 0x2f5 ? (p.int(4) ?? 0) : 0;
   emit(c, {
     kind: 'voice-queue',
     ch,
-    id: readIntOperand(c.e, c.frame, c.instr, 1),
-    aux: readIntOperand(c.e, c.frame, c.instr, 2),
-    delayMs: readIntOperand(c.e, c.frame, c.instr, 3),
+    id: p.int(1) ?? 0,
+    aux: p.int(2) ?? 0,
+    delayMs: p.int(3) ?? 0,
   });
 };
 
 /** `0x2F6`：复位语音通道（停播 + 清状态 + 丢弃寄存）。 */
 const op_voice_reset: OpHandlerLike = (c) => {
-  emit(c, { kind: 'voice-reset', ch: readIntOperand(c.e, c.frame, c.instr, 1) });
+  const p = planFor(c);
+  emit(c, { kind: 'voice-reset', ch: (p.int(1) ?? 0) });
 };
 
 /** `0x2F7`：置语音通道状态位（引擎 `Engine[21315+ch] = 1`）。 */
 const op_voice_flag: OpHandlerLike = (c) => {
-  emit(c, { kind: 'voice-flag', ch: readIntOperand(c.e, c.frame, c.instr, 1) });
+  const p = planFor(c);
+  emit(c, { kind: 'voice-flag', ch: (p.int(1) ?? 0) });
 };
 
 /** `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。 */
 const op_voice_pan: OpHandlerLike = (c) => {
+  const p = planFor(c);
   emit(c, {
     kind: 'voice-pan',
-    ch: readIntOperand(c.e, c.frame, c.instr, 1),
-    pan: readIntOperand(c.e, c.frame, c.instr, 2),
+    ch: (p.int(1) ?? 0),
+    pan: (p.int(2) ?? 0),
   });
 };
 
 /** `0x2FF`：语音通道音量因子**预备**（引擎 `Engine[21318+ch]=1`、`[21321+ch]=op2`，尚未生效）。 */
 const op_voice_factor_prepare: OpHandlerLike = (c) => {
+  const p = planFor(c);
   emit(c, {
     kind: 'voice-factor-prepare',
-    ch: readIntOperand(c.e, c.frame, c.instr, 1),
-    value: readIntOperand(c.e, c.frame, c.instr, 2),
+    ch: (p.int(1) ?? 0),
+    value: (p.int(2) ?? 0),
   });
 };
 
@@ -558,6 +599,7 @@ const op_voice_factor_prepare: OpHandlerLike = (c) => {
  *    = **寄存语音槽**（`0xC4` 的 ADV 分支写 `[122505]=id`/`[122508]=标志`）。
  */
 const op_clear_message_sound_fields: OpHandlerLike = (c) => {
+  const p = planFor(c);
   const e = c.e;
   for (let ch = 0; ch < 3; ch++) {
     e.engineValues.set(ENGINE_FIELD.voiceChannelStateBase + ch, 0);
@@ -584,18 +626,25 @@ const op_clear_message_sound_fields: OpHandlerLike = (c) => {
  * （重写侧用 Web Audio，声部按需惰性创建，没有"驱动文件"这一层）⇒ 记为已登记缺口，不假装实现。
  */
 const op_audio_device_init: OpHandlerLike = (c) => {
+  const p = planFor(c);
   const e = c.e;
-  e.engineValues.set(ENGINE_FIELD.audioDeviceField0, readIntOperand(e, c.frame, c.instr, 2));
-  e.engineValues.set(ENGINE_FIELD.audioDeviceField1, readIntOperand(e, c.frame, c.instr, 3));
-  c.log('0x1C9: 音频设备/驱动初始化 —— 设备文件装载与窗口坐标下发未建模（重写侧无驱动层，缺口已登记）');
+  // ★按引擎顺序读 op1（= **驱动 id**）。重写侧没有驱动层 ⇒ 不装载、只**报出来** ——
+  //   这不是"读了再丢"：引擎确实读它，日志就是这条指令在本工程的观测面（见 `tickets/T-0082` 的批次说明）。
+  const driverId = p.int(1) ?? 0;
+  e.engineValues.set(ENGINE_FIELD.audioDeviceField0, (p.int(2) ?? 0));
+  e.engineValues.set(ENGINE_FIELD.audioDeviceField1, (p.int(3) ?? 0));
+  c.log(
+    `0x1C9: 音频设备/驱动初始化 —— 驱动 id=${driverId}；设备文件装载与窗口坐标下发未建模（重写侧无驱动层，缺口已登记）`,
+  );
 };
 
 /** `0x302`：语音通道音量因子**生效**并应用（引擎 `Engine[21318+ch]=0x10000` → `sub_4BBC30`）。 */
 const op_voice_factor_apply: OpHandlerLike = (c) => {
+  const p = planFor(c);
   emit(c, {
     kind: 'voice-factor-apply',
-    ch: readIntOperand(c.e, c.frame, c.instr, 1),
-    value: readIntOperand(c.e, c.frame, c.instr, 2),
+    ch: (p.int(1) ?? 0),
+    value: (p.int(2) ?? 0),
   });
 };
 
@@ -604,8 +653,9 @@ const op_voice_factor_apply: OpHandlerLike = (c) => {
  * 引擎同时把值写进配置 `sound:Volume0..4`（所以设置界面的滑块改完能持久化），越界走报错分支不写。
  */
 const op_set_volume: OpHandlerLike = (c) => {
-  const category = readIntOperand(c.e, c.frame, c.instr, 1);
-  const value = readIntOperand(c.e, c.frame, c.instr, 2);
+  const p = planFor(c);
+  const category = (p.int(1) ?? 0);
+  const value = (p.int(2) ?? 0);
   if (category < 0 || category > 4) return; // 引擎：sprintf("setVolume") 报错，不写
   setConfigValue(c.e, cfgSoundVolumeKey(category), value);
   emit(c, { kind: 'volume', category, value });

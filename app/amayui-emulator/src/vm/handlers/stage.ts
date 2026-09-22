@@ -15,10 +15,21 @@
  * `scripts/asm/age-shared.mjs` 的 `isLabelArgument` 第 3 条就是 `opcode === 0xD4 && x >= 2`
  * —— 本条实现只是把它接到了 VM 上。
  */
-import type { OpHandler } from '../step.js';
+import type { OpHandler, StepCtx } from '../step.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand } from '../operand.js';
 import { STAGE_GATE } from '../stageLoop.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：阶梯动画时间表族（stage），3 条）；缺计划 = 编程错误。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：阶梯动画时间表族（stage）走操作数计划层，但没有声明计划`);
+  return p;
+}
+
 
 /**
  * `0xD3`（`sub_42AC40` raw 36668-36685，argc 0）：**清空阶梯时间表**。
@@ -27,6 +38,7 @@ import type { OpTable } from './shared.js';
  * 返回值（旧 `end` 指针）在本 VM 里无人消费 ⇒ 不复刻。
  */
 const op_stage_reset: OpHandler = (c) => {
+  const plan = planFor(c);
   c.e.stage.reset();
 };
 
@@ -39,10 +51,11 @@ const op_stage_reset: OpHandler = (c) => {
  * 天然接续上一条的时刻，语料就是靠这一点把"重活 N 次 + 收尾 2 次"拼成一条时间轴。
  */
 const op_stage_add: OpHandler = (c) => {
-  const step = readIntOperand(c.e, c.frame, c.instr, 1);
-  const count = readIntOperand(c.e, c.frame, c.instr, 2);
-  const body = readIntOperand(c.e, c.frame, c.instr, 3);
-  const tail = readIntOperand(c.e, c.frame, c.instr, 4);
+  const plan = planFor(c);
+  const step = (plan.int(1) ?? 0);
+  const count = (plan.int(2) ?? 0);
+  const body = (plan.int(3) ?? 0);
+  const tail = (plan.int(4) ?? 0);
   c.e.stage.add(step, count, body, tail);
 };
 
@@ -58,8 +71,9 @@ const op_stage_add: OpHandler = (c) => {
  * emulator：`c.jump(c.frame.ip)` = "停在同一条指令"，与 `95805 = 0` 等价。
  */
 const op_stage_run: OpHandler = (c) => {
+  const plan = planFor(c);
   const e = c.e;
-  const exitLabel = readIntOperand(e, c.frame, c.instr, 1);
+  const exitLabel = (plan.int(1) ?? 0);
   if (e.stage.index === 0) {
     // 引擎 raw 36699-36714：刷输入（消费挂起事件）→ 记身份/打断点 → 起计时器 → 排序。
     // ★输入刷在这里做（`sub_478090` + `sub_477220`）：起表那一刻把待处理输入吃掉，

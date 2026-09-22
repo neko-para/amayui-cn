@@ -5,10 +5,10 @@
   "area": "docs/03-engine",
   "why": "2026-09 文档模型重构（docs-new/00-overview/authority.md 附录）落地了 A–F+H 期；G 期（机制叙述瘦身）只做了有界的一遍：已剥掉 4 份文档的「2026-09 订正」话术与生成物摘要的历史前缀，但**逐条判重**没做。审计（只读子代理，2026-09）抽 8 条 capabilities 条目，判定 6 条是**真重复**（同 raw、同不变量、机制文档与台账各写一遍）：text-line-pitch-font-1380←adv-text-rendering.md:204、drawitem-world-matrix-composition←rendering.md:125、music-number-table-lifecycle←sound-system.md:169、append-pack-discovery-and-activation←resource-loading.md:13、live2d-node-matrix-compose←live2d.md:150、scene-3d-weather-effects-rain-snow-leaf←stub-reaudit-2026-09.md:103（后者在 99-records 里，已过期）。另有单向回链（resource-loading.md / gallery-and-unlock-flags.md 被 caps 引用但 caps 不引回）与一处**未落库**：copyright-effect.md（LOGO 版权页 ~5s 动画）没有专属 capabilities 条目，结论只在 tickets/T-0024 + 该文档里。",
   "acceptance": [
-    "① 上述 6 条重复：机制文档保留「整体机制」，逐条 raw/不变量改成回链 `engine-capabilities.json#<id>`；抽查这 6 条不再有重复句",
-    "② 补 `engine-capabilities.json` 的 `narrative` 字段（可选）到至少这 6 条，形成双向回链",
-    "③ 给 copyright-effect 补一条 capabilities 条目（引擎侧 trigger/reads/whySilent 必须带 raw 行号，不许凭空）",
-    "④ 同批清掉 docs-new/03-engine/*.md 里剩余的「订正」话术（grep -c）",
+    "① 上述 6 条重复：机制文档保留「整体机制」，逐条 raw/不变量改成回链 `engine-capabilities.json#<id>`；抽查这 6 条不再有重复句\n★进度（2026-09-22，**3/6 已做**）：机制文档保留「整体机制」，逐字段/raw 交给台账（回链写进正文，不是脚注）—— 已完成 ①`adv-text-rendering.md` §换行步进（回链 `#text-line-pitch-font-1380`）、②`rendering.md` §4.5（`#drawitem-world-matrix-composition`）、③`live2d.md` §节点矩阵合成（`#live2d-node-matrix-compose`；核过该条目**已包含**被裁掉的全部内容 ⇒ 无信息损失）。**剩余 3 处**：④`sound-system.md:171-176`（`music-number-table-lifecycle`）、⑤`resource-loading.md:9-13` + §1.1 表（`append-pack-discovery-and-activation`）—— 这两处的机制散文/表与台账重复段还没裁；⑥`stub-reaudit-2026-09.md:103` 属 **`kind=record` 历史区**（文档模型 I8：只增不改）⇒ **不编辑它**，改为把该条能力的 `narrative` **从过期记录改指 live 生成表**（`docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行），并在条目 note 里写明订正理由（本次已做）。\n★收尾（2026-09-22，**6/6 完成**）：④`sound-system.md` §5 尾部（曲号表 → 回链 `#music-number-table-lifecycle`，删除 `PCM+1304/+1320` 字段表与三路径 raw）、⑤`resource-loading.md` §1.1（表格去掉「位置」列与逐函数 raw/异常细节 → 回链 `#append-pack-discovery-and-activation`；顺手修掉过期计数 `380/380`）、⑥`stub-reaudit-2026-09.md:103` = `kind=record` 历史区（I8 只增不改）⇒ 不编辑，改 `narrative` 指 live 生成表 `opcode-table.md`（0x324-0x328 行）+ 条目 note 写订正理由。另：条目 `narrative` 从「指回机制文档」扩展到覆盖 7 条。",
+    "② 补 `engine-capabilities.json` 的 `narrative` 字段（可选）到至少这 6 条，形成双向回链\n★进度（2026-09-22，**已完成**）：`analysis/engine-capabilities.json` 的 `narrative` 字段落地 **7 条** —— 6 条重复条目各指回其机制文档（`text-line-pitch-font-1380`、`drawitem-world-matrix-composition`、`music-number-table-lifecycle`、`append-pack-discovery-and-activation`、`live2d-node-matrix-compose`、`scene-3d-weather-effects-rain-snow-leaf`；最后一条**改指 live 生成表**而非过期记录）+ 新建 `copyright-effect` 指回 `docs-new/03-engine/copyright-effect.md`；`capabilities.js --validate` 绿、`build-capabilities.mjs` 重生成（人可读页同步）。★口径：`narrative` 是可选字段、只写**路径**，schema 不排斥额外字段。\n★收尾（2026-09-22）：6 条重复条目 + `copyright-effect` 共 7 条 `narrative`；`capabilities.js --validate` 绿、`build-capabilities.mjs` 重生成后 `doc-model.test.ts` 8/8 绿（含索引最新性）。",
+    "③ 给 copyright-effect 补一条 capabilities 条目（引擎侧 trigger/reads/whySilent 必须带 raw 行号，不许凭空）\n★进度（2026-09-22，**已完成**）：新增 capabilities 条目 **`copyright-effect`**（总条目 137 → **138**；`--validate` 绿、报表已重生成）—— `trigger`/`reads`/`whySilent` 全部带 raw：时钟 = `Engine[92333]`（字节 +369332；池基读作 `Scene+46500`）/上一帧 `[92334]`（主循环 raw **20465-20576** 每帧 `timeGetTime()`；`0x2400` 含版权页等待旗标 `0x400` ⇒ 停脚本时时钟仍走）；背景淡出（揭示）mesh#1 顶点色窗：`0x322`→`sub_4AE2C0`(raw 130789)、`0x323`→`sub_4AE330`(raw 130806)，逐帧 `sub_4AF1C0`(raw 131435, 131491-131501)，`CalcDiffuse sub_4A2050`(raw 120438)；文字淡入 draw-item diffuse-alpha 窗：`0x203`→`sub_4ACF60`(raw 129850)、`0x202`→`sub_4AD0C0`(raw 129936)，逐帧 `sub_49A300`(raw 115116)；`engine.raw = 129850-131501`；emulator 侧 `modeled-verified`/E2，guard `test/mesh-vertex-quad.test.ts`（另见 `test/op-203-draw-color-alpha.test.ts`、`test/anim-window-done.test.ts`，写在 note 里）。⇒ 该结论不再只存在于 `tickets/T-0024` + 机制文档。\n★收尾（2026-09-22）：`--recount` 后总条目 **138**；条目本身不再改动，raw 锚点全部保留在 `engine` 面（生成物只渲染一句话摘要，全文留 JSON）。",
+    "④ 同批清掉 docs-new/03-engine/*.md 里剩余的「订正」话术（grep -c）\n★进度（2026-09-22，**口径已定、尚待动手**）：`grep -c 订正 docs-new/03-engine/*.md` 现状 —— **生成物**：`opcode-table.md` 46、`engine-capabilities.md` 7、`opcode-gaps.md` 2（这些「订正」文字来自**数据层**：`analysis/opcodes.json` 的 semantics / `engine-capabilities.json` 的 note ⇒ **不许手改生成物**，要清就得改数据层并重跑生成器）；**手写文档**：`adv-text-rendering.md` 5、`save-data.md` 4、`runtime-memory.md` 4、`sound-system.md` 3、`live2d.md` 3、`scene-start-flow.md` 2、`input-system.md` 2、`rendering.md` 1、`live2d-moc-format.md` 1、`flow-control.md` 1、`engine-reset-mainloop.md` 1、`copyright-effect.md` 1、`agerc-module.md` 1（共 13 份 29 处）。⇒ 执行口径：手写文档把这批「★…订正…」改写成**直陈句**（保留结论、去掉沿革话术，沿革统一留在 `00-overview/authority.md` 附录）；生成物那一批**改数据层**或**在 `doc-model.test.ts`/model 页里声明\"生成物的订正来自真源、不属本判据\"**（二选一，须写清）。\n★收尾（2026-09-22，**本判据的声明范围已做完**）：① **手写机制叙述 13 份 28 处「订正」全部改为直陈句**（保留结论、删沿革；沿革统一留在 `00-overview/authority.md` 附录与各实体 `journal[]`）—— 涉及 `adv-text-rendering`(5)、`runtime-memory`(4)、`save-data`(4)、`live2d`(3)、`input-system`(2)、`scene-start-flow`(2)、`sound-system`(2)、`agerc-module`/`copyright-effect`/`engine-reset-mainloop`/`flow-control`/`live2d-moc-format`/`rendering` 各 1；顺手统一了 3 处过期计数（`380/380`、`326/326`、`旧行号`）。② **加守卫 I9**（`test/doc-model.test.ts`：`03-engine` 的 `kind=narrative` 不得含「订正/旧句/历史判据」），突变证明见 `evidence/i9-mutation.md`（注入一行 ⇒ 精确报 `unpacking.md:51 「订正」`）。③ **边界外残余已单独立票 `T-0108`**：生成物里的「订正」来自**数据层**（`opcodes.json` 49 / `engine-capabilities.json` 37 / `opcode-gaps.json` 31 / `functions.json` 24 / `fields.json` 4 / `scripts.json` 1 = 146 处；A2 说沿革该落 `journal[]`）—— 本票**不手改生成物**（改了会被 `doc-model.test.ts` 打回），由 T-0108 从真源清并把它纳入守卫。",
     "npm run verify 全绿（含 test/doc-model.test.ts）；四份台账 --validate 绿"
   ],
   "evidence": [
@@ -26,15 +26,94 @@
       "file": "analysis/engine-capabilities.json",
       "anchor": "live2d-node-matrix-compose",
       "note": "重复抽查样本 5（连「轮 8 落地」叙述都是双份）"
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "\"id\": \"copyright-effect\"",
+      "note": "判据 ③ 新条目落库（raw 全来自 copyright-effect.md）"
+    },
+    {
+      "file": "docs-new/03-engine/engine-capabilities.md",
+      "anchor": "`copyright-effect` | 帧循环",
+      "note": "判据 ③ 人可读页重生成后的条目行（生成物；锚点用带反引号的 id 形式，表格列名会随生成器变）"
+    },
+    {
+      "file": "docs-new/03-engine/adv-text-rendering.md",
+      "anchor": "engine-capabilities.json#text-line-pitch-font-1380",
+      "note": "判据 ① 回链式瘦身样本（换行步进段）"
+    },
+    {
+      "file": "docs-new/03-engine/live2d.md",
+      "anchor": "engine-capabilities.json#live2d-node-matrix-compose",
+      "note": "判据 ① 回链式瘦身样本（节点矩阵合成段）"
+    },
+    {
+      "file": "docs-new/03-engine/copyright-effect.md",
+      "anchor": "92333",
+      "note": "判据 ③ 的 raw 来源（时钟字段）"
+    },
+    {
+      "file": "docs-new/03-engine/sound-system.md",
+      "anchor": "engine-capabilities.json#music-number-table-lifecycle",
+      "note": "判据 ① 站点 ④：曲号表段落回链式瘦身"
+    },
+    {
+      "file": "docs-new/03-engine/resource-loading.md",
+      "anchor": "engine-capabilities.json#append-pack-discovery-and-activation",
+      "note": "判据 ① 站点 ⑤：扩展包六阶段表的回链式瘦身"
+    },
+    {
+      "file": "app/amayui-emulator/test/doc-model.test.ts",
+      "anchor": "沿革不进叙述文档",
+      "note": "判据 ④ 的守卫 I9（A4① 首次可机检）"
+    },
+    {
+      "file": "tickets/T-0105/evidence/i9-mutation.md",
+      "anchor": "unpacking.md:51",
+      "note": "判据 ④ 守卫的突变证明（注入 ⇒ 打红；还原 ⇒ 绿）"
+    },
+    {
+      "file": "tickets/T-0108/ticket.json",
+      "anchor": "数据层沿革话术",
+      "note": "判据 ④ 的边界外残余（数据层 146 处）承接票"
     }
   ],
   "id": "T-0105",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-21",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → doing"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "done：判据 ①②③ 完成、④ 在手写机制叙述范围内完成并加守卫 I9（突变证明）；数据层 146 处沿革单独立 T-0108；四份台账 --validate 绿、doc-model 8/8、npm run verify 全绿"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/doc-model.test.ts",
+    "app/amayui-emulator/test/capability-ledger.test.ts"
+  ],
+  "links": {
+    "tickets": [
+      "T-0024",
+      "T-0035",
+      "T-0054",
+      "T-0083",
+      "T-0108",
+      "T-0097"
+    ],
+    "docs": [
+      "docs-new/00-overview/authority.md",
+      "docs-new/03-engine/engine-capabilities.md",
+      "docs-new/03-engine/copyright-effect.md"
+    ]
+  }
 }

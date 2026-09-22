@@ -8,10 +8,22 @@
  * 不是错误 —— 见 interpreter.run 的捕获。
  */
 import type { OpHandler, StepCtx } from '../step.js';
-import { readIntOperand, writeIntOperand, operandArg } from '../operand.js';
+import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Engine, Frame } from '../engine.js';
 import { labelPos } from './shared.js';
+
+/**
+ * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
+ *
+ * ★本族（`tickets/T-0082` 批次"控制流 + 队列族"）15 条。**label 口径**：引擎取 label 也走
+ * `readIntOperand`（`sub_41BF50`）⇒ 计划层 `int(n)` 就是正确读法（`0x8C`/`0xA0`/`0x8F` 三处一致）。
+ */
+function planFor(c: StepCtx): PlannedOperands {
+  const p = operandsFor(c);
+  if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：控制流/队列族走操作数计划层，但没有声明计划`);
+  return p;
+}
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
@@ -20,8 +32,9 @@ import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 const op_jmp: OpHandler = (c) => {
+  const plan = planFor(c);
   // 引擎 sub_4203D0：op1 经 readIntOperand 取值；op1==-1(0xFFFFFFFF) = 不跳（落下句），非错误。
-  const t = readIntOperand(c.e, c.frame, c.instr, 1);
+  const t = (plan.int(1) ?? 0);
   if (t === -1) return;
   const p = labelPos(c.frame, t);
   if (p === null) throw new Error(`jmp: unknown label 0x${(t >>> 0).toString(16)}`);
@@ -29,19 +42,20 @@ const op_jmp: OpHandler = (c) => {
 };
 
 const op_call: OpHandler = (c) => {
+  const plan = planFor(c);
   // 同脚本内 call label：压**下一条指令的 dword 偏移**到返回栈、跳转。
   //   ★与引擎同口径：`sub_420560`（raw 29457-29471）压 `((ip-ip_base)>>2) + 3`（本指令 3 dword 长）
   //   ⇒ 返回栈里存的是 **dword 偏移**，不是数组下标（`ret` 再经 `dwordToInstr` 换回来）。
   //   operand==-1(0xFFFFFFFF) 则不跳（弹回）。
-  const a = operandArg(c.instr, 1);
+  const a = plan.int(1) ?? -1;
   const retDword = (c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 3;
   c.frame.retStack.push(retDword);
-  if (a.raw === 0xffffffff) {
+  if (a === -1) {
     c.frame.retStack.pop(); // 无目标，弹回（no-op）
     return;
   }
-  const p = labelPos(c.frame, a.raw);
-  if (p === null) throw new Error(`call: unknown label 0x${a.raw.toString(16)}`);
+  const p = labelPos(c.frame, a);
+  if (p === null) throw new Error(`call: unknown label 0x${(a >>> 0).toString(16)}`);
   c.jump(p);
 };
 
@@ -49,7 +63,8 @@ const op_call: OpHandler = (c) => {
  *  备份调用方：调用方 ip += 1（返回后从下一条继续）、callRet=caller；目标帧 caller=caller、ip=0；cur=目标帧。
  *  被调帧跑完 exit(0x2) 依其 caller 返回调用帧。 */
 const op_call_frame: OpHandler = (c) => {
-  const frameIdx = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const frameIdx = (plan.int(1) ?? 0);
   if (frameIdx < 0 || frameIdx >= 40) throw new Error(`call-frame: frame index ${frameIdx} 越界`);
   const target = c.e.frames[frameIdx]!;
   if (!target.script) throw new Error(`call-frame: frame ${frameIdx} 未预装脚本（需先 load-frame 0x6）`);
@@ -64,10 +79,11 @@ const op_call_frame: OpHandler = (c) => {
 };
 
 const op_jcc: OpHandler = (c) => {
-  const cond = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const cond = (plan.int(1) ?? 0);
   // 引擎 sub_4209B0：分支目标(2/3)也经 readIntOperand 取值（可为变量 label；-1=落下句）。
   const branchLab = (n: number): number | null => {
-    const t = readIntOperand(c.e, c.frame, c.instr, n);
+    const t = plan.int(n) ?? -1;
     return t === -1 ? null : t;
   };
   if (cond !== 0) {
@@ -91,6 +107,7 @@ const op_jcc: OpHandler = (c) => {
 
 // ---- ret (0x5)：同脚本子程序返回（弹返回栈跳回；空则 no-op 落到下一指令） ----
 const op_ret: OpHandler = (c) => {
+  const plan = planFor(c);
   const top = c.frame.retStack.pop();
   if (top !== undefined) {
     // ★返回栈里存的是 **dword 偏移**（引擎 `sub_41A9B0` raw 25704-25727：`ip = ip_base + 4*v2`）
@@ -105,7 +122,8 @@ const op_ret: OpHandler = (c) => {
 /** 0x1 abort (sub_418E60)：程序中止。引擎 `_CxxThrowException(&1, Command_Exit)`——立即退出整个程序。
  *  emulator：抛 `ExitScript`（程序退出信号），渲染器捕获后关闭主窗口；headless(run.ts) 捕获后停执行。 */
 
-const op_abort: OpHandler = () => {
+const op_abort: OpHandler = (c) => {
+  const plan = planFor(c);
   throw new ExitScript();
 };
 
@@ -181,6 +199,7 @@ function readSaveVersionPair(e: Engine): { sv1: number; sv2: number } {
 }
 
 const op_exit: OpHandler = async (c) => {
+  const plan = planFor(c);
   const caller = c.frame.caller;
   if (caller === DISPATCH_SENTINEL) {
     // ★引擎 `sub_41A820` 的 -10 分支（raw 25661-25673）：派发脚本跑完 —— 还原现场、继续派发下一条；
@@ -256,7 +275,8 @@ const op_exit: OpHandler = async (c) => {
 // ---- call-script (0x3)：跨脚本，异步装载 ----
 
 const op_call_script: OpHandler = async (c) => {
-  const target = readIntOperand(c.e, c.frame, c.instr, 1); // 目标索引（如 0x5264 或 0）
+  const plan = planFor(c);
+  const target = (plan.int(1) ?? 0); // 目标索引（如 0x5264 或 0）
   if (c.e.cur >= 39) throw new Error(`call-script: 脚本嵌套过深(>40)`);
   // 调用方 IP 前进到下一指令（返回后从此继续）
   c.frame.ip += 1;
@@ -357,6 +377,7 @@ async function dispatchNextRequest(c: StepCtx): Promise<void> {
  * 包里没有 `*.AAI` ⇒ 槽全为 NULL ⇒ **静默跳过**（与引擎一致，不是错误）。
  */
 const op_dispatch_script_requests: OpHandler = async (c) => {
+  const plan = planFor(c);
   const e = c.e;
   // 引擎 `frames[cur].ip += 4`：本条指令只消费一个 dword，之后（派发链跑完）从下一条继续。
   c.frame.ip += 1;
@@ -377,8 +398,9 @@ const op_dispatch_script_requests: OpHandler = async (c) => {
  *  ⇒ 效果 = 把脚本索引 op1 解析并装入 frame[op2]（cur 不变，供后续切换，配合 0x8 call-frame 启动）。
  */
 const op_load_into_frame: OpHandler = async (c) => {
-  const scriptIdx = readIntOperand(c.e, c.frame, c.instr, 1);
-  const frameIdx = readIntOperand(c.e, c.frame, c.instr, 2);
+  const plan = planFor(c);
+  const scriptIdx = (plan.int(1) ?? 0);
+  const frameIdx = (plan.int(2) ?? 0);
   if (frameIdx < 0 || frameIdx >= 40) throw new Error(`0x6: frame index ${frameIdx} 越界`);
   if (!c.e.fileSource) throw new Error('0x6: no FileSource');
   const src = await c.e.fileSource.readScript(scriptIdx);
@@ -411,7 +433,10 @@ const op_comment: OpHandler = () => undefined;
  * ★订正（审计 `op-6-05`）：`0xAF` 的 handler 也是 `sub_419690`（raw 22898；`676696 = 675996 + 4*0xAF`），
  * 体与本条**逐字相同** ⇒ "唯一一条体内什么都不做的指令"这句话对两者都不成立（见 stubs.ts 的订正）。
  */
-const op_dev_ukn: OpHandler = () => undefined;
+const op_dev_ukn: OpHandler = (c) => {
+  // 0x1A8：写当前帧的指令步长槽（emulator 不建模该槽）⇒ 顺序上仍取一次计划视图（argc 0，不读位）
+  planFor(c);
+};
 
 /** 解释器专用信号：脚本 exit (0x2，顶层无调用层=程序退出) / exit-script (0x9，全量重置)。 */
 export class ExitScript extends Error {
@@ -426,6 +451,7 @@ export class ExitScript extends Error {
  *  ★ `+96983` 置 0 是「回标题后不再重播 LOGO/版权页」的关键：SYSTEM4 `load-show-logo(0x130) → jcc → call-script LOGO`，
  *    而 `load-show-logo` 读 `_this[96983]`（构造=1 播放，exit-script=0 跳过）。 */
 const op_exit_script: OpHandler = async (c) => {
+  const plan = planFor(c);
   for (const f of c.e.frames) {
     f.script = null;
     f.ip = 0;
@@ -522,7 +548,8 @@ const op_exit_script: OpHandler = async (c) => {
  *   重写侧照此用 `>>> 0` 比较（否则 `dispatchQueues[-1]` 会静默落到原型链上）。
  */
 const op_queue_reset: OpHandler = (c) => {
-  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const op1 = (plan.int(1) ?? 0);
   if ((op1 >>> 0) > 0xa) {
     // 引擎：`sub_408050(..., aResetq)` + `sub_4034D0` 打 "RESETQ" 错误串（raw 30661-30662），队列不动。
     c.log(`0x132(RESETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不改任何队列`);
@@ -549,12 +576,13 @@ const op_queue_reset: OpHandler = (c) => {
  *   `dispatchQueues` 是 11 个常驻空数组 ⇒ 此处退化为"往空队压"。合法序列（先 `0x132`）行为一致。
  */
 const op_queue_push: OpHandler = (c) => {
-  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const op1 = (plan.int(1) ?? 0);
   if ((op1 >>> 0) > 0xa) {
     c.log(`0x133(ADDQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不压入`);
     return;
   }
-  c.e.dispatchQueues[op1]!.push(readIntOperand(c.e, c.frame, c.instr, 2));
+  c.e.dispatchQueues[op1]!.push((plan.int(2) ?? 0));
 };
 
 /**
@@ -589,16 +617,17 @@ const op_queue_push: OpHandler = (c) => {
  * ★`sub_42B4B0` 的两条写回**只在 else 分支里** ⇒ `op1 > 0xA` 时 op2/op3 **都不写**（保持原值）。
  */
 const op_queue_pop: OpHandler = (c) => {
-  const op1 = readIntOperand(c.e, c.frame, c.instr, 1);
+  const plan = planFor(c);
+  const op1 = (plan.int(1) ?? 0);
   if ((op1 >>> 0) > 0xa) {
     c.log(`0x134(GETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，op2/op3 都不写`);
     return;
   }
   const q = c.e.dispatchQueues[op1]!;
   const v = q.shift(); // 引擎：`buf[rd]` + `rd++`（FIFO）
-  writeIntOperand(c.e, c.frame, c.instr, 2, v === undefined ? 0 : 1); // op2 = 成功位（引擎 raw 39395）
+  plan.setInt(2, v === undefined ? 0 : 1); // op2 = 成功位（引擎 raw 39395）
   // ★偏差披露（见上方注释）：空队时引擎把未初始化栈残留写进 op3，这里写确定的 0。
-  writeIntOperand(c.e, c.frame, c.instr, 3, v === undefined ? 0 : v); // op3 = 值（引擎 raw 39396）
+  plan.setInt(3, v === undefined ? 0 : v); // op3 = 值（引擎 raw 39396）
 };
 
 /** 控制流 + 脚本装载（唯一改写 ip/cur 的一族）。 */

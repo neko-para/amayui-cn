@@ -132,7 +132,14 @@ export const ENGINE_FIELD = {
   // -------------------------------------------------------------------------
   /** `message:MessageSpeed`（`_this[21668]` = `Font+1376`）：逐字节拍 ms。 */
   messageSpeed: 21668,
-  /** 默认消息窗索引（`_this[21631]`，初值 1）：`win` 参数为 0 时取它。 */
+  /**
+   * 默认消息窗索引（引擎 `_this[21631]` = `Font+1228`；`win` 参数为 0 时取它）。
+   * 初值 1（raw 78899 `*(_DWORD *)(_this + 1228) = 1;`），解析规则 raw 73148-73152。
+   *
+   * ★**这一格的建模在 `MsgWindow.defaultWin`（唯一真源，`tickets/T-0101` 的 D5）** ——
+   * 本常量只保留"引擎字段 id"供 raw 对照；不要再把它当第二个存储（历史上 `0x80` 同时写两处，
+   * 导致 `i080` 之前两处初值不同：`msgwin.defaultWin = 1` vs `engineValues[21631] ?? 0`）。
+   */
   defaultWindow: 21631,
   /** 主字体模板（`_this[21632]` = `Font+1236` 的 lfWidth 邻位）：数字直绘的格宽回退来源。 */
   logfontMain: 21632,

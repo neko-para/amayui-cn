@@ -10,24 +10,24 @@ state: live
 - ✅ 统一 id = `pack# << 24 | idx`；`pack#=0` 时低 24 位是本体文件号（须 `< file_count`），`pack#=1..255` 落在扩展包表。实测：`SO006=0x5245`、`SO005=0x5246`、`SO004=0x5272`、`TITLE.BIN=0x5264`、`$1$AUTORUN=0x1000000`、`$5$SC0370=0x5000001`。
 - ✅ 引擎侧三个分派点：`sub_4559C0`（id → 句柄，含**可见报错**）、`sub_454FA0`（id → 名字）、`sub_455000`（名字 → id，**先扫本体再扫扩展包**）。
 - ✅ 实测索引规模（`.tmp/appendProbe.mts`，读 `install/`）：SYS4INI `arcCount=8`（`DATA1..8.ALF`）/`filCount=21109`；APPEND01..05 各 `arcCount=1`（自己的 `APPEND0n.ALF`）/`filCount` = 678 / 261 / 1689 / 425 / 918，包内文件名一律带 `$n$` 前缀。
-- ✅ `NodeFileSource.resolveEntry(id)` 已实现 base+APPEND 合并；`npm run verify` = 380/380（2026-09 实测）。
+- ✅ `NodeFileSource.resolveEntry(id)` 已实现 base+APPEND 合并（`npm run verify` 全绿）。
 
 ### 1.1 扩展包（APPENDnn.AAI + APPENDnn.ALF）的发现 · 注册 · 激活
 
 **一句话**：引擎**启动时扫一次工作目录里的 `*.AAI`**，每个包按**自己的头部包号**登记进 FileDB 的包表；包内容的激活**不在引擎里**，而是本体脚本 `INIT2.txt:140` 的 `i143`（0x143）把每个已登记包的文件 #0（`$n$AUTORUN.BIN`）排进脚本队列 —— 包不在就**静默跳过**。
 
-| 阶段 | 位置 | 事实 |
-|---|---|---|
-| ① 发现 | `sub_455750`（raw 67721-67783） | `GetCurrentDirectoryA` → `FindFirstFileA("<CWD>\\*.AAI")`，跳过目录、文件名转大写；**唯一调用点** = 索引装载函数 `sub_414AC0` 的末尾（raw 22340）⇒ 启动时扫一次、之后不再重扫。工作目录由 WinMain 的 `-sp`/`-path` 设定（raw 142025/142040）。**不硬编码 APPEND01..05**：放什么 `.AAI` 就装什么，子目录里的不算 |
-| ② 解析 | `sub_401100`（raw 7850-7962） | 读 268B 头：@0 魔数（`S3AI/S4AI` = 体直读；`S3AC/S4AC` = 12B 区段头 + LZSS）、@4 版本 3 字节、**@8 版本串必须与 `SYS4INI.BIN` 头 @8 `strcmp` 相等**（实测两边都是「天結いキャッスルマイスタ」）、**@264 = 包号**；TOC 结构 = `arcCount` → 256B 归档路径（实测就是 `APPEND0n.ALF`）→ `fileCount` → 80B/项（`name[64] + archiveIndex + fileIndex + offset + length`） |
-| ③ 注册 | `sub_455750` 内 | `FileDB.packs[包号] = AAIFileDB*`（`FileDB+0x3028` = `Engine+0xA90C4`，256 槽；槽 0 不用）。装载失败 ⇒ 日志「AAIファイルの読み込みに失敗しました． %s」+ 释放对象、槽留 NULL。同包号装两次 ⇒ 后者覆盖、前者泄漏（无查重） |
-| ④ 激活 | `i143` = `sub_41A000`（raw 25168-25191） | 脚本侧唯一调用点 `INIT2.txt:140`（紧跟本体 40 张 INIT 之后）：遍历包表槽 1..255，**非零** ⇒ `queueScript(slot<<24)` 入队 + `dispatchQueuedScripts` 派发 ⇒ 该包文件 #0 = `$slot$AUTORUN.BIN` 开始执行。每个 `$n$AUTORUN` 用它包内的副本重跑整套 `$n$SCINIT`…`$n$BTANINIT2`（覆盖本体刚装好的同一批 globals），最后 `bit-set (global-int 7087f5) n` 置「第 n 包已安装」 |
-| ⑤ 校验 | `SAVE.txt:875-888` | 存档界面把存档里记录的安装掩码（数组 `global fa6`）与**运行期掩码 `global 7087f5`** 逐位比较；存档要求某位而运行期没有 ⇒ 「インストール状況が一致しません／アペンドデータをインストールしてください」 |
-| ⑥ 访问 | `sub_4559C0` / `sub_401410` | id 高字节非 0 ⇒ 取 `packs[id>>24]`；包为 NULL ⇒ **抛 `Command_ShowMessage` 异常**（「拡張ファイル情報ファイル %d は読み込まれていません．」）⇒ 与激活阶段的静默相反：**访问阶段是可见报错**。取到包后先按文件项自带的 64B 名在 CWD 找松散文件（翻译工程生成的 `$n$XXX.BIN` 松散副本就靠这条生效），否则从该包自己的 `APPEND0n.ALF` 按 offset/length 切片 |
+| 阶段 | 事实 |
+|---|---|
+| ① 发现 | 索引装载的**末尾**扫一次 `<CWD>\*.AAI`（跳过目录、文件名转大写）⇒ 启动时扫一次、之后不再重扫。工作目录由 WinMain 的 `-sp`/`-path` 设定。**不硬编码 APPEND01..05**：放什么 `.AAI` 就装什么，子目录里的不算 |
+| ② 解析 | 268B 头：@0 魔数（`S3AI/S4AI` = 体直读；`S3AC/S4AC` = 12B 区段头 + LZSS）、@4 版本、**@8 版本串必须与 `SYS4INI.BIN` 头 @8 `strcmp` 相等**（实测两边都是「天結いキャッスルマイスタ」）、**@264 = 包号**；TOC = `arcCount` → 256B 归档路径（实测就是 `APPEND0n.ALF`）→ `fileCount` → 80B/项（`name[64] + archiveIndex + fileIndex + offset + length`） |
+| ③ 注册 | `FileDB.packs[包号] = AAIFileDB*`（256 槽、槽 0 不用）。装载失败 ⇒ 日志「AAIファイルの読み込みに失敗しました． %s」+ 释放对象、槽留 NULL。同包号装两次 ⇒ 后者覆盖、前者泄漏（无查重） |
+| ④ 激活 | `i143` 遍历包表槽 1..255，**非零** ⇒ `queueScript(slot<<24)` 入队 + 派发 ⇒ 该包 `$slot$AUTORUN.BIN` 开始执行。每个 `$n$AUTORUN` 用它包内的副本重跑整套 `$n$SCINIT`…`$n$BTANINIT2`（覆盖本体刚装好的同一批 globals），最后 `bit-set (global-int 7087f5) n` 置「第 n 包已安装」 |
+| ⑤ 校验 | `SAVE.txt:875-888`：存档界面把存档里记录的安装掩码（数组 `global fa6`）与**运行期掩码 `global 7087f5`** 逐位比较；存档要求某位而运行期没有 ⇒ 「インストール状況が一致しません／アペンドデータをインストールしてください」 |
+| ⑥ 访问 | id 高字节非 0 ⇒ 取 `packs[id>>24]`；包为 NULL ⇒ **抛 `Command_ShowMessage` 异常**（「拡張ファイル情報ファイル %d は読み込まれていません．」）⇒ 与激活阶段的静默相反：**访问阶段是可见报错**。取到包后先按文件项自带的 64B 名在 CWD 找松散文件（翻译工程生成的 `$n$XXX.BIN` 松散副本就靠这条生效），否则从该包自己的 `APPEND0n.ALF` 按 offset/length 切片 |
 
 - **静默失败**（为什么要记这条）：整条①→④**不报错、只少内容**。把 `APPEND03.AAI` 删掉再启动，游戏照常进标题、照常读档，只是包 3 的剧情/道具/立绘全部消失、`7087f5` 第 3 位恒 0 —— 直到进存档界面比较掩码才显形。反向（多装/错装）同样静默。
-- **反向索引不对称**：`nameToId`（`sub_455000`）先扫本体再扫扩展包，且比较的是**完整名字**（扩展包名字带 `$n$` 前缀）⇒ 用普通名 `ITINIT.BIN` 按名查**永远不会**落到扩展包；本体的同名文件总是赢。引擎自己只用固定名调用它（`CALLBACK_LOAD/TEXT/SETTING/LOST/WINDOW.BIN`）。
-- **emulator 现状（2026-09 已对齐，见第二层台账 `append-pack-discovery-and-activation`）**：索引侧 `NodeFileSource` **扫资源根下的 `*.AAI`、按 AAI 头 @264 的包号注册**（不再硬编码文件名、不再限制 5 包；`alf.ts` 支持 `S4AC`(LZSS) 与 `S4AI`(头后整段) 两种体，并按引擎口径用**高字节**判本体/扩展包）；激活侧 `0x143`(`op_dispatch_script_requests`) 按包号升序把 `包号<<24` 入队、逐条装进**帧 37**、脚本 `exit` 走 `-10` 哨兵继续派发、排空后还原发起者（INIT2）现场；访问未装载的包抛 `MissingAppendPackError`（措辞照抄引擎）。守卫 `test/append-packs.test.ts`（E3：真实语料跑完派发链 ⇒ `global 7087f5` 第 1..5 位置起；E4：标题画面左下角 6 个 INSTALL 徽章）。★已补齐（2026-09）：`0x1D6`/`0x1D7`/`0x1D8` **已从 no-op 改为真实现** —— 它们不是"数据管理器调用"，而是 **PCM 播放器的音乐表指令**（曲号表：`+1304` 扁平表 / `+1320` 分组表）；`$3$AUTORUN:67-68` 的 `i1d7 1` + `i1d8 1 30003b2` 在真实派发链上产出「组 1 = `[0, 0x30003b2]`」与 `global 70801e = 0x1000001`（守卫 `test/music-table.test.ts` + `test/append-packs.test.ts` 的 E3 段；语义见第二层台账 `music-number-table-lifecycle` 与 `docs-new/03-engine/sound-system.md` §5/§7）。
+- **反向索引不对称**：`nameToId` 先扫本体再扫扩展包，且比较的是**完整名字**（扩展包名字带 `$n$` 前缀）⇒ 用普通名 `ITINIT.BIN` 按名查**永远不会**落到扩展包；本体的同名文件总是赢。引擎自己只用固定名调用它（`CALLBACK_LOAD/TEXT/SETTING/LOST/WINDOW.BIN`）。
+- **逐函数的 raw/字段证据与 emulator 建模细节（哨兵 `-10`、帧 37、异常类型…）全在第二层台账 `engine-capabilities.json#append-pack-discovery-and-activation`**。emulator 侧一句话：索引扫资源根 `*.AAI` 按 @264 注册（不硬编码包名/包数）、`0x143` 按包号升序派发、访问未装载包抛 `MissingAppendPackError`（措辞照抄引擎）；守卫 `test/append-packs.test.ts`（含真实语料的 E3 段）。★`0x1D6`/`0x1D7`/`0x1D8` 已从 no-op 改为真实现 —— 它们是 **PCM 播放器的曲号表指令**，不是"数据管理器调用"（见 `#music-number-table-lifecycle` 与 `./sound-system.md` §5/§7）。
 - 复现探针：`.tmp/appendProbe.mts`（读真实 AAI/ALF 打印表结构）；`.tmp/appendRun.log`（boot 日志，用于确认有没有 `$n$` 脚本被载入）。
 
 

@@ -10,6 +10,8 @@
  * 将来 Electron renderer 侧可换 IpcFileSource：通过 IPC 把"读原始字节/读 ALF 切片"发给主进程，接口一致。
  */
 import * as fs from 'node:fs/promises';
+// ★同步 API 单独引入（`node:fs/promises` 没有 `*Sync`）：`readHeaderSync` 用（`tickets/T-0025`）。
+import * as fsSync from 'node:fs';
 import * as path from 'node:path';
 import type { FileSource, ScriptBytes } from './fileSource.js';
 import { MissingAppendPackError } from './fileSource.js';
@@ -326,6 +328,14 @@ export class NodeFileSource implements FileSource {
   async resolveEntry(index: number): Promise<{ entry: Sys4FileEntry; archives: string[] } | null> {
     const base = await this.#loadBaseIndex();
     await this.#loadAppends();
+    return this.#lookupEntry(index, base);
+  }
+
+  /**
+   * **纯查表**部分（同步）—— `resolveEntry` 与 `readHeaderSync` 共用同一份判定
+   * （高字节 = 包号、低 24 位 = 包内编号；`tickets/T-0025` 抽出来避免两处漂移）。
+   */
+  #lookupEntry(index: number, base: Sys4Index): { entry: Sys4FileEntry; archives: string[] } | null {
     if (index < 0) return null;
     if ((index & 0xff000000) === 0) return base.files[index] ? { entry: base.files[index]!, archives: base.archives } : null;
     const apn = (index >>> 24) & 0xff;
@@ -333,6 +343,62 @@ export class NodeFileSource implements FileSource {
     const pack = this.#packs.get(apn);
     if (!pack) throw new MissingAppendPackError(apn, index);
     return pos < pack.files.length ? { entry: pack.files[pos]!, archives: pack.archives } : null;
+  }
+
+  /**
+   * **同步**读某个文件 id 的**头部字节**（`tickets/T-0025`：headless 的 `0x208` 需要一个同步答案，
+   * 因为脚本可能在**绑定后的同一条指令批**里就问尺寸 —— 异步预取赶不上，而引擎的
+   * `set-texture` 是同步读+解码的）。
+   *
+   * 口径：**松散文件优先**，否则从 ALF 按 offset 切（与 `#readEntryRange` 同判定）。
+   * 索引/扩展包必须先由异步路径建好（boot 一定读过 `SYS4INI.BIN` 与脚本）；否则返回 `null`
+   * ⇒ 调用方按"尚未就绪/不是 AGF"处理（**不伪造**尺寸）。
+   *
+   * @param maxBytes 最多读多少字节（默认 64 KB：ACGF 的 meta 与无头的 plan 头都在这段里）
+   */
+  readHeaderSync(id: number, maxBytes = 65536): { name: string; data: Uint8Array; total: number } | null {
+    const base = this.#base;
+    if (!base) return null;
+    let r: { entry: Sys4FileEntry; archives: string[] } | null;
+    try {
+      r = this.#lookupEntry(id, base);
+    } catch {
+      return null; // 包未装载（`MissingAppendPackError`）⇒ 同步路径只当"取不到"
+    }
+    if (!r) return null;
+    const want = Math.max(32, Math.min(maxBytes, r.entry.length > 0 ? r.entry.length : maxBytes));
+    // ① 松散文件优先
+    const loosePath = path.join(this.#root, r.entry.name);
+    try {
+      const st = fsSync.statSync(loosePath);
+      if (st.isFile()) {
+        const fd = fsSync.openSync(loosePath, 'r');
+        try {
+          const buf = Buffer.alloc(Math.max(32, Math.min(want, st.size)));
+          const n = fsSync.readSync(fd, buf, 0, buf.length, 0);
+          return { name: r.entry.name, data: new Uint8Array(buf.buffer, buf.byteOffset, n), total: st.size };
+        } finally {
+          fsSync.closeSync(fd);
+        }
+      }
+    } catch {
+      /* 不存在 ⇒ 落到归档 */
+    }
+    // ② 否则从 ALF 切片
+    const arcName = r.archives[r.entry.archiveIndex];
+    if (!arcName) return null;
+    try {
+      const fd = fsSync.openSync(path.join(this.#root, arcName), 'r');
+      try {
+        const buf = Buffer.alloc(want);
+        const n = fsSync.readSync(fd, buf, 0, want, r.entry.offset);
+        return { name: r.entry.name, data: new Uint8Array(buf.buffer, buf.byteOffset, n), total: r.entry.length };
+      } finally {
+        fsSync.closeSync(fd);
+      }
+    } catch {
+      return null;
+    }
   }
 
   /** 按统一文件 id 读出原始字节（含文件名）。用于资源（如图像 AGF / 视频 MPG）读取。 */

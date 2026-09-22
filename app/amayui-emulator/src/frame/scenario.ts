@@ -131,7 +131,14 @@ export type ScenarioClock =
  *    `e.curScript().name`（引擎状态）⇒ 定义只有一份，观测各按所长。
  */
 export interface ScenarioEvent {
-  kind: 'cursor' | 'press' | 'release' | 'wheel' | 'note';
+  /**
+   * 事件种类。
+   * `keydown`/`keyup` = **键盘**（`tickets/T-0052`）：`vk` = Windows 虚拟键码（如 38=↑、40=↓、
+   * 13=Enter、8=BackSpace；映射表见 `vm/input.ts` 的 `DEFAULT_VK_TO_BIT`）。
+   * 两宿主同义：Electron 侧由跑手 `sendInputEvent`/真实键盘驱动（`record.cjs` 录的是**输入快照**，
+   * `keyEdge`/`keysHeld` 已在快照里 ⇒ 回放天然带键盘），headless 侧走 `InputManager.pressKey/releaseKey`。
+   */
+  kind: 'cursor' | 'press' | 'release' | 'wheel' | 'keydown' | 'keyup' | 'note';
   atFrame?: number;
   atMs?: number;
   afterMarker?: string;
@@ -140,6 +147,8 @@ export interface ScenarioEvent {
   y?: number;
   button?: 0 | 1;
   delta?: number;
+  /** 键盘事件的虚拟键码（`keydown`/`keyup` 用；缺省 0 = 无效键，什么都不做）。 */
+  vk?: number;
   note?: string;
 }
 
@@ -183,6 +192,14 @@ export function applyScenarioEvent(input: InputManager, ev: ScenarioEvent): void
     case 'wheel':
       if (ev.x !== undefined) input.setCursor(x, y, true);
       input.addWheel(ev.delta ?? 0);
+      break;
+    // ★键盘（`tickets/T-0052`）：与真实宿主同一条 `InputManager` 缝（`pressKey`/`releaseKey`
+    //   = 引擎 `GetAsyncKeyState` 的等价物：按下沿 + 按住态两把刷子）。
+    case 'keydown':
+      if (ev.vk !== undefined) input.pressKey(ev.vk);
+      break;
+    case 'keyup':
+      if (ev.vk !== undefined) input.releaseKey(ev.vk);
       break;
     case 'note':
       break; // 只留痕（进 `log`），不动输入
