@@ -146,12 +146,19 @@ const NON_BRIDGE = {
     //   **场景模型**。它不是"VM 让宿主做事"（opcode 一条都不调它），而是 `e.fileSource = src` 那一类
     //   装配步骤；调用方是装配层（`boot.ts`）。入桥会把"装配"混进"VM 能调什么"。
     'attachL2dHost',
+    // ★`audioSilent` / `setAudioSilent`（`tickets/T-0106`）：**运行开关 + 诊断缝**，不是"VM 让宿主做事" ——
+    //   调用方是装配层（`boot.ts` 在装载 `emulator.config.json` / `AMAYUI_AUDIO_ENABLED` **之后**按
+    //   `audio.enabled` 切静音）与诊断/HUD。没有一条 opcode 调它们；入桥会把"这次运行出不出声"
+    //   这种**运行开关**混进 VM 的操作数面（而且它是宿主实现细节，headless 侧根本不需要）。
+    //   ★清单必须按**字典序**写（守卫拿排序后的集合比对）。
+    'audioSilent',
     'debugAudio',
     'debugItemState',
     'digestHostCounters',
     'digestState',
     'drainTextureSizeLog',
     'resolveItemTexture',
+    'setAudioSilent', // 同 `audioSilent`（T-0106）；清单按字典序：它在最后
   ],
   'headlessScene.ts': [
     'advance',

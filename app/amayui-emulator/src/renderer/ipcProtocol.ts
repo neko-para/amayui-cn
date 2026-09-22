@@ -31,10 +31,20 @@ declare global {
       /**
        * 读**外置选项文件** `emulator.config.json` 的文本（主进程只读；渲染进程无 `fs`）。
        * `exists=false` = 没有该文件（正常情况，用默认值）。解析在 `src/emulatorOptions.ts` 的
-       * `parseEmulatorOptions`，套用在 `applyEmulatorOptionsToEngine`（`boot.showLogo` + `resources.version`；
-       * `resources.path` 由主进程在建 FileSource 之前解析，不经这条通道）。
+       * `parseEmulatorOptions`，套用在 `applyEmulatorOptionsToEngine`（`boot.showLogo` + `resources.version`
+       * + `audio.enabled`；`resources.path` 由主进程在建 FileSource 之前解析，不经这条通道）。
        */
-      readEmulatorOptions?(): Promise<{ path: string; exists: boolean; text: string } | null>;
+      readEmulatorOptions?(): Promise<{
+        path: string;
+        exists: boolean;
+        text: string;
+        /**
+         * **环境变量覆盖**（`tickets/T-0103`）：渲染进程读不到 `process.env` ⇒ 主进程把
+         * `AMAYUI_AUDIO_ENABLED` 之类解析成结构化的一小块传过来（`envOverridesOf` 的口径）。
+         * 渲染侧用 `mergeEmulatorOptions(fileOptions, envOverrides)` 合并 —— **环境变量优先于文件**。
+         */
+        envOverrides?: { audio?: { enabled?: boolean } };
+      } | null>;
       /** 读 `SAVE.DAT` 原始字节（overlay → base；都没有返回 null）。`save-int`/`save-string` 表的持久化载体。 */
       readSaveData?(): Promise<Uint8Array | number[] | null>;
       /** 写 `SAVE.DAT`（整份字节）；主进程**只写 overlay**，真存档永不被覆盖。 */

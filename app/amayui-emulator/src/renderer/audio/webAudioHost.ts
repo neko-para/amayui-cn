@@ -19,6 +19,9 @@
  */
 
 import type { AudioClip, AudioHost, AudioPlayback, AudioResource, PlayOptions } from '../../audio/audioEngine.js';
+// ★静音模式的时长来源与 headless 同源（`audioDurationSec`：OGG 用 granule/采样率、WAV 用 data/byteRate）
+//   —— 两处各写一份"读容器头"必然漂移，而它的口径就是引擎判"语音占线/SE 释放"的输入。
+import { audioDurationSec } from '../../audio/nodeAudioHost.js';
 
 /** Web Audio 下的 clip：`handle` 就是解码后的 `AudioBuffer`。 */
 interface WebClip extends AudioClip {
@@ -58,6 +61,13 @@ export interface WebAudioHostOptions {
   log?: (msg: string) => void;
   /** 注入 AudioContext 工厂（测试/自定义；默认 `new AudioContext()`）。 */
   createContext?: () => AudioContext;
+  /**
+   * **静音模式**（`emulator.config.json` 的 `audio.enabled=false` / `AMAYUI_AUDIO_ENABLED=0`；
+   * `tickets/T-0103`）：**不建 `AudioContext`、不起播、不建 `<audio>`、不做流式**，
+   * 但 `AudioEngine` 的规则照跑（`decode` 改为**从容器头读精确时长**，与 `decodeAudioData().duration` 同量级）
+   * ⇒ digest / 报告不受影响。见 `emulatorOptions.ts` 文件头的 `audio.enabled` 段。
+   */
+  silent?: boolean;
 }
 
 export class WebAudioHost implements AudioHost {
@@ -71,12 +81,47 @@ export class WebAudioHost implements AudioHost {
   #probeStarted = false;
   /** 一次性事件绑定标记（首个手势时 resume）。 */
   #gestureHooked = false;
+  /** 静音模式（可在选项装载后由 `setSilent(true)` 打开 —— 见 `boot.ts` 的装配顺序）。 */
+  #silent: boolean;
+  /** 静音句柄的起播时刻表（`positionSec` 用；key = 句柄序号）。 */
+  #silentSeq = 0;
+  #silentPlays = 0;
 
   constructor(opts: WebAudioHostOptions = {}) {
     this.#opts = opts;
     this.#log = opts.log ?? ((): void => {});
+    this.#silent = opts.silent === true;
     this.#streamBase = opts.streamBase ?? (typeof window !== 'undefined' ? (window.api?.audioStreamBase ?? '') : '');
-    if (this.#streamBase) this.#probeStream();
+    if (this.#silent) {
+      this.#log('[audio] **静音模式**（audio.enabled=false）：不建 AudioContext、不起播、不建 <audio>；引擎侧规则照跑');
+    } else if (this.#streamBase) {
+      this.#probeStream();
+    }
+  }
+
+  /**
+   * **运行期打开静音**（`boot.ts` 的顺序约束：`PixiBackend.create()` 在选项装载**之前**）。
+   *
+   * 已经建过 `AudioContext` 就把它关掉（`dispose`）—— 否则"静音"只是不再新建，旧 context 还占着设备。
+   * 幂等：重复调用无副作用。**只支持开（`true`）**：关回去（`false`）会让"这次运行到底出不出声"变得难核对，
+   * 而且引擎侧的播放句柄已经按静音句柄走了 —— 要出声请起一个新实例。
+   */
+  setSilent(on: boolean): void {
+    if (!on || this.#silent) return;
+    this.#silent = true;
+    if (this.#ctx) {
+      this.dispose();
+      this.#log('[audio] 切静音：已关闭既有的 AudioContext');
+    }
+    this.#log('[audio] **静音模式**（audio.enabled=false）：不建 AudioContext、不起播、不建 <audio>；引擎侧规则照跑');
+  }
+
+  /** 诊断用：本宿主是否静音 + 静音模式下"起播"过几次（应当只有记账、没有声音）。 */
+  get silent(): boolean {
+    return this.#silent;
+  }
+  get silentPlayCount(): number {
+    return this.#silentPlays;
   }
 
   /**
@@ -103,14 +148,17 @@ export class WebAudioHost implements AudioHost {
 
   info(): WebAudioHostInfo {
     return {
-      contextState: this.#ctx?.state ?? 'none',
-      streamEnabled: this.#streamBase.length > 0,
+      contextState: this.#silent ? 'silent' : (this.#ctx?.state ?? 'none'),
+      streamEnabled: !this.#silent && this.#streamBase.length > 0,
       streamFallbacks: this.#streamFallbacks,
     };
   }
 
-  /** 懒创建 AudioContext（首次真正要出声时才建，避免"打开就创建"的启动副作用）。 */
+  /** 懒创建 AudioContext（首次真正要出声时才建，避免"打开就创建"的启动副作用）。★静音模式**永不建**。 */
   #ensureCtx(): AudioContext {
+    if (this.#silent) {
+      throw new Error('静音模式（audio.enabled=false）不得创建 AudioContext：调用点应先查 `this.#silent`');
+    }
     if (this.#ctx) return this.#ctx;
     const ctx = this.#opts.createContext ? this.#opts.createContext() : new AudioContext();
     this.#ctx = ctx;
@@ -126,6 +174,7 @@ export class WebAudioHost implements AudioHost {
   }
 
   resume(): void {
+    if (this.#silent) return; // 静音模式没有 context 要恢复
     void this.#ensureCtx().resume().catch(() => undefined);
   }
 
@@ -152,6 +201,17 @@ export class WebAudioHost implements AudioHost {
   }
 
   async decode(id: number, bytes: Uint8Array): Promise<AudioClip | null> {
+    // ★静音模式：不碰 Web Audio，改**从容器头读精确时长**（与 `NodeAudioHost` 同一函数）。
+    //   为什么必须给时长：`AudioEngine` 用它判"语音占线/SE 通道何时释放" ⇒ 给 0 或 null 会让
+    //   引擎侧状态与真宿主分叉（那正是本开关要避免的"漂移"）。
+    if (this.#silent) {
+      const dur = audioDurationSec(bytes);
+      if (dur === null) {
+        this.#log(`[audio] （静音）认不出容器 id=${id}（${bytes.length}B）⇒ 按解码失败处理（与真宿主同一条路）`);
+        return null;
+      }
+      return { id, durationSec: dur, bytes: bytes.length };
+    }
     const ctx = this.#ensureCtx();
     // decodeAudioData 会**转移**传入的 ArrayBuffer ⇒ 传一份独立拷贝，别把调用方的字节吃掉
     const copy = bytes.slice();
@@ -168,6 +228,19 @@ export class WebAudioHost implements AudioHost {
   // ==================== 播放 ====================
 
   play(clip: AudioClip, opts: PlayOptions): AudioPlayback {
+    // ★静音模式：不起播、不建节点，只回一个**按墙钟推进位置**的哑句柄（引擎仍能问 `positionSec()`）。
+    if (this.#silent) {
+      this.#silentPlays++;
+      if (this.#silentPlays <= 3) {
+        this.#log(
+          `[audio] （静音）起播记账 clip=${clip.id} 时长=${clip.durationSec.toFixed(2)}s gain=${opts.gain} ` +
+            `loop=${opts.loop} pan=${opts.pan}${this.#silentPlays === 3 ? ' …（后续同类日志省略）' : ''}`,
+        );
+      }
+      const seq = ++this.#silentSeq;
+      void seq;
+      return new SilentPlayback(clip.durationSec, opts);
+    }
     const ctx = this.#ensureCtx();
     const web = clip as WebClip;
     const src = ctx.createBufferSource();
@@ -184,12 +257,19 @@ export class WebAudioHost implements AudioHost {
   }
 
   streamUrl(res: AudioResource): string | undefined {
+    if (this.#silent) return undefined; // 静音模式不假装能流式 ⇒ 引擎退回 load+decode+play（引擎侧同一结局）
     if (!this.#streamBase) return undefined;
     if (this.#streamOk === false) return undefined; // 探测失败 ⇒ 不假装能流式
     return resToUrl(this.#streamBase, res);
   }
 
   playStream(url: string, res: AudioResource, opts: PlayOptions): AudioPlayback {
+    // 静音模式：不建 `<audio>`、不 `play()`（`streamUrl` 已返回 undefined，正常不会走到这里；防御性兜底）
+    if (this.#silent) {
+      this.#silentPlays++;
+      this.#log(`[audio] （静音）流式起播被忽略 ${url}`);
+      return new SilentPlayback(0, opts);
+    }
     const el = new Audio();
     el.loop = opts.loop;
     el.preload = 'auto';
@@ -238,6 +318,76 @@ export class WebAudioHost implements AudioHost {
   dispose(): void {
     void this.#ctx?.close().catch(() => undefined);
     this.#ctx = null;
+  }
+}
+
+/**
+ * **静音播放句柄**（`tickets/T-0103` 的 `audio.enabled=false`）。
+ *
+ * 为什么不是"返回 null / 不返回句柄"：`AudioEngine` 会拿着句柄做 `setGain/setPan/setLoop/stop`，
+ * 并在 BGM 暂停时用 `positionSec()` 记位置 —— 句柄缺了会让引擎侧状态机与真宿主分叉。
+ * 这里**只记账**（位置按墙钟推进、其他全是空操作），因此"引擎看到的世界"与真宿主同形，只是没声音。
+ */
+class SilentPlayback implements AudioPlayback {
+  #stopped = false;
+  #startedAt: number;
+  #loop: boolean;
+  #gain: number;
+  #pan: number;
+  #paused = false;
+  #pausedAtSec = 0;
+
+  constructor(
+    private readonly durationSec: number,
+    opts: PlayOptions,
+  ) {
+    this.#startedAt = Date.now();
+    this.#loop = opts.loop;
+    this.#gain = opts.gain;
+    this.#pan = opts.pan;
+    if (opts.offsetSec) this.#startedAt -= Math.max(0, opts.offsetSec) * 1000;
+  }
+
+  stop(): void {
+    this.#stopped = true;
+  }
+  setGain(gain: number): void {
+    this.#gain = gain;
+  }
+  setPan(pan: number): void {
+    this.#pan = pan;
+  }
+  setLoop(loop: boolean): void {
+    this.#loop = loop;
+  }
+  setPaused(paused: boolean): void {
+    if (paused === this.#paused) return;
+    if (paused) {
+      this.#pausedAtSec = this.positionSec();
+      this.#paused = true;
+    } else {
+      // 续播：把起点按"已过去的暂停时长"往后挪，位置继续走
+      this.#startedAt = Date.now() - this.#pausedAtSec * 1000;
+      this.#paused = false;
+    }
+  }
+  /** 与真宿主同量级的"播放位置"（秒）：循环时对时长取模；未给时长 ⇒ 恒 0。 */
+  positionSec(): number {
+    if (this.#stopped) return this.#paused ? this.#pausedAtSec : 0;
+    if (this.#paused) return this.#pausedAtSec;
+    const raw = Math.max(0, (Date.now() - this.#startedAt) / 1000);
+    if (this.durationSec <= 0) return 0;
+    return this.#loop ? raw % this.durationSec : Math.min(raw, this.durationSec);
+  }
+  /** 诊断：本句柄是否已停（静音模式下没有声音可核，只能核状态）。 */
+  get stopped(): boolean {
+    return this.#stopped;
+  }
+  get gainValue(): number {
+    return this.#gain;
+  }
+  get panValue(): number {
+    return this.#pan;
   }
 }
 

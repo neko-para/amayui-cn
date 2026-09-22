@@ -286,6 +286,25 @@ export class PixiBackend implements NativeBridge {
 
   // ---- 纹理 ---- //
 
+  /**
+   * **运行期切静音**（`emulator.config.json` 的 `audio.enabled=false` / `AMAYUI_AUDIO_ENABLED=0`；
+   * `tickets/T-0103`）。
+   *
+   * 为什么是"运行期"而不是构造参数：`PixiBackend.create()` 排在**选项文件装载之前**
+   * （见 `renderer/app/boot.ts` 的装配顺序：先起窗口/后端，再读 `emulator.config.json` 灌引擎字段），
+   * 而音频是**惰性**的（没有指令就一声不出、`AudioContext` 也要等第一次真出声才建）
+   * ⇒ 装载完选项立刻调用本方法即可，不存在"先响了一声"的窗口。
+   * 若此前已经建过 `AudioContext`，宿主会把它关掉（`WebAudioHost.setSilent` 的语义）。
+   */
+  setAudioSilent(on: boolean): void {
+    this.audioHost.setSilent(on);
+  }
+
+  /** 音频宿主当前的静音状态（诊断/HUD 用）。 */
+  audioSilent(): boolean {
+    return this.audioHost.silent;
+  }
+
   /** 预载一张图像（启动期固定预载清单走它；幂等）。 */
   preloadImage(imgid: number): Promise<void> {
     return this.textures.preloadImage(imgid);

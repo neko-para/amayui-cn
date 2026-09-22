@@ -7,7 +7,13 @@
  * 失败不致命：找不到/读不动 INI 时只记一行 trace，引擎字段沿用构造默认值。
  */
 import { applyConfigToEngine, formatIni, parseIni } from '../../engineConfig.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, parseEmulatorOptions } from '../../emulatorOptions.js';
+import {
+  DEFAULT_EMULATOR_OPTIONS,
+  applyEmulatorOptionsToEngine,
+  mergeEmulatorOptions,
+  parseEmulatorOptions,
+  type EmulatorOptions,
+} from '../../emulatorOptions.js';
 import { decodeSaveData, encodeSaveData, mergeSaveDataFallbacks } from '../../save/saveData.js';
 import type { Engine } from '../../vm/engine.js';
 
@@ -129,32 +135,45 @@ export async function attachSaveDataPersistence(
  * 而选项文件与 INI 存不存在无关。也必须在**装载首个脚本之前**调用 —— `src/SYSTEM4.txt:144-146` 的
  * `load-show-logo` 在脚本一开始就据 `_this[96983]` 决定要不要 `call-script LOGO`。
  *
- * 目前有两个节：`boot.showLogo`（LOGO/版权页）与 `resources.version`（字体面名解析策略，
- * 落到 `Engine.resourceVersion`）；见 `src/emulatorOptions.ts` 的文件头。
+ * 目前有三个节：`boot.showLogo`（LOGO/版权页）、`resources.version`（字体面名解析策略，
+ * 落到 `Engine.resourceVersion`）与 `audio.enabled`（**宿主静音**，`tickets/T-0103`）；见 `src/emulatorOptions.ts` 的文件头。
  * ★`resources.path`（资源根）**不在**这里生效：它必须建 `FileSource` 之前决定，由主进程在
  * `electron/paths.ts` 里解析（`decideResourceDir`），渲染进程只负责 `version`。
+ *
+ * ★**返回值**（`tickets/T-0103`）：把生效后的选项交回调用方 —— `boot.ts` 要用 `audio.enabled`
+ * 决定是否把音频宿主切静音（那个后端建在选项装载**之前**，只能运行期切）。
  */
-export async function loadEmulatorOptionsFile(e: Engine, trace: (line: string) => void): Promise<void> {
+export async function loadEmulatorOptionsFile(e: Engine, trace: (line: string) => void): Promise<EmulatorOptions> {
   try {
     const hit = await window.api?.readEmulatorOptions?.();
     if (!hit) {
       trace('[options] 该 preload 没有 readEmulatorOptions 通道 ⇒ 用默认值');
       for (const n of applyEmulatorOptionsToEngine(e, DEFAULT_EMULATOR_OPTIONS)) trace(`[options] ${n}`);
-      return;
+      return DEFAULT_EMULATOR_OPTIONS;
     }
     if (!hit.exists) {
       trace(
         `[options] 未找到 ${hit.path}（用默认值：boot.showLogo=${DEFAULT_EMULATOR_OPTIONS.boot.showLogo}` +
-          ` resources.version=${DEFAULT_EMULATOR_OPTIONS.resources.version}）`,
+          ` resources.version=${DEFAULT_EMULATOR_OPTIONS.resources.version}` +
+          ` audio.enabled=${DEFAULT_EMULATOR_OPTIONS.audio.enabled}）`,
       );
     } else {
       trace(`[options] ${hit.path}`);
     }
-    const { options, problems } = parseEmulatorOptions(hit.exists ? hit.text : '');
+    const { options: fileOptions, problems } = parseEmulatorOptions(hit.exists ? hit.text : '');
     for (const p of problems) trace(`[options] ⚠ ${p}`);
+    // ★环境变量覆盖（`tickets/T-0103` 的 `AMAYUI_AUDIO_ENABLED` 走这条）：渲染进程读不到 `process.env`
+    //   ⇒ 主进程把它**结构化**传过来（不改文件文本，免得把 `$comment` 之类的说明键抹掉）。
+    const overrides = hit.envOverrides;
+    const options = mergeEmulatorOptions(fileOptions, overrides);
+    if (overrides?.audio?.enabled !== undefined) {
+      trace(`[options] AMAYUI_AUDIO_ENABLED ⇒ audio.enabled=${overrides.audio.enabled}（**环境变量覆盖文件**）`);
+    }
     for (const n of applyEmulatorOptionsToEngine(e, options)) trace(`[options] ${n}`);
+    return options;
   } catch (err) {
     trace(`[options] 加载失败：${(err as Error).message}`);
+    return DEFAULT_EMULATOR_OPTIONS;
   }
 }
 

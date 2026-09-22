@@ -9,13 +9,26 @@
  * 建 3 张全屏 mesh → `poll-input`/`wait` 等 0x400 门 → `play-movie` → `exit`）。跑回归/截图时这段
  * 纯粹是等待，没有任何被测逻辑 ⇒ 需要一个"当作版权页已经看过"的开关来省掉它。
  *
- * ## 目前有两个节（`boot` / `resources`）
+ * ## 目前有三个节（`boot` / `resources` / `audio`）
  *
  * | 键 | 类型 | 默认 | 含义 |
  * |---|---|---|---|
  * | `boot.showLogo` | boolean | `true` | `false` = **启动时预设 LOGO 显示标记**（`_this[96983] = 0`）⇒ cold boot **不进** `LOGO.txt`，直接 `INIT → TITLE` |
  * | `resources.version` | `"jp"` \| `"cnjp"` | `"cnjp"` | **这套资源是哪一版**；决定字体面名解析策略（见下） |
  * | `resources.path` | string（可省） | 无（⇒ `install/`） | **资源根在哪**；相对路径以**生效的 config 文件所在目录**为基准 |
+ * | `audio.enabled` | boolean | `true` | `false` = **静音模式**：不建 `AudioContext`、不起播、不建 `<audio>`（引擎侧的音频状态机照跑） |
+ *
+ * ### `audio.enabled`（`tickets/T-0103` 的测试诉求）
+ * 后续测试（尤其 Electron 的 `shot`/`record`）不需要出声，而出声会带来设备/自动播放策略/时间抖动等
+ * 与"被测逻辑"无关的噪声 ⇒ 提供一个**只关宿主输出、不动引擎语义**的开关：
+ *  - **关掉的是宿主**：`WebAudioHost` 不建 `AudioContext`、不起播、不建 `<audio>`、不做流式；
+ *  - **引擎照跑**：`AudioEngine` 的通道/延迟/语音仲裁/BGM 淡变仍然按真宿主同一套规则推进
+ *    （`decode` 改为**从容器头读精确时长**，与 `decodeAudioData().duration` 同量级 ⇒ 语音占线/SE 释放
+ *    的判据不变）⇒ digest / 报告不受影响；
+ *  - **命令行覆盖**（测试用）：环境变量 `AMAYUI_AUDIO_ENABLED`（`0/false/off/no` 关、`1/true/on/yes` 开）
+ *    优先于文件；测试通过 `node --env-file=test/options.test.env` 引入（见该文件的说明）。
+ *  ⚠ **headless 的 `NodeAudioHost` 不受它影响**：那个宿主本来就不出声，而它的"时长"是引擎判据的一部分 ——
+ *    把它也关掉会让 headless 的通道状态与 Electron 分叉（那正是我们要避免的漂移）。
  *
  * ## `resources` 段：为什么需要它（两个键共用前缀，别只改一半）
  *
@@ -83,6 +96,13 @@ export interface EmulatorOptions {
      */
     path?: string;
   };
+  /**
+   * **音频（宿主输出）**。见文件头的 `audio.enabled` 说明：关掉的是宿主，不是引擎。
+   */
+  audio: {
+    /** `false` = 静音模式（不建 `AudioContext` / 不起播 / 不建 `<audio>`；引擎侧状态机照跑）。 */
+    enabled: boolean;
+  };
 }
 
 /** `resources.version` 的取值：纯日文 / ShiftJIS 编码的中文。 */
@@ -95,7 +115,23 @@ export const RESOURCE_VERSIONS: readonly ResourceVersion[] = ['jp', 'cnjp'];
 export const DEFAULT_EMULATOR_OPTIONS: EmulatorOptions = {
   boot: { showLogo: true },
   resources: { version: 'cnjp' },
+  audio: { enabled: true },
 };
+
+/** 覆盖 `audio.enabled` 的环境变量（测试用：`node --env-file=…` 或直接 `AMAYUI_AUDIO_ENABLED=0`）。 */
+export const AUDIO_ENABLED_ENV = 'AMAYUI_AUDIO_ENABLED';
+
+/**
+ * 解析"布尔风格"的环境变量取值。**认不出返回 `undefined`**（调用方据此报一条 problem 并保留文件值）——
+ * 不猜：`AMAYUI_AUDIO_ENABLED=maybe` 静默当 true 会让人以为开关生效了。
+ */
+export function parseBoolish(v: string | undefined): boolean | undefined {
+  if (v === undefined) return undefined;
+  const s = v.trim().toLowerCase();
+  if (['1', 'true', 'on', 'yes'].includes(s)) return true;
+  if (['0', 'false', 'off', 'no'].includes(s)) return false;
+  return undefined;
+}
 
 /** 解析是否成功（`version` 非法时保持默认值，只上浮一条 problem）。 */
 function isResourceVersion(v: unknown): v is ResourceVersion {
@@ -113,6 +149,7 @@ function isResourceVersion(v: unknown): v is ResourceVersion {
 export interface EmulatorOptionsInput {
   boot?: { showLogo?: boolean };
   resources?: { version?: string; path?: string };
+  audio?: { enabled?: boolean };
 }
 
 /** 把宽松输入补成完整选项（缺失/非法一律取默认值；`path` 只保留非空字符串）。 */
@@ -122,7 +159,67 @@ export function normalizeEmulatorOptions(input?: EmulatorOptionsInput | null): E
   const version: ResourceVersion = isResourceVersion(rawVersion) ? rawVersion : DEFAULT_EMULATOR_OPTIONS.resources.version;
   const rawPath = input?.resources?.path;
   const path = typeof rawPath === 'string' && rawPath.trim().length > 0 ? rawPath : undefined;
-  return { boot: { showLogo }, resources: { version, ...(path !== undefined ? { path } : {}) } };
+  const audioEnabled =
+    typeof input?.audio?.enabled === 'boolean' ? input.audio.enabled : DEFAULT_EMULATOR_OPTIONS.audio.enabled;
+  return {
+    boot: { showLogo },
+    resources: { version, ...(path !== undefined ? { path } : {}) },
+    audio: { enabled: audioEnabled },
+  };
+}
+
+/**
+ * **命令行/环境变量覆盖**（只覆盖 `audio.enabled`；表驱动，新增键时在这里加一行）。
+ *
+ * 为什么需要它：`emulator.config.json` 是**开发机私有**的文件（测试者会按自己的习惯改它），
+ * 而"跑测试时不出声"必须是**测试自己的**决定 —— 所以测试用 `--env-file` 引一个环境变量，
+ * 它**优先于文件**。这正是 `T-0032` 那条"同一件事不要两套基准"的反面：这里**两个来源是刻意的**
+ * （文件 = 人的偏好，环境变量 = 这一次运行的决定），并把生效值与来源都打出来。
+ *
+ * @returns 生效说明行（调用方打日志；已套用的与**取值非法被忽略的**都在里面）
+ */
+export function applyEnvOverrides(options: EmulatorOptions, env: Record<string, string | undefined>): string[] {
+  const lines: string[] = [];
+  const raw = env[AUDIO_ENABLED_ENV];
+  if (raw !== undefined && raw.trim().length > 0) {
+    const v = parseBoolish(raw);
+    if (v === undefined) {
+      lines.push(
+        `⚠ ${AUDIO_ENABLED_ENV}="${raw}" 认不出（只认 1/true/on/yes 与 0/false/off/no）⇒ 保留文件里的 audio.enabled=${options.audio.enabled}`,
+      );
+    } else {
+      options.audio.enabled = v;
+      lines.push(`${AUDIO_ENABLED_ENV}=${raw} ⇒ audio.enabled=${v}（**环境变量覆盖文件**）`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * 环境变量覆盖的**可传递形式**（Electron 主进程 → 渲染进程）。
+ *
+ * 为什么不让主进程直接把覆盖"写进文本"再交给渲染进程：那会把 `$comment` 之类的说明键、格式与注释
+ * 一起抹掉（文件是给人看的）。这里只传**结构化的一小块**，渲染侧用 `normalizeEmulatorOptions` 合并。
+ */
+export function envOverridesOf(env: Record<string, string | undefined>): EmulatorOptionsInput {
+  const out: EmulatorOptionsInput = {};
+  const v = parseBoolish(env[AUDIO_ENABLED_ENV]);
+  if (v !== undefined) out.audio = { enabled: v };
+  return out;
+}
+
+/** 把"文件选项"与"环境变量覆盖"合并（后者优先；渲染侧与 Node 侧共用这一条规则）。 */
+export function mergeEmulatorOptions(file: EmulatorOptions, overrides?: EmulatorOptionsInput | null): EmulatorOptions {
+  return normalizeEmulatorOptions({
+    boot: { showLogo: overrides?.boot?.showLogo ?? file.boot.showLogo },
+    resources: {
+      version: overrides?.resources?.version ?? file.resources.version,
+      ...(overrides?.resources?.path ?? file.resources.path) !== undefined
+        ? { path: (overrides?.resources?.path ?? file.resources.path) as string }
+        : {},
+    },
+    audio: { enabled: overrides?.audio?.enabled ?? file.audio.enabled },
+  });
 }
 
 export interface ParseEmulatorOptionsResult {
@@ -136,6 +233,7 @@ function cloneDefaults(): EmulatorOptions {
   return {
     boot: { showLogo: DEFAULT_EMULATOR_OPTIONS.boot.showLogo },
     resources: { version: DEFAULT_EMULATOR_OPTIONS.resources.version },
+    audio: { enabled: DEFAULT_EMULATOR_OPTIONS.audio.enabled },
   };
 }
 
@@ -166,8 +264,8 @@ export function parseEmulatorOptions(text: string): ParseEmulatorOptionsResult {
   }
   for (const key of Object.keys(root as Record<string, unknown>)) {
     if (key.startsWith('$')) continue; // `$comment` 之类的说明键：允许、不算未知
-    if (key !== 'boot' && key !== 'resources') {
-      problems.push(`未知顶层键 "${key}"（已忽略；本文件目前只认 "boot"/"resources"）`);
+    if (key !== 'boot' && key !== 'resources' && key !== 'audio') {
+      problems.push(`未知顶层键 "${key}"（已忽略；本文件目前只认 "boot"/"resources"/"audio"）`);
     }
   }
 
@@ -225,6 +323,28 @@ export function parseEmulatorOptions(text: string): ParseEmulatorOptionsResult {
       }
     }
   }
+  // ---- audio 节（宿主输出开关；**不动引擎语义**，见文件头）----
+  const audio = (root as Record<string, unknown>)['audio'];
+  if (audio !== undefined) {
+    if (audio === null || typeof audio !== 'object' || Array.isArray(audio)) {
+      problems.push('"audio" 必须是对象（如 `{"audio":{"enabled":false}}`）⇒ 该节用默认值');
+    } else {
+      for (const key of Object.keys(audio as Record<string, unknown>)) {
+        if (key.startsWith('$')) continue;
+        if (key !== 'enabled') problems.push(`未知键 "audio.${key}"（已忽略；本文件目前只认 "audio.enabled"）`);
+      }
+      const enabled = (audio as Record<string, unknown>)['enabled'];
+      if (enabled !== undefined) {
+        if (typeof enabled !== 'boolean') {
+          problems.push(
+            `"audio.enabled" 必须是 true/false（拿到 ${JSON.stringify(enabled)}）⇒ 用默认值 ${DEFAULT_EMULATOR_OPTIONS.audio.enabled}`,
+          );
+        } else {
+          options.audio.enabled = enabled;
+        }
+      }
+    }
+  }
   return { options, problems };
 }
 
@@ -235,15 +355,23 @@ export function parseEmulatorOptions(text: string): ParseEmulatorOptionsResult {
  * 无论 `showLogo` 是 true 还是 false 都**显式写入**：`true` 写 1 = 引擎构造 `sub_415640` 的行为（raw 22589），
  * 显式写让"默认值"也变成可核对的日志，而不是依赖 `Engine` 构造函数的隐式初值。
  *
- * @returns 人类可读的说明行（调用方逐行打日志/trece）。
+ * ★参数收**宽松输入**（`EmulatorOptionsInput`）：历史上的调用点（测试）会手写
+ * `{ boot: { showLogo: false } }` 这样的半份字面量（测试被 tsconfig 排除 ⇒ 不是编译错误），
+ * 本函数内部先过 `normalizeEmulatorOptions` ⇒ 缺节不会变成 `undefined.audio` 之类的运行时崩溃。
+ *
+ * @returns 人类可读的说明行（调用方逐行打日志/trece）
  */
-export function applyEmulatorOptions(values: Map<number, number>, options: EmulatorOptions): string[] {
+export function applyEmulatorOptions(values: Map<number, number>, input: EmulatorOptionsInput | null | undefined): string[] {
+  const options = normalizeEmulatorOptions(input);
   const show = options.boot.showLogo;
   values.set(LOGO_FLAG_FIELD, show ? 1 : 0);
   return [
     show
       ? `boot.showLogo=true ⇒ _this[${LOGO_FLAG_FIELD}]=1（cold boot 播 LOGO/版权页，真游戏行为）`
       : `boot.showLogo=false ⇒ 预设 _this[${LOGO_FLAG_FIELD}]=0（跳过 LOGO/版权页；与 LOGO 自身的 exit-script、GAMEOVER 回标题同一条路径 —— SYSTEM4.txt:144-146 将直接落到 :149 INIT / :150 TITLE）`,
+    options.audio.enabled
+      ? 'audio.enabled=true ⇒ 宿主正常出声（WebAudioHost 建 AudioContext / 起播 / 流式 BGM）'
+      : 'audio.enabled=false ⇒ **静音模式**：宿主不建 AudioContext、不起播、不建 <audio>（引擎侧通道/延迟/仲裁/BGM 淡变照跑；时长改从容器头读 ⇒ 与真宿主同量级）',
   ];
 }
 

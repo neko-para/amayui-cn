@@ -15,6 +15,7 @@ import { NodeFileSource } from '../../src/arch/nodeFileSource.js';
 import { OverlayDir } from '../../src/arch/overlay.js';
 import { INI_FILE, SAVE_DAT_REL } from '../../src/arch/systemPaths.js';
 import { parseIni } from '../../src/engineConfig.js';
+import { envOverridesOf } from '../../src/emulatorOptions.js';
 import { unionUsedFileIds } from '../../src/save/saveData.js';
 // 主进程跑 AGF 解码（Node 有 zlib/fs）。路径: electron/ipc/ -> ../../../../ = 仓库根
 import { decodeAgfRgba } from '../../../../scripts/agf/format.js';
@@ -108,7 +109,19 @@ export function registerFileIpc(): void {
   // 不存在是正常情况（返回 exists=false），渲染侧据此用默认值；解析/校验在 src/emulatorOptions.ts。
   ipcMain.handle('read-emulator-options', () => {
     console.log(`[main] emulator options -> ${EMULATOR_OPTIONS.path} (exists=${EMULATOR_OPTIONS.exists})`);
-    return { path: EMULATOR_OPTIONS.path, exists: EMULATOR_OPTIONS.exists, text: EMULATOR_OPTIONS.text ?? '' };
+    // ★`envOverrides`（`tickets/T-0103`）：渲染进程读不到 `process.env` ⇒ 把 `AMAYUI_AUDIO_ENABLED`
+    //   之类**结构化**传过去（不改文件文本，免得抹掉文件里的 `$comment` 说明）。渲染侧与文件值合并，
+    //   环境变量优先 —— 这就是"测试用命令行引入静音"的那条路（`test/options.test.env`）。
+    const envOverrides = envOverridesOf(process.env);
+    if (envOverrides.audio?.enabled !== undefined) {
+      console.log(`[main] emulator options env override -> audio.enabled=${envOverrides.audio.enabled}`);
+    }
+    return {
+      path: EMULATOR_OPTIONS.path,
+      exists: EMULATOR_OPTIONS.exists,
+      text: EMULATOR_OPTIONS.text ?? '',
+      envOverrides,
+    };
   });
 
   // ---- SAVE.DAT（`save-int`/`save-string` 表的持久化；设置界面的开关靠它跨会话保留）----

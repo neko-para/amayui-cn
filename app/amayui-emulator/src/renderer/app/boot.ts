@@ -71,9 +71,17 @@ export async function bootApp(): Promise<BootedApp | null> {
   traceLog.line('=== amayui emulator boot ===');
 
   await loadEngineConfig(e, (l) => traceLog.line(l));
-  // ★外置选项（`emulator.config.json`）：目前只有 `boot.showLogo`。必须在 `loadScriptData`（下面 :87）之前
-  //   —— SYSTEM4 的 `load-show-logo` 在脚本开头就据 `_this[96983]` 决定是否 `call-script LOGO`。
-  await loadEmulatorOptionsFile(e, (l) => traceLog.line(l));
+  // ★外置选项（`emulator.config.json`）：`boot.showLogo` / `resources.version` / **`audio.enabled`**。
+  //   必须在 `loadScriptData`（下面）之前 —— SYSTEM4 的 `load-show-logo` 在脚本开头就据 `_this[96983]`
+  //   决定是否 `call-script LOGO`。
+  const options = await loadEmulatorOptionsFile(e, (l) => traceLog.line(l));
+  // ★静音模式（`tickets/T-0103`）：音频宿主建在**本函数开头**（`PixiBackend.create`），而选项到这里才读到
+  //   ⇒ 运行期切。安全的理由：音频是惰性的（没指令不出声、`AudioContext` 要等首次真出声才建），
+  //   而选项装载在**脚本装载之前** ⇒ 不存在"先响了一声"。若此前已建过 context，`setSilent` 会把它关掉。
+  if (!options.audio.enabled) {
+    pixi.setAudioSilent(true);
+    traceLog.line('[audio] 按 audio.enabled=false 切静音（AMAYUI_AUDIO_ENABLED=0 亦同）');
+  }
 
   // ★音乐表（SYS4INI 尾部）：`play-bgm` 的曲号解析 + 扩展包用 0x1D7/0x1D8 登记自己的曲子都靠它。
   //   引擎侧由 SYS4INI 装载流程 `sub_48A0D0` 填进 PCM 对象；取不到就留空表（0x1D8 会返回 -1）。

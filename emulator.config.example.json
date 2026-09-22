@@ -1,9 +1,12 @@
 {
-  "$comment": "amayui-emulator 的**外置选项示例**（测试/调试用运行开关；**不是**游戏配置，绝不写回、不进存档）。用法：把本文件复制成同目录的 emulator.config.json 再改（后者是本机私有的，已 gitignore）。键：boot.showLogo（是否播 LOGO/版权页）、resources.version（jp=纯日文资源→更纱黑体 / cnjp=ShiftJIS 中文资源→Amayui CN）、resources.path（资源根；相对路径以本 config 文件所在目录为基准；优先序 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > install/）。改完重跑 emulator 生效。路径也可用环境变量 AMAYUI_EMULATOR_CONFIG 覆盖。详见 docs-new/04-app/emulator.md 的「外置选项」节与 src/emulatorOptions.ts。",
+  "$comment": "amayui-emulator 的**外置选项示例**（测试/调试用运行开关；**不是**游戏配置，绝不写回、不进存档）。用法：把本文件复制成同目录的 emulator.config.json 再改（后者是本机私有的，已 gitignore）。键：boot.showLogo（是否播 LOGO/版权页）、resources.version（jp=纯日文资源→更纱黑体 / cnjp=ShiftJIS 中文资源→Amayui CN）、resources.path（资源根；相对路径以本 config 文件所在目录为基准；优先序 CLI --resources > AMAYUI_RESOURCE_DIR > resources.path > install/）、audio.enabled（false=**静音模式**：宿主不建 AudioContext/不起播/不建 <audio>，引擎侧音频规则照跑；测试可用环境变量 AMAYUI_AUDIO_ENABLED=0 覆盖本文件值）。改完重跑 emulator 生效。路径也可用环境变量 AMAYUI_EMULATOR_CONFIG 覆盖。详见 docs-new/04-app/emulator.md 的「外置选项」节与 src/emulatorOptions.ts。",
   "boot": {
     "showLogo": true
   },
   "resources": {
     "version": "cnjp"
+  },
+  "audio": {
+    "enabled": true
   }
 }

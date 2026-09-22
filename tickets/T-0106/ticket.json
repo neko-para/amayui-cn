@@ -1,0 +1,64 @@
+{
+  "title": "音频静音开关：`emulator.config.json` 的 `audio.enabled` + 命令行 `AMAYUI_AUDIO_ENABLED`（测试默认静音）",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/audio",
+  "why": "用户要求（2026-09-21）：「先添加一个禁用所有音频实际播放的开关（后续测试时默认将音频关闭），通过 emulator.config.json 提供，但是测试时通过命令行引入」。动机：后续测试（尤其 Electron 的 shot/record 与 e2e）不需要出声，而出声会带来**设备访问/AudioContext 自动播放策略/时间抖动**等与「被测逻辑」无关的噪声。约束：开关只能关**宿主输出**，绝不能改变引擎语义 —— AudioEngine 的通道/延迟播/语音仲裁/BGM 淡变是引擎侧规则，headless 侧还拿它们的时长做判据（关掉会让两宿主分叉）。",
+  "acceptance": [
+    "`emulator.config.json` 新增 `audio.enabled`（默认 true = 真游戏行为）；false = 静音模式：宿主不建 AudioContext、不起播、不建 <audio>、不做流式",
+    "命令行/环境变量 `AMAYUI_AUDIO_ENABLED`（0/false/off/no 与 1/true/on/yes）**优先于文件**；认不出的取值不猜（保留文件值 + 留一行 problem）",
+    "测试默认静音：`test/options.test.env` 带 `AMAYUI_AUDIO_ENABLED=0`，由 `node --env-file=…` 引入（= 用户说的『测试时通过命令行引入』）",
+    "**引擎侧不受影响**：静音时 `decode` 改从容器头读精确时长（与 headless 的 NodeAudioHost 同源函数），`AudioEngine` 规则照跑 ⇒ digest/场景报告与出声时一致",
+    "文档同步：`docs-new/04-app/emulator.md` §8（选项表 + 专项小节）、`emulator.config.example.json`、`src/emulatorOptions.ts` 文件头",
+    "npm run verify 全绿；四份台账 --validate 绿"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/emulatorOptions.ts",
+      "anchor": "export const AUDIO_ENABLED_ENV",
+      "note": "选项 + 环境变量覆盖的唯一真源（parse/normalize/applyEnvOverrides/envOverridesOf/mergeEmulatorOptions 都在这里）"
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/audio/webAudioHost.ts",
+      "anchor": "setSilent(on: boolean): void",
+      "note": "宿主侧的门：静音时不建 AudioContext、不起播、不建 <audio>；运行期切静音会关掉既有 context"
+    },
+    {
+      "file": "app/amayui-emulator/test/options.test.env",
+      "anchor": "AMAYUI_AUDIO_ENABLED=0",
+      "note": "测试默认静音的落点（命令行 --env-file 引入）"
+    },
+    {
+      "file": "docs-new/04-app/emulator.md",
+      "anchor": "audio.enabled",
+      "note": "选项表 + 「关掉的是宿主输出、不是音频子系统」的专项说明"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/audio-silent-option.test.ts"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md",
+      "docs-new/03-engine/sound-system.md"
+    ],
+    "tickets": [
+      "T-0103",
+      "T-0032"
+    ]
+  },
+  "id": "T-0106",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-21",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-21",
+      "kind": "status",
+      "what": "open → done —— 开关落地：audio.enabled + AMAYUI_AUDIO_ENABLED（环境变量优先）+ 静音宿主（不建 AudioContext/不起播/不建 <audio>，引擎侧照跑）+ 测试默认静音；守卫 7 条"
+    }
+  ]
+}

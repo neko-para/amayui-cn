@@ -8,6 +8,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
+  applyEnvOverrides,
   EMULATOR_OPTIONS_ENV,
   EMULATOR_OPTIONS_FILE,
   parseEmulatorOptions,
@@ -37,6 +38,11 @@ export interface LoadedEmulatorOptions extends ParseEmulatorOptionsResult {
   text?: string;
   /** 读文件本身失败时的原因（权限/目录等）；`exists=false` 时为 undefined。 */
   readError?: string;
+  /**
+   * **环境变量覆盖**的生效说明行（`AMAYUI_AUDIO_ENABLED` 等；`tickets/T-0103`）——
+   * 空 = 这次运行没有覆盖。取值非法也会在这里留一行（`⚠ …`）。
+   */
+  envApplied: string[];
 }
 
 /**
@@ -52,17 +58,23 @@ export function loadEmulatorOptions(repoRoot: string, env: NodeJS.ProcessEnv = p
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'ENOENT') {
-      return { path: p, exists: false, options: parseEmulatorOptions('').options, problems: [] };
+      const options = parseEmulatorOptions('').options;
+      return { path: p, exists: false, options, problems: [], envApplied: applyEnvOverrides(options, env) };
     }
+    const options = parseEmulatorOptions('').options;
     return {
       path: p,
       exists: false,
-      options: parseEmulatorOptions('').options,
+      options,
       problems: [`读取失败（${(err as Error).message}）⇒ 全用默认值`],
       readError: (err as Error).message,
+      envApplied: applyEnvOverrides(options, env),
     };
   }
-  return { path: p, exists: true, text, ...parseEmulatorOptions(text) };
+  const parsed = parseEmulatorOptions(text);
+  // ★环境变量覆盖**在文件之后**（命令行优先于文件；`tickets/T-0103` 的 audio 开关就是靠这条）
+  const envApplied = applyEnvOverrides(parsed.options, env);
+  return { path: p, exists: true, text, ...parsed, envApplied };
 }
 
 /** 便捷：只要选项值（不关心路径/问题）。 */
@@ -93,12 +105,14 @@ export function resourceDirOf(
 /** 一行式日志（存在/不存在 + 问题），供各入口直接打。 */
 export function describeEmulatorOptions(loaded: LoadedEmulatorOptions): string[] {
   const lines: string[] = [];
-  const defaults = `boot.showLogo=${loaded.options.boot.showLogo} resources.version=${loaded.options.resources.version}`;
+  const defaults = `boot.showLogo=${loaded.options.boot.showLogo} resources.version=${loaded.options.resources.version} audio.enabled=${loaded.options.audio.enabled}`;
   if (!loaded.exists) {
     lines.push(`[options] 未找到 ${loaded.path}（用默认值：${defaults}）`);
   } else {
     lines.push(`[options] ${loaded.path}`);
   }
   for (const p of loaded.problems) lines.push(`[options] ⚠ ${p}`);
+  // ★环境变量覆盖的生效说明（`tickets/T-0103` 的 audio 开关靠它可见：改了哪个值、来自哪个变量）
+  for (const e of loaded.envApplied) lines.push(`[options] ${e}`);
   return lines;
 }

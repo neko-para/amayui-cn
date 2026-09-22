@@ -256,13 +256,34 @@ npm run save:dump      # SAVE.DAT 解析
   也不该让"我改了它"变成"别人跑不过测试"（2026-09 由守卫误报发现并修正）。
 - **路径**：默认 `<仓库根>/emulator.config.json`；可用环境变量 **`AMAYUI_EMULATOR_CONFIG`** 换成任意路径
   （绝对值，或相对仓库根）—— 例：`$env:AMAYUI_EMULATOR_CONFIG='.tmp/opt-skip-logo.json'`。
-- **目前的全部选项**（两节：`boot` / `resources`）：
+- **目前的全部选项**（三节：`boot` / `resources` / `audio`）：
 
 | 键 | 类型 | 默认 | 含义 |
 |---|---|---|---|
 | `boot.showLogo` | boolean | `true` | `false` = **启动时预设 LOGO 显示标记**（`_this[96983] = 0`）⇒ cold boot **不进** `LOGO.txt`（版权页 + `LOGO.MPG`），`SYSTEM4` 直接落到 `INIT → TITLE` |
 | `resources.version` | `"jp"` \| `"cnjp"` | `"cnjp"` | **这套资源是哪一版**，决定字体面名解析策略：`cnjp`（ShiftJIS 编码的中文资源）→ `Amayui CN`；`jp`（纯日文资源）→ 未做 cnjp 替换的**更纱黑体** `res/fonts/SarasaGothicSC` |
 | `resources.path` | string（可省） | 无（⇒ `install/`） | **资源根在哪**；相对路径以**生效的 config 文件所在目录**为基准，绝对路径直接采用 |
+| `audio.enabled` | boolean | `true` | `false` = **静音模式**：宿主不建 `AudioContext`、不起播、不建 `<audio>`、不做流式（**引擎侧音频规则照跑**，见下） |
+
+#### `audio.enabled`（`T-0103`）：关掉的是**宿主输出**，不是音频子系统
+
+- **为什么需要**：后续测试（尤其 Electron 的 `shot`/`record`）不需要出声，而出声会带来设备/自动播放策略/
+  时间抖动等与"被测逻辑"无关的噪声 ⇒ 一个"只关输出、不动语义"的开关。
+- **关掉了什么**：`WebAudioHost` 不建 `AudioContext`、不起播、不建 `<audio>`、`streamUrl` 返回 `undefined`
+  （BGM 因此退回 `load+decode+play` 这条**引擎侧原本就等价**的路）；`resume()` 也不碰 context。
+- **没关什么（刻意）**：`AudioEngine` 的通道/延迟播/语音仲裁/BGM 淡变**照跑**；静音模式下 `decode`
+  改为**从容器头读精确时长**（与 headless 的 `NodeAudioHost` 同源函数 `audioDurationSec`）
+  ⇒ "语音占线 / SE 通道何时释放"的判据与真宿主同量级 ⇒ **digest 与场景报告不受影响**。
+- **命令行覆盖（测试用）**：环境变量 **`AMAYUI_AUDIO_ENABLED`**（`0/false/off/no` 关、`1/true/on/yes` 开）
+  **优先于文件**；认不出的取值**不猜**（保留文件值并在日志里留一条 `⚠`）。
+  测试由 `node --env-file=test/options.test.env`（`package.json` 的 `test` 脚本）引入 `AMAYUI_AUDIO_ENABLED=0`
+  ⇒ **所有测试默认静音**。单跑时也可以 `AMAYUI_AUDIO_ENABLED=0 npx tsx --test test/xxx.test.ts`。
+- **两个来源是刻意的**（不是 `T-0032` 那种"同一件事两套基准"）：文件 = 这台机器的偏好，环境变量 = **这一次运行**的决定；
+  生效值与来源都会打印（`[options] AMAYUI_AUDIO_ENABLED=0 ⇒ audio.enabled=false（**环境变量覆盖文件**）`）。
+- ⚠ **headless 的 `NodeAudioHost` 不受它影响**：那个宿主本来就不出声，而它的"时长"是引擎判据的一部分 ——
+  关掉它会让 headless 与 Electron 的通道状态分叉。
+- 守卫：`app/amayui-emulator/test/audio-silent-option.test.ts`（7 条：解析/合并/命令行优先/静音宿主不建 context/
+  非静音反面/测试默认口径）。
 
 - **为什么"预设标记"就是正确的跳过方式**：`load-show-logo`(0x130) 读 `_this[96983]`（`sub_42F7A0` raw 39346），
   `src/SYSTEM4.txt:144-146` 据此 `jcc`；置 0 的正是 LOGO 自己的 `exit`（`exit-script` sub_428A60 raw 35207）
