@@ -7,26 +7,25 @@
 
 ## 概览
 
-共 **120** 张：🔜 doing **5** · ⛔ blocked **0** · ⬜ open **11** · ✅ done **103** · 🚫 dropped **1**（P0 7 / P1 42）
+共 **121** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **105** · 🚫 dropped **1**（P0 7 / P1 42）
 
-按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/test` 5 · `emulator/msgwin` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `emulator/tooling` 1 · `app/emulator/native` 1
+按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/test` 5 · `emulator/msgwin` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/tooling` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/verify` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1
 
-## 🔜 doing（5）
+## 🔜 doing（3）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(13) | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
-| [`T-0114`](./T-0114/ticket.json) | P2 | req | `emulator/tooling` | 控制面板强化为调试器：① 调试查询（已落地）② 断点/表达式日志 ③ 内存快照/恢复 | 8 | — | `notes.md` `changes.md` | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（11）
+## ⬜ open（12）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
 | [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | — | — | — |
+| [`T-0122`](./T-0122/ticket.json) | P2 | req | `emulator/tooling` | 调试器第 3 步：内存快照/恢复（引擎态 dump 与回灌） | 7 | — | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
@@ -37,7 +36,7 @@
 | [`T-0112`](./T-0112/ticket.json) | P3 | docs | `docs/03-engine` | B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-eff… | 6 | — | — | — |
 | [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | — | — |
 
-## ✅ done（103）
+## ✅ done（105）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -88,6 +87,7 @@
 | [`T-0090`](./T-0090/ticket.json) | P1 | bug | `emulator/save-slot` | 真槽读档后上一个画面的 Live2D 仍活着并被画（TITLE 的 node 0x14 画进 SN0000 ⇒ 背景「完全混乱、很多图元缩放错误」） | 4 | `app/amayui-emulator/test/slot-load-l2d-reset.test.ts` | `notes.md` `changes.md` evidence/(2) | — |
 | [`T-0093`](./T-0093/ticket.json) | P1 | bug | `emulator/ops` | SETWEATHER 族 5 条登记为 engine-internal 有据 no-op + 0x147/0x2f2 纯几何命中测试（deferred → 不… | 5 | `app/amayui-emulator/test/op-327-32e-setweather-noop.test.ts` `app/amayui-emulator/test/op-147-2f2-region-hittest.test.ts` `app/amayui-emulator/test/opcode-gaps.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` `deferred-triage-report.md` | — |
 | [`T-0094`](./T-0094/ticket.json) | P1 | bug | `emulator/adv` | 0x196 display-furigana 的第①②路 MessageSpeed 节流半边未建模（6341 处语料，会少等一拍） | 5 | `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 10 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` `app/amayui-emulator/test/t0102-chapter-chain.test.ts` `app/amayui-emulator/test/missing-texture-skips-item.test.ts` `app/amayui-emulator/test/msg-text-range.test.ts` `app/amayui-emulator/test/op-0202-negative-fallback.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(18) | — |
 | [`T-0116`](./T-0116/ticket.json) | P1 | req | `emulator/hosts` | macOS 宿主侧那半件：新增 `native/macos-input`（0x10A 的 `CGWarpMouseCursorPosition`）—— 现在只… | 8 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
@@ -119,6 +119,7 @@
 | [`T-0100`](./T-0100/ticket.json) | P2 | bug | `emulator/adv` | 进入第一个 SC 场景后 SN0000 中心的文字没有被清除（用户实测；先记录、待后续验证） | 6 | `app/amayui-emulator/test/op-0100-reveal-current-window.test.ts` `app/amayui-emulator/test/adv-reveal-under-throttle.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/char-reveal.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` | `notes.md` `changes.md` `design.md` evidence/(1) | — |
 | [`T-0104`](./T-0104/ticket.json) | P2 | req | `emulator/adv` | 0x82（sub_41F720 → GDI 文本族 sub_466000）未建模：现为 STUB 放行，需补「重绘哪个窗」的口径 | 6 | `app/amayui-emulator/test/op-0104-gdi-repaint.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0106`](./T-0106/ticket.json) | P2 | req | `emulator/audio` | 音频静音开关：`emulator.config.json` 的 `audio.enabled` + 命令行 `AMAYUI_AUDIO_ENABLED`（测试… | 6 | `app/amayui-emulator/test/audio-silent-option.test.ts` | `changes.md` | — |
+| [`T-0114`](./T-0114/ticket.json) | P2 | req | `emulator/tooling` | 控制面板强化为调试器：① 调试查询（已落地）② 断点/表达式日志 ③ 内存快照/恢复 | 13 | `app/amayui-emulator/test/debug-query.test.ts` `app/amayui-emulator/test/debug-break.test.ts` `app/amayui-emulator/test/debug-event-break.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0117`](./T-0117/ticket.json) | P2 | tooling | `emulator/hosts` | 把 darwin 原生模块的**预编译通用二进制**（deployment target 11.0 / arm64+x86_64）预置进仓库，并修订「二进制不… | 6 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | T-0116 |
 | [`T-0119`](./T-0119/ticket.json) | P2 | refactor | `emulator/hosts` | 把 win32-input / macos-input 合并成 `native/host-input`：一个 addon 两个平台实现（加载器/类型/READ… | 8 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0120`](./T-0120/ticket.json) | P2 | analysis | `analysis/emulator/verify` | Windows 侧在合并后未实机核验：`native/host-input` 的构建与加载（延迟加载钩子）需要在 Windows 上再确认一次 | 6 | `app/amayui-emulator/test/native-host.test.ts` `native/host-input/tools/smoke.cjs` | `notes.md` `changes.md` | — |

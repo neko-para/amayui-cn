@@ -378,6 +378,18 @@ export interface BreakHit {
 
 /** 编译一条断点（失败抛 `ConditionError`，消息面向用户）。 */
 export function compileBreak(spec: Omit<BreakSpec, 'ast' | 'always'>): BreakSpec {
+  // ★**事件类型必须在这一层校验**（`tickets/T-0114` 第 8 次变更）：`where` 是**事件断点的唯一
+  //   匹配键**（`matchEvent` 里 `s.where !== where` 直接跳过），写错一个字母（如 `bogus-kind`）
+  //   的后果是"断点进了表、命中数永远 0" —— **静默的死断点**，比报错难查得多。
+  //   为什么放在这里而不是只放在 `parseDebugCommand`：命令台（面板）走前者，而**调试守护进程
+  //   `tools/debugsrv.cjs` 是手工分流的**（它只做 `b event` 前缀识别、不做校验）⇒ 只在解析器里
+  //   校验会漏掉 CLI 那条路（2026-09-23 实测：`dbg 'b event bogus-kind idx == 0'` 被静默注册）。
+  //   `compileBreak` 是面板与 CLI 的**共同收口点** ⇒ 校验放这里两条路一起覆盖。
+  if (spec.kind === 'event' && !(EVENT_KINDS as readonly string[]).includes(spec.where ?? '')) {
+    throw new ConditionError(
+      `事件类型必须是 ${EVENT_KINDS.join(' / ')} 之一（收到「${spec.where ?? ''}」）`,
+    );
+  }
   const condition = (spec.condition ?? '').trim();
   if (condition === '') return { ...spec, condition: '', always: true, ast: undefined };
   return { ...spec, condition, ast: parseCondition(condition), always: false };

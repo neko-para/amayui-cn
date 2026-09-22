@@ -6,6 +6,9 @@
  * node tools/dbg.cjs 'b event global-int-write idx == 3318'
  * node tools/dbg.cjs bl                             # 列断点（等推送）
  * node tools/dbg.cjs c                              # 继续
+ * node tools/dbg.cjs click 807 621                  # 远程点一下（输入坐标；见 debugsrv.cjs 文件头）
+ * node tools/dbg.cjs clickimg 400 325               # 远程点一下（截图图像坐标）
+ * node tools/dbg.cjs move 1240 300                  # 只移动光标（悬停门控）
  * node tools/dbg.cjs --wait 5000 global 0           # 等最多 5s 把推送也收进来
  * node tools/dbg.cjs --json global 0                # 原样打 JSONL（不给人类看的排版）
  * node tools/dbg.cjs --ping / --quit

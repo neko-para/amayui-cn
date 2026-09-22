@@ -36,7 +36,7 @@ generated_by: scripts/build-scripts.mjs
 
 | id | 脚本 | 是什么（摘要） | 段 | 槽 | 状态 | 守卫 |
 |---|---|---|---|---|---|---|
-| [`ALLMAP`](./ALLMAP.md) | `ALLMAP.BIN` | 大地图/章节点入口：登记本场景的请求分派表、置章号 `3f3d`，再走「章节跳转处理链」（`SETADVFLAG` → 跳转表逐个 `call-script… | 3 | 4 | 🟠 部分 | — |
+| [`ALLMAP`](./ALLMAP.md) | `ALLMAP.BIN` | 大地图/章节点入口：登记本场景的请求分派表、按 `b22a` 决定是否置章号 `3f3d = 1`，再走「章节跳转处理链」（`SETADVFLAG` → 跳… | 3 | 4 | 🟠 部分 | `test/t0102-chapter-chain.test.ts` |
 | [`AUTORUN1`](./AUTORUN1.md) | `$1$AUTORUN.BIN` | **扩展包 1 的激活入口**（包内文件 #0 = 统一 id 0x1000000）：先按包内副本重跑整套数据表（`$1$SCINIT`…`$1$BTANI… | 3 | 2 | 🟠 部分 | `test/append-packs.test.ts` |
 | [`AUTORUN3`](./AUTORUN3.md) | `$3$AUTORUN.BIN` | **扩展包 3 的激活入口**（包内文件 #0 = 统一 id 0x3000000）：与包 1/2/4/5 同构 —— 先按包内副本重跑整套数据表（`$3$… | 4 | 4 | 🟠 部分 | `test/music-table.test.ts` `test/append-packs.test.ts` |
 | [`BUNKIMOVE`](./BUNKIMOVE.md) | `BUNKIMOVE.BIN` | 武器画面的「移动」演出子脚本（`BUNKI` 的演出段）：把一组立绘/图元在**两套句柄基址之间批量搬运/交换**，再逐项设色淡出，最后 `poll-inp… | 2 | 4 | 🟠 部分 | `test/op-214-swap-items.test.ts` |
@@ -60,14 +60,14 @@ generated_by: scripts/build-scripts.mjs
 | [`ROOM`](./ROOM.md) | `ROOM.BIN` | **回想（EU-ROOM）菜单**：一张背景 + 四个按钮（CG鑑賞 / シーン回想 / BGM鑑賞 / 情報画面），每个按钮旁显示 `回収数` 与 `回収… | 5 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
 | [`SAVE`](./SAVE.md) | `SAVE.BIN` | 存档/读档界面（SAVE）：槽列表（每行用 `0x1A0` 读头拿状态/日期/游玩秒数）+ 存/读/删/复制与备注输入。 | 3 | 6 | 🟠 部分 | — |
 | [`SC0330`](./SC0330.md) | `$1$SC0330.BIN` | 剧情脚本（本篇章节）：大量角色立绘的变换/表情/位置调整 + 文本推进。 | 5 | 5 | 🟠 部分 | — |
-| [`SCJUMP`](./SCJUMP.md) | `$1$SCJUMP.BIN` | 章节跳转分派器：读目标章号 `global 3f3d`，按值跳到对应章节的处理段（本文件是包 1 / 序章那一支） | 2 | 5 | 🟠 部分 | `test/clear-slot-records-keeps-bindings.test.ts` |
+| [`SCJUMP`](./SCJUMP.md) | `SCJUMP.BIN` | 章节进度机：按 `global 3f3d`（目标章号）分派到各章段，再在章内**按「该节是否已演」逐个找出第一个没演过的节**（`13d7`/`13d8`/… | 3 | 5 | 🟠 部分 | `test/t0102-chapter-chain.test.ts` |
 | [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
 | [`SETADVFLAG`](./SETADVFLAG.md) | `SETADVFLAG.BIN` | 把 `global f8080` 抬成 INT_MAX（`7fffffff`）的短脚本，并顺带重建两张 1000 长的数组（按 `3f3d` 选 `a1ea… | 3 | 3 | 🟠 部分 | — |
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
 | [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 13 | 10 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
 | [`SP2563`](./SP2563.md) | `SP2563.BIN` | 剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。 | 2 | 2 | 🟠 部分 | — |
-| [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 9 | 3 | 🟠 部分 | `test/save-data.test.ts` |
+| [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 9 | 4 | 🟠 部分 | `test/save-data.test.ts` `test/t0102-chapter-chain.test.ts` |
 | [`TITLE`](./TITLE.md) | `TITLE.BIN` | 标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 … | 14 | 15 | 🟠 部分 | `test/config-version-substr.test.ts` `test/title-exit.test.ts` `test/game-start-chain.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` |
 
 ## 怎么用（流程）

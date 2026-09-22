@@ -3,17 +3,22 @@
   "type": "req",
   "priority": "P2",
   "area": "emulator/tooling",
-  "status": "doing",
+  "status": "done",
   "why": "2026-09-22 用户在 T-0102（ADV 窗口白底）排查中提出：「目前调试过于繁琐了」。现状是每验证一个假设都要**改源码加诊断 → 重编 → 从标题推进约 4 分钟**（T-0102 本轮为此打了四轮临时探针、每轮都要用户手动重现）。现有控制面板已是\"半个调试器\"（定向 trace / 停在未知指令 / 结构化上报 / 跳过并继续），快照核心件也已在（scSnapshotPresent + 整套存档序列化）⇒ 值得把这两项能力补齐，作为后续所有 emulator 排查的基础设施。 ★2026-09-22 用户批准「请继续」⇒ 按提案 §4 的三步顺序分步实现，**第 1 步（调试查询）已落地**（见 changes.md 第 1 次变更）：纯函数 `src/vm/debugQuery.ts` + 控制面板查询框 + 控制窗↔渲染窗的 invoke 中转 + 7 例守卫。",
   "acceptance": [
-    "**分步交付**（提案 §4 的顺序）。当前进度：**第 1 步已完成**，第 2/3 步未开工。",
+    "**分步交付**（提案 §4 的顺序）。★**交付完成、本票结案（2026-09-23）**：第 1 步（只读查询）、第 2 步（条件断点 + 语义事件断点）以及**用户提议的 adb 式守护进程**（含**远程输入驱动 + 截图**）全部落地、**实机实测**，并已用它端到端查成 `tickets/T-0102` 的 ADV 白底根因（`0x202` 缺负值回退）。★**第 3 步「内存快照/恢复」已拆到 `T-0122`**（本票不再跟踪；那边保留原硬约束）。",
     "★**第 1 步（已完成）判据**：控制面板能对运行中的引擎执行只读查询并看到结果 —— `global <下标>`（**解码后**的值 + 原始编码值）、`local`、`frame [n]`、`flocal`、`slot`、`run`、`help`；实现为**纯函数**（跑前后状态不变）且**不 eval**；守卫 `test/debug-query.test.ts` 7/7；`npm run verify` 全绿。**落点**：`src/vm/debugQuery.ts`、`src/renderer/app/session.ts`、`electron/preload.ts`、`electron/ipc/control.ts`、`control/{index.html,dom.ts,control.ts}`。",
-    "★**第 1 步未验证项（待用户 E4）**：控制窗 ↔ 渲染窗的 invoke 中转与面板渲染**没有在真界面上点过**；需跑一次确认能查到值。",
-    "**第 2 步（未开工）**：表达式断点 + 表达式日志（复用第 1 步的求值器）。**硬约束**：暂停**不得同步阻塞 IPC**（用 Promise 门，复用现有 async 主循环 idiom）；求值器仍须白名单子集 / 纯函数。",
-    "**第 3 步（未开工）**：内存快照/恢复。**硬约束**：必须**显式列出并记录\"哪些量不进快照\"**（池外裸量如 `global f8080`、L2D 运行态、纹理在途、音频队列）；优先只在**帧边界**做（避开在途态）。",
+    "★**第 1 步未验证项 —— 2026-09-23 已由 CLI 实测关闭**：`tools/dbg.cjs` 经守护进程走通了「控制窗↔渲染窗 invoke 中转」的同一条实现（`sendDebugQuery` 是**抽出来的同一个函数**），`global 0` / `local 0` / `frame` / `frame 1` / `flocal` / `slot 0x11` / `run` / `?` 全部返回；`--json` 给出 JSONL。★仍未在**面板 UI**上点过（面板与 CLI 共用的是渲染窗侧同一条查询函数，但按钮/输入框那条 DOM 路径本身没验）。",
+    "**第 2 步（已完成，2026-09-22）**：表达式断点 + 表达式日志（复用第 1 步的求值器）。**硬约束**（已满足）：暂停**不得同步阻塞 IPC**（用 Promise 门）—— 2026-09-23 实机实测「暂停态下查询照常返回」即为该约束的证据；求值器为白名单子集 / 纯函数。",
+    "**第 3 步（已拆票）**：内存快照/恢复 ⇒ **`T-0122`**（本票不再跟踪）。原硬约束随票带走：必须**显式列出并记录「哪些量不进快照」**（池外裸量如 `global f8080`、L2D 运行态、纹理在途、音频队列），优先只在**帧边界**做。",
     "全程硬约束：① 求值器**不得 eval**；② 不改 `src/*.txt`（调试器是观测与驱动手段，不碰脚本真源）；③ 缺口要写进票与日志（如\"宿主编槽表未纳入查询\"必须写明）。",
     "★**第 2 步已完成**（2026-09-22）：条件断点 + 语义事件断点**都可用**。事件名**按池显式命名**（`global-int-write`/`global-float-write`/`global-str-write`/`slot-bind`）—— 依据：操作数层是扁平 variant（tag 写在指令里），运行期存储层是**按类型分池**（fields.json 的 8 个池基址）；「存 int 3318 再读 float 3318」不会冲突（实测两池独立）。三个引用池暂不发事件（已在 Engine.debugEvent 注明）。接线跨三层：VM 同步发事件 / Engine.debugEvent 钩子 / 主循环 onAfterStepEvent（stepOnce **之后** await）。守卫 test/debug-event-break.test.ts（6 例）。★仍待 E4：整条通路未在真界面点过。",
-    "★**adb 式后台调试守护进程已完成**（用户提议：复用\"控制面板本就长期存在\"这一点）：`tools/debugsrv.cjs`（electron 主脚本 + TCP 服务 127.0.0.1:39427，镜像控制窗推送给外部客户端）+ `tools/dbg.cjs`（短连接 CLI）+`main.ts` 导出 `windows`/`sendDebugQuery`/`sendBreakCommand`（**同一单例**，不另打 bundle）+`control.ts` 抽出可复用发送函数 + npm scripts `dbg:srv`/`dbg`。实测：ping → pong/game=true；`global 0` / `run` 真返回；`--quit` 干净退出。★顺带修掉 `run` 查询的**只读副作用**（`gatePending()` 会写 `gateWaitStart`）并把守卫补强（门计时器纳入快照 + 突变证明）。"
+    "★**adb 式后台调试守护进程已完成**（用户提议：复用\"控制面板本就长期存在\"这一点）：`tools/debugsrv.cjs`（electron 主脚本 + TCP 服务 127.0.0.1:39427，镜像控制窗推送给外部客户端）+ `tools/dbg.cjs`（短连接 CLI）+`main.ts` 导出 `windows`/`sendDebugQuery`/`sendBreakCommand`（**同一单例**，不另打 bundle）+`control.ts` 抽出可复用发送函数 + npm scripts `dbg:srv`/`dbg`。实测：ping → pong/game=true；`global 0` / `run` 真返回；`--quit` 干净退出。★顺带修掉 `run` 查询的**只读副作用**（`gatePending()` 会写 `gateWaitStart`）并把守卫补强（门计时器纳入快照 + 突变证明）。",
+    "★**2026-09-23 实机全面测试（第 8 次变更）**：用这套能力端到端查成了 `tickets/T-0102` 的章节链问题（证据 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md`）。**实测通过**：守护进程起来 + 静音生效；`--ping`；7 种只读查询 + 错误路径 + `--json`；**条件断点**（`b` 无条件）真停；**暂停态下查询照常返回**（证明\"暂停 = Promise 门，不阻塞 IPC\"这条硬约束成立）；`c` 继续 / `d` 删除 / `bl` 列表；**事件断点**在真链路上连中两次（`global-int-write idx == 0` ⇒ `val=2` / `val=1`）。",
+    "★**第 8 次变更的缺陷已修**：非法事件类型（`b event bogus-kind …`）原被**静默**注册成\"永远不命中的死断点\"—— 真因是校验只在 `parseDebugCommand`（面板路），而 `debugsrv.cjs` **手工分流**、`compileBreak` 也不校验 `where`，而 `matchEvent` 拿 `where` 当唯一匹配键。修法：校验下沉到**面板与 CLI 的共同收口点 `compileBreak`**，非法类型抛面向用户的 `ConditionError`。守卫 `test/debug-break.test.ts`「`compileBreak` 必须校验事件类型」一例。",
+    "★**第 8 次变更新增能力（缺口②）**：守护进程的**输入驱动 + 远程截图** —— `click` / `clickn` / `clickimg` / `move` / `shot`（**只在主进程侧** `webContents.sendInputEvent` + `capturePage`，与 `shot.cjs` 同手法 ⇒ 不用重编渲染窗）。判据：实测走通 `TITLE → Load Data → 选存档 071 → LOAD → 确认「是」`，并据此把 T-0102 的现象推进到目标态。`clickimg` 的坐标换算**按当前窗口几何现算**（截图 1604×903 / 内容区 1283×722），**不沿用** `shot.cjs` 那份另一台机器标出来的 `toSend` 常数。",
+    "★**第 8 次变更改动（缺口③）**：`debugsrv.cjs` **默认静音**（require 主进程前把 `AMAYUI_AUDIO_ENABLED` 兜底成 `'0'`，显式传值可覆盖；`AMAYUI_DEBUG_AUDIO=1` 亦恢复）。理由：调试会话是无人值守跑几分钟的形态，出声只带来与被测逻辑无关的噪声。",
+    "★**第 8 次变更的诚实边界（未做）**：`slot` 查询仍**只读 VM 台账**（宿主侧\"纹理是否已就位\"未纳入）；输入驱动**只有鼠标**、无键盘；`clickn` 需重启守护才生效（`.cjs` 启动时加载）；**仍未做**远程改值（写路径，须另开通道并单独设计）；**第 3 步（内存快照/恢复）仍未开工**。"
   ],
   "evidence": [
     {
@@ -72,7 +77,11 @@
       "T-0102"
     ]
   },
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/debug-query.test.ts",
+    "app/amayui-emulator/test/debug-break.test.ts",
+    "app/amayui-emulator/test/debug-event-break.test.ts"
+  ],
   "id": "T-0114",
   "history": [
     {
@@ -114,6 +123,16 @@
       "at": "2026-09-22",
       "kind": "decision",
       "what": "★新增 **adb 式后台调试守护进程**（用户提议）：tools/debugsrv.cjs + tools/dbg.cjs；main.ts 导出 windows/调试发送函数（单例安全）；control.ts 抽出可复用发送函数；npm run dbg:srv / dbg。解决了我先前列的两条限制（单次调用超时、上次窗口无人接管）—— 长期守护 + 短连接。★顺带修掉 `run` 查询的只读副作用（gatePending() 会写 gateWaitStart；且它是方法、插值会打出函数源码），并把 debug-query 的纯只读守卫**补强**（纳入门计时器）+突变证明（★第一次突变用 gatePending(0) 复现不出，改用真实时钟才红 —— 教训：突变要构造成真能触发副作用的形态）。环境：本机 Chromium 沙箱初始化失败 ⇒ 守护脚本 no-sandbox（仅回环 + 只读查询 + 白名单断点）。取证 changes.md 第 7 次变更"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "decision",
+      "what": "★**实机全面测试 + 三处补强**（用户：「测试 T-0114 引入的远程调试能力」）。**测过**：守护起来（日志 `audio.enabled=false` 确认静音）、`--ping`、7 种只读查询、错误路径、`--json`、条件断点真停、**暂停态查询照常返回**（Promise 门不阻塞 IPC 成立）、`c`/`d`/`bl`、**事件断点在真链路连中两次**。**缺陷 1（已修）**：`b event bogus-kind …` 被静默注册成永远不命中的死断点（`debugsrv.cjs` 手工分流绕过 `parseDebugCommand`，且 `compileBreak` 不校验 `where`，而 `matchEvent` 拿 `where` 当唯一匹配键）⇒ 校验下沉到共同收口点 `compileBreak`，守卫 `test/debug-break.test.ts` +1。**缺口 2（已补）**：输入驱动 + 远程截图（`click`/`clickn`/`clickimg`/`move`/`shot`，主进程侧，不重编渲染窗）；`clickimg` 坐标按当前窗口几何现算（不沿用 shot.cjs 那份别机常数）——实测走通 TITLE→Load→选槽→LOAD→确认，并把 T-0102 推进到目标态。**缺口 3（已补）**：`debugsrv.cjs` 默认静音。★边界：`slot` 仍只读 VM 台账、无键盘输入、`clickn` 需重启守护、未做远程改值、第 3 步（快照/恢复）未开工。取证 changes.md 第 8 次变更"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— 结案：第 1 步 + 第 2 步 + adb 式守护进程 + 远程输入驱动/截图 全部实机实测通过，并经它查成 T-0102；第 3 步内存快照/恢复已拆到 T-0122"
     }
   ]
 }

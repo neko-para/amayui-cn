@@ -38,7 +38,7 @@ generated_by: scripts/build-scripts.mjs
 
 ## 坑（踩过一次，别再踩）
 
-- ★本文件把 `f8080` 抬到 INT_MAX ⇒ **`SCJUMP` 的第二道门（`gr f8080, 10`）必然放行**。所以 `mov (global-int 0) 1` 会不会执行，完全由 `SCJUMP` 的第一道门（要 `1dd7 && 3318 && !1521 && !2f3c` 才跳走）决定；两者语义相反，极易看反（`tickets/T-0102` §12）
+- ★本文件把 `f8080` 抬到 INT_MAX ⇒ **`SCJUMP` 的闸值门（`gr f8080, 10`）必然放行**。所以"选中哪一节"完全由 `SCJUMP` 里那串 **`13d7`/`13d8`/`13d9`…（该节是否已演）** 决定 —— ★**不是** `1dd7`/`3318`/`1521`/`2f3c`（那是**包变体** `$1$SCJUMP.txt` 的读法，运行期跑的是 `src/SCJUMP.txt`）；T-0102 曾据此把因果读反，订正见 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md` §4
 - `f8080 = 1015936` **在保存池之外**（池长 1015792）⇒ 它不随存档持久化，是进程内裸量
 
 ## 缺口
@@ -52,4 +52,4 @@ generated_by: scripts/build-scripts.mjs
 ## 证据与备注
 
 - 证据：src/SETADVFLAG.txt:14-41（全文 41 行，除注释外已通读）；运行期见 tickets/T-0102/evidence/clear-slot-records-root-cause.md §10（日志里 `[call-script] 0x512f -> SETADVFLAG.BIN` 紧随 ALLMAP）
-- 备注：本脚本很短（41 行），已通读；未核的是它引用的表与数组。本条是 2026-09-22 白底定位（T-0102）的副产品
+- 备注：本脚本很短（41 行），已通读；未核的是它引用的表与数组。本条是 2026-09-22 白底定位（T-0102）的副产品 ★2026-09-23 订正：删掉"第一道门要 1dd7 && 3318 …"这句（它属于包变体，不是运行的那支）。

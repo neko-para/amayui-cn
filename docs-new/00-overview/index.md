@@ -151,7 +151,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`99-records/2026-09-live2d/CONTEXT.md`](./../99-records/2026-09-live2d/CONTEXT.md) | 🗄 历史记录 | 📤 已消费 | — | CONTEXT — Live2D（TITLE）实现进度快照（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-live2d/live2d-deform-semantics.md`](./../99-records/2026-09-live2d/live2d-deform-semantics.md) | 🗄 历史记录 | 📤 已消费 | — | Live2D（Cubism 2.0.06 for DirectX）变形与顶点生成 + 每帧求值语义（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-route-c/route-c-text-metrics-2026-09.md`](./../99-records/2026-09-route-c/route-c-text-metrics-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 扩展路线 C「字形度量」实测：0x1D0 / 0x1D1 的真身与处置（结论已落 `analysis/opcode-gaps.json`） |
-| [`99-records/2026-09-t0114-debugger/session-state-2026-09-22.md`](./../99-records/2026-09-t0114-debugger/session-state-2026-09-22.md) | 🗄 历史记录 | 📤 已消费 | — | 会话中间状态记录（2026-09-22）（结论已落 `tickets/T-0102/evidence/STATUS.md`） |
+| [`99-records/2026-09-t0114-debugger/session-state-2026-09-22.md`](./../99-records/2026-09-t0114-debugger/session-state-2026-09-22.md) | 🗄 历史记录 | 📤 已消费 | — | 会话中间状态记录（2026-09-22）（结论已落 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md`） |
 | [`99-records/2026-09-transition/transition-render-spec-2026-09.md`](./../99-records/2026-09-transition/transition-render-spec-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 转场渲染规格（T-0084 · 引擎侧算法 → emulator 实现手册）（结论已落 `analysis/engine-capabilities.json`） |
 
 ## `README.md/`（1）

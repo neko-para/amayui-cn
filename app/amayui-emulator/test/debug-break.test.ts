@@ -198,3 +198,22 @@ test('★源码棘轮：控制面板**不得再硬编码事件类型清单**（�
   // 反向：它必须**透传** where（把 rest[1] 直接送出去），而不是先判断
   assert.ok(/where:\s*\(rest\[1\]/.test(panel), '面板应把事件类型透传给渲染窗');
 });
+
+test('★`compileBreak` 必须校验事件类型（CLI 那条路绕过了解析器 —— 2026-09-23 实测踩到）', () => {
+  // 事故经过（`tickets/T-0114` 第 8 次变更）：远程调试守护进程 `tools/debugsrv.cjs` 是**手工分流**的
+  //   （只认 `b event` 前缀、不做校验）⇒ `dbg 'b event bogus-kind idx == 0'` 被静默注册成
+  //   「事件断点(bogus-kind) 命中 0」。而 `matchEvent` 用 `s.where !== where` 做唯一匹配键
+  //   ⇒ 那是一条**永远不会命中的死断点**：不报错、只是"设了没用"，比报错难查得多。
+  // 纪律：校验放在**面板与 CLI 的共同收口点**（`compileBreak`），不是只放在 `parseDebugCommand`。
+  for (const kind of ['global-int-write', 'global-float-write', 'global-str-write', 'slot-bind']) {
+    const ok = compileBreak({ id: 1, kind: 'event', where: kind as never, condition: 'idx == 0' });
+    assert.equal(ok.where, kind);
+  }
+  assert.throws(
+    () => compileBreak({ id: 1, kind: 'event', where: 'bogus-kind' as never, condition: 'idx == 0' }),
+    /类型必须是/,
+    '非法事件类型必须抛（面向用户的 ConditionError），不许静默入表',
+  );
+  // 条件断点没有 `where` 这回事，别把它一起拒了
+  assert.equal(compileBreak({ id: 2, kind: 'step', condition: '' }).always, true);
+});

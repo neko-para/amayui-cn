@@ -142,6 +142,12 @@ primary := '(' expr ')' | INT | 'global' INT | 'local' INT
 另有 5 处临时诊断（`arithmetic.ts`/`gfx-texture.ts`/`save-slot.ts`/`control.ts` 的 `[T-0102 诊断]`）
 仍在源码里 —— 等 T-0102 收尾时一并撤。
 
+> ★**2026-09-23 已撤（第 8 次变更）**：这 5 处**全部移除**（`arithmetic.ts` 3 处 + `control.ts` 1 处 +
+> `gfx-texture.ts` 1 处 + `save-slot.ts` 1 处，含两个随之不再使用的 `decIntSlot` import）。
+> 撤的理由不只是"清理"：其中 `SCJUMP 门：1dd7=…` 那一条打的是**已证伪的变量**（轮 19 实测门读
+> `13d7`/`13d8`）⇒ 留着会**误导下一个读日志的人**。观测能力已由本票的查询 + 断点 + 输入驱动覆盖
+> （`tickets/T-0102/evidence/chapter-chain-runtime-trace.md` 就是不带任何源码探针取到的证）。
+
 ---
 
 ## 第 4 次变更（2026-09-22）—— 第 2 步**接线完成**：暂停闸门 + IPC + 面板 UI（**指令步断点可用**）
@@ -367,3 +373,84 @@ $ node tools/dbg.cjs --ping     → pong / game=true
 $ node tools/dbg.cjs global 0   → global 0x0 = 0 (0x0) ← **未写过**
 $ node tools/dbg.cjs run        → cur=1 帧数=40 / 当前帧 TITLE.BIN ip=52 / 门：gateWaitMs=0 … / playSeconds=17.87
 ```
+
+---
+
+## 第 8 次变更（2026-09-23）—— **实机全面测试**（用户：「测试 T-0114 引入的远程调试能力」）+ 三处补强
+
+本轮是**第一次真机、端到端**地用这套能力去查一个真实现象（`tickets/T-0102` 的白底），
+结果：**能力本身可用**，但暴露了 1 个真缺陷、2 个能力缺口。三处都已修，并留下守卫。
+
+### 测了什么（逐项实测，不是"应该能行"）
+
+| 项 | 命令 | 结果 |
+|---|---|---|
+| 守护进程起来 + 音频 | `electron tools/debugsrv.cjs` | `[dbgsrv] listening on 127.0.0.1:39427`，主进程日志 `emulator options env override -> audio.enabled=false`（**静音生效**） |
+| 连通性 | `dbg --ping` | `pong / game=true` |
+| 只读查询 | `global 0` / `local 0` / `frame` / `frame 1` / `flocal` / `slot 0x11` / `run` / `?` | 全部返回；`global` 给「解码后 + 原始编码值」，未写过显式标注（T-0102 要的正是这个） |
+| 错误路径 | `dbg 'nosuchcmd 1 2'` | `✗ 未知查询` + 用法，退出码 1 |
+| JSONL | `dbg --json global 0` | 含 `hello` / 结果 / `status` 推送三行 |
+| **条件断点** | `dbg 'b'`（无条件 = 每条都停） | ⏸ `TITLE.BIN@ip=52`，命中计数 1 |
+| **暂停中查询** | 暂停态下跑 `run` / `global 0` | **照常返回**（证明「暂停 = await Promise 门」没有阻塞 IPC —— 第 4 次变更那条硬约束真的成立） |
+| **继续 / 删除** | `dbg c` / `dbg d 1` / `dbg bl` | 继续后又在同一条断点再停（无条件断点语义正确）；删除后断点表为空 |
+| **事件断点** | `dbg 'b event global-int-write idx == 0'` | TITLE 处不命中（该处确实不写 `global 0`）；推进到 SN0000 结尾/SCJUMP 时**连中两次**（`val=2` / `val=1`）——本次 T-0102 取证的核心手段 |
+
+### ★缺陷 1（已修）：非法事件类型被**静默**注册成"永远不命中的死断点"
+
+```
+$ node tools/dbg.cjs 'b event bogus-kind idx == 0'
+断点 2 条：
+  #3 事件断点(bogus-kind) idx == 0  命中 0      ← 报错在哪？
+```
+
+**真因**：校验只在 `debugBreak.parseDebugCommand` 里（面板那条路），而调试守护进程 `debugsrv.cjs`
+是**手工分流**的（只认 `b event` 前缀、不做校验）⇒ CLI 那条路绕过了校验；渲染窗 `session.#addBreak`
+→ `compileBreak` 也**不校验 `where`**。而 `matchEvent` 用 `s.where !== where` 当唯一匹配键
+⇒ 写错一个字母的后果是"断点进了表、命中数永远 0"——**不报错、只是没用**，比报错难查得多。
+
+**修法**：校验放到**面板与 CLI 的共同收口点** `compileBreak`（`src/vm/debugBreak.ts`），
+非法类型抛面向用户的 `ConditionError`（消息列出合法清单）。守卫：`test/debug-break.test.ts`
+新增「`compileBreak` 必须校验事件类型（CLI 绕过解析器）」一例。
+
+### ★缺口 2（已补）：只能"看"，不能"驱动" ⇒ 现象照样要人坐在窗口前点
+
+T-0102 要查的态（`SN0000 → SC0000` 切章后的 ADV 窗）**必须点进去**才能到达；只有查询 + 断点的话，
+仍然是"我能不能请你点一下"。⇒ 给守护进程加了**输入驱动**（**只在主进程侧**，
+`webContents.sendInputEvent`，与 `tools/shot.cjs` 同一手法 ⇒ **不用重编渲染窗**）：
+
+```
+click <x> <y>              点一下（输入坐标 = shot.cjs 里 CONFIG_XY 那一套）
+clickn <x> <y> [n] [gap]   连点 n 下（ADV 一页一次点击时用）
+clickimg <x> <y>           点一下，但坐标是**截图图像坐标**
+move <x> <y>               只移动光标（悬停门控）
+shot [名字]                远程截图 → <仓库根>/.tmp/dbg-<名字>.png（并报出内容区尺寸）
+```
+
+★**坐标口径的教训**（写进文件头）：`sendInputEvent` 收**内容区 CSS 像素**，`capturePage()` 给**图像像素**，
+两者差一个缩放（本机实测截图 1604×903、内容区 1283×722 ⇒ ×0.8）。
+`shot.cjs` 那份 `toSend = (x+28.4)/0.955` 是**另一台机器/另一个窗口尺寸**标出来的，本机**对不上**
+⇒ `clickimg` 改成**按当前几何现算**（`getContentSize()` / `capturePage().getSize()`）。
+
+**实测走通**（本次 T-0102 取证就是靠它）：
+`click 1070 480`（TITLE→Load Data）→ `clickimg 677 181`（选存档 071）→ `clickimg 190 865`（LOAD）
+→ `clickimg 802 400`（确认「是」）→ 载入成功（帧栈 `SYSTEM4 → NOVEL → SN0000`）
+→ 连点推进 → 事件断点两次命中（见 T-0102 的取证文件）。
+★顺带一条**坑**：存档列表里点**空槽**不会有任何反应（不是工具的问题）—— 第一次以为是坐标错，
+换到有数据的槽就通了；截图（`shot`）是分辨这两件事的唯一手段。
+
+### ★缺口 3（已补）：调试会话**默认静音**
+
+`debugsrv.cjs` 在 require 主进程**之前**把 `AMAYUI_AUDIO_ENABLED` 兜底成 `'0'`
+（引擎侧正式开关：宿主不出声、引擎语义照跑）。理由：调试会话是"无人值守跑几分钟"的形态，
+出声只带来设备/自动播放策略/时间抖动这些与被测逻辑无关的噪声。
+显式传 `AMAYUI_AUDIO_ENABLED=1`（或本脚本的 `AMAYUI_DEBUG_AUDIO=1`）可恢复。
+
+### 诚实边界（仍然没做的）
+
+- `slot` 查询**仍只读 VM 台账**（`texSlots`/`texSizes`），**宿主侧"纹理是否已就位"没纳入**
+  （输出里已显式写明这一点，见 `debugQuery.ts`）。
+- 输入驱动**只做了鼠标**（`click`/`move`）；键盘没做 —— `shot.cjs` 移除 `--key` 的教训还在
+  （"那个键会看起来一直被按着"），要做需先弄清 `sendInputEvent` 的键盘语义。
+- `clickn` **每次都要重启守护**才生效（.cjs 是启动时加载的）——本次为了不丢已载入的存档，
+  改用调用方侧循环连点；这条限制本身值得记。
+- 本轮**没有**跑"远程改值"（热改全局量）：按定义它是写路径，须另开通道并单独设计（原提案 §3 的后续步）。

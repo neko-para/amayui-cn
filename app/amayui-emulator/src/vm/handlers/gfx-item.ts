@@ -538,6 +538,25 @@ const op_set_vertex_color_alpha: OpHandler = (c) => {
   const rgb = (plan.int(5) ?? 0);
   c.native.setVertexColorAlpha?.(handle, delay, count, alpha, rgb);
 };
+/**
+ * `0x202` set-draw-color（`sub_4231F0` raw 31381-31416，argc=5）：`op1`=图元、`op2`=delay、
+ * `op3`=dur、`op4`=α、`op5`=颜色 —— 启动/重设**颜色动画窗**（`sub_4AD0C0(Scene, handle, delay, dur, TO)`，
+ * 引擎侧：门控 `flags & 1`（元素必须已创建）→ `flags |= 2`、`+0x34 = 0`、`+0x64 = TO`）。
+ *
+ * ★★**负值回退必须实现**（引擎逐字 raw 31395-31411）：
+ * ```
+ * if (α <= 255) { if (α < 0) α = (unsigned)sub_4ADD60(Scene, handle) >> 24; } else α = 255;
+ * if (color < 0) color = sub_4ADD60(Scene, handle);            // 整份 ARGB（写回只取低 24 位）
+ * ```
+ * `sub_4ADD60` = 按 handle 查绘制项、**查不到返回 −1**、否则读 `DrawItem+0x60`（= `Item.from`）。
+ * ⇒ `set-draw-color <h> 0 <dur> -1 -1` 的语义是「**动画到当前色**」，不是"动画到白"。
+ *
+ * ★**T-0102 的「ADV 窗口白底」就是这个缺回退造成的**：窗口例程每帧先
+ * `set-draw-color-alpha <win> 0 (f807d) (a9db)`（= 半透明**黑**，`a9db` 默认 0、`f807d`∈{0xc0,0xa0,0x80}），
+ * 再发 `set-draw-color <win> 0 800 -1 -1`（淡入到当前色）。缺回退时 `-1/-1` 被拼成
+ * `0xFFFFFFFF`（**白不透明**）⇒ 窗口淡入成**白**；引擎淡入成半透明黑 ⇒ 真机是黑窗。
+ * 逐字取证见 `tickets/T-0102/evidence/texture-absent-draw-policy.md` 与轮 21 的日志段。
+ */
 const op_set_draw_color: OpHandler = (c) => {
   // 0x202：op1=handle, op2=delay, op3=count, op4=alpha, op5=rgb → to (ARGB)。
   const p = operandsFor(c);
@@ -545,9 +564,15 @@ const op_set_draw_color: OpHandler = (c) => {
   const handle = p.int(1) ?? 0;
   const delay = p.int(2) ?? 0;
   const count = p.int(3) ?? 0;
-  const a = p.int(4) ?? 0;
-  const b = p.int(5) ?? 0;
-  c.native.setDrawColor?.(handle, delay, count, ((a & 0xff) << 24) | (b & 0xffffff));
+  let a = p.int(4) ?? 0;
+  let b = p.int(5) ?? 0;
+  // ★回退源（`sub_4ADD60`）：与 `0x203` 同一个宿主缝 —— **读绘制项当前色**，项不存在 ⇒ −1。
+  //   ★顺序照引擎：回退必须在写入之前取（`sub_4AD0C0` 会覆写 `+0x60`/`+0x64`）。
+  const current = (): number => c.native.getDrawItemColor?.(handle) ?? -1;
+  if (a > 255) a = 255; // raw 31403-31406
+  else if (a < 0) a = current() >>> 24; // raw 31397-31401
+  if (b < 0) b = current(); // raw 31407-31411
+  c.native.setDrawColor?.(handle, delay, count, (((a & 0xff) << 24) | (b & 0xffffff)) >>> 0);
 };
 /**
  * ★`0x203` set-draw-color-alpha（`sub_4232C0` raw 31419-31451，argc 4）：

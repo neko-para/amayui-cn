@@ -5,18 +5,23 @@
   "area": "emulator/adv",
   "why": "**用户实测（轮 8）**原话两条：\n① 「从 SN0000 进入到 SC0000 后的 ADV 窗口背景是**白色**的，但是展开收起侧边栏菜单似乎刷新了界面导致其正确变成了**半透明黑色**」—— 即窗口的离屏表面/样式在场景切换后**没有被重新光栅化**，直到某个别的路径（侧边栏菜单）触发一次重绘才正确。\n② 「阿瓦罗的角色颜色变成**青色**了，预期应该是**橘色**」—— 角色名文本的颜色不对（青色 ≈ 橘色的 R/B 互换，属可疑的通道顺序问题，但**必须先取证**再下结论）。\n★**当前假设（待验证，不许当结论）**：这两条很可能是**同一个根因**的可见面 —— 与同批修的「逐字不发布」同源：`Engine.serviceTextReveal` 修前漏掉了 `#publishReveal`（`tickets/T-0100` 的改动②）⇒ `msgWinSync` 在整段逐字期间**一次都不发生** ⇒ 宿主既不更新逐字，也可能不更新该窗的**底色/样式**（窗口背景与角色名同属一张窗纹理）。该发布已在本轮恢复（`adv-reveal-under-throttle.test.ts` 两条守卫 + 已证明的辨别力）⇒ **先请用户复验**这两条是否随之消失。",
   "acceptance": [
-    "★**当前权威结论（2026-09-22，详见 evidence/STATUS.md）**：ADV 窗口「白底」= 窗口模式选择子 `global 0` 被覆盖成 1。`src/SC0000.txt:1292` 已把 6 正确写入（诊断实测 `写 global0 ← 6 @SC0000.BIN ip=972`），随后 `SN0000` 结尾的章节推进链（`ALLMAP` → `SETADVFLAG` → `SCJUMP`）在 `src/$1$SCJUMP.txt:49` 执行 `mov (global-int 0) 1` 把它盖成 1 ⇒ 窗口例程 `eq local0, global0, 6` 判假 ⇒ 走白纸窗支（`src/SN0000.txt:3080` / `src/SC0000.txt:32666`）。**已彻底排除**：纹理槽配置（槽 0x11 全程 0x5260）、占位块（两类日志各 0 条）、`0x259`（另有两份独立取证）。两条路（载入 078 推进 / 从 GAMESTART 推进）日志形态一致，与用户实测吻合。",
-    "**判据（任一路径都必须满足）**：① 走到章节点后、ADV 窗口绘制那一刻，`global 0 == 6`（诊断应打 `global0(解码)=6`）；② 窗口走 `create-mesh + set-vertex-color`（半透明黑幕）而不是 `draw-texture … 11 …`；③ `src/*.txt` 与引擎主题文档一行不改（脚本可靠是前提）。",
-    "**未决（下一轮判死，三选一）**：这条链在此时会不会被真机执行 —— (a) `SCJUMP` 本就不该跑（查 `ALLMAP` 的 `b22a` 门 `src/ALLMAP.txt:35`、`SN0000:2227` 那一带的分支）；(b) 链该跑但四个门量在真机取值不同（`1dd7`/`3318`/`1521`/`2f3c`，**需要真机 oracle**）；(c) 真机之后还有一步把 6 写回（全语料只有 `SC0000:1292` 写 6，已实测在本链**之前**）。★关键分叉：`1dd7` 唯一写点 `src/SC2560.txt:1282`、`3318` 唯一写点 `src/GAMESTART.txt`（下标 701）在 emulator 里都没执行。",
-    "**收尾前必做**：撤掉源码里的四处临时诊断（`arithmetic.ts`/`gfx-texture.ts`/`save-slot.ts`/`control.ts` 的 `[T-0102 诊断]`），并跑 `npm run verify` 全绿 + 四份台账 `--validate` 绿。",
-    "★已完成：`0x259` 口径纠错（imgid 不该清、标志位该清）**独立成立**（引擎逐位复核），已修 + 守卫 + 突变证明；它**不是**白底的成因（白底成因见第 1 条）。落点：`src/renderer/pixi/textureCache.ts`、`src/renderer/headlessScene.ts`、`src/vm/handlers/gfx-misc.ts`；守卫 `test/clear-slot-records-keeps-bindings.test.ts`（4 例）+ `test/slot-save-resume.test.ts`。"
+    "★★**权威结论（2026-09-23 轮 20，用户真机 oracle + 引擎逐条取证）**：**分歧不在 `global 0`，也不在脚本分支** —— 用户用 inspector 量到**真机 `global 0 = 1`**（与模拟器同值），而两边都走 `!= 6` 的 `draw-texture 19640/19641 11 …` 支。★**用户提的假设成立**：引擎**允许**拿\"没配纹理\"的槽去画，并且在那时**忽略整笔操作** —— 入队侧（`0x1FB` handler `sub_422E70` raw 31271-31300）**完全不校验槽**；出画侧（渲染器 `sub_4A2D50` raw 122890，门在 122952-122963）取 `CTexture*`，为 0 就 `sprintf_s(\"関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d\") + sub_4034D0 + return 0` —— **什么都不画，且没有替代纹理**；而那个\"报错\"只是 `WriteFile(\"Error.log\")`（`sub_4034D0→sub_4976A0→sub_497620→sub_438CC0`，raw 45647-45667），不抛不弹窗不退出。同型\"未创建纹理 ⇒ 报一行 + 跳过\"在全引擎有 **25+ 处**，`draw-string` 同口径。★★两张表要分清：**绑定表** `image_slot_table`（`Scene+0x748` = `Engine+0x4F458`，20 B/槽）与**对象表** `image_object_table`（`Scene+0xA5D8` = `Engine+0x592E8`，4 B/槽）—— **`DrawTexture` 的门看对象表** ⇒ 一个槽可以\"绑过 imgid 而对象不存在\"，那时引擎仍然什么都不画。取证 `evidence/texture-absent-draw-policy.md`；第二层台账 `texture-absent-draw-is-dropped`。",
+    "★**模拟器侧已按引擎订正**：`presenter.itemSprite` 原来 `tex ? cropSprite(...) : this.#placeholder(it)` = 在\"引擎什么都不画\"的场合**多画一块白的**（这正是\"白底\"那一**类**症状的形状）。现改为 **`!tex ⇒ return null`（跳过该项）+ 一条日志**（日志区分\"从未绑过\"与\"绑过但宿主未就位\"；后者是模拟器异步载入的自己人问题，正解是在屏障处等 —— T-0102 已修的 H2/H3/H4），并删掉 `#placeholder` 本体。守卫 `test/missing-texture-skips-item.test.ts`（引擎侧 + emulator 侧双侧棘轮，突变已证明）；连带修掉 `transition-render-wiring.test.ts` 里\"靠占位块才画得出来\"的假夹具（补 `cache.slotTex.set(1, …)`）。",
+    "★★**oracle (A) 已跑，结果为**否定**（2026-09-23 轮 21）**：用户按建议把 `SYS4REG.INI` 的 `[system] OutErrorLog` 打开后，引擎的 `Error.log`（`C:\\Users\\liaoh\\AppData\\Local\\Eushully\\天結いキャッスルマイスター\\Error.log`）里**只有启动横幅**（`ARCGameEngine Ver 4.60B` / `DrawMode=1 …`），**没有** `関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=17` ⇒ 真机那一刻**槽 17 有纹理对象**、那两笔 `draw-texture` **真的画了** ⇒ 「未配置纹理被整笔忽略」**不是本症状的成因**（该引擎策略本身成立）。★顺带判死第二条：SO001 两片源矩形的 alpha（权威值 = `raw-parts/DATA1-png/SO001.png`，与模拟器自己那条解码路逐值一致）—— 19640 片 **93% 不透明纯白**、19641 片 **84.2% 全透明** ⇒ **解码没问题**、不是 alpha 丢失。",
+    "**旧结论的存废**：§D 的时间线（四处写 `global 0`）、§C 的三项排除、`0x259` 口径纠错**仍然有效**；§A/§B/§E/§F 已被轮 19（跑错文件 + `jcc` 极性）与轮 20（分歧不在 `g0`）订正，见 `evidence/chapter-chain-runtime-trace.md` 与 `evidence/texture-absent-draw-policy.md`。",
+    "**状态**：★**本票可以结了** —— 根因（`0x202` 缺回退）已定位、修复、有守卫、有 E4（白→黑）。剩余可做项（都不阻塞结案）：宿主侧 `slot` 查询仍未纳入、`0x202`/`0x203` 的 `blend`（`DrawItem+0x30`）仍无人消费（已在 `check:dead-writes` 基线里登记）。",
+    "★★★**根因已定位并修复（2026-09-23 轮 21）：模拟器 `0x202 set-draw-color` 缺「操作数为负 ⇒ 取当前色」的回退**。窗口例程每帧发 `set-draw-color <win> 0 800 -1 -1`（那两个 `-1` 是**操作数**，不是黑），引擎语义 = **淡入到当前色**（= 前一条 `set-draw-color-alpha` 刚设好的**半透明黑**：`f807d`∈{0xc0,0xa0,0x80}、`a9db`=0）；旧实现把 `-1/-1` 按位拼成 **`0xFFFFFFFF`（白不透明）** ⇒ 窗口**淡入成白**。引擎原文 `sub_4231F0` raw 31395-31411（`if (α<0) α = sub_4ADD60>>24; if (color<0) color = sub_4ADD60`，`sub_4ADD60` = 读 `DrawItem+0x60` = `Item.from`）；`0x203` 的同一对回退模拟器早已实现，`0x202` 漏了。**修复**：`src/vm/handlers/gfx-item.ts` 的 `op_set_draw_color` 补两条回退（回退源与 `0x203` 共用 `native.getDrawItemColor`，且**写入前取**）。**守卫** `test/op-0202-negative-fallback.test.ts`（4 例；第 1 例修前必红 —— 旧实现给 `0xffffffff`；第 4 例是引擎棘轮）。**E4 验证**：载入存档 071 → 推进过切章 → `SC0000.BIN ip=1330`：窗口项 α 由 `104000:a255` → **`104000:a160`**，画面由**白底纸窗**（`e4-sc0000-g0001-paper-window.png`）变成**半透明黑窗 + 白字**（`e4-adv-window-fixed-black.png`，sha256 `B0BFB1F5…`）—— 与真机一致。取证全文 `evidence/adv-window-0x202-root-cause.md`。",
+    "**判据（保持）**：① `src/*.txt` 与引擎主题文档一行不改（脚本可靠是前提）；② 任何补一块东西让画面看起来对的修法都要有**引擎依据**（本轮删占位块、按引擎补 `0x202` 回退，都是这条纪律的正例）；③ 涉及渲染的结论要有 **E4** 对照（截图 + 日志数值，例：窗口项 α 的 `[present] items={…}` 摘要）。",
+    "**收尾前必做**：★**临时诊断已于 2026-09-23 全部撤除**（`arithmetic.ts`/`gfx-texture.ts`/`save-slot.ts`/`control.ts` 的 `[T-0102 诊断]` 共 6 处 + 2 个随之无用的 import）—— 其中 `SCJUMP 门：1dd7=…` 那条打的是**已证伪的变量**，留着会误导；观测能力已由 `tickets/T-0114` 的查询/断点/输入驱动覆盖。",
+    "★已完成：`0x259` 口径纠错（imgid 不该清、标志位该清）**独立成立**（引擎逐位复核），已修 + 守卫 + 突变证明。落点：`src/renderer/pixi/textureCache.ts`、`src/renderer/headlessScene.ts`、`src/vm/handlers/gfx-misc.ts`；守卫 `test/clear-slot-records-keeps-bindings.test.ts`（4 例）+ `test/slot-save-resume.test.ts`。",
+    "★已完成（轮 19，独立结论）：**`global 0` 是 SYSTEM4 的「実行モード分派键」**（`src/SYSTEM4.txt:170-171` `g0==1 ⇒ 内联 ADV 管线`；`:427-460` `2=ALLMAP / 3=REIGN / 4=FIELD / 6=NOVEL / 7=STUDIO / 8=DEAL`，其余 `不正な実行モード`+`abort`）。另：**`jcc` 极性**在旧叙述里被读反过两次（§B 的分支表、§E 的门方向）；`analysis/opcodes.json` 与引擎 raw 29615-29639 都没错，错的是叙述。"
   ],
   "evidence": [
     {
       "file": "tickets/T-0102/evidence/STATUS.md",
-      "anchor": "被覆盖成 1",
-      "line": 11,
-      "note": "★本票**当前权威状态**（2026-09-22）：白底 = SCJUMP 的 `mov (global-int 0) 1` 把 SC0000 写好的 6 盖成 1；含 global0 完整时间线、两道门的实测值、已排除项、未决项与临时诊断清单。旧的分节结论（§7/§10/§11）在 §G 集中标注作废"
+      "anchor": "2026-09-23 重大订正",
+      "line": 3,
+      "note": "★本票的**过程状态文件**（当前 = 2026-09-22 的快照 + 顶部 2026-09-23 的订正横幅）：包含判定点/已排除三项/global0 时间线/收窄后的未决问题/产出索引/临时诊断清单。★**锚点已 retarget**：原锚点 `被覆盖成 1` 是旧 §A 的措辞，轮 19 订正后该措辞已删（`mov global0 1` 不是覆盖，是选中下一节）；证据本身仍然有效（它记的是那两天的取证过程与排除项）"
     },
     {
       "file": "tickets/T-0100/changes.md",
@@ -263,6 +268,36 @@
       "anchor": "占位块已经没有了",
       "line": 138,
       "note": "2026-09-22 复验：占位块已消除；剩下的白 = `global 0 == 6` 选中的白纸窗支（日志 4596 行），非缺纹理。含 global 0 的写点枚举与待判问题"
+    },
+    {
+      "file": "tickets/T-0102/evidence/chapter-chain-runtime-trace.md",
+      "anchor": "运行期**取证",
+      "line": 1,
+      "note": "★**轮 19 权威取证**（2026-09-23，用 T-0114 的远程调试器，无改源码/无重编）：SCJUMP 跑的是 `src/SCJUMP.txt`（帧栈 + ip=43 直证）、门量 `13d7=1/13d8=0/b22a=0/f8080=INT_MAX`、两次写 global0 的完整记录、白底=纸窗支的截图实证、收窄后的唯一未决问题，以及 `global 0` = SYSTEM4 実行モード分派键这条独立结论"
+    },
+    {
+      "file": "tickets/T-0102/evidence/e4-sc0000-g0001-paper-window.png",
+      "anchor": "PNG",
+      "line": 1,
+      "note": "★白底实证帧（sha256 8CD3654E2A4B49AA64DB923A1B458E20264B8C9026152F6B08B42D1FE84F7D38，1604×903）：载入存档 071 → 推进过切章 → `global 0 = 1`、`1397 = 1`、当前脚本 `SC0000.BIN ip=1330`，画面 = 阿瓦罗的遗迹对话 + **纸窗**（带银框、白底）。获取方式见 chapter-chain-runtime-trace.md 的命令段"
+    },
+    {
+      "file": "tickets/T-0102/evidence/texture-absent-draw-policy.md",
+      "anchor": "未配置纹理",
+      "line": 1,
+      "note": "★★**轮 20 权威取证**：用户真机 oracle（`global 0 = 1`）判死 §F；引擎「允许未配置纹理的槽 + 整笔忽略」的逐条反编译证据（入队不校验 / 出画 `return 0` / 错误只是 `WriteFile(Error.log)` / 全引擎 25+ 处同型）；绑定表 vs 对象表；模拟器侧订正；以及**下一轮判死用的两个 oracle**（`OutErrorLog=1` 看 `Error.log`；inspector 看 `Scene+0xA5D8+4*17` 对象指针）"
+    },
+    {
+      "file": "tickets/T-0102/evidence/adv-window-0x202-root-cause.md",
+      "anchor": "根因与修复",
+      "line": 1,
+      "note": "★★★**轮 21 结案取证**：根因 = `0x202 set-draw-color` 缺「操作数为负 ⇒ 取当前色」回退（引擎 `sub_4231F0` raw 31395-31411 逐字），脚本 `set-draw-color <win> 0 800 -1 -1` 的意思是淡入到当前色（半透明黑），旧实现拼成 `0xFFFFFFFF` 白；修复点、守卫、E4 前/后对照（`104000:a255` → `a160`，白纸窗 → 黑窗）、以及 oracle (A) 的否定结果与 SO001 两片 alpha 的权威值"
+    },
+    {
+      "file": "tickets/T-0102/evidence/e4-adv-window-fixed-black.png",
+      "anchor": "PNG",
+      "line": 1,
+      "note": "★修复后的 E4 帧（sha256 B0BFB1F5A70CD6FF88B12F35E4AE7450ACF78FDADB2AC21F0207DAB3B5215560，1604×903）：同一存档、同一位置 `SC0000.BIN ip=1330`，ADV 窗口现在是**半透明黑 + 白字**（修前对照 = `e4-sc0000-g0001-paper-window.png` 的白底纸窗）"
     }
   ],
   "links": {
@@ -275,7 +310,7 @@
     ]
   },
   "id": "T-0102",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-20",
@@ -411,6 +446,31 @@
       "at": "2026-09-22",
       "kind": "scope",
       "what": "文档整理：新增 evidence/STATUS.md 作为**当前权威状态**（一句话结论 + 判定点 + 已排除三项 + global0 完整时间线 + 两道门实测 + 未决三选一 + 产出索引 + 临时诊断清单）；acceptance 重写为「当前结论 / 判据 / 未决 / 收尾」四段；§7/§10/§11 的作废结论在 STATUS.md §G 集中留档。用户复测「从 GAMESTART 启动」表现一致：日志显示 SC0000 写 6 之后被 SCJUMP 盖成 1。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "decision",
+      "what": "★★**轮 19：用 T-0114 的远程调试器在真运行上取证，推翻旧底稿**。① 开头就把「跑的是哪个 SCJUMP」判死：事件断点第二次命中停在 `SCJUMP.BIN ip=43`，帧栈 `SYSTEM4 → ALLMAP → SCJUMP → $5$READY`，且该文件有 **16059 条指令** ⇒ 跑的是 `src/SCJUMP.txt`（18152 行），**不是** §E 逐行引用的 `src/$1$SCJUMP.txt`（698 行、门读 `1dd7`）。② 门量实测：`13d7=1`（序章 G0000 已演，写点 `SC0000.txt:1282`）、`13d8=0`、`b22a=0`、`f8080=INT_MAX`、`1394=0x74` ⇒ 按 `SCJUMP.txt:38-54` 的同型节选择块，脚本**必然**选中 G0001 并写 `g0=1`、`3f3c=1`、`f8080=10`。⇒ 那句 `mov (global-int 0) 1` **是设计**（进入 ADV 模式 + 选中下一节），不是\"被盖掉\"。③ 白底直证：放行后进 `SC0000.BIN ip=1330`，`global 0` 停在 1 再无第三次写，`1397=1` ⇒ 窗口走 `!= 6` 的 `draw-texture` 纸窗支；截图归档（sha256 8CD3654E…F7D38）。④ 新增守卫 `test/t0102-chapter-chain.test.ts`（5 例：真 BIN 的两条节选择行为 + 三个源棘轮），突变证明（交换 `jcc` 的 op2/op3 ⇒ 2 例红）。⑤ 台账订正：`scripts.json` 的 SCJUMP/ALLMAP 两条（file、门量、极性）+ SYSTEM4 补 `global 0` 模式分派键。取证 chapter-chain-runtime-trace.md"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "未决问题**收窄成一句话**（旧三选一作废）：真机在同一存档点进 G0001 时 `global 0` 是 6 还是 1？若也是 1 ⇒ \"真机是黑\"这条前提要重估（黑来自侧边栏重绘，归宿主侧/`T-0104`）；若是 6 ⇒ 必有一步重新进入 G0000（即真机此刻 `13d7 == 0`）。判据 = dump 真槽池的 `13d7`/`13d8` 与 `int[0]`。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "decision",
+      "what": "★★**轮 20：用户真机 oracle 到手，链条彻底改向**。用户用 inspector 量到**真机 `global 0 = 1`**（与模拟器同值，并存档到槽 77），但真机 ADV 背景仍是黑 ⇒ **分歧不在 `global 0`、也不在脚本分支**（两边都走 `!= 6` 的 `draw-texture 19640/19641 11 …`）。用户提出「引擎是否允许未配置纹理 + 那时忽略整笔操作」⇒ **成立，且是引擎全系统策略**：入队侧 `sub_422E70`（raw 31271-31300）不校验槽；出画侧 `sub_4A2D50`（raw 122890；门 122952-122963）取 `CTexture*` 为 0 就 `sprintf_s(\"…DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d\") + return 0`（不画、无替代纹理），而\"报错\"只是 `WriteFile(\"Error.log\")`（raw 45647-45667，`OPEN_ALWAYS`，仅 `system:OutErrorLog` 打开时建文件）—— 同型 25+ 处，`draw-string` 同口径。★判据落点：**绑定表**（`Scene+0x748`）vs **对象表**（`Scene+0xA5D8` = `Engine+0x592E8`），门看的是对象表。**模拟器已订正**：`presenter.itemSprite` 的 1×1 白占位块（`#placeholder`）删除 ⇒ `!tex` 时 `return null`（跳过）+ 日志；守卫 `test/missing-texture-skips-item.test.ts`（双侧棘轮 + 突变证明）；连带修 `transition-render-wiring.test.ts` 的假夹具。第二层台账新增 `texture-absent-draw-is-dropped`。取证 `evidence/texture-absent-draw-policy.md`。★下一轮只需一个 oracle：`OutErrorLog=1` 后看 `Error.log` 有没有 `TEXTURE=17`。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "decision",
+      "what": "★★★**轮 21：根因定位 + 修复 + E4（结案轮）**。① oracle (A) 跑完：`OutErrorLog=1` 后真机 `Error.log` 里**没有** `DrawTexture エラー…TEXTURE=17` ⇒ 槽 17 那一刻**有**纹理、两笔 `draw-texture` 真的画了 ⇒ 「未配置纹理被整笔忽略」**不是成因**。② 顺带判死 alpha：SO001 两片源矩形（权威值 `raw-parts/DATA1-png/SO001.png`，与模拟器解码逐值一致）= 19640 片 93% 不透明纯白 / 19641 片 84.2% 全透明 ⇒ 解码没问题。③ 从 `[present] items={…104000:a255…}`（681 次采样）看到窗口项的**工作色退化成默认白**；逐帧日志显示脚本先 `set-draw-color-alpha 19640 0 (f807d) (a9db)`（半透明黑）再 `set-draw-color 19640 0 800 -1 -1`。④ 引擎 `sub_4231F0`（0x202，raw 31395-31411）有「**α<0 ⇒ 当前色α**；**色<0 ⇒ 当前色**」两条回退，模拟器 `op_set_draw_color` 漏了 ⇒ `-1/-1` 拼成 `0xFFFFFFFF`（白不透明）⇒ 窗口淡入成白。**修复** `src/vm/handlers/gfx-item.ts`（补两条回退，回退源与 0x203 共用 `getDrawItemColor`、写入前取）。**守卫** `test/op-0202-negative-fallback.test.ts`（4 例，第 1 例修前必红 + 引擎棘轮）。**E4**：同存档同位置，窗口项 α `a255 → a160`、画面 `白纸窗 → 半透明黑窗 + 白字`（`evidence/e4-adv-window-fixed-black.png`）。取证全文 `evidence/adv-window-0x202-root-cause.md`。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "doing → done —— 根因定位并修复：0x202 set-draw-color 缺 操作数为负则取当前色 回退；守卫 op-0202-negative-fallback.test.ts 4 例；用户 E4 确认 ADV 白底消失"
     }
   ],
   "tests": [
@@ -418,6 +478,10 @@
     "app/amayui-emulator/test/texture-bind-race.test.ts",
     "app/amayui-emulator/test/texture-frame-barrier.test.ts",
     "app/amayui-emulator/test/game-start-chain.test.ts",
-    "app/amayui-emulator/test/adv-name-color-chain.test.ts"
+    "app/amayui-emulator/test/adv-name-color-chain.test.ts",
+    "app/amayui-emulator/test/t0102-chapter-chain.test.ts",
+    "app/amayui-emulator/test/missing-texture-skips-item.test.ts",
+    "app/amayui-emulator/test/msg-text-range.test.ts",
+    "app/amayui-emulator/test/op-0202-negative-fallback.test.ts"
   ]
 }

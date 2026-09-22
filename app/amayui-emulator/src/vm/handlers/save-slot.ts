@@ -207,17 +207,6 @@ async function restoreEngineSlot(
     const v = p.ints[i]!;
     if (v !== 0) e.globals.int.set(i, enc(e.key, v));
   }
-  // ★**临时诊断（T-0102 白底，跑完即撤）**：`global 0` 是 ADV 窗口"白纸窗 vs 半透明黑幕"的判决量，
-  //   而两份真槽（78/79）的池里都是 `int[0] = 6` ⇒ 这里打出"池子怎么装进去的"，用来判：
-  //   是**根本没装**，还是装成 6 之后**被脚本改写**成了 1。（`enc(0,6)=0x18000`、`enc(0,1)=0x4000`）
-  {
-    const raw = e.globals.int.get(0);
-    e.native.log(
-      `[T-0102 诊断] 池还原：int[0] 文件值=${p.ints[0]} key=${e.key} ⇒ raw=${
-        raw === undefined ? '未写' : '0x' + (raw >>> 0).toString(16)
-      }（期望 0x${(enc(e.key, 6) >>> 0).toString(16)} 对应 6）`,
-    );
-  }
   e.globals.float.clear();
   for (let i = 0; i < p.floats.length; i++) if (p.floats[i] !== 0) e.globals.float.set(i, p.floats[i]!);
   e.globals.str.clear();

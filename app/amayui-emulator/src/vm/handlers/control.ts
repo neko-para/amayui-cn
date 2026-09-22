@@ -86,23 +86,6 @@ const op_jcc: OpHandler = (c) => {
     const t = plan.int(n) ?? -1;
     return t === -1 ? null : t;
   };
-  // ★**临时诊断（T-0102 白底，跑完即撤）**：`jcc` 是所有门的**公共汇合点** —— 门的条件由上游
-  //   `gr/ne/eq/and` 算出、写在某个 local 里，然后由这里分叉。之前把探针放在 `binOp`（运算侧）
-  //   会漏（有些路径不经过那条运算），放在 `jcc` 上就不会漏。
-  //   只在条件来自 **local 1 / local 7**（`$1$SCJUMP` 的 `3f3d` 分派与 `f8080` 门用的就是这两个）
-  //   时留痕，避免刷屏；打印 cond 与两个分支目标（-1 = 落下句）。
-  {
-    const a1 = c.instr.args[0];
-    if (a1 && a1.type === 0x9 && (a1.raw === 1 || a1.raw === 7)) {
-      const t2 = c.instr.args[2];
-      const t3 = c.instr.args[3];
-      c.log(
-        `[T-0102 诊断] jcc cond=local${a1.raw}=${cond} ` +
-          `⇒ 跳 ${cond !== 0 ? 'op2' : 'op3'}=0x${((cond !== 0 ? t2 : t3)?.raw ?? 0).toString(16)} ` +
-          `@${c.e.curScript().name ?? '?'} ip=${c.frame.ip}`,
-      );
-    }
-  }
   if (cond !== 0) {
     const t = branchLab(2);
     if (t !== null) {

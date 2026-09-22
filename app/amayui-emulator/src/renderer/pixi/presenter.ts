@@ -415,7 +415,7 @@ export class ScenePresenter {
       //   引擎里"屏幕上的字就是 Scene 的 DrawItem"（正文行 id = 行号 + `win+104`，`0x213` 登记
       //   `[105000,105500)`），而 emulator 的文本另有载体（`textLayer` + `msgWins`）⇒ 这批 id 上的
       //   DrawItem 若当图元画，就是 `#placeholder` 的**纯白矩形** —— 用户实测"ADV 窗口背景是白色"
-      //   在 E4 日志里的形状（`item h=0x19a28 layer=105000 未绑定纹理槽 → 占位块` ×28）。
+      //   在 E4 日志里的形状（`item h=0x19a28 layer=105000 未绑定纹理槽`，当时那一支会画占位块 ×28）。
       if (imgid === undefined && inMsgTextRange(scene.msgRanges.values(), it.handle)) {
         const key = `text-line h${it.handle.toString(16)}`;
         if (this.#noteMissing(key)) {
@@ -427,27 +427,41 @@ export class ScenePresenter {
         return null;
       }
       const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
-      const spr = tex ? cropSprite(tex, rect) : this.#placeholder(it);
-      // ★诊断缺口（`tickets/T-0102` 登记的 H4）：修前只在 `imgid === undefined` 时留痕，
-      //   而**症状的形状恰恰是"imgid 已知、纹理还没就位"**（异步载入窗口 ⇒ 占位块是纯白矩形，
-      //   玩家看到的就是"窗口背景是白的"）⇒ 那一类**完全静默**，E4 日志里归因不到任何一项。
-      //   现在两类都记。
+      // ★★★**没有纹理 ⇒ 整项不画**（`tickets/T-0102` 轮 20：按引擎语义订正，**不再是白占位块**）。
       //
-      // ★★**2026-09-22 修掉「去重把证据吃掉」的坑**（T-0102 的 E4 盲区）：此前是
-      //   `if (size > 64) clear()` —— 上限一到就把**全部**键抹掉，于是**只发生一次的占位块**
-      //   （恰恰就是"白底那一帧"的形状）可能一条日志都不留。现在改为**一次性键 + 只停止新增**
-      //   （满了以后不再记新键，但**已记的永不遗忘**）⇒ 每类只留一条、且不会被后来的键冲掉。
+      // 引擎证据（`engine/天结_unpacked.exe_utf8.c`）：
+      //  · **入队侧不校验**：`0x1FB draw-texture` 的 handler `sub_422E70`（raw 31271-31300）只读操作数
+      //    再 `sub_4ACE50(...)` 建绘制项 —— 槽有没有纹理它不管。
+      //  · **出画侧才校验**：渲染器 `sub_4A2D50`（raw 122890 起）取 `CTexture* = Scene[slot]`，
+      //    为 0 时 `sprintf_s("関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d")`
+      //    + `sub_4034D0` + **`return 0`**（raw 122952-122963）⇒ **这一笔什么都不画，也没有任何替代纹理**。
+      //  · 那不是致命错：`sub_4034D0`→`sub_4976A0`（加脚本行号）→`sub_497620`→`sub_438CC0`
+      //    = `WriteFile` 到 `Error.log`（`aErrorLog = "Error.log"`，`CreateFileA(..., OPEN_ALWAYS)`）。
+      //    不抛、不弹窗、不退出。同型"未创建纹理 ⇒ 报一行 + 跳过"的串在全引擎有 25+ 处
+      //    （BlendTexture/CopyTexture/StretchTexture/FillTexture/BlurTexture/MosaicTexture/
+      //    MonoToneTexture/MirrorTexture/CaptureTexture/SetClipRectTexture/Set3DEffectSnow/…），
+      //    `draw-string` 同样是"三个门，缺纹理整条不做"（raw 68478-68480）。
+      //  ⇒ 引擎**没有"替代纹理/占位块"这个概念**。此前 emulator 用 1×1 白占位块顶上，
+      //    是"引擎什么都不画"的场合**多画了一块白的** —— 这正是 `T-0102` 那一类"白底"的来源。
+      //
+      // ★两种"没有"要分清（都按引擎语义**跳过**，但日志要能区分，否则缺口又变静默）：
+      //  ① `imgid === undefined`：该槽**从未绑过图**（引擎：CTexture* = 0 ⇒ 跳过）；
+      //  ② 绑过但宿主还没就位：**引擎里不存在这个态**（`set-texture` `sub_422CB0` 当场读 AGF + 解码，
+      //     是同步的）⇒ 这是 emulator 异步载入的自己人问题，正解是**在屏障处等**（T-0102 的
+      //     H2/H3/H4 + `BARRIER_*`），**不是**画白块掩盖。
       if (!tex) {
         const key = `h${it.handle.toString(16)}/i${imgid === undefined ? 'none' : imgid.toString(16)}`;
         if (this.#noteMissing(key)) {
           this.log(
-            imgid === undefined
-              ? `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 未绑定 → 占位块`
-              : `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 绑定了 imgid=0x${imgid.toString(16)} ` +
-                '但纹理未就位 → 占位块（异步载入窗口；T-0102 的自愈/到货置脏会把它收回来）',
+            (imgid === undefined
+              ? `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 未绑定`
+              : `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 槽 ${it.tex ?? 0} 绑定了 imgid=0x${imgid.toString(16)} 但宿主纹理未就位`) +
+              ' ⇒ **按引擎语义跳过该项**（引擎 DrawTexture 报错 + return 0，raw 122952-122963；无替代纹理）',
           );
         }
+        return null;
       }
+      const spr = cropSprite(tex, rect);
       // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
       //
       // ★**世界矩阵门**（引擎 `sub_4A2D50` raw 123055）：`if (Scene+46532) 乘上该项的世界矩阵`，
@@ -530,14 +544,10 @@ export class ScenePresenter {
     return drawn;
   }
 
-  /** 缺纹理时的占位块：尺寸取源矩形，颜色由 layer 派生（便于肉眼区分是哪个项）。 */
-  #placeholder(it: Item): Sprite {
-    const spr = new Sprite(this.unit);
-    spr.width = it.srcW;
-    spr.height = it.srcH;
-    spr.tint = (((it.layer * 47) % 360) << 8) | 0x6a;
-    return spr;
-  }
+  // ★**`#placeholder`（缺纹理画 1×1 白块）已于 `tickets/T-0102` 轮 20 删除**：
+  //   引擎对没有纹理的槽是"报一行 + 什么都不画"（`DrawTexture` raw 122952-122963 + 25+ 处同型），
+  //   **没有替代纹理这个概念** ⇒ 占位块是"多画一块白的"，正是"白底"那一类症状的来源。
+  //   缺纹理的情形现在在 `itemSprite` 里**跳过**并留一条日志（见那里的长注释）。
 
   /** 节流诊断：每 ~500ms 记一次 scene 合成状态（看动画推进 + 是否有 item/mesh/纹理）。 */
   #logSummary(scene: SceneState, clock: number, waitFlags: number): void {

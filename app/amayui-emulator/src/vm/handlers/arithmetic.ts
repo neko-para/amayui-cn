@@ -8,7 +8,6 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, readFloatOperand, writeFloatOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { asI32 } from '../bits.js';
-import { decIntSlot } from '../ref.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -29,45 +28,8 @@ function binOp(apply: (l: number, r: number) => number): OpHandler {
     const l = p.int(2) ?? 0;
     const r = p.int(3) ?? 0;
     const v = apply(l, r);
-    // ★**临时诊断（T-0102 白底，跑完即撤）**：ADV 窗口的"白纸窗 vs 半透明黑幕"由 `global 0` 判决
-    //   （`eq local0, global0, 6`）。这里给**每一次对 `global 0` 的算术写**留痕（不只是 `mov`，
-    //   因为 `add/sub/and/…` 也可能写它）—— 目标操作数是全局 int（type 0x3）且下标为 0 时打印
-    //   "值 + 脚本名 + ip"，用来**定位到底是谁把它写成 1**，而不是靠推断。
-    noteGlobal0Write(c, v);
-    // ★**缺的那一格**：`SCJUMP` 的门是**读** `f8080`（索引 39 `gr local1, global f8080, 0xa`），
-    //   而上面那条只在**写**的时刻留痕（索引 42 之后）—— 所以看不到"门当时读到几"。
-    //   这里在**比较指令读操作数的那一刻**留痕（op1 是 op2/op3 的比较结果，见 `binOp` 的取值顺序）。
-    if (l === 0xf8080 || r === 0xf8080) {
-      c.log(
-        `[T-0102 诊断] 读 f8080 = ${(l === 0xf8080 ? l : r).toString()} ` +
-          `@${c.e.curScript().name ?? '?'} ip=${c.frame.ip} op=0x${c.instr.opcode.toString(16)}` +
-          `（注意：这是**读到的值**，用于判"门为什么放行"）`,
-      );
-    }
     p.setInt(1, v);
   };
-}
-
-/** T-0102 临时诊断：若某条算术指令的目标是 `global 0`，留一行痕（含脚本名与 ip）。 */
-function noteGlobal0Write(c: StepCtx, v: number): void {
-  const a1 = c.instr.args[0];
-  if (a1 && a1.type === 0x3 && a1.raw === 0) {
-    c.log(`[T-0102 诊断] 写 global0 ← ${v}  @${c.e.curScript().name ?? '?'} ip=${c.frame.ip}`);
-    // ★**同一个诊断（T-0102，跑完即撤）**：`$1$SCJUMP.BIN` 的这条门控写（ip=41）是白底元凶的现场。
-    //   把**决定它执不执行的那组门**一起打出来 —— 由 BIN 操作数实解（不是推断）：
-    //   ip=36 `ne local6, global 12092(0x2f3c), 1` / ip=37 `and local7,local5,local6` /
-    //   ip=38 `jcc local7,-1,0x12a`；ip=39 `gr local1, global 1015936(0xf8080), 0xa` / ip=40 `jcc`
-    //   ⇒ 这两道 jcc 都"落下句"才轮到 ip=41 的 `mov global0 1`。
-    //   上游（脚本行 39-46）另用 `1dd7`/`3318`/`1521` 算出 local5；这里一并给出，便于判"哪一道门与真机不同"。
-    const g = (k: number): string => {
-      const raw = c.e.globals.int.get(k);
-      return raw === undefined ? '未写' : `0x${(raw >>> 0).toString(16)}→${decIntSlot(c.e.key, raw)}`;
-    };
-    c.log(
-      `[T-0102 诊断] SCJUMP 门：1dd7=${g(0x1dd7)} 3318=${g(0x3318)} 1521=${g(0x1521)} ` +
-        `2f3c=${g(0x2f3c)} f8080=${g(0xf8080)} 3f3d=${g(0x3f3d)} 3f3c=${g(0x3f3c)}`,
-    );
-  }
 }
 
 // ---- 算术/位运算 (0x50-0x59) ----
@@ -108,7 +70,6 @@ const op_gre = binOp((l, r) => (asI32(l) >= asI32(r) ? 1 : 0));
 const op_mov: OpHandler = (c) => {
   const p = planOfArith(c);
   const v = p.int(2) ?? 0;
-  noteGlobal0Write(c, v); // ★T-0102 临时诊断（见 noteGlobal0Write）
   p.setInt(1, v);
 };
 

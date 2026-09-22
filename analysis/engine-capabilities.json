@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 138,
+    "total": 139,
     "modeled-verified": 58,
-    "modeled-unverified": 6,
+    "modeled-unverified": 7,
     "partial": 32,
     "absent": 19,
     "n/a-known": 23,
-    "needsAttention": 57
+    "needsAttention": 58
   },
   "entries": [
     {
@@ -4079,6 +4079,35 @@
         "note": "两族都按\"每帧渲染求值\"实现（顶点色窗见 `renderer/drawitem/animWindow.ts` + `mesh-vertex-quad` 守卫；draw-item diffuse-alpha 窗见 `test/op-203-draw-color-alpha.test.ts` 与 `test/anim-window-done.test.ts`），时钟走宿主的毫秒时钟（`tickets/T-0024` 的 `0x238` 计时器与 `0x400` 门）。机制全文：`docs-new/03-engine/copyright-effect.md`（本条目是它的**台账落点**，此前只存在于该文档与 `tickets/T-0024`）。"
       },
       "narrative": "docs-new/03-engine/copyright-effect.md"
+    },
+    {
+      "id": "texture-absent-draw-is-dropped",
+      "subsystem": "渲染",
+      "name": "槽没有纹理对象时，所有\"用这个槽\"的绘制/处理**整笔丢弃**（只写一行 Error.log，无替代纹理）",
+      "trigger": "任何在**对象表**（`image_object_table` = `Scene+0xA5D8` = `Engine+0x592E8`，4 B/槽）上取 `CTexture*` 的操作：2D `DrawTexture`（渲染器 `sub_4A2D50`）、`BlendTexture`、`CopyTexture`、`StretchTexture`、`FillTexture`、`BlurTexture`、`MosaicTexture`、`MonoToneTexture`、`MirrorTexture`、`CaptureTexture`、`SetClipRectTexture`、`Set3DEffectSnow`、`RenderFrame`、`CreateBuffer`、`SetTargetTexture`，以及 `draw-string`（三个门）。★**入队侧不校验**：`0x1FB draw-texture` 的 handler `sub_422E70` 照样建绘制项（raw 31271-31300 对槽表零引用）—— 校验发生在**出画那一刻**。其余落点：`BlendTexture` raw 122576-122596、`draw-string` raw 68478-68480、错误汇 raw 45647-45667。",
+      "engine": {
+        "fns": [
+          "sub_422E70",
+          "sub_4A2D50",
+          "sub_4034D0",
+          "sub_4976A0",
+          "sub_497620",
+          "sub_438CC0"
+        ],
+        "raw": "122890-122963"
+      },
+      "reads": [
+        "Scene+0xA5D8（= Engine+0x592E8，image_object_table：解码后的 CTexture* 表，4 B/槽）",
+        "Scene+0x748（= Engine+0x4F458，image_slot_table：槽↔imgid 绑定，20 B/槽）"
+      ],
+      "whySilent": "它**只写一行日志**：`sprintf_s(\"関数：DrawTexture エラー：描画元テクスチャが作成されていません． TEXTURE=%d\")` + `sub_4034D0` → `sub_4976A0`（补脚本行号）→ `sub_497620` → `sub_438CC0` = **`WriteFile(\"Error.log\")`**（`aErrorLog = \"Error.log\"`；`CreateFileA(..., OPEN_ALWAYS)` 追加；且**只在 `system:OutErrorLog` 打开时才建文件**）。⇒ 不抛、不弹窗、不退出，画面只是**少了一块**。★\"少一块白/少一块黑\"在截图里会长得很像\"背景颜色不对\"，所以这条必须进台账。★注意与**绑定表**的区别：槽完全可能\"绑过 imgid\"而\"对象不存在\"（对象由解码/释放单独管），这时引擎的行为仍然是**什么都不画**。",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "modeled-unverified",
+        "evidence": "E1",
+        "guard": "test/missing-texture-skips-item.test.ts",
+        "note": "已按引擎语义改：`presenter.itemSprite` 在没有纹理时 **`return null`（跳过该项）**；原来的 1×1 白占位块（`#placeholder`）已删除（`tickets/T-0102` 轮 20）。守卫是**双侧棘轮**（引擎侧：错误串 + 紧随的 `return 0` + 错误汇是 `WriteFile` + 入队 handler 不碰槽表；emulator 侧：`!tex ⇒ return null`、`#placeholder` 不得回来），突变已证明（把那一支改成画白块 ⇒ 红）。★缺口：emulator 只建模了**绑定表**（`Engine.texSlots` = imgid），**对象表**由宿主 `slotTex` 隐式代表；\"绑过但对象已被释放\"这种态目前只能靠宿主纹理缺失来近似 —— 若要精确复现，需要 VM 侧补一张对象表。 ★另登记一处**未改**的小分歧：`src/vm/handlers/gfx-texture.ts:195` 在槽不存在时补一句 `texSlots.set(slot, 0)`（= 假装绑到 imgid 0），而引擎的 `draw-texture` **根本不写槽表**，且未绑定槽在引擎里是 **`-1`**（raw 122847）而不是 0 ⇒ 这句让\"从未绑过\"与\"绑到 0\"分不开（只影响诊断日志措辞，不影响本次的绘制判据 —— 判据看的是宿主纹理）。"
+      }
     }
   ]
 }

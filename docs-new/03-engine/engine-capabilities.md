@@ -21,11 +21,11 @@ generated_by: scripts/build-capabilities.mjs
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `modeled-verified` | 58 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 32 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 19 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 23 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **138** | 需要关注（非 n/a 且非已核验）= **57** |
+| **合计** | **139** | 需要关注（非 n/a 且非已核验）= **58** |
 
 ## 按子系统
 
@@ -37,7 +37,7 @@ generated_by: scripts/build-capabilities.mjs
 | 存档槽 | 2 | 0 |
 | 帧循环 | 17 | 8 |
 | 消息窗 | 30 | 18 |
-| 渲染 | 29 | 13 |
+| 渲染 | 30 | 13 |
 | 资源 | 18 | 4 |
 | 转场 | 4 | 2 |
 | 输入 | 7 | 0 |
@@ -184,6 +184,7 @@ generated_by: scripts/build-capabilities.mjs
 | `texture-bind-async-stale-writeback` | 资源 | 纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面 | ✅ 已核验 | E3 · `test/texture-bind-race.test.ts` |
 | `input-keyboard-to-mask-bits` | 输入 | 键盘 VK → 掩码位 0..6（每帧 GetAsyncKeyState 轮询） | ✅ 已核验 | E2 · `test/keyboard-mask.test.ts` |
 | `copyright-effect` | 帧循环 | 版权页（LOGO）的 frame 效果：mesh 顶点色窗 + draw-item diffuse-alpha 窗 + timeGetTime 时钟 | ✅ 已核验 | E2 · `test/mesh-vertex-quad.test.ts` |
+| `texture-absent-draw-is-dropped` | 渲染 | 槽没有纹理对象时，所有"用这个槽"的绘制/处理**整笔丢弃**（只写一行 Error.log，无替代纹理） | 🟡 已建模未核验 | E1 · `test/missing-texture-skips-item.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 

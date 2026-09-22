@@ -182,7 +182,13 @@ test('★源码棘轮：`render4.transitionRuntime` 只被 `scene/transition.ts`
 
 test('★子集离屏合成：`renderItemSubset` 只画选中的项（引擎 36/37 = 记录那两条区间）', () => {
   const root = new Container();
-  const presenter = new ScenePresenter(root, new TextureCache(() => {}), Texture.WHITE, () => {}, VIEW_W, VIEW_H);
+  const cache = new TextureCache(() => {});
+  // ★夹具必须**把槽绑上图**（`tickets/T-0102` 轮 20）：引擎里 `set-texture` 是**同步**的，
+  //   所以"能画出来的项"该槽一定有纹理对象；而"槽没有纹理对象"的场合引擎**整笔不画**
+  //   （`DrawTexture` 报错 + return 0，raw 122952-122963）⇒ emulator 也照此跳过，
+  //   **不再**用 1×1 白占位块顶上。夹具原来靠占位块"画得出来"，那是假象。
+  cache.slotTex.set(1, Texture.WHITE);
+  const presenter = new ScenePresenter(root, cache, Texture.WHITE, () => {}, VIEW_W, VIEW_H);
   const scene = newSceneState();
   const mk = (h: number, layer: number, x: number, y: number, w: number, hh: number): void => {
     scConfigureDrawItem(scene, {
@@ -217,7 +223,7 @@ test('★子集离屏合成：`renderItemSubset` 只画选中的项（引擎 36/
   assert.equal(presenter.renderItemSubset(scene, 0, new Set(), empty), 0);
   assert.equal(empty.children.length, 0);
 
-  // ★同一份画法：主合成里的项数 = 全部可绘制项（这里是 4 张占位/精灵）
+  // ★同一份画法：主合成里的项数 = 全部可绘制项（4 项，槽 1 已绑图 ⇒ 都画得出来）
   presenter.present(scene, 0, 0);
   assert.equal(root.children.length, 4, '主合成仍画全部 4 项 ⇒ 子集渲染没有改动主路径');
 });

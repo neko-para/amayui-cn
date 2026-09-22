@@ -37,6 +37,7 @@ generated_by: scripts/build-scripts.mjs
 | `win 1..8` | 启动阶段批量清场的消息窗 |
 | `global 5` | 「已初始化」标志（save-int 持久化在 SAVE.DAT；= SYSTEM4 的两条分支判据） |
 | `Engine 517 (SetKeyTotal)` | 86 行 `i0fe c` 写 12：默认键槽下标（0x100 空掩码分支用它查 joy-callback 表） |
+| `global 0` | ★**実行モード分派键**（2026-09-23 实测补）：`== 1` ⇒ 走内联 ADV 管线（`:170-171` 的 `eq/jcc` 真分支 = 落下句）；`== 2/3/4/6/7/8` ⇒ `call-script` ALLMAP/REIGN/FIELD/NOVEL/STUDIO/DEAL（`:427-460`）；其余 ⇒ `不正な実行モード` + `abort`。**ADV 窗口画纸窗还是黑幕另有一个 `== 6` 的判据**（`:525-543`）—— 两个用途别混 |
 
 ## 不变量（拿它做回归断言）
 
@@ -71,9 +72,11 @@ generated_by: scripts/build-scripts.mjs
 - 函数结论：`0x4268D0`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/adv-text-rendering.md`
 - 主题文档：`docs-new/03-engine/sound-system.md`
+- 主题文档：`docs-new/03-engine/scene-start-flow.md`
 - 守卫测试：`app/amayui-emulator/test/save-data.test.ts`
+- 守卫测试：`app/amayui-emulator/test/t0102-chapter-chain.test.ts`
 
 ## 证据与备注
 
 - 证据：src/SYSTEM4.txt:40-44 / 71-90 / 120-130；0x73 语义见台账 msgwin-char-reveal-grid；配置装载分支的 E3 断言见 test/save-data.test.ts；语音静音子程序见 src/SYSTEM4.txt:476-480（0x2F8 语义见 sound-system.md §4）
-- 备注：只登记了启动段与字格入口；初始化字段/INIT 调用链未逐段读。
+- 备注：只登记了启动段与字格入口；初始化字段/INIT 调用链未逐段读。 ★2026-09-23 补：工程里 `global 0` 是**実行モード分派键**（运行期帧栈实测 `g0=2 ⇒ ALLMAP`、`g0=6 ⇒ NOVEL`、`g0=1 ⇒ 内联 ADV`），不是"窗口模式"这么窄；详见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md §7。

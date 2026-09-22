@@ -1,13 +1,20 @@
 ---
 kind: record
 state: consumed
-superseded_by: tickets/T-0102/evidence/STATUS.md
+superseded_by: tickets/T-0102/evidence/chapter-chain-runtime-trace.md
 ---
 
 > ★按本工程的文档模型，**历史区一律 `state: consumed`**（结论已落台账/票据，本文件只作"当时的快照"）。
-> 因此**要接着干请以这些为准**：白底 → `tickets/T-0102/evidence/STATUS.md`；
+> 因此**要接着干请以这些为准**：白底 → `tickets/T-0102/evidence/chapter-chain-runtime-trace.md`
+> （轮 19 的实机取证；本文件里那条"SCJUMP 把 6 盖成 1"的因果**已被它订正**）；
 > 调试器 → `tickets/T-0114/notes.md` + `tickets/T-0114/changes.md`；贴边 → `tickets/T-0040/ticket.json` 的 `history`；
 > 性能 → `tickets/T-0115/ticket.json`。本文件的价值是**把它们串成一条时间线**（含"当时未证"的部分）。
+>
+> ★★**2026-09-23 订正（只此一句，正文按"当时的快照"保留）**：本文件 §"T-0102"里的
+> 「`SCJUMP` 执行 `mov (global-int 0) 1` 把 6 盖成 1」**因果不成立** —— 轮 19 用 `tools/dbg.cjs`
+> 在真运行上实测：跑的是 `src/SCJUMP.txt`（不是 `$1$SCJUMP.txt`），门读 `13d7`/`13d8`
+> （不是 `1dd7`/`3318`/`1521`/`2f3c`），而那句 `mov` 是**选中"还没演过的 G0001 节"的正常动作**。
+> 见 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md`。
 
 # 会话中间状态记录（2026-09-22）
 
