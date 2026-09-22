@@ -15,7 +15,7 @@
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(8) | — |
+| [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 5 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(10) | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |

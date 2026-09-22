@@ -150,13 +150,25 @@ async function hover(win, [x, y]) {
 }
 
 async function shot(win, step) {
-  const img = await win.webContents.capturePage();
+  // ★窗口被销毁（用户关窗 / 进程退出）时不要抛穿整个流程：留一条显式告警，后面的步骤会被跳过。
+  if (win.isDestroyed()) {
+    console.log(`[shot] 跳过 ${step}：窗口已销毁`);
+    return false;
+  }
+  let img;
+  try {
+    img = await win.webContents.capturePage();
+  } catch (e) {
+    console.log(`[shot] 跳过 ${step}：capturePage 失败（${e.message}）`);
+    return false;
+  }
   const p = path.join(OUT, `${NAME}-${step}.png`);
   fs.writeFileSync(p, img.toPNG());
   const { width, height } = img.getSize();
   // 全黑/全透明（= 只剩 Pixi 背景色）时给个显眼提示：这类"没画出东西"正是要抓的 bug
   const blackish = img.toBitmap().every((v, i) => i % 4 === 3 || v < 40);
   console.log(`[shot] ${p} (${width}x${height})${blackish ? '  ★几乎全黑：可能有渲染缺陷' : ''}`);
+  return true;
 }
 
 (async () => {
@@ -224,6 +236,18 @@ async function shot(win, step) {
       await sleep(2000);
       await shot(win, `11-load-page-${i}`);
     }
+    // ★`--row <y>`：在列表里先**点一行**再按 LOAD —— `--load <slot>` 只是"标记"，实际载入的是
+    //   **列表当前选中的那一行**（列表会记住上次的页/光标 ⇒ 连跑两次会重复载入同一个槽；
+    //   用户实测踩过：`--load 78` 实际载入了 79）。y 用**图像坐标**（与 `11-load-list.png` 同尺）；
+    //   标定参考：第 4 行 ≈ 325、第 8 行 ≈ 547（`toSend` 的标定来源见文件头注释）。
+    //   ★**不要用按键移动光标**：曾加过 `--key Up`，实测那个键会"看起来一直被按着"（用户观察），
+    //   而且会污染后续输入 ⇒ 已移除，只保留点行。
+    const rowY = Number(argOf('row', '0'));
+    if (Number.isFinite(rowY) && rowY > 0) {
+      await click(win, toSend(400, rowY));
+      await sleep(1200);
+      await shot(win, `11-row-y${rowY}`);
+    }
     await shot(win, '11-load-list');
     await click(win, toSend(130, 575)); // 左下「LOAD」按钮（加载当前选中槽）
     const okDlg = await waitLog('SBUNKIMOVE.BIN', 15000);
@@ -248,6 +272,18 @@ async function shot(win, step) {
     await click(win, [640, 450]); // 推进一步
     await sleep(4000);
     await shot(win, '15-load-next');
+    // ★`--burst <秒>`：点完之后**连拍**（每 2 秒一张）——用来抓"只出现一小段时间"的画面：
+    //   · SN0000 → SC0000 的**切章过场**（用户口径：点完要等 ~15s 才结束，之后才看得到 SC0000 的 ADV 窗）；
+    //   · 存档页消失一瞬（`T-0067`）。
+    //   不连拍就只能靠"睡固定秒数再截一张"猜时刻，实测总是错过那一帧。
+    const burstSec = Number(argOf('burst', '0'));
+    if (Number.isFinite(burstSec) && burstSec > 0) {
+      const N = Math.ceil(burstSec / 2);
+      for (let i = 1; i <= N; i++) {
+        await sleep(2000);
+        await shot(win, `16-t${i * 2}s`);
+      }
+    }
     console.log('[shot] 完成（load）');
     app.quit();
     return;

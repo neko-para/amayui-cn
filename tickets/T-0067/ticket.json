@@ -5,7 +5,7 @@
   "area": "emulator/render",
   "why": "用户实测（T-0064 之后仍在）：在 ADV 场景里存档时，存档页面会消失一瞬间并露出 ADV 界面。机制假设：引擎的 present **从不清后备缓冲**（ClearTarget 被恒 0 的 Scene+46460&1 守卫），一次性绘制的内容与旧像素一直留在屏上；而 emulator 每帧从模型**整屏重组**，于是「脚本撤掉 UI、稍后才重画」的中间帧会被如实呈现。现有的补偿是 pixiBackend 的帧保持（holdFrames / HOLD_MAX_FRAMES=60），但 configureDrawItem（每条 draw-texture）会**无条件**解除保持 ⇒ 存档流程里任何一次新绘制都会解除保持。需要先拿到用户复现时的 frame-hold / present 日志确认是哪一步解除的。",
   "acceptance": [
-    "存档全流程（进入存档页 → 选槽 → 确认 → 写盘 → 回到列表）没有任何一帧展示「UI 缺失」的画面\n★进度（轮 11，**机制已取证 + 已证的缺陷已修**）：拿到真跑日志（`tickets/T-0067/evidence/transition-frame-hold.log`，锚 = 原日志第 2337 行）—— `0x73 -> SC0000.BIN` 那一刻的顺序是「`满屏幕布 0x19258 被撤 → 留帧 60 帧`」→ 几笔之后 `[frame-hold] draw-texture → 解除留帧（剩 60 帧）`，而紧跟其后的 `configureDrawItem h=0x18b00 (0,0,256x128)` 说明**解除留帧的那一笔只有 256×128**（转场贴片，且 `setTransition` 还没执行）⇒ 元凶 = `configureDrawItem` 里那条**无条件**的 `#releaseFrameHold`。已改为按\"**新内容又铺满一屏**\"解除（`itemCoversView`：`flags&1` 且源矩形面积 ≥ 0.9×视口；无时钟无副作用），`HOLD_MAX_FRAMES=60` 上限保留。★**这不是 §2 被打回的\"可见才解除\"**（那条对新建项惰性：`from` alpha 恒 255）——判决实验就是日志那一笔（256×128 = 视口 3.6% ⇒ 继续留帧）。★**本判据仍未结**：与 §3\"底图合成\"的差异（留帧期中小贴片被**推迟**而非叠在旧画面上）与真界面复跑（headless 无留帧机制）见 notes §4。",
+    "存档全流程（进入存档页 → 选槽 → 确认 → 写盘 → 回到列表）没有任何一帧展示「UI 缺失」的画面\n★进度（轮 11，**机制已取证 + 已证的缺陷已修**）：拿到真跑日志（`tickets/T-0067/evidence/transition-frame-hold.log`，锚 = 原日志第 2337 行）—— `0x73 -> SC0000.BIN` 那一刻的顺序是「`满屏幕布 0x19258 被撤 → 留帧 60 帧`」→ 几笔之后 `[frame-hold] draw-texture → 解除留帧（剩 60 帧）`，而紧跟其后的 `configureDrawItem h=0x18b00 (0,0,256x128)` 说明**解除留帧的那一笔只有 256×128**（转场贴片，且 `setTransition` 还没执行）⇒ 元凶 = `configureDrawItem` 里那条**无条件**的 `#releaseFrameHold`。已改为按\"**新内容又铺满一屏**\"解除（`itemCoversView`：`flags&1` 且源矩形面积 ≥ 0.9×视口；无时钟无副作用），`HOLD_MAX_FRAMES=60` 上限保留。★**这不是 §2 被打回的\"可见才解除\"**（那条对新建项惰性：`from` alpha 恒 255）——判决实验就是日志那一笔（256×128 = 视口 3.6% ⇒ 继续留帧）。★**本判据仍未结**：与 §3\"底图合成\"的差异（留帧期中小贴片被**推迟**而非叠在旧画面上）与真界面复跑（headless 无留帧机制）见 notes §4。\n★进度（2026-09-22，用户复验仍未消失，**定位到一条具体机制，待真界面 trace 收口**）：用户复验「从 ADV 界面保存时存档界面仍会消失一小段时间」⇒ 查产品日志的留帧轨迹，得到两条**不对称**：① `clearDrawContainer` **会**武装留帧（`[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）`，日志里多次出现，紧跟着 `clearDrawContainer: 释放 drawItems=29 meshes=1 文本窗=1→0`）；② 而脚本清 UI 的主力手段是 **`detach-texture` 按区间删项**（`detachTexture h=0x19a28 count=500 RANGE-REMOVE [0x19a28,0x19c1c) (drawItems=28, meshes=0) 文本窗清=8`，日志里十几次）—— 这条路**只在被删区间里含\"满屏覆盖幕\"时**才武装留帧（`#coversViewportMeshInRange`），**删掉一屏 UI 图元本身不武装** ⇒ 脚本\"先拆 UI、后重画\"的那一帧被如实呈现 = 用户看到的\"存档界面消失一下\"。**下一步（要先把复现钉住，不许猜）**：需要一次**真界面的存档流程 trace**（进入存档页 → 选槽 → 确认 → 写盘 → 回列表）—— 现有 `npm run record`（`--centered`）可直接录，但 headless 侧走不到\"ADV → 存档页\"（与 `T-0103` 同一可达性缺口）。两条可选路：**(a)** 用户提供一个**在 SC/ADV 场景里的存档槽**（`--load <槽>` 能直接落到那一屏），我再录\"打开存档页\"的输入；**(b)** 用户直接录一段（`npm run record -- --scenario … --centered`）并把 trace 给我。拿到 trace 后按判据修：让\"删除覆盖面积显著的区间\"也武装留帧（与 `clearDrawContainer` 同口径），或改为\"留帧期把新贴片合成在旧画面上\"。\n★进度（2026-09-22 续，复现口径与工具就绪）：用户给出复现配方「载入 79，然后向 70 存档」。工具已就绪：`tools/shot.cjs` 新增 `--burst <秒>`（连拍，抓\"只消失一小段时间\"的画面）与 `--row <y>`（在载入列表点行选槽，避开\"列表记住上次光标\"）；侧边栏热点已从脚本定位（`src/SN0000.txt:52-66`：`i090 49c 0 64 281` = 右侧竖条 **toggle**（x 1180..1280、y 0..641）；`i090 4a5 13 3e 3e` = 顶部方钮（1189,19,62×62）；`i090 49c 72|a4|d6|108|13a|16c|19e|1d0|202 50 2f` = 竖排 8 钮（x1180..1260，y 114/164/214/…/514），各钮经 `call label_0000b884` 分派，`f7ffb` 取值 2/4/5/6/7/8/9/a/b —— **哪一个是 SAVE 还需点一次截图确认**）。**阻塞点**：`shot` 跑的是同一份 overlay/日志，用户实例同时开着时日志与槽会被互相覆盖（本轮实测：读到的是用户 TITLE 屏的 `[present]`）⇒ 需要用户实例**停 ~2 分钟**，或由用户录一段 trace 给我。",
     "改动有 before/after 的日志或截图证据；不破坏既有修复（T-0063 的留帧口径、T-0062 的缩略图捕获）\n★进度（轮 11）：证据已按 T-0057 R6 从 `.tmp/` 搬进票据（`evidence/transition-frame-hold.log`，含原日志行号与抓取口径）；改动前的 before 就是该日志原文（解除留帧那三行），after 由守卫的取值表 + 源码棘轮钉住；既有的 T-0063 留帧口径（`transition-render-wiring.test.ts` 的\"转场活动帧不许被留帧早退\"）与 T-0062 的缩略图捕获路径**未改动**。",
     "npm run verify 全绿"
   ],
@@ -33,6 +33,11 @@
       "anchor": "[frame-hold] draw-texture → 解除留帧（剩 60 帧）",
       "note": "真跑日志原文（来源 .tmp/amayui-emulator.log 第 2325..2362 行）：满屏幕布 0x19258 被撤（留帧启动）之后，一笔 256×128 的转场贴片就把留帧解除了（紧随的 configureDrawItem h=0x18b00 (0,0,256x128)）+ setTransition 尚未执行。⇒ T-0067 的机制取证（原 notes §4 缺的输入 ①）。",
       "line": 29
+    },
+    {
+      "file": "tickets/T-0067/evidence/transition-frame-hold.log",
+      "anchor": "frame-hold",
+      "note": "留帧轨迹证据（本轮又在产品日志里核到：clearDrawContainer 会武装、detachTexture RANGE-REMOVE 不武装 —— 见判据 ① 的 2026-09-22 段）"
     }
   ],
   "links": {
@@ -58,6 +63,16 @@
       "at": "2026-09-21",
       "kind": "status",
       "what": "doing → doing —— 轮 12（副产物登记）：E4 通道打通——本机可跑 Electron，shot/record/replay 三件套可用（record 必须 --centered，否则窗口贴边到屏幕外导致未找到游戏窗口；--out 按仓库根、replay 轨迹按包目录 cwd 解析）。残余②只剩'存档流程的输入编排'（现有 gamestart spec 只到 SN0000 第一页，需补走到存档页的 spec）。详见 notes §5"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "用户复验：从 ADV 保存时存档页仍消失一小段时间。产品日志核到不对称：clearDrawContainer 武装留帧、而脚本清 UI 的主力 detach-texture 区间删除只在\"含满屏覆盖幕\"时才武装 ⇒ 拆 UI 的那一帧被如实呈现。下一步需真界面存档流程 trace（`record --centered`），headless 走不到该屏（与 T-0103 同源）；已向用户要\"SC/ADV 场景的存档槽\"或一段 trace。"
+    },
+    {
+      "at": "2026-09-22",
+      "kind": "status",
+      "what": "复现配方与工具就绪（--burst/--row；侧边栏热点已定位、SAVE 具体按钮待截图确认）；阻塞在\"用户实例与 shot 共享 overlay/日志\" ⇒ 需一次干净窗口或用户侧 trace。"
     }
   ],
   "tests": [

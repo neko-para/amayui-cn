@@ -25,6 +25,9 @@ import {
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
 import { applySceneXformToPlacement, sceneLayerAffected } from '../scene/ops.js';
+// ★消息窗正文行的 id 区间（`0x213`/`0x25D` 登记）：那批 id 上的 DrawItem 是"文本行"而不是图元
+//   （emulator 的文本由 `textLayer` 画）⇒ 无纹理槽时不能当图元画成白块。见 `T-0102`。
+import { inMsgTextRange } from '../drawitem/msgTextRange.js';
 import { walkBlendSequence, type BlendEnv, type BlendState } from '../scene/blend.js';
 import type { TextureCache } from './textureCache.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
@@ -392,6 +395,23 @@ export class ScenePresenter {
 
       // ★纹理解析：**槽号 = DrawItem`+4`**（`draw-texture` 的 op2）。`it.layer`/`it.handle` 是层序键。
       const { tex, imgid } = this.textures.resolve(it);
+      // ★★**消息窗正文行的区间里、没有纹理槽的项 = 文本行本身，交给文本层画**（`tickets/T-0102`）：
+      //   引擎里"屏幕上的字就是 Scene 的 DrawItem"（正文行 id = 行号 + `win+104`，`0x213` 登记
+      //   `[105000,105500)`），而 emulator 的文本另有载体（`textLayer` + `msgWins`）⇒ 这批 id 上的
+      //   DrawItem 若当图元画，就是 `#placeholder` 的**纯白矩形** —— 用户实测"ADV 窗口背景是白色"
+      //   在 E4 日志里的形状（`item h=0x19a28 layer=105000 未绑定纹理槽 → 占位块` ×28）。
+      if (imgid === undefined && inMsgTextRange(scene.msgRanges.values(), it.handle)) {
+        const key = `text-line h${it.handle.toString(16)}`;
+        if (!this.#missingTexLogged.has(key)) {
+          if (this.#missingTexLogged.size > 64) this.#missingTexLogged.clear();
+          this.#missingTexLogged.add(key);
+          this.log(
+            `[present] item h=0x${it.handle.toString(16)} layer=${it.layer} 在消息窗正文区间内且无纹理槽` +
+              ` → **跳过**（文本由文本层画，见 T-0102）`,
+          );
+        }
+        return null;
+      }
       const rect = itemSrcRect(it, clock); // flipbook 窗（窗4）会改源矩形
       const spr = tex ? cropSprite(tex, rect) : this.#placeholder(it);
       // ★诊断缺口（`tickets/T-0102` 登记的 H4）：修前只在 `imgid === undefined` 时留痕，
