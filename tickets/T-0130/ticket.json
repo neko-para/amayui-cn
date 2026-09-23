@@ -1,0 +1,47 @@
+{
+  "title": "三份台账的 guards/tests 加内容锚点（现在只查文件存在）",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/test",
+  "why": "T-0124 复核确认：`capability-ledger.test.ts:74-93`（能力台账）、`script-ledger.test.ts:158-181`（脚本台账）、\n`ticket-ledger.test.ts:111-124`（票据台账）对 `guard`/`tests` 的检查**只有 `fs.existsSync`**。\n\n实测后果：139 条能力 / 92 条 guard / 只用到 **54 个文件**；`test/adv-msgwin.test.ts` 一家给 **11 条能力**当守卫；\n把全部 guard 都指向 `test/harness.ts` 也**全绿**。⇒ 「声称有守卫」与「真有守卫」之间没有机械联系，\n而「守卫不许空口声称」正是本工程台账纪律的核心一条（见技能 `amayui-engine-analysis` §2.3 硬约束 1）。\n\n附带：三份台账的 schema 规则与 `scripts/*.js --validate` 是**双实现**（`capabilities.js` 的注释自己记录过一次不同步事故）。",
+  "acceptance": [
+    "三份台账守卫从 `fs.existsSync(file)` 升级为「文件存在 + 内容锚点存在」（锚点形式建议 `test/x.test.ts#<用例名片段>`，断 `readFileSync(file).includes(anchor)`）",
+    "为至少 3 条现有条目给出迁移示例（含「把 anchor 改错 ⇒ 必须红」的反例实验）",
+    "消除「11 条能力共用同一个 guard 文件」的失真：要么补真实用例锚点，要么把该条目的 evidence 等级降级并写明理由",
+    "把三份 schema 规则与 `scripts/*.js --validate` 抽共享模块（消双实现），并说明哪些规则在两侧各自保留",
+    "收尾：`npm run verify` 全绿；四份台账 `--validate` 绿；changes.md 记前后「能机械核对的 guard 数」"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/capability-ledger.test.ts",
+      "anchor": "fs.existsSync",
+      "note": "只查文件存在"
+    },
+    {
+      "file": "app/amayui-emulator/test/script-ledger.test.ts",
+      "anchor": "existsSync",
+      "note": "同型检查"
+    },
+    {
+      "file": "tickets/T-0124/evidence/G7-audio-ledger-tooling.md",
+      "anchor": "只查",
+      "note": "实测数字（139/92/54 与 11 条共用）来源"
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0124"
+    ]
+  },
+  "id": "T-0130",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

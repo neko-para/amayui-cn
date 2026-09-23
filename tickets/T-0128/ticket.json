@@ -1,0 +1,54 @@
+{
+  "title": "E4 闸门统一到 base+overlay 两侧都看（9 处静默跳过）+ replay 把 Live2D 接进 Digest",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/verify",
+  "why": "T-0124 实测：本机 `base` 侧（`.tmp/appdata/Eushully/天結いキャッスルマイスター/`）**不存在**，但 `overlay` 侧有**真游戏槽**\n（`SAVE78.DAT` format=3 / 38 绘制项、`SAVE79.DAT` format=3 / **69 绘制项**、两份 320×180 `.STH`）。\n\n而 **7~9 处 E4/E3 闸门把路径写成 `resolveSystemPaths(REPO).baseDir/SAVE`** ⇒ 这些「真槽」用例在本机**静默跳过**：\n`save-slot.test.ts:120/145`、`save-thumb.test.ts:155`、`engine-slot.test.ts:210`、`slot-load-resume.test.ts:318`、\n`slot-load-transfer.test.ts:114`、`save-slot-chain.test.ts:47/207`（**2/2 全跳**）、`slot-load-screen`。\n`engine-slot.test.ts:268` 是**唯一**同时看 base+overlay 的（也是唯一真在跑的 E4，实测「真槽 2 个，逐条解码 107 项」）。\n⇒ 结果是：**声称为 E4 的强断言在开发机上一次都没跑过**，而它们本该是这套测试里最强的一档。\n\n另一条独立的「通道没接上」：`src/frame/digest.ts:107` 调 `scSnapshot(scene, nowMs)` **没传第三个可选参数 `l2d`**（`snapshot.ts:369` 的签名有它），\n`DigestEngine` 也没有 l2d 字段 ⇒ **已经跑通的 record/replay 对 Live2D 一字节未比**；补两行即可把 3 条 L2D 用例抬到 E4。",
+  "acceptance": [
+    "把 6 个文件的闸门改成「两侧都看」（照 `engine-slot.test.ts:268` 的已跑通写法：`dirs = [base/SAVE, overlayDir/SAVE]`，并按槽格式过滤）⇒ 复测 `skipped` 数：save-slot 2→0、save-thumb 1→0、engine-slot 1→0、slot-load-resume 1→0、slot-load-transfer 1→0、save-slot-chain 2→0，且 `pass` 不减少",
+    "反例实验（必须写进 changes.md）：把 `SLOT_FRAME_STRIDE_DWORDS` 261 改成 260 ⇒ `engine-slot.test.ts:210/:262` **必须红**（证明这条 E4 真有牙齿）",
+    "`src/frame/digest.ts` 传入 l2d 快照 + `DigestEngine` 加 l2d 字段 ⇒ 至少 3 条 L2D 用例（`live2d-chain` / `live2d-render` / `l2d-node-compose` 的真资产用例）在 record/replay 下可比对，并给出一次实跑输出",
+    "`gallery-bgm-list.test.ts:190-215` 的裸 `return` 静默跳过改成显式 `{ skip: !hasBase }`（与 `music-table.test.ts:160` 同口径）",
+    "收尾：`npm run verify` 全绿；skip 数与 pass 数的前后对照写进 changes.md"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/engine-slot.test.ts",
+      "anchor": "逐条解码",
+      "note": "唯一两侧都看的 E4（写法照它改其余 6 处）"
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/digest.ts",
+      "anchor": "scSnapshot(scene",
+      "note": "没传第三参 l2d ⇒ replay 对 Live2D 一字节未比"
+    },
+    {
+      "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
+      "anchor": "t.skip",
+      "note": "2/2 全跳的实例"
+    },
+    {
+      "file": "tickets/T-0124/notes.md",
+      "anchor": "| D2 |",
+      "note": "D2 缺陷的完整证据与清单"
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0124",
+      "T-0051",
+      "T-0114"
+    ]
+  },
+  "id": "T-0128",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

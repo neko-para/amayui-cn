@@ -1,0 +1,61 @@
+{
+  "title": "测试分档 T0/T1/T2/T3（默认档 ≤20s）+ test/ 纳入 typecheck",
+  "type": "refactor",
+  "priority": "P1",
+  "area": "emulator/test",
+  "why": "T-0124 实测：全量 `npm test` 108.0 s（另一次负载下 66.6 s ⇒ 波动大），而**单文件 `config1-chain.test.ts` 一个人就是 59.2 s**（13 例）= 整轮的一半以上；其余 155 个文件基本都是毫秒级合成用例。\n根因与 T-0115 同源：这些 E3 用例各自**从真 BIN 重跑一遍链路**，且 `config1-chain` 内还有 8 条全链路只差尾部注入（见 `src/tools/config1Chain.ts:740-790`）。\n\n另一条独立缺陷（D1）：**`test/` 不在 typecheck 里** —— `tsconfig.json` 的 `exclude` 含 `test`，\n`tsconfig.control.json` / `tsconfig.electron.json` 只 include `src`/`control`/`electron` ⇒ 17 个守卫文件不受类型检查。\n已经有 1 处**靠 esbuild 消除未用导入才没炸**：`gallery-bgm-list.test.ts:37` 导入 `instr` 又在 `:45` 重声明\n（Node 原生 ESM 语义下是加载期 SyntaxError ⇒ 整个文件的用例会**静默消失**）。\n\n方法论结论（T-0124 §4.4）：分档只改变「什么时候跑」，**不改变期望值**。",
+  "acceptance": [
+    "新增 `tsconfig.test.json` 并挂进 `npm run typecheck`（`test/**/*.ts` 受检）；修掉 `gallery-bgm-list.test.ts:37/:45` 的 `instr` 重声明与其它类型错误",
+    "`package.json` 新增 `test:corpus` / `e4` / `mutate` 三个 script；`npm test` 默认档**不含**真语料档文件",
+    "T0 默认档墙钟 ≤ 20 s（本机实测），且**用例数不减少**（只做文件归属调整）",
+    "T1 语料档：`config1-chain` 改成「变体数组」（跑完 previewProbe 后逐变体 `快照 → 注入 → 走尾段 → 采样 → 还原`，**判据一字不改**）；`adv-name-color-chain` 加模块级 memo（其 3 次 runConfig1Chain 有 2 次 opts 完全相同）⇒ 给出改前/改后墙钟",
+    "★**不许降低判据**：禁止把 E3 断言改成 E1/E2 充数；分档后 T1 必须仍全跑 E3",
+    "`docs-new/04-app/emulator.md` 的闸门表加「档位」一列，写清「改什么必须跑哪一档」",
+    "收尾：`npm run verify` 全绿 + 三份台账 `--validate` 绿 + changes.md 记前后实测数字"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "anchor": "T-0102 判决实验",
+      "note": "单文件 59.2 s = 整轮一半以上",
+      "line": 431
+    },
+    {
+      "file": "app/amayui-emulator/tsconfig.json",
+      "anchor": "\"exclude\": [\"node_modules\", \"dist\", \"test\"]",
+      "note": "D1：test/ 不受 typecheck",
+      "line": 16
+    },
+    {
+      "file": "app/amayui-emulator/test/gallery-bgm-list.test.ts",
+      "anchor": "instr",
+      "note": "导入 + 重声明：ESM 语义下是 SyntaxError，靠 esbuild 侥幸",
+      "line": 37
+    },
+    {
+      "file": "tickets/T-0124/notes.md",
+      "anchor": "### 4.4 建议的档位设计",
+      "note": "T0/T1/T2/T3 的完整定义与实测依据"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/emulator.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0115",
+      "T-0020",
+      "T-0124"
+    ]
+  },
+  "id": "T-0126",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

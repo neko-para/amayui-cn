@@ -1,0 +1,93 @@
+{
+  "title": "全量测试审计（159 文件 / 1078 用例）：逐条判定「有价值 / 无意义」，并评估 Electron 调试能力下的测试方法论",
+  "type": "analysis",
+  "priority": "P1",
+  "area": "emulator/test",
+  "why": "用户要求：分析目前所有测试用例（已超 1000 条），确定哪些有价值、哪些无意义，并评估在新增的基于 Electron 的调试能力（T-0114 的 dbg:srv / 条件与事件断点 / 命令台 / 远程 click·shot）下是否有必要调整测试方法。\n\n做法：把 159 个 *.test.ts 按子系统精确划分成 7 组（24/25/24/25/22/22/17，无重叠无遗漏），每组交一个只读子代理逐条**读断言体**（不只看 it 标题）并给出「反例实验」（改什么会让它红）；主 agent 另做三件事：① 实测成本（逐文件墙钟 + 全量）；② **变异实测**（12 处引擎语义注入，看全量测试哪几条红 —— 这是唯一能客观区分「守卫」与「冗余」的手段）；③ 对每条要进结论的关键判定**亲自复核**（读出 2 条子代理结论为过强/不成立，见 evidence/verification-log.md §B）。\n\n结论：159 文件**没有一个整文件无意义**（drop=0），无意义集中在**断言级**（>90 处，分 6 类）；最严重的是 **5 处零断言假绿**（console.warn('[skip]')+return 而不调 t.skip，node:test 记 pass，一条断言都没跑）；另有 1 处**错 oracle**（engine-config.test.ts:160 与 raw 23695 相反，会挡住正确修复）。方法论**需要调整**，但不是「删单测换调试器」：① 分档（config1-chain 单文件实测 59.2 s ≈ 全量一半）；② 把调试器定位为「oracle 工厂」+ 把 E4 做成 dbg 驱动的自动化闸门（过去 E4 必须人坐在窗口前点，现在可以脚本化）；③ 加变异闸门。另发现三个结构缺陷：test/ 不在 typecheck 里（17 个守卫文件不受检查）、7~9 处 E4 闸门盯不存在的 baseDir（静默跳过）、调试命令表分裂成 3 份且被测试守的那份不发货（面板帮助文本至今写着非法事件名 global-write）。",
+  "acceptance": [
+    "7 份分组报告（逐文件判定表 + 带 file:line 的无意义清单 + 反例实验 + 重复覆盖矩阵）落进本票 evidence/，无一份只指 .tmp",
+    "主 agent 的独立复核记录落库：逐条列出「复核通过」与「订正子代理」两类，且订正必须给实测输出（本次 2 条：G2 的 call-frame:81 判「同义反复」不成立；G4 的 overlay:121 判「永不红」过强，实测该文件会 fail 1 但归因为「测试结束后产生异步活动」）",
+    "变异实测落库：每条给「改动 → 全量测试红了几条 / 哪些文件 → 是否零覆盖」，并明确标出『全绿 = 覆盖空洞』的条目（原始数字，可复算命令）",
+    "方法论结论给出可执行定义：T0/T1/T2/T3 四档各自的命令、内容、目标耗时、在什么改动下必跑；并写明『分档不降判据』（禁止把 E3 断言降成 E1/E2 充数）",
+    "把可行性结论（而非愿景）写清：调试器不能替代回归的三条硬理由（查询面只到 VM 池 / 事件面只 4 种 / 需窗口且单会话做不了跨实例判据）与它真正该承担的两件事（oracle 工厂、automated E4 闸门）",
+    "可执行项分派到后续票并回链：T-0125（清理无判别力断言）/ T-0126（分档 + typecheck）/ T-0127（调试命令表单源化 + 事件面扩展）/ T-0128（E4 闸门两侧都看 + replay 接 l2d）/ T-0129（重复覆盖去重）/ T-0130（台账 guards 内容锚点）",
+    "收尾：node scripts/build-tickets.mjs + tickets.js --validate + ticket-ledger.test.ts 三连绿",
+    "另一个子工程也纳入：`app/amayui-toolkit` 的 87 个 vitest 用例单独审并落 `evidence/toolkit-vitest.md`（发现「不在任何 CI 闸门里」「依赖未入 git 的 metadata.json」两条结构问题）⇒ 派到 T-0131"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0124/notes.md",
+      "anchor": "## 2. \"无意义\"的六种精确形态",
+      "note": "结论件：六种无意义形态的定义与处数、三档方法论、后续票分派",
+      "line": 95
+    },
+    {
+      "file": "tickets/T-0124/evidence/G5-texture-l2d.md",
+      "anchor": "console.warn('[skip]",
+      "note": "5 处零断言假绿（最严重的一类）的来源报告；同文件含 texture/Live2D/字段槽的逐条判定"
+    },
+    {
+      "file": "app/amayui-emulator/test/live2d-moc.test.ts",
+      "anchor": "console.warn('[skip] 找不到 .MOC 语料目录",
+      "note": "★形态①：回调不接 t、不调 t.skip，返回即 pass（零断言）；同文件 :5 的注释自称「缺 ⇒ skip + 诊断（不假装通过）」与行为相反",
+      "line": 62
+    },
+    {
+      "file": "app/amayui-emulator/test/harness.ts",
+      "anchor": "argc: args.length",
+      "note": "op-2ed-and-bit-index.test.ts:112-122 的「同义反复」依据：instr() 的定义就是 argc = args.length",
+      "line": 33
+    },
+    {
+      "file": "app/amayui-emulator/tsconfig.json",
+      "anchor": "\"exclude\": [\"node_modules\", \"dist\", \"test\"]",
+      "note": "缺陷 D1：test/ 不受 npm run typecheck 覆盖（tsconfig.control/electron 也只 include src/control/electron）",
+      "line": 16
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugBreak.ts",
+      "anchor": "export function parseDebugCommand",
+      "note": "缺陷 D3：该函数零生产调用者（只有 test/debug-break.test.ts 调用）；生产走 session.ts 的 compileBreak，面板与 CLI 各有自己的分流表",
+      "line": 514
+    },
+    {
+      "file": "app/amayui-emulator/control/control.ts",
+      "anchor": "类型：global-write / slot-bind",
+      "note": "D3 的后果：面板用户可见帮助写着非法事件名 global-write（合法值见 debugBreak.ts 的 EVENT_KINDS），且 control/ 层零测试覆盖",
+      "line": 246
+    },
+    {
+      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "anchor": "T-0102 判决实验",
+      "note": "成本主犯：单文件实测墙钟 59.2 s（13 例）= 全量 npm test 的一半以上；T-0115 的首要对象",
+      "line": 431
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0115",
+      "T-0114",
+      "T-0020",
+      "T-0051",
+      "T-0122",
+      "T-0125",
+      "T-0126",
+      "T-0127",
+      "T-0128",
+      "T-0129",
+      "T-0130",
+      "T-0131"
+    ]
+  },
+  "id": "T-0124",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "title": "调试器命令表单源化（消灭 3 份拷贝）+ 事件面扩 engine-field-write/local-int-write + debugQuery 加宿主侧槽表/l2d",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/tooling",
+  "why": "T-0114 交付的调试能力（`dbg:srv` + 命令台 + 条件/事件断点 + 远程 click/shot）已经没有回归守卫，而且**命令表分裂成 3 份**：\n\n- `src/vm/debugBreak.ts:514` 的 `parseDebugCommand`（**被 `test/debug-break.test.ts` 测着**）—— **零生产调用者**（生产走 `session.ts` 的 `compileBreak`）；\n- `control/control.ts:266-298`（真发货，**无测试**）；\n- `tools/debugsrv.cjs:262-300`（真发货，**无测试**）。\n\n**后果已经发生**：`control/control.ts:246-247` 的用户可见帮助至今写着非法事件名 `global-write`\n（合法值见 `debugBreak.ts:485-490`：`global-int-write` / `global-float-write` / `global-str-write` / `slot-bind`），\n且缺浮点/字符串两池。`T-0114/changes.md` 自己记过同款教训（「面板不复制渲染窗的命令表——守卫钉不住」），但**本次审计证明它在另一处又发生了**。\n（`T-0122` 的验收⑥还要求「不另起一套命令解析」——现状 3 套，再开工就是 4 套。）\n\n另有两条**能力面**的限制（T-0124 §4.2），它们决定了「多少探针型断言可以退出测试套件」：\n1. `DebugEventKind` 只有 4 种（`src/vm/engine.ts:144-148`）：**不覆盖 local 槽写入、不覆盖 `engineValues`（引擎字段）写入**；\n2. `debugQuery` 只有 `global/local/frame/flocal/slot/run`（`src/vm/debugQuery.ts:95-224`），\n   `slot` 读的是 **VM 台账** `engine.texSlots`，**宿主侧 `TextureCache` 不可观测**；也没有 `l2d` 查询。",
+  "acceptance": [
+    "补 `control/` 层的**最小覆盖**（现在零测试）：变异实测确认删掉 `control/control.ts:38-43` 的 `opHex()` 前导零后**全量 1078 例无一红**（见 tickets/T-0124/evidence/mutation-campaign.md §2 Z3）；至少补一条纯函数用例 `opHex(0x0b5) === '0x0b5'`，把 2026-09 用户实测踩过的\"0x0b5 与 0x05b 混读\"结论钉住",
+    "命令表单源化：`control/control.ts` 与 `tools/debugsrv.cjs` 改为调用同一份解析（`parseDebugCommand` 或下沉到无 Engine 依赖的共享模块）；`debug-break.test.ts:143-184` 由「测死代码」变成「测发货的那份」",
+    "新增棘轮：`parseDebugCommand`（或共享解析模块）**必须至少有两处 `src|control|tools` 调用者**（防「守卫测死代码」复发）",
+    "把 `debug-break.test.ts:186-200` 改成**不带引号的内容级守卫**，且该守卫必须让 `control/control.ts:246-247` 的非法 `global-write` **当场红**（先修帮助文本，再把非法值纳入禁止清单）",
+    "`DebugEventKind` 扩 `engine-field-write` / `local-int-write`（★先给 `engineValues` 立统一写门面，否则事件不完整）；同步 `DEBUG_BREAK_HELP` 与面板帮助",
+    "`debugQuery` 增加：槽的**宿主侧状态**（与 VM 台账分开报）+ `l2d <slot>` 查询；给出至少一条「用新查询把某个探针型断言降级」的实例",
+    "收尾：`npm run verify` 全绿；`debug-*` 三个测试文件的用例数前后对照写进 changes.md"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/vm/debugBreak.ts",
+      "anchor": "export function parseDebugCommand",
+      "note": "零生产调用者",
+      "line": 514
+    },
+    {
+      "file": "app/amayui-emulator/control/control.ts",
+      "anchor": "类型：global-write / slot-bind",
+      "note": "用户可见的非法事件名（无任何测试覆盖）",
+      "line": 246
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "DebugEventKind",
+      "note": "事件面只有 4 种，不含 local / engineValues 写"
+    },
+    {
+      "file": "tickets/T-0124/notes.md",
+      "anchor": "### 4.2 它**不能**替代什么",
+      "note": "能力面的三条硬限制 + 两条工具缺陷"
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0114",
+      "T-0122",
+      "T-0124"
+    ]
+  },
+  "id": "T-0127",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

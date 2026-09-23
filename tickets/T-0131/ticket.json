@@ -1,0 +1,54 @@
+{
+  "title": "amayui-toolkit 的 87 个 vitest 用例既不在闸门里、又依赖未入 git 的 metadata.json；并修 3 处恒真/假覆盖",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "toolkit/test",
+  "why": "T-0124 的审计把 `app/amayui-toolkit`（独立子工程，`vitest run`，5 文件 / 87 例）单独审了一遍，结论件见 `tickets/T-0124/evidence/toolkit-vitest.md`。三件事：\n\n1. ★**这 87 例不在任何闸门里**：`.github/workflows/deploy-pages.yml` 只跑 `npm run build`（生成 metadata + vite build），**从不 `npm test`**；\n   仓库根与 emulator 的 `npm run verify` 也不覆盖它。⇒ 它坏了没人知道。\n2. ★**依赖未入 git 的衍生物**：`app/amayui-toolkit/.gitignore:2` 忽略 `public/`，\n   `git ls-files app/amayui-toolkit/public` 计数 **0**（`metadata.json` 是 `npm run build:data` 生成的）；\n   而 `package.json` **没有 `pretest`** ⇒ 全新 clone 上直接 `npm test`，读 `metadata.json` 的 `search`/`dataset`/`useStore` 三个文件会在 `beforeAll` 抛 ENOENT。\n3. **判据问题**（与 emulator 侧同一批病）：`dataset.test.ts:394-399` 整例同义反复（`e.addr === addrHex(e.kind,e.id)`，构造时就写的同一表达式）；\n   `useStore.test.ts:65` 的 `pos` 单调不减、无法构造失败输入；`search.test.ts:56-63` 同一纯函数调两次 `toEqual`（删掉 `sort` 仍绿）；\n   `search.test.ts:65-70` 的 `idExact` 只传实体 id ⇒ `search.ts` 的 **`byAddr` 分支全测试集永不命中**（改成 `false` 87 例全绿）。\n   另有生产侧标签映射**双实现**（`rules.ts` 与 `search.ts` 各存一份 `UNIT_ATTR_LABEL` + 种族/性别/属性名表）而**无任何一致性断言**。\n   （正面：本套件**没有** emulator 侧那三类假绿 —— 无零断言空跑、无 async 未 await、无 `it.skip` 滥用。）",
+  "acceptance": [
+    "把 toolkit 的测试接进闸门：至少让 CI 的 workflow 跑 `npm test`；并说明它与 emulator `npm run verify` 的关系（是否并入根级 verify）",
+    "消除「未入 git 的衍生物」依赖：`package.json` 加 `pretest`（跑 `build:data`）**或**把测试改为读仓库内可复现的 fixture；并验证「全新 clone + npm ci + npm test」能过（给出实测）",
+    "修 3 处恒真/假覆盖：删 `dataset.test.ts:394-399` 与 `useStore.test.ts:65`；`search.test.ts:56-63` 改成真跨 kind 排序+去重断言；`search.test.ts:65-70` 的 `idExact` 换成地址值（如 `0x17b51`）以真正覆盖 `byAddr`",
+    "补一条「双实现一致」断言：`rules.ts` 与 `search.ts` 的标签映射对同一谓词渲染一致（防静默漂移）",
+    "收尾：`cd app/amayui-toolkit && npm test` 全绿 + 与 `css`/`tsc` 的既有检查不冲突；前后用例数与耗时对照写进 changes.md"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-toolkit/package.json",
+      "anchor": "\"test\": \"vitest run\"",
+      "note": "有 test script 但无 pretest ⇒ 依赖 build:data 产物"
+    },
+    {
+      "file": "app/amayui-toolkit/.gitignore",
+      "anchor": "public/",
+      "note": "metadata.json 所在目录被忽略，未入 git",
+      "line": 2
+    },
+    {
+      "file": ".github/workflows/deploy-pages.yml",
+      "anchor": "npm run build",
+      "note": "CI 只 build、从不 test"
+    },
+    {
+      "file": "tickets/T-0124/evidence/toolkit-vitest.md",
+      "anchor": "**测试不在任何 gate 里**",
+      "note": "逐条判定与反例实验来源",
+      "line": 9
+    }
+  ],
+  "links": {
+    "docs": [],
+    "analysis": [],
+    "tickets": [
+      "T-0124"
+    ]
+  },
+  "id": "T-0131",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}
