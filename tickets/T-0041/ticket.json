@@ -33,13 +33,14 @@
     {
       "file": "app/amayui-emulator/src/renderer/scene/blend.ts",
       "anchor": "leakStateAcrossEntries",
-      "note": "默认 false = 引擎事实；开关降级为实验档（说明已按 T-0041 改写）"
+      "note": "默认 false = 引擎事实；开关降级为实验档（说明已按 T-0041 改写）",
+      "line": 32
     },
     {
       "file": "app/amayui-emulator/test/blend-mode.test.ts",
       "anchor": "★T-0041：2D draw-item 每项都从默认开始",
       "note": "守卫：默认档下 `0` 不继承前一项/mesh 的尾状态；泄漏档序列同时钉住（用于对照）",
-      "line": 114
+      "line": 116
     }
   ],
   "id": "T-0041",

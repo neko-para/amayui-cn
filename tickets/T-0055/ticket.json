@@ -17,7 +17,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "int __thiscall sub_42ACC0(int _this)",
-      "line": 36689,
+      "line": 790,
       "note": "0xD5 = 起表 + 置 0x40 门；`95805` 先置 0（本条不前进）再按 `index < 写游标` 决定是否置门 —— 「派发次数 = 条目数 − 1」的出处"
     },
     {
@@ -60,7 +60,7 @@
       "file": "docs-new/03-engine/engine-reset-mainloop.md",
       "anchor": "### B.6 阶梯动画时间表",
       "note": "机制长文（小语言 / 调度器逐行 / 两条易错口径 / emulator 对应）",
-      "line": 359
+      "line": 363
     },
     {
       "file": "app/amayui-emulator/src/vm/stageLoop.ts",
@@ -72,7 +72,7 @@
       "file": "app/amayui-emulator/test/stage-loop.test.ts",
       "anchor": "SAVE.BIN 的 label_0000706c 段",
       "note": "★E3：真语料实测 31 次派发 / 481 ms / 31 帧（时间表必须摊在多帧，塌成一帧即失败）",
-      "line": 279
+      "line": 283
     }
   ],
   "links": {

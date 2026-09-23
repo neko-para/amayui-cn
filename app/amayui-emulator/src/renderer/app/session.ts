@@ -38,7 +38,9 @@ import type { ControlStatus } from '../ipcFileSource.js';
 import type { RenderStatus } from '../renderStatus.js';
 import type { PixiBackend } from '../pixiBackend.js';
 import { runFrameLoop, type FrameLoopGates, type FrameLoopOptions } from '../../frame/loop.js';
-import type { FrameHost } from '../../frame/host.js';
+import { capturePng, type FrameHost } from '../../frame/host.js';
+// ★`tickets/T-0135`：输入注入走共享层的声明式执行器（宿主无关）——`applyScenarioEvent`。
+import { applyScenarioEvent, type ScenarioEvent } from '../../frame/scenario.js';
 import type { FrameObservation, FrameObserver } from '../../frame/observer.js';
 import type { BinInstruction } from '../../script/bin.js';
 import { JsonlWriter } from './jsonlWriter.js';
@@ -272,7 +274,7 @@ export class RendererSession {
         this.#resumeFromBreak();
       }
     });
-    window.api?.onDebugQuery?.(({ id, text }) => {
+    window.api?.onDebugQuery?.(async ({ id, text }) => {
       let result: unknown;
       const raw = String(text ?? '');
       try {
@@ -280,7 +282,21 @@ export class RendererSession {
         //   分类命令，它把整行原样发过来，由这里的 `parseDebugCommand`（零依赖纯词汇表，与面板同一份）
         //   解析后派发。于是"命令表"从 3 份拷贝收敛成 1 份，CLI 也能拿到 `?` 的**同一份**帮助文本。
         const act = parseDebugCommand(raw);
-        if (act && act.a !== 'query') {
+        if (act && act.a === 'capture') {
+          // ★`tickets/T-0134`：抓一帧走**帧宿主缝**（`FrameHost.capture` = 页面内 extract 读回），
+          //   不是 Electron 的 capturePage（两者是不同管线，见 `T-0133` §B.4.4 的 B′ vs 形态 C）。
+          //   人类看的帧流与 agent 的取证因此是同一条路径。
+          //   ★命令名是 `capture` 而不是 `shot`：后者被 `tools/debugsrv.cjs` 在主进程截获。
+          const png = await capturePng(this.#frameHost());
+          result = png
+            ? {
+                query: raw,
+                ok: true,
+                lines: [`capture: ${png.length}B PNG（base64 在 png 字段）`],
+                png: bytesToBase64(png),
+              }
+            : { query: raw, ok: false, lines: ['capture：当前宿主没有 capture 能力（headless 没有像素）'] };
+        } else if (act && act.a !== 'query') {
           result = { query: raw, ok: true, lines: this.#applyDebugAction(act) };
         } else {
           result = runQuery(this.#e, act && act.a === 'query' ? act.text : raw, {
@@ -360,6 +376,14 @@ export class RendererSession {
       poolPending: () => this.#native.poolPending?.() ?? false,
       /** 音频帧泵（引擎 raw 20645-20646）：驱动每完整帧调一次，参数带本帧 `advActive`。 */
       audio: (intent) => this.#native.audio?.(intent),
+      /**
+       * **抓一帧当前画面**（`FrameHost.capture`；`tickets/T-0134` 决定 ②）。
+       *
+       * 接的是 `PixiBackend.captureFrame()`（内部复用既有的私有 `#captureStageCanvas()`）——
+       * 于是 `shot` 命令与"人类看的帧流"是**同一条路径**，且三者（Electron 可见窗 / offscreen /
+       * 浏览器宿主）共用这一处接线。headless 宿主不实现它（没有像素是它的定义）。
+       */
+      capture: () => this.#pixi.captureFrame(),
       /** `FrameDigest` 的输入（engine 段由 `frame/digest.ts` 的纯函数组装 ⇒ 两宿主同一份判据）。 */
       digestState: () => this.#pixi.digestState(),
       digestHostCounters: () => this.#pixi.digestHostCounters(),
@@ -517,6 +541,30 @@ export class RendererSession {
         this.#reportBreakList({});
         return [`（断点 #${r.id} 已下发；命中会以 event=paused 推送）`];
       }
+      case 'focus':
+        // ★`tickets/T-0134`：宿主焦点模式由调试器显式下发（`focus auto|on|off`）。
+        //   `off` 会立刻执行与 DOM blur 完全相同的释放（`releaseAllMouse` + `releaseAllKeys`），
+        //   之后 `inputAttach` 的焦点处理器在此模式下忽略宿主噪声（DSH 抢焦点 / iframe 失焦 / offscreen）。
+        this.#e.input.setHostFocus(act.mode);
+        this.#traceLog.line(
+          `[focus] hostFocus=${act.mode}${act.mode === 'off' ? '（已释放全部鼠标/键盘按住态）' : ''}`,
+        );
+        return [`hostFocus=${act.mode}`];
+      case 'input': {
+        // ★`tickets/T-0135` Phase 2（`T-0133` §B.4.3）：agent 的输入命令 → `ScenarioEvent` →
+        //   `applyScenarioEvent`。**不经 DOM**（所以浏览器宿主与 Electron 宿主同一条路），
+        //   坐标本来就是引擎虚拟 1280×720 ⇒ 不需要"客户区/图像/虚拟"三套换算。
+        //   命中测试/悬停由 `setCursor` → `onCursorMove` → `routes.hitTest` 触发（`T-0133` §0.11）。
+        for (const ev of act.events) applyScenarioEvent(this.#e.input, ev as ScenarioEvent);
+        const kinds = act.events.map((e) => (e.kind === 'cursor' && e.valid === false ? 'leave' : e.kind)).join(', ');
+        this.#traceLog.line(`[input] 注入 ${act.events.length} 个事件：${kinds}`);
+        return [`已注入 ${act.events.length} 个输入事件（${kinds}）`];
+      }
+      case 'capture':
+        // ★`capture` 是**异步**的（要 await 抓帧）⇒ 不走这条同步路径：真正的处理在 `onDebugQuery` 的
+        //   `act.a === 'capture'` 分支（那里能 await 并把 base64 放进结果的 `png` 字段）。
+        //   走到这一行只可能是有人把它接到了同步派发上 —— 明确报错，不要静默返回空。
+        return ['（内部错误：capture 必须走 onDebugQuery 的异步分支）'];
       case 'query':
         return [`（内部错误：query 不该走这里）${act.text}`];
     }
@@ -894,4 +942,21 @@ export class RendererSession {
       this.notifyStatus();
     }
   }
+}
+
+/**
+ * `Uint8Array` → base64（**浏览器与 Node 都能跑**；`tickets/T-0134` 的 `capture` 命令用）。
+ *
+ * ★为什么不用 `Buffer`：这段代码跑在**渲染进程**（浏览器 bundle，`T-0054` 的"渲染器安全"棘轮：
+ *   连 `Buffer` 都不能用）；`btoa` 是两边都有的全局。
+ * ★为什么要分块：一帧 PNG 有 MB 量级，`String.fromCharCode(...bytes)` 会**撑爆调用栈**
+ *   （spread 的实参个数上限）⇒ 按 32KB 一段累积。
+ */
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
 }

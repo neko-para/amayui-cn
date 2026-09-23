@@ -33,23 +33,26 @@
     {
       "file": "src/TITLE.txt",
       "anchor": "joy-callback 0 label_000008ec",
-      "note": "TITLE 登记的 joy-callback 0（同族 1..4 见 TITLE.txt:40-44；GAMESTART/CONFIG1 等同型）——当前在 emulator 里不可达"
+      "note": "TITLE 登记的 joy-callback 0（同族 1..4 见 TITLE.txt:40-44；GAMESTART/CONFIG1 等同型）——当前在 emulator 里不可达",
+      "line": 40
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "keyEdge = 0;",
       "note": "现状：键盘只有 keyEdge（仅登记），且 `flushHeld`/`flushPending` 不并 0..6",
-      "line": 133
+      "line": 146
     },
     {
       "file": "tickets/T-0052/evidence/keyboard-title-e3.md",
       "anchor": "TITLE → GAMESTART.BIN",
-      "note": "判据 ③ 的 E3：真实 TITLE 菜单键盘走通的链路/实测落点表/节拍坑/辨别力证明（含\"只按 Enter 作对照\"）。"
+      "note": "判据 ③ 的 E3：真实 TITLE 菜单键盘走通的链路/实测落点表/节拍坑/辨别力证明（含\"只按 Enter 作对照\"）。",
+      "line": 23
     },
     {
       "file": "app/amayui-emulator/src/frame/scenario.ts",
       "anchor": "kind: 'cursor' | 'press' | 'release' | 'wheel' | 'keydown' | 'keyup' | 'note';",
-      "note": "判据 ③ 的能力本身：统一 Scenario 的键盘事件种类（两宿主同义；回放的输入快照本来就带 keyEdge/keysHeld）。"
+      "note": "判据 ③ 的能力本身：统一 Scenario 的键盘事件种类（两宿主同义；回放的输入快照本来就带 keyEdge/keysHeld）。",
+      "line": 141
     }
   ],
   "tests": [

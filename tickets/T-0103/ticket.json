@@ -14,7 +14,8 @@
     {
       "file": "tickets/T-0103/notes.md",
       "anchor": "### 复现配方：存档 78",
-      "note": "★本轮（轮 9）用户实测补充：四段现象逐段对照（真机 vs emulator）+ 可复现存档 78 + 现象→归票初判 + 脚本/日志锚点。这是本票判据 ① 的取证条目（帧级连拍仍缺）。"
+      "note": "★本轮（轮 9）用户实测补充：四段现象逐段对照（真机 vs emulator）+ 可复现存档 78 + 现象→归票初判 + 脚本/日志锚点。这是本票判据 ① 的取证条目（帧级连拍仍缺）。",
+      "line": 33
     },
     {
       "file": "src/SN0000.txt",
@@ -25,17 +26,20 @@
     {
       "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
       "anchor": "setTransition id=0x18b02",
-      "note": "章头演出的现场日志（原日志在 .tmp，已摘录归档）：AE910AA.AGF(256×128)→slot 44；`setTransition id=0x18b02` = 类别 3 / `[13]=1`(ZoomBlur) / `[3]=1500`ms / 目标槽 `[4]=64`（该槽确实是 createTexture slot=64 1280×720 mode=1）"
+      "note": "章头演出的现场日志（原日志在 .tmp，已摘录归档）：AE910AA.AGF(256×128)→slot 44；`setTransition id=0x18b02` = 类别 3 / `[13]=1`(ZoomBlur) / `[3]=1500`ms / 目标槽 `[4]=64`（该槽确实是 createTexture slot=64 1280×720 mode=1）",
+      "line": 45
     },
     {
       "file": "tickets/T-0091/notes.md",
       "anchor": "G2 不能直接 import",
-      "note": "转场侧的 G1/G2 与实现陷阱（第 1/4 段的最可能归属）"
+      "note": "转场侧的 G1/G2 与实现陷阱（第 1/4 段的最可能归属）",
+      "line": 33
     },
     {
       "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
       "anchor": "SC0000",
-      "note": "同一次切换的完整边界（7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）"
+      "note": "同一次切换的完整边界（7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）",
+      "line": 1
     }
   ],
   "links": {

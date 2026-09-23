@@ -16,12 +16,14 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "op_gdi_repaint_window",
-      "note": "本轮实现落点：计划层读 op1..op5 + 越界门（Engine.textItems.records）+ op3&2 用 bgrToRgb 覆盖填充/描边色 + emitWin 重发布该窗；三条登记的近似写在它的文档注释里"
+      "note": "本轮实现落点：计划层读 op1..op5 + 越界门（Engine.textItems.records）+ op3&2 用 bgrToRgb 覆盖填充/描边色 + emitWin 重发布该窗；三条登记的近似写在它的文档注释里",
+      "line": 904
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
       "anchor": "已从本表移出",
-      "note": "★锚点已按位移交（原锚点是 [0x82, op_stub_unhandled]，该条目已删）：这里保留「为什么从 STUB_NATIVE_OPS 移出 + 新落点在哪」的说明"
+      "note": "★锚点已按位移交（原锚点是 [0x82, op_stub_unhandled]，该条目已删）：这里保留「为什么从 STUB_NATIVE_OPS 移出 + 新落点在哪」的说明",
+      "line": 79
     },
     {
       "file": "src/CONFIG.txt",

@@ -13,6 +13,47 @@ import { VIEW_H, VIEW_W } from '../viewport.js';
 const MOVE_LOG_MS = 300;
 const WHEEL_LOG_MS = 200;
 
+/**
+ * **`window.blur` 的共享处理**（`tickets/T-0134` 的 WS-1 冻结接口）—— DOM-free，Node 测试可直接调。
+ *
+ * `hostFocus !== 'auto'` ⇒ **忽略宿主噪声**（`'on'`/`'off'` 由调试器说了算），写一行 trace 并返回 `false`；
+ * 否则执行与 `'off'` 完全相同的释放：`releaseAllMouse()`（`tickets/T-0027`：浏览器此后可能不再派发
+ * mouseup）+ `releaseAllKeys()`（同理，keyup 可能丢失），返回 `true`。
+ *
+ * ★为什么抽出来：本文件是 DOM 绑定代码，Node 测试进不来 —— 手动模式的判定必须能在 Node 里断言
+ * （WS-1 验收 3/4）。DOM 监听器只剩薄调用。
+ *
+ * @returns 是否真的释放了（`false` = 被手动焦点模式忽略）。
+ */
+export function handleHostBlur(input: InputManager, trace: (line: string) => void): boolean {
+  if (input.hostFocus !== 'auto') {
+    trace(`[input] 失焦被手动焦点模式忽略（mode=${input.hostFocus}）`);
+    return false;
+  }
+  input.releaseAllMouse();
+  input.releaseAllKeys();
+  trace('[input] blur -> release');
+  return true;
+}
+
+/**
+ * **`visibilitychange(hidden)` 的共享处理**（口径与 `handleHostBlur` 完全一致；`tickets/T-0134`）。
+ *
+ * ★调用方负责判 `document.hidden`（本函数是 DOM-free 的，看不到 document）；释放路径**不写 trace**
+ *   —— 与修前的 hidden 路径一致（避免给自动模式凭空加日志）。
+ *
+ * @returns 是否真的释放了（`false` = 被手动焦点模式忽略）。
+ */
+export function handleHostHide(input: InputManager, trace: (line: string) => void): boolean {
+  if (input.hostFocus !== 'auto') {
+    trace(`[input] 隐藏被手动焦点模式忽略（mode=${input.hostFocus}）`);
+    return false;
+  }
+  input.releaseAllMouse();
+  input.releaseAllKeys();
+  return true;
+}
+
 export function attachMouseInput(
   canvas: HTMLCanvasElement,
   input: InputManager | undefined,
@@ -51,14 +92,14 @@ export function attachMouseInput(
     trace('[input] leave');
   });
 
-  // 失焦/隐藏：浏览器此后可能不再派发 mouseup ⇒ 先释放按钮态（回到窗口后由 mousemove 的
-  // `e.buttons` 真值重建，见 `InputManager.syncButtons`）。
+  // 失焦/隐藏：浏览器此后可能不再派发 mouseup/keyup ⇒ 先释放按钮态与键盘按住态（回到窗口后由
+  // mousemove 的 `e.buttons` 真值重建，见 `InputManager.syncButtons`）。
+  // ★`tickets/T-0134`：判定搬进 DOM-free 的 `handleHostBlur`/`handleHostHide`（手动焦点模式下它们忽略）。
   window.addEventListener('blur', () => {
-    input.releaseAllMouse();
-    trace('[input] blur -> release');
+    handleHostBlur(input, trace);
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) input.releaseAllMouse();
+    if (document.hidden) handleHostHide(input, trace);
   });
 
   window.addEventListener('mousedown', (e) => {
@@ -136,9 +177,6 @@ export function attachMouseInput(
   window.addEventListener('keyup', (e) => {
     input.releaseKey(vkOf(e));
   });
-  // 失焦/隐藏：浏览器此后可能不再派发 keyup ⇒ 与鼠标同样先清按住态
-  window.addEventListener('blur', () => input.releaseAllKeys());
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) input.releaseAllKeys();
-  });
+  // ★失焦/隐藏时的 `releaseAllKeys()` 已并入上面的 `handleHostBlur`/`handleHostHide`
+  //   （`tickets/T-0134`：一次失焦 = 鼠标与键盘一起释放，且手动焦点模式下整体忽略）。
 }

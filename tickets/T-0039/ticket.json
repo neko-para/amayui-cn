@@ -20,7 +20,8 @@
     {
       "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
       "anchor": "死写检测自身有效",
-      "note": "★T-0017 之后这条改成**合成输入**（真实模型已无死写字段）—— 原来的反向断言是 Item.blend 应被判为死写"
+      "note": "★T-0017 之后这条改成**合成输入**（真实模型已无死写字段）—— 原来的反向断言是 Item.blend 应被判为死写",
+      "line": 38
     },
     {
       "file": "app/amayui-emulator/src/renderer/drawitem/model.ts",
@@ -38,7 +39,7 @@
       "file": "app/amayui-emulator/test/no-dead-writes.test.ts",
       "anchor": "死写检测对注释/字符串免疫",
       "note": "守卫：注释/字符串里的字段名不改变读数；唯一真读改成注释后必须回到死写",
-      "line": 68
+      "line": 70
     }
   ],
   "id": "T-0039",

@@ -1,0 +1,36 @@
+# 浮窗三态实拍（2026-09-23，T-0137 acceptance 9）
+
+命令（cwd 必须是 app/amayui-emulator）：
+  npx electron ../../plugins/amayui-emulator/float-shot.cjs
+
+做法：把 `lib/client.js` 的 `shell.overlay` 组件在一个**独立 harness 页**里用真 React 挂起来
+（本地 React 18 UMD + `window.__ModuleLoader__` 桩 + 假 `/dsh-emulator/api/__instances` + 假对话正文），
+用**隐藏** Electron 窗（show:false，1280×800，no-sandbox 前缀同 e2e-shot.cjs）实拍三态。
+★插件源码零改动（驱动把 client.js 原样拷进 harness；diff 为空）；file:// 下的模拟器画面由驱动侧
+`protocol.handle('file', …)` 桩出来的同源假页代替（真环境里那一步是插件路由）。
+
+输出（三次运行一致，exit 0）：
+✓ ModuleLoader.load 收到 id=@amayui/emulator-view
+✓ factory 返回 { name, inject, apply }（name=amayui-emulator-view, inject=["slots"]）
+✓ slot 注册：conversation.session.header.actions (id=amayui-emulator-open, order=36)
+✓ slot 注册：shell.overlay                       (id=amayui-emulator-dialog, order=160)
+✓ 面板轮询了 /dsh-emulator/api/__instances（共 2 次）
+✓ 页面无 JS 异常  []
+✓ 默认态 = 收起胶囊（无 panel/无 modal）
+✓ 胶囊在右下角 fixed 定位  {"x":1197,"y":753,"w":67,"h":31}（视口 1280×800，right/bottom 各 16px）
+✓ collapsed 153196B | expanded 209577B | modal 123570B（均 >20KB）
+✓ 画面框内容区 640×360（scale 0.5；getBoundingClientRect 含 1px 边框 → 642×362）
+✓ 关模态 → 回到浮窗（不是什么都不剩）{panel:true,modal:false,pill:false}
+[float] 全部通过 ✅
+
+## 三张图（本目录）
+| 文件 | 态 | 目视核对 |
+|---|---|---|
+| `panel-1-collapsed.png` | 默认＝**收起胶囊** | 右下角 67×31 深色胶囊「🖥 + 绿徽标 2」；**浮在假对话正文之上、正文一条都没被推挤**；顶部 header 里同时挂着另一个 slot 的按钮「🖥 调试画面 2」 |
+| `panel-2-expanded.png` | **展开浮窗** | 标题栏「🖥 调试画面 / 活实例 2 · 每 3s 刷新」+ 收起 / 尺寸档 0.5× / 放大 / 新标签打开 / ↻ 刷新；列表 `dbg-a :53819 BIN TITLE.BIN f=1234 … ♥1s 前`（选中，金框）与 `dbg-b :41111 ❤5s 前`；下方 640×360 画面框 |
+| `panel-3-modal.png` | **模态（放大）** | 全屏 rgba(0,0,0,.6) 背板 + 居中卡片（左列实例列表 + 右侧同一 640×360 画面框）；点「关闭」**回到浮窗**（已断言） |
+
+## 只能靠真框架语义确认、离线冒烟无法验的一条
+"切会话／滚动对话时浮窗不消失、不跟着滚" —— 来自 `shell.overlay` 的框架语义
+（DSH 文档原话：*above every column and **outside their scroll containers***）+ `position:fixed`；
+harness 里已验证"浮在正文之上且不推挤布局"，剩下那半在重启后的 GUI 里一眼可确认。

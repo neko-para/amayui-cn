@@ -154,6 +154,11 @@ const NON_BRIDGE = {
     //   这种**运行开关**混进 VM 的操作数面（而且它是宿主实现细节，headless 侧根本不需要）。
     //   ★清单必须按**字典序**写（守卫拿排序后的集合比对）。
     'audioSilent',
+    // ★`captureFrame`（`tickets/T-0134` WS-2 的帧捕获缝）：**帧宿主能力**，与 `advanceModel`/`digestState`
+    //   同类 —— 调用方是装配层（`session.ts` 的 `#frameHost()` 把它接成 `FrameHost.capture`），
+    //   再由 `shot` 命令/人类看的帧流经 `capturePng(host)` 调用。**没有一条 opcode 调它**；
+    //   入桥会把"取像素"混进"VM 能让宿主做什么"，而 headless 侧根本没有像素（它刻意不实现）。
+    'captureFrame',
     'debugAudio',
     'debugItemState',
     'digestHostCounters',

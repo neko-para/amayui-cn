@@ -15,18 +15,19 @@
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "return r.stopReason === 'cap' ? frames : r.frames",
       "note": "C5 已统一：两个 chain 的 run 返回语义一致（不再返回 maxFrames）",
-      "line": 588
+      "line": 626
     },
     {
       "file": "app/amayui-emulator/src/renderer/renderer.ts",
       "anchor": "与实现不符",
-      "note": "D3 已订正：删掉\"渲染帧循环（Pixi ticker）独立跑 present\"的说法"
+      "note": "D3 已订正：删掉\"渲染帧循环（Pixi ticker）独立跑 present\"的说法",
+      "line": 18
     },
     {
       "file": "app/amayui-emulator/src/vm/native.ts",
       "anchor": "它不是",
       "note": "D3 已订正：startFrameLoop 只记墙钟起点，不是每帧 ticker",
-      "line": 584
+      "line": 610
     }
   ],
   "history": [

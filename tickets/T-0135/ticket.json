@@ -1,0 +1,86 @@
+{
+  "title": "调试观察宿主 Phase 2：Node web 宿主（HTTP+SSE，静音）+ DSH 插件（同源 iframe）",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "Phase 1（`T-0134`）已把**共享层**那一半做完：输入桥（hover/出窗可注入）、`focus auto|on|off`、`FrameHost.capture` 帧捕获缝、`HostService` 去单例/实例化，全量 `npm run verify` EXIT=0。Phase 2 要把它变成**能真的看**的形态：agent 调试时人能在 DSH 里看到一个 iframe（约 640×360 的「大致情况」），且**不出现 Electron 窗口** —— 而不是现在把窗口挪到屏幕外（`T-0040` 的权宜）。\n\n已完成的前置（记在 `T-0134/changes.md` 变更 2，属 Phase 2 但已提前做掉、有守卫）：`src/web/envelope.ts`（二进制线格式，9/9 测试）与 `src/renderer/webBridge.ts`（`window.api` 的 web 实现：`invoke`→`POST`、`send`→`POST /event`、`sendSync`→`sendBeacon`、`on`→SSE；12/12 测试）。\n\n★**形态已由实测定下**：`T-0134` 的 B′ 实验 **PASS**（`AMAYUI_WINDOW_HIDDEN=1` 隐藏窗口里，`capture` 命令经 `FrameHost.capture` → `extract.canvas` 连拿 3 帧 1280×720、非空、互不相同 —— 证据 `T-0134/evidence/bprime-run.txt` + `bprime-hidden-window-title.jpg`）⇒ **不需要 OSR**，隐藏窗口 + 桥**拉**帧即可；这也意味着 Phase 2 不必碰 `offscreen:true` 那一串坑。\n\n宿主形态按 `T-0134/notes.md` §6.2 的 **P1（子进程 + 同源反向代理）** 走：emulator 的 web 宿主跑**独立进程**（崩溃不拖 DSH，契合「更强的 isolation」），DSH 插件把 `/dsh-emulator/*` 代理过去 ⇒ iframe 与 DSH 同源（无 CORS/CSP 问题），控制面推送用 **SSE**（已实测本 server 可用）从而**不必代理 WebSocket 升级**。",
+  "acceptance": [
+    "【Node web 宿主】新增 `src/web/host.ts`：`node:http` 服务（仅绑 127.0.0.1）实现契约 —— `GET /`（渲染页 + 已构建的 renderer bundle）、`POST /dsh-emulator/api/<method>`（JSON 或信封二进制，元数据走 `x-amayui-meta`）、`POST /dsh-emulator/api/event`（单向）、`GET /dsh-emulator/events`（SSE 长挂）；全部经 `HostService`（每实例一份，`--instance <id>` 决定日志/存档落在 `.tmp/instances/<id>/`）",
+    "【静音】宿主默认 `audio.enabled=false`（不给 `audioStreamBase`）⇒ 引擎侧规则照跑、不出声；断言宿主不提供该字段",
+    "【CSS/页面】新增 web 渲染页（`src/renderer/index.web.html` 或等价物）：CSP 放行同源 `connect-src`（SSE/POST）、不再需要 `amayui-audio:`；在 `renderer.js` **之前**安装 `installWebBridge()`",
+    "【构建】`build-electron.mjs`（或等价入口）增一条：把 `webBridge` + 渲染入口打成浏览器 IIFE，产物进 `dist/web/`；`npm run verify` 全绿（新产物不参与测试，但不得让既有构建脚本坏掉）",
+    "★【端到端实跑证据】起宿主后，用真实浏览器或无头浏览器访问该端口，**跑到 TITLE 并截一张图**（存进 `tickets/T-0135/evidence/`），证明 ① 页面能 boot ② 资源/配置/存档通道通 ③ 不出 Electron 窗口",
+    "【agent 侧】`tools/dbg.cjs`/调试守护进程的 `click/move` 在 web 宿主下走**纯 VM 外层桥**（`ScenarioEvent` → `applyScenarioEvent`），`capture` 命令经 `FrameHost.capture` 取图；两条都有实跑证据（命令 + 观察到的结果）",
+    "【instance 隔离实跑】并行起两个实例（不同 `--instance`）：断言各自的 log/trace/replay/overlay 落点不同、互不干扰（可直接读两个实例目录核对）",
+    "【DSH 插件】`plugins/amayui-emulator`：Host 半 `inject` 含 `webServer`（否则路由静默跳过）+ `register({kind:'prefix', path:'/dsh-emulator'})` 反向代理到子进程；Client 半一个 `shell.overlay`/头部按钮 + 约 640×360 的同源 iframe（外层 `transform: scale()`，因内部视口固定 1280×720）；`node --check` + 离线冒烟（照 `plugins/uimap/smoke.mjs` 的形制）",
+    "【不做】不改 VM/场景语义；不删 Electron 可见窗口路径（它仍可单独跑）；不引入 OSR（B′ 已证明不需要）",
+    "【票据】`T-0134` 的 §6.2 P1/P2 选型结论写进本票 notes.md；Phase 2 完成后 DSH 侧安装步骤写进插件 README"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0134/evidence/bprime-run.txt",
+      "anchor": "形态 B′ 成立",
+      "note": "★Phase 2 的形态判据：隐藏窗口里 extract.canvas 能连续出 1280×720 活帧 ⇒ 不需要 OSR",
+      "line": 26
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/webBridge.ts",
+      "anchor": "export class WebBridge",
+      "note": "已完成的前置：window.api 的 web 实现（HTTP + SSE；可注入 fetch/EventSource 以便 Node 侧守）",
+      "line": 64
+    },
+    {
+      "file": "app/amayui-emulator/src/web/envelope.ts",
+      "anchor": "export function encodeEnvelope",
+      "note": "已完成的前置：浏览器与 Node 共用的二进制线格式（两端同一份编解码器，防漂移）",
+      "line": 42
+    },
+    {
+      "file": "app/amayui-emulator/src/host/service.ts",
+      "anchor": "export class HostService",
+      "note": "Phase 2 要复用的宿主服务（每实例一份；web 宿主的 22 个方法全部由它实现）",
+      "line": 129
+    },
+    {
+      "file": "plugins/uimap/lib/index.js",
+      "anchor": "ctx.effect(() => webServer.register({",
+      "note": "DSH 插件 Host 半的同构样板（前缀路由 + ctx.fs；本票要做的是把 handler 换成到子进程的反向代理）",
+      "line": 325
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0134/notes.md",
+      "tickets/T-0133/notes.md"
+    ],
+    "tickets": [
+      "T-0134",
+      "T-0114",
+      "T-0040"
+    ]
+  },
+  "id": "T-0135",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → doing —— Phase 2 开工：客户端核心（envelope + webBridge）已在 T-0134 变更 2 提前完成并有守卫；本票余下 Node web 宿主 + DSH 插件"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— Phase 2 交付完成：web 宿主(HTTP+SSE)+web 桥+构建+插件（含真浏览器端到端、agent move/capture 往返、两实例隔离实跑）。插件的形态其后由 T-0136 替代（纯观察台），桥与宿主保留"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/web-envelope.test.ts",
+    "app/amayui-emulator/test/web-bridge.test.ts",
+    "app/amayui-emulator/test/bridge-input-focus.test.ts"
+  ]
+}

@@ -15,13 +15,13 @@
       "file": "app/amayui-emulator/test/overlay.test.ts",
       "anchor": "const native = (winPath: string, posixPath: string): string => (WIN ? winPath : posixPath);",
       "note": "① 的修法：两条断言改用平台原生绝对路径（win `D:\\game` / posix `/d/game`）⇒ 两侧都在测\"绝对路径原样采用\"，只是不再把\"Windows 写法在 POSIX 上算相对名\"当成缺陷",
-      "line": 190
+      "line": 192
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
       "anchor": "const CN_SAMPLE = '天俟神俣ＳＡＭＰＬＥ';",
       "note": "期望值来自本地化 BIN（install/CONFIG.BIN + install/CONFIG1.BIN 的松散覆盖）；ALF 里的原版 BIN 是日文 ⇒ 新 checkout 必红",
-      "line": 49
+      "line": 51
     },
     {
       "file": "scripts/translate.js",
@@ -32,7 +32,8 @@
     {
       "file": "scripts/config.js",
       "anchor": "export const ORIG_DATA1_DIR = path.join(ORIG_DATA_ROOT, 'DATA1');",
-      "note": "原始数据解包根（默认 install；`AMAYUI_ORIG_DATA_DIR=raw-parts` 可指向别处的解包树）—— 只给读原始数据的工具用"
+      "note": "原始数据解包根（默认 install；`AMAYUI_ORIG_DATA_DIR=raw-parts` 可指向别处的解包树）—— 只给读原始数据的工具用",
+      "line": 22
     },
     {
       "file": "scripts/translate.js",
@@ -44,13 +45,13 @@
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
       "anchor": "export function chainResourceDir(emulatorOptions?: EmulatorOptions): string {",
       "note": "② 的修法：把\"生效资源根\"导出（与链路同一份解析），测试用它判定本地化产物是否已安装",
-      "line": 426
+      "line": 464
     },
     {
       "file": "app/amayui-emulator/test/config1-chain.test.ts",
       "anchor": "function localizedConfigMissing(): string | null {",
       "note": "②：缺 install/CONFIG*.BIN ⇒ 第一条用例 skip、第二条用 t.diagnostic 说明文案断言未跑（给出构建命令），不静默读 ALF 原版",
-      "line": 60
+      "line": 62
     }
   ],
   "links": {

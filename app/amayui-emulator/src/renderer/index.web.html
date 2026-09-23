@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      web 宿主的 CSP（`tickets/T-0135` Phase 2）。
+      ★与 Electron 版（`index.html`）的两处差别，都是 web 形态**必然**的：
+        1. **不再需要 `amayui-audio:`** —— web 宿主不提供 `audioStreamBase`（静音/解码退化，
+           见 `src/renderer/webBridge.ts` 文件头的取舍 1）⇒ 那条自定义 scheme 在浏览器里也不存在；
+        2. `connect-src 'self'` 覆盖 **SSE（`/events`）与 POST（`/api/*`）**：两者都是同源，
+           且基址由页面位置推（`webBridgeEntry.ts`）⇒ 直连与 DSH 代理两种挂法都不用改 CSP。
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'" />
+    <title>天結いキャッスルマイスター（web 调试宿主）</title>
+    <style>
+      html, body {
+        margin: 0; padding: 0; background: #000; overflow: hidden; height: 100vh; width: 100vw;
+      }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <!-- ★顺序即契约：bridge.js 先把 window.api 装好，renderer.js 才会 boot（两者都是 IIFE）。 -->
+    <script src="./bridge.js"></script>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

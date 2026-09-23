@@ -253,10 +253,15 @@ async function runRepl(raw: string): Promise<void> {
           : { kind: 'set', breakKind: 'step', condition: action.condition },
       );
       return;
+    case 'focus':
+    // ★`tickets/T-0134`：`focus <mode>` 与 `query` 一样**原样转给渲染窗的收口点**
+    //   （`session.ts` 的 `parseDebugCommand` 是唯一命令表）—— 面板不新增第二份命令语义。
     case 'query':
       break; // 落到下面的查询分支
   }
-  const line2 = action.text;
+  // `query` 用解析后的文本；其它落到这里的动作（`focus`）用**原始行**（渲染窗会自己再解析一次，
+  // 这样"命令表只有一份"这条设计不被面板侧的捷径破坏）。
+  const line2 = action.a === 'query' ? action.text : line;
 
   // 其它一律当查询（invoke：要回答案）
   ui.btnReplRun.disabled = true;

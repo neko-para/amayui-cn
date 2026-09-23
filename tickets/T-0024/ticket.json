@@ -16,7 +16,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "int __thiscall sub_407E20(_DWORD *_this)",
-      "line": 12762,
+      "line": 211,
       "note": "门判据本体：池挂起位 _this[11629] + 等待计时器（起点 11630 / 时长 11631 / 现在 11625 / 强制冻结 11628）"
     },
     {
@@ -41,7 +41,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/gfx-state.ts",
       "anchor": "op_load_wait_timer",
       "note": "0x238 装载等待计时器（Engine.gateWaitStart/gateWaitMs）—— 原 handler 名 op_set_canvas_size 已订正",
-      "line": 51
+      "line": 64
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
@@ -52,7 +52,8 @@
     {
       "file": "docs-new/03-engine/copyright-effect.md",
       "anchor": "sub_407E20",
-      "note": "旧文档把 0x400 门记为图形池 pending；~5s 时长驱动者 = 0x238 计时器"
+      "note": "旧文档把 0x400 门记为图形池 pending；~5s 时长驱动者 = 0x238 计时器",
+      "line": 31
     }
   ],
   "blockedBy": [],

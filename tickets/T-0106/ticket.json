@@ -16,22 +16,26 @@
     {
       "file": "app/amayui-emulator/src/emulatorOptions.ts",
       "anchor": "export const AUDIO_ENABLED_ENV",
-      "note": "选项 + 环境变量覆盖的唯一真源（parse/normalize/applyEnvOverrides/envOverridesOf/mergeEmulatorOptions 都在这里）"
+      "note": "选项 + 环境变量覆盖的唯一真源（parse/normalize/applyEnvOverrides/envOverridesOf/mergeEmulatorOptions 都在这里）",
+      "line": 122
     },
     {
       "file": "app/amayui-emulator/src/renderer/audio/webAudioHost.ts",
       "anchor": "setSilent(on: boolean): void",
-      "note": "宿主侧的门：静音时不建 AudioContext、不起播、不建 <audio>；运行期切静音会关掉既有 context"
+      "note": "宿主侧的门：静音时不建 AudioContext、不起播、不建 <audio>；运行期切静音会关掉既有 context",
+      "line": 109
     },
     {
       "file": "app/amayui-emulator/test/options.test.env",
       "anchor": "AMAYUI_AUDIO_ENABLED=0",
-      "note": "测试默认静音的落点（命令行 --env-file 引入）"
+      "note": "测试默认静音的落点（命令行 --env-file 引入）",
+      "line": 12
     },
     {
       "file": "docs-new/04-app/emulator.md",
       "anchor": "audio.enabled",
-      "note": "选项表 + 「关掉的是宿主输出、不是音频子系统」的专项说明"
+      "note": "选项表 + 「关掉的是宿主输出、不是音频子系统」的专项说明",
+      "line": 276
     }
   ],
   "tests": [

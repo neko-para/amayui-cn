@@ -16,25 +16,25 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "if (!ini) {",
-      "line": 40,
+      "line": 46,
       "note": "早退点（现位于 `loadConfigIni` 内，只影响配置部分，不再连坐 SAVE.DAT）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "trace('[config] 未找到 SYS4REG.INI（引擎字段用默认值；玩家一改设置即按引擎键表全量生成）');",
-      "line": 43,
+      "line": 49,
       "note": "实测日志里唯一一条 config/save 相关输出（之后没有任何 [save] 行）。★2026-09（T-0031）文案改为\"一改设置即按引擎键表全量生成\""
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "await loadSaveData(e, trace);",
-      "line": 98,
+      "line": 104,
       "note": "SAVE.DAT 装载：现在位于 `attachSaveDataPersistence` 内，无条件执行"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "e.onSaveDataChanged = () => {",
-      "line": 116,
+      "line": 122,
       "note": "回写接线：同样在早退之后 ⇒ save-int 改动永不落盘"
     },
     {
@@ -58,7 +58,7 @@
     {
       "file": "src/CHARMEDIT.txt",
       "anchor": "save-int (local-ptr 1)",
-      "line": 494,
+      "line": 439,
       "note": "侧栏「設定変更」= CHARMEDIT 的编辑落点（写进 save-int 表）"
     },
     {
@@ -76,25 +76,25 @@
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "ipcMain.handle('write-save-data'",
-      "line": 127,
-      "note": "主进程写 overlay 的 save-data（日志 `[main] save data <- …` 是 E4 判据）"
+      "line": 81,
+      "note": "主进程写 overlay 的 save-data（日志 `[main] save data <- …` 是 E4 判据）｜★2026-09-23 行号刷新：T-0134 WS-3b 把 handler 体委托给 HostService ⇒ files.ts 变短，锚点行号下移。"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "await attachSaveDataPersistence(e, trace);",
-      "line": 25,
+      "line": 31,
       "note": "★修复点：两条通路并列，SAVE.DAT 不再被 INI 的缺失跳过"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "export async function attachSaveDataPersistence(",
-      "line": 93,
+      "line": 99,
       "note": "装载 + 回写接线收口在此（`io.write` 可注入 ⇒ 可单测）"
     },
     {
       "file": "app/amayui-emulator/test/save-data.test.ts",
       "anchor": "★无 SYS4REG.INI 时也要装载 SAVE.DAT 并挂上回写",
-      "line": 400,
+      "line": 404,
       "note": "回归锁（先红后绿）：无 INI 分支下装载生效 + `onSaveDataChanged` 被挂 + 触发一次写盘"
     }
   ],

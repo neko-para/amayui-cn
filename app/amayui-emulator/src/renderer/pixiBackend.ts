@@ -1152,6 +1152,35 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * **公开：抓一帧当前舞台的合成结果为 PNG 字节**（`FrameHost.capture` 的实现；`tickets/T-0134` WS-2）。
+   *
+   * ★**复用既有的私有 `#captureStageCanvas()`**（不改名、不另开抓帧路径）：它已经是"抓当前舞台
+   * 合成结果"的唯一实现，唯一调用点是 `#compositeTransitions()` 里类别 3（插值模糊）的 `screenOnce`
+   * 惰性抓帧；`frameTick()`（`0x20C` 帧刷新 → 渲染目标槽）用的是**同一条** `extract.canvas` 形状
+   * （私有方法的文档原话："与 `frameTick` 同一条 `extract.canvas`"）。另写一条路径会让
+   * "人类看的帧"与"agent 拿到的帧"漂移。
+   *
+   * `extract` 是"渲染进临时纹理再读像素"，**不依赖 `preserveDrawingBuffer`** ⇒ 不踩
+   * "`toDataURL` 抓空白"那个经典坑（`tickets/T-0133` §B.4.4）。
+   *
+   * 失败（无画布 / `toBlob` 给 null）⇒ 抛带上下文的 `Error`（**不静默返回空图**）：
+   * "没有能力"（宿主没这个成员）由 `capturePng` 用 `null` 表达，与本方法的"有能力但这次失败"分开。
+   */
+  async captureFrame(): Promise<Uint8Array> {
+    const canvas = this.#captureStageCanvas();
+    if (!canvas) {
+      throw new Error('[capture] 抓帧失败：#captureStageCanvas() 没有返回画布（当前没有可抓的合成结果）');
+    }
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), 'image/png');
+    });
+    if (!blob) {
+      throw new Error(`[capture] 抓帧失败：canvas.toBlob('image/png') 返回 null（${canvas.width}x${canvas.height}）`);
+    }
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+
+  /**
    * **把"记录的一段 item 区间"渲染成一张离屏画布** —— 引擎转场前那两趟 scratch 重绘的等价物。
    *
    * 引擎：`for (v60 = 0; v60 < 2; ++v60) { SetTarget(36+v60); Clear; BeginScene; 画该趟的项; EndScene; }`

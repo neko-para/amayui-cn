@@ -42,6 +42,19 @@ export interface InputSnapshot {
 }
 
 /**
+ * **宿主焦点模式**（`tickets/T-0134` 的 WS-1 冻结接口）—— 宿主/调试器对「焦点」这件事的唯一开关。
+ *
+ * 引擎里**没有**"窗口是否激活"这个态（`GetForegroundWindow` 全份反编译只出现一次，且不是输入轮询的门）⇒
+ * 焦点在本工程里只是一条**输入生命周期的控制**：DOM blur/visibilitychange 会兜底释放按住态
+ * （`tickets/T-0027`），而 `'on'`/`'off'` 让调试器显式接管这件事。
+ *
+ *  - `'auto'`：跟随真实 DOM 事件（现状；默认）。
+ *  - `'on'`  ：视为窗口激活 —— `inputAttach` 的焦点处理器忽略宿主噪声（DSH 抢焦点 / iframe 失焦 / offscreen 无焦点）。
+ *  - `'off'` ：视为窗口失焦 —— `setHostFocus` **立刻**释放全部按住态，且之后持续忽略 DOM 焦点事件。
+ */
+export type HostFocus = 'auto' | 'on' | 'off';
+
+/**
  * **默认 VK → 虚拟掩码位**（引擎 Input 构造 raw 92394-92400；`tickets/T-0052`）。
  *
  * 引擎那 7 条赋值（`_this[_this[<字段>] + 1176] = <位>`）与 `sub_476AA0` 的默认 VK
@@ -221,6 +234,19 @@ export class InputManager {
 
   // ---------- 渲染器入口 ----------
 
+  /**
+   * **宿主焦点模式**（`tickets/T-0134`）：`'auto'` = 跟随真实 DOM 事件（`inputAttach` 的
+   * blur/visibilitychange 仍会兜底释放）；`'on'`/`'off'` = 调试器显式接管 —— `inputAttach` 的
+   * 焦点处理器在这些模式下**忽略宿主噪声**（DSH 抢焦点 / iframe 失焦 / offscreen 无焦点）。
+   *
+   * ★**故意不进 `InputSnapshot`**：`hostFocus` 是**宿主/调试器状态**，不是 VM 输入状态 ——
+   *   它不参与任何 opcode 读取（0x108/0x109/0x10D/0xCD… 都看不到它），也不影响任何输入的可观测值。
+   *   把它记进快照会让"同一份输入状态的两次快照"因宿主模式不同而不相等，从而污染
+   *   `--record`/`--replay` 的逐帧比对（录制时的焦点模式不是回放要复现的**输入**）。
+   *   需要跨进程/跨会话重建它时，走调试命令 `focus <mode>`，而不是输入快照。
+   */
+  hostFocus: HostFocus = 'auto';
+
   /** 更新光标位置（虚拟坐标）。valid=false 表示出窗/未初始化。位置变化即置 mouseMoved（供 hover 派发）。
    *  ★位置**变化**时还会回调 `onCursorMove`（= 引擎 WM_MOUSEMOVE 里的 `sub_403C50` 命中测试）。 */
   setCursor(x: number, y: number, valid = true): void {
@@ -274,6 +300,22 @@ export class InputManager {
   /** 释放全部鼠标键（窗口失焦/隐藏的兜底；之后任何一次 `syncButtons` 都会按真值重建）。 */
   releaseAllMouse(): void {
     this.buttons = 0;
+  }
+
+  /**
+   * **设置宿主焦点模式**（`tickets/T-0134`；调试命令 `focus <mode>` 的落点）。
+   *
+   * `'off'` = 调试器宣布"窗口失焦"：**立刻**执行与 DOM blur 路径（`inputAttach.handleHostBlur`）
+   * **完全相同**的释放 —— `releaseAllMouse()` + `releaseAllKeys()`（`tickets/T-0027` 的兜底），
+   * 之后由 `inputAttach` 的门忽略后续 DOM 焦点事件 ⇒ 释放只发生这一次、由调试器决定何时发生，
+   * 而不再被宿主噪声随机触发。
+   */
+  setHostFocus(mode: HostFocus): void {
+    this.hostFocus = mode;
+    if (mode === 'off') {
+      this.releaseAllMouse();
+      this.releaseAllKeys();
+    }
   }
 
   /** 手把按钮按下（0..31）。记录按下沿。 */

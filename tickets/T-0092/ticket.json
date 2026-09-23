@@ -15,13 +15,13 @@
       "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-2-10 — 0x02 exit 的 -11 分支被 emulator 当成「整个程序退出」",
       "note": "审计条目：声明 / 实际 / 证据 / 建议处置",
-      "line": 178
+      "line": 183
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/control.ts",
       "anchor": "caller === -11",
       "note": "错读点：无记录 0 时落进 else ⇒ throw ExitScript（引擎不退出）",
-      "line": 194
+      "line": 222
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -32,7 +32,8 @@
     {
       "note": "轮 7 实施者的 raw 证据汇总；★核心订正：审计 op-2-10 的「读配置并写回」是 Hex-Rays 误渲染 —— 权威是 .lst:0041A85A-0041A88B（两次 [vtable+4] = sub_4904D0 retn 4 单参 GetConfig **只读**；写侧 [vtable+12] = sub_492AB0 未被调用）",
       "file": "tickets/T-0092/raw-evidence.md",
-      "anchor": "sub_41A820"
+      "anchor": "sub_41A820",
+      "line": 6
     }
   ],
   "links": {

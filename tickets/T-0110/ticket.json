@@ -16,42 +16,50 @@
     {
       "file": "tickets/T-0080/evidence/b7-coverage.md",
       "anchor": "机制文档残留订正（→ 新票 `T-0110`，纯机械）",
-      "note": "本票的条目清单与依据"
+      "note": "本票的条目清单与依据",
+      "line": 49
     },
     {
       "file": "docs-new/03-engine/scene-start-flow.md",
       "anchor": "| GAMESTART 三按钮 |",
-      "note": "硬数字错误所在行（文档 `local 0` = 3 vs 实测 17）"
+      "note": "硬数字错误所在行（文档 `local 0` = 3 vs 实测 17）",
+      "line": 64
     },
     {
       "file": "docs-new/03-engine/rendering.md",
       "anchor": "从不设正",
-      "note": "被 0x238 证伪的残留句"
+      "note": "被 0x238 证伪的残留句",
+      "line": 84
     },
     {
       "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
       "anchor": "engineBool: 166965",
-      "note": "文档写「未建模」但代码里已在册的对照点"
+      "note": "文档写「未建模」但代码里已在册的对照点",
+      "line": 117
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "\"id\": \"copyright-effect\"",
-      "note": "同批订正：`copyright-effect` 条目的逐帧求值函数 `sub_49A300`(115116) → **`sub_49AA30`**(117239 起)，`engine.raw` → `117239-131501`（该条目由 `T-0105` 新建，函数名引错；`build-capabilities.mjs` 已重生成）"
+      "note": "同批订正：`copyright-effect` 条目的逐帧求值函数 `sub_49A300`(115116) → **`sub_49AA30`**(117239 起)，`engine.raw` → `117239-131501`（该条目由 `T-0105` 新建，函数名引错；`build-capabilities.mjs` 已重生成）",
+      "line": 4050
     },
     {
       "file": "tickets/T-0112/ticket.json",
       "anchor": "B7-B 残余：逐格待核",
-      "note": "本票收尾时拆出的残余票（5 项：字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-effect §6 索引表 / Queue-Stack 构造数）"
+      "note": "本票收尾时拆出的残余票（5 项：字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-effect §6 索引表 / Queue-Stack 构造数）",
+      "line": 2
     },
     {
       "file": "docs-new/03-engine/flow-control.md",
       "anchor": "本节 `_this[N]` 一律指**字节**偏移",
-      "note": "口径混用的修复（字节 vs dword 下标，含 cur_script 383104/95776 的换算）"
+      "note": "口径混用的修复（字节 vs dword 下标，含 cur_script 383104/95776 的换算）",
+      "line": 20
     },
     {
       "file": "docs-new/03-engine/message-config-gates.md",
       "anchor": "取值来源 = **运行期生效的那一份**",
-      "note": "题头取值来源订正（overlay → base；仓库副本只是兜底）"
+      "note": "题头取值来源订正（overlay → base；仓库副本只是兜底）",
+      "line": 15
     }
   ],
   "links": {

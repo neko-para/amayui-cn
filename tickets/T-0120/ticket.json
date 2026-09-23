@@ -16,17 +16,20 @@
     {
       "file": "tickets/T-0119/changes.md",
       "anchor": "### 未证到的",
-      "note": "★缺口的原始记录：Windows 侧没有实机重跑（合并只动布局，但严格说需要一台 Windows 再确认一次）"
+      "note": "★缺口的原始记录：Windows 侧没有实机重跑（合并只动布局，但严格说需要一台 Windows 再确认一次）",
+      "line": 80
     },
     {
       "file": "native/host-input/CMakeLists.txt",
       "anchor": "if(CMAKE_JS_SRC)",
-      "note": "需要重新确认的那段：Windows 独有的延迟加载钩子（缺了 Electron 里加载会报 Module did not self-register）"
+      "note": "需要重新确认的那段：Windows 独有的延迟加载钩子（缺了 Electron 里加载会报 Module did not self-register）",
+      "line": 69
     },
     {
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
       "anchor": "[native] host-input available=",
-      "note": "产品宿主核验的那行日志（本票的判据之一）"
+      "note": "产品宿主核验的那行日志（本票的判据之一）",
+      "line": 70
     }
   ],
   "tests": [

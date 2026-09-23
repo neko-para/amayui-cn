@@ -33,13 +33,13 @@
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-load-drawitem-clear-and-restore",
       "note": "第二层条目：装载点清容器 + 从 body 还原绘制项清单（含 whySilent：残留项被重绑后的槽 4 改画成堆 ⇒ 阶梯）",
-      "line": 3224
+      "line": 3233
     },
     {
       "file": "analysis/scripts.json",
       "anchor": "label_0000e24c",
       "note": "SN0000 唯一的背景/CG 层设置子程序：键 = f8023[层]（层 0 = 0x18A88，表在 INIT2.txt:6-17）、槽 = 3f54[层][0] = 4、图 = f8006（0xB37 = BG050ABL）；调用点指令 757 在**被跳过带**内",
-      "line": 687
+      "line": 693
     },
     {
       "file": "src/TITLE.txt",
@@ -50,7 +50,8 @@
     {
       "file": "src/INIT2.txt",
       "anchor": "mov (global-int f8023) 18a88",
-      "note": "CG 层句柄表 f8023..f802e = 0x18A88…（池外全局 ⇒ 真槽不还原、靠 INIT2 重跑），是「高层键盖住标题残留」的键来源"
+      "note": "CG 层句柄表 f8023..f802e = 0x18A88…（池外全局 ⇒ 真槽不还原、靠 INIT2 重跑），是「高层键盖住标题残留」的键来源",
+      "line": 6
     }
   ],
   "links": {

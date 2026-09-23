@@ -10,67 +10,33 @@
  * ★**回放轨迹走 gzip**（`tickets/T-0005`）：每帧一行（约 12KB）⇒ 一次 2000 帧的录制 ≈ 25MB 纯文本，
  * 而 JSONL 的压缩比约 20:1。gzip 有"缺尾部即整文件损坏"的风险 ⇒ 退出时**显式 close 并等 flush**
  * （`app.on('will-quit')`，见 `registerLogIpc`）。
+ *
+ * ★`tickets/T-0134` WS-3：**appender 的创建与路径已下沉**到 `src/host/service.ts`（每实例一份；
+ * 路径来自 `InstanceLayout`）。本文件只剩**传输层**：`ipcMain.on(…)` 的通道名、`will-quit` 的排空时机、
+ * 同步 `log-line-sync` 的语义 —— 全部与重构前逐字一致（Electron 零行为变更）。
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as zlib from 'node:zlib';
 import { app, ipcMain } from 'electron';
-import { LOG_PATH, REPLAY_PATH, TRACE_PATH } from './paths.js';
-
-/** 一个只写的追加器。 */
-export interface Appender {
-  write(text: string): void;
-}
-
-/** 以追加模式打开一个非阻塞写入流；失败时退化为丢弃（不抛，避免影响启动）。 */
-export function openAppender(p: string): Appender {
-  try {
-    fs.mkdirSync(path.dirname(p), { recursive: true });
-    const s = fs.createWriteStream(p, { flags: 'a' });
-    s.on('error', (err) => console.error(`[append] ${p}: ${err.message}`));
-    return { write: (text: string) => void s.write(text.endsWith('\n') ? text : text + '\n') };
-  } catch (err) {
-    console.error(`[append] 打开失败 ${p}: ${(err as Error).message}`);
-    return { write: () => {} };
-  }
-}
-
-/** 一个 gzip 追加器（`close()` 会结束 gzip 流并等它 flush 到磁盘）。 */
-export interface GzAppender extends Appender {
-  close(): Promise<void>;
-}
+import { REPO_ROOT, RESOURCE_DIR } from './paths.js';
+import { defaultHostService, type Appender, type GzAppender, type HostService } from '../src/host/service.js';
 
 /**
- * 以 gzip 追加一个文件（大体积轨迹用）。**不做 `flags:'a'`**：gzip 是多成员流，追加虽然合法
- * （gunzip 会依次读所有成员），但"一次运行一个文件"更好 diff ⇒ 这里用 `'w'`（覆盖）。
+ * 进程内默认宿主服务（单例；`ipc/files.ts` 拿的是**同一个**对象 ⇒ appenders 与资源读取共享一份落点）。
+ * ★懒构造：首次用到时才建（`initLogFile()` 是第一个调用点，在 `paths.ts` 之后）。
  */
-export function openGzAppender(p: string): GzAppender {
-  try {
-    fs.mkdirSync(path.dirname(p), { recursive: true });
-    const file = fs.createWriteStream(p, { flags: 'w' });
-    const gz = zlib.createGzip({ level: 6 });
-    gz.pipe(file);
-    file.on('error', (err) => console.error(`[append] ${p}: ${err.message}`));
-    return {
-      write: (text: string) => void gz.write(text.endsWith('\n') ? text : text + '\n'),
-      close: () =>
-        new Promise<void>((resolve) => {
-          file.on('close', () => resolve());
-          gz.end(); // 结束 gzip ⇒ 写尾部 ⇒ file 收到 end ⇒ close
-        }),
-    };
-  } catch (err) {
-    console.error(`[append] 打开 gzip 失败 ${p}: ${(err as Error).message}`);
-    return { write: () => {}, close: () => Promise.resolve() };
-  }
+function host(): HostService {
+  return defaultHostService({ repoRoot: REPO_ROOT, resourceDir: RESOURCE_DIR });
 }
 
+// ★`registerLogIpc()` 之前是空实现（与重构前同语义：那之前 `logMainLine()` 只进 console）。
 let logAppender: Appender = { write: () => {} };
 let traceAppender: Appender = { write: () => {} };
 let replayAppender: GzAppender = { write: () => {}, close: () => Promise.resolve() };
 
 /** 启动即建诊断日志文件（写头），确认通道/路径可用。 */
 export function initLogFile(): void {
+  const LOG_PATH = host().layout.logPath;
   try {
     fs.mkdirSync(path.dirname(LOG_PATH), { recursive: true });
     fs.writeFileSync(LOG_PATH, '=== amayui-emulator.log ===\n');
@@ -82,19 +48,16 @@ export function initLogFile(): void {
 
 /** 注册日志/轨迹相关的 IPC（异步批量 + 关窗同步兜底）。 */
 export function registerLogIpc(): void {
-  logAppender = openAppender(LOG_PATH);
-  traceAppender = openAppender(TRACE_PATH);
+  const svc = host();
+  logAppender = svc.log;
+  traceAppender = svc.trace;
 
   ipcMain.on('log-line', (_e, line: string) => {
     logAppender.write(line);
   });
   // 同步最终落盘（renderer 关窗前调用，保证不丢尾）。
   ipcMain.on('log-line-sync', (e, line: string) => {
-    try {
-      fs.appendFileSync(LOG_PATH, line + '\n');
-    } catch (err) {
-      console.error(`[log-line-sync] ${(err as Error).message}`);
-    }
+    svc.logSync(line); // ★同步语义只有这一处，落在服务里（`fs.appendFileSync`）
     e.returnValue = 'ok';
   });
   ipcMain.on('append-trace-line', (_e, text: string) => {
@@ -103,8 +66,8 @@ export function registerLogIpc(): void {
   // ★回放轨迹（`tickets/T-0005`）：路径由 `AMAYUI_REPLAY_PATH` 指定（`tools/record.cjs` 设），
   //   缺省 `.tmp/replay-trace.jsonl.gz`。**gzip**（每帧约 12KB ⇒ 一次录制几十 MB 纯文本）⇒
   //   必须有"退出前排空"的兜底，否则 gzip 尾部缺失 ⇒ 整份轨迹不可解。
-  replayAppender = openGzAppender(REPLAY_PATH);
-  console.log(`[main] replay trace -> ${REPLAY_PATH}`);
+  replayAppender = svc.replay;
+  console.log(`[main] replay trace -> ${svc.layout.replayPath}`);
   ipcMain.on('append-replay-line', (_e, text: string) => {
     replayAppender.write(text);
   });

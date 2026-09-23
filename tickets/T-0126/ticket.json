@@ -18,22 +18,26 @@
     {
       "file": "app/amayui-emulator/test/harness.ts",
       "anchor": "export function scriptDerived()",
-      "note": "51 条 TS2739/TS2741 的统一补全点：ScriptBinary 的派生字段（ipTables/dwordToInstr）是 VM 真读的，不许改成可选"
+      "note": "51 条 TS2739/TS2741 的统一补全点：ScriptBinary 的派生字段（ipTables/dwordToInstr）是 VM 真读的，不许改成可选",
+      "line": 146
     },
     {
       "file": "app/amayui-emulator/package.json",
       "anchor": "\"verify\": \"npm run typecheck && npm run typecheck:test && npm run test:all && npm run check:dead-writes\"",
-      "note": "闸门 D 从基线棘轮改成零容忍：typecheck:test 直接进 verify"
+      "note": "闸门 D 从基线棘轮改成零容忍：typecheck:test 直接进 verify",
+      "line": 20
     },
     {
       "file": "app/amayui-emulator/test/harness.ts",
       "anchor": "export function at<T>(xs: readonly T[], i: number, what = '元素'): T",
-      "note": "noUncheckedIndexedAccess 38 条的处置：显式解包，越界即抛（带下标与长度）"
+      "note": "noUncheckedIndexedAccess 38 条的处置：显式解包，越界即抛（带下标与长度）",
+      "line": 37
     },
     {
       "file": "tickets/T-0126/changes.md",
       "anchor": "## 第 3 次变更（2026-09-23）：`test/` 类型债 **131 → 0**",
-      "note": "本轮完整记录：分类处置表、递减轨迹、判别力回归实验"
+      "note": "本轮完整记录：分类处置表、递减轨迹、判别力回归实验",
+      "line": 149
     },
     {
       "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",

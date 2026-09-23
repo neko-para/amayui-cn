@@ -16,22 +16,26 @@
     {
       "file": "app/amayui-emulator/src/arch/windowPlacement.ts",
       "anchor": "export function computeEdgePosition(",
-      "note": "纯几何：只留 TITLEBAR_PX 可见 + 另一方向居中（不依赖 Electron，可单测）"
+      "note": "纯几何：只留 TITLEBAR_PX 可见 + 另一方向居中（不依赖 Electron，可单测）",
+      "line": 32
     },
     {
       "file": "app/amayui-emulator/electron/windows.ts",
       "anchor": "const WINDOW_EDGE: WindowEdge | null = edgeFromEnv(process.env);",
-      "note": "主窗口与控制窗都走同一档：show:false + skipTaskbar + setPosition + showInactive"
+      "note": "主窗口与控制窗都走同一档：show:false + skipTaskbar + setPosition + showInactive",
+      "line": 26
     },
     {
       "file": "app/amayui-emulator/tools/shot.cjs",
       "anchor": "if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';",
-      "note": "★必须在 require main.cjs 之前设（窗口模块加载期读环境变量）"
+      "note": "★必须在 require main.cjs 之前设（窗口模块加载期读环境变量）",
+      "line": 59
     },
     {
       "file": "app/amayui-emulator/test/window-edge.test.ts",
       "anchor": "T-0040 贴下缘：只留标题栏可见",
-      "note": "守卫：四条边/负坐标/极矮窗口/档位解析"
+      "note": "守卫：四条边/负坐标/极矮窗口/档位解析",
+      "line": 18
     }
   ],
   "id": "T-0040",

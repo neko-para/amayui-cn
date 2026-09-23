@@ -14,7 +14,7 @@
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "releaseFrameHold",
       "note": "每条 draw-texture 都无条件解除留帧（怀疑点）",
-      "line": 359
+      "line": 384
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
@@ -32,12 +32,13 @@
       "file": "tickets/T-0067/evidence/transition-frame-hold.log",
       "anchor": "[frame-hold] draw-texture → 解除留帧（剩 60 帧）",
       "note": "真跑日志原文（来源 .tmp/amayui-emulator.log 第 2325..2362 行）：满屏幕布 0x19258 被撤（留帧启动）之后，一笔 256×128 的转场贴片就把留帧解除了（紧随的 configureDrawItem h=0x18b00 (0,0,256x128)）+ setTransition 尚未执行。⇒ T-0067 的机制取证（原 notes §4 缺的输入 ①）。",
-      "line": 29
+      "line": 10
     },
     {
       "file": "tickets/T-0067/evidence/transition-frame-hold.log",
       "anchor": "frame-hold",
-      "note": "留帧轨迹证据（本轮又在产品日志里核到：clearDrawContainer 会武装、detachTexture RANGE-REMOVE 不武装 —— 见判据 ① 的 2026-09-22 段）"
+      "note": "留帧轨迹证据（本轮又在产品日志里核到：clearDrawContainer 会武装、detachTexture RANGE-REMOVE 不武装 —— 见判据 ① 的 2026-09-22 段）",
+      "line": 9
     }
   ],
   "links": {

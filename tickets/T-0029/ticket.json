@@ -15,42 +15,50 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/boot.ts",
       "anchor": "启动期预载清单已删",
-      "note": "★锚点已按位移交（原锚点是 `const PRELOAD_IMAGES = [0x5245, …];`，本票已删）：这里保留\"为什么删\"的四条理由（无引擎依据 / 两宿主漂移 / 白付启动成本 / 掩盖真实缺陷）与\"要加就登记进能力台账、别加回清单\"的口径"
+      "note": "★锚点已按位移交（原锚点是 `const PRELOAD_IMAGES = [0x5245, …];`，本票已删）：这里保留\"为什么删\"的四条理由（无引擎依据 / 两宿主漂移 / 白付启动成本 / 掩盖真实缺陷）与\"要加就登记进能力台账、别加回清单\"的口径",
+      "line": 21
     },
     {
       "file": "app/amayui-emulator/test/no-boot-preload.test.ts",
       "anchor": "PRELOAD_IMAGES",
-      "note": "本票守卫（4 条）：清单不许回来 / preloadImage 只剩按需入口 / 帧屏障顺序 / bind 的按需语义"
+      "note": "本票守卫（4 条）：清单不许回来 / preloadImage 只剩按需入口 / 帧屏障顺序 / bind 的按需语义",
+      "line": 7
     },
     {
       "file": "app/amayui-emulator/test/no-boot-preload.test.ts",
       "anchor": "纹理帧屏障存在",
-      "note": "★判据 3 的机械锚点：`texturesIdle` 必须排在 `present(` 之前（删了预载之后，首帧不缺图只靠这条）"
+      "note": "★判据 3 的机械锚点：`texturesIdle` 必须排在 `present(` 之前（删了预载之后，首帧不缺图只靠这条）",
+      "line": 86
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "bind(imgid: number, slot: number): void {",
-      "note": "按需装载的唯一入口（未命中缓存 ⇒ 异步装载 ⇒ 到货 onReady 置脏）"
+      "note": "按需装载的唯一入口（未命中缓存 ⇒ 异步装载 ⇒ 到货 onReady 置脏）",
+      "line": 262
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "texturesIdle",
-      "note": "产品合成路径在 present 之前等纹理（帧屏障的调用点）"
+      "note": "产品合成路径在 present 之前等纹理（帧屏障的调用点）",
+      "line": 102
     },
     {
       "file": "tickets/T-0029/evidence/startup-bind-log.txt",
       "anchor": "bindTexture imgid=0x5272 slot=4",
-      "note": "判据 ②：四条原预载 id 里本场景只用到 0x5272，它出现在 TITLE.BIN 内、紧跟其 bindTexture 之后 ⇒ 按需装载；0x5245/0x5246/0x5273 全程 0 次。来源 .tmp/amayui-emulator.log（原日志 296..315 行）。"
+      "note": "判据 ②：四条原预载 id 里本场景只用到 0x5272，它出现在 TITLE.BIN 内、紧跟其 bindTexture 之后 ⇒ 按需装载；0x5245/0x5246/0x5273 全程 0 次。来源 .tmp/amayui-emulator.log（原日志 296..315 行）。",
+      "line": 6
     },
     {
       "file": "tickets/T-0029/evidence/e4-screenshots.md",
       "anchor": "e4-title.png",
-      "note": "判据 ③：Electron 真界面三屏截图索引（含 sha256）+ 与改动前 TITLE 基准的对照结论。"
+      "note": "判据 ③：Electron 真界面三屏截图索引（含 sha256）+ 与改动前 TITLE 基准的对照结论。",
+      "line": 8
     },
     {
       "file": "tickets/T-0029/evidence/record-replay.txt",
       "anchor": "✅ engine 段逐帧相等",
-      "note": "判据 ④（G3）：删除启动期预载后 record+replay 仍逐帧相等（2614 帧），含 `--centered` 这个必需参数的口径。"
+      "note": "判据 ④（G3）：删除启动期预载后 record+replay 仍逐帧相等（2614 帧），含 `--centered` 这个必需参数的口径。",
+      "line": 16
     }
   ],
   "links": {

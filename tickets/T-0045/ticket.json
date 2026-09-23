@@ -14,18 +14,20 @@
     {
       "file": "scripts/prune-install.mjs",
       "anchor": "function translatedCount(id)",
-      "note": "判据：清单收录 或 src 有译文字面量（`@\"…\"` / `\"原文|译文\"`）⇒ 保留；两者都不满足 ⇒ 纯重建，清理"
+      "note": "判据：清单收录 或 src 有译文字面量（`@\"…\"` / `\"原文|译文\"`）⇒ 保留；两者都不满足 ⇒ 纯重建，清理",
+      "line": 30
     },
     {
       "file": "install-manifest.json",
       "anchor": "\"generated\"",
-      "note": "2026-09-11 的 install 顶层 MD5 清单（547 条）＝安装树应收录的那一份；实测清单外 447 个 BIN 全是 0 译文脚本"
+      "note": "2026-09-11 的 install 顶层 MD5 清单（547 条）＝安装树应收录的那一份；实测清单外 447 个 BIN 全是 0 译文脚本",
+      "line": 2
     },
     {
       "file": "docs-new/00-overview/conventions.md",
       "anchor": "### 3.1 install 根 vs 原始解包树",
       "note": "安装目标只有 install 根；AGF overlay 的真源在 res/images，DATA1-8 是只读解包树",
-      "line": 70
+      "line": 74
     }
   ],
   "tests": [

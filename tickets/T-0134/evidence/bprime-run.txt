@@ -1,0 +1,29 @@
+# B′ 判据实验实跑记录（2026-09-23，本机 macOS）
+
+命令：cd app/amayui-emulator && node tools/bprime-shot.cjs --shots 3 --interval-ms 2500
+档位：AMAYUI_WINDOW_HIDDEN=1（只 show:false，从不 showInactive，不摆位）+ AMAYUI_AUDIO_ENABLED=0
+取帧路径：渲染窗 `capture` 命令 → `FrameHost.capture` → `PixiBackend.captureFrame()`
+          → `#captureStageCanvas()` → `renderer.extract.canvas`（**页面内读回**）
+          ★全程不经过 `webContents.capturePage()`（那是形态 C 的管线）
+
+输出：
+[bprime] 起隐藏档守护（AMAYUI_WINDOW_HIDDEN=1，静音）
+[bprime] 调试服务器就绪（等了 1524ms）
+[bprime] 帧 1：1788564B 1280×720 bitDepth=8 colorType=6 → .tmp/bprime/shot-1.png
+[bprime] 帧 2：1781821B 1280×720 bitDepth=8 colorType=6 → .tmp/bprime/shot-2.png
+[bprime] 帧 3：1778610B 1280×720 bitDepth=8 colorType=6 → .tmp/bprime/shot-3.png
+===== B′ 判据 =====
+① PNG 魔数/可解码：PASS（3/3 帧）
+② 尺寸 1280×720：PASS
+③ 字节数 > 20KB（非纯色图）：PASS（1788564, 1781821, 1778610B）
+④ 帧间有差异（活的）：PASS（去重后 3/3）
+⇒ B′ 结论：PASS
+
+目视核对（evidence/bprime-hidden-window-title.jpg）：画面是完整 TITLE —— 游戏 logo、
+Game Start / Load Data / Eushully-sama Room / Option / Quit 五个菜单按钮、角色立绘、
+底部 5 个 "No Install" 槽位指示全部正常 ⇒ **不是空白帧，也不是损坏帧**。
+
+结论：★**形态 B′ 成立** —— 隐藏窗口（show:false）里的 Pixi 页面仍在跑帧循环，
+`extract.canvas` 仍能读回像素 ⇒ Phase 2 的 B 形态**不需要 OSR**
+（一次绕开 `T-0133` §B.4.1 里 OSR 专属的那串坑：paint 静止不出帧、GPU→CPU 拷贝、
+首帧全 0、46 起 getSize() 变 DIP、shared texture 池纪律）。

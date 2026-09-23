@@ -81,7 +81,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "spr.tint = color & 0xffffff;",
       "note": "★2026-09-22 订正：这一行**无条件覆盖**占位块自己的调试色 ⇒ 白占位块的颜色 = 该项 diffuse；与 `0x203` 给的 alpha(≈0xa0) 相乘即 `#E3E3E3`（与归档帧采样逐点吻合）⇒ **白底 = #placeholder** 这条成立。但**触发原因**不是「槽 11 未绑定」（该结论已判死，见 evidence/texture-slot-identity.md），而是宿主侧 `TextureCache.resolve` 在 `texSlots[17]=0x5260` 已就位时仍返回空纹理。",
-      "line": 486
+      "line": 500
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
@@ -135,7 +135,7 @@
       "file": "app/amayui-emulator/test/text-style-snapshot.test.ts",
       "anchor": "判据 4：文本色通道顺序",
       "note": "判据 4 的守卫：**独立**求值引擎那段位运算（不调用被测函数）并逐值比对 `bgrToRgb`，取值 = 真机 `SAVE.DAT` 的 `adcd[0..12]`；再钉「交换两次回到原值」防\"多交换一次\"蒙过。★同时记下真机调色板里**青与橘相邻**（`adcd[4]`⇒#00E1FF 青 / `[5][7][10]`⇒#FFB184/#FFD871/#DD9B2C 橘）⇒ 症状的候选是**下标（`14acda` 派生）**、不是通道。辨别力已机械证明：把 `bgrToRgb` 改成不交换 ⇒ 本用例 1 fail（0xffe100 actual 16769280 / expected 57855）。",
-      "line": 188
+      "line": 190
     },
     {
       "file": "src/LOADCONFIG.txt",
@@ -165,13 +165,13 @@
       "file": "app/amayui-emulator/test/game-start-chain.test.ts",
       "anchor": "判据 5：序章（SN0000）没有",
       "note": "轮 16 新增可达性棘轮（纯脚本数据侧、270 ms）：SN0000 无 `3f37` 设置点 + 设置点必在 SC#### 系里；突变证明：给 SN0000 加一行 `mov (global-int 3f37) 1` ⇒ 该用例 1 fail",
-      "line": 452
+      "line": 471
     },
     {
       "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
       "anchor": "advSpeakerLines",
       "note": "轮 16 新增取样口（`sampleAdvSpeakerLines` + `advanceAfterTarget`；含\"旁白 = 0xFFFFFFFF 必须 `| 0`\"的坑）",
-      "line": 202
+      "line": 207
     },
     {
       "file": "tickets/T-0102/evidence/name-color-chain.md",
@@ -183,7 +183,7 @@
       "file": "app/amayui-emulator/test/adv-name-color-chain.test.ts",
       "anchor": "`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据",
       "note": "轮 17 新增守卫（独立 oracle + 突变证明）；第二条钉 `14acda == 14b0c4[14acdc[msg]]` 与 `f807b == adcd[14acda]`",
-      "line": 63
+      "line": 87
     },
     {
       "file": "src/CVINIT.txt",
@@ -237,7 +237,7 @@
       "file": "app/amayui-emulator/test/msg-text-range.test.ts",
       "anchor": "消息窗正文区间判据",
       "note": "守卫（2 例，含源码棘轮；突变已证明）",
-      "line": 42
+      "line": 44
     },
     {
       "file": "tickets/T-0102/evidence/e4-sc0000-white-panel.md",

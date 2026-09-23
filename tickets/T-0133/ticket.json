@@ -40,10 +40,10 @@
       "line": 35
     },
     {
-      "file": "app/amayui-emulator/electron/ipc/files.ts",
-      "anchor": "const fileSource = new NodeFileSource",
-      "note": "IPC handler 体已经只是 NodeFileSource + OverlayDir + decodeAgfRgba 的薄转发（三者都是 Node 侧、与 Electron 无关）⇒ 一个 HTTP/WS 宿主可以直接复用同一份实现，不必重写资源层。⚠️但它是**模块级单例**，多实例要改（§B.3.3 坑 2）",
-      "line": 30
+      "file": "app/amayui-emulator/src/host/service.ts",
+      "anchor": "this.#fileSource = new NodeFileSource({",
+      "note": "IPC handler 体已经只是 NodeFileSource + OverlayDir + decodeAgfRgba 的薄转发（三者都是 Node 侧、与 Electron 无关）⇒ 一个 HTTP/WS 宿主可以直接复用同一份实现，不必重写资源层。⚠️但它是**模块级单例**，多实例要改（§B.3.3 坑 2）｜★2026-09-23 retarget（T-0134 变更 3／WS-3b）：单例已移进按实例构造的 `HostService`（`src/host/service.ts`），`electron/ipc/files.ts` 不再有它；锚点改指新落点。",
+      "line": 164
     },
     {
       "file": "app/amayui-emulator/src/renderer/audio/webAudioHost.ts",
@@ -85,7 +85,7 @@
       "file": "app/amayui-emulator/src/frame/scenario.ts",
       "anchor": "export function applyScenarioEvent",
       "note": "【第二轮新增】agent 输入通道重铺的现成缝：导出的、宿主无关的声明式输入执行器（ScenarioEvent 的 kind = cursor/press/release/wheel/keydown/keyup）⇒ 不必发明新词汇；⚠️它直接写 InputManager，不经过命中测试/悬停",
-      "line": 177
+      "line": 182
     },
     {
       "file": "app/amayui-emulator/src/arch/systemPaths.ts",
@@ -97,13 +97,13 @@
       "file": "app/amayui-emulator/electron/paths.ts",
       "anchor": "export const LOG_PATH",
       "note": "【第二轮新增】log/trace 是模块级常量、未参数化 ⇒ 这是 instance 隔离里**唯一**需要新增参数化的落点（回放轨迹 REPLAY_PATH 已经走 AMAYUI_REPLAY_PATH）",
-      "line": 54
+      "line": 65
     },
     {
       "file": "app/amayui-emulator/tools/debugsrv.cjs",
       "anchor": "webContents.sendInputEvent",
       "note": "【第二轮新增】agent 输入通道的现状：主进程直接 sendInputEvent（不经过渲染窗）。配合负面证据（三条输入驱动全仓库零 `.focus()` 调用，见 notes §9 的命令）⇒ offscreen 不可聚焦窗口上是否还能注入**必须实测**（§B.4.1.1）",
-      "line": 153
+      "line": 37
     },
     {
       "file": "app/amayui-emulator/src/frame/host.ts",
@@ -127,7 +127,7 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "releaseAllMouse(): void",
       "note": "【第三轮·决定 ①】现状：本工程「焦点」的唯一作用就是这次兜底释放（配 releaseAllKeys）⇒ 提升为调试器显式控制（focus off 等价于这两个调用）改动很小；InputSnapshot 里没有引擎焦点态",
-      "line": 275
+      "line": 301
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -139,7 +139,7 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "this.hitTestPending = true; // 等待泵消费它时做一次 sub_403C50",
       "note": "【订正 5】hover 可注入（1/4）：setCursor 位置**变化**即置 mouseMoved + hitTestPending，并回调 onCursorMove",
-      "line": 233
+      "line": 259
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
@@ -155,9 +155,9 @@
     },
     {
       "file": "app/amayui-emulator/src/frame/scenario.ts",
-      "anchor": "input.setCursor(x, y, true);",
-      "note": "【订正 5】hover 可注入（4/4，同时是**真缺口**）：cursor case 恒传 valid=true ⇒ 表达不了「光标出窗」(mouseleave，inputAttach 走 setCursor(-100000,-100000,false))；修法 = 加 valid?: boolean 或一个 leave kind（一行级）",
-      "line": 182
+      "anchor": "input.setCursor(x, y, ev.valid ?? true);",
+      "note": "【订正 5】hover 可注入（4/4，同时是**真缺口**）：cursor case 恒传 valid=true ⇒ 表达不了「光标出窗」(mouseleave，inputAttach 走 setCursor(-100000,-100000,false))；修法 = 加 valid?: boolean 或一个 leave kind（一行级）｜★2026-09-23 retarget（T-0134 WS-1 落地）：cursor case 现在传 `ev.valid ?? true`（新增 `ScenarioEvent.valid`），旧串只剩 press/release/wheel 三处同形调用 ⇒ 锚点改指 cursor case 的新串。",
+      "line": 187
     }
   ],
   "links": {

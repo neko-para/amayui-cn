@@ -1,0 +1,54 @@
+{
+  "title": "把 Electron 侧的 agent 调试通道也收敛到 VM 外层桥（debugsrv 的 sendInputEvent → ScenarioEvent、shot → FrameHost.capture）",
+  "type": "refactor",
+  "priority": "P2",
+  "area": "emulator/tooling",
+  "why": "`T-0133` 的决定 ② 是「输入与截图改为纯 VM 外层桥」—— web 宿主那条路已经落地（`ScenarioEvent` → `applyScenarioEvent`；`capture` → `FrameHost.capture`），但 **Electron 侧仍是老路**：\n* `tools/debugsrv.cjs:153-165` 的 `click`/`move` 走 `webContents.sendInputEvent`（真 DOM 事件），`tools/shot.cjs:141-152`、`tools/record.cjs:98-112` 同样；\n* `tools/debugsrv.cjs:143/181` 的 `shot` 走 `webContents.capturePage()`（形态 C 的管线）。\n\n后果：同一个「agent 点一下」在两个宿主下走**两条实现**，命令语义与可观测性会漂移（本工程最忌的那种）；而且 `shot` 这个名字被主进程占用，已经迫使渲染侧把新命令改叫 `capture` —— 名字分裂本身就是这次漂移的产物。",
+  "acceptance": [
+    "`tools/debugsrv.cjs` 的 `click`/`clickn`/`move` 在 Electron 宿主下也走**同一命令表**（`move`/`click`/`press`/`release`/`leave`/`wheel`/`key` → `applyScenarioEvent`），不再直接 `sendInputEvent`；若确实需要真 DOM 事件的保真度，保留一条**显式选择**的旧路径并在帮助里说明差异",
+    "`shot` 统一到 `FrameHost.capture`（页面内 `extract.canvas`），与 web 侧同一条管线；`capturePage` 若保留，必须明确标注为「仅取证用」并说明与 `capture` 的差别（形态 C vs B 撇）",
+    "命令名与帮助文本两侧一致（`capture` 不再有主进程同名截获的分裂），`tools/dbg.cjs` 的用法示例同步更新",
+    "端到端证据：Electron 宿主下用新通道跑一遍「打开 Option → 切分类 → 关闭」（或任一可复现的小序列），给出截图 + `[main]` 日志，并证明命令确实经 `applyScenarioEvent` 生效（例如出现 `[input] 注入 N 个事件` 这类 trace）",
+    "`npm run verify` 全绿；`tools/` 的既有 e4 用法（`npm run shot` / `--record`）不被破坏（或明确迁移并更新文档）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/tools/debugsrv.cjs",
+      "anchor": "webContents.sendInputEvent",
+      "note": "Electron 侧的旧输入通道（本票要收敛掉的那条）",
+      "line": 37
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/app/session.ts",
+      "anchor": "applyScenarioEvent(this.#e.input",
+      "note": "web 侧已落地的 VM 外层桥（渲染窗的命令收口点）；本票让 Electron 侧也走它",
+      "line": 558
+    },
+    {
+      "file": "app/amayui-emulator/tools/debugsrv.cjs",
+      "anchor": "capturePage",
+      "note": "旧的取帧通道（形态 C）；与 FrameHost.capture（B 撇）是两条不同管线",
+      "line": 48
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0134/notes.md"
+    ],
+    "tickets": [
+      "T-0133",
+      "T-0134",
+      "T-0135",
+      "T-0114"
+    ]
+  },
+  "id": "T-0142",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

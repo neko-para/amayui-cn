@@ -48,7 +48,8 @@
     {
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "不用 `strokeText` 的原因",
-      "note": "描边已按引擎机制实现（多画几遍是描边、不是加粗）"
+      "note": "描边已按引擎机制实现（多画几遍是描边、不是加粗）",
+      "line": 19
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -60,7 +61,7 @@
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "字重（加粗）落在哪",
       "note": "第 4 轮新增小节：面名唯一来源 message:Font / 字重只有 0x2BD 的 700+0 / sub_459F40 只重建不合成 / 决策权在 GDI 族内选面 / 字体选择器候选表是族列表",
-      "line": 119
+      "line": 123
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -77,7 +78,8 @@
     {
       "file": "app/amayui-emulator/test/font-bold-face.test.ts",
       "anchor": "usWeightClass",
-      "note": "随包两份 TTF 同族名 + 400/700 + 码页含 932（棘轮）；res/fonts 与 LFS oid 一致 ⇒ 分发的那份就是这个"
+      "note": "随包两份 TTF 同族名 + 400/700 + 码页含 932（棘轮）；res/fonts 与 LFS oid 一致 ⇒ 分发的那份就是这个",
+      "line": 10
     },
     {
       "file": "tickets/T-0035/notes.md",
@@ -101,7 +103,7 @@
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "「真机偏细」的探针已被实测修正",
       "note": "§1 推论 2/3 订正：「候选表里只有一条」不能反推「两面配成了一族」（装好两面的机器上也只有一条）；判定要用 tools/font-face-probe.ps1。同一结论已写进 ledger 的 bold-is-lfweight-face-mapping（whySilent + emulator.note）",
-      "line": 133
+      "line": 137
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -113,7 +115,7 @@
       "file": "analysis/engine-capabilities.json",
       "anchor": "text-face-source-memory-vs-system",
       "note": "第二层新条目：正文面名的来源（内存字体 vs 系统字体）与其静默形态；决定了真机选面必须用 GetFontData 探针判定",
-      "line": 3413
+      "line": 3423
     }
   ],
   "links": {

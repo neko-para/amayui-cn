@@ -13,27 +13,32 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/index.ts",
       "anchor": "...SAVE_SLOT_OPS",
-      "note": "顶层展开 ⇒ 求值顺序敏感（修前 TDZ 的抛出点：handlers/index.ts:67）"
+      "note": "顶层展开 ⇒ 求值顺序敏感（修前 TDZ 的抛出点：handlers/index.ts:67）",
+      "line": 67
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "import { loadScriptIntoFrame } from '../scriptFrame.js';",
-      "note": "★锚点已按位移交（原锚点是 '../ops.js' 那条环边，2026-09-21 已改向叶子模块）：现在这条边指向 scriptFrame，环的三条边都不再存在；静态棘轮 test/save-slot-tdz.test.ts 第①条钉住它"
+      "note": "★锚点已按位移交（原锚点是 '../ops.js' 那条环边，2026-09-21 已改向叶子模块）：现在这条边指向 scriptFrame，环的三条边都不再存在；静态棘轮 test/save-slot-tdz.test.ts 第①条钉住它",
+      "line": 27
     },
     {
       "file": "app/amayui-emulator/src/vm/scriptFrame.ts",
       "anchor": "export function loadScriptIntoFrame",
-      "note": "修法落点：叶子模块（只 import type Frame/ScriptBinary，无回边）"
+      "note": "修法落点：叶子模块（只 import type Frame/ScriptBinary，无回边）",
+      "line": 38
     },
     {
       "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
       "anchor": "必须先 import `vm/ops.js`",
-      "note": "实测踩到后写下的口径注释；2026-09-21 改写成「历史口径 + 环已消」（原锚点字符串保留）"
+      "note": "实测踩到后写下的口径注释；2026-09-21 改写成「历史口径 + 环已消」（原锚点字符串保留）",
+      "line": 21
     },
     {
       "file": "app/amayui-emulator/test/save-slot-tdz.test.ts",
       "anchor": "ReferenceError: Cannot access 'SAVE_SLOT_OPS' before",
-      "note": "守卫：修前的**动态判据**就在这一行 TDZ 上红（`handlers/index.ts:67` 的 `...SAVE_SLOT_OPS`）；本文件 4 条断言 = 两条静态棘轮（不许再长出 save-slot→ops / frame→ops）+ 动态可加载 + 叶子模块归属。"
+      "note": "守卫：修前的**动态判据**就在这一行 TDZ 上红（`handlers/index.ts:67` 的 `...SAVE_SLOT_OPS`）；本文件 4 条断言 = 两条静态棘轮（不许再长出 save-slot→ops / frame→ops）+ 动态可加载 + 叶子模块归属。",
+      "line": 13
     }
   ],
   "links": {

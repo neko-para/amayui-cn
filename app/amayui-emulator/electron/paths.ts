@@ -8,6 +8,8 @@ import * as path from 'node:path';
 import { describeResourcesLine } from '../src/arch/resourceDir.js';
 import { loadEmulatorOptions, resourceDirOf } from '../src/emulatorOptionsFile.js';
 import { resolveSystemPaths } from '../src/arch/systemPaths.js';
+// ★默认实例的布局（`tickets/T-0134` WS-3）：log/trace/replay 三个路径从这里取，口径只有一份。
+import { instanceLayout } from '../src/host/instance.js';
 
 /**
  * 仓库根。运行时 `__dirname` = `<repo>/app/amayui-emulator/dist/electron`，
@@ -50,16 +52,25 @@ export const SYSTEM_PATHS = resolveSystemPaths(REPO_ROOT);
 /** 内置字体目录（渲染进程经 IPC `font` 通道读取；见 src/text/fontSet.ts）。 */
 export const FONT_DIR = path.join(REPO_ROOT, 'res', 'fonts');
 
+/**
+ * **默认实例的布局**（`tickets/T-0134` WS-3：单例 → 实例化的第一步）。
+ *
+ * 为什么从这里取而不是本文件自己 `path.join`：路径口径只能有**一份**
+ * （`T-0133` §B.3.3 坑 2）。这三个常量仍是**默认实例**的值 ⇒ Electron 路径**零行为变更**
+ * （`AMAYUI_REPLAY_PATH` / `AMAYUI_SYSTEM_DIR` / `AMAYUI_OVERLAY_DIR` 照旧生效），
+ * 而具名实例走 `<repo>/.tmp/instances/<id>/{base,overlay,log/…}`。
+ */
+export const DEFAULT_LAYOUT = instanceLayout({ repoRoot: REPO_ROOT });
 /** 诊断日志文件（renderer 经 'log-line' IPC 追加到此处）。 */
-export const LOG_PATH = path.join(REPO_ROOT, '.tmp', 'amayui-emulator.log');
+export const LOG_PATH = DEFAULT_LAYOUT.logPath;
 /** 结构化指令轨迹（renderer 经 'append-trace-line' IPC 追加 JSON 行；见控制窗「定向 trace」）。 */
-export const TRACE_PATH = path.join(REPO_ROOT, '.tmp', 'scene-trace.jsonl');
+export const TRACE_PATH = DEFAULT_LAYOUT.tracePath;
 /**
  * **回放轨迹**（renderer 经 'append-replay-line' IPC 追加 JSON 行：时钟 + 输入 + digest）。
  * `tools/record.cjs` 启动时用 `AMAYUI_REPLAY_PATH` 指定本次录到哪个文件
  * （缺省 `.tmp/replay-trace.jsonl.gz`；主进程按 **gzip** 写，见 `logging.ts`）。
  */
-export const REPLAY_PATH = process.env.AMAYUI_REPLAY_PATH || path.join(REPO_ROOT, '.tmp', 'replay-trace.jsonl.gz');
+export const REPLAY_PATH = DEFAULT_LAYOUT.replayPath;
 
 /** 打包后的 preload（两个窗口共用；见 windows.ts 的权限说明）。 */
 export const PRELOAD_PATH = path.join(__dirname, 'preload.cjs');

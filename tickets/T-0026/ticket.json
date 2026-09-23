@@ -31,13 +31,13 @@
       "file": "app/amayui-emulator/src/emulatorOptions.ts",
       "anchor": "resources: {",
       "note": "resources 段两键（version/path）与默认值 cnjp",
-      "line": 74
+      "line": 87
     },
     {
       "file": "app/amayui-emulator/src/emulatorOptionsFile.ts",
       "anchor": "resourceDirOf",
       "note": "config 相对基准 = dirname(loaded.path)（AMAYUI_EMULATOR_CONFIG 换路径时随之改变）",
-      "line": 80
+      "line": 92
     },
     {
       "file": "app/amayui-emulator/src/text/fontSet.ts",
@@ -54,23 +54,26 @@
     {
       "file": "app/amayui-emulator/src/run.ts",
       "anchor": "resourceDirOf",
-      "note": "headless CLI：选项在建 FileSource 之前读，path 决定资源根"
+      "note": "headless CLI：选项在建 FileSource 之前读，path 决定资源根",
+      "line": 18
     },
     {
       "file": "app/amayui-emulator/electron/paths.ts",
       "anchor": "RESOURCE_DECISION",
-      "note": "Electron 主进程只用一份已读选项定资源根，并供 IPC 复用"
+      "note": "Electron 主进程只用一份已读选项定资源根，并供 IPC 复用",
+      "line": 34
     },
     {
       "file": "emulator.config.example.json",
       "anchor": "resources",
-      "note": "入库示例已含 resources 段（version=cnjp = 默认行为）"
+      "note": "入库示例已含 resources 段（version=cnjp = 默认行为）",
+      "line": 2
     },
     {
       "file": "docs-new/04-app/emulator.md",
       "anchor": "resources.version",
       "note": "§8 选项表 + resources 段说明（优先序/相对基准/日志同打两值）",
-      "line": 235
+      "line": 274
     }
   ],
   "blockedBy": [],

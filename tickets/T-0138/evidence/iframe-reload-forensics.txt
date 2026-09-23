@@ -1,0 +1,38 @@
+# 取证：点「放大」后实例被重启（2026-09-23）
+
+## 1. 用户报告（原话）
+「我刚才点了"放大"按钮, 发现似乎走到了之前的 重启 的那个路径上, 导致状态刷新了」
+
+## 2. 宿主日志里的 bin 序列（`[web] status {"bin":…}`；实例 watch）
+取证命令：
+  node --import tsx src/web/host.ts --instance watch --port 0 --repo-root <repo> > /tmp/watch-host.log 2>&1 &
+  grep -o '"bin":"[^"]*"' /tmp/watch-host.log | uniq -c
+
+输出（节选，含被观察到的那条重引导链）：
+   1 "bin":"INITCONFIG4.BIN"
+   1 "bin":"WDINIT.BIN"
+   1 "bin":"$3$ITINIT.BIN"
+   1 "bin":"INIT2.BIN"
+  28 "bin":"TITLE.BIN"
+  17 "bin":"CONFIG1.BIN"        ← 我点开 Option 进了设置
+   1 "bin":"SKINIT.BIN"         ┐
+   1 "bin":"$3$IMINIT.BIN"      │ ★完整一条**重引导链**
+   1 "bin":"INIT2.BIN"          │（页面被卸载 → 重新加载）
+   1 "bin":"BIINIT.BIN"         │
+   1 "bin":"$4$EBINIT.BIN"      ┘
+  32 "bin":"TITLE.BIN"
+
+## 3. 判读（为什么这是"页面被重建"而不是"两个并发页面"）
+* 全程**只有一条** status 流（若有两个页面同时附着，两条流的 bin 会互相交错，例如同时出现
+  `CONFIG1.BIN` 与 `TITLE.BIN`）⇒ 排除"两个并发 VM"；
+* 但出现了一条**完整启动链** ⇒ 说明**旧页面被销毁、新页面被加载**（否则不会从 `SKINIT` 重新开始）。
+
+## 4. 根因（`plugins/amayui-emulator/lib/client.js`）
+三态（收起胶囊／展开浮窗／模态）是**三个不同的 JSX 分支**，各渲染一个 `src` 相同的 `<iframe>`。
+React 在分支之间切换时会**卸载旧节点、挂载新节点**。
+而 `T-0136` 已钉住的架构事实是：**web 形态下 VM 跑在页面里** ⇒ 卸载 iframe = 该实例的 VM 死掉；
+重新挂载 = 从 `ALINIT` 重跑。这就是用户看到的"状态刷新"。
+
+## 5. 同源风险（同一处改）
+面板的「新标签打开」会开**第二个页面** ⇒ 同一实例上**两个 VM 抢同一个 overlay/log**（今天宿主侧无防护、
+面板也不提示）。

@@ -19,19 +19,19 @@
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "重建存档里的图像槽",
       "note": "装载时按两张表装回槽并重绑标了 flag 的条目",
-      "line": 332
+      "line": 343
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "只覆盖池内下标，不得清掉池外下标",
       "note": "int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）",
-      "line": 187
+      "line": 198
     },
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "flag: number;",
       "note": "20 B 记录的第 3 个字段 = 「读档要重载」标志（`sub_410160` raw 19877 判 == 1）",
-      "line": 118
+      "line": 126
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",

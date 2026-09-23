@@ -28,25 +28,25 @@
     {
       "file": ".gitignore",
       "anchor": "!/native/host-input/prebuilds/",
-      "line": 27,
+      "line": 32,
       "note": "★唯一一处「二进制进 git」的例外，注释里逐条写了理由（纯 N-API ABI 稳定 / fat binary / 缺了是静默降级 / macOS 上未必有编译器）"
     },
     {
       "file": ".gitattributes",
       "anchor": "*.node filter=lfs diff=lfs merge=lfs -text",
-      "line": 19,
+      "line": 12,
       "note": "★存储口径：`*.node` 走 **git-lfs**（与 `.gitattributes` 里既有的 `*.png`/`*.exe`/`*.DAT` 等同口径）。第一版曾以「消费者得先装 git-lfs」为由不走 LFS，2026-09-22 用户裁定那是极端情况 ⇒ retarget 到这一行"
     },
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "★预置产物棘轮",
-      "line": 237,
+      "line": 244,
       "note": "★守卫：预置产物必须存在 + 必须双架构 + 每个 slice 的 minos 必须 11.0（用单架构本地构建覆盖它、或抬高 deployment target 都会红）"
     },
     {
       "file": "native/host-input/README.md",
       "anchor": "## 预置产物（二进制怎么随应用走）",
-      "line": 138,
+      "line": 141,
       "note": "文档落点：落点/加载优先级/为什么可以预置/什么时候必须重跑 build:prebuild/手工核对命令"
     }
   ],

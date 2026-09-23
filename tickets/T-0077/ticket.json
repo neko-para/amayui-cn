@@ -23,7 +23,7 @@
       "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "### op-6-01 — 0x34B 的操作数类型被整体错读（delay 当缩放百分数、三个 float 丢弃）",
       "note": "host-invented 的首条；同文件 P2 表列出其余 12 处",
-      "line": 158
+      "line": 163
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -35,7 +35,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/live2d.ts",
       "anchor": "op_l2d_node_scale_win",
       "note": "错读点：把 op2 当百分数、op4 当 dur、op5/op6 丢弃",
-      "line": 181
+      "line": 194
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
@@ -53,7 +53,7 @@
       "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
       "anchor": "aaEnabled",
       "note": "字段 21662 定义后全库 0 使用点：note 说「从字段带到渲染侧」是凭空（渲染侧 msgwin.ts:146 写死 true）",
-      "line": 158
+      "line": 165
     }
   ],
   "links": {

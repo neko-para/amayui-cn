@@ -22,7 +22,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "BOOL __thiscall sub_4A1860(_DWORD *_this, int a2, int a3, HANDLE hFile, SIZE_T dwBytes, DWORD NumberOfBytesRead)",
-      "line": 121665,
+      "line": 2345,
       "note": "装载模型进实例槽：签名末参 = 槽号 0..9 ⇒ 0x341 的 op2 就是槽（旧文档只写\"文件名/资源 id、op2\"）"
     },
     {
@@ -70,7 +70,8 @@
     {
       "file": "docs-new/03-engine/live2d.md",
       "anchor": "2.0.06 for DirectX",
-      "note": "本次评估的落点：系统能力清单 / 资产口径 / 三条重写路线（本节即\"Live2D 系统的大致能力\"与依赖评估的正文）"
+      "note": "本次评估的落点：系统能力清单 / 资产口径 / 三条重写路线（本节即\"Live2D 系统的大致能力\"与依赖评估的正文）",
+      "line": 5
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -100,7 +101,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "const l2dBatchList = scene.l2dHost ? l2dBatches(scene.l2dHost, this.viewW, this.viewH) : [];",
       "note": "L2D = 第四类图元：批次按节点 key 与 item/text/mesh 四路归并，每批一个 Pixi Mesh",
-      "line": 248
+      "line": 264
     },
     {
       "file": "tickets/T-0054/notes.md",
@@ -123,12 +124,14 @@
     {
       "file": "tickets/T-0054/evidence/a9d0-branches.txt",
       "anchor": "a9d0=1 → TITLE 进入于",
-      "note": "判据 #3 后半：两条支路的探针输出（0 ⇒ l2dSlots=[0:0x4f9e]；1 ⇒ l2dSlots=[] 且槽 5 = 0x5273），含\"预设无效 / 帧级 until 太晚 ⇒ 必须逐条 stopAfterStep\"这两条实测坑。"
+      "note": "判据 #3 后半：两条支路的探针输出（0 ⇒ l2dSlots=[0:0x4f9e]；1 ⇒ l2dSlots=[] 且槽 5 = 0x5273），含\"预设无效 / 帧级 until 太晚 ⇒ 必须逐条 stopAfterStep\"这两条实测坑。",
+      "line": 26
     },
     {
       "file": "tickets/T-0054/evidence/e4-title-live2d.md",
       "anchor": "e4-title.png",
-      "note": "判据 #4 的 E4：真界面 TITLE 屏 Live2D 立绘出画（指向 T-0029 归档的截图 + sha256），以及它与 a9d0 回落支对照的落点。"
+      "note": "判据 #4 的 E4：真界面 TITLE 屏 Live2D 立绘出画（指向 T-0029 归档的截图 + sha256），以及它与 a9d0 回落支对照的落点。",
+      "line": 5
     }
   ],
   "links": {

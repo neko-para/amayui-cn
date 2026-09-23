@@ -35,7 +35,7 @@
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "int __thiscall sub_405360(_DWORD *_this, int a2)",
       "note": "★压返回点（raw 11030-11041）：悬停/点击派发一律 a2=-3，而 0x72 长 3 dword ⇒ label 的 ret 正好回到门指令重跑",
-      "line": 11031
+      "line": 173
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -53,13 +53,13 @@
       "file": "app/amayui-emulator/src/vm/msgwin.ts",
       "anchor": "revealArmed(win: number): boolean",
       "note": "内容版本号 + 武装记账（appendText/addRuby/endLine/beginNewMessage 各 +1；finishPage 同键一页只记一次）",
-      "line": 446
+      "line": 445
     },
     {
       "file": "docs-new/03-engine/input-system.md",
       "anchor": "14.5b",
       "note": "常态行为：派发 label 的返回点 = 门指令（ret 回到门指令重跑）—— 门指令必须幂等",
-      "line": 378
+      "line": 389
     }
   ],
   "links": {

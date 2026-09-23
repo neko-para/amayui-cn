@@ -34,31 +34,31 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "advanceThrottle = 0;",
       "note": "现状：恒 0（注释已改成「引擎语义 = 最后一次 mouse-callback 的 op1；emulator 是已知偏差」）",
-      "line": 218
+      "line": 231
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "c.e.input.mouseSlot = slot;",
       "note": "修复点：这里要同时写 `advanceThrottle`",
-      "line": 91
+      "line": 110
     },
     {
       "file": "app/amayui-emulator/test/title-exit.test.ts",
       "anchor": "rt.clock += 16;",
       "note": "冻结时钟的典型：只在 FRAME_OPS 上推进 ⇒ 上节流后相邻 `get-input-type` 落在同一窗口内、派发消失",
-      "line": 66
+      "line": 68
     },
     {
       "file": "app/amayui-emulator/test/route-dispatch.test.ts",
       "anchor": "const h = OPS.get(0xcc)!;",
       "note": "判据⑦b 直接调 `OPS.get(0xcd)`：`nowMs` 与 `lastAdvance` 都是 0，一上 16ms 节流就不再抛「Depth が不正です」",
-      "line": 271
+      "line": 274
     },
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "节流间隔 = 最后一次",
       "note": "文档已按引擎事实改写，并把 emulator 现状标成「已知偏差，见 tickets/T-0046」——本单落地后要改成已实现",
-      "line": 188
+      "line": 198
     }
   ],
   "tests": [

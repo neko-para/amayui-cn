@@ -1,0 +1,44 @@
+# 观察台端到端实跑（2026-09-23，T-0136 acceptance 4/6/8；顺带补 T-0135 的两实例隔离项）
+
+命令（cwd 必须是 app/amayui-emulator）：
+  cd app/amayui-emulator && npx electron ../../plugins/amayui-emulator/e2e-shot.cjs
+
+这条探针**不需要重启 DSH**：它把插件的 handler 直接挂在一个真 node:http 上，
+于是"浏览器走插件路由"这件事被真正验证了（而不是只跑插件的内部函数）。
+
+结构：
+  真实浏览器（Electron 哑窗 show:false）
+    └─ GET /dsh-emulator/obs-a/      ← 插件路由（纯观察）
+         └─ 流式反向代理 ─▶ 127.0.0.1:55799   实例 obs-a（独立进程，注册表登记）
+  agent（node 侧 fetch，全部经插件路由）
+    ├─ GET  /dsh-emulator/api/__instances
+    ├─ POST /dsh-emulator/<id>/api/write-save-slot
+    └─ POST /dsh-emulator/<id>/api/debug-query   （move / capture）
+
+输出（12/12 全过）：
+✓ 插件路由已注册（prefix /dsh-emulator）
+[obs] __instances → [{"id":"obs-a","port":55799,"bin":null},{"id":"obs-b","port":55800,"bin":null}]
+✓ 两个实例都被注册表列出（跨进程发现）
+✓ 两个实例端口互不相同  {"obs-a":55799,"obs-b":55800}
+✓ 经插件路由写 obs-a 的槽 7 → HTTP 200
+✓ 经插件路由写 obs-b 的槽 7 → HTTP 200
+✓ 两实例的槽文件各自落在自己的 overlay 下
+   .tmp/instances/obs-a/overlay/SAVE/SAVE07.DAT | .tmp/instances/obs-b/overlay/SAVE/SAVE07.DAT
+✓ 两个实例的内容互不串（a=1, b=2）  [1,2]
+✓ 实例 A 的截图非空（4061744B）
+✓ 页面内 window.api.readScript(0) → 12012（经插件的每实例路由）
+✓ agent move 经插件路由 → HTTP 200  ["已注入 1 个输入事件（cursor）"]
+✓ agent capture 经插件路由 → 1793344B 1280×720
+✓ 每实例路由：/obs-b/health 报到的是 obs-b  {"instance":"obs-b"}
+✓ 未附渲染页的实例：agent 命令按 id 寻址到 obs-b ⇒ HTTP 503「没有渲染页」（正确语义）
+
+目视核对（observer-instance-a.jpg / observer-agent-capture.jpg）：TITLE 画面完整
+（logo、五个菜单、立绘、槽位指示）。
+
+## ★顺带钉住的一条架构后果（不是缺陷，但影响工作流）
+
+web 形态下 **VM 跑在页面里**（渲染进程就是那个浏览器页）⇒ **没有渲染页附着的实例，
+`/health` 照常（宿主在），但 agent 的 debug-query 必然 503**（没人能执行）。
+⇒ "agent 起一个实例自己调试、不需要人看着"这件事，需要 agent 侧**自己也附一个（无头）渲染页**；
+或者就按自然流程：agent 起宿主 → 人在面板里附上去 → VM 随之跑起来 → agent 下命令。
+（对比 `T-0133` §B.4.1 的 offscreen 形态：那种形态里进程自己就是渲染者，没有这个约束。）

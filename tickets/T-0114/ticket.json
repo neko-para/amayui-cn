@@ -24,7 +24,7 @@
     {
       "file": "docs-new/99-records/2026-09-t0114-debugger/session-state-2026-09-22.md",
       "anchor": "会话中间状态记录（2026-09-22）",
-      "line": 6,
+      "line": 19,
       "note": "★本会话**交接件**（用户要求\"记录所有中间状态\"产出）：三件事的已证/未证/待办三态 —— T-0102 白底根因与三项排除 + 未决三选一；T-0114 调试器已交付范围与未做项；T-0040 macOS 贴边时序修复与实测数字；T-0115 verify 基线；产出文件清单与仓库状态"
     },
     {
@@ -42,13 +42,13 @@
     {
       "file": "app/amayui-emulator/electron/ipc/control.ts",
       "anchor": "control-set-trace-filter",
-      "line": 56,
+      "line": 88,
       "note": "已有：定向 trace 白名单（控制面板已能按 opcode 过滤指令日志）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "#pausedOp",
-      "line": 119,
+      "line": 127,
       "note": "已有：渲染进程\"停在未知指令等面板指令继续\"—— 断点链路的地基，已被真机验证过"
     },
     {
@@ -60,13 +60,13 @@
     {
       "file": "app/amayui-emulator/src/vm/debugQuery.ts",
       "anchor": "export function runQuery",
-      "line": 82,
+      "line": 96,
       "note": "第 1 步的实现：纯函数只读查询 + 白名单解析（不 eval）；口径见文件头注释"
     },
     {
       "file": "app/amayui-emulator/test/debug-query.test.ts",
       "anchor": "★纯只读：查询前后引擎状态不变",
-      "line": 105,
+      "line": 107,
       "note": "守卫（7 例）：值口径 / 未写过 / 批量 / 帧栈 / 失败给用法 / 纯只读 / 源码棘轮（不 eval）"
     }
   ],

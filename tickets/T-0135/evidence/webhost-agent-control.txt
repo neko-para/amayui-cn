@@ -1,0 +1,33 @@
+# agent 侧控制面实测（2026-09-23，T-0135 acceptance 6）
+
+命令：npm run build:electron && npx electron tools/webhost-shot.cjs --port 8903 --instance shot --wait-ms 40000
+（Electron 只当哑浏览器：show:false、无 preload/IPC；页面由 Node web 宿主经 HTTP 提供）
+
+实跑输出：
+[webshot] 页面已加载，等 40000ms 让它跑到 TITLE…
+[webshot] canvas 出现（+8ms）
+[webshot] 截图 4038670B → .tmp/webshot/web-titleshot.png
+[webshot] 页面内 window.api.readScript(0) → 12012        ← HTTP 桥通
+[webshot] agent 'move 640 360' → HTTP 200 ["已注入 1 个输入事件（cursor）"]
+[webshot] agent 'capture' → 1797870B 1280×720 → .tmp/webshot/web-agent-capture.png
+
+链路（**全部经我们自己的协议，不经 Electron 的 sendInputEvent/capturePage**）：
+  agent（node 侧 fetch）
+    → POST /dsh-emulator/api/debug-query {args:["move 640 360"]}
+      → 宿主 push('renderer-debug-query', {id,text}) 经 SSE
+        → 渲染页 session.ts 的 onDebugQuery → parseDebugCommand
+          → {a:'input'} → applyScenarioEvent(InputManager)   ← 纯 VM 外层桥（hover 会触发命中测试）
+        → POST /api/event {channel:'renderer-debug-query-result',[id,result]}
+      → 宿主按 id 配对 → HTTP 200 ["已注入 1 个输入事件（cursor）"]
+
+capture 同一条链：{a:'capture'} → capturePng(FrameHost) → PixiBackend.captureFrame()
+                → #captureStageCanvas() → renderer.extract.canvas → PNG base64 回执
+                → agent 拿到 1,797,870B / 1280×720 的 PNG（见 webhost-agent-capture.jpg）
+
+命令面（共享层词汇表，两个宿主同义；T-0135 已加）：
+  move <x> <y> / leave / click <x> <y> [左|右] / press / release / wheel <±120> [x y] / key <vk> / keyup <vk>
+
+三条错误路径也可区分（plugins/amayui-emulator/smoke.mjs 离线冒烟里验的）：
+  没有渲染页连着 SSE        → HTTP 503 + 可读原因（不挂住）
+  渲染页连着但不回执        → HTTP 504 超时（与 503 可区分）
+  上游子进程没起来          → HTTP 503 + lastLog（面板会显示）

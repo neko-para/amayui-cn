@@ -53,24 +53,25 @@
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "async function transferToRootAfterLoad(e: Engine): Promise<void> {",
       "note": "控制转移的实现（面板/文本复位 + 置门 + `cur=0` + 重载根脚本）",
-      "line": 56
+      "line": 67
     },
     {
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "error: controlErrorText(errorOverride, this.#errorText, paused),",
       "note": "控制面版横幅：每次上报都带上粘住的错误文本（修前 `error: errorOverride ?? autoError` ⇒ 收尾那次上报把它擦成 undefined）",
-      "line": 196
+      "line": 237
     },
     {
       "file": "app/amayui-emulator/test/slot-load-transfer.test.ts",
       "anchor": "读真游戏槽 ⇒ 控制转移到根脚本",
       "note": "★E3 守卫：真槽 + 真资源根，读档后启动链重新跑到 TITLE 且不报错；顺带锁「不拿空表覆盖 SAVE.DAT 表」",
-      "line": 114
+      "line": 119
     },
     {
       "file": "tickets/T-0056/notes.md",
       "anchor": "Depth が不正です 51 != 54",
-      "note": "用户实测现场（boot harness 日志；读档 YES 分支的 SE/绘图/阶梯动画之后立刻报错）（临时日志会随 .tmp 清理，故锚在本文件）"
+      "note": "用户实测现场（boot harness 日志；读档 YES 分支的 SE/绘图/阶梯动画之后立刻报错）（临时日志会随 .tmp 清理，故锚在本文件）",
+      "line": 14
     }
   ],
   "links": {

@@ -16,13 +16,13 @@
       "file": "app/amayui-emulator/src/vm/handlers/gfx-state.ts",
       "anchor": "setTransition",
       "note": "写入端：0x223/0x24F/0x250/0x251 逐格照抄引擎的 sub_4AAE10(Scene+1048, &id)[i] = v",
-      "line": 242
+      "line": 20
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "clock-read-transition-window",
       "note": "★第二层条目：转场窗口 + 条带/模糊/子集离屏合成",
-      "line": 676
+      "line": 677
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
@@ -34,19 +34,19 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "renderItemSubset",
       "note": "★子集离屏合成：与主合成共用 itemSprite 一份画法",
-      "line": 172
+      "line": 188
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "#renderRangeCanvas",
       "note": "★宿主侧：把一段区间渲染成离屏画布（按项集合每帧缓存），类别 0/2 的源",
-      "line": 1164
+      "line": 1193
     },
     {
       "file": "app/amayui-emulator/test/transition-render-wiring.test.ts",
       "anchor": "★写端 → 记录格 → 区间选择",
       "note": "★端到端棘轮：语料形态的 i223 实参 → 记录格 → 区间选择",
-      "line": 225
+      "line": 233
     },
     {
       "file": "analysis/opcode-gaps.json",
@@ -58,7 +58,7 @@
       "file": "app/amayui-emulator/test/sc-transition-window.test.ts",
       "anchor": "★类别 3 的画法参数逐条对应引擎的 SetTechnique/SetFloat",
       "note": "★类别 3 守卫：参数/归一化/采样几何/偏差标记",
-      "line": 311
+      "line": 313
     }
   ],
   "links": {

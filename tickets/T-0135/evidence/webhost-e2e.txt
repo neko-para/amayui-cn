@@ -1,0 +1,46 @@
+# Phase 2 端到端实跑记录（2026-09-23，本机 macOS）
+
+## 形态
+Node web 宿主（独立进程，只绑 127.0.0.1）→ Electron 当**哑浏览器**（show:false，无 preload/IPC）
+加载 http://127.0.0.1:8901/ → `bridge.js` 把 `window.api` 装成 HTTP+SSE 实现 → 模拟器 boot 到 TITLE。
+
+命令：
+  npm run build:electron
+  npx electron tools/webhost-shot.cjs --port 8901 --instance shot --wait-ms 45000
+
+## 实跑输出
+[webshot] 起 web 宿主：instance=shot port=8901
+[webshot] 宿主就绪：".tmp/instances/shot/log/amayui-emulator.log"
+[webshot] 页面已加载，等 45000ms 让它跑到 TITLE…
+[webshot] canvas 出现（+2ms）
+[webshot] 截图 3931607B → .tmp/webshot/web-titleshot.png
+[webshot] 页面内 window.api.readScript(0) → 12012   ← ★页面内调 API 成功（HTTP 桥通）
+[webshot] 收工
+
+## HTTP 层冒烟（node 侧 curl，另一次运行）
+GET  /health            → {"ok":true,"instance":"smoke","layout":{…".tmp/instances/smoke/…"}}
+GET  /                  → HTTP 200 text/html 1401B
+GET  /bridge.js         → HTTP 200 text/javascript 13949B
+POST /api/read-config-ini → null（**干净实例**没有 INI ⇒ 实例隔离生效，不继承玩家配置）
+POST /api/read-script {args:[0]} → x-amayui-kind: bin
+                                  x-amayui-meta: {"index":0,"name":"SYSTEM4.BIN"}
+                                  content-length: 12020
+POST /api/music-table   → 真曲号表（base 数组有值）
+
+## 判据
+① 页面能 boot 到 TITLE：PASS（截图见 webhost-titleshot.jpg —— logo、五个菜单、立绘、
+  底部槽位、版本号 1.07.0043 全部正常）
+② 资源/配置/存档通道通：PASS（页面内 readScript(0)=12012B；node 侧 22 个方法端点冒烟通过）
+③ 不出 Electron 窗口：PASS（`show:false`，全程无可见窗口）
+④ 实例隔离：PASS（health 显示 base/overlay/log 都在 .tmp/instances/<id>/ 下）
+
+## 顺带抓到的真 bug（假 fetch 测不出来的那种）
+`webBridge` 原先把 `fetch` 存进字段再以**桥实例**为 receiver 调用 ⇒ 浏览器报
+`TypeError: Failed to execute 'fetch' on 'Window': Illegal invocation`（Node 的 fetch 不挑 receiver
+⇒ 注入假 fetch 的单测抓不到）。已改为裸调包装，并补了一条"receiver 不许是桥实例"的断言
+（`test/web-bridge.test.ts`，13/13）。
+
+## 已知未做（本票剩余）
+- DSH 插件 `plugins/amayui-emulator`（Host 半反向代理 + Client 半同源 iframe）
+- agent 侧 `click/move` 走 `ScenarioEvent`、`capture` 走 `FrameHost.capture` 的重铺
+- 两实例并行的隔离实跑（当前只有单实例 + 路径断言）

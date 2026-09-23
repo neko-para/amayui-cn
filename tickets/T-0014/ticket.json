@@ -29,24 +29,25 @@
       "file": "app/amayui-emulator/test/anim-window-done.test.ts",
       "anchor": "源码棘轮：引擎不许保留",
       "note": "剥注释后 engine.ts 不得出现 pickHoverLabel，且产品路径那一对调用必须还在",
-      "line": 185
+      "line": 187
     },
     {
       "file": "app/amayui-emulator/src/vm/interpreter.ts",
       "anchor": "loadScriptData",
       "note": "本文件现在只剩 stepOnce / loadScriptData / formatOperands —— interpreter.run()（第 6 份帧循环）已在 B1 删除",
-      "line": 223
+      "line": 242
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "唯一一份",
-      "note": "唯一的帧循环现在在这里（runFrameLoop）"
+      "note": "唯一的帧循环现在在这里（runFrameLoop）",
+      "line": 2
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "无副作用：门状态由 Engine.waitFlags 管",
       "note": "headless 宿主的 waitFlags 是死状态（写后无读者）—— 已在 T-0008 删除，现在是空实现",
-      "line": 697
+      "line": 727
     }
   ],
   "history": [

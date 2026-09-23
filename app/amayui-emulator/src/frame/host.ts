@@ -65,4 +65,29 @@ export interface FrameHost {
   digestState?(): SceneState;
   /** 宿主义务计数（屏障/音频意图/字体缺字）—— 进 `FrameDigest.host` 段，**不参与两宿主比较**。 */
   digestHostCounters?(): DigestHost;
+  /**
+   * **抓一帧当前合成结果为 PNG 字节**（可选能力）。
+   *
+   * ★为什么在**帧宿主**这一层、而不是宿主各自的 IPC：`tickets/T-0133` §B.4.4 —— 截图与输入/焦点
+   * 一样是"宿主无关"的诉求，人类看的帧流与 agent 的 `shot` 必须是**同一条路径**（否则两者会漂移）。
+   * 因此它是 `FrameHost` 的一个可选成员，由**像素宿主**实现（Pixi 侧 = `PixiBackend.captureFrame`）。
+   *
+   * ★**headless 宿主不实现它**（`headlessFrameHost.ts` 刻意不提供）：headless 的"合成"是推进模型 +
+   * 出快照，本来就没有像素 —— "没有这张能力"正是它的语义，而不是缺陷。调用方据此降级（见 `capturePng`）。
+   */
+  capture?(): Promise<Uint8Array>;
+}
+
+/**
+ * **桥对"抓一帧"的唯一下沉点**（`tickets/T-0134` WS-2 的冻结接口）。
+ *
+ * 语义（三条，逐条都有守卫）：
+ *  1. 宿主**没有** `capture` ⇒ 返回 `null`（headless = 没有像素；调用方据此降级，**不是**错误路径）；
+ *  2. 宿主有 ⇒ 原样返回它的 PNG 字节；
+ *  3. `capture()` **自己抛** ⇒ 原样往外抛（不吞）。"没有能力"与"有能力但这次失败"必须可区分：
+ *     前者是常态（headless），后者是真故障，吞掉就会变成"截图偶尔变空"这种最难查的症状。
+ */
+export async function capturePng(host: FrameHost): Promise<Uint8Array | null> {
+  if (!host.capture) return null;
+  return host.capture();
 }

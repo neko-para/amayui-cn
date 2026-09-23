@@ -145,6 +145,11 @@ export interface ScenarioEvent {
   settleMs?: number;
   x?: number;
   y?: number;
+  /**
+   * **仅 `cursor` 用**：`false` = 光标出窗（等价 `inputAttach` 的 `mouseleave`，即
+   * `setCursor(-100000,-100000,false)`）；缺省 `true`（`tickets/T-0134`，`T-0133` §0.11 差异 a）。
+   */
+  valid?: boolean;
   button?: 0 | 1;
   delta?: number;
   /** 键盘事件的虚拟键码（`keydown`/`keyup` 用；缺省 0 = 无效键，什么都不做）。 */
@@ -179,7 +184,7 @@ export function applyScenarioEvent(input: InputManager, ev: ScenarioEvent): void
   const y = ev.y ?? 0;
   switch (ev.kind) {
     case 'cursor':
-      input.setCursor(x, y, true);
+      input.setCursor(x, y, ev.valid ?? true);
       break;
     case 'press':
       if (ev.x !== undefined) input.setCursor(x, y, true);

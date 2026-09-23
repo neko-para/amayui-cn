@@ -41,30 +41,31 @@
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
       "anchor": "const phys =",
       "note": "主进程三跳换算的最后一跳：screen.dipToScreenPoint(dip) —— 缺它则缩放 ≠ 100% 时光标挪到偏左上角",
-      "line": 110
+      "line": 135
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "setSystemCursor(x: number, y: number): void {",
       "note": "渲染侧那跳：虚拟→客户区，用与 attachMouseInput.toVirtual 同一套 getBoundingClientRect（互为逆运算）",
-      "line": 1391
+      "line": 1420
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "c.native.setSystemCursor?.(x, y);",
       "note": "0x10A 的两半件：先 input.setCursor（引擎侧真源）再交给宿主缝（同一对坐标）",
-      "line": 372
+      "line": 402
     },
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "0x10A：宿主缝收到**与引擎侧同一对**虚拟坐标",
       "note": "★守卫：两半件不许各算一套；另有降级契约 / 搜索链顺序 / headless no-op / 换算源码棘轮",
-      "line": 399
+      "line": 406
     },
     {
       "file": "app/amayui-emulator/tools/verify-cursor.cjs",
       "anchor": "AMAYUI_CURSOR_VERIFY",
-      "note": "★真机核验（真实 Electron 宿主 + 真实光标）：DIP(447,390) → 物理(559,488) → 读回一致 → 复位（本机 125% 缩放，正是「少一跳就错」的场景）"
+      "note": "★真机核验（真实 Electron 宿主 + 真实光标）：DIP(447,390) → 物理(559,488) → 读回一致 → 复位（本机 125% 缩放，正是「少一跳就错」的场景）",
+      "line": 9
     },
     {
       "file": "native/host-input/tools/smoke.cjs",
@@ -76,13 +77,13 @@
       "file": "native/host-input/README.md",
       "anchor": "## 预置产物（二进制怎么随应用走）",
       "note": "打包方案",
-      "line": 138
+      "line": 141
     },
     {
       "file": "docs-new/04-app/native-addon.md",
       "anchor": "## 5. 打包（二进制怎么随应用走）",
       "note": "文档落点",
-      "line": 86
+      "line": 108
     }
   ],
   "links": {

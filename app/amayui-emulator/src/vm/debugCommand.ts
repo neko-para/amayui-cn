@@ -23,6 +23,47 @@ export type DebugAction =
   | { a: 'break-list' }
   | { a: 'continue' }
   | { a: 'help' }
+  /**
+   * **宿主焦点模式**（`tickets/T-0134`）：`auto` = 跟随真实 DOM 焦点（默认）；`on`/`off` = 调试器显式接管。
+   *
+   * ★`mode` 用**本地字面量联合**，不 import `InputManager.HostFocus`：本模块的设计约束是**零依赖**
+   *   （见文件头：控制窗与渲染窗两个编译单元都安全引它）。字面量与 `HostFocus` 结构相同，
+   *   `session.ts` 侧 `input.setHostFocus(act.mode)` 天然类型兼容。
+   */
+  | { a: 'focus'; mode: 'auto' | 'on' | 'off' }
+  /**
+   * **抓一帧当前画面**（`tickets/T-0134`）：B′ 判据实验与 agent 取证的统一入口。
+   *
+   * 走 `FrameHost.capture`（= 页面内 `renderer.extract.canvas` 读回），**不是** Electron 的
+   * `capturePage()` —— 两者是不同管线（`T-0133` §B.4.4 的 B′ vs 形态 C）。结果里带 `png`（base64）。
+   *
+   * ★**为什么不叫 `shot`**：`tools/debugsrv.cjs:215` 在**主进程**就截获了 `shot`/`screencap`
+   *   （走 `capturePage()`），压根不会转发到渲染窗 ⇒ 同名命令永远收不到。`capture` 是"页面内读回"
+   *   这条新路的专属名字，与那条待退役的旧路分清。
+   */
+  | { a: 'capture' }
+  /**
+   * **注入输入**（`tickets/T-0135` Phase 2）：把一条命令翻成若干 `ScenarioEvent`，
+   * 由**拥有 `InputManager` 的那一侧**逐个 `applyScenarioEvent` 执行。
+   *
+   * ★为什么走这里而不是各宿主自己写一套：`T-0133` §B.4.3 —— 输入是**宿主无关**的
+   *   （浏览器宿主与 Electron 宿主共用同一份词汇/执行器），而 `capture`/`focus` 也在这张表里，
+   *   于是"agent 看到的命令面"只有一个（`T-0127` 的单一收口点）。
+   * ★类型用**本地结构字面量**（不 import `ScenarioEvent`）：本模块的约束是**零依赖**
+   *   （控制窗/渲染窗两个编译单元都引它）。字段与 `src/frame/scenario.ts` 的 `ScenarioEvent` 同形。
+   */
+  | {
+      a: 'input'
+      events: {
+        kind: 'cursor' | 'press' | 'release' | 'wheel' | 'keydown' | 'keyup'
+        x?: number
+        y?: number
+        button?: 0 | 1
+        delta?: number
+        vk?: number
+        valid?: boolean
+      }[]
+    }
   /** 其它输入一律当查询（`runQuery`）；这样"查一个值"不需要任何前缀。 */
   | { a: 'query'; text: string };
 
@@ -60,6 +101,15 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '  bl / breakpoints      列断点（含命中次数）',
   '  d [id] / delete [id]  删一条；省略 id = 全删',
   '  c / continue          继续（从当前指令**走**过去）',
+  '  focus [auto|on|off]   宿主焦点模式（缺省 auto）：auto=跟随真实 DOM 焦点；',
+  '                        on/off=调试器显式接管（off 立即释放全部按住态并忽略后续 DOM 焦点事件）',
+  '  capture               抓一帧当前画面（页面内 extract；PNG 见结果的 png 字段）',
+  '  move <x> <y>          注入光标移动到虚拟坐标（1280×720；触发引擎的命中测试/悬停）',
+  '  leave                 注入「光标出窗」（等价窗口 mouseleave；侧栏收起那条路）',
+  '  click <x> <y> [左|右]  注入一次点击（= press + release；缺省左键）',
+  '  press <x> <y> [左|右] / release [左|右]   分别注入按下/抬起（按住态可跨命令保持）',
+  '  wheel <±120> [x y]    注入滚轮（引擎单位：上滚正、一格 120；缺省沿用当前光标）',
+  '  key <vk> / keyup <vk> 注入键盘按下/抬起（vk = Windows 虚拟键码，如 38=↑、13=Enter）',
   '  ? / help              本帮助',
   '  <其它>                当查询：global <下标> / local <下标> / frame [下标|all] / slot <槽> / run',
   '★下标与常量口径：`0x…`=十六进制；含 a-f 的串=十六进制；纯数字=十进制。',
@@ -81,6 +131,85 @@ export function parseDebugCommand(raw: string): DebugAction | null {
     const id = Number.parseInt(parts[1], 10);
     if (!Number.isInteger(id)) return { a: 'query', text: `delete：id 必须是整数（收到「${parts[1]}」）` };
     return { a: 'break-del', id };
+  }
+
+  if (cmd === 'focus') {
+    // `focus` / `focus auto` / `focus on` / `focus off`（无参 = auto）。
+    // 非法参数按既有 `b event` / `delete` 的口径回报：`{a:'query'}` 兜到 `runQuery` 打印"未知命令 + 帮助"，
+    // **不抛错、不崩**（面板与 CLI 拿到同一句失败）。
+    const arg = (parts[1] ?? 'auto').toLowerCase();
+    if (arg !== 'auto' && arg !== 'on' && arg !== 'off') {
+      return { a: 'query', text: `focus：模式必须是 auto / on / off 之一（收到「${parts[1] ?? ''}」）` };
+    }
+    return { a: 'focus', mode: arg };
+  }
+
+  // `capture`：抓一帧（PNG base64 由渲染窗填进结果的 `png` 字段）。只认裸命令，不吃参数。
+  // ★不叫 `shot`：那个名字被 `tools/debugsrv.cjs` 在主进程截获（capturePage 路线，见 `T-0133` §B.4.4）。
+  if (cmd === 'capture') return { a: 'capture' };
+
+  // ---- 输入注入（`tickets/T-0135`；解析出来的就是 `ScenarioEvent` 的形状）----
+  // 非法参数一律走既有的"当查询回报"口径（不抛错、不崩），面板与 CLI 拿到同一句失败。
+  const bad = (msg: string): DebugAction => ({ a: 'query', text: msg });
+  const int2 = (a: string | undefined, b: string | undefined): [number, number] | null => {
+    const x = Number(a);
+    const y = Number(b);
+    return Number.isFinite(x) && Number.isFinite(y) ? [x, y] : null;
+  };
+  const btn = (t: string | undefined): 0 | 1 => (t === '右' || t === 'right' || t === 'r' ? 1 : 0);
+  /** `release` 的两种写法收敛到一处（带坐标就顺手把光标也设过去，与 `press` 对称）。 */
+  const xyy = (ps: string[], xy: [number, number] | null, b: 0 | 1): DebugAction =>
+    xy
+      ? { a: 'input', events: [{ kind: 'cursor', x: xy[0], y: xy[1], valid: true }, { kind: 'release', x: xy[0], y: xy[1], button: b }] }
+      : { a: 'input', events: [{ kind: 'release', button: btn(ps[1]) }] };
+  if (cmd === 'move') {
+    const xy = int2(parts[1], parts[2]);
+    if (!xy) return bad('move：用法 move <x> <y>（虚拟坐标 0..1280 / 0..720）');
+    return { a: 'input', events: [{ kind: 'cursor', x: xy[0], y: xy[1], valid: true }] };
+  }
+  if (cmd === 'leave') {
+    // ★`valid:false` 就是"光标出窗"（`T-0133` §0.11 的真缺口，由 `ScenarioEvent.valid` 补上）。
+    return { a: 'input', events: [{ kind: 'cursor', x: 0, y: 0, valid: false }] };
+  }
+  if (cmd === 'click') {
+    const xy = int2(parts[1], parts[2]);
+    if (!xy) return bad('click：用法 click <x> <y> [左|右]');
+    const b = btn(parts[3]);
+    return {
+      a: 'input',
+      events: [
+        { kind: 'cursor', x: xy[0], y: xy[1], valid: true },
+        { kind: 'press', x: xy[0], y: xy[1], button: b },
+        { kind: 'release', x: xy[0], y: xy[1], button: b },
+      ],
+    };
+  }
+  if (cmd === 'press') {
+    const xy = int2(parts[1], parts[2]);
+    if (!xy) return bad('press：用法 press <x> <y> [左|右]');
+    return { a: 'input', events: [{ kind: 'cursor', x: xy[0], y: xy[1], valid: true }, { kind: 'press', x: xy[0], y: xy[1], button: btn(parts[3]) }] };
+  }
+  if (cmd === 'release') {
+    // `release` 允许多种写法：`release` / `release 右` / `release <x> <y> [左|右]`
+    const xy = int2(parts[2], parts[3]) ?? int2(parts[1], parts[2]);
+    const b = btn(xy ? parts[4] ?? parts[3] : parts[1]);
+    return xyy(parts, xy, b);
+  }
+  if (cmd === 'wheel') {
+    const d = Number(parts[1]);
+    if (!Number.isFinite(d)) return bad('wheel：用法 wheel <±120> [x y]');
+    const xy = int2(parts[2], parts[3]);
+    return {
+      a: 'input',
+      events: xy
+        ? [{ kind: 'cursor', x: xy[0], y: xy[1], valid: true }, { kind: 'wheel', x: xy[0], y: xy[1], delta: d }]
+        : [{ kind: 'wheel', delta: d }],
+    };
+  }
+  if (cmd === 'key' || cmd === 'keyup') {
+    const vk = Number(parts[1]);
+    if (!Number.isInteger(vk) || vk <= 0) return bad(`${cmd}：用法 ${cmd} <vk>（Windows 虚拟键码，如 38=↑）`);
+    return { a: 'input', events: [{ kind: cmd === 'key' ? 'keydown' : 'keyup', vk }] };
   }
 
   if (cmd === 'b' || cmd === 'break') {

@@ -17,13 +17,14 @@
     {
       "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
       "anchor": "frameTickLock: 107438,",
-      "note": "R2 的单一真源：0x1F5 的字节偏移 429756/429752 就是这里的 frameCount/frameTickLock（×4）"
+      "note": "R2 的单一真源：0x1F5 的字节偏移 429756/429752 就是这里的 frameCount/frameTickLock（×4）",
+      "line": 36
     },
     {
       "file": "app/amayui-emulator/test/engine-field-ids.test.ts",
       "anchor": "0x1F4 / 0x1F5：停靠锁 + 帧计数 + 时钟刷新成对",
       "note": "R3 的守卫：i1f4 累加 frameCount、i1f5 递减并在 0 时释放停靠锁、此后 i1f4 恢复刷时钟（修前时钟冻在第一帧）",
-      "line": 92
+      "line": 94
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -65,22 +66,25 @@
       "file": "app/amayui-emulator/test/config-keys.test.ts",
       "anchor": "src 里的每个配置键字面量都必须在权威键表",
       "note": "R1 的守卫（先剥注释，避免 T-0039 的「注释让棘轮失效」）",
-      "line": 46
+      "line": 48
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
       "anchor": "const ENGINE_FIELD_GET: Map<number, number>",
-      "note": "R4：字段 getter 表；没有依据的 getter 一律抛错，不再伪造 0"
+      "note": "R4：字段 getter 表；没有依据的 getter 一律抛错，不再伪造 0",
+      "line": 55
     },
     {
       "file": "app/amayui-emulator/src/util/lzss.ts",
       "anchor": "export function unlzss",
-      "note": "R5：LZSS 两份实现合一（原 src/vm/lzss.ts + src/script/lzss.ts 删除）"
+      "note": "R5：LZSS 两份实现合一（原 src/vm/lzss.ts + src/script/lzss.ts 删除）",
+      "line": 22
     },
     {
       "file": "tickets/T-0057/notes.md",
       "anchor": "## 1. 类 A：同一语义多处真源",
-      "note": "全量发现清单（A/B/C/D/E 五类，含未在本轮实施的后继项）"
+      "note": "全量发现清单（A/B/C/D/E 五类，含未在本轮实施的后继项）",
+      "line": 29
     }
   ],
   "links": {

@@ -15,18 +15,19 @@
       "file": "app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts",
       "anchor": "缺口棘轮",
       "note": "T-0094 的 E3 量化断言（每处 Δ ∈ [SPEED, max(2·SPEED, SPEED+3帧)]，实测 66.7ms）—— 本票的起算点",
-      "line": 87
+      "line": 89
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "gates.sleep",
       "note": "帧首判定的 sleep 门（到点后本帧 return ⇒ 下一帧才派发）",
-      "line": 296
+      "line": 325
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "SLEEP_GATE",
-      "note": "SLEEP_GATE = 0x20000000（= 引擎 effect_flags 的同一位）与 sleepUntil"
+      "note": "SLEEP_GATE = 0x20000000（= 引擎 effect_flags 的同一位）与 sleepUntil",
+      "line": 22
     }
   ],
   "links": {

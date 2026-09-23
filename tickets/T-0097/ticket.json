@@ -16,13 +16,13 @@
       "file": "app/amayui-emulator/src/vm/handlers/engine-fields.ts",
       "anchor": "op_set_meswin_alpha",
       "note": "同族直写配置的写法先例（0x141）；0x2EE 缺 SetConfig 的对照点",
-      "line": 318
+      "line": 350
     },
     {
       "file": "docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md",
       "anchor": "| op-4-11 | cross-source-mismatch |",
       "note": "0x2EE 的审计条（raw 33590-33603；字符串常量 4380）",
-      "line": 473
+      "line": 478
     },
     {
       "file": "analysis/fields.json",
@@ -40,12 +40,13 @@
       "anchor": "口径唯一",
       "file": "app/amayui-emulator/test/operand-missing-slot-zero.test.ts",
       "note": "③ 的棘轮（口径唯一 + hasRefValue 只许 memory.ts 写侧）★该文件同时是 T-0093② 的 region-hittest.ts 收口的仲裁点：终态 hasRefValue 只在 memory.ts，跨 agent 冲突已消解",
-      "line": 113
+      "line": 115
     },
     {
       "anchor": "0x2ED",
       "note": "轮 7 实施者的 raw 证据全文（0x2EE 体的逐行 + 0x141/0x135/0x136/0x13F 的 unsigned 依据 + ③ 的四组 enc_zero 体证据 + 0x2ED 与 0x107/0x10B/0xFE 的派生发现）",
-      "file": "tickets/T-0097/raw-evidence.md"
+      "file": "tickets/T-0097/raw-evidence.md",
+      "line": 26
     }
   ],
   "links": {

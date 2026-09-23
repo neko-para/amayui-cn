@@ -22,12 +22,13 @@
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "parseEngineSlotBody",
       "note": "状态主体解析（帧镜像/池/三张表/图像清单）+ 两个内层 CRC",
-      "line": 310
+      "line": 318
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/frame.ts",
       "anchor": "resolveSlotResumeIp",
-      "note": "0xAE 的两条落点分支与走栈"
+      "note": "0xAE 的两条落点分支与走栈",
+      "line": 32
     },
     {
       "file": "app/amayui-emulator/src/script/bin.ts",
@@ -38,19 +39,20 @@
     {
       "file": "app/amayui-emulator/test/engine-slot.test.ts",
       "anchor": "落点 opcode 与语义自洽",
-      "note": "E4：真槽逐帧落点自洽"
+      "note": "E4：真槽逐帧落点自洽",
+      "line": 13
     },
     {
       "file": "docs-new/03-engine/save-data.md",
       "anchor": "### 7.2",
       "note": "布局与续跑链路的主题文档",
-      "line": 332
+      "line": 339
     },
     {
       "file": "docs-new/03-engine/opcode-table.md",
       "anchor": "存档版本分支指令（读档续跑）",
       "note": "0xAE 行：两条分支步长差异 + 语料订正",
-      "line": 157
+      "line": 167
     },
     {
       "file": "analysis/functions.json",
@@ -62,7 +64,7 @@
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-slot-chain",
       "note": "第二层：存档槽链路的 emulator 判定已更新",
-      "line": 2648
+      "line": 2654
     }
   ],
   "links": {

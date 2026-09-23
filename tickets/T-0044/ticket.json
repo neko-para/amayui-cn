@@ -26,7 +26,8 @@
     {
       "file": "scripts/check-skeleton.mjs",
       "anchor": "function skeleton(text)",
-      "note": "新增棘轮：src 与 data 的控制行序列必须逐行相同（译文行不参与比较），失败时给出首个差异"
+      "note": "新增棘轮：src 与 data 的控制行序列必须逐行相同（译文行不参与比较），失败时给出首个差异",
+      "line": 25
     },
     {
       "file": "scripts/translate.js",
@@ -37,7 +38,8 @@
     {
       "file": "scripts/resync-control-lines.mjs",
       "anchor": "const LABEL_ONLY = /^label_[0-9a-f]+$/;",
-      "note": "补齐工具链的缺口：把 data 里新增的控制行（label_* 定义）插回 src 且**保留译文**（`sync-data-to-src.js --apply` 会整文件重置、把译文丢掉）"
+      "note": "补齐工具链的缺口：把 data 里新增的控制行（label_* 定义）插回 src 且**保留译文**（`sync-data-to-src.js --apply` 会整文件重置、把译文丢掉）",
+      "line": 23
     }
   ],
   "tests": [

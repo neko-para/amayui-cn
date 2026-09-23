@@ -1,0 +1,54 @@
+{
+  "title": "agent 自持无头渲染页（--attach-headless），让「没人看」也能调试；并加宿主侧第二渲染者防护",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "本轮实测钉住的一条架构后果：**web 形态下 VM 跑在页面里** ⇒ 没有渲染页附着的实例，`/health` 照常（宿主在），但 agent 的 `debug-query` **必然 503**（`T-0136` 的端到端断言「未附渲染页的实例 ⇒ 503 没有渲染页」就是钉这条的）。\n\n于是今天有两个尴尬：① 想让 agent 自己调、人不用盯着看，就得有人或什么东西先附一个渲染页（现在只有人开面板、或一次性的哑窗探针能干这事）；② 反过来，**多附一个页面就是多一个 VM**（面板的「新标签打开」就会造成这种情况），两个 VM 抢同一份 overlay/log，而宿主侧**没有任何防护**。",
+  "acceptance": [
+    "宿主侧新增 `--attach-headless`（或等价开关）：实例启动时自己附一个**无头渲染页**（照 `plugins/amayui-emulator/e2e-shot.cjs` 的哑窗手法：隐藏 Electron 窗 + 不抢焦点），于是实例**不依赖人**就能跑起来并被 agent 驱动",
+    "开关关闭时行为与今天完全一致（默认关，避免无谓地起一个渲染进程）",
+    "宿主侧加**第二渲染者防护**：同一实例的 SSE 观察者数大于 1 时至少给出明确告警（日志 + 在 `/health` 与注册表里可见）；给出并实现一个明确策略（拒绝第二个，或允许但显著告警并记日志），写清选择理由",
+    "面板侧 viewers 显示与告警与新策略一致（`T-0137`/`T-0138` 已加显示，这里与宿主策略对齐）",
+    "端到端证据：① 只带 `--attach-headless` 起实例（**不开任何面板**）⇒ agent 的 `move`/`capture` 都能成功；② 再开一个页面 ⇒ 能观察到告警/拒绝，并证明 overlay/log **没有被两个 VM 同时写**（日志里不出现交错的两条 status 流）",
+    "`npm run verify` 全绿；两条插件冒烟不回归；插件 README 与 `src/web/host.ts` 用法写清开关与策略"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0136/changes.md",
+      "anchor": "★这条实跑顺带钉住的一个**架构后果**",
+      "note": "为什么需要本票：web 形态下没有渲染页就没有 VM（503 的由来）",
+      "line": 54
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/client.js",
+      "anchor": "viewers",
+      "note": "面板侧已在显示观察者数并在大于 1 时告警；本票要把宿主侧策略补齐（今天只有显示）",
+      "line": 27
+    },
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "export interface WebHostOptions",
+      "note": "新开关的落点",
+      "line": 78
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0136/notes.md"
+    ],
+    "tickets": [
+      "T-0136",
+      "T-0137",
+      "T-0138"
+    ]
+  },
+  "id": "T-0140",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

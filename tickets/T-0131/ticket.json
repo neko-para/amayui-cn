@@ -15,7 +15,8 @@
     {
       "file": "app/amayui-toolkit/package.json",
       "anchor": "\"test\": \"vitest run\"",
-      "note": "有 test script 但无 pretest ⇒ 依赖 build:data 产物"
+      "note": "有 test script 但无 pretest ⇒ 依赖 build:data 产物",
+      "line": 14
     },
     {
       "file": "app/amayui-toolkit/.gitignore",
@@ -26,7 +27,8 @@
     {
       "file": ".github/workflows/deploy-pages.yml",
       "anchor": "npm run build",
-      "note": "CI 只 build、从不 test"
+      "note": "CI 只 build、从不 test",
+      "line": 45
     },
     {
       "file": "tickets/T-0124/evidence/toolkit-vitest.md",

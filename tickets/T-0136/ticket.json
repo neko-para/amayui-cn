@@ -1,0 +1,77 @@
+{
+  "title": "观察台化：实例注册表（文件心跳）+ 每实例路由 + 面板纯观察（含闲置自停）",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "`T-0135` 把画面**嵌进 DSH** 这件事做完了（真浏览器实跑：跑到 TITLE、页面内 API 通、agent 的 `move`/`capture` 往返都对），但用户实测后反馈了一个**形态问题**：\n\n> 「能够启动，但是好像每次打开时是一个新实例。我其实感觉并不需要我自己去创建实例，而是类似于，查看目前所有后台实例，选择激活某一个」\n\n实测核对（`/dsh-emulator/api/__status` → `running:true, port:53819, instance:dsh`；`.tmp/instances/` 下只有 `dsh` 一个实例目录）：**磁盘身份是稳定的，不稳定的是进程/会话** —— 今天插件自己 `spawn` 一个子进程，点一次启动就等于一次全新会话（从 `ALINIT` 跑到 `TITLE`，内存进度归零）；而且插件**只知道自己 spawn 的那一个**（`lib/index.js` 里一个 `child` 变量），agent 在别的终端起的实例它根本看不见。\n\n⇒ 用户要的形态是**观察台 + 切换器**，而不是启动器。四项选择（2026-09-23 用户确认）：\n1. **生命周期只由 agent/CLI 持有**，面板**纯观察**（不放启动/停止）；\n2. 列表来源 = **文件注册表** `.tmp/instances/<id>/instance.json`（跨进程/跨终端，agent 起的也看得见）；\n3. 路由 = **每实例一条路径** `/dsh-emulator/<id>/…`（可并排看多个）；\n4. **闲置 N 分钟（没人看且没命令）自停**（实例自己执行；磁盘状态保留）。\n\n不做这一票，调试时想看到画面就仍然要人先点一下启动，而且看不到 agent 手里那个正在跑的实例 —— 与 `T-0133` 立这个需求的初衷（观察 agent 的调试）相反。",
+  "acceptance": [
+    "【注册表】新增 `src/host/registry.ts`：`InstanceRecord{id,pid,port,host,startedAt,heartbeatAt,lastStatus,repoRoot}` 的原子写（tmp+rename）、读、删，以及 `listInstances(root)`（过滤 pid 已死或 heartbeatAt 过期的记录）与 `isAlive(pid)`；`id` 校验（`[A-Za-z0-9._-]{1,64}` 且**不许是保留段 `api`**）；守卫测试覆盖：往返、原子写（写一半不产生半文件）、死 pid 被过滤、过期心跳被过滤、坏 JSON 当不存在（不炸）",
+    "【宿主登记】`src/web/host.ts`：listen 成功后写记录并每 5s 刷心跳（心跳带 `lastStatus`：最近一次 `renderer-status` 的 `bin`/`frames`/`gate` 摘要）；`close()` 与信号退出删记录；**同 id 互斥**（已有活记录就拒绝启动并打印 `实例 <id> 已在运行 pid=… port=…`，不静默抢 overlay/log）",
+    "【闲置自停】实例自己执行：`--idle-sec`（缺省 600，`0` 表示关）—— 无 SSE 观察者**且**无任何请求持续超过阈值，就写一行日志、删注册项、退出；守卫测试用 `--idle-sec 1` 在秒级验到",
+    "【插件·每实例路由】`plugins/amayui-emulator/lib/index.js` 改为**纯观察**（**删掉** spawn 以及 `__start`/`__stop`）：`GET /dsh-emulator/api/__instances` 读注册表返回活实例列表（id/port/起于何时/最后活跃/BIN）；`/dsh-emulator/<id>/…` 反向代理到该实例（流式，SSE 直通）；未知或已死的 id 回 404/410 与可读原因；裸前缀 `/dsh-emulator/` 在恰有一个活实例时 302 到它，否则回 JSON 列表与提示",
+    "【插件·面板纯观察】`lib/client.js`：模态里只有**实例列表**（id / 端口 / 跑到哪支 BIN / 起于何时 / 观察者数）加选中即嵌的 640×360 iframe 与「新标签打开」；**没有**启动/停止按钮；列表为空时显示怎么起一个实例的命令提示；列表每 3s 轮询刷新",
+    "【离线冒烟】`plugins/amayui-emulator/smoke.mjs` 更新并通过：以 agent 身份真起一个实例 → `__instances` 列出它 → 经 `/dsh-emulator/<id>/` 代理 `/health` 与二进制 `read-script` → 杀掉实例后代理该 id 得 410、且列表不再含它",
+    "【同 id 互斥实测】对同一 id 起第二个实例，必须非零退出且错误信息含「已在运行」，并且**不**改动既有实例的 overlay",
+    "★【端到端实跑证据】以 agent 身份起实例 → 用真浏览器打开 `/dsh-emulator/<id>/`（经插件路由）跑到 TITLE → 面板走的同一条路（`__instances` + 代理）能列出它；截图与命令输出归档到 `tickets/T-0136/evidence/`",
+    "【不改】不改 VM 与场景语义；不引入 OSR；不删 Electron 可见窗口路径；`T-0135` 已验证过的桥（`envelope`/`webBridge`/`webBridgeEntry`）不动",
+    "【票据】`T-0135` 的插件部分在本票里被**替代**（其 changes.md 记录旧形态，本票 changes.md 记录替代关系）；两票的 README 与 notes 口径一致"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0135/changes.md",
+      "anchor": "**懒启动**独立子进程",
+      "note": "旧形态（插件自 spawn 子进程 + 面板 start/stop）的**记录**在 T-0135/changes.md 的变更 2；本票把它替代为纯观察台 ⇒ 锚点改指那份历史记录，不指被删掉的代码（2026-09-23 retarget）。",
+      "line": 82
+    },
+    {
+      "file": "app/amayui-emulator/src/host/instance.ts",
+      "anchor": "export function instanceLayout",
+      "note": "实例的**磁盘身份**已经是稳定且每实例隔离的（base/overlay/log/trace/replay）⇒ 本票只需补运行时登记、发现与路由，不动隔离本身",
+      "line": 97
+    },
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "export interface WebHostOptions",
+      "note": "宿主侧要加登记、心跳、互斥、闲置自停的落点；`--instance` 已经是实例身份的入口",
+      "line": 78
+    },
+    {
+      "file": "tickets/T-0135/changes.md",
+      "anchor": "启动/停止/刷新/新标签打开",
+      "note": "同上：旧面板的启动/停止形态已在本票被删 ⇒ 锚点改指 T-0135/changes.md 对它的记录（2026-09-23 retarget）。",
+      "line": 83
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0135/changes.md",
+      "tickets/T-0134/notes.md"
+    ],
+    "tickets": [
+      "T-0135",
+      "T-0114"
+    ]
+  },
+  "id": "T-0136",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → doing —— 开工：注册表 + 每实例路由 + 面板纯观察 + 闲置自停（用户四项选择已确认）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 观察台化完成：注册表+每实例路由+面板纯观察+闲置自停；12/12 端到端实跑（经插件路由的真浏览器 + 两实例隔离 + agent 命令按 id 寻址）；插件冒烟全过。唯一残留=重启 dsh web 后在 GUI 里目视确认（环境步骤）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/host-registry.test.ts"
+  ]
+}

@@ -14,18 +14,18 @@
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
       "anchor": "imageReload",
       "note": "真槽 body **带**绘制项清单：这里解析成 {size:740, count, ids}（ids = handle），但 740 B 记录被丢弃且无消费者 ⇒ 这就是本票的根因（订正原 evidence 的「没有绘制项」）",
-      "line": 188
+      "line": 196
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "save-load-drawitem-clear-and-restore",
       "note": "第二层条目（源码级）：装载点清 Scene+0x408 + 从 body 还原清单",
-      "line": 3224
+      "line": 3233
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "label_0000e24c",
-      "line": 3667,
+      "line": 1027,
       "note": "SN0000 的背景/CG 层设置子程序（键 0x18A88、槽 4、BG050ABL 全屏）；其唯一调用点在指令 757（line 1027）= 被跳过带内 ⇒ 读档后背景只能来自**还原的清单**"
     }
   ],

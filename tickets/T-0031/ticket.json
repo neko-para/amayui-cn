@@ -15,7 +15,7 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "e.onConfigChanged = (c) => {",
-      "line": 74,
+      "line": 80,
       "note": "★回写接线：位于 loadConfigIni 内 ⇒ 无 INI 时不接线（本票要改的就是这条前提）"
     },
     {
@@ -33,14 +33,14 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/boot.ts",
       "anchor": "audioBootIntents(e.config)",
-      "line": 79,
+      "line": 98,
       "note": "启动期音频设置依赖 INI；无 INI ⇒ 一律默认（这类现象用户可感知）"
     },
     {
       "file": "app/amayui-emulator/src/engineConfig.ts",
       "anchor": "export const CONFIG_FIELD_BINDINGS",
       "note": "INI 键 → 引擎字段的 8 条绑定（引擎字段层的唯一启动来源）",
-      "line": 224
+      "line": 229
     },
     {
       "file": "src/CONFIG1.txt",
@@ -63,7 +63,7 @@
     {
       "file": "app/amayui-emulator/electron/ipc/files.ts",
       "anchor": "function configRatchetOk",
-      "line": 46,
+      "line": 42,
       "note": "主进程防丢键棘轮：部分键集的安全性要靠它 + 默认值等价性来论证"
     },
     {
@@ -111,7 +111,7 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "FileA = CreateFileA(a2, 0, 0, 0, 3u, 0x80u, 0);",
-      "line": 110616,
+      "line": 14221,
       "note": "sub_4900F0 只做存在性检查（OPEN_EXISTING）⇒ exe 无写 INI 路径"
     },
     {
@@ -129,19 +129,19 @@
     {
       "file": "app/amayui-emulator/src/renderer/app/configBoot.ts",
       "anchor": "export async function attachSaveDataPersistence(",
-      "line": 93,
+      "line": 99,
       "note": "无 INI 时也照常装配（配置回写与 SAVE.DAT 两条通路都无条件接线）"
     },
     {
       "file": "app/amayui-emulator/test/config-version-substr.test.ts",
       "anchor": "formatIni：① 键表全量",
-      "line": 228,
+      "line": 230,
       "note": "新语义用例（自带 fixture，替代原先依赖本机真游戏 INI 的假红用例）"
     },
     {
       "file": "app/amayui-emulator/test/config-version-substr.test.ts",
       "anchor": "★无 INI 时也接线 onConfigChanged",
-      "line": 266,
+      "line": 268,
       "note": "回归锁：无 INI → 首改即全量落盘"
     }
   ],

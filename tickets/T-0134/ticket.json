@@ -1,0 +1,101 @@
+{
+  "title": "调试观察宿主 Phase 1：VM 外层桥接三件套（输入/focus/帧捕获）+ 宿主服务实例化",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "T-0133 的评估结论要落成代码。本轮只做**共享层**那一半（也是三种宿主——Electron 可见窗 / offscreen / 浏览器——都要用的那一半）：\n\n① **输入桥**：调试器注入输入不再走 Electron 的 `webContents.sendInputEvent`，改为在共享层写 `InputManager`（`applyScenarioEvent`）。缺口：`ScenarioEvent` 的 `cursor` case 恒传 `valid=true`，**表达不了「光标出窗」**（`inputAttach` 的 mouseleave 走 `setCursor(-100000,-100000,false)`），而侧栏展开/收起与它相关（T-0051）。\n② **focus 手动控制**：现在 `window.blur`/`visibilitychange` 会无条件 `releaseAllMouse()`+`releaseAllKeys()`（T-0027 的兜底），在调试会话里会被 DSH 抢焦点/iframe 失焦/offscreen 无焦点这些**宿主噪声**随机触发，把注入的按住态清掉。要提升为调试命令 `focus auto|on|off`（落 `debugCommand.ts` 的 T-0127 唯一词汇表）。\n③ **帧捕获缝**：`tools/debugsrv.cjs` 的 `shot` 靠 Electron 的 `capturePage()`。要改成帧宿主（`FrameHost`）的可选能力，复用 Pixi 里**已有的** `#captureStageCanvas()`（转场在用，同一条 `extract.canvas`）⇒ 桥宿主无关。\n④ **宿主服务去单例**：`electron/paths.ts` 的 `LOG_PATH`/`TRACE_PATH` 与 `electron/ipc/files.ts` 的 `fileSource`/`systemFiles` 都是**模块级单例**，log/trace 路径未参数化 ⇒ 多实例（并行调试会话）根本做不到；而 base 也必须 per-instance（`readSaveDataBoth`/`readSaveFlags` 会并上 base，否则会继承玩家真存档）。\n\n不做这一轮，Phase 2（web 宿主 + DSH 插件）就会把「宿主相关」的输入/截图/焦点各写一份 —— 正是 T-0002/T-0008/T-0057 反复付代价的那种「同一语义两处实现」。",
+  "acceptance": [
+    "【输入桥·出窗】`ScenarioEvent` 能表达「光标出窗」（方案 A：加 `valid?: boolean`，`cursor` case 传 `ev.valid ?? true`；不新增 kind —— 以保住 T-0052 锚的 kind 联合字面串）；守卫断言：`{kind:'cursor', valid:false}` 与 `inputAttach` 的 mouseleave 路径产生**同一个 `InputSnapshot`**",
+    "【输入桥·hover】守卫断言 hover 真的发生：在等待态注入 `{kind:'cursor',x,y}` 后 `InputManager.hitTestPending` 被消费且命中测试被调用（用真 `Engine`+假面板或 routes 表跑），即证明「不经命中测试」的旧说法彻底作废（T-0133 订正 5）",
+    "【focus】`debugCommand.ts` 的 `DebugAction` 增加 `focus`（值 `auto|on|off`），帮助文本同步；`InputManager` 增 `hostFocus` + `setHostFocus(mode)`；守卫断言：① `focus off` 产出的 `InputSnapshot` 与 DOM blur 路径**逐字段相等**；② 非 auto 模式下 blur/visibilitychange **不再**清输入（这是「手动模式」的定义）",
+    "【帧捕获】`FrameHost` 增可选 `capture?(): Promise<Uint8Array>`（PNG）；`PixiBackend` 实现（**保留**私有 `#captureStageCanvas` 原样、另加公开 `captureFrame()` 调它 ⇒ 保住 T-0133 锚不破）；`headlessFrameHost` **不**实现（无像素语义）；守卫断言结构（接口存在/实现方存在/headless 缺席）+ 用桩宿主验证调用方拿到字节",
+    "【宿主服务】新增传输无关的实例化宿主服务（资源+存档+配置读取，Node 侧、零 Electron import）；`electron/ipc/files.ts` 的 handler 体改为**委托**同一份实现 ⇒ Electron 行为零变更（现有测试全绿，日志行不变：`[main] save data <- …` 等）",
+    "【实例隔离】可在**不修改 `process.env`** 的前提下为每个实例指定 base/overlay/log/trace/replay；守卫断言两个实例的写盘路径两两不同，且其中一个是默认实例（= 现状路径，保住 T-0133 的 `export const LOG_PATH` 锚）",
+    "`npm run verify` 全绿（typecheck + typecheck:test + test:all + check:dead-writes）；`npm run test:unpinned` 亦然",
+    "★**锚点纪律**：不改动任何既有票据锚点的字面串；确实必须改的（如 T-0133 自己的 `input.setCursor(x, y, true);`）先在报告里申报，由票 owner（主 agent）retarget —— **不许用删证据/降状态消红**",
+    "不改 VM 语义：opcode 行为、场景模型、FrameDigest 口径零变更（新增能力只走**可选**缝）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/frame/scenario.ts",
+      "anchor": "input.setCursor(x, y, ev.valid ?? true);",
+      "note": "要修的缺口本体：cursor case 恒 valid=true ⇒ 表达不了「光标出窗」（实现后此锚需 owner retarget 到新的同义串）｜★2026-09-23 retarget（T-0134 WS-1 落地）：cursor case 现在传 `ev.valid ?? true`（新增 `ScenarioEvent.valid`），旧串只剩 press/release/wheel 三处同形调用 ⇒ 锚点改指 cursor case 的新串。",
+      "line": 187
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "releaseAllMouse(): void",
+      "note": "focus 手动控制的等价物：`focus off` 必须与 DOM blur 路径逐字段同快照 —— 这条就是判据",
+      "line": 301
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#captureStageCanvas",
+      "note": "帧捕获缝的现成实现（转场在用）⇒ 保持它私有不改名、另加公开 captureFrame()，既拿到能力又不破锚",
+      "line": 1140
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/host.ts",
+      "anchor": "export interface FrameHost",
+      "note": "capture?() 要加在这个共享接口上（宿主无关的落点）",
+      "line": 18
+    },
+    {
+      "file": "app/amayui-emulator/electron/paths.ts",
+      "anchor": "export const LOG_PATH",
+      "note": "单例证据：log/trace 是模块级常量未参数化（实现后保留默认实例路径，锚不变）",
+      "line": 65
+    },
+    {
+      "file": "app/amayui-emulator/src/host/service.ts",
+      "anchor": "this.#fileSource = new NodeFileSource({",
+      "note": "单例证据：模块级 fileSource/systemFiles ⇒ 多实例共用一份（实现后此锚可能需 owner retarget 到服务模块里的同一构造）｜★2026-09-23 retarget（T-0134 变更 3／WS-3b）：单例已移进按实例构造的 `HostService`（`src/host/service.ts`），`electron/ipc/files.ts` 不再有它；锚点改指新落点。",
+      "line": 164
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
+      "anchor": "export type DebugAction",
+      "note": "focus 命令的唯一落点（T-0127 的三处共用词汇表）",
+      "line": 20
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0133/notes.md",
+      "app/amayui-emulator/README.md"
+    ],
+    "tickets": [
+      "T-0133",
+      "T-0005",
+      "T-0027",
+      "T-0052",
+      "T-0127",
+      "T-0114"
+    ]
+  },
+  "id": "T-0134",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → doing —— Phase 1 开工：三条独立工作流派子代理（输入+focus / 帧捕获缝 / 宿主服务实例化），tickets/ 由主 agent 独占写"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— Phase 1 完成：输入桥/焦点/帧捕获三件套 + HostService 实例化；全量 verify EXIT=0（1134 tests / 0 fail）；B′ 实验实跑 PASS（隐藏窗口 extract 出 1280×720 活帧）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/bridge-input-focus.test.ts",
+    "app/amayui-emulator/test/frame-capture-seam.test.ts",
+    "app/amayui-emulator/test/host-instance.test.ts",
+    "app/amayui-emulator/test/host-service.test.ts"
+  ]
+}

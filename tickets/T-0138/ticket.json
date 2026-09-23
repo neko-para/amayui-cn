@@ -1,0 +1,55 @@
+{
+  "title": "面板状态切换会重建 iframe ⇒ 实例被重启（VM 活在页面里）：单一 iframe + 观察者数告警",
+  "type": "bug",
+  "priority": "P0",
+  "area": "emulator/hosts",
+  "why": "用户实测（2026-09-23）：「我刚才点了放大按钮, 发现似乎走到了之前的 重启 的那个路径上, 导致状态刷新了」。\n\n**实测取证**（宿主日志里 `[web] status` 的 `bin` 序列）：打开 Option 后进入 `CONFIG1.BIN`，随后出现**完整一条重引导链** `SKINIT → $3$IMINIT → INIT2 → BIINIT → $4$EBINIT → TITLE`；全程**只有一条** status 流（⇒ 不是两个并发页面，而是页面被卸载又加载）。原始记录见 `evidence/iframe-reload-forensics.txt`。\n\n**根因**：`lib/client.js` 的三态（收起胶囊 / 展开浮窗 / 模态）是三个不同的 JSX 分支，**各渲染一个 `src` 相同的 `<iframe>`** ⇒ 每次状态切换 React 都卸载旧 iframe、挂载新的。而 web 形态下 **VM 跑在页面里**（`T-0136` 已钉住的架构事实）⇒ 卸载 = 该实例的 VM 直接死掉；重新挂载 = 从 `ALINIT` 重跑一遍。\n\n后果（都很难查，因为「看起来只是切了个视图」）：① 每次「放大 / 关闭 / 收起」都**丢掉内存里的进度**（回到 TITLE）；② 若收起后不再展开，实例的 VM 其实已经没了，而注册表心跳还在（面板仍显示它活着）；③ 期间对同一实例的任何 agent 命令都会打到「另一个刚起步的 VM」上。\n\n顺带一条**同源风险**（同一处改）：面板的「新标签打开」会开**第二个页面** ⇒ 同一个实例上**两个 VM 抢同一个 overlay/log**；宿主侧今天没有任何防护，也没告诉用户。",
+  "acceptance": [
+    "【单一 iframe】选中实例后，`shell.overlay` 组件在**四种状态**（收起胶囊 / 展开浮窗 / 模态 / 无选中）之间切换时，`<iframe>` **始终是同一个 DOM 节点**：不 unmount、不改 `key`、`src` 不变；状态切换只改**容器的 style**（位置/尺寸/可见性）",
+    "【收起不杀会话】收起（胶囊）时 iframe **仍在 DOM**（离屏或 1px/opacity 0 皆可，但不得卸载）；展开回来必须是**同一个会话**（宿主日志里**不得出现第二条启动链**）",
+    "【src 只在显式换实例时变】`src` 仅当用户点选**另一个实例**时改变（那是显式选择，允许导航）",
+    "【观察者数】宿主侧在 `/health` 与注册表心跳里暴露 `viewers`（当前 SSE 连接数）；面板显示「观察者 N」；N>1 时给出**明确告警**（两个页面 = 两个 VM 抢同一实例的 overlay/log）",
+    "【新标签打开】保留但必须标注风险（会开第二个 VM），或在 N>1 时禁用；README 写清这条语义",
+    "【守卫】`plugins/amayui-emulator/smoke-client.mjs` 增断言：四种状态渲染出的 HTML 里 `<iframe>` **恰好一个**且 `src` 相同；驱动一次完整的 收起→展开→放大→关闭 状态序列，断言**没有产生第二个 iframe 节点**（用节点身份/props 的稳定性断言，而不是只看字符串）",
+    "★【端到端证据】真浏览器里把 收起↔展开↔放大↔关闭 来回切若干次，宿主日志里**只允许一条**启动链（`SKINIT → … → TITLE` 出现次数不增加），且 `frames` 计数**不回零**；截图/日志归档进 `tickets/T-0138/evidence/`",
+    "【不改】VM 与场景语义、`lib/index.js` 的路由与注册表语义（除新增 `viewers` 字段）、`T-0135`/`T-0136` 已验证的桥与宿主"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0138/evidence/iframe-reload-forensics.txt",
+      "anchor": "★完整一条**重引导链**",
+      "note": "取证：一条 status 流 + 一条完整重引导链 ⇒ 页面被卸载又加载（不是两个并发页面）；根因是三个 JSX 分支各挂一个 iframe",
+      "line": 19
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/client.js",
+      "anchor": "amayui-emulator-viewport",
+      "note": "浮窗里的画面框（iframe 容器）；模态里另有同源的一份 ⇒ 两个分支各挂一个 iframe 就是本 bug｜★2026-09-23 retarget：修复把外层容器从 `#amayui-emulator-viewbox` 改成承担定位/可见性的 `#amayui-emulator-viewport`（`viewportStyle` 的落点）⇒ 锚点随同义新串。",
+      "line": 397
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0137/changes.md",
+      "tickets/T-0136/notes.md"
+    ],
+    "tickets": [
+      "T-0137",
+      "T-0136"
+    ]
+  },
+  "id": "T-0138",
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建（先建了 T-0138/evidence/ 导致 --add 跳到 T-0139；已搬回 T-0138）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → doing —— P0 实测 bug：状态切换重建 iframe ⇒ 实例重启。开工修（单一 iframe + viewers 告警）"
+    }
+  ]
+}

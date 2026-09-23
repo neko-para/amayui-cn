@@ -1,0 +1,71 @@
+{
+  "title": "面板形态：常驻浮窗（PiP，默认收成小胶囊）+ 保留模态作放大",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/hosts",
+  "why": "用户补充：**「这里希望渲染可以固定在外面, 例如 float 在对话流里面, 而不是现在必须模态」**。\n\n现状（`T-0136`）：`shell.overlay` 里只渲染一个全屏模态 —— 点按钮才开、点关闭就没了，人不能一边看对话一边看画面。\n\n槽位调研结论（DSH 包内自带的 slot 目录，原话见 `tickets/T-0137/notes.md` §1）：`shell.overlay` 正是**为浮层准备的** —— *Frame-wide floating layer, above every column and outside their scroll containers … The layer itself is click-through — entries opt back into pointer events* ⇒ 用它做**常驻浮窗**天然满足「滚对话时不跟着滚」与「不挡操作」。\n\n用户已确认（2026-09-23）：形态选 **F 浮窗（PiP）**（不要右栏停靠 tab、不要贴输入区），默认 **收成小胶囊**。",
+  "acceptance": [
+    "【常驻】`shell.overlay` 注册的组件在**未打开模态**时也渲染一个 `position: fixed` 的浮窗；默认**收起为一枚小胶囊**（含「🖥」与活实例数徽标）；点胶囊展开为面板",
+    "【面板内容】展开后：实例列表（id / 端口 / BIN / 心跳年龄，3s 轮询）+ 选中实例的 640×360 画面框（内层 1280×720，`transform: scale(0.5)`，`transform-origin: top left`）+ 「收起」「放大」「新标签打开」；**仍然没有启动/停止**；空列表给可复制的起实例命令",
+    "【点击穿透】容器自身 `pointerEvents:'auto'`；**不改** slot 层行为、不给其它区域加拦截（`shell.overlay` 的点击穿透必须保留）",
+    "【拖动与尺寸】标题栏可拖动（`mousedown` + window `mousemove/mouseup`，位置 clamp 在视口内）；尺寸两档（0.25× = 320×180 与 0.5× = 640×360）",
+    "【持久化】`localStorage`（键名带插件前缀）存 `{collapsed,x,y,scale,selectedId}`；刷新后恢复；坏数据/无 localStorage 一律退回默认且**不炸**",
+    "【模态保留】现有全屏模态保留为「放大」；关掉模态后**回到浮窗状态**（不是什么都不剩）",
+    "【守卫】`plugins/amayui-emulator/smoke-client.mjs` 更新并通过：断言浮窗/胶囊在未开模态时也渲染、胶囊默认态、`pointerEvents` 只在自己容器上、拖动处理存在、两档尺寸、`localStorage` 读写（含坏数据分支）、**无启动/停止**、空态命令；`node --check` 三个 js 文件通过；`node plugins/amayui-emulator/smoke.mjs`（Host 半）不受影响仍全过",
+    "【不改】`lib/index.js`（路由/代理与形态无关）、`T-0135`/`T-0136` 已验证的桥与宿主、VM/场景语义",
+    "★【端到端】用真浏览器把**浮窗**渲染出来并截图（借用 `plugins/amayui-emulator/e2e-shot.cjs` 的哑窗手法：把 `lib/client.js` 的浮窗组件在页面里挂起来，或直接对浮窗 DOM 截图），图归档进 `tickets/T-0137/evidence/`"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0137/notes.md",
+      "anchor": "## 1. DSH 客户端槽位调研",
+      "note": "★本票的形态依据：`shell.overlay` 的官方原话是「frame-wide floating layer … outside their scroll containers … click-through」，正是常驻浮窗该用的座位（含 `sidebar.right.pane.tab` / `conversation.input.dock` 的对照）",
+      "line": 9
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/client.js",
+      "anchor": "amayui-emulator-pill",
+      "note": "现状：只有模态（`shell.overlay` 里渲染全屏 backdrop）；缩放常量在这里，浮窗要复用成两档｜★2026-09-23 retarget（T-0137 落地）：形态改成三态浮窗后旧常量 `var SCALE = 0.5` 改名/扩展为尺寸档数组，锚点改指默认态胶囊的 id（`amayui-emulator-pill`）—— 它才是\"常驻浮窗\"这条需求的落点。",
+      "line": 511
+    },
+    {
+      "file": "plugins/amayui-emulator/smoke-client.mjs",
+      "anchor": "全部通过",
+      "note": "T-0136 新增的客户端渲染守卫（53 条断言 + 10 种内存变异的对抗验证）；本票改形态后**必须同步更新**它",
+      "line": 822
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0136/changes.md",
+      "tickets/T-0137/notes.md"
+    ],
+    "tickets": [
+      "T-0136",
+      "T-0135"
+    ]
+  },
+  "id": "T-0137",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建（先写 notes.md 导致 --add 自动跳到 T-0138；已搬回 T-0137）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → doing —— 开工：浮窗（shell.overlay + position:fixed，默认收成胶囊，可拖/两档缩放/localStorage 持久化），保留模态作放大"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 浮窗形态完成：三态（胶囊/浮窗/模态）+ 拖动/两档尺寸/localStorage 持久化；守卫 140+14 条 + 28/28 对抗性变异；真浏览器三态实拍归档"
+    }
+  ],
+  "tests": [
+    "plugins/amayui-emulator/smoke-client.mjs#全部通过",
+    "plugins/amayui-emulator/smoke.mjs#全部通过"
+  ]
+}

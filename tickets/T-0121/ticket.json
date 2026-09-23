@@ -15,24 +15,26 @@
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "按 arch 的落点必须是搜索链的第一命中",
-      "line": 290,
+      "line": 296,
       "note": "★改后的断言：非 darwin 上只要求「搜索链命中预置落点」（不再要求 dlopen 异平台二进制成功）。改前的锚点是 `按 arch 的落点应能加载` —— 那正是本票要修的那句（锚点已按同义新串 retarget，原句仍留在 tickets/T-0120/changes.md 的实测原文里）"
     },
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "★win32 预置产物棘轮",
-      "line": 328,
+      "line": 334,
       "note": "同一次编辑里新增的那条（归属 T-0120 的政策裁定）：在库 + PE Machine=0x8664 + win32 上按预置落点真能加载"
     },
     {
       "file": "tickets/T-0120/changes.md",
       "anchor": "is not a valid Win32 application",
-      "note": "本机（Windows 11）实测的断言原文与定因"
+      "note": "本机（Windows 11）实测的断言原文与定因",
+      "line": 109
     },
     {
       "file": "native/host-input/index.js",
       "anchor": "function tryRequire(file)",
-      "note": "加载器在这里 `require(file)`：`platform` 参数只参与路径选择，dlopen 永远发生在宿主平台上（改法的根据）"
+      "note": "加载器在这里 `require(file)`：`platform` 参数只参与路径选择，dlopen 永远发生在宿主平台上（改法的根据）",
+      "line": 68
     }
   ],
   "blockedBy": [],

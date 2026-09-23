@@ -19,18 +19,19 @@
       "file": "tickets/T-0124/notes.md",
       "anchor": "## 2. \"无意义\"的六种精确形态",
       "note": "结论件：六种无意义形态的定义与处数、三档方法论、后续票分派",
-      "line": 95
+      "line": 105
     },
     {
       "file": "tickets/T-0124/evidence/G5-texture-l2d.md",
       "anchor": "console.warn('[skip]",
-      "note": "5 处零断言假绿（最严重的一类）的来源报告；同文件含 texture/Live2D/字段槽的逐条判定"
+      "note": "5 处零断言假绿（最严重的一类）的来源报告；同文件含 texture/Live2D/字段槽的逐条判定",
+      "line": 101
     },
     {
       "file": "app/amayui-emulator/test/live2d-moc.test.ts",
       "anchor": "t.skip('找不到 .MOC 语料目录",
       "note": "★形态①：回调不接 t、不调 t.skip，返回即 pass（零断言）；同文件 :5 的注释自称「缺 ⇒ skip + 诊断（不假装通过）」与行为相反 ｜★2026-09-23 已修：裸 return 改 t.skip（该形态由 test/organization.test.ts 的 R3 棘轮守住），evidence 锚点随之 retarget",
-      "line": 64
+      "line": 66
     },
     {
       "file": "app/amayui-emulator/test/harness.ts",
@@ -42,19 +43,19 @@
       "file": "app/amayui-emulator/tsconfig.json",
       "anchor": "\"exclude\": [\"node_modules\", \"dist\", \"test\"]",
       "note": "缺陷 D1：test/ 不受 npm run typecheck 覆盖（tsconfig.control/electron 也只 include src/control/electron）",
-      "line": 16
+      "line": 20
     },
     {
       "file": "app/amayui-emulator/src/vm/debugCommand.ts",
       "anchor": "export function parseDebugCommand",
       "note": "缺陷 D3：该函数零生产调用者（只有 test/debug-break.test.ts 调用）；生产走 session.ts 的 compileBreak，面板与 CLI 各有自己的分流表 ｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`（面板/渲染窗/守护进程三处共用），锚点随之 retarget｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
-      "line": 69
+      "line": 119
     },
     {
       "file": "app/amayui-emulator/src/vm/debugCommand.ts",
       "anchor": "export const EVENT_KINDS",
       "note": "D3 的后果：面板用户可见帮助写着非法事件名 global-write（合法值见 debugBreak.ts 的 EVENT_KINDS），且 control/ 层零测试覆盖｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
-      "line": 34
+      "line": 75
     },
     {
       "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",

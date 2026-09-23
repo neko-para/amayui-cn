@@ -25,6 +25,27 @@ import {
  */
 const WINDOW_EDGE: WindowEdge | null = edgeFromEnv(process.env);
 
+/**
+ * **"从不显示窗口"档**（`tickets/T-0134` 的 B′ 判据实验）：`AMAYUI_WINDOW_HIDDEN=1`
+ * ⇒ 只 `show: false`，**不** `showInactive()`、不摆位、不进任务栏。
+ *
+ * 为什么与贴边档（`WINDOW_EDGE`）分开而不是复用它：贴边档的前提是**窗口可见**
+ * ——`T-0040` 的 macOS 实测就是"隐藏时 `setPosition` 被丢弃 ⇒ 必须先显示再摆位"，
+ * 所以两者互斥（同时给时以本档为准：既然不显示，摆位没有意义）。
+ *
+ * ⚠️**平台差异（`T-0133` §B.4.2 的调研结论）**：macOS 上 `show:false` 的窗口**仍会出帧**
+ * （`paintWhenInitiallyHidden` 默认 true，`NativeWidgetMac` 在这条路径跑 headless 模式）；
+ * Windows/Linux 上"renderer 在 tick rAF 但没有帧被 present" ⇒ `capturePage()` 拿不到帧。
+ * 因此本档的用途是"**页面内的**合成与读回"（`PixiBackend.captureFrame` 走 `extract.canvas`，
+ * 不经过窗口截图管线），而不是 `capturePage()`。
+ */
+const WINDOW_HIDDEN = process.env.AMAYUI_WINDOW_HIDDEN === '1';
+
+/** 隐藏档的窗口选项（与贴边档同一形状：构造即隐藏 + 不占任务栏）。 */
+function hiddenOptions(): Electron.BrowserWindowConstructorOptions {
+  return WINDOW_HIDDEN ? { show: false, skipTaskbar: true } : {};
+}
+
 /** 创建窗口时的附加选项（贴边档才加；避免"先在中间闪一下再挪走"）。 */
 function edgeOptions(): Electron.BrowserWindowConstructorOptions {
   return WINDOW_EDGE === null ? {} : { show: false, skipTaskbar: true };
@@ -105,11 +126,12 @@ export class Windows {
       backgroundColor: '#000000',
       resizable: false,
       webPreferences: baseWebPreferences(),
+      ...hiddenOptions(),
       ...edgeOptions(),
     });
     win.loadFile(RENDERER_HTML);
     win.setContentSize(1280, 720);
-    applyEdge(win, { width: 1280, height: 720 });
+    if (!WINDOW_HIDDEN) applyEdge(win, { width: 1280, height: 720 });
     win.on('closed', () => {
       this.game = null;
     });
@@ -126,10 +148,11 @@ export class Windows {
       backgroundColor: '#1e1e1e',
       resizable: true,
       webPreferences: baseWebPreferences(),
+      ...hiddenOptions(),
       ...edgeOptions(),
     });
     win.loadFile(CONTROL_HTML);
-    applyEdge(win, { width: 500, height: 720 });
+    if (!WINDOW_HIDDEN) applyEdge(win, { width: 500, height: 720 });
     win.on('closed', () => {
       this.control = null;
     });

@@ -1,0 +1,12 @@
+# @amayui/emulator-view bundle patch.
+# Inserts the plugin row over the empty profile root. The Host half registers
+# `/dsh-emulator` (pure-observer reverse proxy: `api/__instances` lists live instances from
+# the file registry under .tmp/instances, and `/dsh-emulator/<id>/...` proxies to that instance).
+# The instance lifecycle is owned by the agent/CLI, never by this panel. The same package carries
+# `dsh.client` metadata, so the web modules node also serves and loads its browser
+# half: the session-header 「🖥 调试画面」 button plus the full-screen modal with a
+# 640×360 same-origin iframe (the emulator viewport is fixed 1280×720 ⇒ outer scale);
+# no start/stop controls — the panel only lists and attaches.
+- insert:
+    - id: amayui-emulator-view
+      name: '@amayui/emulator-view'

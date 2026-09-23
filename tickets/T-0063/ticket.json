@@ -17,13 +17,14 @@
     {
       "file": "app/amayui-emulator/src/renderer/scene/present.ts",
       "anchor": "export function scSnapshotPresent",
-      "note": "呈现态快照/还原（读档把画面装回去的共享实现）"
+      "note": "呈现态快照/还原（读档把画面装回去的共享实现）",
+      "line": 40
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "与引擎同一条续跑路",
       "note": "本工程槽也走引擎那条路：帧装到入口 + saveResume 入队 + 0xAE 落点走栈；并把 texSlots/present 装回",
-      "line": 462
+      "line": 473
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",

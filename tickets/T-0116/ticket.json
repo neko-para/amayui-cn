@@ -36,7 +36,7 @@
     {
       "file": "app/amayui-emulator/electron/nativeAddon.ts",
       "anchor": "const phys =",
-      "line": 148,
+      "line": 135,
       "note": "「有则用」的最后一跳：macOS 没有 dipToScreenPoint（它的屏幕坐标本来就是点）⇒ 在那里补这一跳就是双重换算（本文件是 T-0058 与 T-0116 共用的锚点）"
     },
     {
@@ -48,19 +48,19 @@
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",
       "anchor": "★E3：真产物存在时",
-      "line": 177,
+      "line": 184,
       "note": "★守卫：真产物只读探测（光标落在虚拟屏矩形内，不动光标）；同文件另有降级契约/搜索链/门面空实现/预置产物棘轮/主进程棘轮"
     },
     {
       "file": "app/amayui-emulator/tools/verify-cursor.cjs",
       "anchor": "AMAYUI_CURSOR_VERIFY",
-      "line": 45,
+      "line": 9,
       "note": "★真机核验（真实 Electron 宿主 + 真实光标）：macOS 上 DIP(440,392) → 点(440,392) → 读回一致 → 复位（同一支工具在 Windows 上还验 DIP→物理那一跳）"
     },
     {
       "file": "native/host-input/README.md",
       "anchor": "## 权限（macOS；为什么默认路径不需要授权）",
-      "line": 130,
+      "line": 133,
       "note": "权限口径：warp 不需要授权（本机实测）、postMouseMove 需要且未授权时事件被静默丢弃"
     },
     {

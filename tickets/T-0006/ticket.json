@@ -15,18 +15,19 @@
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "kind: 'tick'",
       "note": "唯一的音频帧泵调用点",
-      "line": 802
+      "line": 850
     },
     {
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "audio?: (intent: AudioIntent) => void;",
       "note": "headless 宿主已实现 audio（条件能力：给了 audioHost 才存在）",
-      "line": 158
+      "line": 167
     },
     {
       "file": "app/amayui-emulator/src/audio/audioEngine.ts",
       "anchor": "tick(",
-      "note": "tick 语义（寄存冲刷/延迟 SE/BGM 淡变）；★修掉了 armedAtMs 的 0 哨兵（虚拟时钟从 0 起会晚一帧）"
+      "note": "tick 语义（寄存冲刷/延迟 SE/BGM 淡变）；★修掉了 armedAtMs 的 0 哨兵（虚拟时钟从 0 起会晚一帧）",
+      "line": 15
     }
   ],
   "links": {

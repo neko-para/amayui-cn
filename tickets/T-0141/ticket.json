@@ -1,0 +1,46 @@
+{
+  "title": "待核：web 宿主下点 CONFIG 左侧分类 (120,206) 没有切到 CONFIG2（反而整条重引导回 TITLE）",
+  "type": "analysis",
+  "priority": "P2",
+  "area": "analysis/emulator/verify",
+  "why": "用户要求「打开 option 并切换到 ADV 设置再关闭」时，我用仓库里**已验证**的口径操作：\n* `click (807,621)` 打开 Option ⇒ `TITLE.BIN → CONFIG1.BIN` ✓（与 `src/tools/config1Chain.ts:637` 的 CONFIG_XY 一致）；\n* 读图确认左侧分类为 系统设定 / 游戏设定 / ADV设定 / 声音设定 / 角色设定 / 操作设定，按 `config1Chain.ts` 的贴片公式 `(24, 106+50i)` 取第 3 项 ⇒ `click (120,206)`。\n\n结果：**没有进入 `CONFIG2.BIN`**（切分类本该载入它），宿主日志反而出现一条**完整重引导链**（`SKINIT → $3$IMINIT → INIT2 → BIINIT → $4$EBINIT → TITLE`）。\n\n**当时观测被另一件事污染**：同一时刻用户点了面板的「放大」，而那一版客户端半区会在状态切换时重建 iframe ⇒ 实例被重启（`T-0138` 的 P0）。所以这次失败**不能断定是坐标问题，也不能断定不是** —— 需在 P0 修好后重做一次干净实验。",
+  "acceptance": [
+    "在 `T-0138` 修好（单一 iframe、切形态不重启）之后重做实验：`click (807,621)` → 确认 `CONFIG1.BIN` → `click (120,206)` → **确认是否出现 `CONFIG2.BIN`**（宿主日志 + 截图两条证据）",
+    "给出结论并落到具体口径：分类贴片的**真实命中矩形**（x 范围 / y 中心 / 项间距），并与 `src/tools/config1Chain.ts` 里那套 `(24, 106+50i)`、190x26 的口径**逐条对照**（若不一致，说清差异是针对哪个页面/哪个脚本）",
+    "若确认坐标口径有误：把正确口径写回 `config1Chain.ts` 的注释与（若有）测试，并记一条「文档假设 vs 实测」的订正",
+    "若坐标正确而事件未生效：定位是**输入注入路径**（`ScenarioEvent` → `applyScenarioEvent`）还是 **CONFIG 脚本自身的门**（例如切页需要按住/释放的时序、或需要先经过某个 hover 状态），给出最小复现与结论",
+    "两条结论都要有**可复核的证据**（宿主日志片段 + 截图归档到本票 evidence/）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/tools/config1Chain.ts",
+      "anchor": "左侧分类列表第 2 项的中心",
+      "note": "仓库里已验证的贴片口径（(24, 106+50i)，190x26）—— 本票核查的就是它与实测是否一致",
+      "line": 683
+    },
+    {
+      "file": "tickets/T-0138/evidence/iframe-reload-forensics.txt",
+      "anchor": "★完整一条**重引导链**",
+      "note": "当时那条重引导链的原始取证：它说明这次实验被 T-0138 的 P0 污染了（不能据此判坐标对错）",
+      "line": 19
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0136/notes.md"
+    ],
+    "tickets": [
+      "T-0138",
+      "T-0102"
+    ]
+  },
+  "id": "T-0141",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

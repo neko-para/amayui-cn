@@ -21,7 +21,7 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-item.ts",
       "anchor": "const op_set_transition_fade: OpHandler",
-      "line": 372,
+      "line": 403,
       "note": "订正后落点：0x223 = op_set_transition_fade → native.setTransition（与 0x24f/0x250/0x251 同一条宿主缝；旧实现 e.itemRegions.set(handle, rec) 已删）"
     },
     {
@@ -39,7 +39,7 @@
     {
       "file": "app/amayui-emulator/test/op-223-transition-fade.test.ts",
       "anchor": "assert.equal(r.length, 24",
-      "line": 114,
+      "line": 117,
       "note": "新守卫（旧 test/op-223-item-region.test.ts 已删）：记录长度 24、[0] === 0、前 9 格逐格相等、[9..13] 保持默认"
     }
   ],

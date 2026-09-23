@@ -16,23 +16,26 @@
     {
       "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
       "anchor": "unhandled 0x308 i308",
-      "note": "★现场证据（主 agent 从用户 GUI 实测日志摘出）：第一个 SC 场景 = SC0000.BIN（日志行 7969）；进它前一条是未处理的 0x308；★反证：绘制项 26→4 已被清干净（detachTexture RANGE-REMOVE + clearDrawContainer + clearSlotRecords）⇒ 残留很可能在宿主文本层/消息窗侧，不是 DrawItem 残留"
+      "note": "★现场证据（主 agent 从用户 GUI 实测日志摘出）：第一个 SC 场景 = SC0000.BIN（日志行 7969）；进它前一条是未处理的 0x308；★反证：绘制项 26→4 已被清干净（detachTexture RANGE-REMOVE + clearDrawContainer + clearSlotRecords）⇒ 残留很可能在宿主文本层/消息窗侧，不是 DrawItem 残留",
+      "line": 35
     },
     {
       "file": "docs-new/05-scripts/SN0000.md",
       "anchor": "# 脚本台账 · ",
-      "note": "SN0000 的台账页（结构/槽/不变量/坑）—— 动手前先读它，别重读脚本"
+      "note": "SN0000 的台账页（结构/槽/不变量/坑）—— 动手前先读它，别重读脚本",
+      "line": 8
     },
     {
       "file": "analysis/scripts.json",
       "anchor": "\"id\": \"SN0000\"",
       "note": "SN0000 的脚本台账真源条目（layout/slots/invariants/gaps）",
-      "line": 623
+      "line": 629
     },
     {
       "note": "轮 8 只读诊断全文（30KB）：谁画的（逐候选排除）/ 载体 / 引擎在哪清（NOVEL.txt:415 的 detach-texture 19a28 1f4）/ emulator 缺哪步（engine.ts:744-746 遍历所有 reveal 键）/ H1 成立 + H2 反驳（0x308 = RegisterTouchWindow）/ H3 判据 / E2·E3 复现 / 最小修复集 + 禁止修法 / 6 条未确证项",
       "file": "tickets/T-0100/design.md",
-      "anchor": "serviceRevealAdvanceInput"
+      "anchor": "serviceRevealAdvanceInput",
+      "line": 17
     },
     {
       "note": "★根因落点：该函数遍历所有 msgwin.reveal 键逐个发布（engine.ts:744-746），而引擎只泵当前窗（`Engine[489484] = _this[122371]`，raw 13943-13945）⇒ 残留 reveal[8] 被贴回屏",
@@ -43,7 +46,8 @@
     {
       "file": "app/amayui-emulator/test/op-0100-reveal-current-window.test.ts",
       "anchor": "result = sub_45BE20",
-      "note": "本票的守卫（4 条）：前置证明 reveal 同时含残留窗 8 与当前窗 1（⇒ 旧的全窗发布必然发布 8，守卫有辨别力）+ 点击只发布当前窗 + 每帧泵不推进残留窗 + 0x70 只发布本窗；并断言 reveal[8] 仍 active ⇒ 明令禁止\"清状态\"式修法"
+      "note": "本票的守卫（4 条）：前置证明 reveal 同时含残留窗 8 与当前窗 1（⇒ 旧的全窗发布必然发布 8，守卫有辨别力）+ 点击只发布当前窗 + 每帧泵不推进残留窗 + 0x70 只发布本窗；并断言 reveal[8] 仍 active ⇒ 明令禁止\"清状态\"式修法",
+      "line": 10
     }
   ],
   "links": {

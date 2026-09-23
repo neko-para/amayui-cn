@@ -14,7 +14,7 @@
       "file": "app/amayui-emulator/src/renderer/headlessScene.ts",
       "anchor": "setTextureSizeAnswers",
       "note": "现在靠录制答案（按 slot 匹配的队列）",
-      "line": 166
+      "line": 175
     },
     {
       "file": "app/amayui-emulator/src/frame/trace.ts",
@@ -31,12 +31,14 @@
     {
       "file": "tickets/T-0025/evidence/record-replay-cleared-tex.txt",
       "anchor": "engine 段逐帧相等",
-      "note": "判据 ②/③：清掉轨迹里的 tex 字段后回放仍逐帧相等（2614 帧），原始轨迹作回归对照；含两个踩过的坑（同步是必需的 / 无头容器必须传真实文件大小）。"
+      "note": "判据 ②/③：清掉轨迹里的 tex 字段后回放仍逐帧相等（2614 帧），原始轨迹作回归对照；含两个踩过的坑（同步是必需的 / 无头容器必须传真实文件大小）。",
+      "line": 11
     },
     {
       "file": "app/amayui-emulator/src/arch/agfSize.ts",
       "anchor": "export function agfSizeOf(bytes: Uint8Array, totalSize?: number)",
-      "note": "判据 ①的实现：ACGF 头 + 无头 plan 扫描（移植自 scripts/agf/format.js，src/ 因 rootDir 不能 import 它）；与共享解码器的逐值对照在 test/agf-size.test.ts。"
+      "note": "判据 ①的实现：ACGF 头 + 无头 plan 扫描（移植自 scripts/agf/format.js，src/ 因 rootDir 不能 import 它）；与共享解码器的逐值对照在 test/agf-size.test.ts。",
+      "line": 246
     }
   ],
   "links": {

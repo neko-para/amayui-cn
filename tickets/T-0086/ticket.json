@@ -14,19 +14,19 @@
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "v6 = sub_41BF50((_DWORD *)_this, 3);",
-      "line": 32750,
+      "line": 31225,
       "note": "引擎读 op3 作颜色，紧随的 32751-32755 是 <0⇒0 与强置 A=0xFF 的归一化"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts",
       "anchor": "c.native.setTextureObjectParam?.(slot, normalizeTextureColor(color));",
-      "line": 78,
+      "line": 99,
       "note": "T-0086 修复后：op3 走与 0x1F9 共用的 normalizeTextureColor（负值⇒0 也下发、域内正值强置 A=0xFF）"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts",
       "anchor": "op_load_texture_by_id",
-      "line": 48,
+      "line": 87,
       "note": "0x249 的 handler（与已修好的 0x1f9 同族、同一宿主缝）"
     }
   ],

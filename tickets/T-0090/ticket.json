@@ -15,13 +15,13 @@
       "file": "app/amayui-emulator/src/live2d/runtime.ts",
       "anchor": "export function l2dResetHost",
       "note": "★唯一的清空入口（含为什么必须清的引擎/容器依据）",
-      "line": 194
+      "line": 197
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "清掉上一个执行链的 L2D 运行态",
       "note": "装载点调用点 + 日志",
-      "line": 313
+      "line": 324
     },
     {
       "file": "app/amayui-emulator/src/vm/engineSlot.ts",
@@ -33,7 +33,7 @@
       "file": "app/amayui-emulator/test/slot-load-l2d-reset.test.ts",
       "anchor": "读档后不许再挂着上一个画面的立绘节点/实例槽",
       "note": "★守卫",
-      "line": 55
+      "line": 60
     }
   ],
   "links": {

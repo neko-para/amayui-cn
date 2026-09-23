@@ -14,32 +14,38 @@
     {
       "file": "app/amayui-emulator/tools/paths.cjs",
       "anchor": "function resolveRepoPath",
-      "note": "★新落点：路径基准的唯一真源（仓库根 + 越界前置校验）。原先两种基准散在两个跑手里"
+      "note": "★新落点：路径基准的唯一真源（仓库根 + 越界前置校验）。原先两种基准散在两个跑手里",
+      "line": 55
     },
     {
       "file": "app/amayui-emulator/tools/paths.cjs",
       "anchor": "越出仓库",
-      "note": "★越界报错的文案锚点：`--out ../../.tmp/x` 这条实测事故现在在这里被拦下（调用方 exit(2)）"
+      "note": "★越界报错的文案锚点：`--out ../../.tmp/x` 这条实测事故现在在这里被拦下（调用方 exit(2)）",
+      "line": 11
     },
     {
       "file": "app/amayui-emulator/tools/record.cjs",
       "anchor": "require('./paths.cjs')",
-      "note": "★锚点已按位移交（原锚点是 `const OUT = path.resolve(ROOT, argOf('out', …))`，已删）：现在两条路径都走 preflight"
+      "note": "★锚点已按位移交（原锚点是 `const OUT = path.resolve(ROOT, argOf('out', …))`，已删）：现在两条路径都走 preflight",
+      "line": 25
     },
     {
       "file": "app/amayui-emulator/tools/record.cjs",
       "anchor": "fs.mkdirSync(path.dirname(OUT), { recursive: true });",
-      "note": "越界路径此前在此抛 EPERM（未捕获）⇒ Electron 弹「App threw an error during load」；现在 preflight 先拦"
+      "note": "越界路径此前在此抛 EPERM（未捕获）⇒ Electron 弹「App threw an error during load」；现在 preflight 先拦",
+      "line": 55
     },
     {
       "file": "app/amayui-emulator/tools/shot.cjs",
       "anchor": "const OUT = path.join(ROOT, '.tmp');",
-      "note": "shot.cjs 固定写仓库 .tmp（安全，基准与 record 现已统一）"
+      "note": "shot.cjs 固定写仓库 .tmp（安全，基准与 record 现已统一）",
+      "line": 46
     },
     {
       "file": "app/amayui-emulator/test/tool-paths.test.ts",
       "anchor": "ToolPathError",
-      "note": "本票守卫（7 条）：基准 / 越界 / 老写法 fallback / 源码棘轮（preflight 必须在 require(main.cjs) 之前）"
+      "note": "本票守卫（7 条）：基准 / 越界 / 老写法 fallback / 源码棘轮（preflight 必须在 require(main.cjs) 之前）",
+      "line": 17
     }
   ],
   "links": {
