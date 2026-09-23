@@ -1,0 +1,223 @@
+{
+  "title": "可行性评估：把 emulator 渲染面桥接进 DSH Web GUI，作为**调试观察宿主**（同源 iframe + HTTP/WS 宿主）",
+  "type": "analysis",
+  "priority": "P2",
+  "area": "emulator/hosts",
+  "why": "用户要求评估：能否把 emulator 的**界面部分**（Electron renderer）桥接进 DSH（当前环境 = `dsh web` @127.0.0.1:3080）里，作为一个小 iframe；并把原来的 Electron IPC「可选地」换成 WebSocket。这决定的是 emulator 的**第三种宿主形态**（现在是 Electron 渲染宿主 + headless 宿主），因此要先判清：Electron 耦合面到底有多宽、哪些通道有等价替代、哪些能力在浏览器里根本做不到、以及 DSH 侧有没有承载它的扩展点（同源？WebSocket？CSP 会不会拦？）。不先评估就动手，风险是造出第二套「同一语义两处实现」（本工程已因这类漂移付过多次代价，见 T-0002/T-0008/T-0057）。\n\n**第二轮（2026-09-23，用户补充背景）**：真实用途不是「通用 UI 桥接」，而是**agent 远程调试时的观察宿主** —— ① 人要能看到大致情况；② **真正不出现 Electron 窗口**（不是「挪到屏幕外」的权宜）；③ 要做 **instance 级隔离**（log/saves）；④ audio 按调试用途**忽略**（只记 side effects）；⑤ `setSystemCursor` 同 audio 忽略（用户指出它本来就是 Node 侧原生实现 —— 该判断经核实**正确**，第一轮把它写成「能力缺口」是错的，已订正）。两轮结论在同一份报告里（第一轮 §1–§9 作背景，第二轮 §0 + Part B 为准）。\n\n**第三轮（2026-09-23，用户三条决定）**：① focus/blur 改为**纯手动、由调试器控制**；② 输入与截图改为**纯 VM 外层桥接**（不再用 Electron 的 `sendInputEvent`/`capturePage`）；③ 可忽略「真实 DOM 事件」那条路（保真差异留给用户手动体验排查）。三条互相咬合：输入/截图/焦点全部落到共享层 ⇒ 桥变成**宿主无关**的一份实现，宿主只剩「提供像素」「提供资源」两职责；形态 B 的风险随之显著缩小（并出现可能免掉 OSR 的 B′ 变体）。",
+  "acceptance": [
+    "报告落到本票 notes.md：逐条回答「耦合点在哪 / 替代方案是什么 / 要不要改 VM」三问，每条带可复核的 文件+行号",
+    "对 `window.api` 的全部成员（`ipcProtocol.ts` 的 `declare global`，51 个）给出归类（请求-应答 / 单向 / 订阅 / 数据属性 / 同步）与 web 侧替代（HTTP fetch / WS / SSE / query 参数 / 不支持），清单可由 ipcProtocol.ts 逐一复核",
+    "DSH 侧承载方式给出**确证**（不是推测）：插件扩展点名字、能否同源、能否 WebSocket、CSP/帧策略会不会拦、有没有仓库内先例 —— 每条带 文件+行号",
+    "【第二轮】按「调试观察宿主」重述目标并重排方案：给出形态对比（浏览器宿主 / offscreen Electron / 隐藏窗口抓帧 / 无像素 digest 面板）与推荐；明确「第一轮以为要做、第二轮不用做」的三项（音频协议改造、真光标、单会话排他）各自的新定性",
+    "【第二轮】`setSystemCursor` 的订正必须写清：**能力在 Node 侧**（原生门面可独立 require、`tools/smoke.cjs` 可独立跑），第一轮的说法错在哪、以及「可做但故意不做 ≠ 做不到」",
+    "【第二轮】音频「忽略」的可行性与边界：静音模式已覆盖，但须说清**仍需要字节通道算时长**（否则从静音退化为解码失败、引擎侧漂移），并给出至少两种实现与取舍",
+    "【第二轮】instance 隔离给出一张**写盘点**（哪些文件/目录、现状落点、参数化现状）＋ 设计（含「base 也必须 per-instance」与「现有宿主是模块级单例」两个坑）",
+    "【第二轮】明确指出 agent 侧两条通道必须重铺（输入注入 / 截图），且给出**复用既有缝**的方案（`ScenarioEvent` + `applyScenarioEvent`；渲染侧 extract 出图）",
+    "【订正 5·用户质询】hover **可注入**这条必须写清证据链（`setCursor` → `hitTestPending`/`onCursorMove` → `routes.hitTest` = 引擎 `sub_403C50`），并说明上一稿据以否定它的那句话（`scenario.ts` 文件头）实际是**改造前的问题陈述**；同时给出订正后剩下的**真实**差异（`valid=false` 表达不了「光标出窗」= 一行级缺口；`syncButtons` 等价；「位置没变不重算」属引擎语义、要写进 agent 用法说明）",
+    "给出候选方案对比与推荐，并指出一旦要做，**第一步该抽哪个文件**（零行为变更的那一刀；第二轮升级为「抽 + 实例化」）",
+    "【第三轮·决定 ①】focus/blur 提升为**调试器显式控制**：写清现状（本工程无引擎焦点态、`InputSnapshot` 无该字段、引擎侧 `GetForegroundWindow` 全份仅一处且非输入门）与落点（`debugCommand.ts` 的命令词汇表 + `focus auto/on/off`；`focus off` 必须与现有 blur 路径等价，并给一条断言两者同快照的守卫要求）",
+    "【第三轮·决定 ②】输入与截图改为**纯 VM 外层桥接**：给出具体缝（输入 = `applyScenarioEvent` 直写 `InputManager`；截图 = `FrameHost.capture?()` + 把 `#captureStageCanvas` 提公开），并说明其后果（桥**宿主无关**、`sendInputEvent`/`capturePage` 在调试通道退役、§B.4.1.1 的实测项作废、形态 B 可用于共享同一份桥）",
+    "【第三轮】给出 **B′ 变体**（隐藏窗口 + 桥**拉**帧，可能不需要 OSR）及其 10 分钟判据，并写清 **B′ ≠ 形态 C**（页面内 `extract.canvas` vs Electron 的 `capturePage` 窗口截图管线）",
+    "本票是纯分析：不改 `src/vm/**`、`src/frame/**`、`src/renderer/**` 的任何语义代码；结论以报告交付，实现另行开票"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/ipcProtocol.ts",
+      "anchor": "declare global {",
+      "note": "渲染进程的宿主接口面**只有** window.api：51 个成员全在这份全局声明里 ⇒ 它就是「桥接」的完整契约",
+      "line": 11
+    },
+    {
+      "file": "app/amayui-emulator/electron/preload.ts",
+      "anchor": "contextBridge.exposeInMainWorld('api'",
+      "note": "Electron 侧的实现只有 4 种形态（invoke / send / sendSync / on）⇒ 可机械映射到 fetch(POST) / WS 单向 / 异步化 / WS 订阅",
+      "line": 11
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/fileSource.ts",
+      "anchor": "export interface FileSource",
+      "note": "文件访问抽象：VM 只认这个接口（Electron 用 IpcFileSource、Node 用 NodeFileSource）⇒ 换宿主不动 VM，这正是桥接可行性的根据",
+      "line": 35
+    },
+    {
+      "file": "app/amayui-emulator/electron/ipc/files.ts",
+      "anchor": "const fileSource = new NodeFileSource",
+      "note": "IPC handler 体已经只是 NodeFileSource + OverlayDir + decodeAgfRgba 的薄转发（三者都是 Node 侧、与 Electron 无关）⇒ 一个 HTTP/WS 宿主可以直接复用同一份实现，不必重写资源层。⚠️但它是**模块级单例**，多实例要改（§B.3.3 坑 2）",
+      "line": 30
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/audio/webAudioHost.ts",
+      "anchor": "amayui-audio://",
+      "note": "⚠️【订正 1】它不是「唯一必须改成 HTTP 的通道」：调试用途下走静音模式，web 桥接只要**不提供 audioStreamBase**，streamUrl() 就返回 undefined ⇒ 引擎自动退回 load+decode+哑 play，自定义 scheme 根本不用替换",
+      "line": 11
+    },
+    {
+      "file": "app/amayui-emulator/src/audio/nodeAudioHost.ts",
+      "anchor": "export function audioDurationSec",
+      "note": "【订正 1 的另一半】静音模式**仍需原始字节**：webAudioHost 的静音 decode 用它算时长，而时长是引擎判「语音占线 / SE 何时释放」的输入 ⇒ 音频通道不能整个删掉，否则从「静音」变成「解码失败」、引擎侧漂移",
+      "line": 60
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/index.html",
+      "anchor": "media-src 'self' amayui-audio:",
+      "note": "CSP 必须按 web 宿主改写：不再需要 amayui-audio:，但要放行同源 connect（若走独立端口还需 ws:/http: 白名单）",
+      "line": 10
+    },
+    {
+      "file": "plugins/uimap/lib/index.js",
+      "anchor": "ctx.effect(() => webServer.register({",
+      "note": "仓库内先例：静态 bundle 插件的 Host 半在 DSH GUI 的 webServer 上挂 /dsh-uimap 前缀路由（二进制 + JSON API），Client 半在 GUI 里渲染 ⇒ 桥接的 DSH 承载方式已有同构样板",
+      "line": 325
+    },
+    {
+      "file": "plugins/ticket-board/README.md",
+      "anchor": "必须 `inject` `webServer`",
+      "note": "DSH 侧硬约束：不把 webServer 放进 inject 会在 base 阶段挂载、路由被**静默跳过**（插件作者实测记下的坑）",
+      "line": 53
+    },
+    {
+      "file": "native/host-input/index.js",
+      "anchor": "与测试都能直接 require",
+      "note": "【订正 2】原生光标能力是**纯 Node 的 CJS 门面**（零 Electron 依赖，加载链全在 node:fs/path 上；`node native/host-input/tools/smoke.cjs` 可独立跑）⇒ setSystemCursor 不是能力缺口；Electron 只出现在坐标换算（electron/nativeAddon.ts:130-136）",
+      "line": 3
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/scenario.ts",
+      "anchor": "export function applyScenarioEvent",
+      "note": "【第二轮新增】agent 输入通道重铺的现成缝：导出的、宿主无关的声明式输入执行器（ScenarioEvent 的 kind = cursor/press/release/wheel/keydown/keyup）⇒ 不必发明新词汇；⚠️它直接写 InputManager，不经过命中测试/悬停",
+      "line": 177
+    },
+    {
+      "file": "app/amayui-emulator/src/arch/systemPaths.ts",
+      "anchor": "export function resolveSystemPaths",
+      "note": "【第二轮新增】instance 存档隔离的可行性根据：env 是**函数参数**而不是直接读 process.env ⇒ 多实例不必改 process.env，每实例传一份 env 即可（AMAYUI_SYSTEM_DIR / AMAYUI_OVERLAY_DIR）",
+      "line": 88
+    },
+    {
+      "file": "app/amayui-emulator/electron/paths.ts",
+      "anchor": "export const LOG_PATH",
+      "note": "【第二轮新增】log/trace 是模块级常量、未参数化 ⇒ 这是 instance 隔离里**唯一**需要新增参数化的落点（回放轨迹 REPLAY_PATH 已经走 AMAYUI_REPLAY_PATH）",
+      "line": 54
+    },
+    {
+      "file": "app/amayui-emulator/tools/debugsrv.cjs",
+      "anchor": "webContents.sendInputEvent",
+      "note": "【第二轮新增】agent 输入通道的现状：主进程直接 sendInputEvent（不经过渲染窗）。配合负面证据（三条输入驱动全仓库零 `.focus()` 调用，见 notes §9 的命令）⇒ offscreen 不可聚焦窗口上是否还能注入**必须实测**（§B.4.1.1）",
+      "line": 153
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/host.ts",
+      "anchor": "export interface FrameHost",
+      "note": "【第三轮·决定 ②】「VM 外层桥接」的落点：截图能力加在这个共享接口上（可选 capture?()），而不是接 Electron 的 capturePage ⇒ 桥宿主无关，Electron/offscreen/浏览器三态共用",
+      "line": 18
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#captureStageCanvas",
+      "note": "【第三轮·决定 ②】整帧抓取**已经存在**（私有方法，转场的新/旧帧来源，与 frameTick 同一条 extract.canvas）⇒ 截图桥 = 提公开 + 接到 FrameHost.capture，个位数行；且 extract 是渲染进临时纹理再读像素，不依赖 preserveDrawingBuffer",
+      "line": 1140
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
+      "anchor": "export type DebugAction",
+      "note": "【第三轮·决定 ①】调试命令词汇表的唯一收口点（T-0127 把三处拷贝收敛成一份）⇒ focus auto/on/off 加在这里，不再新增通道",
+      "line": 20
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "releaseAllMouse(): void",
+      "note": "【第三轮·决定 ①】现状：本工程「焦点」的唯一作用就是这次兜底释放（配 releaseAllKeys）⇒ 提升为调试器显式控制（focus off 等价于这两个调用）改动很小；InputSnapshot 里没有引擎焦点态",
+      "line": 275
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "GetForegroundWindow() == hWnd",
+      "note": "【第三轮·决定 ①】引擎侧 GetForegroundWindow 全份**只出现一次**，且在 WM_SYSCOMMAND 的「从最小化恢复」分支里（不是输入轮询门）⇒「焦点」不必建模成引擎态，只需是一个输入生命周期的控制开关",
+      "line": 141419
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "this.hitTestPending = true; // 等待泵消费它时做一次 sub_403C50",
+      "note": "【订正 5】hover 可注入（1/4）：setCursor 位置**变化**即置 mouseMoved + hitTestPending，并回调 onCursorMove",
+      "line": 233
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "this.input.onCursorMove = (x, y) => {",
+      "note": "【订正 5】hover 可注入（2/4）：回调体就是 routes.hitTest(x,y) ⇒ 注入光标**直接触发**命中测试，不经任何 DOM",
+      "line": 731
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/route.ts",
+      "anchor": "sub_403C50`（raw 9787-9824）：**按坐标命中测试**",
+      "note": "【订正 5】hover 可注入（3/4）：hitTest 的语义标题即引擎 sub_403C50（WM_MOUSEMOVE 里的命中测试）⇒ routes.cursor / 侧栏悬停由此产生",
+      "line": 222
+    },
+    {
+      "file": "app/amayui-emulator/src/frame/scenario.ts",
+      "anchor": "input.setCursor(x, y, true);",
+      "note": "【订正 5】hover 可注入（4/4，同时是**真缺口**）：cursor case 恒传 valid=true ⇒ 表达不了「光标出窗」(mouseleave，inputAttach 走 setCursor(-100000,-100000,false))；修法 = 加 valid?: boolean 或一个 leave kind（一行级）",
+      "line": 182
+    }
+  ],
+  "links": {
+    "docs": [
+      "app/amayui-emulator/README.md",
+      "docs-new/04-app/native-addon.md"
+    ],
+    "analysis": [
+      "host-cursor-warp"
+    ],
+    "tickets": [
+      "T-0051",
+      "T-0053",
+      "T-0114",
+      "T-0118"
+    ]
+  },
+  "id": "T-0133",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— 评估报告完成（notes.md）；结论：可行，推荐同源 bundle 插件方案"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "第二轮范围变更（用户补充背景）：目标从「通用 UI 桥接」改为「agent 调试时的观察宿主」——人要能看到大致情况、真正不出现 Electron 窗口、instance 级 log/saves 隔离；audio 与 setSystemCursor 按调试用途忽略。评估按此重做（§0 + Part B），并订正第一轮三处判断。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 第二轮评估完成：形态 B 的 Electron offscreen 调研结论已并入 §B.4.1（macOS 可靠 + 三前提 + 坑表 + agent 输入待实验），并据其订正形态 C 的判断（订正 4）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "done → doing —— 第三轮范围变更（用户三条决定）：① focus/blur 改为纯手动、由调试器控制；② 输入与截图改为**纯 VM 外层桥接**（不再依赖 Electron 的 sendInputEvent/capturePage）；③ 可忽略真实 DOM 事件路径（保真度差异不再需要两条路）。评估按此更新（§B.4.3–§B.4.5 + 形态 B 风险重估）。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 第三轮评估完成：三条决定已落到 §B.4.3（纯 VM 外层输入桥，只留直写）、§B.4.4（帧宿主 capture 缝 + B′ 变体）、§B.4.5（focus 调试器显式控制）；§B.4.1.1 作废、§B.6 补两个 10 分钟实验"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "done → doing —— 订正 5（用户质询）：hover 能模拟 —— 上一稿「applyScenarioEvent 不经命中测试/悬停」是把 scenario.ts 文件头描述**改造前问题**的句子误当成实现性质。证据：setCursor 位置变化时置 hitTestPending 并回调 onCursorMove（engine.ts:731 → routes.hitTest = sub_403C50），即引擎 WM_MOUSEMOVE 的同一路径。"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 订正 5 完成：hover 可注入（setCursor→onCursorMove→routes.hitTest=sub_403C50 证据链入 §0.11/§B.4.3/§8/§9 与 evidence 4 条）；真实差异收敛为「光标出窗 valid=false 一行级缺口」+ syncButtons 等价 + 两条引擎语义用法说明"
+    }
+  ],
+  "doneWhy": "本票是纯分析：交付物 = tickets/T-0133/notes.md 的评估报告（两轮）。第一轮：可行性结论 + 51 个 window.api 通道映射 + DSH 侧承载能力确证 + 方案对比。第二轮（按「调试观察宿主」）：目标重述与形态排序（A 浏览器宿主 / B offscreen Electron / C 隐藏抓帧 / D 无像素面板）、三条订正（音频不用改协议但需留字节管道；setSystemCursor 能力在 Node 侧、非缺口；单会话排他改 instance 隔离）、instance 隔离写盘点与两个坑、agent 侧两条通道（输入注入 / 截图）的重铺方案、分步建议。无代码改动 ⇒ 没有可执行守卫，判据由报告本身承载（notes.md §0/§0.9/Part B 逐条对应 acceptance 十条）。后续如需实现，另开 req 票。\n\n第三轮（用户三条决定）追加：§B.4.3 输入改纯 VM 外层桥接（只留 `applyScenarioEvent` 直写，砍掉 DOM 合成模式）、§B.4.4 截图改帧宿主缝（`FrameHost.capture?` + `#captureStageCanvas` 提公开）并给出 **B′ 变体**（隐藏窗口 + 桥拉帧，可能不需要 OSR）及 10 分钟判据、§B.4.5 focus/blur 提升为调试器显式控制（`focus auto/on/off`，落 `debugCommand.ts` 词汇表；`focus off` 须与现有 blur 路径等价）；§B.4.1.1 的 `sendInputEvent` 实测项随之作废；§B.6 补两个 10 分钟实验（B′ 判据、焦点 latch）作为第 0′ 步。\n\n订正 5（用户当场质询）：上一稿「applyScenarioEvent 不经命中测试/悬停」是**误读**——那是 scenario.ts 文件头对**改造前问题**的陈述。实测证据链是 setCursor(位置变化) → hitTestPending/mouseMoved → onCursorMove → engine.routes.hitTest = 引擎 WM_MOUSEMOVE 里的 sub_403C50 ⇒ **hover 可注入，且比 DOM 路径更贴引擎**；订正后真实差异只剩「表达不了光标出窗 valid=false（一行级缺口）」与 syncButtons（等价），另有「位置没变不重算」属引擎语义需写进 agent 用法说明。到此本票为三轮 + 五次订正的最终版。"
+}

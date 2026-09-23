@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **130** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **116** · 🚫 dropped **1**（P0 7 / P1 47）
+共 **131** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **117** · 🚫 dropped **1**（P0 7 / P1 47）
 
-按域：`emulator/render` 21 · `emulator/test` 11 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/msgwin` 3 · `emulator/tooling` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1
+按域：`emulator/render` 21 · `emulator/test` 11 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/hosts` 8 · `emulator/save-slot` 8 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/msgwin` 3 · `emulator/tooling` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1
 
 ## 🔜 doing（3）
 
@@ -34,7 +34,7 @@
 | [`T-0112`](./T-0112/ticket.json) | P3 | docs | `docs/03-engine` | B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-eff… | 6 | — | — | — |
 | [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | `notes.md` | — |
 
-## ✅ done（116）
+## ✅ done（117）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -132,6 +132,7 @@
 | [`T-0130`](./T-0130/ticket.json) | P2 | tooling | `emulator/test` | 三份台账的 guards/tests 加内容锚点（现在只查文件存在） | 5 | `app/amayui-emulator/test/capability-ledger.test.ts` `app/amayui-emulator/test/script-ledger.test.ts` `app/amayui-emulator/test/ticket-ledger.test.ts` | `changes.md` | — |
 | [`T-0131`](./T-0131/ticket.json) | P2 | tooling | `toolkit/test` | amayui-toolkit 的 87 个 vitest 用例既不在闸门里、又依赖未入 git 的 metadata.json；并修 3 处恒真/假覆盖 | 5 | `app/amayui-toolkit/src/services/dataset.test.ts` `app/amayui-toolkit/src/services/search.test.ts` `app/amayui-toolkit/src/services/rules.test.ts` | `changes.md` | — |
 | [`T-0132`](./T-0132/ticket.json) | P2 | req | `emulator/test` | T2 真机档首批文件：把 E4 工具链（shot / dbg:srv）落成 @tier T2 守卫，并定 verify 口径 | 6 | `app/amayui-emulator/test/e4-gamestart-shot.test.ts#判据自检（不需要 Electron）` `app/amayui-emulator/test/e4-gamestart-shot.test.ts#E4：真 Electron 跑 gamestart` `app/amayui-emulator/test/organization.test.ts#默认档有实质覆盖` | `notes.md` `changes.md` | — |
+| [`T-0133`](./T-0133/ticket.json) | P2 | analysis | `emulator/hosts` | 可行性评估：把 emulator 渲染面桥接进 DSH Web GUI，作为**调试观察宿主**（同源 iframe + HTTP/WS 宿主） | 14 | — | `notes.md` | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | `app/amayui-emulator/test/harness-convergence.test.ts` | `changes.md` | — |
