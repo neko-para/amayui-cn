@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem adv */
+
 /**
  * **ADV 角色名颜色的派生链**（`tickets/T-0102` 判据 4/5 —— 用户实测「阿瓦罗的名字是青色，预期橘色」）。
  *

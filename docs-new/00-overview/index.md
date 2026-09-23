@@ -15,7 +15,7 @@ generated_by: scripts/build-doc-index.mjs
 > ★**读文档前先看 `state`**：`live` 才是现行结论；`record` 是**一次性取证的历史快照**（结论已落台账，
 > 只作票据证据锚点用）；`generated` 一律勿手改，改真源后重跑生成器。
 
-共 **103** 份：📋 流程 18 · ⚙️ 生成物 39 · 📖 叙述 28 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 13；按 state：live 90 · consumed 13
+共 **104** 份：📋 流程 18 · ⚙️ 生成物 39 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 13；按 state：live 91 · consumed 13
 
 ## `00-overview/`（7）
 
@@ -83,7 +83,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`03-engine/sound-system.md`](./../03-engine/sound-system.md) | 📖 叙述 | ✅ | — | 03-engine · 声音子系统（设备 / 三模块 / 音量路由 / ADV 语音联动） |
 | [`03-engine/unpacking.md`](./../03-engine/unpacking.md) | 📖 叙述 | ✅ | — | 03-engine · 加壳拆壳与反汇编管线 |
 
-## `04-app/`（9）
+## `04-app/`（10）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
@@ -95,6 +95,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`04-app/live2d-support-assessment.md`](./../04-app/live2d-support-assessment.md) | 📖 叙述 | ✅ | — | 04-app · Live2D 支持评估（系统能力 / 依赖路线 / 落地计划） |
 | [`04-app/native-addon.md`](./../04-app/native-addon.md) | 📖 叙述 | ✅ | — | 04-app · 宿主侧原生模块（N-API）：为什么、怎么建、怎么打包 |
 | [`04-app/README.md`](./../04-app/README.md) | 🧭 索引 | ✅ | — | 04-app · app 工具（三大子工程） |
+| [`04-app/test-organization.md`](./../04-app/test-organization.md) | 📖 叙述 | ✅ | — | 04-app · 测试分类与组织（测试法） |
 | [`04-app/toolkit.md`](./../04-app/toolkit.md) | 📖 叙述 | ✅ | — | 04-app · amayui-toolkit |
 
 ## `05-scripts/`（34）

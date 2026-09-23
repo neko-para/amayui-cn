@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem audio */
+
 /**
  * **headless 的音频能力**（`tickets/T-0006`，B3 的一环）：宿主（`NodeAudioHost`）+ 帧泵（驱动每帧 tick）。
  *

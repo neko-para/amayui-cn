@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * ★`0x147` / `0x2F2` **GDI 区域命中测试**（`sub_42FD60` raw 39655-39702 / `sub_4318A0` raw 40687-40721）
  * —— 合成指令守卫（`tickets/T-0093` 第②半）。

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * **Live2D 变形语义守卫**（T-0054 M1/E3：headless 不依赖 WebGL）。
  *
@@ -240,10 +242,10 @@ test('★deform：多参数同时插值（m ≥ 2）按 2^m 角点做多线性�
   assert.ok(Math.abs(x - 25) > 1, '不得退回"只插一个维度"的旧口径');
 });
 
-test('deform：真实模型求值（BM021A）—— 顶点数/有限性/参数驱动形变', () => {
+test('deform：真实模型求值（BM021A）—— 顶点数/有限性/参数驱动形变', (t) => {
   const f = findMoc('$1$BM021A.MOC');
   if (!f) {
-    console.warn('[skip] 找不到 $1$BM021A.MOC 语料 —— 跳过');
+    t.skip('找不到 $1$BM021A.MOC 语料');
     return;
   }
   const model: MocModel = parseMoc(new Uint8Array(fs.readFileSync(f)));
@@ -282,10 +284,10 @@ test('deform：真实模型求值（BM021A）—— 顶点数/有限性/参数�
   }
 });
 
-test('deform：全部真实模型都能求值（不抛、不 NaN、组合数 = ∏pivots）', () => {
+test('deform：全部真实模型都能求值（不抛、不 NaN、组合数 = ∏pivots）', (t) => {
   const dir = path.join(REPO_ROOT, 'raw-parts');
   if (!fs.existsSync(dir)) {
-    console.warn('[skip] 找不到 raw-parts/ —— 跳过');
+    t.skip('找不到 raw-parts/');
     return;
   }
   const files: string[] = [];

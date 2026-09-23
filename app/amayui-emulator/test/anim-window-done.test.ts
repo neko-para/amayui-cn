@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * **动画判据的两条口径**（`tickets/T-0002` 的 A2 / `tickets/T-0008` 的 D3 / `tickets/T-0024`）。
  *

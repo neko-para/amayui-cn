@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem frame */
+
 /**
  * `T-0029` 守卫：**启动期预载清单必须消失，且"首帧不缺图"由帧屏障负责**。
  *

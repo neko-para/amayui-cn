@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * 回归测试：**绘制项 → 纹理 的槽号解析**。
  *

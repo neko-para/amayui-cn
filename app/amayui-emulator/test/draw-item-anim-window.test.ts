@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * 回归测试：**DrawItem 的 5 个动画窗**（引擎 `Scene+1032` 的 740 字节元素）。
  *

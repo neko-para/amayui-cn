@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **`0x23F` 槽尺寸 getter**（`tickets/T-0076` 的 B3 补；语料 3 处 = FIELD×2 / BTL×1）。
  *

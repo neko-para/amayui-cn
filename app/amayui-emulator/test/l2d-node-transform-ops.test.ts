@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem l2d */
+
 /**
  * ★Live2D **572B 立绘节点变换族**（`0x347`/`0x348`/`0x349`/`0x34A`/`0x34B`/`0x34C`/`0x34D`）——
  * 合成指令守卫（`tickets/T-0077`，审计 P2 `op-9-op840`、P1 `op-6-01`）。

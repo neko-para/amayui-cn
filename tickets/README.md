@@ -7,29 +7,29 @@
 
 ## 概览
 
-共 **129** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **19** · ✅ done **105** · 🚫 dropped **1**（P0 7 / P1 47）
+共 **129** 张：🔜 doing **5** · ⛔ blocked **0** · ⬜ open **18** · ✅ done **105** · 🚫 dropped **1**（P0 7 / P1 47）
 
 按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/test` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/msgwin` 3 · `emulator/tooling` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1
 
-## 🔜 doing（4）
+## 🔜 doing（5）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0124`](./T-0124/ticket.json) | P1 | analysis | `emulator/test` | 全量测试审计（159 文件 / 1078 用例）：逐条判定「有价值 / 无意义」，并评估 Electron 调试能力下的测试方法论 | 8 | — | `notes.md` evidence/(11) | — |
+| [`T-0126`](./T-0126/ticket.json) | P1 | refactor | `emulator/test` | 测试分档 T0/T1/T2/T3（默认档 ≤20s）+ test/ 纳入 typecheck | 8 | — | `changes.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（19）
+## ⬜ open（18）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0125`](./T-0125/ticket.json) | P1 | refactor | `emulator/test` | 清理无判别力断言：5 处零断言假绿 + 恒真/镜像 + 1 处错 oracle（每条带反例实验） | 6 | — | — | — |
-| [`T-0126`](./T-0126/ticket.json) | P1 | refactor | `emulator/test` | 测试分档 T0/T1/T2/T3（默认档 ≤20s）+ test/ 纳入 typecheck | 7 | — | — | — |
 | [`T-0127`](./T-0127/ticket.json) | P1 | req | `emulator/tooling` | 调试器命令表单源化（消灭 3 份拷贝）+ 事件面扩 engine-field-write/local-int-write + debugQuery 加宿主侧槽… | 7 | — | — | — |
 | [`T-0128`](./T-0128/ticket.json) | P1 | bug | `emulator/verify` | E4 闸门统一到 base+overlay 两侧都看（9 处静默跳过）+ replay 把 Live2D 接进 Digest | 5 | — | — | — |
 | [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
-| [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | — | — | — |
+| [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | — | `notes.md` | — |
 | [`T-0122`](./T-0122/ticket.json) | P2 | req | `emulator/tooling` | 调试器第 3 步：内存快照/恢复（引擎态 dump 与回灌） | 7 | — | — | — |
 | [`T-0129`](./T-0129/ticket.json) | P2 | refactor | `emulator/test` | 重复覆盖去重：adv-msgwin 路由组 / 存档族 10→7 / option-font-speed-menu 拆分 / 注册表分类棘轮合并 | 5 | — | — | — |
 | [`T-0130`](./T-0130/ticket.json) | P2 | tooling | `emulator/test` | 三份台账的 guards/tests 加内容锚点（现在只查文件存在） | 5 | — | — | — |

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /**
  * **操作数计划层守卫**（`tickets/T-0082` RF-A 的第三步）—— 把 `src/vm/operandPlan.ts` 的**声明**
  * 与三处真源焊在一起，任何一处漂移即红：

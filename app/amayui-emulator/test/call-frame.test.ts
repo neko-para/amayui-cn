@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /** call-frame (0x8) / load-frame (0x6) 帧调用往返测试。
  *  依据引擎 sub_41C900 (0x8)：切到「已预装帧」op1，调用方 ip 前进、callRet=caller、目标帧 caller=caller/ip=0；被调帧 exit 返回调用帧。 */
 import { test } from 'node:test';

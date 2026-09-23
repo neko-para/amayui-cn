@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem texture */
+
 /**
  * `T-0102` 守卫：**`0x259` 之后，槽号→图像 的索引必须还在**（`ADV 窗口白底` 的根因锁）。
  *

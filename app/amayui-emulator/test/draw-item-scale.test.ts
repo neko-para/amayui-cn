@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * 回归测试：**`0x1FD`（立即缩放）与 DrawItem 世界矩阵的合成条件**。
  *

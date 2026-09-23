@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem config */
+
 /**
  * `T-0098` 守卫：① `0x2ED` 读侧注册（真指令闭环）；② `0x107`/`0x10B`/`0xFE` 的**无符号位号口径**。
  *

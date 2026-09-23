@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /**
  * **操作数口径核验**（`tickets/T-0082` RF-A 的第一步，审计 `docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md`）。
  *

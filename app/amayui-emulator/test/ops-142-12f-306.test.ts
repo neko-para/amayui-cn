@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * 三条指令的实现测试：`0x142`（写引擎开关 `_this[174812]`）/ `0x12F`（按 `B[idx]+C[idx]` 排索引数组 A）/
  * `0x306`（`system:EffectSkipOnClick` getter）。

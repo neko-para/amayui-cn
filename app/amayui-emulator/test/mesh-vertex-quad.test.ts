@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * 回归测试：**mesh 顶点四边形 + 逐顶点色**（引擎 `0x320/0x322/0x323`）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * `T-0114` 第 2 步守卫：**条件断点 + 语义事件断点**（`src/vm/debugBreak.ts`）。
  *

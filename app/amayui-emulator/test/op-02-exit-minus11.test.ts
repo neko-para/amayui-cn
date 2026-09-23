@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /**
  * `0x02 exit` 的 **-11** 分支（`tickets/T-0092`，审计 `op-2-10`）。
  *

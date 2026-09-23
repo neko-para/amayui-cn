@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem frame */
+
 /**
  * **TITLE「点击退出」端到端回归**（E3：真实脚本 + 模拟输入）。
  *

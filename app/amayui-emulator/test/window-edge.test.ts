@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem host */
+
 /**
  * **贴边开窗的几何**（`src/arch/windowPlacement.ts`）—— `tickets/T-0040` 的守卫。
  *

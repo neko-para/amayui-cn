@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem config */
+
 /**
  * **CONFIG1 链路端到端回归**（E3：真实脚本 + 模拟输入 + 真实 SYS4REG.INI）。
  *

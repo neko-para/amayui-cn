@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem vm */
+
 /**
  * 三张注册表（`OPS` / `NATIVE_OPS` / `ENGINE_INTERNAL_OPS`）**必须两两不相交**。
  *

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * `.moc` 解析守卫（实证口径：拿**全部真实模型**逼不变量，见 tickets/T-0054 acceptance #2）。
  *
@@ -56,10 +58,11 @@ function combos(pivotCounts: number[]): number {
   return pivotCounts.reduce((a, b) => a * b, 1);
 }
 
-test('live2d/moc：全部真实 .moc 逐字节解析 + 结构不变量（335 个语料）', () => {
+test('live2d/moc：全部真实 .moc 逐字节解析 + 结构不变量（335 个语料）', (t) => {
   const dir = findMocDir();
   if (!dir) {
-    console.warn('[skip] 找不到 .MOC 语料目录（raw-parts/ 或 raw/）—— 本机未抽取资源，跳过');
+    // ★不许用 console.warn + 裸 return：node:test 会把「零断言返回」记成 pass（T-0124 形态①）。
+    t.skip('找不到 .MOC 语料目录（raw-parts/ 或 raw/）—— 本机未抽取资源');
     return;
   }
   const files = walkMoc(dir).sort();
@@ -177,15 +180,15 @@ test('live2d/moc：全部真实 .moc 逐字节解析 + 结构不变量（335 个
 });
 
 /** 单模型级不变量：`$1$BM021A.MOC` 的关键帧组合数（钉死解析口径的回归样本）。 */
-test('live2d/moc：样本 BM021A 的 pivots/关键帧组合（口径回归）', () => {
+test('live2d/moc：样本 BM021A 的 pivots/关键帧组合（口径回归）', (t) => {
   const dir = findMocDir();
   if (!dir) {
-    console.warn('[skip] 找不到 .MOC 语料目录 —— 跳过');
+    t.skip('找不到 .MOC 语料目录');
     return;
   }
   const hit = walkMoc(dir).find((f) => /BM021A\.MOC$/i.test(f));
   if (!hit) {
-    console.warn('[skip] 语料里没有 BM021A.MOC —— 跳过');
+    t.skip('语料里没有 BM021A.MOC');
     return;
   }
   const m = parseMoc(new Uint8Array(fs.readFileSync(hit)));

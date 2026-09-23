@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem frame */
+
 /**
  * **headless 的 `needsRender` 语义**（`tickets/T-0003` 的 B3，第二项）。
  *

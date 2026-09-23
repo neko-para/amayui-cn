@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem transition */
+
 /**
  * **转场的"指令 → 记录 → 窗口 → 离屏合成"整条链** —— `tickets/T-0084`。
  *

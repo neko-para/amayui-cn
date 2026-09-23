@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem config */
+
 /**
  * **配置读取指令族**回归：读引擎配置键 → **写回脚本操作数**。
  *

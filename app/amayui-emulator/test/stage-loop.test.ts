@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem frame */
+
 /**
  * **阶梯动画调度器（`0xD3` / `0xD4` / `0xD5`）守卫** —— 语义与 raw 锚点见 `src/vm/stageLoop.ts`。
  *

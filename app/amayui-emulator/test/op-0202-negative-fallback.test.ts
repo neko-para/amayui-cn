@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * ★★`tickets/T-0102` 轮 21：**`0x202 set-draw-color` 的"负值 ⇒ 取当前色"回退**
  * （ADV 窗口白底的**真正根因**）。

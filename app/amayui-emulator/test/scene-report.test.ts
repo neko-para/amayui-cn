@@ -1,3 +1,5 @@
+/** @tier T1 @kind tool @subsystem tool */
+
 /**
  * **场景执行报告 + 快照回归**的测试。
  *

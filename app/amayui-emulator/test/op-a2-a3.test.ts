@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **复评台账 A2 + A3 的回归测试**（2026-09）。
  *

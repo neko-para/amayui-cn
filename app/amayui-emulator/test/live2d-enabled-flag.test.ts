@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * `T-0054` 判据 #3 后半的守卫：**`global a9d0` 的两条支路都能跑通**（L2D / 静态贴图回落）。
  *

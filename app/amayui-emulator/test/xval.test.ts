@@ -1,3 +1,5 @@
+/** @tier T1 @kind ratchet @subsystem vm */
+
 /** 交叉验证：SYS4450 BIN 解析器 vs 反汇编文本（src/*.txt）逐条一致。
  *  源解析与 FileSource 一致：资源根 = `install/`（汉化版；松散优先，否则从 ALF 切片）。 */
 import { test } from 'node:test';

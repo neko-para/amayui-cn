@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * **字格逐字显现（逐字渲染）回归** —— 对应台账 `msgwin-char-reveal-grid`。
  *

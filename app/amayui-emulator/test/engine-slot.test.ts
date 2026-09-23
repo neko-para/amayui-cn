@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **真游戏槽的状态主体解析**（`tickets/T-0059`）—— `src/vm/engineSlot.ts` 的守卫。
  *

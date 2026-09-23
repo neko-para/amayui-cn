@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem vm */
+
 /**
  * **指令集 JSON 同步棘轮**（`tickets/T-0022`）。
  *

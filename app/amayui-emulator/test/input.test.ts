@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem input */
+
 /** 鼠标/输入子系统测试。
  *  1) InputManager 单元（位置/按钮/按下沿/移动/flush/consume/派发目标/get-input-type 节流门）。
  *  2) TITLE 端到端：登记 mouse_callback -> get-input-type（时间节流）派发到鼠标 handler 且不崩。

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * `0x141`（SetMesWinAlpha）与 `0x135`/`0x136`/`0x13F`（位指令族）的**操作数越界口径**：
  * 与体同形 = **无符号比较** + **打错误串后继续**（不是抛异常）。`tickets/T-0097` ②。

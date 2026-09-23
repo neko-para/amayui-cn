@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /**
  * 「读操作数 → 写引擎字段」一族（`ENGINE_FIELD_STORE`）的测试。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * 文本排版模型单测（S1）。
  *

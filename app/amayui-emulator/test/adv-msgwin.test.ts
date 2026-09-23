@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /**
  * **ADV / 消息窗状态机回归**（对应台账 `adv-flag-lifecycle` / `adv-perframe-dispatch` /
  * `adv-text-reveal-progress` / `msgwin-text-object`）。

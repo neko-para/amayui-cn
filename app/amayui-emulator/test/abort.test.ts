@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /** 0x1 abort (sub_418E60)：程序中止。抛 ExitScript（程序退出信号）；渲染窗捕获后关闭主窗口，headless 捕获后停执行。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

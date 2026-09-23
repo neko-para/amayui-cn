@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem frame */
+
 /**
  * **`Scenario`（输入编排）契约测试**（`tickets/T-0003` 验收 3 / 为 B5 的 `--record/--replay` 打底）。
  *

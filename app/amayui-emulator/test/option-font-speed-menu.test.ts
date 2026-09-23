@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * **四项用户实测问题的回归**（2026-09）：
  *

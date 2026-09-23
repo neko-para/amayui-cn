@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem config */
+
 /**
  * 引擎配置（SYS4REG.INI）加载 + 配置类 opcode 的取值测试。
  *

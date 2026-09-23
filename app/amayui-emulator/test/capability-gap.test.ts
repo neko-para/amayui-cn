@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ledger */
+
 /**
  * **闸门 B 回归测试**：`StepTrace.gap`（能力缺口）—— 被当作 no-op 跳过、却收到**非平凡实参**的指令。
  *

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem render */
+
 /**
  * 管线级回归测试：**draw-item 的纹理槽解析覆盖率**（跑到 TITLE，统计绘制项能否解析到纹理槽）。
  *

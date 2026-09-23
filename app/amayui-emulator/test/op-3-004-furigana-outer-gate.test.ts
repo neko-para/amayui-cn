@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem text */
+
 /**
  * 审计 `op-3-004`（`tickets/T-0094`）：`0x196 display-furigana` 的**外层门**（raw 29071）+
  * 第①②路的 **MessageSpeed 节流半边**（raw 29075-29095）。

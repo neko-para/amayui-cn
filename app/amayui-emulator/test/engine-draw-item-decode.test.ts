@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * **引擎 740 B DrawItem 记录 → emulator `Item` 的逐字段守卫**（`tickets/T-0083`）。
  *

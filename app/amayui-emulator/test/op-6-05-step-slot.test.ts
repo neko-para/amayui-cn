@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem adv */
+
 /**
  * 审计 `op-6-05`：`0x1A8` 与 `0xAF` 的引擎 handler 是**同一个** `sub_419690`，体是
  * "写当前帧的指令步长槽 = 1"，不是空实现。

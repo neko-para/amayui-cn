@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * `T-0102` 守卫：**异步图像载入不得覆盖脚本后来画上去的槽表面**。
  *

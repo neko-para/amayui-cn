@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /** 菜单派发（0xA1 复位 / 0xA2 登记 / 0xA3 查表跳转）单元测试。
  *  语义依据：engine 0xA1/sub_433A40、0xA2/sub_434F10、0xA3/sub_429830 + helpers sub_415530/sub_434D00/sub_428E00。
  *  key 用菜单项序号字符串("-1"/"0"/...，引擎 sub_41B640 读 string，emulator 取 op1 的 DEC 值字符串化)，value=目标 label(dword index)。 */

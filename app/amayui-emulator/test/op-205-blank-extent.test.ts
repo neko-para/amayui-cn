@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * **`set:BlankExtentMode`（空白字前进量的配置门）守卫** —— `tickets/T-0085`（E2）。
  *

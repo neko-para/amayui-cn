@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem host */
+
 /**
  * **闸门 A 回归测试**：`withNativeTap` 让"宿主没实现的 native 调用"不再静默。
  *

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem frame */
+
 /**
  * **「启动 → TITLE 右上角 Game Start → 配置界面 ゲーム開始 → SN0000 首文案」链路**（2026-09）。
  *

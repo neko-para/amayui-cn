@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem l2d */
+
 /**
  * `T-0054`（M3 的 `live2d-slot-probe`）守卫：**Live2D 节点的动画窗必须进合成判据**。
  *

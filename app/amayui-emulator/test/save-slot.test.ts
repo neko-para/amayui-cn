@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **存档槽链路回归**（`tickets/T-0018`）：读头 `0x1A0` / 读档 `0x1A1` / 存档 `0x19E` / 删 `0x1AB` /
  * 复制 `0x1AC` / `.STH` `0x1AE`·`0x1AF`。

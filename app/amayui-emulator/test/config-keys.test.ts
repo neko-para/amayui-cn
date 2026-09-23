@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem config */
+
 /**
  * **配置键单一真源的守卫**（`tickets/T-0057` R1）。
  *

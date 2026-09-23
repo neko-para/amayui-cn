@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * **抗锯齿配置门与锯齿字形化**（`tickets/T-0035`）。
  *

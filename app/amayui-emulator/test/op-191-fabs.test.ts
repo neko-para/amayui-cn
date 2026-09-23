@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * ★`0x191` **fabs**（`sub_42CEC0` raw 37896-37906，argc 2）：`op1 = fabs(op2)`（**浮点**）。
  *

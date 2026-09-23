@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **票据台账守卫**（`tickets/<ID>/ticket.json` —— 需求/缺陷单的真源）。
  *

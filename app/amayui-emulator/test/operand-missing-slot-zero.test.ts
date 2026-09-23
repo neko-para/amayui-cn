@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /**
  * **「脚本从未写过的 int 槽读 0」的全局口径**（`tickets/T-0097` ③）。
  *

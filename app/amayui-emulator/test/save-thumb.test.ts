@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **`.STH` 存档缩略图 = BMP**（`tickets/T-0036`）：编解码 + `0x1AE`/`0x1AF` 的 op3 语义 + 真槽 E4。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * ★`0x203` **set-draw-color-alpha**（`sub_4232C0` raw 31419-31451，argc 4）—— clamp 与「<0 回退取当前色」。
  *

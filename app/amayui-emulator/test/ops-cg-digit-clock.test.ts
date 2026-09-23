@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * 回归测试：**2026 复核后升级为"真实现"的 5 条**（分析见 `.tmp/re-misc-gfx.md`）。
  *

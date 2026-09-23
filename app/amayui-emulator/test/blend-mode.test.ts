@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * **混合模式模型**（`src/renderer/scene/blend.ts`）—— `tickets/T-0017` 的守卫。
  *

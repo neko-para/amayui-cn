@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem frame */
+
 /**
  * **`FrameDigest` 契约测试**（`tickets/T-0003` 验收 4 / 设计文档 §4 的 G1、G3 量具）。
  *

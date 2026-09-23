@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * **Live2D 出画几何守卫**（`tickets/T-0054` 的 M1 收尾：把变形几何真的交给渲染层）。
  *

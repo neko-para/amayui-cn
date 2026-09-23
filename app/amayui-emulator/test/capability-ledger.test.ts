@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **能力台账的守卫测试**（任务 2）。
  *

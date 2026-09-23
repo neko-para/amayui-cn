@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem audio */
+
 /**
  * **BGM 曲号 → 文件名**（★订正：`play-bgm` 的操作数是**曲号**，不是统一文件 id）。
  *

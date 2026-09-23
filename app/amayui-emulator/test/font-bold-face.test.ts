@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem text */
+
 /**
  * **内置字体的「面」体检**：`Amayui CN` 必须是"真双面"（Regular + Bold），而不是同一份 Regular
  * 被登记两次 —— 后者会让 `i2bd/i2be`（`Font+218516` = 700/0）**静默失效**（见 `fontSet.ts` 的说明）。

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * **Live2D 节点矩阵合成器** `sub_4A07F0`（raw 121131-121655）的守卫 —— `tickets/T-0096`（E2）。
  *

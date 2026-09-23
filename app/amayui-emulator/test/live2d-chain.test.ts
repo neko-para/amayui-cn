@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem l2d */
+
 /**
  * **Live2D 装载 → 绑定 → 入队 → 出画链**（T-0054 的 E3 守卫；headless，**不依赖 WebGL**）。
  *

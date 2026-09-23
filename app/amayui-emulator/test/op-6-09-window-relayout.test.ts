@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /**
  * 审计 `op-6-09`：`0x20A` 的引擎体有**两条**效果，emulator 折进一次 `emitWin`。
  *

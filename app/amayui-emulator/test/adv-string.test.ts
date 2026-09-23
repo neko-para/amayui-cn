@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /** save/load-int(0x1A2/0x1A3) + save/load-string(0x1A9/0x1AA) + ADV/消息激活态(0x8000000) 单元测试。
  *  语义依据：opcode-table.md 0x1A2(sub_434F60)/0x1A3(sub_42DF40)（`_this+5452` 表）、0x1A9(sub_434FE0)/0x1AA(sub_433A70)（`_this+5472` 表）、0x071/0x088/0x19B/0x19C（effect_flags 0x8000000）。 */
 import { test } from 'node:test';

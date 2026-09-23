@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem transition */
+
 /**
  * **E3：真语料里的转场窗** —— `tickets/T-0084`。
  *

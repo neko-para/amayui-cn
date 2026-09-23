@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem adv */
+
 /**
  * ★`tickets/T-0102`「ADV 窗口背景是白色」的**渲染侧判据**（2026-09，E4 日志归因到的那一条）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * ★通用 `Queue_int` 队族：`0x132` 重建 / `0x133` 压入 / `0x134` 弹出
  * （`tickets/T-0076` 的 B3；筛体方案 `docs-new/99-records/2026-09-b3/b3-screening-2026-09.md` §2.1）。

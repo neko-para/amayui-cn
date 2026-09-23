@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem host */
+
 /**
  * 扩展包（APPENDnn.AAI）测试 —— 引擎 `sub_455750`（发现/注册）+ `i143`（激活）的等价物。
  *

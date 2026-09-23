@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem audio */
+
 /**
  * **音乐表指令族**（`0x1D6` / `0x1D7` / `0x1D8`）回归（`src/vm/handlers/music-table.ts`）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **闸门 C 的回归测试**：死写 ratchet。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem frame */
+
 /**
  * **CLI（`run.ts`）的帧驱动口径守卫** —— `tickets/T-0012`。
  *

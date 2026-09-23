@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * 回归测试：**纹理的销毁时机**（`0x1F8 create-texture` / `0x1FA release-texture` 换掉旧纹理时）。
  *

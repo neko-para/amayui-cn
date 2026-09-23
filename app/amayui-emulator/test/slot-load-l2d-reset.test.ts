@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem save */
+
 /**
  * **装载点必须清 L2D 运行态** —— `tickets/T-0090`（由 `T-0066`/`T-0072` 那一族里实测出来的一处具体泄漏）。
  *

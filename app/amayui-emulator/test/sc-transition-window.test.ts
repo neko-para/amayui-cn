@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem transition */
+
 /**
  * **转场窗的运行时模型** —— `tickets/T-0084`（引擎消费端 `sub_4B06D0` 的窗口部分）。
  *

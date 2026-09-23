@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **文档模型守卫**（`docs-new/**` 的 `kind` / `state` 状态机）。
  *

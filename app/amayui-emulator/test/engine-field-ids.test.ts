@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem vm */
+
 /**
  * **引擎字段注册表的守卫**（`tickets/T-0057` R2/R3）。
  *

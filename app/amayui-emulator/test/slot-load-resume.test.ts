@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **真游戏槽的读档续跑（VM 层）**（`tickets/T-0059`）—— `0x1A1` + `0xAE` 的实际行为。
  *

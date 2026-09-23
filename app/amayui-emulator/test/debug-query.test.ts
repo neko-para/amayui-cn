@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * `T-0114` 第 1 步守卫：**调试查询（direct query）**。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * ★`0x20B` **FillTexture**（`sub_423690` raw 31569-31592 → `sub_4A4C70` raw 124572 起，argc 7）。
  *

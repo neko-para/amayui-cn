@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * **纹理帧屏障回归**（`TextureCache.waitIdle` + `PixiBackend.texturesIdle`）。
  *

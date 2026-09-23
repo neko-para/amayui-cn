@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem texture */
+
 /**
  * ★★`tickets/T-0102` 轮 20：**"未配置纹理 ⇒ 引擎整笔忽略"** 的判据（引擎侧语义 + emulator 侧同构）。
  *

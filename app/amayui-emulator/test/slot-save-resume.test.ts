@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem save */
+
 /**
  * **本工程槽（`format = 0` + 状态块）的"存档退栈 / 读档转移"契约**（`tickets/T-0061`）。
  *

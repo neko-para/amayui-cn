@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem input */
+
 /**
  * `T-0052` 守卫：**键盘 → 虚拟掩码位 0..6**（修前 emulator 实际上只能纯鼠标操作）。
  *

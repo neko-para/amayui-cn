@@ -5,7 +5,7 @@
   "area": "emulator/test",
   "why": "T-0124 的全量审计确认：159 个测试文件里没有一个整文件无意义，但**断言级**有 >90 处不产生判别力。按\"改坏实现会不会红\"分三类，处置优先级不同：\n\n① **零断言假绿 5 处（最严重）**：回调里 `console.warn('[skip]…'); return;`，不接 `t`、不调 `t.skip()` ⇒ node:test 记 **pass**，**一条断言都没跑**。\n   位置：`test/live2d-moc.test.ts:62/183/188`、`test/live2d-deform.test.ts:246/288`（全仓 `t.skip(` 有 31 处，只有这 5 处是裸 return）。\n   `live2d-moc.test.ts:5` 的注释自称\"缺 ⇒ skip + 诊断（**不假装通过**）\"——**与行为相反**。\n\n② **恒真断言 ~10 处**：两侧同一表达式或纯字面量运算，**永不红**：\n   `op-2ed-and-bit-index.test.ts:112-122`（`instr()` 的定义就是 `argc:args.length`，见 `test/harness.ts:33`）、\n   `operand-plan.test.ts:523-527`（if/else 保证四桶之和 ≡ checked.length）、\n   `op-d0-wallclock.test.ts:94-97`（第二个 Engine 从未跑 0xD0，只 enc→dec 往返）、\n   `op-205-blank-extent.test.ts:75`（★且 Node 24 的 `assert.equal(NaN,NaN)` **不抛** ⇒ 注释声称的\"防 NaN\"也做不到）、\n   `music-table.test.ts:120`（`0x1000001 & 0xffffff` 纯字面量）、`script-ledger.test.ts:238`、\n   `save-data.test.ts:94`（`crc32MsbFirst(v) === msb` 同进程同函数自证；真 golden = `0xfc891918`）、\n   `slot-save-resume.test.ts:287-289`（JSON 往返自洽）、`config-keys.test.ts:68-77`（CFG vs 同一份手写常量表）。\n\n③ **错 oracle 1 处（会挡住正确修复）**：`engine-config.test.ts:160` 期望 `get(21293)===2`，而引擎 raw 23695 是 `= v37 != 0`（存 0/1）；\n   `src/engineConfig.ts:243-244` 的 note 自称\"布尔化\"却**没有 map**，`:236` 的 1384 同样无 map 且**测试零断言**。\n\n另有 **判据钉错地方**（断言源码文本/注释/日志文案/台账 prose）约 10 处，重构即假红、真坏可能不红：\n`missing-texture-skips-item.test.ts:64-85`（还要求注释里含 `raw 122952`）、`msg-text-range.test.ts:59-73`、\n`transition-render-wiring.test.ts:100-103`、`op-22a-22f-scene-xform.test.ts:206-209/253-263`、\n`op-1b2-text-buffer.test.ts:45-48`、`draw-string.test.ts:207-210`、`op-02-exit-minus11.test.ts:118-120`、\n`tool-paths.test.ts:98/110-113`、`audit-report-completeness.test.ts:66-90`。\n\n★纪律：**不许用\"删证据/降 status/删条目\"消红**；每处改动都要在 changes.md 写清\"反例实验（改什么会让它红，改什么不该红）\"，\n并且**只减不增**地报用例数前后对照。",
   "acceptance": [
-    "补两处**变异实测确认的零覆盖**（见 tickets/T-0124/evidence/mutation-campaign.md §2）：① 绘制项 **z 序**（把 src/renderer/pixi/presenter.ts:179 的排序方向反转，全量 1078 例**无一红**）⇒ 补一条\"出画次序\"行为用例（现有 draw-item-*/blend-mode 只看单点属性）；② `scSnapshot` 的\"可绘制项\"恒为空（改 src/renderer/scene/snapshot.ts 的 drawable 为 []，**无一红**）⇒ 把 scene-report.test.ts:43-45 的恒等式换成独立期望（\"该场景 drawable ≥ N\"，N 由真语料给出）",
+    "★已交付（由 T-0126 第 1 次变更落地）：5 处零断言假绿改成 `t.skip()`，并新增机械棘轮 `test/organization.test.ts` 的 R3（扫描全仓 test/*.test.ts，禁止「console.warn([skip]) + 裸 return 且无 t.skip」）",
     "5 处零断言假绿改成 `t.skip()`（回调补 `t` 参数），并新增一条**机械棘轮**：扫描 `test/*.test.ts`，禁止「console.warn 跳过 + 裸 return 且无 t.skip」这种形态（防复发）",
     "恒真断言逐条处置并在 changes.md 里给出**反例实验**（例：`save-data.test.ts:94` 换成 golden `0xfc891918` 后，把 `src/util/crc32.ts:33` 的 `i<<25` 改成 `i<<24` **必须红**）",
     "修 `engine-config.test.ts:160` 的错 oracle：期望值改 1 **并**给 `src/engineConfig.ts:243-244` / `:236` 补 `map` + 新增 `get(1384)` 断言；验证方式是「只补 map 不改期望 ⇒ 该用例当场红」（证明它原本挡着修复）",
@@ -15,9 +15,9 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/test/live2d-moc.test.ts",
-      "anchor": "console.warn('[skip] 找不到 .MOC 语料目录",
-      "note": "零断言假绿（返回即 pass）",
-      "line": 62
+      "anchor": "t.skip('找不到 .MOC 语料目录",
+      "note": "零断言假绿（返回即 pass） ｜★2026-09-23 已修：裸 return 改 t.skip（该形态由 test/organization.test.ts 的 R3 棘轮守住），evidence 锚点随之 retarget",
+      "line": 64
     },
     {
       "file": "app/amayui-emulator/test/harness.ts",

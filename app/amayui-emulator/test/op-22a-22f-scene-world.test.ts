@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * **`0x22A`/`0x22C`/`0x22D`/`0x22F`：Scene 级世界矩阵 + 「只作用于层号 ∈ [20,30) 的项」的合成级**
  * （`tickets/T-0076`；上一轮这四条是 `deferred`，本轮落地）。

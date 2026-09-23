@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem input */
+
 /**
  * `T-0052` 判据 ③ 的 **E3**：**真实 TITLE 菜单只用键盘走通**（移动 + 确认），并用"只按 Enter"作对照。
  *

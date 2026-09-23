@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * 守卫：**`Item.flags` bit2 = B 层（周期/循环动画层）** —— opcode `0x230`–`0x235` + `0x244`。
  *

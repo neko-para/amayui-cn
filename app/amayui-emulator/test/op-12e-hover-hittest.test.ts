@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * ★`0x12E` **悬停命中**（`sub_42F230` raw 39199-39252，argc 8）—— 合成指令守卫。
  *

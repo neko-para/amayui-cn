@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem frame */
+
 /**
  * **共享帧驱动契约测试**（`src/frame/loop.ts`）—— `tickets/T-0001`（B1）。
  *

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **「TITLE →（右上角菜单第 1 项 Load Data）→ SAVE.BIN 存档列表」链路**（`tickets/T-0018`）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * `T-0114` 第 2 步（续）守卫：**语义事件断点的接线**（`Engine.debugEvent` → 主循环 `onAfterStepEvent`）。
  *

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem frame */
+
 /**
  * **鼠标/输入 → 路由表 → label 派发**的忠实性回归（对应规格 `.tmp/mouse-dispatch-spec.md` 的 F.4 判据 ①–⑤、⑦）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /**
  * 审计 `op-10-002`：`0x6E` 的 MessageSpeed 节流**只在 ADV 位未置时**才装门，且帧循环里
  * **ADV 分支必须排在 `sleep` 门之前**。

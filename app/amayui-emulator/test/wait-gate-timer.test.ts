@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem frame */
+
 /**
  * **`0x400` 等待门的真值**（`tickets/T-0024`）：`sub_407E20` = **池挂起位** + **`0x238` 装载的等待计时器**。
  *

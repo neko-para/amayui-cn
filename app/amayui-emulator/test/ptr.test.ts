@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem vm */
+
 /** ADR-011 指针操作数模型测试：lea/lookup-array/memcpy/copy-local-array/random + 解引用/写穿。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

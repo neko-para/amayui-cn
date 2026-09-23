@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **A6（AGERC 模块接口）+ A4（图元/网格/纹理/渲染状态）的回归测试**（2026-09）。
  *

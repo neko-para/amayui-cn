@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem render */
+
 /**
  * 缺口收口轮（6 条「语料用到但零注册」）的守卫 —— `tickets/T-0076`。
  *

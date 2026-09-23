@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem host */
+
 /**
  * **宿主侧真实光标（`native/host-input`）** 守卫 —— `tickets/T-0053`（缺口）/ `T-0058`（Windows 落地）/
  * `T-0116`（macOS 落地）/ `T-0117`（预置产物）/ `T-0119`（两个平台实现合并成一个 addon）。

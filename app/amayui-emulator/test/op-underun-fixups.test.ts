@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **操作数漏读白名单「核体后处置」的守卫**（`test/opcode-operands.test.ts` 的 `ALLOW_UNDERRUN`
  * 那一节的机械镜像）。

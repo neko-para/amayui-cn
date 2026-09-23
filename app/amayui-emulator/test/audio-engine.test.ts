@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem audio */
+
 /**
  * **音频引擎回归**（`src/audio/audioEngine.ts`）：SE / 语音 / BGM 的通道行为、音量与 pan、
  * 延迟播、ADV 寄存器与冲刷、BGM 淡变与压低、解码缓存。

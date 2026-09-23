@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem text */
+
 /**
  * **`0x1D0` / `0x1D1` 的判定棘轮**（2026-09 扩展路线 C：`tickets/T-0076`）。
  *

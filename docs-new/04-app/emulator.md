@@ -15,10 +15,10 @@ state: live
 
 | 项 | 值 | 校验方式 |
 |---|---|---|
-| 测试 | **612 条** node:test（603 pass / 0 fail / 9 skip） | `npm test` |
-| 类型 | 3 个 tsconfig 全干净 | `npm run typecheck` |
-| 死写棘轮 | 基线 2 条（`Item.blend` / `MeshObj.blend`） | `npm run check:dead-writes` |
-| 一条命令全绿 | `npm run verify` = typecheck + test + dead-writes | — |
+| 测试 | **1085 条** node:test（1073 pass / 0 fail / 12 skip），分三档：**T0 120 文件 796 条**（默认档，5.8 s）+ **T1 40 文件 289 条**（真资产档，41.9 s） | `npm test`（T0）/ `npm run test:all`（全量）；组织法见 [`test-organization.md`](./test-organization.md) |
+| 类型 | 3 个 tsconfig 全干净；`test/` 的类型检查由**闸门 D**（基线棘轮：131 条既有债、只许收敛不许增长）把住 | `npm run typecheck` / `npm run check:typecheck-test`（见 T-0126） |
+| 死写棘轮 | 基线 0 条 | `npm run check:dead-writes` |
+| 一条命令全绿 | `npm run verify` = typecheck + **check:typecheck-test**（闸门 D）+ **test:all** + dead-writes | — |
 | **帧驱动** | **唯一一份**：`src/frame/loop.ts`（`runFrameLoop`）—— Electron（`renderer/app/session.ts`）与全部 headless 入口都经它跑；宿主差异只能经 `FramePolicy`/`FrameHost` 显式表达 | `test/frame-loop.test.ts` |
 | **两宿主等价** | `FrameDigest`（`src/frame/digest.ts`）：同 Scenario 两宿主产出同一 `engine` 段；**G3** = Electron 录、headless 复现（`npm run record` + `npm run replay`） | `test/frame-digest.test.ts`、`test/scenario-replay.test.ts` |
 | opcode 实现表 | `OPS` **230** / `NATIVE_OPS` **50** / `ENGINE_INTERNAL_OPS` **14**（三张表**两两不交**，`test/registry-tables.test.ts` 守） | 代码 |
@@ -156,7 +156,8 @@ app/amayui-emulator/
 │  ├─ script/           bin.ts / alf / lzss / opcodes.ts
 │  └─ tools/            report / opInventory / diagText / gameStartChain / config1Chain / deadWrites / saveDump
 │                       scenarioBoot.ts（headless 启动装配）/ scenarioRun.ts（跑 Scenario）/ replay.ts（G3 回放）
-├─ test/                476 条（含棘轮：registry-tables / game-start-chain / no-dead-writes / capability-* /
+├─ test/                1085 条 / 160 文件（**分类与档位见 `test-organization.md`**；含棘轮：registry-tables /
+│                       game-start-chain / no-dead-writes / capability-* / organization /
 │                       script-ledger / frame-loop / frame-digest / scenario-replay / native-tap 宿主能力面）
 ├─ tools/               shot.cjs（G4 截图）/ record.cjs（G3 录制）/ boottime.cjs / scenarios/*.json
 ├─ build-electron.mjs（esbuild 打包）/ package.json / tsconfig{,.control,.electron}.json
@@ -194,8 +195,13 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 476 测试 + 死写棘轮
-npm test               # node:test
+npm run verify         # ★提交前必跑：3×tsc + 闸门 D（test/ 类型债棘轮）+ **test:all**（1085 例）+ 死写棘轮
+npm test               # ★日常档：T0（120 文件 / 796 例 / ~6 s）—— 纯合成 + 纯函数 + 棘轮
+npm run test:corpus    # T1 真资产档（40 文件 / 289 例）：需要 install/ · raw/ · 真存档槽
+npm run test:all       # T0+T1+T2 全量（= 旧 `npm test` 的口径）
+npm run test:list      # 打印三轴索引（tier / kind / subsystem）
+npm run test:org       # 只校验分类一致性（档位声明 ⟷ 机械证据）
+npm run typecheck:test # `test/` 的类型检查（★当前有 131 个历史错误待清，见 tickets/T-0126）
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）
 npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未实现"清单）
@@ -227,7 +233,7 @@ npm run save:dump      # SAVE.DAT 解析
 
 | 你改了什么 | 必跑 | 判据 |
 |---|---|---|
-| `src/frame/*`（帧驱动/observer/digest/scenario/trace/host） | **G1**（`npm test`）+ **G3** + **G4** | G3 必须逐帧相等；G4 关键日志行不变 |
+| `src/frame/*`（帧驱动/observer/digest/scenario/trace/host） | **G1**（`npm run test:all`）+ **G3** + **G4** | G3 必须逐帧相等；G4 关键日志行不变 |
 | `src/renderer/scene/*`（共享场景语义：`ops.ts`/`state.ts`/`snapshot.ts`） | **G1** + **G3** | 两个宿主都吃这一份 ⇒ 任何语义改动都会体现在 digest |
 | `src/renderer/{headlessScene,pixiBackend,headlessFrameHost}.ts`（两个宿主的接线/宿主能力） | **G1** + **G3** + **G4** | 宿主侧副作用**不得**改变引擎状态（G3 就是这条的判据） |
 | `src/renderer/app/session.ts`（产品的帧装配/观察者） | **G3** + **G4** | G3 顺带证明"产品的帧序 == headless 的帧序" |
@@ -235,7 +241,9 @@ npm run save:dump      # SAVE.DAT 解析
 | `electron/*`（主进程/IPC/preload） | **G4**（起得来 + 关键行不变） | — |
 | `src/audio/*`、`src/text/*`（宿主义务） | 对应单测即可 | 它们只影响 `FrameDigest.host` 段（不参与 G3 比较） |
 
-- **G1 确定性**：`npm test`（同 Scenario 两次跑 ⇒ digest 逐字节相同）。
+- **G1 确定性**：`npm run test:all`（同 Scenario 两次跑 ⇒ digest 逐字节相同）。
+  ★`npm test` 是**日常快档**（只跑 T0，不含真资产用例）⇒ 改 `src/frame/*`、`src/renderer/*`、`src/vm/*` 时
+  跑的必须是 `test:all` / `verify`；**不要拿 `npm test` 的绿灯当闸门过了**（见 `test-organization.md` §5）。
 - **G3 回放等价**：`npm run record -- --scenario … --out X.gz && npm run replay -- X.gz`（**本地**；约 1 分钟）。
 - **G4 观感**：`npm run shot -- --gamestart --name X` + 与上一份对照截图/关键行比对。
   ★**测试期窗口不再居中打扰**（`T-0040`）：`shot`/`record` 默认把窗口摆到**屏幕下缘**（只留标题栏、

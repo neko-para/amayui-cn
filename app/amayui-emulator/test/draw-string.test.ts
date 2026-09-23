@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * 回归测试：**`0x204` draw-string（把一整串文本直绘进纹理槽）**。
  *

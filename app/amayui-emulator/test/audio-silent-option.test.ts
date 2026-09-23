@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem audio */
+
 /**
  * `T-0103` 需求守卫：**禁用所有音频实际播放的开关**（`emulator.config.json` 的 `audio.enabled`
  * + 命令行/环境变量 `AMAYUI_AUDIO_ENABLED`）。
@@ -199,6 +201,10 @@ test('★⑤ 反面：非静音宿主**会**建 context（证明上面的门是�
 test('★⑥ 测试默认口径：`test/options.test.env` 必须把音频关掉（并用 --env-file 引入）', () => {
   const envFile = fs.readFileSync(path.join(APP, 'test', 'options.test.env'), 'utf8');
   assert.match(envFile, /^AMAYUI_AUDIO_ENABLED=0$/m, '★测试必须默认静音（tickets/T-0103 的要求）');
+  // ★2026-09-23：机制变更（有 test/run.ts 档位入口）后，这条判据跟着搬家但**不降级**：
+  //   ① `npm test` 必须走 runner（否则档位/env 都可能被绕过）；② runner 必须把这份 env-file 传给子进程。
   const pkg = JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
-  assert.match(pkg.scripts['test'] ?? '', /--env-file=test\/options\.test\.env/, '环境必须由命令行显式引入（--env-file）');
+  assert.match(pkg.scripts['test'] ?? '', /test\/run\.ts/, '`npm test` 必须经 `test/run.ts`（档位选择器；否则 env-file 可能被绕过）');
+  const runner = fs.readFileSync(path.join(APP, 'test', 'run.ts'), 'utf8');
+  assert.match(runner, /--env-file=test\/options\.test\.env/, 'runner 必须把 test/options.test.env 显式传给子进程（--env-file）');
 });

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * `0x20C` 帧刷新里的**渲染目标捕获** —— 存档缩略图那条链的捕获端（`tickets/T-0062`）。
  *

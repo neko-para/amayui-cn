@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem vm */
+
 /**
  * **arity 槽自动核验**（`tickets/T-0082` 的 B2 第二步；审计 `docs-new/99-records/2026-09-audit/audit-2026-09-opcodes.md`）。
  *

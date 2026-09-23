@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem vm */
+
 /**
  * opcode 缺口台账守卫（`tickets/T-0081`，B0；审计 `docs-new/99-records/2026-09-audit/audit-2026-09.md` §1「不静默跳过」）。
  *

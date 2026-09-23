@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem config */
+
 /**
  * **`0x2C7` SBSubstr / `0x2EB` GetConfig("set:GameVersion") / `0x2E6`+`0x2E7` 配置读写 / 配置回写**
  * —— TITLE「Version X.YY.ZZZZ」与"改了设置要落盘"这两件事的回归。

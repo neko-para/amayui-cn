@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem transition */
+
 /**
  * ★`0x223`（`sub_423F00` raw 31936-31958 → `sub_4ADDB0` raw 132590-132635，argc 8）：
  * **转场记录表 `Scene+1048` 的写入端 · 类别 0（全屏交叉淡化）**，`op1` = 记录键。

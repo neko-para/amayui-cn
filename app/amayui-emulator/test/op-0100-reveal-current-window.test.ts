@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /**
  * `tickets/T-0100` 守卫：**帧泵只许发布「当前窗」**。
  *

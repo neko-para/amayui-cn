@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem save */
+
 /**
  * `T-0089` 守卫：**模块环 TDZ** —— `handlers/save-slot` ⟷ `vm/ops` ⟷ `handlers/index`。
  *

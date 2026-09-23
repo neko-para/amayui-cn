@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem host */
+
 /**
  * **overlay 层回归**（`src/arch/overlay.ts` + `src/arch/systemPaths.ts`）。
  *

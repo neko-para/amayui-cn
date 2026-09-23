@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **A1 三条「会回写脚本操作数」的 stub 转真实现**（2026-09）。
  *

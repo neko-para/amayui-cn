@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem texture */
+
 /**
  * `i032`（`0x32`）—— **槽 → 槽的缩放转送**（引擎名 **StretchTexture**；`tickets/T-0050`）。
  *

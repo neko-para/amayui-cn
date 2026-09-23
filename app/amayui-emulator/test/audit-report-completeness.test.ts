@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **审计报告完整性棘轮**（`tickets/T-0075` 的出口判据）—— 把"审计交付物必须自包含"变成可执行检查。
  *

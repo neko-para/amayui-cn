@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem save */
+
 /**
  * **`SAVE.DAT`（脚本 `save-int`/`save-string` 表的持久化）回归**。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * 字符串长度族（`tickets/T-0076` 的 B3 批次）：
  *

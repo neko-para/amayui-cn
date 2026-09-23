@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem render */
+
 /**
  * `i214`（`0x214`）—— **交换两条绘图项记录**（`tickets/T-0049`）。
  *

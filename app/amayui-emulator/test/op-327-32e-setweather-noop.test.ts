@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * **SETWEATHER 族不再硬停**（`tickets/T-0093`，2026-09 轮 6）。
  *

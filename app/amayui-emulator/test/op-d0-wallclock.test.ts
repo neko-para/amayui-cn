@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem ops */
+
 /**
  * ★`0xD0`（`id0`，argc 1）：**op1 = 墙钟毫秒**（`timeGetTime()`）。
  *

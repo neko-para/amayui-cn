@@ -1,3 +1,5 @@
+/** @tier T1 @kind tool @subsystem config */
+
 /**
  * **外置选项文件（`emulator.config.json`）回归** —— `src/emulatorOptions.ts`（纯解析/套用）+
  * `src/emulatorOptionsFile.ts`（node-only 读取）。

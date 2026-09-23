@@ -1,0 +1,18 @@
+{
+  // ★T-0124 缺陷 D1：`tsconfig.json` 的 `exclude` 含 `test`，另两份 tsconfig 只 include
+  //   `src`/`control`/`electron` ⇒ **17 个守卫文件不受 `npm run typecheck` 检查**。
+  //   后果已经发生过一次：`gallery-bgm-list.test.ts` 里 `instr` 既 import 又重声明，
+  //   在 Node 原生 ESM 语义下是**加载期 SyntaxError**（整个文件的用例会静默消失），
+  //   只因运行器用 esbuild 消除了未用导入才侥幸没炸。
+  //   ⇒ 本文件把 `test/` 纳入类型检查，并挂进 `npm run typecheck`。
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // 主工程把 rootDir 钉在 `src`；本工程要连 `test/` 一起收 ⇒ 放开到工程根（noEmit 下它只影响推断）
+    "rootDir": ".",
+    // 测试里大量 `t.skip` / 动态构造，允许更松的索引访问代价（保持与主工程同口径的部分不放松）
+    "outDir": "./dist/test-tsc"
+  },
+  "include": ["src/**/*.ts", "src/**/*.json", "control/**/*.ts", "electron/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

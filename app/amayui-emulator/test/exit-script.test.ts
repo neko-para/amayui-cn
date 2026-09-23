@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem vm */
+
 /** exit-script(0x9) 与 load-show-logo(0x130,+96983) 的「GAMEOVER → 回标题且不再播 LOGO/版权页」机制测试。
  *  依据 engine：
  *   - sub_415640(构造) 置 `_this[96983]`(byte 387932)=1 → SYSTEM4 `load-show-logo → jcc → call-script LOGO`。

@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem texture */
+
 /**
  * `T-0025` 守卫：`src/arch/agfSize.ts`（headless 自带的 AGF 尺寸解析）必须与
  * `scripts/agf/format.js` 的完整解码器 `decodeAgfRgba` **在真文件上逐值一致**。

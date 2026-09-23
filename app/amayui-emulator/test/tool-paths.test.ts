@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * `T-0032` 守卫：**命令行路径参数的基准统一 + 越界前置报错**（`tools/paths.cjs`）。
  *

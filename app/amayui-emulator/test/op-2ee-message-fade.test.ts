@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem adv */
+
 /**
  * `0x2EE <ms>` = **消息淡入时长**：`_this[80106]` **且** `SetConfig("message:MessageFade")`
  * —— 双写（`tickets/T-0097` ①；审计 `op-4-11` cross-source-mismatch）。

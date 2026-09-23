@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * **多 agent 工作流的工具链守卫**（三份台账 CLI + 三份 SKILL.md 的共享协议节）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind tool @subsystem tool */
+
 /**
  * **控制窗 ⚠️ 横幅必须"粘住"硬错误**（`tickets/T-0056`）。
  *

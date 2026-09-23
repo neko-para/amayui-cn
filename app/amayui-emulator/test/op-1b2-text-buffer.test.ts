@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem text */
+
 /**
  * **文本累加缓冲族：`0x1B2` / `0x1B3` / `0x1B4`**（`tickets/T-0076` 的 B3 补；语料 3 + 2 + 1 处）。
  *

@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem save */
+
 /**
  * **读档装载点的画面语义（装载点按存档替换绘制项）与 A/B 模型一致** —— `tickets/T-0083`。
  *

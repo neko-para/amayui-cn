@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem frame */
+
 /**
  * **Scenario / 回放契约测试**（`tickets/T-0005` 的 B5；G1 与 G3 的**可 CI 部分**）。
  *

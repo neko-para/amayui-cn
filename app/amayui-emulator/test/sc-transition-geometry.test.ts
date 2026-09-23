@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem transition */
+
 /**
  * **转场（盲帘擦除）的条带几何** —— `tickets/T-0084`（`0x24F` → `sub_4AF6A0`，消费端 `sub_4B06D0`）。
  *

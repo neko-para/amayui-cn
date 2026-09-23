@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem ledger */
+
 /**
  * **脚本台账的守卫测试**（数据层第三层：`analysis/scripts.json`）。
  *

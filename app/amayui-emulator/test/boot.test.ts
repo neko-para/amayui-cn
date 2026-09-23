@@ -1,3 +1,5 @@
+/** @tier T1 @kind tool @subsystem frame */
+
 /** 管线级测试：NodeFileSource(异步代理) -> SYS4450 解析 -> 解释器逐条执行 -> 未实现 opcode 硬报错。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

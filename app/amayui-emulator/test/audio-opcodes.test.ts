@@ -1,3 +1,5 @@
+/** @tier T0 @kind core @subsystem audio */
+
 /**
  * **音频指令族 → 宿主意图**（`src/vm/handlers/audio.ts`）回归。
  *

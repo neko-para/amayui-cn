@@ -1,3 +1,5 @@
+/** @tier T1 @kind core @subsystem text */
+
 /**
  * **`0x1D0` 回看页索引表读端**（`T-0095`）—— 台账 464 从 `deferred` 转真实现后的行为守卫。
  *

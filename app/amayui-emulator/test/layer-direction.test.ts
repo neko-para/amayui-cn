@@ -1,3 +1,5 @@
+/** @tier T0 @kind ratchet @subsystem render */
+
 /**
  * **分层方向棘轮**（`tickets/T-0021` 的守卫）—— 把"A1 分层违规已消"变成可执行检查。
  *
