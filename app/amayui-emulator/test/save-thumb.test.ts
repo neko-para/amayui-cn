@@ -14,6 +14,7 @@
  * （引擎 raw 47894 只加了 40 字节 DIB 头、漏算自己的 14 字节文件头）⇒ **解码不许信 bfSize**。
  */
 import { test } from 'node:test';
+import { firstRealFile, readReal, realSlotDirs } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -27,6 +28,7 @@ import { resolveSystemPaths } from '../src/arch/systemPaths.js';
 import type { FileSource } from '../src/arch/fileSource.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { synthSlotScript } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -50,21 +52,8 @@ function mkEngine(fsLike: FileSource): {
     getSlotPixels: (slot: number) => (state.serve && state.serve.slot === slot ? state.serve : null),
   } as unknown as NativeBridge;
   const e = new Engine(native);
-  const sc: ScriptBinary = {
-    signature: 'SYS4450 ',
-    isVer5: false,
-    headerLen: 0x3c,
-    localVars: [0, 0, 0, 0, 0, 0],
-    subHeaderLength: 0,
-    tables: [
-      { length: 0, offset: 1 },
-      { length: 0, offset: 1 },
-      { length: 0, offset: 1 },
-    ],
-    instructions: [instr(0x1a7)],
-    labelTargets: new Set<number>(),
-    raw: new Uint8Array(0x3c + 12),
-  };
+  // ★合成槽脚本 = 共享夹具（`tickets/T-0129` 上收；`save-slot` 那份逐字相同）
+  const sc: ScriptBinary = synthSlotScript();
   loadScriptIntoFrame(e.curScript(), sc, 'TEST.BIN', 0);
   e.fileSource = fsLike;
   return { e, written, serve: state.serve };
@@ -75,8 +64,8 @@ function thumbFs(store: Map<number, Uint8Array>): FileSource {
   return {
     readFile: async () => new Uint8Array(0),
     readScript: async () => null,
-    readSlotThumb: async (slot) => store.get(slot) ?? null,
-    writeSlotThumb: async (slot, data) => void store.set(slot, data),
+    readSlotThumb: async (slot: number) => store.get(slot) ?? null,
+    writeSlotThumb: async (slot: number, data: Uint8Array) => void store.set(slot, data),
   } as unknown as FileSource;
 }
 
@@ -154,13 +143,14 @@ test('BMP：自顶向下（负高度）也能解；非 BMP / 压缩 / 截断 ⇒
 // E4：本机真槽的 .STH
 // ---------------------------------------------------------------------------
 
-test('E4：真 `SAVE00.STH` 就是 320×180 的 24bpp BMP，且引擎的 bfSize 少写了 14', (t) => {
-  const file = path.join(resolveSystemPaths(REPO).baseDir, 'SAVE', 'SAVE00.STH');
-  if (!fs.existsSync(file)) {
-    t.skip(`本机没有真缩略图 ${file}`);
+test('E4：真 `SAVE??.STH` 就是 320×180 的 24bpp BMP，且引擎的 bfSize 少写了 14', (t) => {
+  // ★`tickets/T-0128`：两侧都看（base + overlay）
+  const thumb = firstRealFile(REPO, 'STH');
+  if (!thumb) {
+    t.skip(`本机没有真缩略图（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
-  const bytes = new Uint8Array(fs.readFileSync(file));
+  const bytes = readReal(thumb);
   assert.equal(bytes.length, 54 + 320 * 180 * 3, '长度 = BMP 头 + 像素（E4：172,854）');
   const bmp = decodeBmp(bytes);
   assert.ok(bmp, '应能解出');

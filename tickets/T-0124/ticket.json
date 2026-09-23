@@ -36,7 +36,7 @@
       "file": "app/amayui-emulator/test/harness.ts",
       "anchor": "argc: args.length",
       "note": "op-2ed-and-bit-index.test.ts:112-122 的「同义反复」依据：instr() 的定义就是 argc = args.length",
-      "line": 33
+      "line": 101
     },
     {
       "file": "app/amayui-emulator/tsconfig.json",
@@ -45,21 +45,21 @@
       "line": 16
     },
     {
-      "file": "app/amayui-emulator/src/vm/debugBreak.ts",
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
       "anchor": "export function parseDebugCommand",
-      "note": "缺陷 D3：该函数零生产调用者（只有 test/debug-break.test.ts 调用）；生产走 session.ts 的 compileBreak，面板与 CLI 各有自己的分流表",
-      "line": 514
+      "note": "缺陷 D3：该函数零生产调用者（只有 test/debug-break.test.ts 调用）；生产走 session.ts 的 compileBreak，面板与 CLI 各有自己的分流表 ｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`（面板/渲染窗/守护进程三处共用），锚点随之 retarget｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
+      "line": 69
     },
     {
-      "file": "app/amayui-emulator/control/control.ts",
-      "anchor": "类型：global-write / slot-bind",
-      "note": "D3 的后果：面板用户可见帮助写着非法事件名 global-write（合法值见 debugBreak.ts 的 EVENT_KINDS），且 control/ 层零测试覆盖",
-      "line": 246
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
+      "anchor": "export const EVENT_KINDS",
+      "note": "D3 的后果：面板用户可见帮助写着非法事件名 global-write（合法值见 debugBreak.ts 的 EVENT_KINDS），且 control/ 层零测试覆盖｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
+      "line": 34
     },
     {
       "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",
       "anchor": "T-0102 判决实验",
-      "note": "成本主犯：单文件实测墙钟 59.2 s（13 例）= 全量 npm test 的一半以上；T-0115 的首要对象 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
+      "note": "成本主犯：单文件实测墙钟 59.2 s（13 例）= 全量 npm test 的一半以上；T-0115 的首要对象 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
       "line": 34
     }
   ],
@@ -82,12 +82,26 @@
     ]
   },
   "id": "T-0124",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点未变）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（harness.ts 因 T-0129 上收共享夹具而位移；锚点文本未变）"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/organization.test.ts",
+    "app/amayui-emulator/test/ticket-ledger.test.ts"
   ]
 }

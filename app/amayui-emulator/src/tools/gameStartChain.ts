@@ -47,7 +47,12 @@ import { applyConfigToEngine, parseIni } from '../engineConfig.js';
 // ★`bgrToRgb`：`engineValues[21664/21665]` = 引擎的 **COLORREF** 字段（`0x76`/`0x77` 把脚本 RGB 翻成
 //   COLORREF 存进去），屏幕色 = 再翻一次（`tickets/T-0102` 判据 4）⇒ 采样与 `globalTextStyle` 同口径。
 import { bgrToRgb } from '../vm/handlers/msgwin.js';
-import { DEFAULT_EMULATOR_OPTIONS, applyEmulatorOptionsToEngine, normalizeEmulatorOptions, type EmulatorOptions } from '../emulatorOptions.js';
+import {
+  DEFAULT_EMULATOR_OPTIONS,
+  applyEmulatorOptionsToEngine,
+  normalizeEmulatorOptions,
+  type EmulatorOptionsInput,
+} from '../emulatorOptions.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -265,7 +270,12 @@ export interface GameStartOptions {
    * 为什么不让 library 自己读文件：`test/game-start-chain.test.ts` 直接调本函数 ⇒ 读本机配置文件会让
    * "测试结果取决于开发机上的一个 JSON"，那是不可复现的。只有 CLI 入口才 `loadEmulatorOptions()`。
    */
-  emulatorOptions?: EmulatorOptions;
+  /**
+   * 宽松输入（`EmulatorOptionsInput`）：library 调用只需要给想改的那几格，其余取默认值。
+   * ★这里**不该**收已归一化的 `EmulatorOptions` —— 那会逼调用方把 `resources`/`audio` 也编出来，
+   * 反而更容易编错（`tickets/T-0126`）。归一化在内部（下一行的 `normalizeEmulatorOptions`）。
+   */
+  emulatorOptions?: EmulatorOptionsInput;
 }
 
 /**

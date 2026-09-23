@@ -35,7 +35,7 @@ import { ZERO_LENGTH_OPS, operandCountSlotValue, operandsFor, planOf, plannedOps
 import { fieldStorePlanOps } from '../src/vm/handlers/engine-fields.js';
 import { cfgReadPlanOps } from '../src/vm/handlers/config-read.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr } from './harness.js';
+import { im, instr, scriptDerived, trackArgs } from './harness.js';
 import { ROOT, scanArity } from './arityScan.js';
 
 /** 迁到计划层的 handler：op → 「为什么它算已迁移」（留着当迁移台账，别删）。 */
@@ -364,13 +364,8 @@ test('★计划 ⟷ 实现：已迁移的 handler 碰过的位必须覆盖计划
     // ★用 Proxy 观测 handler **真的碰了**哪几格（与 `test/opcode-operands.test.ts` 同一手法）——
     //   不能拿 `operandsFor()` 自己返回的 view 的 `touched`：那是**守卫这边**新建的视图，
     //   handler 内部还会再建一个（两者不是同一个 Set），观测不到它的行为。
-    const touched = new Set<number>();
-    const args = new Proxy(realArgs, {
-      get(t, p, r) {
-        if (typeof p === 'string' && /^\d+$/.test(p)) touched.add(Number(p) + 1); // 1-based
-        return Reflect.get(t, p, r);
-      },
-    });
+    // ★触碰观测 = 共享的 `harness.trackArgs`（`tickets/T-0129` 上收）
+    const { args, hits } = trackArgs(realArgs);
     const one: BinInstruction = {
       opcode: op,
       name: `i${op.toString(16)}`,
@@ -380,6 +375,7 @@ test('★计划 ⟷ 实现：已迁移的 handler 碰过的位必须覆盖计划
       index: 0,
     } as unknown as BinInstruction;
     const sc = {
+      ...scriptDerived(),
       signature: 'SYS4450 ',
       isVer5: false,
       headerLen: 0x3c,
@@ -422,7 +418,7 @@ test('★计划 ⟷ 实现：已迁移的 handler 碰过的位必须覆盖计划
         /* 其它（合成输入导致的业务抛错）：忽略（见上） */
       }
     }
-    const hit = [...touched].sort((a, b) => a - b);
+    const hit = hits();
     // ★`unused` 位（指令里带一格但引擎/实现都不消费）与 `w` 一样**不要求被碰** —— 见 `OperandIo` 说明。
     const want = plan.kinds.map((_k, i) => i + 1).filter((n) => {
       const io = plan.io?.[n - 1] ?? 'r';
@@ -541,6 +537,7 @@ test('★运行期：派发器把模型值写进 `frame.operandCount`，`StepTra
   const native = new StubNative(() => {});
   const e = new Engine(native, new InputManager());
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

@@ -1779,7 +1779,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV",
         "note": "已修正：`0x71` 不再无条件置位（补上 `message:ReadTextSkip` 门 + `advanceReveal` 判定），ADV 位由 `Engine.serviceAdv()`（每帧）与 0x88/0x19B/0xFA/0x101 清除。实测 TITLE 空转 598000 → 1234 步/秒。★同族的 **bit30（0x40000000，逐字模式）** 与 bit31（等待门）已建模：0x72 每次武装（游标 Engine[107704] 清零）、0x1CE/点击推进收尾，见 msgwin-char-reveal-grid。仍未建模：`sub_411900` 的 cancel-message 三态机（受 `set:CancelMessageKey` 门控，随包 INI 无该键 ⇒ 休眠）与 `sub_411BC0` 的滚轮/控件分支。"
       }
     },
@@ -1809,7 +1809,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#ADV 每帧服务：未显示完判定成立时清掉 ADV",
         "note": "已实现：Engine.serviceAdv()（= sub_411900 的输入泵 + 「未显示完」判定 + ADV 清除）与**帧驱动**的 adv 分支（每帧恰好 1 条指令，advErrors 分 stop/swallow 两档）；产品路径（session）与全部 headless 入口同构（B4 后同一份驱动）。"
       }
     },
@@ -1838,7 +1838,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#0x1CA SetConfig(message:ReadTextSkip)：运行期覆盖门控生效",
         "note": "部分：ReadTextSkip 门已实现（含 0x1CA 运行期覆盖）。仍未建模引擎真正的逐字/逐行推进泵 —— 见 text-reveal-pump-409400（sub_409400 + sub_45BE20 + message:MessageSpeed）；本条目只覆盖「是否已显示完」的判定，miss 时统一返回 0 属合法路径。"
       }
     },
@@ -1869,7 +1869,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#0x6E show-text / 0x6F end-text-line / 0x196 display-furigana：文本内容按槽记录",
         "note": "部分：已建模文本槽内容（show-text 追加 / end-text-line 断行 / display-furigana 注音）、消息窗对象表（0x212/0x213/0x25D）与 **0x71 的清场语义**（MsgWindow.beginNewMessage；漏掉它会让上一屏文案残留并在下次 0x71 被当新消息重新逐字显现 —— 2026 实测 CONFIG 进/出设置重放与两行）。仍未建模：sub_46BE30 的逐字量宽与边界硬断、注音配对（24B 记录 +0/+20）、120B 文本记录、每窗离屏表面、D3D 路径的纹理清底。★旧条目把 Font 基址写成 Engine+21324 字节（错 4 倍，实为 Engine+85296 字节），且把 sub_45EC60 说成 0x6E/0x71/0x72 共用（实际只有 0x71 调它）。"
       }
     },
@@ -1896,7 +1896,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#0xFA poll-msg-advance 已注册且不抛错",
         "note": "2026-09 修（T-0027）：★等待推进泵 serviceAdvanceWait 必须用**消费刷**（引擎 sub_411BC0 raw 20238 调的 sub_478090：吸取挂起事件、读后即清）—— 其调用链无 sub_477150 ⇒ 一次按下只推进一页；ADV 分支 serviceAdv（sub_411900 raw 20111）才用**实时刷** sub_4780D0（含鼠标按住态）。emulator 已把唯一的 flush() 拆成 flushPending()/flushHeld() 并按 raw 归属逐个消费者：泵/0x101/0xFA 后半/eatAllInput/hoverDispatchAllowed 走消费刷，serviceAdv/0x100/0xFF/0xFA 前半走实时刷。★2026-09（T-0047）补：0xCD 的推进间隔（= 最后一次 0xCC 的 op1，十六进制 `10`=16ms / `32`=50ms）也已建模（InputManager.advanceThrottle）；headless 守卫必须让虚拟时钟前进（sleep n = n ms），否则相邻 get-input-type 落在同一窗口内 ⇒ 派发消失。守卫 test/adv-msgwin.test.ts（按住 10 帧只推进 1 页 + down/up 同帧不丢 + ADV 分支仍读按住态）、test/input.test.ts（两把刷子语义 + syncButtons 自愈 + 0xCC/0xCD 节流）与 test/route-dispatch.test.ts（0xCC 后 advanceThrottle === 0x10）。仍未建模：sub_403DD0（方向键/翻页键移动游标）与 panelB 的 sub_4040A0（见 adv-advance-route-table 的登记缺口）。"
       }
     },
@@ -1927,7 +1927,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#消息窗对象表：0x212 / 0x213 / 0x25D 写同一对象的三个字段组",
         "note": "部分：对象表与三条写指令（0x212→+100、0x213→+104/+108、0x25D→+276/+280）已建模并有测试；0x301 顺带清 +132。仍未建模：`sub_404F80` 的布局重算（移除图元区间）与对象内部其它字段。"
       }
     },
@@ -1952,7 +1952,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#set:CancelMesSkipOnClick 下按住 ⇒ 三态机进 stage2",
         "note": "已实现三态机本体（`Engine.serviceAdv()` 内，掩码 bit4 = 鼠标左键驱动 122370: 0→1→2，到 2 时清 ADV + 复位 ReadTextSkip）。但引擎门控在 `GetConfig(\"set:CancelMessageKey\")`，随包 SYS4REG.INI **没有该键** ⇒ 与引擎一致地处于休眠（cfgInt 缺省 0）。"
       }
     },
@@ -1981,7 +1981,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#★0x72 wait-for-input：结束一页并置等待推进门",
         "note": "已实现 0x6E/0x6F/0x72/0xFA/0x1CA（全部注册进 OPS，`0xFA` 不再硬报错）；其中 `0x72` 置 bit31 等待门，`0xFA` 收尾入等待门。测试锁住四条的行为。"
       }
     },
@@ -2018,7 +2018,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#★重跑 0x72（悬停 ret 回到门指令）不得重启已显完的逐字显现",
         "note": "部分：消息窗对象表三条（0x212/0x213/0x25D）已实现；其余约 22 条纯转发器（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1BB/0x1C1/0x1C9/0x1CE/0x324…）仍是 no-op —— 它们转发到不存在的文本布局子系统，**不假装实现**。"
       }
     },
@@ -2060,7 +2060,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#0x2DE = 字体名 → 字体表下标",
         "note": "部分：0x196 display-furigana 已实现（记录注音对）。仍为 no-op 且**属 P0（阅读体验）**：0x75 字号 / 0x76 填充色 / 0x77 描边色 / 0x78 描边档位 / 0x1A4 描边偏移 / 0x8B 第三色 / 0x197 注音字号 / 0x2BD/0x2BE 加粗 / 0x1A5/0x2FE 面名。★描边四档（0 无 / 1 单向投影 / 2 1-4 强度副本 / 3 多向描边，默认 1）必须逐档复刻观感（canvas 等价实现见 app/amayui-emulator/docs/12-adv-text-rendering.md §5.3）；字体内部配置（AA/度量/缓存）按用户口径只记录字段。"
       }
     },
@@ -3186,7 +3186,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E3",
-        "guard": "test/adv-msgwin.test.ts",
+        "guard": "test/adv-msgwin.test.ts#★逐字显现速度定律：MessageSpeed = **每字**毫秒",
         "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（2026-09 二次订正 / 最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。\n★2026-09（`tickets/T-0033`，用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）：**逐字期间有一个专门的输入出口**。文本泵 `sub_409400` 的第二半（raw 13931-13946）在「没有 0x300 闸门槽活跃」时处理**当前窗**（`Engine[489484]`）：消费刷取掩码后，若 `mask & 0x10`（**只认左键**；等待泵才是 `0x50`）或滚轮键位命中（`message:AdvanceMesOnWheel & 1`）或滚轮累加器 `Engine[7796] < 0`（读后清）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20` 到整页贴完**、把掩码清 0（这次点击被消费）；**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。下一次调用见 `388212` 时再自旋一次，并在 `Engine[667856] == 1`（`set:DrawMode`）时清等待门计时器 + 置强制冻结（raw 13910-13915）。⇒ emulator：`Engine.serviceRevealAdvanceInput()`（帧驱动在 `textRevealing` 分支里、`serviceTextReveal` 之前调用）；验收 = 点击／点击／点击 ⇒ 贴完／下一句／跳过下一句的逐字。守卫：`test/adv-msgwin.test.ts`（逐字期间左键 ⇒ 整页 + 不推进 + 消费 + 不清 bit30；右键／上滚不生效）、`test/frame-loop.test.ts`（驱动层：点击帧不派发、后续帧不得攒成推进）。E3（真实语料）：点击后 1 帧 `shown` 0 → 52/52、ip／pages 不变、bit30 保持。\n\n★2026-09 轮 8（`tickets/T-0100`）：**「每帧只泵当前窗」这条已修好并被守卫钉住**。引擎 ADV 支只把**当前窗**交给泵（raw 13943-13945 `do result = sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484)); while (!result);`；`489484/4 = 122371` = 当前窗，由 `0x6E` raw 28365/28381 与 `0x71`/`0x72` raw 28545 写），而 emulator 修前有**三处**会发布「所有已知窗」：① `Engine.serviceRevealAdvanceInput`（逐字期间点击 ⇒ 整页贴完那条路）遍历 `msgwin.reveal` 的**所有**键；② `Engine.serviceTextReveal` 用 `tickReveal`（全窗版）；③ `0x70` 的 handler 调 `emitAllWins`。**用户可见后果（E4 实测）**：序章 `SN0000`（正文在**窗 8**，满屏 1280×720@(0,0)+居中）切到 `SC0000`（正文在**窗 1**）时，脚本已用 `detach-texture 19a28 1f4`（`src/NOVEL.txt:415`）删掉屏上正文行、emulator 也**忠实**清了 `scene.msgWins`，但**窗 8 的 `reveal` 条目仍然留着**（引擎同样保留 `win+132` 游标，**合法**）⇒ `SC0000` 第一页逐字期间**点一下鼠标**就把序章最后一页重新贴回**屏中央**（用户实测日志 8655/8658，此后每次点击复发）。**修法**：三处统一收敛到 `resolveWin(msgwin.lastArg)`。★**禁止的修法**（写进票据验收）：场景边界 `msgwin.reset()` / 清 `slots[8]` / 清 `reveal[8]`（引擎保留记录与游标；`exit`(0x2) 边界不 reset 是与引擎一致的）、给 `#holdFrames` 打补丁、用「清 DrawItem」修（边界两侧 DrawItem 已干净：26 → 4）、动 `scDetachTexture` 区间清。守卫 `app/amayui-emulator/test/op-0100-reveal-current-window.test.ts`（4 条：① 前置证明 `reveal` 里**确实同时**含残留窗与当前窗 ⇒ 旧的全窗发布必然发布 8，守卫有辨别力；② 点击只发布当前窗；③ 每帧泵不推进也不发布残留窗；④ `0x70` 只发布本窗）。回归：受影响的 12 个文件 124/124 + 真语料链 5 个文件 45/45 + `tsc --noEmit` 干净。\n★★2026-09 轮 8 追加（用户实测 2 条，同批修）：**「推进了就必须发布」+「节流位置位期间仍要跑泵」**。\n① **坑 A（当时由 T-0100 的改动引入）**：把 serviceTextReveal 从 \tickReveal（全窗）收窄成 \tickRevealWin(cur) 时**连带删掉了 \for (const win of dirty) #publishReveal(win)** ⇒ 游标在 VM 里照常走、宿主却只在 msgWinSync 才重绘 ⇒ 屏上停在第 0 个字直到别的路径发布一次（用户原话：「必须等待逐字完成后才直接展示出来」）。E4 判据：\textLayer.ts:104 只在 \revealed 变化时打印 [reveal] win=N x/总数，用户日志里 ADV 只有 \u0000/22 与最终 26/26、中间态全无；而同日志里 win=9（\u0000x300 闸门泵，不经此处）是 1/10…10/10 逐步的。修法 = 把那行发布加回（仍只发布当前窗）。\n② **坑 B（引擎建模反了）**：主循环 raw **21176-21181** if ((v35 & 0x20000000) != 0) { sub_409400(_this); if (Engine[489860]) goto LABEL_215; } ⇒ **节流位置位时引擎是「调文本泵」（等节拍→推一个字），不是「空等」**；而 \frame/loop.ts 的 sleep 分支修前什么都不做 ⇒ 门内既不推进也不重绘。★\u0000x6E 在轮 6 就置该位、**轮 7 的 T-0094 又把它加到 \u0000x196（6341 处、一句中间）** ⇒ 门内停顿频率在轮 7 后明显上升。修法 = sleep 分支加 serviceTextReveal(nowMs)（忠实 raw 21178），门仍照旧阻塞脚本派发。\n③ 守卫与判别力：新增 \test/adv-reveal-under-throttle.test.ts（2 条：中间态 ≥2 个 / **门还置着时必须收到过发布**）；两条修复的判别力都用脚本机械证明过（撤销→红、还原→绿、sha256 自检还原）。★首版「坑 B」守卫只断言「门后还有新中间态」，**撤销修复后仍绿 = 假守卫**，已改成按 waitFlags & SLEEP_GATE 当场打点的精确判据 —— 教训：**守卫必须证明自己有辨别力**。"
       }
     },

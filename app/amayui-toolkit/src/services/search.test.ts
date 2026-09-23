@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDataset, type Dataset } from './dataset';
 import { buildResults, queryFromEntry, queryFromId, queryFromUnitAttr, queryFromUnitStar, queryFromTraining, expressionKey, expressionLabel } from './search';
-import { cardFromResult, type SearchExpression } from '../types/search';
+import { cardFromResult, CATEGORY_ORDER, type SearchExpression } from '../types/search';
 import type { Metadata } from '../types/metadata';
 
 let ds: Dataset;
@@ -53,20 +53,53 @@ describe('搜索内核：交集与去重/排序', () => {
     expect(view[0].kind).toBe('skill');
   });
 
-  it('结果按 kind 固定序 → 序号排序，且 (kind,id) 去重', () => {
-    // 手动构造一个跨 category 的表达式（含类别 + 空匹配会不同，这里用单类验证排序稳定）
-    const expr = queryFromId('item', 1);
-    const a = buildResults(expr, ds);
-    const b = buildResults(expr, ds);
-    expect(a).toEqual(b);   // 幂等、顺序稳定
-    expect(a.length).toBe(1);
+  it('★跨 kind：结果按 CATEGORY_ORDER → id 升序，且 (kind,id) 唯一', () => {
+    // ★2026-09-23 重写（`tickets/T-0131`）：原版是「同一纯函数调两次 toEqual」——同输入同输出**恒真**
+    //   （把 `search.ts:123` 的 sort 整行删掉它也不会红），而标题声称的"跨 kind 排序 + 去重"一句没测。
+    //   现在：先找一个**在 ≥2 个 id 空间里都存在**的 id（各实体 id 是"名串地址 − 各自基址"，基址互不相干
+    //   ⇒ 物品与设施的 id 本来就会重叠，见 `idspace.ts` 头注），再用 `idExact` 求值 ⇒ 真的跨 kind。
+    const kindsById = new Map<number, Set<string>>();
+    for (const e of ds.search) {
+      const set = kindsById.get(e.id) ?? new Set<string>();
+      set.add(e.kind);
+      kindsById.set(e.id, set);
+    }
+    const crossId = [...kindsById.entries()].find(([, kinds]) => kinds.size >= 2)?.[0];
+    expect(crossId, '数据集里应存在跨 id 空间重叠的 id（idspace.ts 的基址互不相干）').toBeTypeOf('number');
+
+    const view = buildResults([{ type: 'idExact', value: crossId! }], ds);
+    expect(view.length).toBe(kindsById.get(crossId!)!.size);
+    expect(new Set(view.map((v) => v.kind)).size).toBeGreaterThanOrEqual(2);
+    // ① kind 按固定序非降
+    for (let i = 1; i < view.length; i++) {
+      expect(CATEGORY_ORDER[view[i - 1]!.kind]).toBeLessThanOrEqual(CATEGORY_ORDER[view[i]!.kind]);
+    }
+    // ② 同一 kind 内 id 升序
+    for (let i = 1; i < view.length; i++) {
+      const a = view[i - 1]!, b = view[i]!;
+      if (a.kind === b.kind) expect(a.id).toBeLessThan(b.id);
+    }
+    // ③ (kind,id) 唯一
+    expect(new Set(view.map((v) => `${v.kind}:${v.id}`)).size).toBe(view.length);
+    // ④ 同一谓词写两遍（交集不变）⇒ 结果一字不变（防"按谓词数翻倍"的实现）
+    const twice = buildResults([{ type: 'idExact', value: crossId! }, { type: 'idExact', value: crossId! }], ds);
+    expect(twice.map((v) => `${v.kind}:${v.id}`)).toEqual(view.map((v) => `${v.kind}:${v.id}`));
   });
 
-  it('idExact 同时匹配 id 下标与名串地址', () => {
-    // 因夫鲁斯骑士 unitId=0x9b → addr 17b51 = 0x17b51（id 值 0x9b ≠ 地址值，验证两种匹配路径）
+  it('idExact 的两条匹配路径都要覆盖：按 id 下标 **与** 按名串地址', () => {
+    // ★2026-09-23 修（`tickets/T-0131`）：原版只传 `0x9b`（= unitId），那**只**走 `byId` 分支 ——
+    //   `search.ts` 的 `byAddr` 分支在整个测试集里**永不命中**（把它改成 false，87 例全绿）。
+    //   因夫鲁斯骑士：unitId = 0x9b，名串地址 = 0x17ab6 + 0x9b = **0x17b51**。
     const byId = buildResults([{ type: 'category', value: 'unit' }, { type: 'idExact', value: 0x9b }], ds);
     expect(byId.length).toBe(1);
     expect(byId[0].nameZh).toBe('因夫鲁斯骑士');
+    expect(byId[0].addr).toBe('17b51');
+
+    // 按**地址值**查（此时 id 下标 ≠ 地址值 ⇒ 只有 `byAddr` 能命中）
+    const byAddr = buildResults([{ type: 'category', value: 'unit' }, { type: 'idExact', value: 0x17b51 }], ds);
+    expect(byAddr.length).toBe(1);
+    expect(byAddr[0].nameZh).toBe('因夫鲁斯骑士');
+    expect(byAddr[0].id).toBe(0x9b);
   });
 });
 

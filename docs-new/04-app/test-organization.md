@@ -68,18 +68,25 @@ state: live
 ## 5. 执行入口（`test/run.ts`）
 
 ```bash
-npm test               # T0 默认档     —— 日常迭代（本机实测 5.8 s / 796 例）
-npm run test:corpus    # T1 真资产档   —— 改 VM/渲染/存档 或提交前（实测 41.9 s / 289 例）
-npm run test:all       # T0+T1+T2 全量 —— 与旧 `npm test` 口径一致（实测 31.8 s / 1082 例，见 §8）
-npm run test:e4        # T2 真机档     —— 目前为空（E4 由 `npm run shot` / `dbg:srv` 工具链承担，见 T-0128）
+npm test               # T0 默认档     —— 日常迭代（本机实测 ~6 s / 797 例）
+npm run test:corpus    # T1 真资产档   —— 改 VM/渲染/存档 或提交前（实测 ~22.6 s / 289 例）
+npm run test:all       # T0+T1        —— **提交前口径**（实测 36.6 s / 1086 例，见 §8）
+npm run test:e4        # T2 真机档     —— 真 Electron + GUI 会话；**必须显式跑**（1 文件 / 2 例 / 42.1 s，见 T-0132）
 npm run test:list      # 打印三轴索引（--json 给机器）
 npm run test:org       # 只跑分类一致性校验（不跑例）
 npm run mutate         # 闸门 E：变异闸门（定向子集，~1 min）—— 每条"引擎语义破坏"必须有测试红
-npm run mutate -- --all # 闸门 E 的发现模式（每条跑全量 1082 例，慢；用来找零覆盖）
-npm run verify         # ★提交前必跑：typecheck + check:typecheck-test（闸门 D）+ **test:all** + 死写棘轮
+npm run mutate -- --all # 闸门 E 的发现模式（每条跑全量 1086 例，慢；用来找零覆盖）
+npm run verify         # ★提交前必跑：typecheck + typecheck:test（闸门 D）+ **test:all** + 死写棘轮
 ```
 
-★`verify` 里是 `test:all` 而**不是** `test` —— 这样"分档"只把**日常**变快，**闸门口径一字不降**。
+★`verify` 里是 `test:all` 而**不是** `test` —— 这样"分档"只把**日常**变快，**T0/T1 的判据一字不降**。
+
+★★**`all` / `verify` 刻意不含 T2**（`tickets/T-0132`，2026-09-23 定口径，实测见 §8.3）：
+`all` 是提交前闸门，而 T2 需要**能起得来的 Electron + GUI 会话** —— 在自动化上下文里这**不是"慢一点"，
+而是"可能起不来"**（本机 agent shell 里 Electron 沙箱初始化 `Operation not permitted` ⇒ GPU 进程 SIGTRAP，
+必须显式 `--no-sandbox` 才跑得动）。把这种失败模式放进提交闸门 = 让闸门红在"宿主环境"上而不是"代码"上。
+⇒ **改渲染宿主 / 输入 / 窗口时序 / 帧驱动时必须显式跑一次 `npm run test:e4`**（清单：`renderer/app/*`、
+`frame/*`、`vm/input.ts`、`pixi/*`、`electron/*`、`tools/shot.cjs`）。
 
 ## 6. 三条硬规则（`test/orgRules.ts`，守卫 `test/organization.test.ts`）
 
@@ -98,19 +105,21 @@ npm run verify         # ★提交前必跑：typecheck + check:typecheck-test�
 
 ---
 
-## 7. 现状分布（166 个文件，2026-09-23）
+## 7. 现状分布（170 个文件，2026-09-23）
 
 | 轴 | 分布 |
 |---|---|
-| `tier` | **T0 122**（默认档）· **T1 44**（真资产档）· T2 0（真机档目前无测试文件） |
-| `kind` | **core 128** · **ratchet 24** · **tool 14** |
-| `subsystem` | render 18 · vm 16 · frame 15 · ops 15 · adv 12 · text 12 · config 11 · save 11 · texture 9 · l2d 8 · ledger 8 · audio 7 · transition 6 · host 5 · input 4 |
+| `tier` | **T0 124**（默认档）· **T1 45**（真资产档）· **T2 1**（真机档：`e4-gamestart-shot.test.ts`，见 `T-0132`） |
+| `kind` | **core 130** · **ratchet 25** · **tool 15** |
+| `subsystem` | render 18 · vm 17 · ops 15 · frame 15 · text 12 · save 12 · adv 12 · config 11 · tool 9 · texture 9 · ledger 9 · l2d 8 · audio 7 · transition 6 · **host 6** · input 4 |
 
 ★文件数 160 → 166 全是**组织性**变化（不是新增覆盖）：`config1-chain` 由 1 个文件拆成 5 个（§8.1 的并行化）、
 新增 `render-draw-order.test.ts`（补 z 序零覆盖）与 `registry-classification.test.ts`（收编 8 个文件里的注册表棘轮）。
 
-★T2 = 0 是**如实登记**：真机验证（E4）现在由工具链承担（`npm run shot`、`dbg:srv` + `dbg.cjs` 的
-`click/clickimg/move/shot`）。把它变成可重复闸门是 `tickets/T-0128` 的工作，届时有文件就会进 T2 档。
+★T2 = 0 是**如实登记**：E4 工具链已就位（`npm run shot`、`dbg:srv` + `dbg.cjs` 的 `click/clickimg/move/shot`，见 `T-0128`），
+但**还没有 `@tier T2` 文件**（`npm run test:e4` 实测输出『T2 真机档（需要 Electron）：0 个文件』）⇒ 把工具链落成可重复判据是 `tickets/T-0132` 的工作，
+★且该票必须先决定『T2 是否进 `test:all`（= `verify`）』：`all` 现在含 T2，一旦有 T2 文件，`verify` 就会拉起 Electron（需 GUI 会话、墙钟 +数十秒），
+与 `T-0115` 刚收口到的 ~33 s 冲突。
 
 ---
 
@@ -152,15 +161,65 @@ npm run verify         # ★提交前必跑：typecheck + check:typecheck-test�
 实测：**59.2 s（1 文件）→ 15.2 s（5 文件并行）**；整个 T1 档 **41.9 s → 22.6 s**。
 ★这正是"分档不降判据"的另一种形态：**判据没动，只是把互相不依赖的东西放到能并行的位置**。
 
+### 8.1b 去重导致的总量变化（`T-0129` 第 3 次变更，2026-09-23）
+
+T0 用例 **799 → 797**（删掉 `option-font-speed-menu` 里 2 条被 `adv-msgwin` 更强替身覆盖的消息速度用例），
+总用例 **1088 → 1086**。★同一轮里 `adv-msgwin` 那侧原本的 `st.intervalMs === revealInterval(5)`（镜像 + 恒真）
+改成了具体数（`1000/60` 与 `(1000/60) × 5`）—— 属于 `T-0125` 的判据清理。
+
+### 8.3 T2 真机档落地 + `all` 口径对照（`T-0132`，2026-09-23）
+
+| 口径 | 文件 | 用例 | 墙钟 | 机器要求 |
+|---|---|---|---|---|
+| `npm run verify`（= `typecheck` + `typecheck:test` + `test:all` + 死写） | 169 | **1086** | **36.6 s** | 无（含 T0+T1） |
+| `npm run test:e4`（T2） | 1 | 2 | **42.1 s** | ★真 Electron + GUI 会话（自动化上下文需 `--no-sandbox`） |
+| 对照实验：把 T2 临时并回 `all` 后的 `test:all` | 170 | 1088 | **52.6 s** | 同上 |
+
+★对照实验的**修正**：T2 并回 `all` 的边际墙钟只有 **+16 s**（node:test 按文件并行 ⇒ 那 42 s 与 T0/T1 重叠），
+比我最初估的"数十秒"小。**决定口径的不是这 16 s，而是失败模式**：T2 需要"宿主的 Electron 起得来"，
+本机 agent shell 下就是 `Failed to initialize sandbox: Operation not permitted` ⇒ GPU 进程 SIGTRAP、
+整个 run 起不来。提交闸门红在"宿主环境"上而不是"代码"上，是不可接受的假红来源。
+
+判据（`test/e4-gamestart-shot.test.ts`，两类都机器可判、都不看人眼）：
+
+| 类别 | 判据 | 真机实测（本机 2026-09-23） |
+|---|---|---|
+| 链路深度 | 工具 stdout 的 `TITLE=true` / `GAMESTART=true` / `SN0000=true`（`shot.cjs` 的 `waitLog(...)` 产物，**不睡固定秒数**） | 三个全部 `true` |
+| 像素本身 | 标题帧与 ADV 首文案帧的 `colors=N`（`shot.cjs` 对 `capturePage()` bitmap 按 ~2 万样点统计的不同 RGB 三元组数）≥ 64，且不带 `★几乎全黑` | 标题 **14985**、首文案 **13737**、其余帧 7299~11877；纯色/黑屏帧 = **1** ⇒ 阈值有 ~100× 余量 |
+
+反例实验：把 `session.ts` 的 `present` 改成不合成（`if (false) …`）⇒ `test:e4` **fail 1**，
+失败信息同时点出两帧 `colors=1`（链路标记仍为 true ⇒ 像素判据有**独立**判别力）；还原后逐字节一致、绿。
+另有一条**纯函数自检**（不需要 Electron）：喂"好帧 / 纯色帧 / 缺标记"三种合成 stdout，必须给出三种不同结论。
+
+★`capturePage()` 给的是**物理像素**（本机 DPR=2 ⇒ 2560×1440），所以判据只钉"不小于逻辑 1280×720 + 16:9"，
+不钉设备像素 —— 否则换台 DPR=1 的机器就假红。
+
+### 8.2 `test/` 类型债清零（`T-0126` 第 2 次变更，2026-09-23）
+
+| 口径 | 值 |
+|---|---|
+| `npm run typecheck:test` 错误数 | **131 → 0**（60 个文件 → 0；`id` 84 个） |
+| 主要类别 | TS2739 37 + TS2741 14 = **51 条手搓 `ScriptBinary` fixture 缺派生字段**；`noUncheckedIndexedAccess` 38（TS2532 24 + TS18048 14）；TS2440 **4 条「import 与本地声明同名」**（4 个文件各自逐字重抄了一份 `instr`）；其余 38 条散落 |
+| 闸门 | 基线文件 `test-typecheck.baseline.json` 与棘轮工具 `src/tools/typecheckTestBaseline.ts` **一并删除**，`verify` 改跑 `typecheck:test`。★基线归零后 `--recount` 只剩一个用途：**把新错误登记成合法** ⇒ 留着它就是留后门 |
+
+处置口径（**没有一条是把类型放松**）：①补 fixture 派生字段（`harness.scriptDerived()`：`ipTables`/`dwordToInstr`
+是 `parseScript()` 从 `raw` 反推出的索引，`engineSlot.ts:577` 直接索引 ⇒ 不许改成可选）；②删掉 4 份逐字重复的
+本地 `instr`，改用 `harness.instr`；③数组解包加 `at()`/`must()`（越界即抛，失败信息带下标与长度 —— `!` 与
+`?? 0` 会把「数组短了」这条信息丢掉）；④**类型本身就是错的**那几处按真实形状修：`Ticket.history[].kind`/
+`doneWhy` 缺字段、`GameStartOptions.emulatorOptions` 收的是已归一化的 `EmulatorOptions`（应放宽为
+`EmulatorOptionsInput`）、`SlotStateBlock.adv` 是 `unknown`（断言侧按 `AdvStateJson` 断言）、跨目录
+`scripts/agf/format.js` 补 `.d.ts`；⑤删掉一条同义反复断言（`op-02`：`assert.equal(thrown, null)` 之后的
+`!(thrown instanceof ExitScript)` 恒真，`tickets/T-0125` 口径）。
+
 ---
 
 ## 9. 已知债与后续票
 
 | # | 内容 | 票 |
 |---|---|---|
-| 1 | **`test/` 的类型债**：`tsconfig.test.json` 已就位，且已挂进 `verify` —— 但用的是**闸门 D 基线棘轮**（`check:typecheck-test` + `test-typecheck.baseline.json`）：现有 **131 条 / 60 个文件**（TS2739 37、`noUncheckedIndexedAccess` 38、TS2741 14 …）登记在基线里，**新增即红、只许收敛**。清空基线即可把 `typecheck:test` 直接挂上去 | `T-0126` |
+| 1 | ~~**`test/` 的类型债**~~ —— **已还清**（`tickets/T-0126`，2026-09-23）：131 条 / 60 文件（TS2739 37 手搓 `ScriptBinary` 缺 `ipTables`/`dwordToInstr`、`noUncheckedIndexedAccess` 38、TS2741 14、TS2440 4 …）逐类清零，**基线文件与棘轮工具一并删除**（基线归零后 `--recount` 只会变成「把新错误登记成合法」的后门）⇒ 闸门 D = `typecheck:test` 零容忍，直接进 `verify` | 已做 |
 | 2 | ~~**T1 内部重复链路**~~ —— ①`config1-chain` 已**拆成 5 个文件并行**（59.2 s → 15.2 s，见 §8.1）；②`adv-name-color-chain` 的 3 次链路里 2 次 opts 相同，已加**按键 memo**（21.9 s → ~14.6 s）。★想再往下压（"共享一次 boot + 逐变体重放尾段"）需要**引擎态快照/回灌** = `T-0122` 的能力 | 已做 / `T-0122` |
-| 3 | **E4 档落地**：`dbg:srv` 驱动的脚本化真机闸门（`T-0051` 的 5 项人工 E4 + `T-0114` 未做的 E4），届时产生 T2 档文件 | `T-0128` |
+| 3 | ~~**E4 档落地**~~ —— **已做**（`T-0132`，2026-09-23）：首个 T2 文件 `test/e4-gamestart-shot.test.ts`（真 Electron 跑 `TITLE→GAMESTART→SN0000`，= 三个 `waitLog` 标记 + 像素 `colors≥64` 且非全黑），口径定为 **`all`/`verify` 不含 T2**、`npm run test:e4` 显式跑（实测数字见 §8.3） | 已做 |
 | 4 | **去重**：同一不变量的第 2/3 份（`adv-msgwin` 路由组、存档族、注册表棘轮 8~9 处）—— 删冗余不损失检出，但**每处都要给替身位置与反例实验** | `T-0129` |
 | 5 | **台账 `guards` 加内容锚点**（现在只查文件存在）：与本组织法同源的问题 —— "声明"要能被机械复核 | `T-0130` |
 | 6 | 断言级清理（恒真 / 镜像 / 错 oracle / 判据钉错地方）与补 3 处零覆盖：**z 序已闭**（`render-draw-order.test.ts`）、**快照 drawable 已闭**（`scene-report` 独立下限）、**面板 `opHex` 待补**（`T-0127`） | `T-0125`/`T-0127` |

@@ -26,7 +26,7 @@ import { scSwapItems, scConfigureDrawItem } from '../src/renderer/scene/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr, loc } from './harness.js';
+import { im, instr, loc, scriptDerived } from './harness.js';
 
 const A = 0x1000;
 const B = 0x2000;
@@ -94,6 +94,7 @@ function mkScript(instructions: BinInstruction[]): ScriptBinary {
     for (let k = 0; k < n; k++) dwordToInstr[instructions[i]!.index + k] = i;
   }
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

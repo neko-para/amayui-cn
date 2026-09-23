@@ -436,10 +436,14 @@ export function matchEvent(
   //   `global-float-write` ⇒ idx / val（val = **float 的 int32 位模式**，用 `f2i` 比整数常量）
   //   `global-str-write`   ⇒ idx / val（val = 字符串**长度**）
   //   `slot-bind`          ⇒ slot / imgid
+  //   `engine-field-write`⇒ idx / val / removed（`removed == 1` = 这是一次 delete）
+  //   `local-int-write`    ⇒ idx / val
   const params: Record<string, number> =
     where === 'slot-bind'
       ? { slot: values.slot ?? 0, imgid: values.imgid ?? 0 }
-      : { idx: values.idx ?? 0, val: values.val ?? 0 };
+      : where === 'engine-field-write'
+        ? { idx: values.idx ?? 0, val: values.val ?? 0, removed: values.removed ?? 0 }
+        : { idx: values.idx ?? 0, val: values.val ?? 0 };
   for (const s of specs) {
     if (s.kind !== 'event' || s.where !== where) continue;
     if (s.always || evalCondition(s.ast!, { engine: e, params }) !== 0) {
@@ -472,83 +476,15 @@ export function matchEvent(
  * <其它>                交给**调试查询**（见 `debugQuery.ts`）  ≈ expression / frame variable
  * ```
  */
-export type DebugAction =
-  | { a: 'break-add'; breakKind: 'step' | 'event'; where?: string; condition: string }
-  | { a: 'break-del'; id?: number }
-  | { a: 'break-list' }
-  | { a: 'continue' }
-  | { a: 'help' }
-  /** 其它输入一律当查询（`runQuery`）；这样"查一个值"不需要任何前缀。 */
-  | { a: 'query'; text: string };
-
-/** 事件断点的合法类型（`b event <类型> <条件>`）。 */
-export const EVENT_KINDS = [
-  'global-int-write',
-  'global-float-write',
-  'global-str-write',
-  'slot-bind',
-] as const;
-
-/** 命令台帮助文本。 */
-export const DEBUG_COMMAND_HELP: string[] = [
-  '命令（输入后回车即生效；与 lldb 同形）：',
-  '  b <条件>              条件断点：**每条指令即将执行时**求一次条件，满足即停',
-  '                        例：`b global 0x11 == 5260`、`b`（= 每条指令都停）',
-  '  b event <类型> <条件>  语义事件断点：在"改状态"的那一瞬停',
-  '                        类型（**按池命名**）：global-int-write / global-float-write /',
-  '                                              global-str-write / slot-bind',
-  '                        参数：int/float/str 池 → `idx`（池下标）+ `val`',
-  '                              （int：解码后的值；float：位模式，用 f2i 比；str：长度）',
-  '                              slot-bind → `slot` + `imgid`',
-  '                        例：`b event global-int-write idx == 0`（任何写 global 0 都停）',
-  '                            `b event slot-bind slot == 0x11 && imgid == 0x5260`',
-  '  bl / breakpoints      列断点（含命中次数）',
-  '  d [id] / delete [id]  删一条；省略 id = 全删',
-  '  c / continue          继续（从当前指令**走**过去）',
-  '  ? / help              本帮助',
-  '  <其它>                当查询：global <下标> / local <下标> / frame [下标|all] / slot <槽> / run',
-  '★下标与常量口径：`0x…`=十六进制；含 a-f 的串=十六进制；纯数字=十进制。',
-];
-
-/** 解析一行命令（纯函数；不接触引擎）。返回 `null` = 空行。 */
-export function parseDebugCommand(raw: string): DebugAction | null {
-  const text = raw.trim();
-  if (text === '') return null;
-  const parts = text.split(/\s+/);
-  const cmd = parts[0]!.toLowerCase();
-
-  if (cmd === '?' || cmd === 'help') return { a: 'help' };
-  if (cmd === 'c' || cmd === 'cont' || cmd === 'continue') return { a: 'continue' };
-  if (cmd === 'bl' || cmd === 'breakpoints') return { a: 'break-list' };
-
-  if (cmd === 'd' || cmd === 'delete') {
-    if (parts[1] === undefined) return { a: 'break-del' };
-    const id = Number.parseInt(parts[1], 10);
-    if (!Number.isInteger(id)) return { a: 'query', text: `delete：id 必须是整数（收到「${parts[1]}」）` };
-    return { a: 'break-del', id };
-  }
-
-  if (cmd === 'b' || cmd === 'break') {
-    const rest = parts.slice(1);
-    // `b event <类型> <条件>`
-    if (rest[0]?.toLowerCase() === 'event') {
-      const kind = (rest[1] ?? '').toLowerCase();
-      if (!(EVENT_KINDS as readonly string[]).includes(kind)) {
-        return {
-          a: 'query',
-          text: `b event：类型必须是 ${EVENT_KINDS.join(' / ')} 之一（收到「${rest[1] ?? ''}」）`,
-        };
-      }
-      return {
-        a: 'break-add',
-        breakKind: 'event',
-        where: kind,
-        condition: rest.slice(2).join(' '),
-      };
-    }
-    // `b [条件]`（条件可空 = 每条指令都停）
-    return { a: 'break-add', breakKind: 'step', condition: rest.join(' ') };
-  }
-
-  return { a: 'query', text };
-}
+// ★`tickets/T-0127`：命令的**词汇表**（解析 / 合法事件类型 / 帮助文本）已抽到零依赖的
+//   `./debugCommand.js` —— 渲染窗、控制面板、调试守护进程三处不再各存一份。
+//   本模块只做**导入 + 再导出**，保持既有 import 面不变（`EVENT_KINDS` / `DEBUG_COMMAND_HELP` /
+//   `parseDebugCommand` / `DebugAction`）。
+import {
+  EVENT_KINDS,
+  DEBUG_COMMAND_HELP,
+  parseDebugCommand,
+  type DebugAction,
+} from './debugCommand.js';
+export { EVENT_KINDS, DEBUG_COMMAND_HELP, parseDebugCommand };
+export type { DebugAction };

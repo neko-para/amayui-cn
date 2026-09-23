@@ -46,13 +46,13 @@
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "const mask = im.flushPending();",
-      "line": 1062,
+      "line": 1157,
       "note": "等待推进泵（serviceAdvanceWait）只消费挂起事件（flushPending = sub_478090）⇒ 按住期间不再每帧放行（修复点）"
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "const mask = im.flushHeld();",
-      "line": 680,
+      "line": 760,
       "note": "ADV 分支（serviceAdv）保留实时刷（sub_4780D0）—— 拆刷子时不许把它一起改掉"
     },
     {
@@ -99,6 +99,11 @@
       "at": "2026-09-14",
       "what": "doing → done —— 用户 E4 复核通过（「点击翻页正常了」）：一次普通点击只前进一页",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点文本未变）"
     }
   ],
   "tests": [

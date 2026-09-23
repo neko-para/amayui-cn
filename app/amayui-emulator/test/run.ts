@@ -6,9 +6,17 @@
  * node --import tsx test/run.ts fast      # T0：纯合成/纯函数/棘轮（日常；≈ 秒级）
  * node --import tsx test/run.ts corpus    # T1：需要未入库的真游戏资源（install/ raw/ 真存档槽）
  * node --import tsx test/run.ts all       # T0 + T1（= 提交前/CI 的完整口径，等价于旧的 npm test）
+ * node --import tsx test/run.ts e4        # T2：需要真 Electron + GUI 会话（**显式跑**，不进 all/verify）
  * node --import tsx test/run.ts list      # 打印三轴索引（tier / kind / subsystem）
  * node --import tsx test/run.ts check     # 只跑分类一致性校验（不跑用例）
  * ```
+ *
+ * ★**`all` 为什么不含 T2**（`tickets/T-0132`，2026-09-23 定口径）：
+ *  `all` 是 `verify`（提交前必跑）的第 3 段，而 T2 要真 Electron + GUI 会话、单次 +数十秒 ——
+ *  那会把 `T-0115` 刚收口到的 ~35 s 重新拉回去，并让"无显示器的 CI/沙箱"从"跑得快"变成"跑不起来"。
+ *  ⇒ `all` = T0 + T1（与本文件头注一致），T2 只能由 `npm run test:e4` 显式跑：
+ *  改渲染宿主 / 输入 / 窗口时序 / 帧驱动时**必须**跑一次（清单见 `docs-new/04-app/test-organization.md` §5）。
+ *  实测（本机 2026-09-23）：`verify` = 1086 例 / ~35 s；`test:e4` = 1 文件 / 1 例 / ~70 s。
  *
  * 为什么要有它：
  *  1. **默认档要快**：单文件 `config1-chain.test.ts` 一个人就是 ~59 s（= 旧全量的一半），
@@ -18,6 +26,7 @@
  *  3. **目录不动**：实测移动 T1 文件会打断约 924 处跨台账/文档引用，见 `docs-new/04-app/test-organization.md`。
  */
 import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkOrganization, groupByAxis, scanTests, type TestFile } from './orgRules.js';
@@ -67,9 +76,27 @@ switch (cmd) {
     run(byTier('T2'), 'T2 真机档（需要 Electron）');
     break;
   case 'all':
-    run(pick(() => true), 'T0 + T1 + T2 全量');
+    // ★刻意的口径（`tickets/T-0132`）：`all` = T0 + T1，**不含 T2** —— 见文件头的理由。
+    run(
+      pick((f) => f.pragma!.tier === 'T0' || f.pragma!.tier === 'T1'),
+      'T0 + T1 全量（提交前口径；T2 真机档请显式跑 `npm run test:e4`）',
+    );
     break;
   case 'check': {
+    // `--shrink-harness`：把 T-0020 的一致性基线收缩到当前磁盘现状（**只许收缩**由守卫保证）
+    if (process.argv.includes('--shrink-harness')) {
+      const { scanHarness } = await import('./harnessScan.js');
+      const basePath = path.join(HERE, 'harness-convergence.baseline.json');
+      const base = JSON.parse(readFileSync(basePath, 'utf8')) as Record<string, unknown>;
+      const now = scanHarness(HERE);
+      base['mkVariants'] = now.mkVariants;
+      base['selfFrameLoops'] = now.selfFrameLoops;
+      writeFileSync(basePath, JSON.stringify(base, null, 1) + '\n');
+      console.log(
+        `[T-0020] 基线已收缩：mk 变体 ${now.mkVariants.length}、自造帧循环 ${now.selfFrameLoops.length}`,
+      );
+      break;
+    }
     const problems = checkOrganization(files);
     report(problems);
     break;

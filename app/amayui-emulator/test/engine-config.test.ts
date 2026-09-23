@@ -26,6 +26,7 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { dec, asI32, enc } from '../src/vm/bits.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -33,7 +34,11 @@ const ROOT = path.resolve(HERE, '..', '..', '..');
  * 玩家数据的 base 那侧：**真游戏的** `SYS4REG.INI`（`%LOCALAPPDATA%\Eushully\<game>\`）。
  * ★只用于「结构 + 自洽」断言 —— 具体取值属**玩家数据**，见文件头与 `tickets/T-0034`。
  */
-const INI = path.join(resolveSystemPaths(ROOT).baseDir, INI_FILE);
+// ★2026-09-23（`tickets/T-0128`）：两侧都看，且 **overlay 优先** —— 与产品 `systemPaths.ts` 的读取口径一致。
+//   原来只查 base，而本机真 INI 只在 overlay 一侧 ⇒ 这条"真 INI"用例被**静默跳过**。
+const SYS_PATHS = resolveSystemPaths(ROOT);
+const INI_CANDIDATES = [path.join(SYS_PATHS.overlayDir, INI_FILE), path.join(SYS_PATHS.baseDir, INI_FILE)];
+const INI = INI_CANDIDATES.find((c) => fs.existsSync(c)) ?? INI_CANDIDATES[1]!;
 const HAS_REAL_INI = fs.existsSync(INI);
 /** 真 INI 的文本（不存在 ⇒ null）。 */
 function realIniText(): string | null {
@@ -124,7 +129,11 @@ test('真实 SYS4REG.INI：结构 + 「配置→字段」自洽（不断言玩�
     assert.ok(cfg.values.has(k), `真 INI 应有 ${k}（引擎每次退出都会写）`);
   }
   assert.ok(cfgInt(cfg, 'message:messagespeed', -1) >= 0, 'MessageSpeed 应是可解析的整数');
-  assert.ok(cfgStr(cfg, 'message:font').length > 0, '字体名不应为空');
+  // ★2026-09-23（`tickets/T-0128`）：原来这里断 `message:Font` **非空** —— 那是**玩家取值**，
+  //   与文件头自述的「不断言玩家取值」自相矛盾。本机 overlay 那份真 INI 的 `Font=` 就是空的
+  //   （引擎在没有指定字体时用内置默认面，`src/text/fontSet.ts` 有回退）⇒ 闸门一打开它就假红。
+  //   改成只断「这个键在，且取值是个字符串（可空）」—— 结构判据，不越界到玩家数据。
+  assert.equal(typeof cfgStr(cfg, 'message:font'), 'string', '真 INI 应有 message:Font（取值属玩家数据，不判空）');
 
   // ③ ★自洽：每个绑定键在 INI 里 ⇒ 灌进引擎字段的值必须 = **读出来的那个值**（经 map 变换）
   const values = new Map<number, number>([[96983, 1]]);
@@ -192,6 +201,7 @@ function oneOp(opcode: number, slot: number): ScriptBinary {
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,
@@ -221,6 +231,7 @@ function nOp(opcode: number, slots: number[], types?: number[]): ScriptBinary {
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,
@@ -414,6 +425,7 @@ test('设置界面涉及的 opcode：分类正确 + 步进不抛错（implemente
       index: 0,
     };
     const sc: ScriptBinary = {
+      ...scriptDerived(),
       signature: 'SYS4450 ',
       isVer5: false,
       headerLen: H,

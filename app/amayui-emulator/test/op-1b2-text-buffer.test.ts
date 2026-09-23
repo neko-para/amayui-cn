@@ -44,9 +44,12 @@ test('★0x1B2/0x1B3/0x1B4：文本缓冲累加（含 CRLF）+ 取出复位', as
 
   await OPS.get(0x1b4)!(makeCtx(e, frame, instr(0x1b4, 0, []), e.native, (m) => logs.push(m)));
   assert.equal(e.textBuffer, '', '★0x1B4 取出后缓冲复位（引擎 `sub_40B420(buf, 0, -1)`）');
+  // ★2026-09-23（`tickets/T-0125`）：原版还要求日志含固定前缀 `'0x1B4: 取出文本缓冲'` —— 那是钉
+  //   **文案**（改前缀就假红）。0x1B4 体内**不写任何操作数**（`strings.ts` 头注：观测面 = 一条日志 +
+  //   缓冲复位），所以"取出的内容被报出来"这条**记录义务**要留着；但报的是哪句前言不构成契约。
   assert.ok(
-    logs.some((m) => m.includes('0x1B4: 取出文本缓冲') && m.includes('HELLO\\r\\nWORLD')),
-    `0x1B4 要把整段文本留在日志里（否则这三条就是沉默的死写）：${logs.join(' | ')}`,
+    logs.some((m) => m.includes('HELLO\\r\\nWORLD')),
+    `0x1B4 要把取出的整段文本留在日志里（否则这三条就是沉默的死写）：${logs.join(' | ')}`,
   );
 });
 

@@ -55,6 +55,7 @@ export const DEBUG_QUERY_HELP: string[] = [
   '  frame [下标|all]       列**活帧**（空槽折叠；给下标则展开该帧；`all` 强制全列）',
   '  flocal <帧> <下标>      指定帧的 local int 槽',
   '  slot <槽号>             纹理槽绑定（VM 台账 / 宿主纹理 分开报）',
+  '  l2d <槽号>              Live2D 槽运行态（模型/纹理数/当前动作；需要宿主查询）',
   '  run                     当前运行态（cur / 脚本 / ip / 门 / 错误）',
   '  help                    本帮助',
   '★全部只读；下标按**十六进制**输入（与 src/*.txt 的字面量口径一致），也接受 0x 前缀。',
@@ -81,7 +82,18 @@ function readGlobalInt(e: Engine, key: number): { raw?: number; decoded: number 
  * @param text   用户输入的一行（控制面板文本框）
  * @returns      结构化结果（`lines` 已按面板可读的粒度切好）
  */
-export function runQuery(engine: Engine, text: string): DebugQueryResult {
+/**
+ * **宿主侧的可观测面**（`tickets/T-0127`）—— 可选注入：VM 层拿不到宿主的状态（纹理是否真的就位、
+ * Live2D 槽里是什么），只能由渲染窗在调用点提供。**不传 ⇒ 行为与本票之前完全一致**（向后兼容）。
+ */
+export interface DebugQueryHost {
+  /** 宿主侧槽状态（如"已就位 W×H"/"没有该槽"）；返回 `null` = 这一侧没有信息。 */
+  slot?: (slot: number) => string | null;
+  /** Live2D 槽的运行态（模型 id / 纹理数 / 当前动作）；返回 `null` = 该槽没有立绘。 */
+  l2d?: (slot: number) => string | null;
+}
+
+export function runQuery(engine: Engine, text: string, host?: DebugQueryHost | null): DebugQueryResult {
   const query = text.trim();
   const fail = (msg: string): DebugQueryResult => ({ query, ok: false, lines: [msg, ...DEBUG_QUERY_HELP] });
   if (query === '' || query === '?' || query === 'help') {
@@ -216,8 +228,25 @@ export function runQuery(engine: Engine, text: string): DebugQueryResult {
           `slot 0x${s.toString(16)}（= ${s}）`,
           `  VM 台账 texSlots = ${vm === undefined ? '**未绑定**' : `0x${(vm >>> 0).toString(16)}`}`,
           `  VM texSizes   = ${size ? `${size[0]}×${size[1]}` : '（无，非 create-texture 或未建）'}`,
-          '  ★宿主是否已把纹理就位要看 `[present]` 日志；本查询只读 VM 台账（提案 §3 的"宿主侧槽表"是后续步）。',
+          // ★`tickets/T-0127`：宿主侧状态（有注入就报，没有就明说"查不到"）
+          `  宿主          = ${host?.slot ? (host.slot(s) ?? '（宿主没有该槽）') : '（本次调用未注入宿主查询）'}`,
+          '  ★两侧分开报的原因：VM 台账有绑定 ≠ 宿主纹理已就位（异步载入/在途丢弃，见 T-0102）。',
         ],
+      };
+    }
+
+    case 'l2d': {
+      // ★`tickets/T-0127`：Live2D 的运行态在**宿主**（`scene.l2dHost`）里，VM 看不到 ⇒ 走注入的回调。
+      const slot = parseIndex(parts[1]);
+      if (slot === null) return fail('l2d：需要一个槽号（十六进制），如 `l2d 5`');
+      if (!host?.l2d) {
+        return { query, ok: false, lines: ['l2d：本次调用未注入宿主查询（Live2D 运行态在宿主里，不在 VM 里）'] };
+      }
+      const info = host.l2d(slot);
+      return {
+        query,
+        ok: true,
+        lines: [`l2d 槽 0x${slot.toString(16)}（= ${slot}）`, `  ${info ?? '（该槽没有立绘实例）'}`],
       };
     }
 

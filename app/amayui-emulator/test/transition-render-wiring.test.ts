@@ -99,10 +99,10 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
     /composeIntoSlot\(slot,/.test(backend),
     '宿主必须把转场结果画进记录 `[4]` 那个槽（引擎 sub_4A50C0(_this, v384[4])，raw 136174）',
   );
-  assert.ok(
-    backend.includes('类别 1') && backend.includes('U2'),
-    '类别 1（分块淡入淡出）必须在注释里写明"为什么不画"（语料 0 处 + 可见效果未确证）',
-  );
+  // ★2026-09-23 删除一条**断言注释**的判据（`tickets/T-0125`）：原版要求 `pixiBackend.ts` 的**注释**里
+  //   含 `类别 1` 与 `U2` 两个字面串 —— 改注释就红、行为改坏却可能不红（正是"判据钉错地方"）。
+  //   同一件事由下面那条**代码形状**判据（`cat !== 0 && cat !== 2 && cat !== 3` + `continue`）覆盖；
+  //   行为面另有 `renderItemSubset` 的真宿主用例（本文件 :183 起）。
   assert.ok(
     /cat !== 0 && cat !== 2 && cat !== 3/.test(backend) && /continue;/.test(backend),
     '类别 1 必须**显式跳过**，不许静默假装画了',

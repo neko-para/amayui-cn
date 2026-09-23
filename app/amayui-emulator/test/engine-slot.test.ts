@@ -14,6 +14,7 @@
  *     没有真槽的机器上跳过（不假装通过）。
  */
 import { test } from 'node:test';
+import { findRealFiles, readReal, realSlotDirs } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -38,6 +39,7 @@ import { resolveSystemPaths } from '../src/arch/systemPaths.js';
 import { SEEDS, buildBody, buildScriptBin, buildSlotFile, drawItemRecord } from './engineSlotFixtures.js';
 import { ENGINE_DRAW_ITEM_BYTES, decodeEngineDrawItem } from '../src/vm/engineDrawItem.js';
 import { assertFlags } from '../src/vm/native.js';
+import { must } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -159,7 +161,8 @@ test('★body 被改坏一个字节 ⇒ 内层 CRC 拒绝（不返回错位的�
   const good = buildSlotFile(body, SEEDS);
   const crcA = crc32MsbFirst(body);
   const crcB = crc32(body);
-  body[SLOT_IMAGE_PRELUDE_BYTES + 4] ^= 0xff;
+  const corruptAt = SLOT_IMAGE_PRELUDE_BYTES + 4;
+  body[corruptAt] = must(body[corruptAt], '帧记录 scriptId 字节') ^ 0xff;
   const bad = buildSlotFile(body, { ...SEEDS, crcOverride: [crcA, crcB] });
   const okDec = decodeEngineSlot(good);
   assert.equal(okDec.ok, true, '未改坏的那份必须能解（否则负例没有意义）');
@@ -211,23 +214,19 @@ test('返回栈换算：表 C 下标 → 返回点 dword 偏移（+3）；越界
 
 test('★E4：本机真槽全部解出，且每帧记录的落点 opcode 与语义自洽', async (t) => {
   const system = resolveSystemPaths(REPO);
-  const dir = path.join(system.baseDir, 'SAVE');
-  let names: string[] = [];
-  try {
-    names = fs.readdirSync(dir).filter((f) => /^SAVE\d\d\.DAT$/.test(f)).sort();
-  } catch {
-    names = [];
-  }
-  if (names.length === 0) {
-    t.skip(`本机没有真存档槽（${dir}）`);
+  // ★`tickets/T-0128`：定位收敛到 `test/realSlots.ts`（两侧都看）
+  const reals = findRealFiles(REPO, 'DAT');
+  if (reals.length === 0) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
   const src = new NodeFileSource({ resourceDir: resolveResourceDir(REPO), system });
   let checkedFrames = 0;
   let slots = 0;
   const failures: string[] = [];
-  for (const name of names) {
-    const bytes = new Uint8Array(fs.readFileSync(path.join(dir, name)));
+  for (const real of reals) {
+    const name = real.name;
+    const bytes = readReal(real);
     const dec = decodeEngineSlot(bytes);
     if (!dec.ok) {
       failures.push(`${name}: ${dec.reason}`);

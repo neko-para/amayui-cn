@@ -26,6 +26,7 @@ import {
   matchInstruction,
   parseCondition,
   parseDebugCommand,
+  DEBUG_COMMAND_HELP,
   testCondition,
   type BreakSpec,
 } from '../src/vm/debugBreak.js';
@@ -185,20 +186,44 @@ test('★命令台（lldb 风格）：`b` / `b event` / `bl` / `d` / `c` / 其�
   assert.match((badDel as { text: string }).text, /id 必须是整数/);
 });
 
-test('★源码棘轮：控制面板**不得再硬编码事件类型清单**（用户实测踩过这份漂移）', () => {
-  // 事故经过：渲染窗把事件名改成按池命名（`global-int-write` 等）后，控制面板里那份**手抄的**
-  // 合法值清单没跟着改 ⇒ `b event global-int-write …` 被面板本地的校验拒掉。
-  // 守卫当时**没抓住** —— 因为它测的是渲染窗的 `parseDebugCommand`，不是面板里那份拷贝。
-  // 纪律：面板**不再重复校验**，一律透传，由渲染窗的 `EVENT_KINDS`（唯一真相源）判定并回可读错误。
-  const panel = fs.readFileSync(path.join(ROOT, 'app/amayui-emulator/control/control.ts'), 'utf8');
-  for (const kind of ['global-int-write', 'global-float-write', 'global-str-write', 'slot-bind', 'global-write']) {
-    assert.ok(
-      !panel.includes(`'${kind}'`),
-      `control.ts 里不该出现事件类型字面量 '${kind}'（那是渲染窗 EVENT_KINDS 的职责）`,
-    );
-  }
-  // 反向：它必须**透传** where（把 rest[1] 直接送出去），而不是先判断
-  assert.ok(/where:\s*\(rest\[1\]/.test(panel), '面板应把事件类型透传给渲染窗');
+test('★命令词汇表只有一份（`tickets/T-0127`）：面板/守护进程都不许再手抄事件类型或分流白名单', () => {
+  const APP = path.join(ROOT, 'app', 'amayui-emulator');
+  const read = (rel: string): string => fs.readFileSync(path.join(APP, rel), 'utf8');
+  /** 剥注释（否则"注释里提到某个事件名"会被误报 —— 本轮就踩过）。 */
+  const strip = (src: string): string =>
+    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const KINDS = ['global-int-write', 'global-float-write', 'global-str-write', 'slot-bind'];
+
+  // ① 单一真源：`parseDebugCommand` 必须被 ≥2 处**生产代码**引用
+  const callers = ['src/vm/debugBreak.ts', 'src/renderer/app/session.ts', 'control/control.ts'].filter((f) =>
+    read(f).includes('parseDebugCommand'),
+  );
+  assert.ok(
+    callers.length >= 3,
+    `命令解析必须被渲染窗（收口点）、面板、再导出三处共用；实际只有 ${callers.join(', ')}`,
+  );
+
+  // ② 面板：不得出现"同一行里 ≥2 个事件类型"的手抄清单（帮助文本必须来自共享常量）
+  const panel = strip(read('control/control.ts'));
+  const kindLine = new RegExp(`(${KINDS.join('|')})[^\\n]{0,60}(${KINDS.join('|')})`);
+  assert.ok(!kindLine.test(panel), 'control.ts 里不该再有手抄的事件类型清单（用 DEBUG_COMMAND_HELP / EVENT_KINDS）');
+  assert.ok(panel.includes('DEBUG_COMMAND_HELP'), '面板的帮助必须渲染共享常量 DEBUG_COMMAND_HELP');
+  assert.ok(panel.includes('parseDebugCommand'), '面板必须用共享解析器，不许自己写 if 链');
+
+  // ③ 调试守护进程：不得再有命令分流白名单（整行原样转发给渲染窗的收口点）
+  const daemon = strip(read('tools/debugsrv.cjs'));
+  assert.ok(
+    !/'b', ?'break'/.test(daemon) && !daemon.includes("'breakpoints'"),
+    'debugsrv.cjs 不该再维护命令白名单（增删命令只应改 src/vm/debugCommand.ts）',
+  );
+
+  // ④ 反向控制：共享帮助文本本身必须**只含合法**事件类型（非法值一个都不许有）
+  const help = DEBUG_COMMAND_HELP.join('\n');
+  for (const kind of KINDS) assert.ok(help.includes(kind), `帮助文本应列出合法类型 ${kind}`);
+  assert.ok(
+    !/global-write(?!-)/.test(help),
+    '★帮助文本不得出现笼统的 `global-write`（它不在 EVENT_KINDS 里 —— 这正是 2026-09 面板漂移出的那个非法值）',
+  );
 });
 
 test('★`compileBreak` 必须校验事件类型（CLI 那条路绕过了解析器 —— 2026-09-23 实测踩到）', () => {

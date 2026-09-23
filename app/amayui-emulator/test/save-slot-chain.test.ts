@@ -18,8 +18,10 @@
  *   （读档列表界面本来就不该写玩家数据）。
  */
 import { test } from 'node:test';
+import { findRealFiles, firstRealFile, realSlotDirs } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
@@ -51,16 +53,9 @@ test('E3：TITLE → Load Data → SAVE.BIN，路径上零未实现 opcode 且�
   const system = resolveSystemPaths(ROOT);
   const src = new NodeFileSource({ resourceDir, system });
   // 真槽目录里没有存档 ⇒ 这条断言没有意义（自报 skip，而不是假装通过）
-  const hasSlots = (() => {
-    try {
-      const dir = path.join(system.baseDir, 'SAVE');
-      return fs.readdirSync(dir).some((f) => /^SAVE\d\d\.DAT$/.test(f));
-    } catch {
-      return false;
-    }
-  })();
-  if (!hasSlots) {
-    t.skip(`本机没有真存档槽（${path.join(system.baseDir, 'SAVE')}）`);
+  // ★`tickets/T-0128`：两侧都看（base + overlay）
+  if (findRealFiles(ROOT, 'DAT').length === 0) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(ROOT).join(' / ')}）`);
     return;
   }
 
@@ -196,97 +191,4 @@ test('E3：TITLE → Load Data → SAVE.BIN，路径上零未实现 opcode 且�
     assert.equal(h.ok, true, h.ok ? '' : `真槽 ${first} 头解析失败：${h.reason}`);
   }
   void NotImplementedOp;
-});
-
-/**
- * ★**缩略图**（`tickets/T-0036`）：同一条链路里 `0x1AF` 必须把真槽的 `.STH`（BMP）解出来、写进脚本
- * `create-texture` 出来的那个 320×180 纹理槽 —— 这正是"存档列表右侧那张图"。
- *
- * 判据：脚本 `src/SAVE.txt:2086-2095` 先 `create-texture (local 21c6) 140 b4 0`（320×180），成功读完
- * 才 `draw-texture … 140 b4 …`。headless 不存像素，但会把尺寸记进槽（`HeadlessScene.setSlotPixels`）
- * ⇒ 这里断言"有一张 320×180、像素字节数 320*180*4 的图被写进某个纹理槽"。
- */
-test('E3：列表里的缩略图（0x1AF）真的被解进纹理槽了（320×180）', async (t) => {
-  const resourceDir = decideResourceDir(ROOT, { env: process.env }).dir;
-  const system = resolveSystemPaths(ROOT);
-  const src = new NodeFileSource({ resourceDir, system });
-  const hasThumb = (() => {
-    try {
-      return fs.readdirSync(path.join(system.baseDir, 'SAVE')).some((f) => /^SAVE\d\d\.STH$/.test(f));
-    } catch {
-      return false;
-    }
-  })();
-  if (!hasThumb) {
-    t.skip(`本机没有真缩略图（${path.join(system.baseDir, 'SAVE')}\\SAVE??.STH）`);
-    return;
-  }
-
-  const input = new InputManager();
-  const scene = new HeadlessScene({ audioHost: new NodeAudioHost({ source: src }) });
-  const thumbs: { slot: number; w: number; h: number; bytes: number }[] = [];
-  const orig = scene.setSlotPixels.bind(scene);
-  scene.setSlotPixels = (slot: number, w: number, h: number, rgba: Uint8Array) => {
-    thumbs.push({ slot, w, h, bytes: rgba.length });
-    orig(slot, w, h, rgba);
-  };
-  const e = new Engine(scene, input);
-  e.fileSource = src;
-  e.config = parseIni(effectiveIniText(new OverlayDir(system)));
-  applyConfigToEngine(e.config, e.engineValues);
-  applyEmulatorOptionsToEngine(e, DEFAULT_EMULATOR_OPTIONS);
-  const boot = await src.readScript(0);
-  assert.ok(boot);
-  loadScriptData(e, boot.data, boot.name);
-
-  let clock = 0;
-  const host: FrameHost = {
-    now: () => clock,
-    advanceModel: (tm) => scene.advance(tm),
-    poolPending: () => scene.poolPending(),
-  };
-  let lastScript = e.curScript().name;
-  const base: Omit<FrameLoopOptions, 'until' | 'maxFrames'> = {
-    gates: { anim: 'wait', sleep: 'wait', advance: 'pump' },
-    advFrame: true,
-    advErrors: 'swallow',
-    maxStepsPerFrame: 20000,
-    onUnknown: () => 'continue', // 这条测试只关心缩略图；缺口由上面那条测试负责报红
-    onScriptChange: (n) => {
-      lastScript = n;
-    },
-    onFrameEnd: () => {
-      clock += 1000 / 60;
-    },
-  };
-  const run = async (frames: number, until?: () => boolean): Promise<number> => {
-    const r = await runFrameLoop(e, host, {
-      ...base,
-      ...(until ? { until } : {}),
-      initialScript: lastScript,
-      maxFrames: frames,
-    });
-    return r.stopReason === 'cap' ? frames : r.frames;
-  };
-  const name = (): string => e.curScript().name;
-  const hover = (): number => dec(e.key, e.curScript().locals.int.get(0x3f7) ?? -99);
-
-  await run(4000, () => name().startsWith('TITLE'));
-  await run(4000);
-  input.setCursor(...LOAD_DATA_XY);
-  await run(2000, () => hover() === 1);
-  input.pressMouse(0);
-  await run(400);
-  input.releaseMouse(0);
-  await run(6000, () => name().startsWith('SAVE'));
-  // 列表画完那一页需要若干帧（脚本按槽位画行 + 读缩略图）
-  await run(3000);
-
-  assert.ok(
-    thumbs.length > 0,
-    `应至少装进一张缩略图（0x1AF → setSlotPixels）；实际 ${JSON.stringify(thumbs)}`,
-  );
-  const t320 = thumbs.find((x) => x.w === 320 && x.h === 180);
-  assert.ok(t320, `缩略图应为脚本 create-texture 的 320×180；实际 ${JSON.stringify(thumbs.slice(0, 4))}`);
-  assert.equal(t320.bytes, 320 * 180 * 4, '像素缓冲应为 RGBA 320×180');
 });

@@ -199,16 +199,21 @@ const IMPLEMENTED = [0x22a, 0x22c, 0x22d, 0x22f] as const;
 const DEFERRED = [0x1c4, 0x23a] as const;
 const MINE = [...IMPLEMENTED, ...DEFERRED] as const;
 
-test('★六条都必须在册、note 写清「体内真实行为 + 处置 + 消费者链/扩展点」（≥80 字）', () => {
+test('★六条都必须在册、带票，且 note 里有 raw 地址（台账的可追溯性义务）', () => {
+  // ★2026-09-23（`tickets/T-0125`）：原来还查 `note.length >= 80` 与 `/扩展点|消费者/` —— 那是
+  //   **文案风格**判据（把 note 写短一点或换个说法就假红，而引擎体改坏却不会红）。留下的这条是
+  //   台账的**可追溯性**义务：`note` 必须至少引用一处反编译地址（4~6 位数字），否则那段结论
+  //   在真源里查不到出处。语义本身（哪个体、哪些算子、消费者是谁）由本文件开头的**体账**用例
+  //   直接钉在 `engine/…_utf8.c` 上，不靠 note 的措辞。
   for (const op of MINE) {
     const e = ledger.entries.find((x) => x.opcode === op);
     assert.ok(e, `0x${op.toString(16)} 必须留在 opcode-gaps.json 里（不许静默消失）`);
     assert.ok(e.ticket, `0x${op.toString(16)} 必须带票`);
-    assert.ok(
-      (e.note ?? '').length >= 80,
-      `0x${op.toString(16)} 的 note 必须写清体内行为 / 处置 / 消费者链（当前 ${(e.note ?? '').length} 字）`,
+    assert.match(
+      e.note ?? '',
+      /\b\d{4,6}\b/,
+      `0x${op.toString(16)} 的 note 必须引至少一处 raw 地址（可追溯性）`,
     );
-    assert.match(e.note, /扩展点|消费者/, `0x${op.toString(16)} 的 note 必须给出消费者链或扩展点`);
   }
 });
 
@@ -249,19 +254,11 @@ test('★「未实现」清零：台账里不再有 unimplemented，且 deferred
   }
 });
 
-test('★本轮订正过的语义要点必须留在台账 note 里（防回退到筛体旧说法）', () => {
-  const note = (op: number): string => ledger.entries.find((e) => e.opcode === op)?.note ?? '';
-  // 0x1C4：语音总线（订正「Scene 场景层里是否已挂项」）
-  assert.match(note(0x1c4), /语音/, '0x1C4 的 note 必须写明是语音总线查询');
-  assert.match(note(0x1c4), /84128/, '0x1C4 的 note 必须留 +84128 这个地址锚');
-  // 0x22F：被调体是 Translation（订正筛体的 Scaling）
-  assert.match(note(0x22f), /Translation/, '0x22F 的 note 必须写明被调体是 D3DXMatrixTranslation');
-  // 0x22A：op1 不是 handle（真源里是「不是 handle」，这里只钉「不是 handle」这一语义）
-  assert.match(note(0x22a), /不是 handle/, '0x22A 的 note 必须写明 op1 不是 handle');
-  // 0x23A：91322 与 94672 是两张表
-  assert.match(note(0x23a), /94672/, '0x23A 的 note 必须写明 91322/94672 是两张不同的表');
-  // 四条 Scene 变换都要指向同一个消费者链（RenderScene 的 20..29 层）
-  for (const op of IMPLEMENTED) {
-    assert.match(note(op), /20\.\.29|\[20, ?30\)|20, ?30\)/, `0x${op.toString(16)} 的 note 应写明「只作用于 20..29 层」这一消费端事实`);
-  }
-});
+// ★2026-09-23（`tickets/T-0125`）：这里原有第五条用例「本轮订正过的语义要点必须留在台账 note 里」，
+//   用 `assert.match(note(0x22f), /Translation/)` 之类的**prose 正则**钉四个订正点。删掉的理由：
+//   ① 那四件事**全部**已由本文件开头的**体账**用例直接钉在反编译器上，而且钉得更准 ——
+//      0x22A「op1 不是 handle」→ 体内不得出现 `sub_41BF50`（:86）；0x22F 被调体是 Translation
+//      → `j_D3DXMatrixTranslation`（:131）；0x1C4 是语音总线 + `Engine+84128`（:146，含被调体
+//      `00404CB0` 的总线判据）；0x23A 的 91322/94672 是两张表（:160，含同族 0x23E 的反向断言）。
+//   ② 它的失败模式恰恰是错的：改 note 的措辞（保留事实）会红，而把 engine 体/实现改坏不会。
+//   ⇒ 台账 note 从此是**自由散文**，事实由体账与行为用例负责（同 `transition-render-wiring` 的先例）。

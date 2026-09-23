@@ -35,7 +35,7 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/native.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { stepOnce } from '../src/vm/interpreter.js';
-import { im, instr, str } from './harness.js';
+import { im, instr, scriptDerived, str } from './harness.js';
 
 /** 造一个引擎：`StubNative` + 记录每次 `msgWinSync(win)` 收到的窗号。 */
 function mk(ops: BinInstruction[]): { e: Engine; synced: number[] } {
@@ -46,6 +46,7 @@ function mk(ops: BinInstruction[]): { e: Engine; synced: number[] } {
   };
   const e = new Engine(native);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

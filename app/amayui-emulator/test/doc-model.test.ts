@@ -44,8 +44,8 @@ test('★文档模型：每份 docs-new md 都有合法的 kind / state', () => 
   const problems: string[] = [];
   for (const d of docs) {
     if (!d.fm) { problems.push(`${d.rel}：缺 front-matter（kind/state）`); continue; }
-    if (!KINDS.includes(d.fm.kind)) problems.push(`${d.rel}：kind 非法（${d.fm.kind}）`);
-    if (!STATES.includes(d.fm.state)) problems.push(`${d.rel}：state 非法（${d.fm.state}）`);
+    if (!d.fm.kind || !KINDS.includes(d.fm.kind)) problems.push(`${d.rel}：kind 非法（${d.fm.kind}）`);
+    if (!d.fm.state || !STATES.includes(d.fm.state)) problems.push(`${d.rel}：state 非法（${d.fm.state}）`);
   }
   assert.deepEqual(problems, [], `front-matter 不合规：\n  - ${problems.join('\n  - ')}`);
   assert.ok(docs.length >= 90, `文档数异常（${docs.length}）—— 扫描可能失效`);

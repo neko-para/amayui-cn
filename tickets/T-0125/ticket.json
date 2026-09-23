@@ -10,9 +10,10 @@
     "★已交付：补两处变异实测零覆盖 —— Z1 绘制项 z 序（新增 `test/render-draw-order.test.ts`，反转权威排序 ⇒ 2/2 红，而旧 47 条仍全绿）、Z2 快照 drawable（`scene-report.test.ts` 补独立下限，注入 `drawable=[]` ⇒ 红）",
     "★已交付：5 处零断言假绿改成 `t.skip()`，并由 `test/organization.test.ts` 的 R3 棘轮防复发（见 T-0126 第 1 次变更）",
     "剩余①：**镜像实现 ~15 处**（`OPS.has(op)` / `长度 === 21` 之类）合并成一张 `{op, class, ticket}` 数据表，而不是逐处删",
-    "剩余②：**判据钉错地方 ~10 处**换成公开缝上的行为断言 —— ★已做第一处：`missing-texture-skips-item.test.ts` 的源码正则改成 `itemSprite(...) === null` + 反面控制（并证伪：注入白占位块后**旧正则仍绿、新断言红**，该变异已收进闸门 E 的 M14）。其余优先：`transition-render-wiring.test.ts:100-103`（断言注释含\"类别 1\"）、`op-22a-22f-scene-xform.test.ts:206-209`（台账 prose）、`op-1b2`/`draw-string`/`op-02` 的日志文案判据",
     "剩余③：`control/` 层零覆盖（Z3，`opHex` 前导零）见 T-0127；其余重复覆盖见 T-0129",
-    "★纪律：不许用\"删证据/降 status/删条目\"消红；每处改动都要在 changes.md 写清反例实验（改什么会让它红、改什么不该红）"
+    "★纪律：不许用\"删证据/降 status/删条目\"消红；每处改动都要在 changes.md 写清反例实验（改什么会让它红、改什么不该红）",
+    "★已交付（第 2 次变更）：删掉 `transition-render-wiring.test.ts:100-103` 那条「断言注释含 类别 1 / U2」的判据（改注释就红、行为坏不红），由紧邻的代码形状判据 + 真宿主用例覆盖",
+    "剩余②（精确清单见 tickets/T-0125/changes.md 的「本票剩余」表）：镜像实现 ~15 处的其余部分、以及 6 个文件里的源码正则/日志文案判据（op-22a-22f-scene-xform / op-1b2 / draw-string / op-02 / msg-text-range / anim-window-done / tool-paths / audit-report-completeness）"
   ],
   "evidence": [
     {
@@ -25,7 +26,7 @@
       "file": "app/amayui-emulator/test/harness.ts",
       "anchor": "argc: args.length",
       "note": "op-2ed:112-122 恒真的依据",
-      "line": 33
+      "line": 101
     },
     {
       "file": "app/amayui-emulator/test/engine-config.test.ts",
@@ -47,12 +48,40 @@
     ]
   },
   "id": "T-0125",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段： —— 第 3 次变更：本票剩余②（源码正则/日志文案判据）清空，5 处改行为 + 2 处保留并写明理由"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（harness.ts 因 T-0129 上收共享夹具而位移；锚点文本未变）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：tests —— 补 tests[]（done 前置：每条指向真实存在的守卫 + 内容锚点）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 本票剩余①（镜像实现）已由 T-0129 的注册表分类表覆盖、②清空、③/④见 T-0127/T-0129 ⇒ 关单；守卫见 ticket.json tests[]"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/organization.test.ts#R3",
+    "app/amayui-emulator/test/render-draw-order.test.ts#Z1",
+    "app/amayui-emulator/test/op-02-exit-minus11.test.ts#分派真值表",
+    "app/amayui-emulator/test/msg-text-range.test.ts#正文区间内 + 无纹理槽",
+    "app/amayui-emulator/test/tool-paths.test.ts#前置报错 + exit 2",
+    "app/amayui-emulator/test/op-22a-22f-scene-xform.test.ts#raw 地址"
   ]
 }

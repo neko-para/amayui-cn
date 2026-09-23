@@ -15,6 +15,7 @@ import { StubNative } from '../src/vm/native.js';
 import { loadScriptIntoFrame, OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const T_LOCAL_FLOAT = 0xa;
 
@@ -33,6 +34,7 @@ async function fabs(op: number, v: number): Promise<number> {
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

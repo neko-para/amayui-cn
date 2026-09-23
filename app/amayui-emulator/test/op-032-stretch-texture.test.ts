@@ -23,7 +23,7 @@ import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { clampScaledBlit } from '../src/renderer/scene/ops.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr } from './harness.js';
+import { im, instr, scriptDerived } from './harness.js';
 
 type R4 = [number, number, number, number];
 
@@ -74,6 +74,7 @@ function mkScript(instructions: BinInstruction[]): ScriptBinary {
     for (let k = 0; k < n; k++) dwordToInstr[instructions[i]!.index + k] = i;
   }
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

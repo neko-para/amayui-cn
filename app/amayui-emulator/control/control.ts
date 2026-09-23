@@ -15,6 +15,8 @@
 import type { ControlStatus } from '../src/renderer/ipcProtocol.js';
 import { lists, ui } from './dom.js';
 import { ListView } from './listView.js';
+import { opHex } from './format.js';
+import { DEBUG_COMMAND_HELP, parseDebugCommand } from '../src/vm/debugCommand.js';
 
 let traceAll = false;
 /** 当前等待处理的未知指令（= 渲染窗上报的 pendingUnknown；null 表示没有）。 */
@@ -32,16 +34,6 @@ function parseOpList(s: string): number[] {
 
 // ---- 五张清单（渲染格式只有这一处；复制文本与显示文本同源）----
 
-/**
- * 指令码的规范写法（**所有清单行都以它开头**）。
- *
- * ★为什么必须带 opcode：助记符在缺名时是 `i0b5` 这种"i + 三位十六进制"，极易与
- * 别的 opcode 混读 —— 2026-09 用户实测就把 `0x0B5`（`i0b5`，DsPlaySound 音轨）看成了
- * `0x05B`（`ne`，已实现），于是以为"已实现的指令被当成缺口"。带上 `0x0b5` 后不可能再混。
- */
-function opHex(opcode: number): string {
-  return `0x${opcode.toString(16).padStart(3, '0')}`;
-}
 
 const ignoredView = new ListView<ControlStatus['ignored'][number]>({
   elements: lists.ignored,
@@ -230,72 +222,46 @@ async function runRepl(raw: string): Promise<void> {
   if (line === '') return;
   pushTranscript(`> ${line}`);
 
-  // 面板侧的命令表（与 `src/vm/debugBreak.ts` 的 `parseDebugCommand` 同形）；
-  // ★为什么不 import 渲染窗的模块：控制窗与渲染窗是**两个编译单元**，
-  //   跨单元 import 会把后者的类型/依赖拖进来（`ipcProtocol.ts` 的 `recordScript` 注释记过同类事故）。
-  const parts = line.split(/\s+/);
-  const cmd = parts[0]!.toLowerCase();
-  const rest = parts.slice(1);
-
-  if (cmd === '?' || cmd === 'help') {
-    pushTranscript(
-      [
-        'b <条件>              条件断点：每条指令**执行前**求一次条件，满足即停',
-        '                      例：b global 0x11 == 5260 ／ b（= 每条都停）',
-        'b event <类型> <条件>  语义事件断点（改状态那一刻停）',
-        '                      类型：global-write / slot-bind',
-        '                      例：b event global-write idx == 0',
-        'bl                    列断点（含命中次数）',
-        'd [id]                删一条；省略 id = 全删',
-        'c                     继续（从当前指令走过去）',
-        '其它                  当查询：global 0 ／ local 1 ／ frame ／ slot 0x11 ／ run',
-        '★数字口径：0x… = 十六进制；含 a-f 的串 = 十六进制；纯数字 = 十进制',
-      ].join('\n'),
-    );
-    return;
-  }
-  if (cmd === 'c' || cmd === 'cont' || cmd === 'continue') {
-    window.api.controlBreakCommand({ kind: 'continue' });
-    pushTranscript('（已请求继续）');
-    return;
-  }
-  if (cmd === 'bl' || cmd === 'breakpoints') {
-    const lines: string[] = [];
-    renderBreaks(lines);
-    pushTranscript(lines.join('\n'));
-    return;
-  }
-  if (cmd === 'd' || cmd === 'delete') {
-    const id = rest[0] === undefined ? undefined : Number.parseInt(rest[0], 10);
-    if (rest[0] !== undefined && !Number.isInteger(id)) {
-      pushTranscript(`✗ delete：id 必须是整数（收到「${rest[0]}」）`);
+  // ★`tickets/T-0127`：**不再在面板侧手抄一份命令表** —— 用零依赖的纯词汇表
+  //   `src/vm/debugCommand.ts`（渲染窗 / 面板 / 调试守护进程三处共用一份）。
+  //   为什么它能被两个编译单元共用：它**只 import 类型**，不拖任何引擎/渲染/DOM 依赖；
+  //   而面板原先手抄的那份已经漂移过：帮助里写着**非法**事件类型 `global-write`（用户可见）。
+  const action = parseDebugCommand(line);
+  if (action === null) return;
+  switch (action.a) {
+    case 'help':
+      pushTranscript(DEBUG_COMMAND_HELP.join('\n'));
+      return;
+    case 'continue':
+      window.api.controlBreakCommand({ kind: 'continue' });
+      pushTranscript('（已请求继续）');
+      return;
+    case 'break-list': {
+      const lines: string[] = [];
+      renderBreaks(lines);
+      pushTranscript(lines.join('\n'));
       return;
     }
-    window.api.controlBreakCommand(id === undefined ? { kind: 'clear' } : { kind: 'clear', id });
-    return;
-  }
-  if (cmd === 'b' || cmd === 'break') {
-    if (rest[0]?.toLowerCase() === 'event') {
-      // ★**不在面板侧校验类型**：渲染窗的 `debugBreak.ts` 才是真相源（`EVENT_KINDS`）。
-      //   面板曾硬编码一份列表，结果渲染窗加了 `global-float-write` 之后面板还在拒 —— 用户实测踩到。
-      //   教训：跨编译单元**复制**一份"合法值清单"，守卫（测的是渲染窗那份）**钉不住**它。
-      //   现在一律透传，由渲染窗解析并回一条可读错误（错误会经 `onBreakList.error` 显示在转录区）。
-      window.api.controlBreakCommand({
-        kind: 'set',
-        breakKind: 'event',
-        where: (rest[1] ?? '').toLowerCase(),
-        condition: rest.slice(2).join(' '),
-      });
+    case 'break-del':
+      window.api.controlBreakCommand(action.id === undefined ? { kind: 'clear' } : { kind: 'clear', id: action.id });
       return;
-    }
-    window.api.controlBreakCommand({ kind: 'set', breakKind: 'step', condition: rest.join(' ') });
-    return;
+    case 'break-add':
+      // ★不在面板侧校验事件类型：`compileBreak`（渲染窗）是唯一收口点，非法值由它回一条可读错误。
+      window.api.controlBreakCommand(
+        action.breakKind === 'event'
+          ? { kind: 'set', breakKind: 'event', where: action.where ?? '', condition: action.condition }
+          : { kind: 'set', breakKind: 'step', condition: action.condition },
+      );
+      return;
+    case 'query':
+      break; // 落到下面的查询分支
   }
+  const line2 = action.text;
 
   // 其它一律当查询（invoke：要回答案）
   ui.btnReplRun.disabled = true;
   try {
-    const r = (await window.api.debugQuery({ id: ++replSeq, text: line })) as {
+    const r = (await window.api.debugQuery({ id: ++replSeq, text: line2 })) as {
       ok?: boolean;
       lines?: unknown;
     } | null;

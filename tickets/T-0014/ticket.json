@@ -17,13 +17,13 @@
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "hoverDispatchAllowed(): boolean {",
       "note": "产品路径的悬停门控 + 那一对调用的真身（serviceAdvanceWait 内联；测试门面在 test/harness.ts）",
-      "line": 1234
+      "line": 1323
     },
     {
       "file": "app/amayui-emulator/test/harness.ts",
       "anchor": "export function pickHoverLabel(e: Engine): number {",
       "note": "T-0014 把引擎上那个只被测试调用的门面挪到这里（逐字复刻产品路径的两行）",
-      "line": 77
+      "line": 191
     },
     {
       "file": "app/amayui-emulator/test/anim-window-done.test.ts",
@@ -64,6 +64,21 @@
       "at": "2026-09-15",
       "what": "open → done —— ①–③ 已在 B1/T-0008 落地；本次删掉 Engine.pickHoverLabel（门面挪 test/harness），44/44 绿 + 源码棘轮",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点文本未变）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（harness.ts 因 T-0129 上收共享夹具而位移；锚点文本未变）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新"
     }
   ],
   "links": {

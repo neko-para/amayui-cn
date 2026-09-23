@@ -19,6 +19,7 @@ import { stepOnce, formatOperands } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { enc } from '../src/vm/bits.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_IMM = 0x0;
@@ -35,6 +36,7 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,

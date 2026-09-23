@@ -144,7 +144,15 @@ const op_abort: OpHandler = (c) => {
  * | `a2 == 3` | — | 同上，槽位组换成 `261*cur+156524/156525/156526` |
  * | 其它 | — | **什么都不做**（raw 18934 的 `return result`） |
  */
-function sub40F750Branch(sv1: number, sv2: number): 'record' | 'partial' | 'none' {
+/**
+ * `sub_40F750` 的分派表 → 三种结果。
+ *
+ * ★导出给测试（`tickets/T-0125`）：这张表是**引擎事实**（上面那张表逐行有 raw 依据），此前只能经
+ * `SUB40F750_BRANCH_TEXT` 的**日志文案**间接观测 ⇒ 判据钉在文案上（改文案假红、改表可能假绿）。
+ * 现在 `test/op-02-exit-minus11.test.ts` 直接对这张真值表断言；"读到的配置真的喂给分派"那一半
+ * 由**行为**断言覆盖（`pendingRecord0` + 帧 0 是否换成记录脚本 ⇒ 装 / 不装）。
+ */
+export function sub40F750Branch(sv1: number, sv2: number): 'record' | 'partial' | 'none' {
   if (sv1 === 1) return sv2 === 10 || sv2 === 20 ? 'partial' : 'none';
   if (sv1 === 2 || sv1 === 3) return 'record';
   return 'none';

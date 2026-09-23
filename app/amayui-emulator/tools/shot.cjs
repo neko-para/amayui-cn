@@ -18,26 +18,16 @@
  * ★时序不要用"睡固定秒数"：机器忙时启动链会慢一倍以上（实测出现过 20s 还没到 TITLE，
  *   于是所有截图都是黑的，看起来像 bug 复现）。这里一律**等日志里出现装载标记**再动作。
  */
-const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { preflight, ToolPathError } = require('./paths.cjs');
 
-// ★必须关掉"后台/被遮挡窗口"的节流：主进程是脚本自己（窗口不在前台）时，Chromium 会把
-//   requestAnimationFrame 降到极低频 ⇒ 渲染循环几乎不推进 ⇒ 启动链永远到不了 TITLE
-//   （实测：VM 时钟 60s 只走到 1.8s，截图全黑、`-> TITLE.BIN` 标记不出现，看起来像渲染崩了）。
-//   这也解释了同一份代码"有时能截到、有时全黑"。
-app.commandLine.appendSwitch('disable-renderer-backgrounding');
-app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
-app.commandLine.appendSwitch('disable-background-timer-throttling');
-
-// ★测试期"贴边开窗"（`tickets/T-0040`）：默认把窗口摆到屏幕**下缘**（只留标题栏）、不抢焦点，
-//   免得每次弹到正中打断手头的事。必须**在 require main.cjs 之前**设（主进程模块加载期读它）；
-//   `--centered` 或 `AMAYUI_WINDOW_EDGE=0` 可单次恢复"居中弹出"。
-if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
-
-// ★★`tickets/T-0032`：**参数校验必须早于 `require(main.cjs)`** —— 否则参数错会变成
-//   Electron 的「App threw an error during load」弹窗（`record.cjs` 的实测事故）。
+// ★★`tickets/T-0032`：**参数校验必须最早** —— 2026-09-23（`tickets/T-0125`）从"早于
+//   `require(main.cjs)`"提到"早于 `require('electron')` 本身"：
+//     · 参数错 ⇒ 一行可读报错 + `exit(2)`，连 Electron 进程都不拉起（不会变成
+//       「App threw an error during load」弹窗 —— `record.cjs` 的实测事故）；
+//     · 于是这条校验在普通 `node tools/shot.cjs --name a/b` 下就能复现 ⇒ 守卫可以**真跑一次 CLI**
+//       来钉它，不必再对源码里那句报错文案做正则。
 //   截图产物固定落仓库 `.tmp/`；`--name` 只是文件名，不许带路径分隔符（那会写到别处去）。
 const ROOT = path.resolve(__dirname, '..', '..', '..');
 const argv = process.argv.slice(2);
@@ -62,6 +52,20 @@ try {
 } catch (err) {
   if (!(err instanceof ToolPathError)) throw err;
 }
+
+// ★测试期"贴边开窗"（`tickets/T-0040`）：默认把窗口摆到屏幕**下缘**（只留标题栏）、不抢焦点，
+//   免得每次弹到正中打断手头的事。必须**在 require main.cjs 之前**设（主进程模块加载期读它）；
+//   `--centered` 或 `AMAYUI_WINDOW_EDGE=0` 可单次恢复"居中弹出"。
+if (!process.argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
+
+// ★必须关掉"后台/被遮挡窗口"的节流：主进程是脚本自己（窗口不在前台）时，Chromium 会把
+//   requestAnimationFrame 降到极低频 ⇒ 渲染循环几乎不推进 ⇒ 启动链永远到不了 TITLE
+//   （实测：VM 时钟 60s 只走到 1.8s，截图全黑、`-> TITLE.BIN` 标记不出现，看起来像渲染崩了）。
+//   这也解释了同一份代码"有时能截到、有时全黑"。
+const { app, BrowserWindow } = require('electron');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
 
 require('../dist/electron/main.cjs'); // 真实主进程：建窗口 + 注册 IPC（脚本/图像/配置）
 const TABS = (argOf('tabs', '4')) // 默认：先看角色设定（曾经黑屏的那一页）
@@ -166,8 +170,19 @@ async function shot(win, step) {
   fs.writeFileSync(p, img.toPNG());
   const { width, height } = img.getSize();
   // 全黑/全透明（= 只剩 Pixi 背景色）时给个显眼提示：这类"没画出东西"正是要抓的 bug
-  const blackish = img.toBitmap().every((v, i) => i % 4 === 3 || v < 40);
-  console.log(`[shot] ${p} (${width}x${height})${blackish ? '  ★几乎全黑：可能有渲染缺陷' : ''}`);
+  const bmp = img.toBitmap();
+  const blackish = bmp.every((v, i) => i % 4 === 3 || v < 40);
+  // ★像素统计（`tickets/T-0132`）：T2 真机档要拿**像素本身**下判据，不能只断言"工具没报错"。
+  //   `colors` = 采样后不同 RGB 三元组的个数，采样步长自适应到最多 ~2 万个样点（1280×720 ⇒ 每 ~46 像素一个）。
+  //   ★通道序（BGRA / RGBA）不影响这两个判据：`blackish` 只看"三个通道都 <40"，`colors` 只数不同三元组。
+  const px = width * height;
+  const stepPx = Math.max(1, Math.floor(px / 20000));
+  const seen = new Set();
+  for (let q = 0; q < px; q += stepPx) {
+    const i = q * 4;
+    seen.add((bmp[i] << 16) | (bmp[i + 1] << 8) | bmp[i + 2]);
+  }
+  console.log(`[shot] ${p} (${width}x${height}) colors=${seen.size}${blackish ? '  ★几乎全黑：可能有渲染缺陷' : ''}`);
   return true;
 }
 

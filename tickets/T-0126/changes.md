@@ -143,3 +143,76 @@
 | **新 `npm test`（T0）** | 121 | 797 | **5.8 s** |
 | `npm run test:corpus`（T1） | 44 | 289 | **22.2 s** |
 | **`npm run verify`（typecheck + D + test:all + 死写）** | 165 | **1086** | **31.3 s** |
+
+---
+
+## 第 3 次变更（2026-09-23）：`test/` 类型债 **131 → 0**，闸门 D 从「基线棘轮」变成「零容忍」
+
+收尾的是验收里的**剩余①**：`tsconfig.test.json` 已挂进 `verify`，但用的是"基线棘轮"
+（`check:typecheck-test` + `test-typecheck.baseline.json`：131 条既有债登记在案，新增即红）。
+基线归零后棘轮就该退场 —— 留着它，`--recount` 只剩一个用途：**把新错误登记成合法**。
+⇒ 债还清、基线文件与工具**一并删除**，`verify` 直接跑 `typecheck:test`。
+
+### 1. 数字
+
+| 口径 | 改前 | 改后 |
+|---|---|---|
+| `npm run typecheck:test` 错误 | **131**（60 个文件 / 84 个 `id`） | **0** |
+| `npm run verify` | `typecheck && check:typecheck-test && test:all && check:dead-writes` | `typecheck && typecheck:test && test:all && check:dead-writes` |
+| `npm run test:all` | 1086 例 | **1088 例**（1086 pass / 0 fail / 2 skip），墙钟 ~35 s |
+
+### 2. 分类处置（**没有一条是把类型放松**）
+
+| 类别 | 条数 | 处置 |
+|---|---|---|
+| TS2739 37 + TS2741 14 | **51** | 手搓 `ScriptBinary` / `BinArg` fixture 缺派生字段 ⇒ 新增 `test/harness.ts` 的 **`scriptDerived()`**（`ipTables` / `dwordToInstr`），41 个文件、47 处字面量在**开头**展开它（后面的显式字段自然覆盖）。★这两个字段是 `parseScript()` 从 `raw` 反推出来的、**VM 真读**（`engineSlot.ts:577` 直接索引 `ipTables[2]`）⇒ **不许**改成可选来图省事；空表与原状在语义上等价（产品路径多处本来就是 `?.` / `?? []`），所以这是**行为保持**的补全。`native-host` 那条补 `ipTables`、`exit-script` 那条补 `BinArg` 形状 |
+| `noUncheckedIndexedAccess` 38（TS2532 24 + TS18048 14） | 38 | 新增 **`at(xs, i, what)` / `must(v, what)`**（`test/harness.ts`）：越界即抛，失败信息带**下标与长度**。★不用 `!`（把"我确信"写成编译器无法复核的谎话）、也不用 `?? 0`（元素真缺失时会跑出一个看似正常的断言结果 —— 例如 `undefined >= 1` = false 被当成"确实没有已核验能力"）。`text-layout`（27 条）原来自己写了一份 `at`，一并改用共享的那个 |
+| TS2440 4 | 4 | `gallery-bgm-list` / `game-start-chain` / `op-1cb-2c8-2c9` / `option-font-speed-menu` 各有一份**逐字相同**的本地 `instr`（又与 `harness.instr` 逐字相同）⇒ 删本地定义、改用 harness 那份。★这正是 T-0124 D1 点名的形态（`gallery-bgm-list` 那条在 Node 原生 ESM 下是加载期 SyntaxError，此前靠 esbuild 消除未用导入侥幸没炸） |
+| 类型本身就写错了 | ~20 | `Ticket.history[].kind` / `doneWhy` 缺字段（台账真源 403 条 history **全都有** `kind`）；`GameStartOptions.emulatorOptions` 收的是**已归一化**的 `EmulatorOptions`，而内部本来就 `normalizeEmulatorOptions()` ⇒ 放宽为 `EmulatorOptionsInput`；`SlotStateBlock.adv` 是 `unknown`（分层刻意）⇒ 断言侧按 `AdvStateJson` 断言；`scripts/agf/format.d.ts` 补最小声明（跨目录 import 的唯一出口）；`save-thumb` 的 `async (slot) =>` 因整体 `as unknown as FileSource` 丢了上下文类型 ⇒ 显式标注 |
+| 恒真断言 | 1 | `op-02`：`assert.equal(thrown, null)`（`node:assert/strict`）之后的 `!(thrown instanceof ExitScript)` **永远不可能失败** ⇒ 删除并把口径写进注释（T-0125 的清理规则） |
+| 回调返回类型 | 6 | `onFrameEnd: () => (box.clock += …)` / `onStep: () => arr.push(…)` 返回 `number`，而契约是 `void | Promise<void>`（★这不是 `void` 那个"返回值可忽略"的例外，因为是联合类型）⇒ 加花括号 |
+
+### 3. 判别力证据
+
+- 每次改动跑 **`npm run typecheck:test` + `npm test`**：全程 0 失败，逐类递减 131 → 69 → 56 → 51 → 32 → 7 → 0。
+- 清空基线后**回归实验**：随便注入一条类型错误 ⇒ `npm run verify` 当场红（`tsc -p tsconfig.test.json --noEmit` 的报错直接就是失败原因），无需棘轮。
+- `test/` 的**断言一个没动**（唯一删掉的是上面那条恒真断言）：`test:all` 用例数 1086 → 1088 是**期间其它票**（T-0128 的 l2d digest 守卫等）新增的，不是本轮把断言改松。
+
+### 4. 顺手记下的两条纪律
+
+1. **基线棘轮是"欠债期"的工具，不是常态**：它的存在意义是让"在债里做增量"可判定；债清零后必须**连工具一起删**，
+   否则 `--recount` 就是后门。判断标准：**基线为 0 时，棘轮 ⟺ 硬闸门** ⇒ 留硬的那个。
+2. **`test/harness.ts` 是纯构造物的落点**：`scriptDerived()` / `at()` / `must()` 都放这里（该文件头写的就是"只放与引擎语义无关、纯构造的东西"）。
+
+---
+
+## 第 4 次变更（2026-09-23，同会话收口）：T2 真机档文件分派 **T-0132**，本票关单
+
+### 1. 为什么不在本票里直接落 T2 文件
+
+| 事实 | 实测 |
+|---|---|
+| T2 档入口与工具链都已就位 | `npm run test:e4` → `（T2 真机档（需要 Electron）：0 个文件）`；`npm run shot` / `dbg:srv` 可用（Electron 44.2.0、`dist/electron/main.cjs` 已构建、`.tmp/*.png` 有真机产物） |
+| ★但口径冲突 | `test/run.ts` 的 `all` = T0+T1+**T2** ⇒ 一旦有 T2 文件，`verify` 就会拉起 Electron：需要 GUI 会话、墙钟 +数十秒 —— 而 **T-0115** 刚把 `verify` 从 51.4 s 收到 **~33 s**（本轮复测 34.6 s） |
+| ⇒ 决策 | 这个取舍（T2 进不进 `verify`、`all` 与它自己头注 `all = T0+T1` 哪个为准）是**设计决定**，必须显式写理由 + 给加进去前后的实测数字 ⇒ 落成新票 **T-0132**，本票只负责把"分档/类型检查/闸门"三件交付掉 |
+
+★分派不是把活丢掉：T-0132 的验收里写明了**反例实验**（把日志标记改坏/首帧全黑必须让 T2 红）、**前置探测 + skip 策略**
+（缺 Electron/资源/GUI 会话 ⇒ `t.skip()` 而非 fail）、以及**必须给出 verify 口径的前后墙钟数字**。
+
+### 2. 本票最终状态（四项逐条对账）
+
+| # | 验收项 | 状态 | 证据 |
+|---|---|---|---|
+| 档位 + 组织法 | T0/T1 默认档、`test:list`/`test:org`、三轴 pragma、R1/R2/R3 棘轮 | ✅ | `test/orgRules.ts`、`test/organization.test.ts`；`test:org` = 169 文件 T0 124 / T1 45、0 问题 |
+| `test/` 类型检查 | 131 → **0**，闸门 D 从基线棘轮改**零容忍**并进 `verify` | ✅ | 第 3 次变更；`npm run typecheck:test` 0 错误、基线文件与工具已删 |
+| 闸门 E（变异） | 15 条变异全部可复跑、每条 ≥1 红 | ✅ | `npm run mutate` → 15/15 caught（本轮复跑同） |
+| T2 真机档文件 | 0 → 分派 **T-0132** | ➡️ | 见上表 §1 |
+
+### 3. 本轮复跑的绿线证据（2026-09-23）
+
+| 命令 | 结果 |
+|---|---|
+| `npm run verify` | **1086 例 / 1084 pass / 0 fail / 2 skip**，墙钟 **34.6 s**（含 4× tsc + `test:all` + 死写棘轮） |
+| `npm run test:org` | 文件 169：T0=124 T1=45；kind core=130 tool=14 ratchet=25；**0 条问题** |
+| `npm run test:e4` | T2：0 个文件（= T-0132 的起点，已记入该票 evidence） |
+| 四份台账 `--validate` | tickets 129→130 / capabilities 139 / scripts 33 / functions+fields（`report.js`）全绿 |

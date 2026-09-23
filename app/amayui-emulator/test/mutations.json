@@ -146,13 +146,14 @@
   },
   {
    "id": "M13_ophex_padstart_removed",
-   "file": "control/control.ts",
+   "file": "control/format.ts",
    "from": "  return `0x${opcode.toString(16).padStart(3, '0')}`;",
    "to": "  return `0x${opcode.toString(16)}`;",
    "semantics": "控制面板指令码去掉前导零（2026-09 用户实测把 0x0b5 看成 0x05b 的那个修复）",
-   "expectCatch": [],
-   "knownGap": "T-0127",
-   "note": "★首次实测**零覆盖**（全量 1078 例无一红）：`control/` 层没有任何测试。修在 T-0127（补 opHex 纯函数用例）；闸门会提醒翻牌"
+   "expectCatch": [
+    "control-format.test.ts"
+   ],
+   "note": "★2026-09-23 翻牌：首次实测是**零覆盖**（全量 1086 例无一红，`control/` 无测试）⇒ 登记为 T-0127 的缺口；T-0127 把 `opHex` 抽到不依赖 DOM 的 `control/format.ts` 并补了 `control-format.test.ts` ⇒ 现在它必须红。 ｜2026-09-23：`opHex` 从 `control/control.ts` 迁到 `control/format.ts`（为了可测），锚文件随之更新"
   },
   {
    "id": "M14_missing_texture_placeholder",
@@ -164,6 +165,17 @@
     "missing-texture-skips-item.test.ts"
    ],
    "note": "2026-09-23 新增：它同时证明了「源码正则守卫」比行为守卫弱 —— 注入后**旧的正则断言仍然绿**（它只认 `#placeholder(it: Item)` 这个签名），只有新的 `itemSprite(...) === null` 行为断言会红"
+  },
+  {
+   "id": "M15_click_dispatches_enter_label",
+   "file": "src/vm/engine.ts",
+   "from": "        this.dispatchWithReturn(panel.currentLabelClick(), -3);",
+   "to": "        this.dispatchWithReturn(panel.entries[panel.cursor]?.labelEnter ?? -1, -3);",
+   "semantics": "点击热点时派发 **labelA（进入）** 而不是 **labelC（点击）** —— 这正是旧实现的错法（引擎 `sub_404E00` = [459+游标] 才是点击）",
+   "expectCatch": [
+    "route-dispatch.test.ts"
+   ],
+   "note": "2026-09-23 新增：用来证明「删掉 adv-msgwin 里那三条重复路由用例之后，判据仍被 route-dispatch 抓住」（T-0129 的删减安全网）"
   }
  ]
 }

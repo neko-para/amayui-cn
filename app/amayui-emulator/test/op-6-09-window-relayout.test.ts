@@ -30,13 +30,14 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../src/text/layout.js';
 import { styleOfWin } from '../src/vm/handlers/msgwin.js';
-import { im, instr } from './harness.js';
+import { im, instr, scriptDerived } from './harness.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
 /** 造一个装在**指定宿主**上的合成脚本引擎（`harness.mkEngine` 固定用 StubNative，这里要 HeadlessScene）。 */
 function mk(ops: BinInstruction[], native: HeadlessScene): Engine {
   const e = new Engine(native);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

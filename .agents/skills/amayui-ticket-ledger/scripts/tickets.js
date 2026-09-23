@@ -79,6 +79,10 @@ function parseOpt(argv) {
 }
 const { o: opt, pos } = parseOpt(process.argv.slice(2));
 const root = (typeof opt.root === 'string' ? opt.root : null) || '.';
+// ★`tickets/T-0130`：守卫规格（`file#anchor`）的规则实现只有一份 —— `scripts/lib/guard-spec.cjs`
+// ★相对**工具自身**定位（不是 `--root`）：规则实现是工具代码，不是台账数据 ——
+//   `agent-workflow.test.ts` 会用 `--root <临时目录>` 跑这些工具，那里没有 scripts/lib。
+const { checkGuard } = require(path.resolve(__dirname, '..', '..', '..', '..', 'scripts', 'lib', 'guard-spec.cjs'));
 const DIR = path.join(root, 'tickets');
 
 // ---------------------------------------------------------------------------
@@ -274,8 +278,10 @@ function validate() {
       if (tests.length === 0 && doneWhy.length === 0) {
         problems.push(at('status=done 但没有 tests[]、也没有 doneWhy —— 不许空口声称做完（代码票给 tests，文档/分析票给 doneWhy）'));
       }
+      // ★`tickets/T-0130`：文件存在 → **用例存在**（规则实现只有一份：scripts/lib/guard-spec.mjs）
       for (const g of tests) {
-        if (!fs.existsSync(path.join(root, g))) problems.push(at(`tests 指向的守卫不存在：${g}`));
+        const why = checkGuard(root, g);
+        if (why) problems.push(at(`tests 指向的守卫不存在：${g}（${why}）`));
       }
     }
     if (t.status === 'dropped') {

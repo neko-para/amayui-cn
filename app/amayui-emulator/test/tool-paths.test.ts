@@ -17,14 +17,18 @@
  *  ② 越出仓库的相对/绝对路径 ⇒ **抛 `ToolPathError`**（调用方据此 `exit(2)`，不再冒成加载期异常）；
  *  ③ 文档里的老写法 `--scenario tools/scenarios/gamestart.json`（在包目录下敲）仍可用，
  *     但**必须报告**命中的是 `cwd(fallback)`（不做静默双基准）；
- *  ④ **源码棘轮**：两个 Electron 跑手都 `require('./paths.cjs')`，且 `preflight(...)` 出现在
+ *  ④两个 Electron 跑手都 `require('./paths.cjs')`，且 `preflight(...)` 出现在
  *     `require('../dist/electron/main.cjs')` **之前** —— 位置反过来就又会变成弹窗。
+ *     ★`--name` 的边界（不许带路径分隔符/`..`）2026-09-23 起**真跑一次 CLI** 断言（`tickets/T-0125`），
+ *     不再对源码里的报错文案做正则；`preflight` 的**语句顺序**仍只能看源码（那是代码形状主张，
+ *     没有运行期可观测物）⇒ 这一类"必须不存在/必须在前"的断言保留为棘轮。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -109,9 +113,30 @@ test('★T-0032 ④（源码棘轮）：两个跑手都用同一份 paths.cjs，
   }
 });
 
-test('★T-0032 ④：`--name` 不许带路径分隔符（shot.cjs 的边界）', () => {
-  const src = fs.readFileSync(path.join(TOOLS, 'shot.cjs'), 'utf8');
-  assert.match(src, /--name 只是文件名/, 'shot.cjs 必须有这条前置校验（写死文案，守卫按它钉）');
+test('★T-0032 ④：参数错 ⇒ **前置报错 + exit 2**（真跑一次 CLI，不拉起 Electron、也不看源码文案）', () => {
+  // ★2026-09-23（`tickets/T-0125`）：原版断 `assert.match(src, /--name 只是文件名/)` —— 判据钉在
+  //   `shot.cjs` 里那句**写死的报错文案**上（改标点就假红，而把校验删掉只要文案还在就假绿）。
+  //   现在真跑一次 CLI。之所以能这么跑：两个跑手的参数校验 2026-09-23 起排在
+  //   `require('electron')` **之前**（原先只排在 `require(main.cjs)` 之前）⇒ 普通 node 子进程
+  //   就能走到校验、拿到 `exit(2)`，全程不拉起 Electron。
+  for (const bad of ['a/b', 'a\\b', '..', 'x/../../y']) {
+    const r = spawnSync(process.execPath, [path.join(TOOLS, 'shot.cjs'), '--name', bad], { encoding: 'utf8' });
+    assert.equal(r.status, 2, `--name ${JSON.stringify(bad)} 必须前置报错 exit(2)；实际 status=${r.status}`);
+    assert.ok(
+      !/App threw an error|commandLine|electron/i.test(`${r.stdout}${r.stderr}`),
+      `★不许进入 Electron（那就会变成弹窗）：${r.stdout}${r.stderr}`,
+    );
+  }
+  // `record.cjs` 的越界 `--out`：同一份 `paths.cjs` 规则，同样必须在起 Electron 之前报出来
+  const rec = spawnSync(process.execPath, [path.join(TOOLS, 'record.cjs'), '--out', '../../越界.jsonl.gz'], {
+    encoding: 'utf8',
+  });
+  assert.equal(rec.status, 2, `越界的 --out 必须 exit(2)；实际 status=${rec.status}：${rec.stdout}${rec.stderr}`);
+  assert.match(String(rec.stderr), /越出仓库/, `应给一行可读的越界说明：${rec.stderr}`);
+  // 反面控制：合法 `--name` 会**继续往下走**（在普通 node 下会因为拿不到真 Electron 而失败，
+  // 但**不再是** exit(2) 那条前置校验）⇒ 证明上一条不是因为"任何参数都 exit 2"。
+  const ok = spawnSync(process.execPath, [path.join(TOOLS, 'shot.cjs'), '--name', 'guard-probe'], { encoding: 'utf8' });
+  assert.notEqual(ok.status, 2, `合法 --name 不该走前置校验的 exit(2)：${ok.stdout}${ok.stderr}`);
 });
 
 test('T-0032：`isInside` 的边界（等于 / 在内 / 在外 / 前缀相似但不是子目录）', () => {

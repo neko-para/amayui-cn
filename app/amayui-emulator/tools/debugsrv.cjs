@@ -259,49 +259,11 @@ async function handle(sock, msg) {
     return;
   }
 
-  // 与 `debugBreak.parseDebugCommand` 的白名单同形（**只做分流**，不做校验 —— 校验在渲染窗）
-  const isCommand = ['b', 'break', 'bl', 'breakpoints', 'd', 'delete', 'c', 'cont', 'continue', '?', 'help'].includes(head);
-
-  if (isCommand) {
-    // 断点/继续类：先下发（结果由渲染窗推送回来），再回一条确认
-    if (head === '?' || head === 'help') {
-      const r = await sendDebugQuery('?');
-      send(sock, { id, ...r });
-      return;
-    }
-    if (head === 'c' || head === 'cont' || head === 'continue') {
-      sendBreakCommand({ kind: 'continue' });
-      send(sock, { id, ok: true, lines: ['（已请求继续）'] });
-      return;
-    }
-    if (head === 'bl' || head === 'breakpoints') {
-      sendBreakCommand({ kind: 'list' });
-      send(sock, { id, ok: true, lines: ['（断点表将由 event=break-list 推送；见下一条消息）'] });
-      return;
-    }
-    if (head === 'd' || head === 'delete') {
-      const rest = text.split(/\s+/).slice(1);
-      const rid = rest[0] === undefined ? undefined : Number.parseInt(rest[0], 10);
-      if (rest[0] !== undefined && !Number.isInteger(rid)) {
-        send(sock, { id, ok: false, lines: [`delete：id 必须是整数（收到「${rest[0]}」）`] });
-        return;
-      }
-      sendBreakCommand(rid === undefined ? { kind: 'clear' } : { kind: 'clear', id: rid });
-      send(sock, { id, ok: true, lines: [`（已请求删除${rid === undefined ? '全部' : ` #${rid}`}）`] });
-      return;
-    }
-    // `b …`
-    const parts = text.split(/\s+/);
-    const rest = parts.slice(1);
-    if (rest[0]?.toLowerCase() === 'event') {
-      sendBreakCommand({ kind: 'set', breakKind: 'event', where: (rest[1] ?? '').toLowerCase(), condition: rest.slice(2).join(' ') });
-    } else {
-      sendBreakCommand({ kind: 'set', breakKind: 'step', condition: rest.join(' ') });
-    }
-    send(sock, { id, ok: true, lines: ['（断点已下发；生效与命中会以 event=break-list / event=paused 推送）'] });
-    return;
-  }
-
+  // ★`tickets/T-0127`：**本进程不再认识任何命令** —— 它只把整行原样转发给渲染窗，由那里的
+  //   `parseDebugCommand`（零依赖纯词汇表，与控制面板同一份）解析并派发，回执也由它给出。
+  //   为什么改：这里原先有一份"与 `debugBreak.parseDebugCommand` 同形"的手抄分流表 —— 那是**第三份**
+  //   拷贝（面板一份、渲染窗一份、这里一份），而面板那份已经漂移出过非法事件名 `global-write`。
+  //   现在增删命令只需改 `src/vm/debugCommand.ts` 一处。
   // 其余一律当**查询**（要回答案）
   const r = await sendDebugQuery(text);
   send(sock, { id, ...r });

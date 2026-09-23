@@ -21,6 +21,11 @@ import { SLEEP_GATE, type DebugEventKind, type Engine, type Frame } from '../../
 import { NotImplementedOp, type StepTrace } from '../../vm/interpreter.js';
 import { runQuery } from '../../vm/debugQuery.js';
 import {
+  DEBUG_COMMAND_HELP,
+  parseDebugCommand,
+  type DebugAction,
+} from '../../vm/debugCommand.js';
+import {
   compileBreak,
   matchEvent,
   matchInstruction,
@@ -269,10 +274,31 @@ export class RendererSession {
     });
     window.api?.onDebugQuery?.(({ id, text }) => {
       let result: unknown;
+      const raw = String(text ?? '');
       try {
-        result = runQuery(this.#e, String(text ?? ''));
+        // ★`tickets/T-0127`：这条通道现在是**唯一的"命令行收口点"** —— 调试守护进程（CLI）不再自己
+        //   分类命令，它把整行原样发过来，由这里的 `parseDebugCommand`（零依赖纯词汇表，与面板同一份）
+        //   解析后派发。于是"命令表"从 3 份拷贝收敛成 1 份，CLI 也能拿到 `?` 的**同一份**帮助文本。
+        const act = parseDebugCommand(raw);
+        if (act && act.a !== 'query') {
+          result = { query: raw, ok: true, lines: this.#applyDebugAction(act) };
+        } else {
+          result = runQuery(this.#e, act && act.a === 'query' ? act.text : raw, {
+            // ★`tickets/T-0127`：把**宿主侧**可观测面注入查询（VM 看不到"纹理是否真的就位"与 Live2D 运行态）。
+            slot: (slot) => {
+              const px = this.#pixi.getSlotPixels(slot);
+              return px ? `已就位 ${px.w}×${px.h}` : null;
+            },
+            l2d: (slot) => {
+              // ★ 挂在宿主（`l2dHost`）上，不在 SceneState 自己身上
+              const inst = this.#pixi.digestState().l2dHost?.l2dSlots.get(slot);
+              if (!inst) return null;
+              return `模型 id=${inst.modelId}、纹理 ${inst.textures.size} 组、动作 ${inst.current?.motion.name ?? '（无）'}`;
+            },
+          });
+        }
       } catch (err) {
-        result = { query: String(text ?? ''), ok: false, lines: [`查询抛错：${(err as Error).message}`] };
+        result = { query: raw, ok: false, lines: [`查询/命令抛错：${(err as Error).message}`] };
       }
       window.api?.sendDebugQueryResult?.({ id: Number(id), result });
     });
@@ -459,6 +485,40 @@ export class RendererSession {
       return { id: spec.id };
     } catch (err) {
       return { error: `断点条件无法解析：${(err as Error).message}` };
+    }
+  }
+
+  /**
+   * **执行一条已解析的调试命令**（`tickets/T-0127`）—— 面板的命令台与 CLI 的 `eval` 通道都走这里，
+   * 保证"同一条命令在两个入口下的效果与回执一致"。
+   *
+   * 返回给人看的回执行（CLI 直接把这几行打出来；面板另有自己的转录区）。
+   */
+  #applyDebugAction(act: DebugAction): string[] {
+    switch (act.a) {
+      case 'help':
+        return [...DEBUG_COMMAND_HELP];
+      case 'continue':
+        this.#resumeFromBreak();
+        return ['（已请求继续）'];
+      case 'break-list':
+        this.#reportBreakList({});
+        return [`断点 ${this.#breaks.length} 条（明细见 event=break-list 推送）`];
+      case 'break-del':
+        this.#breaks = act.id === undefined ? [] : this.#breaks.filter((b) => b.id !== act.id);
+        this.#reportBreakList({});
+        return [`（已请求删除${act.id === undefined ? '全部' : ` #${act.id}`}）`];
+      case 'break-add': {
+        const r = this.#addBreak(act.breakKind, act.where, act.condition);
+        if (r.error) {
+          this.#reportBreakList({ error: r.error });
+          return [`✗ ${r.error}`];
+        }
+        this.#reportBreakList({});
+        return [`（断点 #${r.id} 已下发；命中会以 event=paused 推送）`];
+      }
+      case 'query':
+        return [`（内部错误：query 不该走这里）${act.text}`];
     }
   }
 

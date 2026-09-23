@@ -38,8 +38,6 @@ const lPtr = (n: number): BinArg => ({ type: 0xc, raw: n }) as unknown as BinArg
 const lStrPtr = (n: number): BinArg => ({ type: 0xe, raw: n }) as unknown as BinArg;
 /** 数组型操作数（`0x8003` 族）。 */
 const arr = (type: number, raw: number): BinArg => ({ type, raw }) as unknown as BinArg;
-const instr = (op: number, args: BinArg[]): BinInstruction =>
-  ({ opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 }) as unknown as BinInstruction;
 
 function mk(): { e: Engine; run: (op: number, args: BinArg[]) => void; inp: (op: number, args: BinArg[]) => BinInstruction } {
   const native = new StubNative(() => {});

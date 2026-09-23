@@ -19,6 +19,7 @@ import {
   type MsgWinInput,
 } from '../src/text/layout.js';
 import { fontFaceFor, fontFileList, normalizeFace, resolveFace } from '../src/text/fontSet.js';
+import { at } from './harness.js';
 
 const input = (over: {
   text: string;
@@ -95,29 +96,29 @@ test('show-text 的多段拼接成一行（未 end-text-line 时不换行）', (
     ],
   });
   assert.equal(f.lines.length, 1);
-  assert.equal(f.lines[0].text, 'いキャッスル');
+  assert.equal(at(f.lines, 0, '行').text, 'いキャッスル');
 });
 
 test('注音：居中于本文词上方一个注音字高', () => {
   // 本文「天結」二字 = 60px（字号 30），注音「あまゆ」3 字 × 10px/字 = 30px
   const f = layoutWindow(9, input({ text: '天結', ruby: [['天結', 'あまゆ']], style: { wrapRight: 1000 } }));
-  const line = f.lines[0];
+  const line = at(f.lines, 0, '行');
   assert.equal(line.glyphs.length, 2);
-  const rx0 = line.ruby[0].x;
-  const rxEnd = line.ruby[line.ruby.length - 1].x + advance('ゆ', 10);
+  const rx0 = at(line.ruby, 0, '注音').x;
+  const rxEnd = at(line.ruby, line.ruby.length - 1, '注音').x + advance('ゆ', 10);
   // 居中：注音左右端点相对本文词左右端点各内缩 (60-30)/2 = 15
   assert.equal(rx0, 0 + 15);
   assert.equal(rxEnd, 60 - 15);
   // 本文行上方一个注音字高（`Font+1292` = -注音字号）+ 引擎在非 D3D 路径的 +1
   // （sub_465A20：`ruby.y = 行 y + Font+1292`，随后 `if (DrawMode != 1 && !Font+218600) ++y`）
-  assert.equal(line.ruby[0].y, -9);
+  assert.equal(at(line.ruby, 0, '注音').y, -9);
 });
 
 test('★注音随本文词的**末字**显现（不是整行一开头就全亮）—— tickets/T-0037', () => {
   // 本文「天結」二字（字号 30）+ 注音「あまゆ」；引擎把注音记录挂在本文词**最后一个字**的
   // 24B 记录之后并给该记录标 [+0]=1，显现循环 do { 贴 } while (上一记录[+0]) ⇒ 一步 = 末字 + 注音。
   const f = layoutWindow(9, input({ text: '天結い', ruby: [['天結', 'あまゆ']], style: { wrapRight: 1000 } }));
-  const line = f.lines[0];
+  const line = at(f.lines, 0, '行');
   assert.equal(line.ruby.length, 3);
   assert.deepEqual(
     line.ruby.map((g) => g.from),
@@ -178,8 +179,8 @@ test('注音：跨行不配对（引擎把注音挂在行记录上）', () => {
     f.lines.map((l) => l.text),
     ['あい', 'うえ'],
   );
-  assert.equal(f.lines[0].ruby.length, 2);
-  assert.equal(f.lines[1].ruby.length, 0);
+  assert.equal(at(f.lines, 0, '行').ruby.length, 2);
+  assert.equal(at(f.lines, 1, '行').ruby.length, 0);
 });
 
 test("★`vertical` 标志不改变排版流向（引擎 sub_46BE30 不读 Font+235108）", () => {
@@ -219,11 +220,15 @@ test('对齐：mode 1 居中（op3 = 行中心）/ mode 2 右对齐（行右缘�
   //   真机对照：win 8 `i303 8 1 1f4`（op3=500）+ 块原点 x=140 ⇒ 行中心 = 640 = 屏幕中心。
   const base = { wrapRight: 1000, alignWidth: 200 } as const;
   const center = layoutWindow(9, input({ text: '天結', style: { ...base, align: 1 } }));
-  assert.equal(center.lines[0].glyphs[0].x, 200 - 60 / 2, '位移 = op3 − 行宽/2 ⇒ 行中心 = op3（此处 200）');
+  assert.equal(
+    at(at(center.lines, 0, '行').glyphs, 0, '字形').x,
+    200 - 60 / 2,
+    '位移 = op3 − 行宽/2 ⇒ 行中心 = op3（此处 200）',
+  );
   const right = layoutWindow(9, input({ text: '天結', style: { ...base, align: 2 } }));
-  assert.equal(right.lines[0].glyphs[0].x, 200 - 60, '右对齐：行右缘 = op3');
+  assert.equal(at(at(right.lines, 0, '行').glyphs, 0, '字形').x, 200 - 60, '右对齐：行右缘 = op3');
   const left = layoutWindow(9, input({ text: '天結', style: { ...base, align: 0 } }));
-  assert.equal(left.lines[0].glyphs[0].x, 0);
+  assert.equal(at(at(left.lines, 0, '行').glyphs, 0, '字形').x, 0);
 });
 
 test('★逐字显现游标：负数 = 全部显示、0 = 不画（漏掉这条 ⇒ 所有窗口空白）', () => {
@@ -240,10 +245,10 @@ test('★逐字显现游标：负数 = 全部显示、0 = 不画（漏掉这条 
 
 test('逐字显现游标：按跨行累计的字形序号决定每行画几个', () => {
   const f = layoutWindow(1, input({ text: 'あいうえおか', style: { wrapRight: 100, wrapBottom: 720 } }));
-  assert.equal(visibleInLine(f.lines[0], 0, 0), 0);
-  assert.equal(visibleInLine(f.lines[0], 0, 2), 2);
-  assert.equal(visibleInLine(f.lines[0], 0, 5), 3); // 第一行封顶
-  assert.equal(visibleInLine(f.lines[1], 3, 5), 2);
+  assert.equal(visibleInLine(at(f.lines, 0, '行'), 0, 0), 0);
+  assert.equal(visibleInLine(at(f.lines, 0, '行'), 0, 2), 2);
+  assert.equal(visibleInLine(at(f.lines, 0, '行'), 0, 5), 3); // 第一行封顶
+  assert.equal(visibleInLine(at(f.lines, 1, '行'), 3, 5), 2);
   assert.equal(f.glyphCount, 6);
 });
 

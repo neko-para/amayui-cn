@@ -38,6 +38,8 @@ import { StubNative } from '../src/vm/stubNative.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { parseIni } from '../src/engineConfig.js';
 import { parseScriptBytes } from '../src/script/bin.js';
+// ★`sub40F750Branch` 是**引擎分派表的事实**（此前只能经日志文案观测，`tickets/T-0125` 起直接断言真值表）
+import { sub40F750Branch } from '../src/vm/handlers/control.js';
 import type { EngineSlotResume } from '../src/vm/engineSlot.js';
 import { buildScriptBin } from './engineSlotFixtures.js';
 
@@ -104,7 +106,9 @@ test('② caller=-11 且无记录 0：不抛 ExitScript、不退出程序，只�
     null,
     `★"无记录 0"必须什么都不做（旧实现抛 ExitScript = 程序退出）；实际抛了 ${String(thrown)}`,
   );
-  assert.ok(!(thrown instanceof ExitScript), '尤其不得是 ExitScript');
+  // ★这里曾有一条 `assert.ok(!(thrown instanceof ExitScript), '尤其不得是 ExitScript')` —— 它是
+  //   **同义反复**：上一行 `assert.equal`（`node:assert/strict`）已经要求 `thrown === null`，而
+  //   `null instanceof X` 恒为 false ⇒ 它永远不会是失败的那一条（`tickets/T-0125` 的清理口径）。
   assert.ok(trace, '应正常返回一条 trace（说明"一次控制转移"没被误当成"整个程序退出"）');
   assert.equal(trace.opcode, 0x2);
 
@@ -127,35 +131,74 @@ test('② caller=-11 且无记录 0：不抛 ExitScript、不退出程序，只�
   assert.equal(f.ip, 2);
 });
 
-test('② `set:SaveVersion1/2` 真的被读：改注册表值 ⇒ 分派支跟着变（且**只读**，值不被回写）', async () => {
-  const cases: { ini: string; sv1: number; sv2: number; branch: RegExp }[] = [
-    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 0\n', sv1: 1, sv2: 0, branch: /两支都不进 ⇒ 直接 return（不动作）/ },
-    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 10\n', sv1: 1, sv2: 10, branch: /sv1=1 的部分还原（a3∈\{10,20\}）/ },
-    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 20\n', sv1: 1, sv2: 20, branch: /sv1=1 的部分还原（a3∈\{10,20\}）/ },
-    { ini: '[set]\nSaveVersion1 = 2\nSaveVersion2 = 0\n', sv1: 2, sv2: 0, branch: /装载记录脚本（a2==2\/3/ },
-    { ini: '[set]\nSaveVersion1 = 3\nSaveVersion2 = 20\n', sv1: 3, sv2: 20, branch: /装载记录脚本（a2==2\/3/ },
+test('② `set:SaveVersion1/2` 真的被读：改注册表值 ⇒ 装载支跟着变（且**只读**，值不被回写）', async () => {
+  // ★2026-09-23 重写（`tickets/T-0125`）：原版用 `assert.match(logs.join(), c.branch)` 判"走了哪一支"
+  //   —— 判据钉在**引擎自己的日志文案**上（改文案假红、把配置读成常量却照旧打同一行可以假绿）。
+  //   现在断**行为**：给 `pendingRecord0` + 假 FileSource，于是"分派进装载支"的唯一可观测后果 =
+  //   帧 0 换成记录脚本（`curScript().name === 'SYSTEM4.BIN'`）且标志被消费；'none' 支则**什么都不动**。
+  //   三分类本身（partial / record / none）是纯函数，改由 `sub40F750Branch` 的真值表用例直接钉。
+  const cases: { ini: string; sv1: number; sv2: number; loads: boolean }[] = [
+    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 0\n', sv1: 1, sv2: 0, loads: false },
+    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 10\n', sv1: 1, sv2: 10, loads: true },
+    { ini: '[set]\nSaveVersion1 = 1\nSaveVersion2 = 20\n', sv1: 1, sv2: 20, loads: true },
+    { ini: '[set]\nSaveVersion1 = 2\nSaveVersion2 = 0\n', sv1: 2, sv2: 0, loads: true },
+    { ini: '[set]\nSaveVersion1 = 3\nSaveVersion2 = 20\n', sv1: 3, sv2: 20, loads: true },
     // a2 ∉ {1,2,3}（含注册表缺键时的 0）⇒ 什么都不做
-    { ini: '[set]\nSaveVersion1 = 0\nSaveVersion2 = 20\n', sv1: 0, sv2: 20, branch: /两支都不进 ⇒ 直接 return（不动作）/ },
+    { ini: '[set]\nSaveVersion1 = 0\nSaveVersion2 = 20\n', sv1: 0, sv2: 20, loads: false },
   ];
   for (const c of cases) {
     const logs: string[] = [];
     const e = mkEngine(logs);
     e.config = parseIni(c.ini);
     armCallback(e);
+    e.fileSource = fakeFileSource();
+    e.saveResume = resume0({ sv1: c.sv1, sv2: c.sv2 });
     const before = JSON.stringify([...e.config.values]);
+    const scriptBefore = e.curScript().name;
 
     const thrown = await stepOnce(e).then(
       () => null,
       (x: unknown) => x,
     );
     assert.equal(thrown, null, `sv1=${c.sv1}/sv2=${c.sv2} 不得抛异常`);
-    const joined = logs.join('\n');
-    assert.match(joined, new RegExp(`sub_40F750\\(sv1=${c.sv1}, sv2=${c.sv2}\\)`), '读到的值 = 注册表里的值');
-    assert.match(joined, c.branch, `sv1=${c.sv1}/sv2=${c.sv2} 的分派支`);
+    assert.equal(
+      e.engineValues.get(ENGINE_FIELD.callRet),
+      -1,
+      `sv1=${c.sv1}/sv2=${c.sv2}：本分支第一件事恒为写 call_ret = -1`,
+    );
+    if (c.loads) {
+      assert.equal(
+        e.curScript().name,
+        'SYSTEM4.BIN',
+        `sv1=${c.sv1}/sv2=${c.sv2} ⇒ 分派进装载支：帧 0 必须换成记录 0 的脚本`,
+      );
+      assert.equal(e.saveResume!.pendingRecord0, false, `sv1=${c.sv1}/sv2=${c.sv2}：标志被消费`);
+    } else {
+      assert.equal(
+        e.curScript().name,
+        scriptBefore,
+        `sv1=${c.sv1}/sv2=${c.sv2} ⇒ 'none' 支：**不得**装载（帧 0 脚本不变）`,
+      );
+      assert.equal(e.saveResume!.pendingRecord0, true, `sv1=${c.sv1}/sv2=${c.sv2}：'none' 支不消费标志`);
+    }
     // ★审计 `op-2-10` 说这一支"把结果写回配置" —— 体里没有写（两次 call 都是 vtable 槽 +4 的 GetConfig，
     //   写侧是槽 +12 的 sub_492AB0，本分支一次都没调；见 control.ts 的 readSaveVersionPair 头注）。
     assert.equal(JSON.stringify([...e.config.values]), before, '★本分支只读：注册表值不得被改写');
   }
+});
+
+test('② `sub_40F750` 的分派真值表（`tickets/T-0125`：从日志文案改判纯函数本身）', () => {
+  // 表逐行有 raw 依据（见 `control.ts` 的头注）：a2==1 且 a3∈{10,20} = 部分还原；a2∈{2,3} = 装记录；
+  // 其余（含缺键的 0）= 什么都不做。★判据从"日志里出现哪句话"改成"函数返回哪个类"。
+  assert.equal(sub40F750Branch(1, 10), 'partial');
+  assert.equal(sub40F750Branch(1, 20), 'partial');
+  assert.equal(sub40F750Branch(1, 0), 'none');
+  assert.equal(sub40F750Branch(1, 30), 'none');
+  assert.equal(sub40F750Branch(2, 0), 'record');
+  assert.equal(sub40F750Branch(2, 20), 'record');
+  assert.equal(sub40F750Branch(3, 20), 'record');
+  assert.equal(sub40F750Branch(0, 20), 'none');
+  assert.equal(sub40F750Branch(4, 10), 'none');
 });
 
 // ---------------------------------------------------------------------------

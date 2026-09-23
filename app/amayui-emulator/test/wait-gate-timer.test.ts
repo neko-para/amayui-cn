@@ -36,6 +36,7 @@ import {
   scTransitionDefaultRecord,
 } from '../src/renderer/sceneModel.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const im = (n: number): BinArg => ({ type: 0, raw: n }) as unknown as BinArg;
 const instr = (opcode: number, args: BinArg[] = []): BinInstruction =>
@@ -45,6 +46,7 @@ const instr = (opcode: number, args: BinArg[] = []): BinInstruction =>
 function mk(ops: BinInstruction[], native: StubNative | HeadlessScene): Engine {
   const e = new Engine(native);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

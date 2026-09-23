@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { Engine } from '../src/vm/engine.js';
 import { StubNative } from '../src/vm/native.js';
 import { enc } from '../src/vm/bits.js';
-import { runQuery } from '../src/vm/debugQuery.js';
+import { DEBUG_QUERY_HELP, runQuery } from '../src/vm/debugQuery.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const SRC = path.join(ROOT, 'app/amayui-emulator/src/vm/debugQuery.ts');
@@ -139,4 +139,32 @@ test('★源码棘轮：调试查询不许 eval（白名单解析）', () => {
   const src = fs.readFileSync(SRC, 'utf8');
   assert.ok(!/\beval\s*\(/.test(src), '不得使用 eval');
   assert.ok(!/new\s+Function\s*\(/.test(src), '不得使用 new Function');
+});
+
+test('★`tickets/T-0127`：宿主侧可观测面 —— `slot` 分两侧报、`l2d <槽>` 报运行态', () => {
+  const e = new Engine(new StubNative(() => {}));
+  e.texSlots.set(0x11, 0x5260);
+  // ① 有注入：宿主侧单独一行
+  const withHost = runQuery(e, 'slot 11', {
+    slot: () => '已就位 320×180',
+    l2d: (s) => (s === 5 ? '模型 id=7、纹理 2 组、动作 idle' : null),
+  });
+  assert.equal(withHost.ok, true);
+  assert.ok(withHost.lines.some((l) => l.includes('宿主') && l.includes('已就位 320×180')), `应报宿主侧；实际 ${JSON.stringify(withHost.lines)}`);
+  // ② 不注入：明说"查不到"，而不是假装没有（也不能因此失败）
+  const noHost = runQuery(e, 'slot 11');
+  assert.equal(noHost.ok, true);
+  assert.ok(noHost.lines.some((l) => l.includes('未注入宿主查询')), '不注入时要明说，不许静默');
+
+  // ③ `l2d <槽>`：有注入 ⇒ 报运行态；该槽没有立绘 ⇒ 明说
+  const l2dHit = runQuery(e, 'l2d 5', { l2d: (s) => (s === 5 ? '模型 id=7' : null) });
+  assert.ok(l2dHit.lines.some((l) => l.includes('模型 id=7')));
+  const l2dMiss = runQuery(e, 'l2d 6', { l2d: () => null });
+  assert.ok(l2dMiss.lines.some((l) => l.includes('没有立绘实例')));
+  // ④ 没注入 ⇒ 明确失败并说明原因（Live2D 运行态不在 VM 里）
+  const l2dNoHost = runQuery(e, 'l2d 5');
+  assert.equal(l2dNoHost.ok, false);
+  assert.ok(l2dNoHost.lines[0]!.includes('未注入宿主查询'));
+  // ⑤ 帮助文本要列上这条命令
+  assert.ok(DEBUG_QUERY_HELP.some((l) => l.includes('l2d')), '帮助里应有 l2d');
 });

@@ -7,44 +7,34 @@
 
 ## 概览
 
-共 **129** 张：🔜 doing **7** · ⛔ blocked **0** · ⬜ open **16** · ✅ done **105** · 🚫 dropped **1**（P0 7 / P1 47）
+共 **130** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **10** · ✅ done **116** · 🚫 dropped **1**（P0 7 / P1 47）
 
-按域：`emulator/render` 21 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/test` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/msgwin` 3 · `emulator/tooling` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1
+按域：`emulator/render` 21 · `emulator/test` 11 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 9 · `emulator/save-slot` 8 · `emulator/hosts` 7 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/msgwin` 3 · `emulator/tooling` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/emulator/verify` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1
 
-## 🔜 doing（7）
+## 🔜 doing（3）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0124`](./T-0124/ticket.json) | P1 | analysis | `emulator/test` | 全量测试审计（159 文件 / 1078 用例）：逐条判定「有价值 / 无意义」，并评估 Electron 调试能力下的测试方法论 | 8 | — | `notes.md` evidence/(11) | — |
-| [`T-0125`](./T-0125/ticket.json) | P1 | refactor | `emulator/test` | 清理无判别力断言：5 处零断言假绿 + 恒真/镜像 + 1 处错 oracle（每条带反例实验） | 8 | — | `changes.md` | — |
-| [`T-0126`](./T-0126/ticket.json) | P1 | refactor | `emulator/test` | 测试分档 T0/T1/T2/T3（默认档 ≤20s）+ test/ 纳入 typecheck | 8 | — | `changes.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
-| [`T-0129`](./T-0129/ticket.json) | P2 | refactor | `emulator/test` | 重复覆盖去重：adv-msgwin 路由组 / 存档族 10→7 / option-font-speed-menu 拆分 / 注册表分类棘轮合并 | 7 | — | `changes.md` | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 8 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（16）
+## ⬜ open（10）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0127`](./T-0127/ticket.json) | P1 | req | `emulator/tooling` | 调试器命令表单源化（消灭 3 份拷贝）+ 事件面扩 engine-field-write/local-int-write + debugQuery 加宿主侧槽… | 7 | — | — | — |
-| [`T-0128`](./T-0128/ticket.json) | P1 | bug | `emulator/verify` | E4 闸门统一到 base+overlay 两侧都看（9 处静默跳过）+ replay 把 Live2D 接进 Digest | 5 | — | — | — |
 | [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
-| [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | — | `notes.md` | — |
 | [`T-0122`](./T-0122/ticket.json) | P2 | req | `emulator/tooling` | 调试器第 3 步：内存快照/恢复（引擎态 dump 与回灌） | 7 | — | — | — |
-| [`T-0130`](./T-0130/ticket.json) | P2 | tooling | `emulator/test` | 三份台账的 guards/tests 加内容锚点（现在只查文件存在） | 5 | — | — | — |
-| [`T-0131`](./T-0131/ticket.json) | P2 | tooling | `toolkit/test` | amayui-toolkit 的 87 个 vitest 用例既不在闸门里、又依赖未入 git 的 metadata.json；并修 3 处恒真/假覆盖 | 5 | — | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
-| [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
 | [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 4 | — | `notes.md` | — |
 | [`T-0107`](./T-0107/ticket.json) | P3 | analysis | `analysis/emulator/live2d` | INFOEN 的 L2D 资产 id 表（全局槽 527d8c / 528944）真源未定位：脚本 0 写点 ⇒ 需要找出引擎侧是谁填的 | 4 | — | — | — |
 | [`T-0108`](./T-0108/ticket.json) | P3 | docs | `analysis` | 数据层沿革话术：semantics/note 里的「订正/原记/旧写」146 处 → 结论留原文、沿革落 journal[] | 5 | — | — | — |
 | [`T-0112`](./T-0112/ticket.json) | P3 | docs | `docs/03-engine` | B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-eff… | 6 | — | — | — |
-| [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | — | — |
+| [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | `notes.md` | — |
 
-## ✅ done（105）
+## ✅ done（116）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -97,6 +87,11 @@
 | [`T-0094`](./T-0094/ticket.json) | P1 | bug | `emulator/adv` | 0x196 display-furigana 的第①②路 MessageSpeed 节流半边未建模（6341 处语料，会少等一拍） | 5 | `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0102`](./T-0102/ticket.json) | P1 | bug | `emulator/adv` | 进入 SC 场景后 ADV 窗口背景是白色（展开/收起侧边栏菜单刷新后才正确）；阿瓦罗角色名颜色变青色（预期橘色） | 10 | `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/texture-bind-race.test.ts` `app/amayui-emulator/test/texture-frame-barrier.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/adv-name-color-chain.test.ts` `app/amayui-emulator/test/t0102-chapter-chain.test.ts` `app/amayui-emulator/test/missing-texture-skips-item.test.ts` `app/amayui-emulator/test/msg-text-range.test.ts` `app/amayui-emulator/test/op-0202-negative-fallback.test.ts` | `notes.md` `changes.md` `white-report.md` evidence/(18) | — |
 | [`T-0116`](./T-0116/ticket.json) | P1 | req | `emulator/hosts` | macOS 宿主侧那半件：新增 `native/macos-input`（0x10A 的 `CGWarpMouseCursorPosition`）—— 现在只… | 8 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0124`](./T-0124/ticket.json) | P1 | analysis | `emulator/test` | 全量测试审计（159 文件 / 1078 用例）：逐条判定「有价值 / 无意义」，并评估 Electron 调试能力下的测试方法论 | 8 | `app/amayui-emulator/test/organization.test.ts` `app/amayui-emulator/test/ticket-ledger.test.ts` | `notes.md` evidence/(11) | — |
+| [`T-0125`](./T-0125/ticket.json) | P1 | refactor | `emulator/test` | 清理无判别力断言：5 处零断言假绿 + 恒真/镜像 + 1 处错 oracle（每条带反例实验） | 9 | `app/amayui-emulator/test/organization.test.ts#R3` `app/amayui-emulator/test/render-draw-order.test.ts#Z1` `app/amayui-emulator/test/op-02-exit-minus11.test.ts#分派真值表` `app/amayui-emulator/test/msg-text-range.test.ts#正文区间内 + 无纹理槽` `app/amayui-emulator/test/tool-paths.test.ts#前置报错 + exit 2` `app/amayui-emulator/test/op-22a-22f-scene-xform.test.ts#raw 地址` | `changes.md` | — |
+| [`T-0126`](./T-0126/ticket.json) | P1 | refactor | `emulator/test` | 测试分档 T0/T1/T2/T3（默认档 ≤20s）+ test/ 纳入 typecheck | 8 | `app/amayui-emulator/package.json#"typecheck:test": "tsc -p tsconfig.test.json --noEmit"` `app/amayui-emulator/package.json#"verify": "npm run typecheck && npm run typecheck:test && npm run test:all && npm run check:dead-writes"` `app/amayui-emulator/test/organization.test.ts#R3` `app/amayui-emulator/test/harness-convergence.test.ts#mk()` | `changes.md` | — |
+| [`T-0127`](./T-0127/ticket.json) | P1 | req | `emulator/tooling` | 调试器命令表单源化（消灭 3 份拷贝）+ 事件面扩 engine-field-write/local-int-write + debugQuery 加宿主侧槽… | 7 | `app/amayui-emulator/test/debug-break.test.ts` `app/amayui-emulator/test/debug-event-break.test.ts` `app/amayui-emulator/test/debug-query.test.ts` `app/amayui-emulator/test/control-format.test.ts` | `changes.md` | — |
+| [`T-0128`](./T-0128/ticket.json) | P1 | bug | `emulator/verify` | E4 闸门统一到 base+overlay 两侧都看（9 处静默跳过）+ replay 把 Live2D 接进 Digest | 5 | `app/amayui-emulator/test/engine-slot.test.ts` `app/amayui-emulator/test/save-slot.test.ts` `app/amayui-emulator/test/save-thumb.test.ts` `app/amayui-emulator/test/slot-load-resume.test.ts` `app/amayui-emulator/test/slot-load-transfer.test.ts` `app/amayui-emulator/test/save-slot-chain.test.ts` `app/amayui-emulator/test/save-slot-thumb.test.ts` `app/amayui-emulator/test/frame-digest.test.ts` `app/amayui-emulator/test/gallery-bgm-list.test.ts` | `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |
@@ -128,12 +123,18 @@
 | [`T-0104`](./T-0104/ticket.json) | P2 | req | `emulator/adv` | 0x82（sub_41F720 → GDI 文本族 sub_466000）未建模：现为 STUB 放行，需补「重绘哪个窗」的口径 | 6 | `app/amayui-emulator/test/op-0104-gdi-repaint.test.ts` `app/amayui-emulator/test/config1-chain.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0106`](./T-0106/ticket.json) | P2 | req | `emulator/audio` | 音频静音开关：`emulator.config.json` 的 `audio.enabled` + 命令行 `AMAYUI_AUDIO_ENABLED`（测试… | 6 | `app/amayui-emulator/test/audio-silent-option.test.ts` | `changes.md` | — |
 | [`T-0114`](./T-0114/ticket.json) | P2 | req | `emulator/tooling` | 控制面板强化为调试器：① 调试查询（已落地）② 断点/表达式日志 ③ 内存快照/恢复 | 13 | `app/amayui-emulator/test/debug-query.test.ts` `app/amayui-emulator/test/debug-break.test.ts` `app/amayui-emulator/test/debug-event-break.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0115`](./T-0115/ticket.json) | P2 | refactor | `emulator/test` | verify 太慢：四个 E3 真语料测试文件占掉大半（建议共享 fixture / 分档） | 3 | `app/amayui-emulator/test/organization.test.ts` | `notes.md` | — |
 | [`T-0117`](./T-0117/ticket.json) | P2 | tooling | `emulator/hosts` | 把 darwin 原生模块的**预编译通用二进制**（deployment target 11.0 / arm64+x86_64）预置进仓库，并修订「二进制不… | 6 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | T-0116 |
 | [`T-0119`](./T-0119/ticket.json) | P2 | refactor | `emulator/hosts` | 把 win32-input / macos-input 合并成 `native/host-input`：一个 addon 两个平台实现（加载器/类型/READ… | 8 | `app/amayui-emulator/test/native-host.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0120`](./T-0120/ticket.json) | P2 | analysis | `analysis/emulator/verify` | Windows 侧在合并后未实机核验：`native/host-input` 的构建与加载（延迟加载钩子）需要在 Windows 上再确认一次 | 6 | `app/amayui-emulator/test/native-host.test.ts` `native/host-input/tools/smoke.cjs` | `notes.md` `changes.md` | — |
 | [`T-0121`](./T-0121/ticket.json) | P2 | bug | `app/emulator/native` | 守卫 `test/native-host.test.ts` 在非 darwin 平台必红：预置产物兜底用例 dlopen 了异平台 Mach-O（Window… | 5 | `app/amayui-emulator/test/native-host.test.ts` | `changes.md` | — |
+| [`T-0129`](./T-0129/ticket.json) | P2 | refactor | `emulator/test` | 重复覆盖去重：adv-msgwin 路由组 / 存档族 10→7 / option-font-speed-menu 拆分 / 注册表分类棘轮合并 | 10 | `app/amayui-emulator/test/registry-classification.test.ts#一张表` `app/amayui-emulator/test/harness-convergence.test.ts#mk()` `app/amayui-emulator/test/harness.ts#export function trackArgs` `app/amayui-emulator/test/adv-msgwin.test.ts#1000 / 60` | `changes.md` | — |
+| [`T-0130`](./T-0130/ticket.json) | P2 | tooling | `emulator/test` | 三份台账的 guards/tests 加内容锚点（现在只查文件存在） | 5 | `app/amayui-emulator/test/capability-ledger.test.ts` `app/amayui-emulator/test/script-ledger.test.ts` `app/amayui-emulator/test/ticket-ledger.test.ts` | `changes.md` | — |
+| [`T-0131`](./T-0131/ticket.json) | P2 | tooling | `toolkit/test` | amayui-toolkit 的 87 个 vitest 用例既不在闸门里、又依赖未入 git 的 metadata.json；并修 3 处恒真/假覆盖 | 5 | `app/amayui-toolkit/src/services/dataset.test.ts` `app/amayui-toolkit/src/services/search.test.ts` `app/amayui-toolkit/src/services/rules.test.ts` | `changes.md` | — |
+| [`T-0132`](./T-0132/ticket.json) | P2 | req | `emulator/test` | T2 真机档首批文件：把 E4 工具链（shot / dbg:srv）落成 @tier T2 守卫，并定 verify 口径 | 6 | `app/amayui-emulator/test/e4-gamestart-shot.test.ts#判据自检（不需要 Electron）` `app/amayui-emulator/test/e4-gamestart-shot.test.ts#E4：真 Electron 跑 gamestart` `app/amayui-emulator/test/organization.test.ts#默认档有实质覆盖` | `notes.md` `changes.md` | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
+| [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | `app/amayui-emulator/test/harness-convergence.test.ts` | `changes.md` | — |
 | [`T-0021`](./T-0021/ticket.json) | P3 | refactor | `emulator/arch` | 消 A1 分层违规：arch/nodeFileSource.ts 与 electron/ipc/files.ts 反向依赖 vm/saveData | 2 | `app/amayui-emulator/test/layer-direction.test.ts` `app/amayui-emulator/test/save-data.test.ts` `app/amayui-emulator/test/overlay.test.ts` `app/amayui-emulator/test/save-slot.test.ts` | `changes.md` | — |
 | [`T-0022`](./T-0022/ticket.json) | P3 | tooling | `repo` | 跨包边与孤儿文件清理（src/opcodes.ts → scripts/asm/opcodes.json；根 age_map_src.mjs 等） | 2 | `app/amayui-emulator/test/opcode-json-sync.test.ts` `app/amayui-emulator/test/opcode-arity.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `changes.md` | — |
 | [`T-0025`](./T-0025/ticket.json) | P3 | req | `emulator/render` | headless 自带 AGF 尺寸解析：让 0x208 不再依赖录制 | 3 | `app/amayui-emulator/test/agf-size.test.ts` | `notes.md` evidence/(1) | — |

@@ -15,26 +15,26 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/vm/debugBreak.ts",
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
       "anchor": "export function parseDebugCommand",
-      "note": "零生产调用者",
-      "line": 514
+      "note": "零生产调用者｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
+      "line": 69
     },
     {
-      "file": "app/amayui-emulator/control/control.ts",
-      "anchor": "类型：global-write / slot-bind",
-      "note": "用户可见的非法事件名（无任何测试覆盖）",
-      "line": 246
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
+      "anchor": "export const EVENT_KINDS",
+      "note": "用户可见的非法事件名（无任何测试覆盖）｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串",
+      "line": 34
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "DebugEventKind",
-      "note": "事件面只有 4 种，不含 local / engineValues 写"
+      "note": "事件面只有 4 种，不含 local / engineValues 写｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串"
     },
     {
       "file": "tickets/T-0124/notes.md",
       "anchor": "### 4.2 它**不能**替代什么",
-      "note": "能力面的三条硬限制 + 两条工具缺陷"
+      "note": "能力面的三条硬限制 + 两条工具缺陷｜★2026-09-23：T-0127 把命令词汇表下沉到零依赖的 `src/vm/debugCommand.ts`，面板帮助改为渲染共享常量 ⇒ 原先「面板里那个非法事件名」这一证据点已**消失**（正是本票要修的东西），evidence 随之 retarget 到共享真源上的同义串"
     }
   ],
   "links": {
@@ -47,12 +47,23 @@
     ]
   },
   "id": "T-0127",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点未变）"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/debug-break.test.ts",
+    "app/amayui-emulator/test/debug-event-break.test.ts",
+    "app/amayui-emulator/test/debug-query.test.ts",
+    "app/amayui-emulator/test/control-format.test.ts"
   ]
 }

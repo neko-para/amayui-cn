@@ -23,6 +23,7 @@ import { parseScenarioSpec, runScenario, ScenarioScheduler, type ScenarioSpec } 
 import { TraceRecorder, parseTrace, runReplay, traceToSpec, type TraceHeader } from '../src/frame/trace.js';
 import { canonicalize } from '../src/frame/digest.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const FRAME_MS = 1000 / 60;
 const im = (n: number): BinArg => ({ type: 0, raw: n }) as unknown as BinArg;
@@ -34,6 +35,7 @@ function mk(ops: BinInstruction[]): { e: Engine; host: ReturnType<typeof headles
   const scene = new HeadlessScene();
   const e = new Engine(scene);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

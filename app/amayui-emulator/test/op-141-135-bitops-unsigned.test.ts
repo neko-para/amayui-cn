@@ -39,6 +39,7 @@ import { dec, enc } from '../src/vm/bits.js';
 import { cfgInt } from '../src/engineConfig.js';
 import { CFG } from '../src/configRegistry.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_GLOBAL_INT = 0x3;
@@ -53,6 +54,7 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,

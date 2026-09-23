@@ -33,6 +33,12 @@ jobs:
         working-directory: app/amayui-toolkit
         run: npm ci
 
+      # ★先跑测试（`tickets/T-0131`：原来这条 workflow **从不** `npm test` ⇒ 87 个 vitest 用例不在任何闸门里）。
+      #   `pretest` 会先 `build:data` 生成 `public/data/metadata.json`（它没入 git，见 package.json / .gitignore）。
+      - name: Test
+        working-directory: app/amayui-toolkit
+        run: npm test
+
       # 生成 public/data/metadata.json（读工程根 src/ 权威数据源）并 Vite 构建 dist/
       - name: Extract metadata + build
         working-directory: app/amayui-toolkit

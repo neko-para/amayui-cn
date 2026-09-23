@@ -33,7 +33,7 @@
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "texSlotFlags = new Map<number, number>();",
-      "line": 457,
+      "line": 518,
       "note": "Engine.itemRegions 已删（T-0087 落地）；本锚点取它原来的邻居行，证明该字段已不在引擎状态里"
     },
     {
@@ -69,6 +69,11 @@
       "at": "2026-09-20",
       "what": "open → done —— 修复落地：handler `op_set_item_region` → `op_set_transition_fade`，改走 `native.setTransition(key, writes)`（与 0x24F/0x250/0x251 同一条宿主缝、同一张 `Scene+1048` 记录表）；写集按体 raw 132618-132635 逐格复核 = `[0]=0`（类别 0）`[1]=0` `[2]=op7` `[3]=op8` `[4]=op2` `[5]=op3` `[6]=op5` `[7]=op4` `[8]=op6`；记录长度由 `scTransitionDefaultRecord()` 保证 **24 格**且 `[9..13]` 保持默认（此前只有 9 格、默认值全丢）。死模型 `Engine.itemRegions` 已删（全仓无生产引用）。旧测试 `op-223-item-region.test.ts` 删除，新守卫 `test/op-223-transition-fade.test.ts`（4 条：类别 0 + 前 9 格逐格 deepEqual + `length===24` + `[9..13]` 默认 + `itemRegions===undefined` + 与 0x24F 同表不串格）。★实现要点（写进注释）：8 个操作数**必须先读进局部量**再调用 —— 内联进 `setTransition?.(…)` 实参表会因可选调用短路而整批不读（StubNative 无该缝），`opcode-operands` 会红。★独立复核：我逐行读了 `sub_4ADDB0`(类别 0) 与 `sub_4ADEE0`(类别 1)，确认 `[13]=a10` 只属类别 1（并订正了 `transition-render-spec` §2.3 里把类别 0 的 `[13]` 误记为 `a10` 的那一格）。★仍未建模（另记缺口）：`sub_4ADDB0` 头部的惰性（重）建纹理层分支（`sub_4A2C10`，0x460 对象内部未读完）——属渲染端缺口，非本票判据。",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点未变）"
     }
   ],
   "tests": [

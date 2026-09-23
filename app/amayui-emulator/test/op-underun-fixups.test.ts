@@ -34,7 +34,7 @@ import { dec, enc } from '../src/vm/bits.js';
 import { SAVE_ENGINE_VERSION, SAVE_HEADER_BYTES, SAVE_MAGIC } from '../src/save/saveData.js';
 import type { FileSource } from '../src/arch/fileSource.js';
 import type { BinArg } from '../src/script/bin.js';
-import { im, instr, loc } from './harness.js';
+import { im, instr, loc, trackArgs } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..', '..');
@@ -46,17 +46,13 @@ const ROOT = path.join(HERE, '..', '..', '..');
 function touched(op: number, args: BinArg[], native: StubNative): number[] {
   const e = new Engine(native);
   const f = new Frame();
-  const seen = new Set<number>();
-  const proxied = new Proxy(args, {
-    get(t, p, r) {
-      if (typeof p === 'string' && /^\d+$/.test(p)) seen.add(Number(p) + 1);
-      return Reflect.get(t, p, r);
-    },
-  });
+  // ★触碰观测 = 共享的 `harness.trackArgs`（`tickets/T-0129` 上收；口径与 opcode-operands /
+  //   operand-plan / op-203 三处同一份）
+  const { args: proxied, hits } = trackArgs(args);
   const h = OPS.get(op) ?? NATIVE_OPS.get(op) ?? ENGINE_INTERNAL_OPS.get(op);
   assert.ok(h, `0x${op.toString(16)} 未注册`);
   h!(makeCtx(e, f, instr(op, proxied), native, () => {}));
-  return [...seen].sort((a, b) => a - b);
+  return hits();
 }
 
 /** 从守卫源码里取出 `ALLOW_UNDERRUN` 的键集（白名单 = "有据豁免"的登记处）。 */

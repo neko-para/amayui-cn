@@ -19,7 +19,7 @@ import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
-import { im, instr, str } from './harness.js';
+import { im, instr, must, str } from './harness.js';
 
 const loc = (slot: number): BinArg => ({ type: 0x9, raw: slot }) as unknown as BinArg;
 const F = (k: number): number => PANEL_BASE + k;
@@ -181,7 +181,7 @@ test('A5 0xD9：清 effect_flags & 0x1000（派发中时同清 95779）', () => 
   assert.equal(e.effectFlags & 0x2000, 0x2000);
   e.engineValues.set(95779, 0x1000 | 0x8);
   run(0xd9);
-  assert.equal(e.engineValues.get(95779) & 0x1000, 0x1000, '124350 == 0 ⇒ **不**清 95779 的该位');
+  assert.equal(must(e.engineValues.get(95779), '引擎字段 95779') & 0x1000, 0x1000, '124350 == 0 ⇒ **不**清 95779 的该位');
   e.engineValues.set(124350, 1);
   e.engineValues.set(95779, 0x1000 | 0x8);
   run(0xd9);

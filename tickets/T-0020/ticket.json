@@ -1,7 +1,7 @@
 {
   "id": "T-0020",
   "type": "refactor",
-  "status": "open",
+  "status": "done",
   "priority": "P3",
   "area": "emulator/test",
   "title": "收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动",
@@ -36,5 +36,8 @@
       "what": "创建（种子：会话盘点 + refactor-plan §10 + 帧循环差异清单）",
       "kind": "created"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/harness-convergence.test.ts"
   ]
 }

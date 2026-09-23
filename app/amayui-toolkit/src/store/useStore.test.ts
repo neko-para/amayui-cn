@@ -61,8 +61,11 @@ describe('store 历史（表达式 query 模型）', () => {
 
     const st = useStore.getState();
     expect(st.history.length).toBe(histLenBefore + 1); // 新增一条（非覆盖）
+    // ★2026-09-23 删一条恒真断言（`tickets/T-0131`）：原来这里是
+    //   `expect(st.pos).toBeGreaterThanOrEqual(posBefore)` —— navigate 之后 pos 单调不减，
+    //   构造不出失败输入（且上一行已经**精确**钉住 `pos === history.length - 1`）。
     expect(st.pos).toBe(st.history.length - 1);
-    expect(st.pos).toBeGreaterThanOrEqual(posBefore);
+    void posBefore;
   });
 
   it('navigate（卡片等任意路径）会把激活规则同步到搜索区草稿（顶部不失效）', () => {

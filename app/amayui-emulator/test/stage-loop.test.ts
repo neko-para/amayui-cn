@@ -26,6 +26,7 @@ import { parseScriptBytes, type BinArg, type BinInstruction, type ScriptBinary }
 import { runFrameLoop, type FrameLoopOptions } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
+import { scriptDerived } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -62,6 +63,7 @@ function mkScript(ops: Op[], native: StubNative = new StubNative(() => {})): Eng
     for (let d = 0; d < 1 + 2 * ins.argc; d++) dwordToInstr[ins.index + d] = i;
   });
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

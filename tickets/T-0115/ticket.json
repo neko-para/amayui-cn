@@ -3,7 +3,7 @@
   "type": "refactor",
   "priority": "P2",
   "area": "emulator/test",
-  "status": "open",
+  "status": "done",
   "why": "2026-09-22 用户提出「npm run verify 耗时有点久」。实测：`npm test` 是**唯一**大头 —— **155 个测试文件 / 1059 个用例 / ~51.5 s**（`typecheck` 三遍 + `check:dead-writes` 各约 1–3 s）。\n\n按**单文件**计时（`node --env-file=test/options.test.env --import tsx --test test/<f>.test.ts`）：\n  - `config1-chain.test.ts`      **48.8 s**（13 例，10 例跑真语料）\n  - `keyboard-scenario-menu.test.ts` **24.5 s**（2 例）\n  - `adv-name-color-chain.test.ts`   **19.6 s**（3 例，全跑真语料）\n  - `game-start-chain.test.ts`       **14.4 s**\n  四个合计 **~107 s**，而整轮 `npm test` 只要 ~51.5 s ⇒ 说明这些用例在**并行**跑、彼此抢 CPU。\n（对照：`operand-plan` 0.7 s、`save-slot-resume` 0.03 s —— 纯单测几乎不花时间。）\n\n根因：这些 E3 用例都要**从真 BIN 重跑一遍游戏链路**（`runGameStartChain` / `runConfig1Chain` / `loadScriptData` + 帧循环），而**每个用例各跑一遍**、彼此不共享任何已装载的引擎/场景状态。",
   "acceptance": [
     "目标是\"`npm test` 的墙钟时间显著下降，且**判据强度不降**\"。三条候选路径（可组合，实施时择一并写清理由）：\n  ① **共享 fixture**：同一链路跑一次，把结果（引擎状态/快照/逐帧观测）给多个用例复用；\n     ★风险：状态泄漏会让用例互相污染 ⇒ 必须**只读共享**或每个用例拿深拷贝；\n  ② **分档**：把四个\"跑真语料\"的 E3 拆成独立的 `test:deep`（`npm test` 默认跳过），\n     `verify` 仍全跑、日常迭代只跑快档；★风险：默认档不再覆盖 E3 ⇒ 必须在文档/CI 里写清\"何时必须跑 deep\"；\n  ③ **减少重复链路**：`config1-chain` 10 例共用一次链路（它单文件 48.8 s 最大）。\n★不论选哪条：**不得降低判据**（不许把 E3 断言改成 E1/E2 充数）；改动后必须给出**前后实测数字**。",
@@ -25,9 +25,9 @@
     },
     {
       "file": "app/amayui-emulator/package.json",
-      "anchor": "\"verify\": \"npm run typecheck && npm run check:typecheck-test && npm run test:all && npm run check:dead-writes\"",
-      "line": 16,
-      "note": "verify 的四段构成（typecheck + 闸门 D 类型债棘轮 + test:all + 死写棘轮）；★2026-09-23 因「测试分档 + test/ 纳入类型检查」两次 retarget（`npm test` 改为只跑 T0 默认档，`verify` 改调 `test:all` 以保持覆盖不降）"
+      "anchor": "\"verify\": \"npm run typecheck && npm run typecheck:test && npm run test:all && npm run check:dead-writes\"",
+      "line": 20,
+      "note": "verify 的四段构成（typecheck + 闸门 D `typecheck:test` + test:all + 死写棘轮）；★2026-09-23 第三次 retarget：闸门 D 的 131 条类型债还清后基线棘轮退役，`verify` 里 `check:typecheck-test` 换成 `typecheck:test`（零容忍），见 T-0126"
     }
   ],
   "links": {
@@ -38,13 +38,20 @@
       "T-0114"
     ]
   },
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/organization.test.ts"
+  ],
   "id": "T-0115",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence retarget：package.json 的 verify 锚点随闸门 D 退役（check:typecheck-test → typecheck:test）更新"
     }
   ]
 }

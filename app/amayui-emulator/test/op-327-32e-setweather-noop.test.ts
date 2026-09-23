@@ -27,6 +27,7 @@ import { Engine } from '../src/vm/engine.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..', '..');
@@ -53,6 +54,7 @@ function script(opcode: number, argc: number): ScriptBinary {
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,

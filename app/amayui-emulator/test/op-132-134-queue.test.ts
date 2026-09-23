@@ -28,6 +28,7 @@ import { loadScriptIntoFrame, OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../sr
 import { stepOnce } from '../src/vm/interpreter.js';
 import { enc, dec } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 /** 立即数 int（读）。 */
 const T_LIT = 0x0;
@@ -64,6 +65,7 @@ async function run(calls: { op: number; args: Arg[] }[], prep?: (e: Engine) => v
     index: i,
   }));
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

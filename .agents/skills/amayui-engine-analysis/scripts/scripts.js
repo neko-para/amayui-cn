@@ -74,6 +74,10 @@ const CAPS = path.join(root, 'analysis', 'engine-capabilities.json');
 const FUNCS = path.join(root, 'analysis', 'functions.json');
 const SRC = path.join(root, 'src');
 const APP_DIR = path.join(root, 'app', 'amayui-emulator');
+// ★`tickets/T-0130`：守卫规格（`file#anchor`）的规则实现只有一份 —— `scripts/lib/guard-spec.cjs`
+// ★相对**工具自身**定位（不是 `--root`）：规则实现是工具代码，不是台账数据 ——
+//   `agent-workflow.test.ts` 会用 `--root <临时目录>` 跑这些工具，那里没有 scripts/lib。
+const { checkGuard } = require(path.resolve(__dirname, '..', '..', '..', '..', 'scripts', 'lib', 'guard-spec.cjs'));
 
 const STATUS_MARK = { analyzed: '✅ 已分析', partial: '🟠 部分', stub: '⚪ 仅登记' };
 
@@ -229,8 +233,11 @@ function validate(doc, diskCounts) {
       if (!s.key) at(`slots[${i}] 缺 key`);
       if (!s.what) at(`slots[${i}] 缺 what`);
     }
+    // ★`tickets/T-0130`：文件存在 → **用例存在**（`test/x.test.ts#<用例名片段>`）；
+    //   规则实现只有一份：`scripts/lib/guard-spec.mjs`。
     for (const g of e.guards ?? []) {
-      if (!fs.existsSync(path.join(APP_DIR, g))) at(`guard 指向的文件不存在：${g}`);
+      const why = checkGuard(APP_DIR, g);
+      if (why) at(`guard 指向的用例不存在：${g}（${why}）`);
     }
     for (const c of e.links?.capabilities ?? []) {
       if (caps.length && !caps.includes(c)) at(`links.capabilities 里的 id 不存在：${c}`);

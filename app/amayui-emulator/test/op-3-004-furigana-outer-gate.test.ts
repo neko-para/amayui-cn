@@ -53,7 +53,7 @@ import { ADV_ACTIVE, SLEEP_GATE } from '../src/vm/engine.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
-import { im, instr, mkEngine, str } from './harness.js';
+import { im, instr, mkEngine, scriptDerived, str } from './harness.js';
 
 /** `message:MessageSpeed` 的测试取值（引擎 `Engine[86672]` = `Font+1376`）。 */
 const SPEED = 40;
@@ -193,6 +193,7 @@ async function runRealFuriganaUnderFrameLoop(
   const e = mkEngine([]);
   e.engineValues.set(ENGINE_FIELD.messageSpeed, speed);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -227,7 +228,9 @@ async function runRealFuriganaUnderFrameLoop(
       onStepStart: (_f, ins) => {
         pendingOp = ins?.opcode ?? -1;
       },
-      onStep: () => dispatched.push({ op: pendingOp, clock, frame }),
+      onStep: () => {
+        dispatched.push({ op: pendingOp, clock, frame });
+      },
       onFrameEnd: () => {
         clocks.push(clock);
         clock += 1000 / 60;

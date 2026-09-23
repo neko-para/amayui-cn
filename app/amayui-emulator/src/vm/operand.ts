@@ -340,6 +340,9 @@ export function writeIntOperand(e: Engine, frame: Frame, instr: BinInstruction, 
       return;
     case TYPE_LOCAL_INT:
       frame.locals.int.set(a.raw, enc(e.key, value));
+      // ★`tickets/T-0127`：本帧 local int 的**唯一写门面**（脚本可见的 local 写都经这里）
+      //   ⇒ "谁写了 local N" 现在是事件断点能回答的问题，不必再写专门的探针用例。
+      e.emitDebugEvent('local-int-write', { idx: a.raw, val: value });
       return;
     case TYPE_LOCAL_FLOAT:
       frame.locals.float.set(a.raw, value);

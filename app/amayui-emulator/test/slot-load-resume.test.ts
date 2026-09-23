@@ -21,6 +21,7 @@
  *    真的把存档帧脚本（如 SC1560.BIN）装进帧 1（这就是"续到存档当时"的判据）。
  */
 import { test } from 'node:test';
+import { firstRealFile, readReal, realSlotDirs, slotNumberOf } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -319,12 +320,14 @@ test('0xAE 的门关着 ⇒ 不动任何帧状态（与引擎的门控路径逐�
 
 test('★E3：真 SAVE00.DAT ⇒ 帧 0 = SYSTEM4.BIN，且第一步走栈真的装上存档帧的脚本', async (t) => {
   const system = resolveSystemPaths(REPO);
-  const slotPath = path.join(system.baseDir, 'SAVE', 'SAVE00.DAT');
-  if (!fs.existsSync(slotPath)) {
-    t.skip(`本机没有真存档槽（${slotPath}）`);
+  // ★`tickets/T-0128`：两侧都看（base + overlay）
+  const slot = firstRealFile(REPO, 'DAT');
+  if (!slot) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
-  const bytes = new Uint8Array(fs.readFileSync(slotPath));
+  const slotNo = slotNumberOf(slot.name); // ★`0x1A1` 的 op2 = **槽号**（本机 78/79，不是 0）
+  const bytes = readReal(slot);
   const dec = decodeEngineSlot(bytes);
   assert.ok(dec.ok, `真槽必须解出（${dec.ok ? '' : dec.reason}）`);
   if (!dec.ok) return;
@@ -336,7 +339,7 @@ test('★E3：真 SAVE00.DAT ⇒ 帧 0 = SYSTEM4.BIN，且第一步走栈真的�
   e.fileSource = src;
   const { parseScriptBytes } = await import('../src/script/bin.js');
   const { loadScriptIntoFrame } = await import('../src/vm/ops.js');
-  const callerBin = buildScriptBin([{ op: 0x1a1, args: [{ type: 0x9, raw: 0x10 }, { type: 0, raw: 0 }] }]);
+  const callerBin = buildScriptBin([{ op: 0x1a1, args: [{ type: 0x9, raw: 0x10 }, { type: 0, raw: slotNo }] }]);
   loadScriptIntoFrame(e.frames[1]!, parseScriptBytes(callerBin), 'SAVE.BIN', 51);
   e.cur = 1;
   await run(e, 1, 0);

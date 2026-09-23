@@ -238,15 +238,19 @@ test('resolveSystemPaths：没有 LOCALAPPDATA（非 Windows/CI）退到仓库 .
   assert.equal(p.overlayDir, `${p.baseDir}${OVERLAY_SUFFIX}`);
 });
 
-test('真实 base 目录就在本机（存在则校验结构：SYS4REG.INI + SAVE\\SAVE.DAT 至少有一个）', (t) => {
+test('真实玩家目录就在本机（base 或 overlay 至少一侧有结构：SYS4REG.INI + SAVE\\SAVE.DAT 至少一个）', (t) => {
+  // ★2026-09-23（`tickets/T-0128`）：原来只查 `baseDir` —— 而本机 **base 不存在、真数据只在 overlay**
+  //   ⇒ 这条被静默跳过。现在按"两侧都看"，并对**存在的那一侧**做结构校验。
   const p = resolveSystemPaths(REPO);
-  if (!fs.existsSync(p.baseDir)) {
-    t.skip(`本机没有 ${p.baseDir}`);
+  const present = [p.baseDir, p.overlayDir].filter((d) => fs.existsSync(d));
+  if (present.length === 0) {
+    t.skip(`本机 base 与 overlay 都不存在（${p.baseDir} / ${p.overlayDir}）`);
     return;
   }
-  const hasIni = fs.existsSync(path.join(p.baseDir, INI_FILE));
-  const hasSave = fs.existsSync(path.join(p.baseDir, SAVE_DAT_REL));
-  assert.ok(hasIni || hasSave, `${p.baseDir} 里应有 ${INI_FILE} 或 ${SAVE_DAT_REL}`);
+  const dir = present[0]!;
+  const hasIni = fs.existsSync(path.join(dir, INI_FILE));
+  const hasSave = fs.existsSync(path.join(dir, SAVE_DAT_REL));
+  assert.ok(hasIni || hasSave, `${dir} 里应有 ${INI_FILE} 或 ${SAVE_DAT_REL}`);
   assert.equal(
     p.overlayDir,
     `${p.baseDir}${OVERLAY_SUFFIX}`,

@@ -19,6 +19,7 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { refAt, readRef, writeRef } from '../src/vm/ref.js';
 import { dec, enc } from '../src/vm/bits.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_GLOBAL_INT = 0x3;
@@ -35,6 +36,7 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,
@@ -174,7 +176,7 @@ test('0x306：op1 = 配置 `system:EffectSkipOnClick`（SYS4REG.INI 缺该键时
   assert.equal(read(5), 0);
 
   // (b) 配置文件里显式给 1 → 读 1（配置值必须压过内建默认；取 1 才能与 (a) 的 0 区分开）
-  e.config = { values: new Map([['system:effectskiponclick', 1]]), sections: ['system'] };
+  e.config = { values: new Map([['system:effectskiponclick', 1]]), sections: ['system'], order: new Map([['system', ['effectskiponclick']]]) };
   loadScriptIntoFrame(e.curScript(), script(0x306, [{ type: 0x9, raw: 6 }]), 'TEST.BIN');
   await stepOnce(e);
   assert.equal(read(6), 1);

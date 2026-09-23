@@ -19,6 +19,7 @@ import { StubNative } from '../src/vm/native.js';
 import { runFrameLoop, type FrameLoopOptions } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const im = (n: number): BinArg => ({ type: 0, raw: n }) as unknown as BinArg;
 const instr = (opcode: number, args: BinArg[] = []): BinInstruction =>
@@ -28,6 +29,7 @@ const instr = (opcode: number, args: BinArg[] = []): BinInstruction =>
 function mk(ops: BinInstruction[]): Engine {
   const e = new Engine(new StubNative(() => {}));
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -65,8 +67,12 @@ test('stopReason：跑满上限 = cap（frames=上限、steps 按每帧派发数
     advFrame: false,
     maxStepsPerFrame: 1,
     maxFrames: 2,
-    onStep: () => stepsSeen++,
-    onFrameEnd: advance,
+    onStep: () => {
+      stepsSeen++;
+    },
+    onFrameEnd: () => {
+      advance();
+    },
   });
   assert.equal(r.stopReason, 'cap');
   assert.equal(r.frames, 2, '两帧');
@@ -99,7 +105,9 @@ test('★逐字期间点击：贴完整页、不派发；再点一次才推进�
     maxStepsPerFrame: 100,
     maxFrames: 1,
     audio: 'never' as const,
-    onFrameEnd: advance,
+    onFrameEnd: () => {
+      advance();
+    },
   };
   // ① 跑到"逐字中"（产品门档：文本段落间的 sleep 让步也照走）
   let guard = 0;
@@ -144,7 +152,9 @@ test('stopReason：until 在帧开头生效 ⇒ frames 记"已跑完的帧数"�
     maxStepsPerFrame: 100,
     maxFrames: 10,
     until: () => true,
-    onFrameEnd: advance,
+    onFrameEnd: () => {
+      advance();
+    },
   });
   assert.equal(r.stopReason, 'until');
   assert.equal(r.frames, 0);
@@ -160,7 +170,9 @@ test('stopReason：ip 越界 = script-end（且**不计**该帧为已完成）',
     advFrame: false,
     maxStepsPerFrame: 100,
     maxFrames: 10,
-    onFrameEnd: advance,
+    onFrameEnd: () => {
+      advance();
+    },
   });
   assert.equal(r.stopReason, 'script-end');
   assert.equal(r.steps, 2, '两条都派发了');
@@ -295,7 +307,9 @@ test('每帧服务开关：关掉 winReveal/charGrid 时驱动不碰它们（hea
     advFrame: false,
     maxStepsPerFrame: 1,
     maxFrames: 2,
-    onFrameEnd: advance,
+    onFrameEnd: () => {
+      advance();
+    },
   });
   assert.equal(winReveal, 0, 'winReveal 关了');
   assert.equal(charGrid, 2, 'charGrid 开着（每帧一次）');
@@ -314,9 +328,16 @@ test('★音频帧泵：每完整帧恰好一次 tick，带本帧 nowMs 与 advA
   const trace: string[] = [];
   const host: FrameHost = {
     now: () => box.clock,
-    audio: (intent) => trace.push(`audio:${intent.kind}:${intent.nowMs}:${intent.advActive ? 1 : 0}`),
-    advanceModel: (nowMs) => trace.push(`advance:${nowMs}`),
-    present: () => trace.push('present'),
+    audio: (intent) => {
+      if (intent.kind !== 'tick') throw new Error(`本测试只期待 tick 意图，收到 ${intent.kind}`);
+      trace.push(`audio:${intent.kind}:${intent.nowMs}:${intent.advActive ? 1 : 0}`);
+    },
+    advanceModel: (nowMs) => {
+      trace.push(`advance:${nowMs}`);
+    },
+    present: () => {
+      trace.push('present');
+    },
   };
   const r = await runFrameLoop(e, host, {
     gates: { anim: 'ignore', sleep: 'ignore', advance: 'ignore' },
@@ -324,7 +345,9 @@ test('★音频帧泵：每完整帧恰好一次 tick，带本帧 nowMs 与 advA
     advFrame: false,
     maxStepsPerFrame: 1,
     maxFrames: 2,
-    onFrameEnd: () => (box.clock += 1000 / 60),
+    onFrameEnd: () => {
+      box.clock += 1000 / 60;
+    },
   });
   assert.equal(r.frames, 2);
   const t1 = 1000 / 60;
@@ -348,7 +371,9 @@ test('★音频帧泵：`audio: "never"` 时一次都不发（report.ts 的 C2 �
     maxStepsPerFrame: 1,
     maxFrames: 2,
     audio: 'never',
-    onFrameEnd: () => (box.clock += 1000 / 60),
+    onFrameEnd: () => {
+      box.clock += 1000 / 60;
+    },
   });
   assert.equal(r.frames, 2);
   assert.equal(ticks, 0, 'never ⇒ 连一帧都不发');
@@ -359,14 +384,24 @@ test('★音频帧泵：撞脚本尾那一帧不算完整帧 ⇒ 不发 tick（�
   const box = { clock: 0 };
   let ticks = 0;
   let presents = 0;
-  const host: FrameHost = { now: () => box.clock, audio: () => ticks++, present: () => presents++ };
+  const host: FrameHost = {
+    now: () => box.clock,
+    audio: () => {
+      ticks++;
+    },
+    present: () => {
+      presents++;
+    },
+  };
   const r = await runFrameLoop(e, host, {
     gates: { anim: 'ignore', sleep: 'ignore', advance: 'ignore' },
     services: { winReveal: false, charGrid: false },
     advFrame: false,
     maxStepsPerFrame: 10,
     maxFrames: 5,
-    onFrameEnd: () => (box.clock += 1000 / 60),
+    onFrameEnd: () => {
+      box.clock += 1000 / 60;
+    },
   });
   assert.equal(r.stopReason, 'script-end');
   assert.equal(r.frames, 0, '第 1 帧就撞尾 ⇒ 没有完整帧');
@@ -385,9 +420,15 @@ test("★present: 'needsRender'：宿主说不用画就只推进模型、不 pre
   let want = false;
   const host: FrameHost = {
     now: () => box.clock,
-    audio: () => trace.push('audio'),
-    advanceModel: () => trace.push('advance'),
-    present: () => trace.push('present'),
+    audio: () => {
+      trace.push('audio');
+    },
+    advanceModel: () => {
+      trace.push('advance');
+    },
+    present: () => {
+      trace.push('present');
+    },
     needsRender: () => want,
   };
   const opts = {
@@ -397,7 +438,9 @@ test("★present: 'needsRender'：宿主说不用画就只推进模型、不 pre
     maxStepsPerFrame: 1,
     maxFrames: 2,
     present: 'needsRender' as const,
-    onFrameEnd: () => (box.clock += 1000 / 60),
+    onFrameEnd: () => {
+      box.clock += 1000 / 60;
+    },
   };
   await runFrameLoop(e, host, opts);
   assert.deepEqual(trace, ['audio', 'advance', 'audio', 'advance'], '两帧都没画（宿主说不需要）');

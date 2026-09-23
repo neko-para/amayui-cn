@@ -35,7 +35,7 @@ import { runFrameLoop, type FrameLoopOptions } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
 import type { MsgWinInput } from '../src/text/layout.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr, str } from './harness.js';
+import { at, im, instr, scriptDerived, str } from './harness.js';
 
 /** 造引擎 + 记录每次 `msgWinSync` 的 `revealed`（= 宿主真正被要求画出的字形数）。 */
 function mk(ops: BinInstruction[]): {
@@ -54,6 +54,7 @@ function mk(ops: BinInstruction[]): {
     if ((e.waitFlags & SLEEP_GATE) !== 0) revealedUnderGate.push(rev);
   };
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -105,7 +106,10 @@ test('★坑 A：ADV 逐字必须**逐步发布**给宿主（0 < revealed < tota
   );
   assert.equal(uniq[uniq.length - 1], 8, `最终应显完 8 字；实测 unique=${JSON.stringify(uniq)}`);
   for (let i = 1; i < revealed.length; i++) {
-    assert.ok(revealed[i] >= revealed[i - 1], `revealed 不得回退：${JSON.stringify(revealed)}`);
+    assert.ok(
+      at(revealed, i, 'revealed 序列') >= at(revealed, i - 1, 'revealed 序列'),
+      `revealed 不得回退：${JSON.stringify(revealed)}`,
+    );
   }
 });
 

@@ -21,6 +21,7 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { dec, asI32 } from '../src/vm/bits.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const HEADER_LEN = 0x3c;
 /** operand arg type 0x9 = local-int（operand.ts 未导出该常量，此处按类型值直接构造）。 */
@@ -37,6 +38,7 @@ function wheelScript(slot: number): ScriptBinary {
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: HEADER_LEN,
@@ -120,6 +122,7 @@ function hwheelScript(slot: number): ScriptBinary {
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: HEADER_LEN,
@@ -189,6 +192,7 @@ test('InputManager：水平滚轮也不被 consumeEdges() 擦除，且进快照/
 /** 造一个最小 v4 脚本：一条指令 + 若干操作数（每条操作数 8 字节）。 */
 function oneInstr(opcode: number, args: { type: number; raw: number }[]): ScriptBinary {
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: HEADER_LEN,

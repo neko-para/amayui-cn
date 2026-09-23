@@ -10,6 +10,7 @@
     "build": "node scripts/extract-metadata.mjs && vite build",
     "dev": "node scripts/extract-metadata.mjs && vite",
     "preview": "vite preview",
+    "pretest": "npm run build:data",
     "test": "vitest run"
   },
   "dependencies": {

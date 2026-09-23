@@ -18,6 +18,7 @@ import { StubNative } from '../src/vm/native.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 import type { BinInstruction, BinArg, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -34,8 +35,8 @@ test('load-show-logo(0x130) 读 _this[96983]：构造=1(LOGO on)、exit-script �
   const native = new StubNative(() => {});
   const e = new Engine(native);
   const f = new Frame();
-  const run = (input: BinArg[]) => {
-    const c = makeCtx(e, f, instr(0x130, [input]), native, () => {});
+  const run = (arg: BinArg) => {
+    const c = makeCtx(e, f, instr(0x130, [arg]), native, () => {});
     NATIVE_OPS.get(0x130)!(c);
     return c;
   };
@@ -58,6 +59,7 @@ test('exit-script(0x9)：重置引擎 + 置 _this[96983]=0 + 重载根脚本 IND
 
   // 把一个「单条 exit-script」的合成脚本装入帧0（模拟 GAMEOVER 时执行的 exit-script 指令）。
   const bootSrc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -91,6 +93,7 @@ test('GAMEOVER→回标题不再播版权页：exit-script 后 0x130 读回 0（
   const e = new Engine(native);
   e.fileSource = src;
   const bootSrc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

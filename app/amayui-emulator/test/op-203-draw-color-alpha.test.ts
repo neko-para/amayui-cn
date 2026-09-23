@@ -22,7 +22,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/native.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { im, instr } from './harness.js';
+import { im, instr, trackArgs } from './harness.js';
 import type { BinArg } from '../src/script/bin.js';
 
 const HANDLE = 0x10;
@@ -106,17 +106,11 @@ test('★0x203 端到端（headless 场景）：第二次 `−1/−1` 保持第�
 
 /** 合成的 `i203` 必须与真语料同形（op1 handle / op2 blend / op3 α / op4 color 都是 int 槽）。 */
 test('★0x203：四格操作数全部被读（不触越界）', () => {
-  const touched = new Set<number>();
-  const args: BinArg[] = [im(HANDLE), im(0), im(255), im(0xffffff)];
-  const proxy = new Proxy(args, {
-    get(t, p, r) {
-      if (typeof p === 'string' && /^\d+$/.test(p)) touched.add(Number(p) + 1);
-      return Reflect.get(t, p, r);
-    },
-  });
+  // ★触碰观测用共享的 `harness.trackArgs`（`tickets/T-0129` 上收；口径与另外三处同一份）
+  const { args, hits } = trackArgs([im(HANDLE), im(0), im(255), im(0xffffff)]);
   const native = new ColorRecorder(-1);
   const e = new Engine(native);
   const h = (OPS.get(0x203) ?? NATIVE_OPS.get(0x203))!;
-  h(makeCtx(e, new Frame(), instr(0x203, proxy), native, () => {}));
-  assert.deepEqual([...touched].sort((a, b) => a - b), [1, 2, 3, 4]);
+  h(makeCtx(e, new Frame(), instr(0x203, args), native, () => {}));
+  assert.deepEqual(hits(), [1, 2, 3, 4]);
 });

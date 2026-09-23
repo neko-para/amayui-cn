@@ -34,6 +34,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { planOf } from '../src/vm/operandPlan.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived, trackArgs } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', '..', '..');
@@ -137,7 +138,6 @@ function runOne(op: number, argc: number, native: StubNative): Row {
     { get: () => () => new Promise(() => {}) },
   );
   const f = e.curScript();
-  const touched = new Set<number>();
   const realArgs: BinArg[] = [];
   // ★实参类型**跟着操作数计划走**（`tickets/T-0082`）：有计划时按计划声明的类型造
   //   （`str` → 字符串操作数、`ptr` → 指针槽、其余 → int 槽），没有计划则沿用 int 槽。
@@ -157,12 +157,8 @@ function runOne(op: number, argc: number, native: StubNative): Row {
       realArgs.push({ type: 0xc, raw } as unknown as BinArg);
     } else realArgs.push({ type: 0x9, raw: 0x40 + i } as unknown as BinArg);
   }
-  const args = new Proxy(realArgs, {
-    get(t, p, r) {
-      if (typeof p === 'string' && /^\d+$/.test(p)) touched.add(Number(p) + 1); // 1-based
-      return Reflect.get(t, p, r);
-    },
-  });
+  // ★触碰观测 = 共享的 `harness.trackArgs`（`tickets/T-0129` 上收；1-based 口径只有一份实现）
+  const { args, hits } = trackArgs(realArgs);
   const instr: BinInstruction = {
     opcode: op,
     name: `i${op.toString(16)}`,
@@ -172,6 +168,7 @@ function runOne(op: number, argc: number, native: StubNative): Row {
     index: 0,
   } as unknown as BinInstruction;
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,
@@ -194,7 +191,7 @@ function runOne(op: number, argc: number, native: StubNative): Row {
   // async 类 handler（exit / exit-script / 模块加载）会返回 promise：等它结算并吞掉结局，
   // 否则 node:test 会把它记成"测试结束后的异步活动"而判定整文件失败（与本测试的断言无关）。
   if (ret && typeof (ret as { then?: unknown }).then === 'function') void ret.catch(() => {});
-  return { op, argc, touched: [...touched].sort((a, b) => a - b), kind: 'ran' };
+  return { op, argc, touched: hits(), kind: 'ran' };
 }
 
 test('★操作数口径：每个已注册 opcode 不得碰越界操作数，且 1..argc 全被碰（漏读需在白名单里说明）', () => {

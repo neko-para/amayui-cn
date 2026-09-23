@@ -184,7 +184,8 @@ cd app/amayui-emulator && npx tsx --test test/script-ledger.test.ts          # �
 
 1. ★**锚点棘轮**：每条 `layout[].anchor` 必须**真的出现在它声明的 `lines` 区间内**（锚点 ≥6 字符：label 名、`i12e …`、`show-text 0 @"…"` 这类真源里存在的串）。
    —— 既防"凭印象编造结构"，也让 `src/*.txt` 一旦被**翻译 reflow / 反汇编重排**必然变红，逼人刷新行号（**这是刻意的**）。
-2. `guards[]` 指向的测试文件真实存在；`links.capabilities[]` 是第二层真有的 id；`links.functions[]` 是第一层真有的 addr。
+2. `guards[]` 指向的测试**用例**真实存在（规格 `test/x.test.ts` 或 `#<用例名片段>`，见 `tickets/T-0130`）；
+   `links.capabilities[]` 是第二层真有的 id；`links.functions[]` 是第一层真有的 addr。
 3. 一个脚本只登记**一条**（`file` 不重复）；`status` 与 `layout` 的规模相称（没读过就别写 `analyzed`）。
 4. `gaps` 或 `notes` 至少有一个说话 —— **不许用沉默掩盖缺口**（与第二层 `n/a-known` 必须写 `why:` 是同一条纪律）。
 

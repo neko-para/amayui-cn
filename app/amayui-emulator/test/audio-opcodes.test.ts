@@ -21,7 +21,7 @@ import { parseIni } from '../src/engineConfig.js';
 import { audioBootIntents } from '../src/vm/handlers/audio.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
-import { im, instr, str } from './harness.js';
+import { im, instr, RecordingAudioNative, str } from './harness.js';
 
 const INI = `[sound]
 Volume0=80
@@ -35,24 +35,9 @@ KeepMusicVolume=1
 `;
 
 
-/** 记录音频意图的宿主（其余走 StubNative 的记录实现）。 */
-class RecordingNative extends StubNative {
-  readonly intents: AudioIntent[] = [];
-  constructor() {
-    super(() => {});
-  }
-  override audio(intent: AudioIntent): void {
-    this.intents.push(intent);
-  }
-  get last(): AudioIntent {
-    const v = this.intents.at(-1);
-    assert.ok(v, '没有记录到任何音频意图');
-    return v;
-  }
-}
 
-function mk(): { e: Engine; native: RecordingNative; step: (op: number, args?: BinArg[]) => void; logs: string[] } {
-  const native = new RecordingNative();
+function mk(): { e: Engine; native: RecordingAudioNative; step: (op: number, args?: BinArg[]) => void; logs: string[] } {
+  const native = new RecordingAudioNative();
   const e = new Engine(native);
   e.config = parseIni(INI);
   const f = new Frame();
@@ -152,7 +137,7 @@ test('★BGM 运行态（`Music[259]` = `_this[174713]`）：0xB7 0 = 重播当�
   assert.equal(native.intents.length, afterStop, '当前曲 id 为 0 ⇒ `i0b7 0` 不重播（引擎同分支）');
 });
 
-function mini(): { e: Engine; native: RecordingNative; step: (op: number, args?: BinArg[]) => void } {
+function mini(): { e: Engine; native: RecordingAudioNative; step: (op: number, args?: BinArg[]) => void } {
   return mk();
 }
 

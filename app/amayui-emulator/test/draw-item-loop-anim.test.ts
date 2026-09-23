@@ -47,6 +47,7 @@ import {
   makeItem,
   type Item,
 } from '../src/renderer/drawItem.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x18a9c;
 /** 虚拟时钟起点（非 0：`start === 0` 是"未锁存"哨兵）。 */
@@ -332,7 +333,7 @@ test('注册：7 条都在已实现表里，且不在 no-op / native 表里（�
 // ---------------------------------------------------------------------------
 
 /** 只记录 `setDrawItemLoop` 请求的 native（其余照 StubNative）。 */
-class RecordingNative extends StubNative {
+class LoopRecorder extends StubNative {
   readonly reqs: DrawItemLoopRequest[] = [];
   readonly clearMasks: number[] = [];
   constructor() {
@@ -348,8 +349,8 @@ class RecordingNative extends StubNative {
 }
 
 /** 走**真实** handler：把一条指令喂给解释器（骨架照 `op-223-transition-fade.test.ts`）。 */
-async function step(op: number, vals: { v: number; float?: boolean }[]): Promise<RecordingNative> {
-  const n = new RecordingNative();
+async function step(op: number, vals: { v: number; float?: boolean }[]): Promise<LoopRecorder> {
+  const n = new LoopRecorder();
   const e = new Engine(n, new InputManager());
   e.key = 0x12345678;
   const slots = vals.map((_, i) => 0x40 + i);
@@ -365,6 +366,7 @@ async function step(op: number, vals: { v: number; float?: boolean }[]): Promise
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

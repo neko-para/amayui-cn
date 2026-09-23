@@ -21,6 +21,7 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const T_GLOBAL_INT = 0x3;
 // 立即字符串：type 0x2（local-string）带 str 字段 —— 与 	est/harness.ts 的 str() 同形
@@ -41,6 +42,7 @@ async function run(op: number, text: string): Promise<number> {
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

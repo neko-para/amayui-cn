@@ -33,6 +33,7 @@ import { loadScriptIntoFrame, OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../sr
 import { stepOnce } from '../src/vm/interpreter.js';
 import { enc, dec } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const T_LOCAL = 0x9; // 出参：本地 int 槽
 
@@ -52,6 +53,7 @@ async function run(
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

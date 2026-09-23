@@ -52,7 +52,7 @@ import {
 } from '../src/engineConfig.js';
 import { sjisSubstr } from '../src/text/sjis.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
-import { im, instr, str } from './harness.js';
+import { at, im, instr, must, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -381,7 +381,13 @@ test('★E3：启动链跑到 TITLE 后，版本号数字条画的是 1/0/7/0/0/
 
   const rec = e.cgDigits.get(0);
   assert.ok(rec, 'TITLE 应登记过 CG 数字条记录 0（0x2DA）');
-  const [tex, x0, y0, cellW, , gap] = rec!;
+  // `cgDigits` 的值是 `number[]`（`engine.ts:439`）⇒ 逐字段取要显式解包，别用 `!` 掩盖长度不足。
+  const r = must(rec, 'CG 数字条记录 0（0x2DA）');
+  const tex = at(r, 0, 'rec');
+  const x0 = at(r, 1, 'rec');
+  const y0 = at(r, 2, 'rec');
+  const cellW = at(r, 3, 'rec');
+  const gap = at(r, 5, 'rec'); // r[4] = 未使用的槽
   assert.equal(tex, 4);
   // 版本号三段都画在同一 y（记录 y0）上；**handle 序 = 自右向左**（`cgDigitItems` 的 k 从高位往低位走、
   // 而 x = k·advance + x ⇒ k 越大越靠右），所以每段要 reverse 回"从左到右"再拼。

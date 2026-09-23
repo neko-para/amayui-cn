@@ -27,6 +27,7 @@ import { dec, enc } from '../src/vm/bits.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import type { NativeBridge } from '../src/vm/native.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const T_GLOBAL_INT = 0x3;
 
@@ -42,6 +43,7 @@ function mkScript(op: number, vals: number[]): { sc: ScriptBinary; slots: number
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

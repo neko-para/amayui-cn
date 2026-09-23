@@ -35,9 +35,9 @@ import { StubNative } from '../src/vm/stubNative.js';
 import { readIntOperand, readFloatOperand } from '../src/vm/operand.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec, enc } from '../src/vm/bits.js';
-import { runGameStartChain } from '../src/tools/gameStartChain.js';
+import { runGameStartChain, type GameStartOptions, type GameStartResult } from '../src/tools/gameStartChain.js';
 import type { NativeBridge } from '../src/vm/native.js';
-import type { BinArg, BinInstruction } from '../src/script/bin.js';
+import type { BinArg } from '../src/script/bin.js';
 import { im, instr, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -51,8 +51,6 @@ const imStr = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as
 const gStr = (n: number): BinArg => ({ type: 5, raw: n }) as unknown as BinArg;
 /** 局部字符串（type 0xb）—— `0x195` 的两个待比较串。 */
 const lStr = (n: number): BinArg => ({ type: 0xb, raw: n }) as unknown as BinArg;
-const instr = (op: number, args: BinArg[]): BinInstruction =>
-  ({ opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 }) as unknown as BinInstruction;
 
 function mk(native: NativeBridge = new StubNative(() => {})): {
   e: Engine;
@@ -83,6 +81,25 @@ const A5_IMPLEMENTED = [0x93, 0x94, 0x97, 0xd9, 0x1ad, 0x1b1, 0x1bc] as const;
 // ---------------------------------------------------------------------------
 // 注册表棘轮
 // ---------------------------------------------------------------------------
+
+/**
+ * ★**按键 memo**（`tickets/T-0128` 后的成本收敛）：本文件有 3 次 `runGameStartChain` 全链路，其中
+ * **两次的 opts 完全相同**（都是 `{}`）⇒ 按 opts 的 JSON 键共享同一次运行结果，省掉一整次启动链。
+ * 结果只读（与 `config-chain` / `adv-name-color-chain` 同一约定）；失败时逐出缓存，避免把偶发失败永久缓存。
+ */
+const chainCache = new Map<string, Promise<GameStartResult>>();
+function chainOnce(opt: GameStartOptions = {}): Promise<GameStartResult> {
+  const key = JSON.stringify(opt);
+  let p = chainCache.get(key);
+  if (!p) {
+    p = runGameStartChain(opt).catch((e: unknown) => {
+      chainCache.delete(key);
+      throw e;
+    });
+    chainCache.set(key, p);
+  }
+  return p;
+}
 
 test('注册表棘轮：本链路采集到的 25 条**全部**已转真实现（OPS）', () => {
   for (const op of IMPLEMENTED_9) {
@@ -323,7 +340,7 @@ test('★0x228：op1=成功标志、op3/4/5=绘制项当前**平移**（`+0x16C`
 // ---------------------------------------------------------------------------
 
 test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN0000.txt:1224）', async () => {
-  const r = await runGameStartChain({});
+  const r = await chainOnce({});
   // ① TITLE 菜单第 0 项 = 右上角 Game Start
   assert.equal(r.titleHover, 0, 'TITLE 悬停点应命中第 0 项（Game Start）');
   assert.ok(r.reachedGameStart, `应进入 GAMESTART，实际轨迹尾部 ${r.scriptTrail.slice(-6).join(',')}`);
@@ -390,7 +407,7 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
  * 悬停整条通路消失（游标恒 −1、零 `hover-enter`）。这就是"headless 与 Electron 表现分叉"的实证。
  */
 test('E3 判据⑦：`advance: "force"`（修前旁路）⇒ 悬停不发生（对照 pump）', async () => {
-  const r = await runGameStartChain({ unknownPolicy: 'stub', advance: 'force' });
+  const r = await chainOnce({ unknownPolicy: 'stub', advance: 'force' });
   assert.equal(r.advancePolicy, 'force');
   assert.equal(
     r.dispatches.some((d) => d.kind === 'hover-enter' || d.kind === 'hover-leave'),
@@ -418,7 +435,7 @@ test('E3 判据⑦：`advance: "force"`（修前旁路）⇒ 悬停不发生（�
  * 起播侧的锁在 `test/audio-engine.test.ts` 的「同一通道换装不同 id」。
  */
 test('E3 判据⑥：点「ゲーム開始」后下一条 SE 由 GAMESTART 发（id 0x51e3），且早于任何 SN0000 的 SE', async () => {
-  const r = await runGameStartChain({});
+  const r = await chainOnce({});
   const i = r.sePlays.findIndex((s) => s.id === 0x51e3);
   assert.ok(i >= 0, `应发出 id 0x51e3 的 SE；实际 ${JSON.stringify(r.sePlays.map((s) => `0x${s.id.toString(16)}@${s.script}`))}`);
   assert.equal(r.sePlays[i]!.script, 'GAMESTART.BIN', '这条 SE 必须由 GAMESTART 发出');

@@ -44,7 +44,7 @@ import { OPS } from '../src/vm/ops.js';
 import { makeCtx } from '../src/vm/step.js';
 import { StubNative } from '../src/vm/native.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { loc } from './harness.js';
+import { loc, must, scriptDerived } from './harness.js';
 import { enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
@@ -153,7 +153,11 @@ test('门面在不可用（api=null）时全函数返回 null/false，且原生�
     ['getAsyncKeyState', null],
     ['showCursor', null],
   ] as const) {
-    assert.equal((f as unknown as Record<string, (...a: unknown[]) => unknown>)[name](0), fallback, `${name} 必须退化成 null`);
+    const fn = must(
+      (f as unknown as Record<string, ((...a: unknown[]) => unknown) | undefined>)[name],
+      `${name} 应存在`,
+    );
+    assert.equal(fn(0), fallback, `${name} 必须退化成 null`);
   }
   assert.equal(f.setCursorPos(1, 2), false);
   assert.equal(f.postMouseMove(1, 2), false);
@@ -232,9 +236,9 @@ test('★平台专有函数只在自己平台存在：别的平台上由门面�
 function minOsVersion(file: string, arch: string): string | null {
   const out = execFileSync('otool', ['-l', '-arch', arch, file], { encoding: 'utf8' });
   const build = /cmd LC_BUILD_VERSION[\s\S]*?\n\s*minos\s+(\S+)/.exec(out);
-  if (build) return build[1];
+  if (build) return build[1] ?? null;
   const legacy = /cmd LC_VERSION_MIN_MACOSX[\s\S]*?\n\s*version\s+(\S+)/.exec(out);
-  return legacy ? legacy[1] : null;
+  return legacy ? (legacy[1] ?? null) : null;
 }
 
 test('★预置产物棘轮：darwin 通用二进制（arm64 + x86_64）必须在库，且最低系统版本 = 11.0', (t) => {
@@ -382,6 +386,7 @@ async function runSetMousePos(x: number, y: number): Promise<{ seen: [number, nu
   e.curScript().locals.int.set(0x10, enc(e.key, x));
   e.curScript().locals.int.set(0x11, enc(e.key, y));
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

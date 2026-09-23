@@ -15,6 +15,7 @@
  * 以及"看板与真源同步"（`tickets/README.md` 由 `node scripts/build-tickets.mjs` 渲染 ⇒ 忘跑就红）。
  */
 import { test } from 'node:test';
+import { checkGuard } from './guardAnchor.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -42,8 +43,11 @@ interface Ticket {
   evidence?: { file: string; line?: number; anchor?: string }[];
   blockedBy?: string[];
   links?: { tickets?: string[] };
-  history?: { at: string; what: string }[];
+  /** `history[].kind` 由写入口 `tickets.js --add/--set-status/--note` 必写（`HISTORY_KINDS` 校验）。 */
+  history?: { at: string; what: string; kind: string }[];
+  /** 关单理由：`status=dropped` 必填；`status=done` 且没有 `tests[]` 时也用它（文档/分析票）。 */
   droppedWhy?: string;
+  doneWhy?: string;
   notes?: string;
 }
 
@@ -84,10 +88,10 @@ test('票据 schema：目录名=id、枚举合法、title/area/why/acceptance �
     assert.ok(Array.isArray(t.acceptance) && t.acceptance.length > 0, `${d}: 没有判据的单不算单（acceptance 空）`);
     assert.ok(Array.isArray(t.history) && t.history.length > 0, `${d}: history 至少一条`);
     const HISTORY_KINDS = ['created', 'status', 'scope', 'decision'];
-  for (const h of t.history!) {
-    assert.equal(typeof h.at === 'string' && typeof h.what === 'string', true, `${d}: history 条目缺 at/what`);
-    assert.ok(HISTORY_KINDS.includes(h.kind as string), `${d}: history 条目的 kind 非法（${h.kind}）`);
-  }
+    for (const h of t.history!) {
+      assert.equal(typeof h.at === 'string' && typeof h.what === 'string', true, `${d}: history 条目缺 at/what`);
+      assert.ok(HISTORY_KINDS.includes(h.kind), `${d}: history 条目的 kind 非法（${h.kind}）`);
+    }
     if (t.status === 'dropped') {
       const why = (t.droppedWhy ?? '').trim() || (/why[:：]/.test(t.notes ?? '') ? 'notes' : '');
       assert.notEqual(why, '', `${d}: status=dropped 必须写 droppedWhy（不许静默关单）`);
@@ -120,7 +124,9 @@ test('★done 必须带真实存在的守卫（代码票给 tests[]，文档/分
       continue;
     }
     for (const g of tests) {
-      assert.ok(fs.existsSync(path.join(REPO, g)), `${d}: tests 指向的守卫不存在：${g}`);
+      // ★`tickets/T-0130`：文件存在 → **用例存在**（`app/…/test/x.test.ts#<用例名片段>`）
+      const why = checkGuard(REPO, g);
+      assert.ok(!why, `${d}: tests 指向的守卫不存在：${g}（${why ?? ''}）`);
     }
   }
 });

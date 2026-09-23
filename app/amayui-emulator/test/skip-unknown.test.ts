@@ -14,6 +14,7 @@ import { Engine } from '../src/vm/engine.js';
 import { NotImplementedOp, stepOnce } from '../src/vm/interpreter.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
+import { scriptDerived } from './harness.js';
 
 const HEADER_LEN = 0x3c;
 
@@ -28,6 +29,7 @@ function scriptOf(...opcodes: number[]): ScriptBinary {
     index: i,
   }));
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: HEADER_LEN,

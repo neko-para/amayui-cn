@@ -25,9 +25,10 @@ import type { FrameHost } from '../src/frame/host.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { scConfigureDrawItem, scSetDrawColor } from '../src/renderer/sceneModel.js';
 import { DigestCollector } from '../src/frame/observer.js';
-import { canonicalize, digestFromLine, digestToLine, diffEngineDigest, fnv1a32, hashEngine } from '../src/frame/digest.js';
+import { buildFrameDigest, canonicalize, digestFromLine, digestToLine, diffEngineDigest, fnv1a32, hashEngine } from '../src/frame/digest.js';
 import { FakeAudioHost } from './fakeAudioHost.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const FRAME_MS = 1000 / 60;
 
@@ -40,6 +41,7 @@ function mk(ops: BinInstruction[], audioHost?: FakeAudioHost): { e: Engine; scen
   const scene = new HeadlessScene(audioHost ? { audioHost } : {});
   const e = new Engine(scene);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -200,4 +202,26 @@ test('JSONL 往返：`digestToLine` → `digestFromLine` 保真（`--record`/`--
     assert.equal(back.hash, hashEngine(back.engine), '哈希可由 engine 段重算出来（回放侧要能自证）');
   }
   assert.throws(() => digestFromLine('{}'), '坏行必须抛，不许静默跳过');
+});
+
+test('★Live2D 段参与 digest（`tickets/T-0128`）：挂上 l2dHost ⇒ 段不再是 null，且哈希必变', () => {
+  // 为什么要有它：`scSnapshot(scene, nowMs, l2dHost?)` 一直**接受**第三个参数，而 `buildFrameDigest`
+  // 从来没传 ⇒ 已经跑通的 record/replay（G3）对 Live2D **一字节未比**（T-0124 的审计发现）。
+  // 判据：① 没有 l2dHost ⇒ 段为 null；② 挂上（哪怕还是空的）l2dHost ⇒ 段变成对象且**哈希必须变**。
+  // 反例实验：把 `digest.ts` 里的 `l2d: snap.l2d` 删掉（或第三个参数不传）⇒ 本条第二、三条断言红。
+  const { e, scene } = mk([instr(0x2)]);
+  const st = scene.scene; // ★`buildFrameDigest` 要的是 `SceneState`（= `HeadlessScene.scene`），不是宿主本身
+  const a = buildFrameDigest({ e, scene: st, frame: 0, nowMs: 0 });
+  assert.equal(a.engine.l2d, null, '没有 l2dHost ⇒ 该段为 null');
+  assert.ok(canonicalize(a.engine).includes('"l2d"'), 'l2d 必须在 canonicalize 的字段表里（= 参与 G3 比较）');
+
+  (st as unknown as { l2dHost: unknown }).l2dHost = { l2dSlots: new Map(), l2dNodes: new Map() };
+  const b = buildFrameDigest({ e, scene: st, frame: 0, nowMs: 0 });
+  assert.notEqual(b.engine.l2d, null, '挂上 l2dHost ⇒ 段必须是对象');
+  assert.notEqual(a.hash, b.hash, '★立绘段必须参与 digest 哈希（补之前：改立绘不影响任何哈希）');
+  assert.notEqual(hashEngine(a.engine), hashEngine(b.engine), 'hashEngine 应包含 l2d');
+  assert.ok(
+    diffEngineDigest(a, b).some((l) => l.startsWith('l2d:')),
+    `差异说明应指名 l2d 段；实际 ${JSON.stringify(diffEngineDigest(a, b))}`,
+  );
 });

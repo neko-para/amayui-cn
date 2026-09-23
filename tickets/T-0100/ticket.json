@@ -38,7 +38,7 @@
       "note": "★根因落点：该函数遍历所有 msgwin.reveal 键逐个发布（engine.ts:744-746），而引擎只泵当前窗（`Engine[489484] = _this[122371]`，raw 13943-13945）⇒ 残留 reveal[8] 被贴回屏",
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "serviceRevealAdvanceInput",
-      "line": 727
+      "line": 816
     },
     {
       "file": "app/amayui-emulator/test/op-0100-reveal-current-window.test.ts",
@@ -73,6 +73,11 @@
       "at": "2026-09-20",
       "what": "doing → done —— 全量 npm run verify 绿（909/909、0 fail、死写 0）⇒ 收口。三处收敛（serviceRevealAdvanceInput/serviceTextReveal/0x70 emitWin）+ 4 条新守卫（含\"reveal 同时含残留窗与当前窗\"的辨别力证明）+ 受影族 124/124 + 真语料链 45/45 + 能力台账 text-reveal-pump-409400 已补本票的持续行为结论",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence 行号刷新（锚点未变）"
     }
   ],
   "tests": [

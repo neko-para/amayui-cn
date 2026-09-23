@@ -27,7 +27,6 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { ENGINE_INTERNAL_OPS, NATIVE_OPS } from '../src/vm/ops.js';
 import { dec } from '../src/vm/bits.js';
-import { revealInterval } from '../src/vm/msgwin.js';
 import { layoutWindow } from '../src/text/layout.js';
 import { styleOfWin } from '../src/vm/handlers/msgwin.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
@@ -437,47 +436,6 @@ test('热点表：命中测试设游标；表满 100 时抛错（引擎同样抛
   assert.throws(() => step(0x090, [im(0), im(0), im(1), im(1), im(1), im(2), im(3)]), /热点表已满/);
 });
 
-test('★等待推进门：点中热点 → 跳到该热点的 **labelC**（`sub_404E00` = [459+游标]，加载返回点 -3）', () => {
-  const e0 = new Engine(new StubNative(() => {}));
-  const { e, step } = mk(e0.curScript());
-  // 造一个带 labelMap 的帧：三个 label 各自映射到不同指令下标，以便区分走的是哪一条
-  const f = e.curScript();
-  f.labelMap.set(0x1078, 3); // labelA（游标**进入**该热点；`sub_403E70` 的 [259+i]）
-  f.labelMap.set(0x10a4, 5); // labelB（游标**离开**）
-  f.labelMap.set(0x10b4, 7); // labelC（**点击/键命中**；`sub_403D70` / `sub_404E00` / 主循环 20182）
-  f.script = { instructions: [instr(0x90, []), instr(0x72, [im(0)]), ...Array.from({ length: 10 }, () => instr(0x72, [im(0)]))] } as never;
-  showPanel(step); // 面板必须已显示（等待泵被 Engine[51828] 门控）
-  OPS.get(0x090)!(
-    makeCtx(e, f, instr(0x090, [im(0), im(0), im(500), im(720), im(0x1078), im(0x10a4), im(0x10b4)]), e.native, () => {}),
-  );
-  step(0x72, [im(0)]); // wait-for-input 挂起（本指令 3 dword ⇒ 返回点 = 当前 dword 偏移 - 3）
-  assert.equal(e.awaitingAdvance, true);
-  moveAndClick(e, 100, 100); // 落在全屏热点内（移动 ⇒ hitTest；再按下）
-  assert.equal(e.routes.cursor, 0, '鼠标移动做了一次命中测试（引擎 sub_4B8D50）');
-  assert.equal(e.serviceAdvanceWait(), true, '点到热点 ⇒ 派发');
-  assert.equal(e.awaitingAdvance, false);
-  // ★2026-09 订正（raw 20284-20292 / 20251-20258 / 10667-10676）：**点击走 labelC**（[459+i]），
-  //   且是**带返回点的子程序**：`sub_405360(Engine, -3)` 压「当前 dword 偏移 - 3」，
-  //   而 wait-for-input(0x72) 正好 3 dword（`sub_41EEF0` raw 28484 `step = 3`）
-  //   ⇒ 返回点 = **那条门指令本身** ⇒ label 末尾 `ret` 后**重跑门指令**（页已显示完 ⇒ 再挂起）。
-  //   旧实现取 labelA（labelNext=3）是错的：那条 label 在 ADV 页里会"清窗重贴本页"
-  //   （用户实测："点击推进时先整句显示 → 清掉 → 又从零逐字"）。
-  assert.equal(f.ip, 7, 'ip 应被重定位到 **labelC** 对应的指令（不是 labelA 的 3）');
-  // 返回点 = 「调用点之后的 dword 偏移」+ `a2`（引擎 `sub_405360` raw 11035-11037 压的是
-  // `a2 + ((ip - ip_base) >> 2)`，而调用方已经 `ip += 4*step`）。本测试手搓 `makeCtx`
-  // （没有 stepOnce 推进 ip）⇒ emu 的回退口径 = `dwordToInstr[curDwordOffset]` 的下一个 dword。
-  // 精确到具体 dword 值的断言在 `test/route-dispatch.test.ts` 的判据②（那里用真实 stepOnce）。
-  assert.equal(f.retStack.length, 1, '带返回点的子程序派发 ⇒ 压了 1 个返回点');
-  // 手搓 `makeCtx` 时 ip 未推进 ⇒ emu 的回退口径 = `instructions[ip].index + (-3)`。
-  assert.equal(
-    f.retStack[0],
-    f.script!.instructions[0]!.index - 3,
-    '返回点 = 调用点之后的 dword 偏移 + (-3)（`a2` 是**字面 dword 偏移**）',
-  );
-  assert.equal(e.routes.cursor, -1, '派发后游标清 -1（LABEL_68 raw 20457）');
-  assert.equal(e.routes.enterPending, 0, '派发后 [7466] 清 0（raw 20456）');
-});
-
 test('★等待推进门：**右键不派发 label**（推进分支的 mask 判据是 `& 0x10` = 鼠标左；右键只"处理输入"）', () => {
   const e0 = new Engine(new StubNative(() => {}));
   const { e, step } = mk(e0.curScript());
@@ -510,48 +468,14 @@ test('★等待推进门：**右键不派发 label**（推进分支的 mask 判�
  * 调用点是等待泵 `sub_411BC0`（raw 20322-20337）每帧一次 ⇒ 脚本里靠热点做的悬停 UI 才会响应
  * （`SN0000.txt:63/74` 的热点 labelA = 展开侧边栏、`:66` 全屏热点 labelA = 收起）。
  */
-test('★0x93 清面板 = **清空路由表**（引擎 [258] = _this+1032 = 命中测试用的条目数）', () => {
-  const { e, step } = mk();
-  step(0x090, [im(0), im(0), im(100), im(100), im(1), im(2), im(3)]);
-  step(0x090, [im(200), im(0), im(100), im(100), im(4), im(5), im(6)]);
-  assert.equal(e.routes.count, 2, '先登记 2 项');
-  step(0x093, []); // 消息面显示态关 → sub_403EF0：面板游标态复位（含 [258]=0）
-  assert.equal(e.routes.count, 0, '★0x93 必须把路由条目表清空（否则 UI 例程每次重登记都会累积、旧热点持续遮蔽）');
-  assert.equal(e.routes.cursor, -1);
-  // 再登记 2 项：不应是 4（用户实测过 14→33→40 的累积）
-  step(0x090, [im(0), im(0), im(100), im(100), im(1), im(2), im(3)]);
-  step(0x090, [im(200), im(0), im(100), im(100), im(4), im(5), im(6)]);
-  assert.equal(e.routes.count, 2, '清表后重新登记 ⇒ 只有 2 项');
-});
-test('★悬停派发（sub_403E70 两段式）：进入发 labelA、离开发 labelB、A→B 先离开后进入', () => {
-  const { e } = mk();
-  const f = e.curScript();
-  f.labelMap.set(0xaa, 3); // labelA（进入）
-  f.labelMap.set(0xbb, 5); // labelB（离开）
-  // 两个互不相交的热点：h0 = (0,0,100,100) / h1 = (200,0,100,100)
-  OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
-  OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(200), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
-
-  // ★游标由**鼠标移动**更新（引擎 `sub_4B8D50` → `sub_403C50`）；`pickHoverLabel` 自己**不做**
-  //   命中测试（raw 20324 只调 `sub_403E70`）。
-  // ① 从"无"进入 h0 ⇒ 直接发 h0 的 labelA
-  e.input.setCursor(50, 50);
-  assert.equal(pickHoverLabel(e), 0xaa, '进入热点 ⇒ labelA（无"离开"前项）');
-  // ② 同一位置（无移动）⇒ 游标没变，什么都不发
-  assert.equal(pickHoverLabel(e), -1, '游标未变 ⇒ 不重发');
-  // ③ h0 → h1：本帧发 h0 的 labelB（离开），下一帧才发 h1 的 labelA（进入）
-  e.input.setCursor(250, 50);
-  assert.equal(pickHoverLabel(e), 0xbb, 'A→B：先发旧项的 labelB（离开）');
-  assert.equal(pickHoverLabel(e), 0xaa, '下一帧补发新项的 labelA（进入）');
-  assert.equal(pickHoverLabel(e), -1, '之后稳定不再发');
-  // ④ 走出所有热点 ⇒ 发 h1 的 labelB
-  e.input.setCursor(900, 900);
-  assert.equal(pickHoverLabel(e), 0xbb, '离开所有热点 ⇒ 旧项 labelB');
-  assert.equal(pickHoverLabel(e), -1, '之后稳定不再发');
-  // ⑤ 没有光标（headless）⇒ 无移动、游标保持 ⇒ 不派发
-  e.input.setCursor(0, 0, false);
-  assert.equal(pickHoverLabel(e), -1, '无游标/无变化 ⇒ 不派发（headless 不受影响）');
-});
+// ★2026-09-23（`tickets/T-0129`）：本文件原有三组「路由」用例已**删除** —— 它们与
+//   `test/route-dispatch.test.ts` 的判据①②④重复，而后者用**真 `stepOnce`**、返回点精确到
+//   `gateDword === 17`，并多断 `hitDone`/`hover`/`ret` 回门/文本不变：
+//     · 点中热点 → labelC        ← route-dispatch 判据②（`test/route-dispatch.test.ts:133`）
+//     · 0x93 清空路由表          ← route-dispatch 判据④（`:200`，还多断 `hover`/`hitDone`）
+//     · 悬停两段式 enter/leave   ← route-dispatch 判据①（`:111`，含"一次只给一个 label"+稳定性）
+//   ★保留下面这条「悬停**判定**阶段不改 ip」：`pickHoverLabel` 是纯判定，`route-dispatch` 只测了
+//     泵的**派发**路径 ⇒ 这条断言没有替身（删了会真丢覆盖）。
 
 test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只给 label，不动 ip/等待门', () => {
   const { e } = mk();
@@ -678,11 +602,14 @@ test('★逐字显现速度定律：MessageSpeed = **每字**毫秒（总时长 
   const laid = layoutWindow(9, { style: styleOfWin(eLines, 9), segments: eLines.msgwin.slot(9).segments });
   assert.ok(laid.lines.length > 1, `窄窗应折成多行（实际 ${laid.lines.length} 行）`);
   // 2026-09：节拍是逐字的（intervalMs = max(speed, 一帧)），整段 = 字数 × 节拍；一次推进一个字。
-  assert.equal(st.intervalMs, revealInterval(5), '逐字节拍 = max(speed, 一帧)');
+  // ★2026-09-23（`tickets/T-0125`）：原来这两条写的是 `st.intervalMs === revealInterval(5)` 与
+  //   `st.intervalMs * n === revealInterval(5) * n` —— **镜像 + 恒真**（拿实现用的那个函数去断
+  //   实现自己的输出，第二条还只是第一条乘同一个数）。换成**具体数**：
+  assert.equal(st.intervalMs, 1000 / 60, 'MessageSpeed=5 < 一帧 ⇒ 节拍被"一帧"地板住（16.67ms/字）');
   assert.equal(
     st.intervalMs * laid.glyphCount,
-    revealInterval(5) * laid.glyphCount,
-    `整段 = 字数(${laid.glyphCount}) × max(speed, 一帧)（行数 ${laid.lines.length} 不参与）`,
+    (1000 / 60) * 5,
+    `整段 = 字数(5) × 一帧 16.67ms（行数 ${laid.lines.length} 不参与）`,
   );
   assert.equal(laid.glyphCount, 5);
 

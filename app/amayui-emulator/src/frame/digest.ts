@@ -53,6 +53,15 @@ export interface DigestEngine {
   routes: { count: number; cursor: number; hover: number; shown: number };
   /** 消息页数（`e.msgwin.pages`）。 */
   pages: number;
+  /**
+   * **Live2D 运行态段**（`SceneSnapshot['l2d']`：槽 + 节点 + 每节点这一帧的三角批次）。
+   *
+   * ★2026-09-23（`tickets/T-0128`）：`scSnapshot(scene, nowMs)` 一直**接受**第三个可选参数
+   *   `l2dHost`，但 `buildFrameDigest` 从来没传 ⇒ 已经跑通的 **record/replay（G3）对 Live2D
+   *   一字节未比**（T-0124 的审计发现：`grep l2d src/frame/digest.ts` 零命中）。
+   *   补上之后，G3 的「逐帧 engine 段相等」就**包含立绘**（同一场景两宿主的立绘必须逐帧一致）。
+   */
+  l2d: SceneSnapshot['l2d'];
 }
 
 /** **host 段**：允许两宿主不同（宿主义务的履行计数，不参与 G3 比较）。 */
@@ -104,7 +113,8 @@ const ZERO_HOST: DigestHost = { barriers: 0, audioIntents: 0, fontMisses: 0 };
  */
 export function buildFrameDigest(args: BuildDigestArgs): FrameDigest {
   const { e, scene, frame, nowMs } = args;
-  const snap = scSnapshot(scene, nowMs);
+  // ★第三个参数是 Live2D 宿主（见 `DigestEngine.l2d`）—— 不传就等于「立绘不参与 digest」
+  const snap = scSnapshot(scene, nowMs, scene.l2dHost ?? null);
   const f = e.curScript();
   const engine: DigestEngine = {
     script: f.name,
@@ -122,6 +132,7 @@ export function buildFrameDigest(args: BuildDigestArgs): FrameDigest {
     msgWins: snap.msgWins,
     routes: { count: e.routes.count, cursor: e.routes.cursor, hover: e.routes.hover, shown: e.routes.shown },
     pages: e.msgwin.pages,
+    l2d: snap.l2d,
   };
   return {
     frame,
@@ -211,6 +222,15 @@ export function diffEngineDigest(a: FrameDigest, b: FrameDigest, maxEntries = 6)
   }
   for (const k of Object.keys(ea.counts) as (keyof SceneSnapshot['counts'])[]) {
     if (ea.counts[k] !== eb.counts[k]) push(`counts.${k}: ${ea.counts[k]} vs ${eb.counts[k]}`);
+  }
+  // ★Live2D 段（`tickets/T-0128`）：用 canonicalize 比（键序无关），失败时给一段可读摘要
+  if (canonicalize(ea.l2d) !== canonicalize(eb.l2d)) {
+    const d = (x: DigestEngine['l2d']): string => {
+      if (x === null) return 'null';
+      const tri = x.nodes.reduce((a, n) => a + n.triangles, 0);
+      return `slots=${x.slots.length} nodes=${x.nodes.length} triangles=${tri}`;
+    };
+    push(`l2d: ${d(ea.l2d)} vs ${d(eb.l2d)}`);
   }
   const lenDiff = (name: string, x: unknown[], y: unknown[]): boolean => {
     if (x.length !== y.length) {

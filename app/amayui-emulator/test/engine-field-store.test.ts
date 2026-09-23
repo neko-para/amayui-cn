@@ -20,6 +20,7 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { dec, asI32, enc } from '../src/vm/bits.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_GLOBAL_INT = 0x3;
@@ -36,6 +37,7 @@ function mkScript(opcode: number, vals: number[]): { sc: ScriptBinary; slots: nu
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,

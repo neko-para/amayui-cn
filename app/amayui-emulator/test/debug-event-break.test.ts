@@ -25,6 +25,7 @@ import { writeIntOperand, writeFloatOperand, writeStringOperand } from '../src/v
 import { NATIVE_OPS, OPS } from '../src/vm/ops.js';
 import { makeCtx } from '../src/vm/step.js';
 import { f32 } from '../src/vm/bits.js';
+import { compileBreak, matchEvent } from '../src/vm/debugBreak.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -115,4 +116,49 @@ test('★源码棘轮：事件暂停必须挂在 `stepOnce` **之后**（`onAfte
   const sess = fs.readFileSync(path.join(ROOT, 'app/amayui-emulator/src/renderer/app/session.ts'), 'utf8');
   assert.ok(/this\.#e\.debugEvent = /.test(sess), 'session 必须注册 Engine.debugEvent');
   assert.ok(/onAfterStepEvent:/.test(sess), 'session 必须在 loopOptions 里挂 onAfterStepEvent');
+});
+
+test('★`tickets/T-0127` 新事件①：写引擎字段 ⇒ `engine-field-write`（含 delete 的 `removed=1`）', () => {
+  // 为什么要有它：审计指出"谁写了 Engine[N]"这类问题此前只能靠**静态读码或专门写一个探针用例**回答，
+  // 于是那批"字段值断言"降不下去。现在 `engineValues` 的写门面（`EngineFieldMap`）让任何写路径都发事件。
+  const e = new Engine(new StubNative(() => {}));
+  const evs = recordEvents(e);
+  e.engineValues.set(21664, 0xff90b6);
+  assert.equal(evs.length, 1, '写一次引擎字段应恰好发一个事件');
+  assert.equal(evs[0]!.kind, 'engine-field-write');
+  assert.deepEqual(evs[0]!.values, { idx: 21664, val: 0xff90b6, removed: 0 });
+  // 构造期填的初值（96983=1）**不应**发事件（`super.set` 不经过重写）
+  assert.ok(!evs.some((x) => x.values.idx === 96983), '构造初值不算"写"');
+  // delete 也要发（`removed == 1`，条件里可区分"被删"与"被写成 0"）
+  e.engineValues.delete(21664);
+  assert.equal(evs.length, 2);
+  assert.deepEqual(evs[1]!.values, { idx: 21664, val: 0, removed: 1 });
+});
+
+test('★`tickets/T-0127` 新事件②：写本帧 local int ⇒ `local-int-write`（`val` 是解码后的值）', () => {
+  const e = new Engine(new StubNative(() => {}));
+  e.key = 0x12345678;
+  const evs = recordEvents(e);
+  const f = e.frames[0]!;
+  // `local 0x51` ← 立即数 42
+  writeIntOperand(e, f, instr(0x55, [{ type: 0x9, raw: 0x51 }, { type: 0, raw: 42 }]), 1, 42);
+  assert.equal(evs.length, 1);
+  assert.equal(evs[0]!.kind, 'local-int-write');
+  assert.deepEqual(evs[0]!.values, { idx: 0x51, val: 42 }, '★val 必须是解码后的 42（池里存的是 ENC 位模式）');
+  assert.notEqual(f.locals.int.get(0x51), 42, '池里存的应是 ENC 后的位模式');
+});
+
+test('★`tickets/T-0127`：新事件类型也能被**事件断点**命中（idx/val 参与条件求值）', () => {
+  const e = new Engine(new StubNative(() => {}));
+  const specs = [
+    compileBreak({ id: 1, kind: 'event', where: 'engine-field-write', condition: 'idx == 21664 && val == 255' }),
+    compileBreak({ id: 2, kind: 'event', where: 'local-int-write', condition: 'idx == 0x51' }),
+  ];
+  e.engineValues.set(21664, 255);
+  const hit = matchEvent(specs, 'engine-field-write', e, { idx: 21664, val: 255, removed: 0 }, 'x');
+  assert.ok(hit, '★条件 `idx == 21664 && val == 255` 必须命中（事件参数按种类映射进条件）');
+  assert.equal(hit!.spec.id, 1);
+  const hit2 = matchEvent(specs, 'local-int-write', e, { idx: 0x51, val: 42 }, 'x');
+  assert.ok(hit2, 'local-int-write 也应能被条件命中');
+  assert.equal(hit2!.spec.id, 2);
 });

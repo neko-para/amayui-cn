@@ -10,10 +10,12 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import type { BinInstruction, BinArg, ScriptBinary } from '../src/script/bin.js';
 import { dec } from '../src/vm/bits.js';
+import { at, scriptDerived } from './harness.js';
 
 const im = (raw: number): BinArg => ({ type: 0x0, raw });
 const instr = (opcode: number, args: BinArg[]): BinInstruction => ({ opcode, name: 'x', argc: args.length, args, byteOffset: 0, index: 0 });
 const mkScript = (instructions: BinInstruction[]): ScriptBinary => ({
+  ...scriptDerived(),
   signature: 'SYS0000', isVer5: false, headerLen: 0, localVars: [0, 0, 0, 0, 0, 0],
   subHeaderLength: 0, tables: [], instructions, labelTargets: new Set(), raw: new Uint8Array(0),
 });
@@ -30,20 +32,20 @@ test('load-frame(0x6)→call-frame(0x8)→exit：切到预装帧执行、exit �
   const t1 = await stepOnce(e);
   assert.equal(t1.opcode, 0x8, 'step1 应执行 call-frame(0x8)');
   assert.equal(e.cur, 1, 'call-frame 后 cur 应切到目标帧 1');
-  assert.equal(e.frames[0].ip, 1, '调用方帧0 应已推进到 call-frame 之后（返回后继续）');
-  assert.equal(e.frames[1].caller, 0, '目标帧 caller 应为调用方 cur=0');
-  assert.equal(e.frames[1].ip, 0, '目标帧应从 ip0 执行');
+  assert.equal(at(e.frames, 0, '帧').ip, 1, '调用方帧0 应已推进到 call-frame 之后（返回后继续）');
+  assert.equal(at(e.frames, 1, '帧').caller, 0, '目标帧 caller 应为调用方 cur=0');
+  assert.equal(at(e.frames, 1, '帧').ip, 0, '目标帧应从 ip0 执行');
 
   // 0x2 exit → 目标帧返回调用帧
   const t2 = await stepOnce(e);
   assert.equal(t2.opcode, 0x2, 'step2 应执行 exit(0x2)');
   assert.equal(e.cur, 0, 'exit 后 cur 应回到调用方帧0');
-  assert.equal(e.frames[0].ip, 1, '调用方帧0 应在 call-frame 之后（=1）继续');
+  assert.equal(at(e.frames, 0, '帧').ip, 1, '调用方帧0 应在 call-frame 之后（=1）继续');
 
   // 返回后再执行标记 op（mov）—— 验证调用方真的继续下来
   const t3 = await stepOnce(e);
   assert.equal(t3.opcode, 0x55, 'step3 应执行调用方的下一指令(mov)');
-  assert.equal(e.frames[0].ip, 2, 'mov 之后 ip 前进到 2');
+  assert.equal(at(e.frames, 0, '帧').ip, 2, 'mov 之后 ip 前进到 2');
 });
 
 test('call-frame(0x8) 未预装帧 → 抛错', async () => {

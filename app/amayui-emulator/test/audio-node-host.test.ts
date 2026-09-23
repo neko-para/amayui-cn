@@ -25,6 +25,7 @@ import { NodeAudioHost, audioDurationSec } from '../src/audio/nodeAudioHost.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { DropRecorder, withNativeTap } from '../src/vm/nativeTap.js';
 import { FakeAudioHost } from './fakeAudioHost.js';
+import { scriptDerived } from './harness.js';
 
 // ==================== 1. 时长推断（容器头 → 秒） ====================
 
@@ -164,7 +165,7 @@ test('NodeAudioHost：`fallbackDurationSec` 兜底；`streamUrl` 不给（强制
   });
   const clip = await host.decode(7, new Uint8Array(100));
   assert.equal(clip!.durationSec, 1.25, '兜底生效');
-  assert.equal(host.streamUrl({ id: 7 }), undefined, '不提供流式 ⇒ 与"一次性解码"的引擎路径同构');
+  assert.equal(host.streamUrl(), undefined, '不提供流式 ⇒ 与"一次性解码"的引擎路径同构');
 
   // play 只记账（headless 无声）
   const pb = host.play(clip!, { gain: 0.5, pan: 0, loop: false });
@@ -189,6 +190,7 @@ function mkScene(ops: BinInstruction[], audioHost: FakeAudioHost): HeadlessScene
   const scene = new HeadlessScene({ audioHost, onLog: () => {} });
   const e = new Engine(scene);
   const script: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,

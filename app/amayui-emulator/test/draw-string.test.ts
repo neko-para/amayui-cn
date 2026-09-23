@@ -29,6 +29,7 @@ import { drawStringGlyphs, advance } from '../src/text/layout.js';
 import { TextureCache, canvasPixelSize } from '../src/renderer/pixi/textureCache.js';
 import type { DrawStringStyle, NativeBridge } from '../src/vm/native.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_IMM_INT = 0x0;
@@ -45,6 +46,7 @@ function script(opcode: number, args: { type: number; raw: number; str?: string 
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,
@@ -136,6 +138,7 @@ test('★共享模型：直绘文本记进槽、快照可见；create-texture �
     outlineMode: 3,
     outlineDx: 1,
     outlineDy: 1,
+    antiAlias: true, // 引擎构造默认（`msgwin.ts:184`）
   };
   s.drawString(196, 5, 6, '窗口顕示', style);
   s.drawString(196, 5, 36, '画面模式', style);
@@ -202,14 +205,20 @@ test('★纹理槽：没先 create-texture 的槽上直绘 = 不画（引擎 raw
     outlineMode: 0,
     outlineDx: 0,
     outlineDy: 0,
+    antiAlias: true, // 引擎构造默认（`msgwin.ts:184`）
   };
-  // 注意：Node 里没有 document ⇒ `create` 不会真的建 canvas（浏览器侧才有），
-  // 因此这条只锁"没有表面就不画、并且要说清楚"这一条语义。
+  // ★2026-09-23 重写（`tickets/T-0125`）：原版断 `logs.some(l => l.includes('没有 create-texture'))`
+  //   —— 判据钉在自己那句**日志文案**上（改文案假红）。Node 里没有 `document` ⇒ `create()` 根本不会
+  //   建画布（`textureCache.ts:346` 的 `typeof document !== 'undefined'`），所以"有没有画上去"在
+  //   这个宿主里**没有像素面**可观测。能观测的是三件**语义**事（不再管文案怎么写）：
+  //   ① 必须优雅忽略（去掉 `if (!cs) return;` 那道门 ⇒ 这里会 TypeError）；
+  //   ② 不得凭空建面（槽尺寸仍是引擎"槽为空"口径的 0×0）；
+  //   ③ 必须留痕（忽略是**有记录**的，不是静默死写 —— ADR-010 的记录义务口径）。
+  assert.doesNotThrow(() => tc.drawString(196, 5, 6, 'x', style), '★没有表面的槽上直绘必须优雅忽略');
+  assert.equal(tc.size(196).w, 0, '★不得凭空建面（引擎口径：槽为空 ⇒ 0×0）');
+  const beforeLogs = logs.length;
   tc.drawString(196, 5, 6, 'x', style);
-  assert.ok(
-    logs.some((l) => l.includes('没有 create-texture')),
-    `应记一条"被忽略"的日志，实际：${logs.join(' | ')}`,
-  );
+  assert.ok(logs.length > beforeLogs, `忽略必须留痕（当前日志：${logs.join(' | ')}）`);
 });
 
 /**

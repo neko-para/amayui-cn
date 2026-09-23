@@ -35,8 +35,8 @@ import { parseScriptBytes } from '../src/script/bin.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { dec } from '../src/vm/bits.js';
 import type { AudioIntent } from '../src/audio/audioEngine.js';
-import type { BinArg, BinInstruction } from '../src/script/bin.js';
-import { im, instr, str } from './harness.js';
+import type { BinArg } from '../src/script/bin.js';
+import { im, instr, RecordingAudioNative, str } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -44,24 +44,7 @@ const RES = resolveResourceDir(ROOT);
 
 const gInt = (n: number): BinArg => ({ type: 3, raw: n }) as unknown as BinArg;
 const lInt = (n: number): BinArg => ({ type: 9, raw: n }) as unknown as BinArg;
-const instr = (op: number, args: BinArg[]): BinInstruction =>
-  ({ opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 }) as unknown as BinInstruction;
 
-/** 记录音频意图的宿主。 */
-class RecordingNative extends StubNative {
-  readonly intents: AudioIntent[] = [];
-  constructor() {
-    super(() => {});
-  }
-  override audio(intent: AudioIntent): void {
-    this.intents.push(intent);
-  }
-  get last(): AudioIntent {
-    const v = this.intents.at(-1);
-    assert.ok(v, '没有记录到任何音频意图');
-    return v;
-  }
-}
 
 function mk(native: StubNative = new StubNative(() => {})): {
   e: Engine;
@@ -130,7 +113,7 @@ test('0x1BF：按 122504（消息跳读态）置 122503；顺带清 122504 的 b
 });
 
 test('0xB8：停 BGM（清 effect_flags bit0x200 时先推进淡出）', () => {
-  const native = new RecordingNative();
+  const native = new RecordingAudioNative();
   const { e, run } = mk(native);
   e.effectFlags = 0x200;
   run(0xb8, []);
@@ -189,11 +172,14 @@ test('SAVE.DAT 的「已使用文件」块：本工程格式写入→读回（�
   assert.equal(empty.data.usage.usedFileIds.size, 0);
 });
 
-test('★E4：真机系统存档（`SAVE\\SAVE.DAT`）解出鉴赏进度；overlay 旧副本与 base 取并集', async () => {
+test('★E4：真机系统存档（`SAVE\\SAVE.DAT`）解出鉴赏进度；overlay 旧副本与 base 取并集', async (t) => {
   const src = new NodeFileSource({ resourceDir: RES, system: resolveSystemPaths(ROOT) });
   const merged = await src.readSaveFlags();
   if (!merged) {
-    await src.dispose?.(); // 这台机器上没有真机系统存档 ⇒ E4 依赖本机玩家数据，跳过不算失败
+    // ★2026-09-23（`tickets/T-0128`）：原来是**裸 return**（node:test 记 pass、零断言 ⇒ 谎报绿灯）。
+    //   缺真机系统存档是「环境缺数据」，要用 `t.skip` 明说，而不是假装跑过。
+    await src.dispose?.();
+    t.skip('本机没有真机系统存档（E4 依赖玩家数据）');
     return;
   }
   assert.ok(merged.length > 0, '并集不该为空（本工程 overlay 那份可能是旧版本写的、缺 flag 块 ⇒ 必须靠 base 兜住）');

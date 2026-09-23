@@ -27,7 +27,7 @@ import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { parseScriptBytes } from '../src/script/bin.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
-import { im, instr, pickHoverLabel } from './harness.js';
+import { im, instr, pickHoverLabel, scriptDerived } from './harness.js';
 
 /** 造一个可被 `labelMap` 解析的最小脚本：指令的 dword index 按下标推（每条 1+2*argc dword）。 */
 function mkScript(instructions: BinInstruction[]): ScriptBinary {
@@ -42,6 +42,7 @@ function mkScript(instructions: BinInstruction[]): ScriptBinary {
     for (let k = 0; k < n; k++) dwordToInstr[instructions[i]!.index + k] = i;
   }
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

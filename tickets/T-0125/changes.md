@@ -71,3 +71,63 @@
    `transition-render-wiring.test.ts:100-103`（断言注释含 `类别 1`）。
 3. **其余重复覆盖**：见 `T-0129`。
 4. **Z3（`control/` 层零覆盖）**：见 `T-0127`。
+
+---
+
+## 第 2 次变更（2026-09-23，同会话续）：再清一处"断言注释"的判据
+
+`test/transition-render-wiring.test.ts:100-103` 原来要求 `pixiBackend.ts` 的**注释**里同时含
+`类别 1` 与 `U2` 两个字面串 —— 改注释就红、行为改坏却可能不红（"判据钉错地方"的典型）。
+**删除**该行并留注说明：同一件事由紧邻的**代码形状**判据（`cat !== 0 && cat !== 2 && cat !== 3` + `continue`）
+与本文件的 `renderItemSubset` 真宿主用例（`:183` 起）覆盖。用例数不变（6/6 绿）。
+
+### 本票剩余（精确清单，供后续按需取用）
+
+| # | 项 | 说明 |
+|---|---|---|
+| 1 | **镜像实现 ~15 处** | `OPS.has(op)` / `长度 === 21` 之类。★注册表分类那 8~9 处已在 `T-0129` 收成一张表（`test/registry-classification.test.ts`），其余按需合并 |
+| 2 | 其余**源码正则 / 日志文案**判据 | 已做 `missing-texture-skips-item`（→ 行为断言）与本轮 `transition-render-wiring`；**还剩**：`op-22a-22f-scene-xform.test.ts:206-209/253-263`（台账 prose）、`op-1b2-text-buffer.test.ts:45-48` 与 `draw-string.test.ts:207-210`（日志文案）、`op-02-exit-minus11.test.ts:118-120,151-152`（分支判据匹配自己的日志）、`msg-text-range.test.ts:59-73`、`anim-window-done.test.ts:156-204`、`tool-paths.test.ts:98/110-113`、`audit-report-completeness.test.ts:66-90` |
+| 3 | 重复覆盖 | 见 `T-0129`（已做注册表表化 + adv-msgwin 三条；剩存档族与 option-font-speed-menu） |
+| 4 | Z3（`control/` 零覆盖） | ✅ 已在 `T-0127` 闭合（`test/control-format.test.ts`），变异 `M13` 已翻牌 |
+
+---
+
+## 第 3 次变更（2026-09-23，同会话续）：把"钉在文案/源码上"的判据换成行为断言（本票剩余②收尾）
+
+清单来自 §「本票剩余」第 2 行。逐条处置如下，**每条都给了反例实验或"为什么只能这么钉"的理由**。
+
+| # | 位置 | 处置 | 现在的判据 / 理由 |
+|---|---|---|---|
+| 1 | `op-02-exit-minus11.test.ts`（分支表 + `assert.match(logs, c.branch)`） | **改行为** | 原判据是"引擎自己那行日志里出现了哪句话"。现在：`pendingRecord0` + 假 `FileSource` ⇒ 分派进装载支的唯一可观测后果 = **帧 0 换成记录脚本**（`curScript().name === 'SYSTEM4.BIN'`）且标志被消费；`'none'` 支则脚本不变、标志不消费。三分类本身从日志文案改为**纯函数真值表**（新增导出 `sub40F750Branch`，9 格逐格断言） |
+| 2 | `draw-string.test.ts:213-216`（`logs.some(l => l.includes('没有 create-texture'))`） | **改语义** | Node 里没有 `document` ⇒ `create()` 根本不建画布（`textureCache.ts:346`）⇒"有没有画上去"在这个宿主**没有像素面**可观测。改成三件可观测的语义：① `doesNotThrow`（去掉 `if (!cs) return;` 那道门 ⇒ 这里会 TypeError）；② `size(196)` 仍为 0×0（**不得凭空建面**）；③ 忽略必须**留痕**（日志条数增加，但**不管文案怎么写**） |
+| 3 | `op-1b2-text-buffer.test.ts:47-50` | **放宽** | 0x1B4 体内不写任何操作数 ⇒ 观测面 = 日志 + 缓冲复位（`strings.ts` 头注）。缓冲复位已断言；剩下的"取出的内容被报出来"是**记录义务**，保留"日志里必须出现被取出的文本"，删掉对固定前缀 `'0x1B4: 取出文本缓冲'` 的要求 |
+| 4 | `msg-text-range.test.ts:61-76`（源码正则） | **改行为** | 原版对 `presenter.ts` 源码文本做正则（认 `imgid === undefined && inMsgTextRange(...)` 这个字面表达式）。现在真调 `presenter.itemSprite`：正文区间内 + 无纹理槽 ⇒ `null`；**同一槽状态**、handle 移出区间 ⇒ 必须画出 sprite（互为对照） |
+| 5 | `op-22a-22f-scene-xform.test.ts:252-267`（note prose 正则） | **删** | 那四个"订正点"**全部**已由同文件开头的**体账**用例直接钉在反编译器上（0x22A 无 `sub_41BF50`、0x22F 是 `j_D3DXMatrixTranslation`、0x1C4 语音总线 + `Engine+84128`、0x23A 两张表）⇒ prose 正则只是重复，且失败模式相反（改措辞假红、改坏引擎不红） |
+| 6 | 同文件 `:202-213`（`note.length >= 80` + `/扩展点\|消费者/`） | **改内容** | 换成"`note` 必须至少引用一处 raw 地址（4~6 位）"= 台账的**可追溯性**义务；`在册 + 带票` 保留。字数与措辞不再是判据 |
+| 7 | `tool-paths.test.ts:110-113`（`assert.match(src, /--name 只是文件名/)`） | **改行为** | 真跑 CLI：`node tools/shot.cjs --name a/b\|a\\b\|..\|x/../../y` ⇒ `exit(2)` 且输出里**不得**出现 Electron 的痕迹；再加 `record.cjs --out ../../x` 的越界用例与"合法 `--name` 不走这条 exit(2)"的反面控制 |
+
+★**为此动了两处源码（都是"让判据能落在公开缝上"，不是改语义）**：
+
+1. `src/vm/handlers/control.ts`：导出纯函数 `sub40F750Branch`（引擎分派表的事实），并在头注写明为什么导出。
+2. `tools/shot.cjs` / `tools/record.cjs`：**参数校验从"早于 `require(main.cjs)`"提到"早于 `require('electron')` 本身"**。
+   原先参数错仍会先把 Electron 模块拉起来（`record.cjs` 的事故正是"应用还没起来就崩"），提到最前之后
+   ①报错更早、②`node tools/shot.cjs --name a/b` 就能复现 ⇒ 守卫不必再对源码文案做正则。
+
+### 反例实验（本轮的判别力证据）
+
+| 改动 | 期望 | 实测 |
+|---|---|---|
+| 禁用 `presenter` 的正文区间判据（`if (false && inMsgTextRange(...))`） | `msg-text-range` 红 | **fail 1**（pass 798/799） |
+| 禁用 `shot.cjs` 的 `--name` 校验（`if (false)`） | `tool-paths` 红 | **fail 1**（pass 797/798） |
+| 两处分别还原（逐字节比对） | 绿 | ✅ |
+
+### 保留为棘轮的三类（**不是漏做，是判据本身就是"代码形状"或"交付物完整性"**）
+
+| 位置 | 为什么行为断言表达不了 |
+|---|---|
+| `anim-window-done.test.ts`（T-0008 不得再有 `waitFlags` 镜像字段 / T-0014 `Engine` 不得再挂测试专用门面） | 命题是**"某形态不得存在"**——没有运行期可观测物；且文件已**剥注释**再查，所以"改注释"不会假红。反方向（改名绕过）是这类判据的已知上限，已在文件头写明 |
+| `op-22a-22f` 的**体账**用例（对 `engine/…_utf8.c` 做配平取体 + 断言体内算子） | 判据是**外部真源（反编译器）**，不是我们自己的文案 —— 这是"防照筛体旧说法抄一遍"的唯一机器办法 |
+| `audit-report-completeness.test.ts`（报告 §6 必须列全批次/票号；归档 JSON 的 kept/dropped/unclear 计数） | 判据是**审计交付物本身的完整性**（T-0075 的产出就是那份报告与三份归档 JSON）；"行为"在这里没有对应物 |
+
+⇒ §「本票剩余」第 2 行（6 个文件里的源码正则/日志文案判据）**到此清空**：5 处改行为、1 处删（由更强的体账覆盖）、
+1 处放宽、1 处改内容、1 处保留并写明理由。第 1 行（镜像实现 ~15 处）与第 3 行（重复覆盖）见 `T-0129`。

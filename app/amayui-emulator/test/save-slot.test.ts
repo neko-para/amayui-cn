@@ -11,6 +11,7 @@
  *  - **E2**：`NodeFileSource` 的槽读写**只碰 overlay**（真存档槽一个字节都不动）。
  */
 import { test } from 'node:test';
+import { findRealFiles, firstRealFile, readReal, realSlotDirs } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -39,6 +40,7 @@ import { encodeSaveData } from '../src/save/saveData.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 import { buildScriptBin } from './engineSlotFixtures.js';
+import { synthSlotScript } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -51,21 +53,8 @@ const instr = (opcode: number, args: BinArg[] = []): BinInstruction =>
 /** 造一个装了合成脚本的引擎（含一张空脚本，供 `load-int` 写回操作数）。 */
 function mkEngine(fsLike: FileSource): { e: Engine; script: ScriptBinary } {
   const e = new Engine(new StubNative(() => {}));
-  const script: ScriptBinary = {
-    signature: 'SYS4450 ',
-    isVer5: false,
-    headerLen: 0x3c,
-    localVars: [0, 0, 0, 0, 0, 0],
-    subHeaderLength: 0,
-    tables: [
-      { length: 0, offset: 1 },
-      { length: 0, offset: 1 },
-      { length: 0, offset: 1 },
-    ],
-    instructions: [instr(0x1a7)], // comment（无害：只为让帧里有条指令）
-    labelTargets: new Set<number>(),
-    raw: new Uint8Array(0x3c + 12),
-  };
+  // ★合成槽脚本 = 共享夹具（`tickets/T-0129` 上收；`save-thumb` 那份逐字相同）
+  const script: ScriptBinary = synthSlotScript();
   loadScriptIntoFrame(e.curScript(), script, 'TEST.BIN', 0);
   e.fileSource = fsLike;
   return { e, script };
@@ -119,39 +108,57 @@ function memoryFs(): FileSource & { slots: Map<number, Uint8Array>; thumbs: Map<
 // ---------------------------------------------------------------------------
 // E4：真存档槽的头（本机 47 个 SAVE??.DAT 里的字段布局实证）
 // ---------------------------------------------------------------------------
-test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 年/月/日/时/分/秒（与文件时间一致）+ 游玩秒数', (t) => {
-  const paths = resolveSystemPaths(REPO);
-  const file = path.join(paths.baseDir, 'SAVE', 'SAVE00.DAT');
-  if (!fs.existsSync(file)) {
-    t.skip(`本机没有真存档槽 ${file}`);
+test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 存档时刻（SYSTEMTIME）+ 游玩秒数', (t) => {
+  // ★`tickets/T-0128`：改为**两侧都看**（base + overlay）—— 本机真槽只在 overlay 一侧，
+  //   原写法（只查 base）在这些用例上是"静默跳过"。
+  const slots = findRealFiles(REPO, 'DAT');
+  if (slots.length === 0) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
-  const bytes = new Uint8Array(fs.readFileSync(file));
-  const r = parseSlotHeader(bytes);
-  assert.equal(r.ok, true, r.ok ? '' : r.reason);
-  if (!r.ok) return;
-  const h = r.header;
-  const st = fs.statSync(file);
-  assert.equal(h.magic, 'S4SD');
-  // 头的日期 = 存档时间（文件 mtime，本地时区）
-  assert.equal(h.year, st.mtime.getFullYear(), '头 +264 = 年');
-  assert.equal(h.month, st.mtime.getMonth() + 1, '头 +266 = 月');
-  assert.equal(h.day, st.mtime.getDate(), '头 +270 = 日（★+268 是星期、0x1A0 不取）');
-  assert.equal(h.hour, st.mtime.getHours(), '头 +272 = 时');
-  assert.equal(h.minute, st.mtime.getMinutes(), '头 +274 = 分');
-  assert.ok(Math.abs(h.second - st.mtime.getSeconds()) <= 2, `头 +276 = 秒（${h.second} vs ${st.mtime.getSeconds()}）`);
-  assert.ok(h.playSeconds > 0, `头 +280 = 游玩秒数（实际 ${h.playSeconds}）`);
-  assert.equal(h.format, 3, '真槽的 format（≥3 = 模幂混淆 + 压缩）');
+  // ★2026-09-23：原来在**第一个**真槽上逐字段断「头 == 文件 mtime」。闸门打开后实测：
+  //   本机 SAVE79 与 mtime **逐秒一致**（= 这个字段确实是存档时刻），而 SAVE78 的 mtime 是后来
+  //   被重写/复制过的（头 00:48:39 vs mtime 13:26）⇒ 单槽硬比 mtime 会随"文件有没有被碰过"假红。
+  //   改成两层：① 每个槽的头都必须是**合法 SYSTEMTIME**（年/月/日/时/分/秒 在有效范围、format=3、游玩秒数>0）；
+  //            ② **至少一个**槽的头与 mtime 一致（证明这个字段就是存档时刻 —— 这是判据的核心，不能省）。
+  const lines: string[] = [];
+  let matched = 0;
+  for (const slot of slots) {
+    const r = parseSlotHeader(readReal(slot));
+    assert.equal(r.ok, true, r.ok ? '' : `${slot.name}: ${r.reason}`);
+    if (!r.ok) return;
+    const h = r.header;
+    const st = fs.statSync(slot.path);
+    assert.equal(h.magic, 'S4SD', `${slot.name} 魔数`);
+    assert.ok(h.year >= 2000 && h.year <= 2100, `${slot.name} 年合法（${h.year}）`);
+    assert.ok(h.month >= 1 && h.month <= 12, `${slot.name} 月合法（+266 = ${h.month}）`);
+    assert.ok(h.day >= 1 && h.day <= 31, `${slot.name} 日合法（+270 = ${h.day}；★+268 是星期、0x1A0 不取）`);
+    assert.ok(h.hour <= 23 && h.minute <= 59 && h.second <= 59, `${slot.name} 时/分/秒合法（+272/+274/+276）`);
+    assert.ok(h.playSeconds > 0, `${slot.name} 头 +280 = 游玩秒数（实际 ${h.playSeconds}）`);
+    assert.equal(h.format, 3, `${slot.name} 的 format（≥3 = 模幂混淆 + 压缩）`);
+    const same =
+      h.year === st.mtime.getFullYear() && h.month === st.mtime.getMonth() + 1 && h.day === st.mtime.getDate() &&
+      h.hour === st.mtime.getHours() && h.minute === st.mtime.getMinutes() &&
+      Math.abs(h.second - st.mtime.getSeconds()) <= 2;
+    if (same) matched++;
+    lines.push(
+      `  ${slot.name}: 头 ${h.year}-${h.month}-${h.day} ${h.hour}:${h.minute}:${h.second}` +
+        ` / mtime ${st.mtime.toLocaleString()} ${same ? '（一致）' : '（文件被重写过 ⇒ 不参与一致性判据）'}`,
+    );
+  }
+  assert.ok(
+    matched >= 1,
+    `至少应有一个真槽的头部时刻与文件 mtime 一致（= 头 +264..+276 确实是存档时刻）；实测：\n${lines.join('\n')}`,
+  );
 });
 
 test('E4：真存档槽能读到整份"头"；状态主体是引擎私有布局 ⇒ engineFormat = true（缺口已登记）', (t) => {
-  const paths = resolveSystemPaths(REPO);
-  const file = path.join(paths.baseDir, 'SAVE', 'SAVE00.DAT');
-  if (!fs.existsSync(file)) {
-    t.skip(`本机没有真存档槽 ${file}`);
+  const slot = firstRealFile(REPO, 'DAT');
+  if (!slot) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
-  const r = parseSlotFile(new Uint8Array(fs.readFileSync(file)));
+  const r = parseSlotFile(readReal(slot));
   assert.equal(r.ok, true, r.ok ? '' : r.reason);
   if (!r.ok) return;
   assert.equal(r.data.engineFormat, true, '引擎格式（format ≥ 1）⇒ 只读头');

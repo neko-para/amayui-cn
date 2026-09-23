@@ -67,16 +67,30 @@ test('轴的取值都在白名单内，且每个子系统/档位/性质都真的
   }
   for (const k of KINDS) assert.ok(byKind[k]?.length, `kind ${k} 一个文件都没有`);
   // T2 允许为空：真机档（Electron）目前由工具链承担（`npm run shot` / `dbg:srv`），见 tickets/T-0128。
-  for (const t of ['T0', 'T1'] as const) assert.ok(byTier[t]?.length, `tier ${t} 一个文件都没有`);
+  for (const t of ['T0', 'T1', 'T2'] as const) assert.ok(byTier[t]?.length, `tier ${t} 一个文件都没有`);
+  // ★T2 不许再回到 0（`tickets/T-0132`）：E4 判据只活在人工会话里是这次开票的原因；
+  //   档位空着 = `npm run test:e4` 又能"成功"地什么都不跑。缺机器时应当 `t.skip()`（前置探测），
+  //   而不是删文件 —— 前置探测与 skip 策略见 `test/e4-gamestart-shot.test.ts`。
 });
 
-test('默认档有实质覆盖：T0 必须占多数，且 T1 档有明确边界', () => {
+test('默认档有实质覆盖：T0 必须占多数，且 T1/T2 档有明确边界', () => {
   const { byTier } = groupByAxis(files);
   const t0 = byTier['T0']?.length ?? 0;
   const t1 = byTier['T1']?.length ?? 0;
+  const t2 = byTier['T2']?.length ?? 0;
   assert.ok(t0 > t1, `T0(${t0}) 应远多于 T1(${t1})，否则分档没意义`);
   assert.ok(t1 > 0, 'T1 档不应为空（真语料 E3 是判据最硬的一档，见 T-0124 §4.4）');
-  assert.ok(t0 + t1 === files.length, '每个文件必须恰好属于一个档位');
+  // ★`tickets/T-0132`：T2 档 0 → 1 之后，这条不变量的正确形式是"T0+T1+T2 = 全部文件"
+  //   （原先写死 `t0 + t1 === files.length`，等于把"T2 必须是空的"当成了规则）。
+  assert.ok(t0 + t1 + t2 === files.length, `每个文件必须恰好属于一个档位（T0=${t0} T1=${t1} T2=${t2} 合计 ${files.length}）`);
+  // ★T2 的"档位诚实"（与 T1 反向自检同口径）：声明 T2 就必须真的有 Electron 依赖的证据 ——
+  //   否则 T2 会变成"不想在 CI 上跑的杂物抽屉"，而 `all` 又不含 T2 ⇒ 那些文件**永远不跑**。
+  const t2WithoutElectron = files.filter((f) => f.pragma?.tier === 'T2' && !/\belectron\b/i.test(f.src));
+  assert.deepEqual(
+    t2WithoutElectron.map((f) => f.name),
+    [],
+    '声明 T2 但机械判据看不出 Electron 依赖（T2 只能经 `npm run test:e4` 跑 ⇒ 误标 = 永不执行）',
+  );
 });
 
 test('分类结果与审计结论一致（防止有人顺手把档位改松）', () => {

@@ -15,10 +15,10 @@ state: live
 
 | 项 | 值 | 校验方式 |
 |---|---|---|
-| 测试 | **1082 条** node:test（1070 pass / 0 fail / 12 skip），分三档：**T0 122 文件 793 条**（默认档，~6 s）+ **T1 44 文件 289 条**（真资产档，22.2 s） | `npm test`（T0）/ `npm run test:all`（全量）；组织法见 [`test-organization.md`](./test-organization.md) |
-| 类型 | 3 个 tsconfig 全干净；`test/` 的类型检查由**闸门 D**（基线棘轮：131 条既有债、只许收敛不许增长）把住 | `npm run typecheck` / `npm run check:typecheck-test`（见 T-0126） |
+| 测试 | **1088 条** node:test（1086 pass / 0 fail / 2 skip），分三档：**T0 124 文件 797 条**（默认档，~6 s）+ **T1 45 文件 289 条**（真资产档，~22.6 s）+ **T2 1 文件 2 条**（真机档，真 Electron，~42 s） | `npm test`（T0）/ `npm run test:all`（T0+T1）/ `npm run test:e4`（T2，需 GUI 会话）；组织法见 [`test-organization.md`](./test-organization.md) |
+| 类型 | **4 套 tsconfig 全干净**（含 `test/`）：闸门 D 曾是「131 条既有债的基线棘轮」，2026-09-23 债还清后**基线归零、棘轮退役**，`typecheck:test` 直接进 `verify`（见 T-0124 D1 / T-0126） | `npm run typecheck` / `npm run typecheck:test` |
 | 死写棘轮 | 基线 0 条 | `npm run check:dead-writes` |
-| 一条命令全绿 | `npm run verify` = typecheck + **check:typecheck-test**（闸门 D）+ **test:all** + dead-writes | — |
+| 一条命令全绿 | `npm run verify` = typecheck + **typecheck:test**（闸门 D，零容忍）+ **test:all**（T0+T1，引擎 1086 例）+ dead-writes。★**T2 不在 verify 里**（要 GUI 会话；改渲染/输入/帧驱动时显式 `npm run test:e4`，见 `T-0132`） | — |
 | **帧驱动** | **唯一一份**：`src/frame/loop.ts`（`runFrameLoop`）—— Electron（`renderer/app/session.ts`）与全部 headless 入口都经它跑；宿主差异只能经 `FramePolicy`/`FrameHost` 显式表达 | `test/frame-loop.test.ts` |
 | **两宿主等价** | `FrameDigest`（`src/frame/digest.ts`）：同 Scenario 两宿主产出同一 `engine` 段；**G3** = Electron 录、headless 复现（`npm run record` + `npm run replay`） | `test/frame-digest.test.ts`、`test/scenario-replay.test.ts` |
 | opcode 实现表 | `OPS` **230** / `NATIVE_OPS` **50** / `ENGINE_INTERNAL_OPS` **14**（三张表**两两不交**，`test/registry-tables.test.ts` 守） | 代码 |
@@ -156,7 +156,7 @@ app/amayui-emulator/
 │  ├─ script/           bin.ts / alf / lzss / opcodes.ts
 │  └─ tools/            report / opInventory / diagText / gameStartChain / config1Chain / deadWrites / saveDump
 │                       scenarioBoot.ts（headless 启动装配）/ scenarioRun.ts（跑 Scenario）/ replay.ts（G3 回放）
-├─ test/                1082 条 / 166 文件（**分类与档位见 `test-organization.md`**；含棘轮：registry-tables /
+├─ test/                1086 条 / 169 文件（**分类与档位见 `test-organization.md`**；含棘轮：registry-tables /
 │                       game-start-chain / no-dead-writes / capability-* / organization /
 │                       script-ledger / frame-loop / frame-digest / scenario-replay / native-tap 宿主能力面）
 ├─ tools/               shot.cjs（G4 截图）/ record.cjs（G3 录制）/ boottime.cjs / scenarios/*.json
@@ -195,14 +195,14 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 闸门 D（test/ 类型债棘轮）+ **test:all**（1082 例）+ 死写棘轮（实测 ~32 s）
-npm test               # ★日常档：T0（122 文件 / 793 例 / ~6 s）—— 纯合成 + 纯函数 + 棘轮
-npm run test:corpus    # T1 真资产档（44 文件 / 289 例 / ~22 s）：需要 install/ · raw/ · 真存档槽
-npm run test:all       # T0+T1+T2 全量（= 旧 `npm test` 的口径）
+npm run verify         # ★提交前必跑：4×tsc（含 `typecheck:test` = 闸门 D）+ **test:all**（T0+T1 / 1086 例）+ 死写棘轮（实测 ~36 s）
+npm test               # ★日常档：T0（124 文件 / 797 例 / ~6 s）—— 纯合成 + 纯函数 + 棘轮
+npm run test:corpus    # T1 真资产档（45 文件 / 289 例 / ~22.6 s）：需要 install/ · raw/ · 真存档槽
+npm run test:all       # T0+T1（= 提交前口径；T2 真机档不在这里）
+npm run test:e4        # T2 真机档：真 Electron 跑 TITLE→GAMESTART→SN0000 + 像素判据（1 文件 2 例 / ~42 s / 需 GUI 会话）
 npm run test:list      # 打印三轴索引（tier / kind / subsystem）
 npm run test:org       # 只校验分类一致性（档位声明 ⟷ 机械证据）
-npm run typecheck:test # `test/` 的完整类型检查（★当前有 131 个历史错误待清，见 tickets/T-0126）
-npm run check:typecheck-test # 闸门 D：上面那 131 条的基线棘轮（新增即红、只许收敛）
+npm run typecheck:test # 闸门 D：`test/` 的完整类型检查（**零容忍**；131 条历史债 2026-09-23 已还清）
 npm run mutate         # 闸门 E：变异闸门 —— 每条"引擎语义破坏"必须有测试红（定向子集 ~1 min）
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）

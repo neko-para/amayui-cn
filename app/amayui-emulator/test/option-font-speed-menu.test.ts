@@ -29,8 +29,6 @@ const gstr = (v: number): BinArg => ({ type: 5, raw: v }) as unknown as BinArg;
 const lit = (s: string): BinArg => ({ type: 2, raw: 0, str: s }) as unknown as BinArg;
 const locInt = (i: number): BinArg => ({ type: 9, raw: i }) as unknown as BinArg;
 const locStr = (i: number): BinArg => ({ type: 0xb, raw: i }) as unknown as BinArg;
-const instr = (op: number, args: BinArg[]): BinInstruction =>
-  ({ opcode: op, name: `i${op.toString(16)}`, argc: args.length, args, byteOffset: 0, index: 0 }) as unknown as BinInstruction;
 
 /** 建一个引擎 + 直接以 handler 执行一条指令（与 engine-config.test.ts 同口径）。 */
 function mk(native = new StubNative(() => {})): {
@@ -156,7 +154,7 @@ test('★菜单指令不再被记成"宿主未实现的意图"（假缺口）：
   const rec = new DropRecorder();
   const native = withNativeTap(new StubNative(() => {}), rec);
   // 0x4 系列不做断言，只确认"菜单相关的三个 opcode 一个都不上报"
-  const { run } = mk(native as unknown as Engine2['native']);
+  const { run } = mk(native);
   run(0xa1, []);
   run(0xa2, [im(1), im(0x10)]);
   assert.equal(rec.count(), 0, `不该有被丢弃的 native 意图（实际：${rec.list().map((d) => d.method).join(',')}）`);
@@ -166,12 +164,12 @@ test('★菜单指令不再被记成"宿主未实现的意图"（假缺口）：
 // 1) 消息速度：显现预算 = 字数 × max(节拍, 一帧)
 // ---------------------------------------------------------------------------
 
-test('★0x1B5 设消息速度：写字段 `Engine[21668]` **且** 写配置 `message:MessageSpeed`', () => {
-  const { e, run } = mk();
-  run(0x1b5, [im(25)]);
-  assert.equal(e.engineValues.get(21668), 25);
-  assert.equal(e.config?.values.get('message:messagespeed'), 25);
-});
+// ★2026-09-23（`tickets/T-0129`）：这里原有「0x1B5 写字段 + 写配置」与「99ms 与 1ms 的时长比 > 5」
+//   两条 —— 都已被 `test/adv-msgwin.test.ts` 的更强替身覆盖（`:629` 0x1B5 还多断了 `0x74` 只写字段
+//   不动注册表、且显现节拍立刻读新值；`:543` ②③ 用**真脚本路径**断了"越大越慢"与 `speed=0` 立即显示完，
+//   比"比值 > 5"精确）。下面两条**保留**：它们钉的是 `beginReveal/tickRevealWin` 的**具体数**
+//   （speed=1 被一帧地板住、每次 tick 最多推一个字）—— 那两点 adv-msgwin 那侧当时是镜像断言，
+//   已同步修成具体数（见该文件 `:606`），但**直接模型层**的这两条仍然更细，不许删。
 
 test('★显现节拍按**字**算（引擎一步 = 一个字）：speed=99 ⇒ 99ms/字，speed=1 被一帧地板住', () => {
   const e = new Engine(new StubNative(() => {}));
@@ -196,14 +194,5 @@ test('★逐字显现：99ms/字 ⇒ 每 99ms 一个字（旧实现按"行"算 �
   const st = e.msgwin.reveal.get(0)!;
   assert.equal(st.shown, 10, '按 99ms/字 逐拍推满 ⇒ 10 个字全部显示');
   assert.equal(st.active, false);
-});
-
-test('★可观察性回归：速度 1..99ms/字 的整段时长跨度必须是"每字节拍"级（不是"每行"）', () => {
-  const e = new Engine(new StubNative(() => {}));
-  const span = (speed: number): number => e.msgwin.beginReveal(0, 40, 0, speed).intervalMs * 40;
-  const fast = span(1);
-  const slow = span(99);
-  assert.ok(slow / fast > 5, `99ms 与 1ms 的时长比应远大于 5（旧实现只有 ~6×；实际 ${(slow / fast).toFixed(1)}×）`);
-  assert.equal(slow, 3960, '40 字 × 99ms');
 });
 

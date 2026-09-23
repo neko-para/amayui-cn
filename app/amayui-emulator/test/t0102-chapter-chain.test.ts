@@ -48,7 +48,7 @@ const SCJUMP_BIN = path.join(ROOT, 'install', 'SCJUMP.BIN');
 function loadReal(name: string, file: string): Engine {
   const e = new Engine(new StubNative(() => {}));
   const bytes = new Uint8Array(fs.readFileSync(file));
-  const script = parseScriptBytes(bytes, name);
+  const script = parseScriptBytes(bytes);
   loadScriptIntoFrame(e.curScript(), script, name);
   return e;
 }

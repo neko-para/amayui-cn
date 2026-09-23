@@ -40,6 +40,7 @@ import { cfgInt, CONFIG_FIELD_BINDINGS, type EngineConfig } from '../src/engineC
 import { CFG } from '../src/configRegistry.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import type { BinInstruction, ScriptBinary } from '../src/script/bin.js';
+import { scriptDerived } from './harness.js';
 
 const H = 0x3c;
 const T_GLOBAL_INT = 0x3;
@@ -55,6 +56,7 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
     index: 0,
   };
   return {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: H,

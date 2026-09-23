@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDataset, filterCandidates, describeView, type Dataset } from '../services/dataset';
 import { buildResults, queryFromId, queryFromEntry } from '../services/search';
-import { cardFromResult } from '../types/search';
+import { cardFromResult, type SearchCategory } from '../types/search';
 import type { Metadata, MapData } from '../types/metadata';
 import { RESIST_NAME, STAT_NAME } from '../types/metadata';
 import { addrHex, entityTagLabel } from './idspace';
@@ -391,10 +391,38 @@ describe('id 空间与地址徽标（idspace）', () => {
     expect(entityTagLabel('location', 0x11)).toBe('地点 #11 · 1217f');
   });
 
-  it('卡片上显示的地址 = 搜索项的 addr（即可直接粘回搜索框定位）', () => {
-    // 这是本次改动的核心不变量：展示地址与搜索键必须同源同形
-    for (const e of ds.search) {
-      expect(e.addr).toBe(addrHex(e.kind, e.id));
+  it('★卡片地址能按地址被搜索内核找回（走 `byAddr` 分支，不是自证）', () => {
+    // ★2026-09-23 重写（`tickets/T-0131`）：原版是 `expect(e.addr).toBe(addrHex(e.kind, e.id))` ——
+    //   而 `dataset.ts:124-138` 构造搜索项时写的就是 `addr: addrHex(<同 kind>, <同 id>)`
+    //   ⇒ **同源重算、恒真**（把 `ID_BASE.unit` 从 0x17ab6 改成 0x10000，两侧同变，仍绿，而真实地址已错）。
+    //   现在断**跨模块的行为**：拿卡片上那个地址串回搜索内核，必须找回同一条目。
+    //   反例实验：改任一个 `ID_BASE` ⇒ 本用例红（搜索项与查询串不再对齐）。
+    // ★两层判据（缺一不可）：
+    //   ① **字面 golden**（外部真值，出自 `idspace.ts` 的头注与 `entityTagLabel` 的文档例）——
+    //      它才能抓"基址写错"（两边同源重算或地址自往返都抓不到：改基址时两侧同变）；
+    const GOLDEN: Array<[SearchCategory, number, string]> = [
+      ['item', 1, '18e41'],      // 物品「青铜导键」id=1 → 18e41（idspace.ts 的 entityTagLabel 文档例）
+      ['skill', 1, '1d4f5'],     // 技能「防御」id=1 → 1d4f5（同上）
+      ['skill', 0x28, '1d51c'],  // 同上文件既有断言（#40 進行不可）
+      ['unit', 0x9b, '17b51'],   // 因夫鲁斯骑士 unitId=0x9b → 0x17ab6+0x9b
+    ];
+    for (const [kind, id, wantAddr] of GOLDEN) {
+      const hit = ds.search.find((e) => e.kind === kind && e.id === id);
+      expect(hit, `搜索集里应有 ${kind} #${id.toString(16)}`).toBeTruthy();
+      expect(hit!.addr).toBe(wantAddr);
+    }
+    //   ② **经搜索内核的地址往返**（覆盖 `byAddr` 分支：断言"卡片上那个地址串真能定位回它"）
+    const samples = ds.search.filter((e) => e.kind === 'unit' || e.kind === 'item').slice(0, 16);
+    expect(samples.length).toBeGreaterThan(8);
+    for (const e of samples) {
+      const addrValue = parseInt(e.addr, 16);
+      // 前提：地址值必须 ≠ 实体 id —— 否则命中的是 `byId`，覆盖不到 `byAddr`
+      expect(addrValue).not.toBe(e.id);
+      const hit = buildResults(
+        [{ type: 'category', value: e.kind }, { type: 'idExact', value: addrValue }],
+        ds,
+      );
+      expect(hit.map((h) => `${h.kind}:${h.id}`)).toContain(`${e.kind}:${e.id}`);
     }
   });
 

@@ -19,6 +19,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseMoc, type MocModel } from '../src/live2d/moc.js';
+import { at } from './harness.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -201,12 +202,12 @@ test('live2d/moc：样本 BM021A 的 pivots/关键帧组合（口径回归）', 
   if (foot.kind !== 'bdAffine') return;
   assert.equal(foot.affines.length, 3, 'BDAffine（KAKUSYUKU 参数 3 档）应有 3 个关键帧');
   assert.equal(foot.affines.length, foot.pivotOpacities.length, '关键帧数 = 不透明度数');
-  assert.equal(foot.affines[0].kind, 'affineEnt', '关键帧应是 AffineEnt');
+  assert.equal(at(foot.affines, 0, '关键帧').kind, 'affineEnt', '关键帧应是 AffineEnt');
 
   const dd = face.drawables.find((d) => d.id?.name === 'D_FACE.01');
   assert.ok(dd, '应有 D_FACE.01');
   assert.deepEqual(dd.pivotManager?.params.map((p) => p.paramId?.name), ['HEAR']);
-  assert.deepEqual(dd.pivotManager?.params[0].pivotValues, [0, 10]);
+  assert.deepEqual(at(dd.pivotManager?.params ?? [], 0, 'pivot 参数').pivotValues, [0, 10]);
   assert.equal(dd.pivotPoints.length, 2, 'HEAR 2 档 ⇒ 2 组顶点');
   assert.equal(dd.pivotDrawOrders.length, 2);
   assert.equal(dd.pivotOpacities.length, 2);

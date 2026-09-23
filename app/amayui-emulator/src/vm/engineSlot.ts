@@ -71,6 +71,14 @@ import type { ScriptBinary } from '../script/bin.js';
 export const SLOT_FRAME_STRIDE_DWORDS = 261;
 /** 帧镜像的固定前导字节数（记录从 +21252 开始；记录总数 = savedCur+1 ⇒ 镜像 = 1044*savedCur + 22296）。 */
 export const SLOT_IMAGE_PRELUDE_BYTES = 21252;
+/**
+ * 帧镜像的**尾部固定字节数**（`22296 = 21252 + 1044`：前导 + 第 0 帧那一份记录）。
+ * ★2026-09-23（`tickets/T-0128`）：本文件原来同时存在「命名常量」与「内联字面量 `1044`/`22296`」
+ * —— 命名常量因此**没有任何读者**（死常量），于是把它改错也不会有任何测试变红
+ * （实测：`SLOT_FRAME_STRIDE_DWORDS 261→260` 时 E4 用例仍全绿）。现在解码器**只用常量**，
+ * 常量才是真的"布局真源"，E4 用例也才真的钉得住它。
+ */
+export const SLOT_IMAGE_TAIL_BYTES = 22296;
 /** 100 个「解码图槽」在镜像里的起点（每槽 12 B）。 */
 export const SLOT_IMAGE_SLOTS_AT = 52;
 /** 1000 条 20 B 记录在镜像里的起点。 */
@@ -360,14 +368,14 @@ export function parseEngineSlotBody(body: Uint8Array): EngineSlotParseResult {
   if (savedCur < 0 || savedCur > 39) {
     return { ok: false, reason: `savedCur=${savedCur} 不合理（帧号应 0..39）` };
   }
-  const imageBytes = 1044 * savedCur + 22296;
+  const imageBytes = 4 * SLOT_FRAME_STRIDE_DWORDS * savedCur + SLOT_IMAGE_TAIL_BYTES;
   if (imageBytes > body.length) {
     return { ok: false, reason: `帧镜像长度 ${imageBytes} 超出 body（${body.length}）` };
   }
 
   const frames: EngineSlotFrame[] = [];
   for (let k = 0; k <= savedCur; k++) {
-    const at = SLOT_IMAGE_PRELUDE_BYTES + 1044 * k;
+    const at = SLOT_IMAGE_PRELUDE_BYTES + 4 * SLOT_FRAME_STRIDE_DWORDS * k;
     const depth = i32(dv, at + 8);
     if (depth < 0 || depth > 256) return { ok: false, reason: `帧 ${k} 的返回栈深度 ${depth} 不合理` };
     const retIdx: number[] = [];

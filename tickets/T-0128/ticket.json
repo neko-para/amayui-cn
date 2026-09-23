@@ -24,8 +24,8 @@
     },
     {
       "file": "app/amayui-emulator/test/save-slot-chain.test.ts",
-      "anchor": "t.skip",
-      "note": "2/2 全跳的实例"
+      "anchor": "findRealFiles",
+      "note": "两处 base-only 闸门已改成两侧都看（`findRealFiles`）"
     },
     {
       "file": "tickets/T-0124/notes.md",
@@ -43,12 +43,23 @@
     ]
   },
   "id": "T-0128",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/engine-slot.test.ts",
+    "app/amayui-emulator/test/save-slot.test.ts",
+    "app/amayui-emulator/test/save-thumb.test.ts",
+    "app/amayui-emulator/test/slot-load-resume.test.ts",
+    "app/amayui-emulator/test/slot-load-transfer.test.ts",
+    "app/amayui-emulator/test/save-slot-chain.test.ts",
+    "app/amayui-emulator/test/save-slot-thumb.test.ts",
+    "app/amayui-emulator/test/frame-digest.test.ts",
+    "app/amayui-emulator/test/gallery-bgm-list.test.ts"
   ]
 }

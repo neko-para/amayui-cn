@@ -32,7 +32,7 @@ import { stepOnce } from '../src/vm/interpreter.js';
 import { enc, dec } from '../src/vm/bits.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
-import { im, instr } from './harness.js';
+import { im, instr, scriptDerived } from './harness.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 
 const T_GLOBAL_INT = 0x3;
@@ -57,6 +57,7 @@ async function run(vals: number[]): Promise<{ e: Engine; native: HeadlessScene }
     index: 0,
   };
   const sc: ScriptBinary = {
+    ...scriptDerived(),
     signature: 'SYS4450 ',
     isVer5: false,
     headerLen: 0x3c,

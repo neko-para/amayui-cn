@@ -11,7 +11,10 @@
     "三份 Proxy `touched` 与 `mkEngine(fsLike)` 上收 `test/harness.ts` 或新建 `test/operandHarness.ts`（顺带缓解 `T-0020`）",
     "★抽样验证：去重后，用 T-0124 变异清单里对应的那几处（M2/M3/M4/M5/M9/M10）复跑，**仍然必须被 ≥1 条测试抓到**",
     "用例总数与墙钟的前后对照写进 changes.md；`npm run verify` 全绿",
-    "★每处去重后必须用闸门 E 抽样复跑：删掉的那条不变量的对应变异**仍必须被 ≥1 条测试抓到**（`npm run mutate`）"
+    "★每处去重后必须用闸门 E 抽样复跑：删掉的那条不变量的对应变异**仍必须被 ≥1 条测试抓到**（`npm run mutate`）",
+    "★已交付（第 3 次变更，全文 tickets/T-0129/changes.md）：剩余①的 5 组路由用例与②的存档族两条经核**不成立**（替身更弱 —— `save-slot:272` 只断自描述空块返回 0，`route-dispatch:319` 只覆盖 ownerScriptId 一面）⇒ **保留**；③`option-font-speed-menu` 删掉 2 条被 `adv-msgwin` 更强替身覆盖的消息速度用例、其余 9 条经核无替身故保留（「整文件可删」的前提有误：`op-a2-a3` 是迁移阶段不是 opcode 0xA1-A3）",
+    "★已交付（第 3 次变更）：剩余④结构债上收 `test/harness.ts` —— `RecordingAudioNative`（2 份逐字相同）、`trackArgs`（**4 处**各写一遍的操作数触碰 Proxy，1-based 口径原先有 4 份实现）、`synthSlotScript`（2 份 12 行字面量）；`draw-item-loop-anim` 的同名异物类改名 `LoopRecorder`。两处 WAV 合成件经核**不是重复**（参数面不同），记在 changes.md 不合并",
+    "★已交付（第 3 次变更）：去重后闸门 E 复跑 **15/15 caught**（含 M2/M3/M4/M5/M9/M10 这几处与本次删例直接相关的变异）；T0 用例 799 → 797（−2 = 删掉的重复），`typecheck:test` 干净、`test:all` 全绿"
   ],
   "evidence": [
     {
@@ -45,12 +48,33 @@
     ]
   },
   "id": "T-0129",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 3 次变更：剩余①②经核不成立（替身更弱）故保留；③删 2 例；④结构债上收 harness；闸门 E 15/15"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：tests —— 补 tests[]（done 前置：每条指向真实存在的守卫 + 内容锚点）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— ①②经核前提不成立（替身更弱）故保留并记录；③删 2 条重复；④结构债上收 harness；闸门 E 15/15"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/registry-classification.test.ts#一张表",
+    "app/amayui-emulator/test/harness-convergence.test.ts#mk()",
+    "app/amayui-emulator/test/harness.ts#export function trackArgs",
+    "app/amayui-emulator/test/adv-msgwin.test.ts#1000 / 60"
   ]
 }

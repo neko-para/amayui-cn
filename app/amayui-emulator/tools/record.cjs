@@ -17,7 +17,9 @@
  * ★`AMAYUI_REPLAY_PATH` 必须在 `require('../dist/electron/main.cjs')` **之前**设好 ——
  *   `electron/paths.ts` 在模块加载时就把它读成常量。
  */
-const { app, BrowserWindow } = require('electron');
+// ★`require('electron')` 本身也要**排在参数校验之后**（`tickets/T-0125` 起）：于是
+//   "参数错"在普通 `node tools/record.cjs ...` 下就能复现（子进程 exit(2)、不拉起 Electron）
+//   ⇒ 守卫可以**真跑一次 CLI** 来钉它，不必再对源码里的报错文案做正则。
 const fs = require('node:fs');
 const path = require('node:path');
 const { preflight } = require('./paths.cjs');
@@ -60,6 +62,7 @@ process.env.AMAYUI_SCENARIO_SCRIPT = String(spec.boot?.script ?? 0);
 if (!argv.includes('--centered')) process.env.AMAYUI_WINDOW_EDGE ??= '1';
 
 // 关掉后台节流（与 shot.cjs 同因：窗口不在前台时 rAF 会被降到极低频）。
+const { app, BrowserWindow } = require('electron');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-background-timer-throttling');

@@ -145,7 +145,37 @@ export type DebugEventKind =
   | 'global-int-write'
   | 'global-float-write'
   | 'global-str-write'
-  | 'slot-bind';
+  | 'slot-bind'
+  // ★`tickets/T-0127` 扩的两类：让"谁写了 Engine[N] / local N"也能被事件断点抓到
+  //   （审计说：这两类此前只能靠静态读码或写专门的探针用例，因此"探针型断言"降不下去）。
+  | 'engine-field-write'
+  | 'local-int-write';
+
+/**
+ * `engineValues` 的承载类型：**写即发事件**的 Map（见 `Engine.engineValues` 的说明）。
+ * `removed=1` 表示这是一次 `delete`（值按 0 报，条件里可用 `removed == 1` 区分）。
+ */
+export class EngineFieldMap extends Map<number, number> {
+  #onWrite: ((idx: number, val: number, kind: 'set' | 'delete') => void) | null;
+  constructor(onWrite: ((idx: number, val: number, kind: 'set' | 'delete') => void) | null, entries: [number, number][]) {
+    // ★注意：**不能** `super(entries)` —— `Map` 的构造函数会逐条调 `this.set`，而那时私有字段
+    //   `#onWrite` 还没装上（JS 私有字段在 `super()` 之后才初始化）⇒ TypeError。
+    //   所以先装钩子，再用 `super.set` 填初值（`super.set` 不经过我们的重写 ⇒ 构造期不发事件）。
+    super();
+    this.#onWrite = onWrite;
+    for (const [k, v] of entries) super.set(k, v);
+  }
+  override set(k: number, v: number): this {
+    super.set(k, v);
+    this.#onWrite?.(k, v, 'set');
+    return this;
+  }
+  override delete(k: number): boolean {
+    const had = super.delete(k);
+    if (had) this.#onWrite?.(k, 0, 'delete');
+    return had;
+  }
+}
 
 export class GlobalArrays {
   int = new Map<number, number>();
@@ -265,7 +295,17 @@ export class Engine {
    *  ★**启动时由 SYS4REG.INI 填充**：见 `src/engineConfig.ts` 的 `CONFIG_FIELD_BINDINGS`（如 174713←sound:Music、
    *    167990←display:ScreenMode、21668←message:MessageSpeed、80106←message:MessageFade），
    *    renderer 在 boot 前调用 applyConfigToEngine。`field` 一律是 dword 下标（= handler 的 `_this[K]` 空间）。 */
-  engineValues = new Map<number, number>([
+  /**
+   * ★**引擎字段（`_this[K]`）的写门面**（`tickets/T-0127`）：`engineValues` 用这个 Map 子类承载，
+   * 每次 `set`/`delete` 都发一条 `engine-field-write` 事件。
+   *
+   * 为什么用"包一层 Map"而不是给每个写点加一句 `emitDebugEvent`：写点散落在 handler / 配置灌入 /
+   * 读档恢复等**十几处**，逐处加等于把"谁负责发事件"变成纪律；包一层则**任何**写入路径都被覆盖
+   * （含将来新增的），且 `Map` 的既有 API 一字不改（`size`/`get`/`entries` 都照旧）。
+   */
+  engineValues: EngineFieldMap = new EngineFieldMap(
+    (idx, val, kind) => this.emitDebugEvent('engine-field-write', { idx, val, removed: kind === 'delete' ? 1 : 0 }),
+    [
     [96983, 1],
     // 517 = SetKeyTotal（0xFE）：Input 构造函数 `sub_477DD0`（raw 92385）写 `_this[259] = 7`
     // （Input 对象 = `Engine + 258` ⇒ Input[259] = Engine[517]）。它同时是 **0x100 在掩码为空时的

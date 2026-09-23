@@ -21,6 +21,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
+import { checkGuard } from './guardAnchor.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -171,8 +172,10 @@ test('台账守卫：guards 指向的测试存在、links 不悬空（capabiliti
   const badCaps: string[] = [];
   const badFuncs: string[] = [];
   for (const e of L.entries) {
+    // ★`tickets/T-0130`：文件存在 → **用例存在**（`test/x.test.ts#<用例名片段>`）
     for (const g of e.guards) {
-      if (!fs.existsSync(path.join(APP_ROOT, g))) missingGuards.push(`${e.id} → ${g}`);
+      const why = checkGuard(APP_ROOT, g);
+      if (why) missingGuards.push(`${e.id} → ${g}（${why}）`);
     }
     for (const c of e.links.capabilities) if (!caps.includes(c)) badCaps.push(`${e.id} → ${c}`);
     for (const f of e.links.functions) if (!funcs.includes(f)) badFuncs.push(`${e.id} → ${f}`);

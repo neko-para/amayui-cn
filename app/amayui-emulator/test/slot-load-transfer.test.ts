@@ -22,6 +22,7 @@
  *  - **本工程格式（能直接续档）**：不转移（既有口径不变）。
  */
 import { test } from 'node:test';
+import { firstRealFile, realSlotDirs, slotNumberOf } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -39,6 +40,7 @@ import { LOAD_IN_PROGRESS_FLAG } from '../src/vm/handlers/save-slot.js';
 import { runFrameLoop } from '../src/frame/loop.js';
 import type { FrameHost } from '../src/frame/host.js';
 import { buildScriptBin } from './engineSlotFixtures.js';
+import { scriptDerived } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -66,6 +68,7 @@ function mkScriptBinary(ops: { op: number; args: BinArg[] }[]): ScriptBinary {
     for (let d = 0; d < 1 + 2 * ins.argc; d++) dwordToInstr[ins.index + d] = i;
   });
   return {
+    ...scriptDerived(),
     signature: 'SYS0000',
     isVer5: false,
     headerLen: 0,
@@ -116,12 +119,16 @@ function putCaller(e: Engine, frameIdx: number, scriptId: number, ops: { op: num
 test('★E3：读真游戏槽 ⇒ 控制转移到根脚本（`cur=0` + 重载），调用方帧不再前进（那一枪打不出来）', async (t) => {
   const system = resolveSystemPaths(REPO);
   const src = new NodeFileSource({ resourceDir: resolveResourceDir(REPO), system });
-  const slotDir = path.join(system.baseDir, 'SAVE');
-  const slot = firstRealSlot(slotDir);
-  if (slot === null) {
-    t.skip(`本机没有真存档槽（${slotDir}）`);
+  // ★`tickets/T-0128`：两侧都看（base + overlay）；定位逻辑也收敛到 `test/realSlots.ts`
+  const slotFile = firstRealFile(REPO, 'DAT');
+  if (!slotFile) {
+    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
+  // ★注意：`0x1A1` 的 op2 要的是**槽号**（`SAVE78.DAT` → 78），不是文件字节 ——
+  //   原来那位 `firstRealSlot()` 返回的就是槽号（本机 = 78/79，不是 0 ⇒ 原来断言 `cur=0` 之所以"看起来对"，
+  //   只是因为整条用例在 base 侧找不到槽时被**静默跳过**了）。
+  const slot = slotNumberOf(slotFile.name);
 
   const native = new StubNative(() => {});
   const e = new Engine(native);

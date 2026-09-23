@@ -30,6 +30,8 @@ import { loadSlotIntoEngine } from '../src/vm/handlers/save-slot.js';
 import { parseScriptBytes } from '../src/script/bin.js';
 import type { FileSource } from '../src/arch/fileSource.js';
 import { buildScriptBin } from './engineSlotFixtures.js';
+import { must } from './harness.js';
+import type { AdvStateJson } from '../src/vm/advState.js';
 
 const ADV_ID = 77;
 const MENU_ID = 51;
@@ -228,9 +230,14 @@ test('★BGM 还原：存档带「当前曲 id」、读档重播它（引擎 CAL
   eA.engineValues.set(ENGINE_FIELD.storedCur, 0);
   const saveOp = { opcode: 0x19e, name: 'i19e', argc: 2, args: [loc(0x10), im(7)], byteOffset: 0, index: 0 };
   await OPS.get(0x19e)!(makeCtx(eA, eA.curScript(), saveOp as never, eA.native, () => {}));
-  const st = parseSlotFile(src.slots.get(7)!).data.state as SlotStateBlock;
+  const read = parseSlotFile(must(src.slots.get(7), '槽 7 的存档字节'));
+  assert.ok(read.ok, `槽 7 应能解析（${read.ok ? '' : read.reason}）`);
+  const st = read.data.state as SlotStateBlock;
+  // `SlotStateBlock.adv` 刻意是 `unknown`（存档层不依赖 VM 层，`saveSlot.ts:224`）
+  // ⇒ 断言侧要按 VM 的真形状 `AdvStateJson` 断言，别用 `!`/`as never` 糊过去。
+  const adv = st.adv as AdvStateJson | undefined;
   assert.deepEqual(
-    st.adv?.fields?.find(([k]) => k === ENGINE_FIELD.musicField),
+    adv?.fields?.find(([k]) => k === ENGINE_FIELD.musicField),
     [ENGINE_FIELD.musicField, 13],
     '★状态块要带运行态「当前曲 id」（引擎把它写进镜像 [2]：raw 17469-17471）',
   );

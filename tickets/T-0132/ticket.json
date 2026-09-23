@@ -1,0 +1,82 @@
+{
+  "id": "T-0132",
+  "type": "req",
+  "status": "done",
+  "priority": "P2",
+  "area": "emulator/test",
+  "title": "T2 真机档首批文件：把 E4 工具链（shot / dbg:srv）落成 @tier T2 守卫，并定 verify 口径",
+  "why": "T-0126 的剩余④：分档逻辑（`npm run test:e4` = `byTier('T2')`）与 E4 工具链（`npm run shot`、`dbg:srv` + `tools/dbg.cjs`）都已就位，但 `test/` 里 **0 个 `@tier T2` 文件** ⇒ 『真机档』目前只是一条能跑空集的命令，没有任何机器判据。后果：E4 的结论（真机截图/日志标记）仍然只活在**人工会话**里（`.tmp/*.png` 与聊天记录），换一次改动就得重跑一遍人眼判断 —— T-0040/T-0102 那两轮『黑屏/白块』都是这样被发现的，说明这类症状机器判据比人眼更早更稳。★另有一个必须显式决定的冲突：`run.ts` 的 `all` = T0+T1+T2，而 T-0115 刚把 `verify` 压到 ~33 s —— 若 T2 文件进 `all`，`verify` 会开始拉起 Electron（+数十秒且需要 GUI 会话）⇒ 让 `all` 与它自己的头注（`all = T0+T1`）一致、还是让 verify 承担 E4，必须在这一票里写清理由。",
+  "acceptance": [
+    "★已交付（第 1 次变更，全文 tickets/T-0132/changes.md）：首个 T2 文件 `test/e4-gamestart-shot.test.ts`（真 Electron 跑 `TITLE→GAMESTART→SN0000`），只经**已有**工具链 `tools/shot.cjs` 驱动，未新写 Electron 启动逻辑",
+    "★已交付：判据两类且都机器可判 —— ①`waitLog` 的三个链路标记（`TITLE/GAMESTART/SN0000=true`，不睡固定秒数）；②**像素本身**（`colors ≥ 64` 且无 `★几乎全黑`；真机实测 14985/13737，纯色帧 = 1）。能抓住的症状：启动链断（标记缺失）、整屏没画出来/黑屏（`T-0040` 那类 `colors=1`）、ADV 整片纯色（`T-0102` 那类）",
+    "★已交付：前置探测 + `t.skip()`（缺 Electron / 缺 `dist/electron/main.cjs` / 缺资源根 / 非 macOS 无 `DISPLAY`）；本机走真跑（2 例 0 skip），并记下自动化上下文需 `--no-sandbox` 的实测现象",
+    "★已交付（**verify 口径决策 = 方案 1**）：`all`/`verify` **不含 T2**（`run.ts` 的 `all` 改成只选 T0/T1，与其头注一致），`test:e4` 显式跑。实测：`verify` 36.6 s / 1086 例；`test:e4` 42.1 s / 2 例；对照实验把 T2 并回 `all` = 52.6 s（边际 +16 s，并行重叠）⇒ 决定口径的是**失败模式**（宿主起不来 Electron）而非这 16 s；两个文档已写明何时必须跑 e4",
+    "★已交付：反例实验 —— 把 `session.ts` 的 `present` 改成不合成 ⇒ `test:e4` **fail 1**（两帧 `colors=1`，而链路标记仍 true ⇒ 像素判据有独立判别力）；还原后逐字节一致且绿。另有纯函数判据自检（合成 stdout 三种结论）",
+    "★已交付：`npm run verify` 全绿（含闸门 D/E）、四份台账 `--validate` 绿、看板重建；`docs-new/04-app/test-organization.md` §8.3 + §5/§7/§9 与 `docs-new/04-app/emulator.md` 已同步"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/test/run.ts",
+      "anchor": "case 'e4':",
+      "note": "T2 档入口已就位（byTier('T2')），当前跑的是空集"
+    },
+    {
+      "file": "app/amayui-emulator/test/run.ts",
+      "anchor": "case 'all':",
+      "note": "★口径冲突点：all 目前含 T2 ⇒ 一旦有 T2 文件，verify 就会拉起 Electron"
+    },
+    {
+      "file": "app/amayui-emulator/tools/shot.cjs",
+      "anchor": "waitLog(",
+      "note": "E4 就绪证据：shot 一律等日志标记而不睡固定秒数（可直接复用为 T2 判据的观测面）"
+    },
+    {
+      "file": "app/amayui-emulator/test/realSlots.ts",
+      "anchor": "export function realSlotDirs",
+      "note": "真资产探测的既有写法（T2 的前置探测照它写）"
+    },
+    {
+      "file": "app/amayui-emulator/test/organization.test.ts",
+      "anchor": "R2",
+      "note": "档位诚实规则：T0 不许 import 语料装载器；T2 的档位声明也要经这套规则（新文件必须声明 @tier T2）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/04-app/test-organization.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0126",
+      "T-0128",
+      "T-0115"
+    ]
+  },
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— T2 首文件 + 口径定为 all 不含 T2（对照实验 +16 s 但宿主依赖不可接受）；反例实验红→还原绿"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 方案 1 落地：all 不含 T2 + 首个 T2 文件 + 口径对照实测"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：tests —— 补 tests[]：T2 文件的两条守卫 + 档位不变量守卫"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/e4-gamestart-shot.test.ts#判据自检（不需要 Electron）",
+    "app/amayui-emulator/test/e4-gamestart-shot.test.ts#E4：真 Electron 跑 gamestart",
+    "app/amayui-emulator/test/organization.test.ts#默认档有实质覆盖"
+  ]
+}

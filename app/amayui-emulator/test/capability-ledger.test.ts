@@ -17,8 +17,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
+import { checkGuards } from './guardAnchor.js';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { must } from './harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..', '..');
@@ -75,9 +77,9 @@ test('台账 schema：必需字段齐、status/evidence 在枚举内、id 不重
   assert.equal(L.counts['total'], L.entries.length);
 });
 
-test('台账守卫：每条 guard 指向的测试文件真的存在（防止"声称有守卫"落空）', () => {
+test('台账守卫：guard 指向的**测试用例**真的存在（文件 + `#锚点`，防止"声称有守卫"落空）', () => {
   const L = load();
-  const missing: string[] = [];
+  const pairs: Array<[string, string]> = [];
   for (const e of L.entries) {
     const g = e.emulator.guard;
     if (!g) {
@@ -88,9 +90,12 @@ test('台账守卫：每条 guard 指向的测试文件真的存在（防止"声
       );
       continue;
     }
-    if (!fs.existsSync(path.join(APP_ROOT, g))) missing.push(`${e.id} → ${g}`);
+    pairs.push([e.id, g]);
   }
-  assert.deepEqual(missing, [], `guard 指向的文件不存在：\n${missing.join('\n')}`);
+  // ★`tickets/T-0130`：从"文件存在"升级为"**用例存在**"（`test/x.test.ts#<用例名片段>`）。
+  //   原先只查 existsSync ⇒ 11 条能力共用 `adv-msgwin.test.ts` 一个文件、全指向 harness.ts 也全绿。
+  const bad = checkGuards(APP_ROOT, pairs);
+  assert.deepEqual(bad, [], `guard 指向的用例不存在：\n${bad.join('\n')}`);
 });
 
 test('台账不得用 n/a 掩盖缺口：每条 n/a-known 必须写 why:', () => {
@@ -123,7 +128,7 @@ test('缺口可见：统计数据可读（体检报告）', () => {
   // 不设阈值（会随进展变化）——只在失败/需要看时把清单打出来
   const lines = attention.map((e) => `  ${e.emulator.status.padEnd(19)} ${e.id}`);
   assert.ok(
-    L.counts['modeled-verified'] >= 1,
+    (L.counts['modeled-verified'] ?? 0) >= 1,
     `至少应有一条已核验能力（当前 ${L.counts['modeled-verified']}）\n需要关注的 ${attention.length} 条：\n${lines.slice(0, 40).join('\n')}`,
   );
 });

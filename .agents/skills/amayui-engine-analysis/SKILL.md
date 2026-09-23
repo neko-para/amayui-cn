@@ -140,7 +140,9 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 **evidence 等级**（`emulator.evidence`）：`E0` 未读体 / `E1` 已读体（静态 + raw 行号） / `E2` 合成指令单测 / `E3` 真实脚本的场景级断言（快照/不变量） / `E4` 与真机对照（截图或状态 dump）。
 
 **三条硬约束**（`test/capability-ledger.test.ts` 会强制，`capabilities.js --validate` 可离线自检）：
-1. 声称 **E2/E3 就必须给 `guard`**，且该测试文件真实存在（防止"声称有守卫"变成空话）；
+1. 声称 **E2/E3 就必须给 `guard`**，且该测试**用例**真实存在 —— 规格 `test/x.test.ts` 或
+   **`test/x.test.ts#<用例名片段>`**（`tickets/T-0130` 起支持；`#` 后的字面串必须出现在该文件里）。
+   规则实现只有一份：`scripts/lib/guard-spec.cjs`（三个 `--validate` 工具与三个 TS 守卫共用）；
 2. `n/a-known` **必须**在 `note` 里写 `why:`（**不许用 n/a 掩盖缺口**）；
 3. 每条都要有 `whySilent`（"缺失时为什么静默" —— 这是台账存在的理由本身）。
 
@@ -189,7 +191,9 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 **四条硬约束**（`app/amayui-emulator/test/script-ledger.test.ts` 会强制，`scripts.js --validate` 可离线自检）：
 1. ★**锚点棘轮**：每条 `layout[].anchor` 必须**真的出现在它声明的 `lines` 区间内**（锚点 ≥6 字符，用 label 名或该行真实存在的 opcode 串）——
    既防"凭印象编造结构"，也让 `src/*.txt` 一旦被反汇编重排/翻译 reflow **必然变红**，逼人刷新行号；
-2. `guards[]` 指向的测试文件真实存在；`links.capabilities[]` 是第二层里真有的 id、`links.functions[]` 是 `functions.json` 里真有的 addr；
+2. `guards[]` 指向的测试**用例**真实存在 —— 规格 `test/x.test.ts` 或 **`test/x.test.ts#<用例名片段>`**
+   （`tickets/T-0130` 起支持；`#` 后的字面串必须出现在该文件里。规则实现只有一份：`scripts/lib/guard-spec.cjs`）；
+   `links.capabilities[]` 是第二层里真有的 id、`links.functions[]` 是 `functions.json` 里真有的 addr；
 3. 一个脚本只登记**一条**（`file` 不重复）；`status` 与 `layout` 的规模要相称（没读过就别写 `analyzed`）；
 4. `gaps` 或 `notes` 至少有一个说话 —— 未读到的部分必须写出来（**不许用沉默掩盖缺口**，与第二层的 `why:` 同一条纪律）。
 

@@ -64,6 +64,10 @@ const { o: opt, rootVal } = parseOpt(process.argv.slice(2));
 const root = (typeof opt.root === 'string' ? opt.root : null) || rootVal || '.';
 const FILE = path.join(root, 'analysis', 'engine-capabilities.json');
 const APP_DIR = path.join(root, 'app', 'amayui-emulator');
+// ★`tickets/T-0130`：守卫规格（`file#anchor`）的规则实现只有一份 —— `scripts/lib/guard-spec.cjs`
+// ★相对**工具自身**定位（不是 `--root`）：规则实现是工具代码，不是台账数据 ——
+//   `agent-workflow.test.ts` 会用 `--root <临时目录>` 跑这些工具，那里没有 scripts/lib。
+const { checkGuard } = require(path.resolve(__dirname, '..', '..', '..', '..', 'scripts', 'lib', 'guard-spec.cjs'));
 
 const STATUS_MARK = {
   'modeled-verified': '✅ 已核验',
@@ -227,8 +231,11 @@ function validate(doc, diskCounts) {
     }
     if (!doc.statusEnum[e.emulator.status]) errs.push(`${e.id} status 非法：${e.emulator.status}`);
     if (!doc.evidenceEnum[e.emulator.evidence]) errs.push(`${e.id} evidence 非法：${e.emulator.evidence}`);
-    if (e.emulator.guard && !fs.existsSync(path.join(APP_DIR, e.emulator.guard))) {
-      errs.push(`${e.id} 的 guard 不存在：${e.emulator.guard}`);
+    // ★`tickets/T-0130`：文件存在 → **用例存在**（`test/x.test.ts#<用例名片段>`）。
+    //   规则实现只有一份：`scripts/lib/guard-spec.mjs`（与 TS 侧的 test/guardAnchor.ts 同源）。
+    if (e.emulator.guard) {
+      const why = checkGuard(APP_DIR, e.emulator.guard);
+      if (why) errs.push(`${e.id} 的 guard 不存在：${e.emulator.guard}（${why}）`);
     }
     if ((e.emulator.evidence === 'E2' || e.emulator.evidence === 'E3') && !e.emulator.guard) {
       errs.push(`${e.id} 声称 ${e.emulator.evidence} 却没有 guard`);

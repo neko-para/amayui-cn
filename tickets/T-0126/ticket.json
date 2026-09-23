@@ -8,35 +8,38 @@
     "★已交付（第 1 次变更，全文 tickets/T-0126/changes.md）：`tsconfig.test.json` + `npm run typecheck:test` 就位；`npm test`=T0 默认档、新增 `test:corpus`/`test:e4`/`test:all`/`test:list`/`test:org`；`verify` 改调 `test:all`（判据=与旧全量等价）；`docs-new/04-app/test-organization.md` 落地并在 emulator.md 的闸门表登记",
     "★已交付：T0 默认档实测 **5.8 s / 120 文件 / 796 例**（目标 ≤20 s），用例总数 **1078 → 1085（只增不减）**、skip 12→12、fail 0；`test:all` 1085 例全绿",
     "★已交付：5 处零断言假绿（console.warn + 裸 return）改成 `t.skip()`，并由 `test/organization.test.ts` 的 R3 棘轮防复发（棘轮自带\"正例必须红 / 合法 t.skip 不得误报\"的判别力自检）",
-    "剩余①：还清 `test/` 的 **131 条既有类型债**（TS2739×37 手搓 ScriptFixture 缺 ipTables/dwordToInstr、noUncheckedIndexedAccess×38、TS2741×14、TS2440×4…）⇒ 清空 `test-typecheck.baseline.json` 后把 `typecheck:test` 直接挂进 `verify`。★现在已由**闸门 D 基线棘轮**把住（`check:typecheck-test` 已在 verify 里：新增即红、只许收敛，判别力已实测）",
-    "剩余②：T1 内部共享链路 —— `config1-chain.test.ts` 的 8 条全链路改成\"变体数组\"（跑完 previewProbe 后逐变体 快照→注入→走尾段→采样→还原，**判据一字不改**）；`adv-name-color-chain.test.ts` 加模块级 memo（3 次链路有 2 次 opts 相同）。目标：T1 从 41.9 s → ~20 s，并给出改前/改后实测",
-    "剩余③：把 T-0124 的 12 条变异做成可复跑的 `npm run mutate`（每条要求 ≥1 红；零红 = 覆盖空洞 ⇒ 开票），作为\"清理/重构之后\"的常规档",
-    "剩余④：T2 真机档目前 0 文件 —— 等 T-0128 把 `dbg:srv` 驱动的 E4 脚本化后，测试文件进 T2 档（选档逻辑已就位）",
+    "★已交付（第 3 次变更，全文 tickets/T-0126/changes.md）：`test/` 的 **131 条既有类型债 → 0**（60 文件 → 0）——TS2739 37 + TS2741 14 = 51 条手搓 `ScriptBinary` 补 `harness.scriptDerived()`（`ipTables`/`dwordToInstr` 是 VM 真读字段，不许改成可选）；`noUncheckedIndexedAccess` 38 条改 `at()`/`must()` 显式解包；TS2440 4 条 = 4 个文件逐字重抄的 `instr` 删除；其余按真实形状修（`Ticket.history[].kind`/`doneWhy`、`GameStartOptions.emulatorOptions` 放宽为 `EmulatorOptionsInput`、`SlotStateBlock.adv` 按 `AdvStateJson` 断言、`scripts/agf/format.d.ts`）。★`test-typecheck.baseline.json` 与 `src/tools/typecheckTestBaseline.ts` 一并删除（基线归零后 `--recount` 只剩『把新错误登记成合法』一个用途），`verify` 改跑 `typecheck:test`（零容忍）",
+    "★已交付（2026-09-23，见 T-0128/changes.md §6）：T1 内部成本收敛 —— `config1-chain` 拆成 5 个文件并行（59.2 s → 15.2 s）、`adv-name-color-chain` 按键 memo（21.9 → 7.9 s）、`game-start-chain` 按键 memo（16.7 → 7.9 s）、`save-slot-chain` 拆两文件；T1 档 41.9 s → 56.5 s（★闸门打开后 E4 真跑，属\"多跑了东西\"；并行化前一度 116 s）",
+    "★已交付（第 2 次变更，见 T-0126/changes.md「闸门 E」与 T-0128/changes.md）：`npm run mutate` 就位（15 条变异，每条判据 = 对应定向子集**至少 1 红**、自动还原并逐字节核对；`--all` 为发现模式）⇒ 实测 **15/15 caught、0 已知缺口**（2026-09-23 复跑仍 15/15）",
+    "★已分派（2026-09-23 第 4 次变更）：T2 真机档文件 ⇒ 新票 **T-0132**（『T2 真机档首批文件：把 E4 工具链落成 @tier T2 守卫，并定 verify 口径』）。分派理由与实测：本票的选档逻辑与 E4 工具链已就位（`npm run test:e4` 实测输出『T2 真机档（需要 Electron）：**0 个文件**』），但 `run.ts` 的 `all` 含 T2 ⇒ 一旦落 T2 文件，`verify` 就会变成要 GUI 会话、墙钟 +数十秒的档，与 **T-0115** 刚收口到的 ~33 s 直接冲突。这个口径取舍（T2 是否进 `verify`）是 T-0132 的验收项之一，不在本票里偷偷决定。",
     "★纪律不变：分档只改\"什么时候跑\"，**不改变任何期望值**；禁止把 E3 断言改成 E1/E2 充数"
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/test/harness.ts",
+      "anchor": "export function scriptDerived()",
+      "note": "51 条 TS2739/TS2741 的统一补全点：ScriptBinary 的派生字段（ipTables/dwordToInstr）是 VM 真读的，不许改成可选"
+    },
+    {
+      "file": "app/amayui-emulator/package.json",
+      "anchor": "\"verify\": \"npm run typecheck && npm run typecheck:test && npm run test:all && npm run check:dead-writes\"",
+      "note": "闸门 D 从基线棘轮改成零容忍：typecheck:test 直接进 verify"
+    },
+    {
+      "file": "app/amayui-emulator/test/harness.ts",
+      "anchor": "export function at<T>(xs: readonly T[], i: number, what = '元素'): T",
+      "note": "noUncheckedIndexedAccess 38 条的处置：显式解包，越界即抛（带下标与长度）"
+    },
+    {
+      "file": "tickets/T-0126/changes.md",
+      "anchor": "## 第 3 次变更（2026-09-23）：`test/` 类型债 **131 → 0**",
+      "note": "本轮完整记录：分类处置表、递减轨迹、判别力回归实验"
+    },
+    {
       "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",
       "anchor": "T-0102 判决实验",
-      "note": "单文件 59.2 s = 整轮一半以上 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
-      "line": 34
-    },
-    {
-      "file": "app/amayui-emulator/tsconfig.json",
-      "anchor": "\"exclude\": [\"node_modules\", \"dist\", \"test\"]",
-      "note": "D1：test/ 不受 typecheck",
-      "line": 16
-    },
-    {
-      "file": "app/amayui-emulator/test/gallery-bgm-list.test.ts",
-      "anchor": "instr",
-      "note": "导入 + 重声明：ESM 语义下是 SyntaxError，靠 esbuild 侥幸",
-      "line": 37
-    },
-    {
-      "file": "tickets/T-0124/notes.md",
-      "anchor": "### 4.4 建议的档位设计",
-      "note": "T0/T1/T2/T3 的完整定义与实测依据"
+      "line": 34,
+      "note": "单文件 59.2 s = 整轮一半以上 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）"
     }
   ],
   "links": {
@@ -51,12 +54,53 @@
     ]
   },
   "id": "T-0126",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段： —— 第 2 次变更：test/ 类型债 131→0；基线棘轮退役，typecheck:test 直接进 verify"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：evidence —— 第 3 次变更记录落 changes.md；evidence 补 scriptDerived/at 与新的 verify 行锚点"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 剩余③标注已交付（15 条变异 15/15）；剩余④写明前置条件已就位、只差真机"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 4 次变更：T2 真机档文件分派到新票 T-0132（含 verify 口径取舍），本票收口"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段：tests —— 补 tests[]：闸门 D 的两个挂点 + 档位 R3 棘轮 + T-0020 harness 棘轮"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— 四项收口：分档 + 组织法（交付）/ typecheck 类型债 131→0 + 闸门 D 零容忍（交付）/ 闸门 E 15/15（交付）/ T2 文件分派 T-0132"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "scope",
+      "what": "改字段： —— 回链更新：分派出的 T-0132 已交付（T2 首文件 + all 不含 T2 的口径），本票的 T2 缺口已闭"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/package.json#\"typecheck:test\": \"tsc -p tsconfig.test.json --noEmit\"",
+    "app/amayui-emulator/package.json#\"verify\": \"npm run typecheck && npm run typecheck:test && npm run test:all && npm run check:dead-writes\"",
+    "app/amayui-emulator/test/organization.test.ts#R3",
+    "app/amayui-emulator/test/harness-convergence.test.ts#mk()"
   ]
 }
