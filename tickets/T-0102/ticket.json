@@ -114,10 +114,10 @@
       "line": 170
     },
     {
-      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",
       "anchor": "★T-0102 判决实验",
-      "note": "判决实验的守卫（3 组，含 `seedRecords` 正向组）：记录表非空 ⇒ `i082` 必须**恰好重画一次**且用**重派生后的实时色**（`restyleByI082.fill == after.fill`、`snapshot === false`、`snapFill === null`）；`g0=6` ⇒ 走 `:262` 假分支、**不**重新入队（无 0x6E）；`g0=1 && 3f37>=0`（剧情里按「戻る」）⇒ **有** `0x71`+`0x6E` 重新入队。辨别力已机械证明：摘掉 `op_gdi_repaint_window` 那道越界门 ⇒ 本用例 1 fail（`g0=6` 组 actual 1 / expected 0）。",
-      "line": 431
+      "note": "判决实验的守卫（3 组，含 `seedRecords` 正向组）：记录表非空 ⇒ `i082` 必须**恰好重画一次**且用**重派生后的实时色**（`restyleByI082.fill == after.fill`、`snapshot === false`、`snapFill === null`）；`g0=6` ⇒ 走 `:262` 假分支、**不**重新入队（无 0x6E）；`g0=1 && 3f37>=0`（剧情里按「戻る」）⇒ **有** `0x71`+`0x6E` 重新入队。辨别力已机械证明：摘掉 `op_gdi_repaint_window` 那道越界门 ⇒ 本用例 1 fail（`g0=6` 组 actual 1 / expected 0）。 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
+      "line": 34
     },
     {
       "file": "app/amayui-emulator/src/vm/textItems.ts",

@@ -22,6 +22,7 @@
     "boot:time": "node tools/boottime.cjs",
     "build:electron": "node build-electron.mjs",
     "check:dead-writes": "tsx src/tools/deadWrites.ts",
+    "mutate": "tsx src/tools/mutate.ts",
     "dbg": "node tools/dbg.cjs",
     "dbg:srv": "npm run build:electron && electron tools/debugsrv.cjs",
     "diag:text": "tsx src/tools/diagText.ts",

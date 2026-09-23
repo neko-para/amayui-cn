@@ -33,7 +33,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runConfig1Chain } from '../src/tools/config1Chain.js';
+import { runConfig1Chain, type ChainResult } from '../src/tools/config1Chain.js';
 import { globalTextStyle } from '../src/vm/handlers/msgwin.js';
 import { Engine } from '../src/vm/engine.js';
 import { InputManager } from '../src/vm/input.js';
@@ -62,6 +62,28 @@ function cvinitColorIndexTable(): Map<number, number> {
   return table;
 }
 
+/**
+ * ★**按键 memo**（`tickets/T-0115` 的 T1 成本收敛）：本文件有 3 次 CONFIG1 全链路，其中 2 次的 opts
+ * **完全相同** —— 一次在单条用例里（`msg: 1`）、一次是下面循环的 `msg=1` 那一轮。按 opts 的 JSON 键共享
+ * 同一次运行结果即可省掉一次 boot（实测单次 ~6 s）。
+ *
+ * ★为什么安全：`ChainResult` 是**只读快照**（探针产物），本文件所有断言只读它（与 `config1-chain.test.ts`
+ * 的 `cached ??=` 同一约定）。失败时把缓存删掉 —— 否则一次偶发失败会被永久缓存成"这个键总是失败"。
+ */
+const chainCache = new Map<string, Promise<ChainResult>>();
+function chainWith(opt: Parameters<typeof runConfig1Chain>[0] = {}): Promise<ChainResult> {
+  const key = JSON.stringify(opt);
+  let p = chainCache.get(key);
+  if (!p) {
+    p = runConfig1Chain(opt).catch((e: unknown) => {
+      chainCache.delete(key);
+      throw e;
+    });
+    chainCache.set(key, p);
+  }
+  return p;
+}
+
 test('★T-0102：`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据（探针实测 vs 脚本 oracle）', async () => {
   const oracle = cvinitColorIndexTable();
   assert.ok(oracle.size >= 10, `CVINIT 的 14b0c4 表样本太少（${oracle.size}）`);
@@ -69,7 +91,7 @@ test('★T-0102：`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据�
   assert.equal(oracle.get(1), 4, 'CVINIT：`14b0c5` 应为 4（阿瓦罗）');
   assert.equal(oracle.get(2), 5, 'CVINIT：`14b0c6` 应为 5（菲亚）');
 
-  const r = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g0: 1, g1397: 1, msg: 1 } });
+  const r = await chainWith({ previewProbe: true, advReturnProbe: { g0: 1, g1397: 1, msg: 1 } });
   const d = r.advReturn?.derivation;
   assert.ok(d, '应产出 derivation 快照');
   assert.equal(d.via, 1, '`14acdc[1]` 应为 1（消息 1 → 角色 1）；实测 ' + d.via);
@@ -81,7 +103,7 @@ test('★T-0102：`14b0c4` 的逐元素值 == `src/CVINIT.txt` 的角色数据�
 
 test('★T-0102：取色三环自洽 —— `14acda == 14b0c4[14acdc[msg]]`、渲染色 == 脚本原色（两条不同角色）', async () => {
   for (const msg of [1, 2]) {
-    const r = await runConfig1Chain({ previewProbe: true, advReturnProbe: { g0: 1, g1397: 1, msg } });
+    const r = await chainWith({ previewProbe: true, advReturnProbe: { g0: 1, g1397: 1, msg } });
     const p = r.advReturn;
     assert.ok(p, `msg=${msg} 应产出探针结果`);
     const d = p.derivation;

@@ -522,15 +522,15 @@ test('★计划覆盖账：已核对行 = 已计划 + A 引擎内部 + B 未注�
     else if (OPS.has(e.opcode) || NATIVE_OPS.has(e.opcode)) C.push(e.opcode);
     else B.push(e.opcode);
   }
-  assert.equal(
-    covered + A.length + B.length + C.length,
-    checked.length,
-    '分区必须覆盖全部已核对行（等式不成立 ⇒ 分类口径有洞）',
-  );
-  assert.ok(covered >= 347, `计划覆盖数下滑：${covered}（棘轮 ≥319）`);
+  // ★2026-09-23 删除一条**恒真断言**（`tickets/T-0125`）：上面 `:514` 起的 `if / else if / else`
+  //   保证每个 `checked` 元素必进且只进一个桶 ⇒ `covered + A + B + C ≡ checked.length` **永远成立**，
+  //   "等式不成立 ⇒ 分区有洞"这句注释描述的洞在这段代码里不可能出现。反例实验：把任意一条
+  //   `analysis/opcodes.json` 的 status 改成别的 ⇒ 该条进循环 ⇒ 四个桶之和仍 ≡ checked.length。
+  //   真正有判别力的是下面两条棘轮（它们能红）：
+  assert.ok(covered >= 347, `计划覆盖数下滑：${covered}（棘轮 ≥347）`);
   assert.ok(
     C.length <= 3,
-    `待迁移的"真 handler"变多了（${C.length} > 250）—— 要么新注册了 op 没声明计划，要么分类口径变了`,
+    `待迁移的"真 handler"变多了（${C.length} > 3）—— 要么新注册了 op 没声明计划，要么分类口径变了`,
   );
   console.log(
     `[plan] 已核对 ${checked.length} = 已计划 ${covered} + A 引擎内部 ${A.length} + B 未注册 ${B.length} + C 待迁移 ${C.length}`,

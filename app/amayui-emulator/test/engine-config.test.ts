@@ -133,6 +133,11 @@ test('真实 SYS4REG.INI：结构 + 「配置→字段」自洽（不断言玩�
     const raw = cfgInt(cfg, b.key, NaN);
     if (Number.isNaN(raw)) continue; // 该键不在这份 INI 里 ⇒ 跳过（不做"必须存在"的要求）
     const want = b.map ? b.map(raw) : raw;
+    // ★`null` = 该取值下引擎不写该字段 ⇒ 这里必须**跳过**（否则会要求它等于 null，把正确实现判红）
+    if (want === null) {
+      assert.ok(!values.has(b.field), `${b.key}=${raw} ⇒ 引擎不写 _this[${b.field}]（map 返回 null）`);
+      continue;
+    }
     assert.equal(values.get(b.field), want, `${b.key}=${raw} ⇒ _this[${b.field}] 应为 ${want}（不断言具体数值，只要求一致）`);
   }
   // ④ MessageSpeed 与 MesWinAlpha 必须落在**不同**字段（历史误绑会让后者顶掉前者）
@@ -158,8 +163,13 @@ test('applyConfigToEngine：按绑定写入引擎字段（夹具 INI，含 displ
   //   夹具刻意让两者不同（7 vs 6）⇒ 误绑会立刻显形。
   assert.equal(get(21668), 7, 'message:MessageSpeed=7 → _this[21668]（0x7F 读）；不得被 MesWinAlpha=6 覆盖');
   assert.equal(get(80106), 250, 'message:MessageFade=250 → _this[80106]（0x2EE 写）');
-  assert.equal(get(20980), 1, 'sound:SE=1（下标 20980 = raw 字节 83920）');
-  assert.equal(get(21293), 2, 'sound:Voice=2（下标 21293 = raw 字节 85172）');
+  // ★2026-09-23 修错 oracle（`tickets/T-0125`）：引擎对这两个键都是 `= v != 0`（raw 23689-23691 /
+  //   23693-23695）⇒ 夹具里 `sound:Voice=2` 必须落成 **1**。原来的期望是 2 —— 而 2 会让消费者
+  //   `== 1` 的判据读成"关"；实测把这条期望留着、只给绑定表补 `map` ⇒ 本行**当场红**（反例实验已做）。
+  assert.equal(get(20980), 1, 'sound:SE=1 ⇒ 布尔化 1（下标 20980 = raw 字节 83920）');
+  assert.equal(get(21293), 1, '★sound:Voice=2 ⇒ 布尔化 **1**（下标 21293 = raw 字节 85172；不是 2）');
+  // ★`message:RMouseEvent=1` ⇒ 引擎写 `v+1 = 2`（raw 23722-23735：`v<=1 ⇒ v+1`、`v==2 ⇒ 31`、其它**不写**）
+  assert.equal(get(1384), 2, '▶ message:RMouseEvent=1 ⇒ 2（下标 1384 = raw 字节 5536）');
   assert.equal(get(96983), 1, '无关字段不受影响（LOGO 开关）');
   assert.ok(applied.length >= 7, `应写入至少 7 个字段（实际 ${applied.length}；T-0064 起 sound:Music 不在其中）`);
 

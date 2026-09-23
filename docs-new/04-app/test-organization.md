@@ -70,10 +70,12 @@ state: live
 ```bash
 npm test               # T0 默认档     —— 日常迭代（本机实测 5.8 s / 796 例）
 npm run test:corpus    # T1 真资产档   —— 改 VM/渲染/存档 或提交前（实测 41.9 s / 289 例）
-npm run test:all       # T0+T1+T2 全量 —— 与旧 `npm test` 口径一致（实测 44.7 s / 1085 例）
+npm run test:all       # T0+T1+T2 全量 —— 与旧 `npm test` 口径一致（实测 31.8 s / 1082 例，见 §8）
 npm run test:e4        # T2 真机档     —— 目前为空（E4 由 `npm run shot` / `dbg:srv` 工具链承担，见 T-0128）
 npm run test:list      # 打印三轴索引（--json 给机器）
 npm run test:org       # 只跑分类一致性校验（不跑例）
+npm run mutate         # 闸门 E：变异闸门（定向子集，~1 min）—— 每条"引擎语义破坏"必须有测试红
+npm run mutate -- --all # 闸门 E 的发现模式（每条跑全量 1082 例，慢；用来找零覆盖）
 npm run verify         # ★提交前必跑：typecheck + check:typecheck-test（闸门 D）+ **test:all** + 死写棘轮
 ```
 
@@ -87,19 +89,25 @@ npm run verify         # ★提交前必跑：typecheck + check:typecheck-test�
 | **R2 档位诚实** | 正向：`T0` **不得** import 语料装载器、不得出现资源目录**字符串字面量**（注释里的 `raw 33865` 不算 —— 那是反编译行号）；反向：`T1` 必须真有资产证据（防 T1 变成杂物抽屉） | "在干净 clone / CI 上跑不起来"的默认档 |
 | **R3 不许零断言空跑** | 禁止 `console.warn('[skip]…')` + 裸 `return`（该形态会被 node:test 记 pass）。守卫自带**判别力自检**：合成一段正例必须能红、一段合法的 `t.skip` 不得误报 | 审计查出的最严重一类假绿 |
 
+**闸门 E（变异闸门）**是这套组织法的"体检"：分类解决"怎么跑/红了算什么"，变异解决"**到底有没有人守**"。
+清单 `test/mutations.json`，判据见该文件头（`expectCatch` 全绿 = 守卫丢了 = 闸门失败）。
+
 **为什么 `evidence`（E0–E4）不在这里再记一份**：它是**每条引擎能力**的属性，已经活在
 `analysis/engine-capabilities.json` 的 `emulator.evidence` 里，并有守卫（声称 E2/E3 必须给真实 `guard`）。
 按测试文件再记一份 = **第二个真源**，必然漂移。本组织法只回答"怎么跑 / 红了算什么 / 在哪"。
 
 ---
 
-## 7. 现状分布（160 个文件，2026-09-23）
+## 7. 现状分布（166 个文件，2026-09-23）
 
 | 轴 | 分布 |
 |---|---|
-| `tier` | **T0 120**（默认档）· **T1 40**（真资产档）· T2 0（真机档目前无测试文件） |
-| `kind` | **core 123** · **ratchet 23** · **tool 14** |
-| `subsystem` | render 17 · vm 16 · frame 15 · ops 15 · adv 12 · text 12 · save 11 · texture 9 · l2d 8 · ledger 8 · audio 7 · config 7 · transition 6 · host 5 · input 4 |
+| `tier` | **T0 122**（默认档）· **T1 44**（真资产档）· T2 0（真机档目前无测试文件） |
+| `kind` | **core 128** · **ratchet 24** · **tool 14** |
+| `subsystem` | render 18 · vm 16 · frame 15 · ops 15 · adv 12 · text 12 · config 11 · save 11 · texture 9 · l2d 8 · ledger 8 · audio 7 · transition 6 · host 5 · input 4 |
+
+★文件数 160 → 166 全是**组织性**变化（不是新增覆盖）：`config1-chain` 由 1 个文件拆成 5 个（§8.1 的并行化）、
+新增 `render-draw-order.test.ts`（补 z 序零覆盖）与 `registry-classification.test.ts`（收编 8 个文件里的注册表棘轮）。
 
 ★T2 = 0 是**如实登记**：真机验证（E4）现在由工具链承担（`npm run shot`、`dbg:srv` + `dbg.cjs` 的
 `click/clickimg/move/shot`）。把它变成可重复闸门是 `tickets/T-0128` 的工作，届时有文件就会进 T2 档。
@@ -112,13 +120,37 @@ npm run verify         # ★提交前必跑：typecheck + check:typecheck-test�
 |---|---|---|---|
 | 旧 `npm test`（无档位） | 159 | 1078 | **108.0 s**（同一轮另有负载）；空闲机重复测 66.6 s |
 | 逐文件单跑（串行合计） | 159 | 1078 | 245.9 s |
-| **新 `npm test`（T0）** | 120 | 796 | **5.8 s** |
-| 新 `npm run test:corpus`（T1） | 40 | 289 | 41.9 s |
-| 新 `npm run test:all`（= 旧口径 + 7 条新守卫） | 160 | **1085** | 44.7 s |
+| **新 `npm test`（T0）** | 121 | 797 | **5.8 s** |
+| 新 `npm run test:corpus`（T1，**并行化前**） | 40 | 289 | 41.9 s |
+| **新 `npm run test:corpus`（T1，并行化后）** | 44 | 289 | **22.2 s** |
+| 新 `npm run test:all` / `verify` | 166 | **1082**（T0 793 + T1 289） | **31.8 s**（verify 全流程） |
 
-- 用例数 1078 → 1085：**只增不减**（新增 7 条是 `organization.test.ts` 的分类守卫）。
+- 用例数 1078 → 1082（**净 +4**）：新增 11 条守卫（`organization` ×7、`render-draw-order` ×2、`registry-classification` ×2），
+  同时**删掉 7 条被更强替身覆盖的重复棘轮**（8 个文件里各写一遍的「注册表分类」+ op-d0 的恒真断言等）。
+  ★判据没有降低：每一条被删的都由 §「替身」更严或等价——`registry-classification.test.ts` 一条覆盖原来 8 条的全部 opcode，
+  且**已证伪**（把 0xD0 从 `OPS` 摘掉 ⇒ 该文件红）。
 - skip 12 → 12：分档**没有丢掉任何覆盖**（11 在 T1、1 在 T0）。
 - 失败 0：`test:all` 与 `test:org` 全绿；`typecheck`（原三套）与 `check:dead-writes` 全绿。
+
+### 8.1 T1 的"并行化"：把串行链路拆成多进程（**判据一字不改**）
+
+`config1-chain.test.ts` 原来在**一个进程**里串行跑 **9 次** CONFIG1 全链路（单文件实测 59.2 s = 整轮 verify 的一半以上）。
+逐条看过：9 个变体的注入各不相同（`fontPicker` / `scroll` / `advReturn` 的 6 组不同 `{g0,g1397,msg,seedRecords}`）
+⇒ **没有可 memo 的共享状态**（想"共享一次 boot + 逐变体重放尾段"需要引擎态快照/回灌 = `T-0122` 的能力，当前没有）。
+
+但 node:test 是**按文件分进程并行**的 ⇒ 把互不相干的探针**按文件拆开**：CPU 总工作量一字不变
+（还是 9 次 boot），墙钟却从"九次相加"变成"最慢那一组"：
+
+| 文件 | 全链路次数 |
+|---|---|
+| `config1-chain.test.ts`（8 条共享同一次 `chain()`） | 1 |
+| `config1-chain-fontpicker-scroll.test.ts` | 2 |
+| `config1-chain-advreturn.test.ts` | 2 |
+| `config1-chain-advreturn-seed.test.ts` | 3 |
+| `config1-chain-advreturn-real.test.ts` | 1 |
+
+实测：**59.2 s（1 文件）→ 15.2 s（5 文件并行）**；整个 T1 档 **41.9 s → 22.6 s**。
+★这正是"分档不降判据"的另一种形态：**判据没动，只是把互相不依赖的东西放到能并行的位置**。
 
 ---
 
@@ -127,11 +159,11 @@ npm run verify         # ★提交前必跑：typecheck + check:typecheck-test�
 | # | 内容 | 票 |
 |---|---|---|
 | 1 | **`test/` 的类型债**：`tsconfig.test.json` 已就位，且已挂进 `verify` —— 但用的是**闸门 D 基线棘轮**（`check:typecheck-test` + `test-typecheck.baseline.json`）：现有 **131 条 / 60 个文件**（TS2739 37、`noUncheckedIndexedAccess` 38、TS2741 14 …）登记在基线里，**新增即红、只许收敛**。清空基线即可把 `typecheck:test` 直接挂上去 | `T-0126` |
-| 2 | **T1 内部还有重复链路**：`config1-chain` 的 8 条全链路只差尾部注入；`adv-name-color-chain` 3 次链路有 2 次 opts 相同 | `T-0115` / `T-0126` |
+| 2 | ~~**T1 内部重复链路**~~ —— ①`config1-chain` 已**拆成 5 个文件并行**（59.2 s → 15.2 s，见 §8.1）；②`adv-name-color-chain` 的 3 次链路里 2 次 opts 相同，已加**按键 memo**（21.9 s → ~14.6 s）。★想再往下压（"共享一次 boot + 逐变体重放尾段"）需要**引擎态快照/回灌** = `T-0122` 的能力 | 已做 / `T-0122` |
 | 3 | **E4 档落地**：`dbg:srv` 驱动的脚本化真机闸门（`T-0051` 的 5 项人工 E4 + `T-0114` 未做的 E4），届时产生 T2 档文件 | `T-0128` |
 | 4 | **去重**：同一不变量的第 2/3 份（`adv-msgwin` 路由组、存档族、注册表棘轮 8~9 处）—— 删冗余不损失检出，但**每处都要给替身位置与反例实验** | `T-0129` |
 | 5 | **台账 `guards` 加内容锚点**（现在只查文件存在）：与本组织法同源的问题 —— "声明"要能被机械复核 | `T-0130` |
-| 6 | 断言级清理（恒真 / 镜像 / 错 oracle / 判据钉错地方）与补 3 处零覆盖（z 序、快照 drawable、面板 `opHex`） | `T-0125` |
+| 6 | 断言级清理（恒真 / 镜像 / 错 oracle / 判据钉错地方）与补 3 处零覆盖：**z 序已闭**（`render-draw-order.test.ts`）、**快照 drawable 已闭**（`scene-report` 独立下限）、**面板 `opHex` 待补**（`T-0127`） | `T-0125`/`T-0127` |
 
 ---
 

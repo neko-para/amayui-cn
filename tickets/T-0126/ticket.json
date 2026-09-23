@@ -16,10 +16,10 @@
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/test/config1-chain.test.ts",
+      "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",
       "anchor": "T-0102 判决实验",
-      "note": "单文件 59.2 s = 整轮一半以上",
-      "line": 431
+      "note": "单文件 59.2 s = 整轮一半以上 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
+      "line": 34
     },
     {
       "file": "app/amayui-emulator/tsconfig.json",

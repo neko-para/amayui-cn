@@ -87,11 +87,8 @@ async function run(calls: { op: number; args: Arg[] }[], prep?: (e: Engine) => v
   return e;
 }
 
-test('★0x132/0x133/0x134：已注册（不是 native 桩、不是 no-op）；默认 = 11 个空队', () => {
-  for (const op of [0x132, 0x133, 0x134]) {
-    assert.ok(OPS.has(op), `0x${op.toString(16)} 必须进已实现表`);
-    assert.ok(!NATIVE_OPS.has(op) && !ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不得是 native 桩或 no-op`);
-  }
+test('★0x132/0x133/0x134：默认 = 11 个空队（注册表棘轮已并入 test/registry-classification.test.ts）', () => {
+  // ★2026-09-23：三条的「已注册」棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
   // 默认 = 引擎构造后的状态：**11 个空队**（引擎 init raw 18080-18096 建 11 个：`v27 = 10; do … while(--v27)`）。
   const e = new Engine(new StubNative(() => {}), new InputManager());
   assert.equal(e.dispatchQueues.length, 11, '队列族规模 = 11（引擎 init/teardown 都按 11 个槽遍历）');

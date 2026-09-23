@@ -62,17 +62,7 @@ const A2_A3 = [
   0x199, // 接线：0x7B 的读取端
 ];
 
-test('注册表棘轮：A2/A3 的每条都落在真实现表里，且不在 ENGINE_INTERNAL_OPS', () => {
-  for (const op of A2_A3) {
-    const inOps = OPS.has(op) || NATIVE_OPS.has(op);
-    assert.ok(inOps, `0x${op.toString(16)} 应已实现（OPS 或 NATIVE_OPS）`);
-    assert.equal(ENGINE_INTERNAL_OPS.has(op), false, `0x${op.toString(16)} 不得同时留在 stub 表里`);
-  }
-  // 过去"压根没注册"的三条读取端（命中即 NotImplementedOp）
-  for (const op of [0x1d3, 0x1d4, 0x2f3, 0x199]) {
-    assert.ok(OPS.has(op), `0x${op.toString(16)} 必须注册（否则命中即硬报错）`);
-  }
-});
+// ★2026-09-23：`A2_A3` 的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
 
 // ---------------------------------------------------------------------------
 // A2

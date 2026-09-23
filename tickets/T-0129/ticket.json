@@ -5,11 +5,13 @@
   "area": "emulator/test",
   "why": "T-0124 的分组审计一致指出：**重复覆盖是最大的一类浪费**，且每处都有「更强的那一份」可替身 —— 删掉冗余不损失任何故障检出。\n\n主要标的（全部逐条核过，替身位置见 T-0124 的 evidence/G*.md）：\n- **`adv-msgwin.test.ts:415-501,511-523`（5 组路由用例）↔ `route-dispatch.test.ts:109-217`**：后者用真 `stepOnce`、返回点精确到 `gateDword===17`，口径更强 ⇒ 删组内那 5 组（约 −5 例 / −90 行）。\n- **存档族 10 文件 / 60 例 → 7 文件 / 51 例**：`save-slot-chain` 并入 `slot-load-transfer`；`save-slot` 吃掉 `save-thumb` 的 2 例重复；`slot-load-screen` + `slot-load-l2d-reset` → `slot-load-presentation`。★`save-slot-tdz` **必须保持独立**（import 顺序本身是被测对象）。\n- **`option-font-speed-menu.test.ts` 4 个不相关主题混装**：字体表并入 `adv-msgwin`、菜单并入 `op-a2-a3`、注册表部分并入注册表棘轮 ⇒ 整文件可删。\n- **注册表分类棘轮 8~9 处同形**（`op-a2-a3:63` / `op-a4-a6:45` / `op-a5:39` / `op-1cb:61` / `op-191:57` / `op-d0:70` / `op-132-134:88` / `op-327:70` + `registry-tables:41`；全仓共 38 个文件同形）⇒ 合并成一张 `[op, class, ticket]` 数据表。\n- 逐字节拍被 4 处各断一遍（`adv-msgwin:616` / `char-reveal:101` / `char-reveal:218` / `option-font-speed-menu:174`）；`0x346` 复位整段重复（`l2d-node-compose:185-210` ↔ `l2d-node-transform-ops:162-183`）；`.STH` 往返（`save-slot:261-270` ↔ `save-thumb:199-236`）等。\n- 结构债（与 `T-0020` 同源，可一并做）：三份逐字重复的 Proxy `touched` 实现、`RecordingNative` 2 份、WAV/OGG 合成件 2 份、`mkEngine(fsLike)` 2 份几乎逐字相同。",
   "acceptance": [
+    "★已交付（第 1 次变更，全文 tickets/T-0129/changes.md）：8 个文件里的「注册表分类棘轮」收成 `test/registry-classification.test.ts` 的**一张表**（[opcode, 期望类别, 出处票]），判据更严（恰好在一张表里 + 就在该在的那张 + 表内不许重复登记），并已证伪（删掉 0xD0 的注册 ⇒ 该文件红）。删除 7 条重复用例，原地留指针注释，不动任何行为断言",
     "每一处去重都在 changes.md 里给出**被删断言的替身位置**（`file:line`），并说明「替身更强在哪里」",
     "注册表分类棘轮合并成一张数据表（新建 `test/registryClass.test.ts`），各票文件只留自己的**行为**用例；`ALLOW_UNDERRUN` / `EXPECTED_THROW` 抽到共享模块（解掉 `op-underun-fixups.test.ts:61-68` 解析另一个测试文件源码的测试-测试耦合）",
     "三份 Proxy `touched` 与 `mkEngine(fsLike)` 上收 `test/harness.ts` 或新建 `test/operandHarness.ts`（顺带缓解 `T-0020`）",
     "★抽样验证：去重后，用 T-0124 变异清单里对应的那几处（M2/M3/M4/M5/M9/M10）复跑，**仍然必须被 ≥1 条测试抓到**",
-    "用例总数与墙钟的前后对照写进 changes.md；`npm run verify` 全绿"
+    "用例总数与墙钟的前后对照写进 changes.md；`npm run verify` 全绿",
+    "★每处去重后必须用闸门 E 抽样复跑：删掉的那条不变量的对应变异**仍必须被 ≥1 条测试抓到**（`npm run mutate`）"
   ],
   "evidence": [
     {
@@ -43,7 +45,7 @@
     ]
   },
   "id": "T-0129",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-23",

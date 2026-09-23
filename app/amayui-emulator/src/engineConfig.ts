@@ -207,8 +207,13 @@ export interface ConfigFieldBinding {
   key: string;
   /** 引擎字段 DWORD 下标 `_this[K]`。 */
   field: number;
-  /** 取值变换（如 `!=0` 布尔化）。默认原样。 */
-  map?: (v: number) => number;
+  /**
+   * 取值变换（如 `!=0` 布尔化）。默认原样。
+   * ★返回 **`null` = 这个取值下引擎根本不写该字段**（不是"写 0"）—— 例：`message:RMouseEvent`
+   * 只在 `v<=2` 时写（raw 23722-23735 的 `if (v44 >= 0) { if (v44 <= 1) … else if (v44 == 2) … }`，
+   * 否则**整段跳过**、字段保持原值）。
+   */
+  map?: (v: number) => number | null;
   /** 说明/证据。 */
   note: string;
 }
@@ -233,15 +238,22 @@ export const CONFIG_FIELD_BINDINGS: ConfigFieldBinding[] = [
   { key: CFG.messageMessageSpeed, field: 21668, note: '消息速度 ms（raw 23736-23738 写字节 86672 ⇒ 下标 21668 = Font+1376）；op 0x74 写 / 0x7F 读' },
   // ★文本路径：80106×4 = 320424 = Font+235128。op 0x2EE 写（raw 33600 `_this[80106] = op1`）。
   { key: CFG.messageMessageFade, field: 80106, note: '消息淡入 ms（raw 23739-23741 写字节 320424 ⇒ 下标 80106 = Font+235128）；op 0x2EE 写、行 alpha 动画窗时长因子（MessageSpeed×MessageFade/100）' },
-  { key: CFG.messageRMouseEvent, field: 1384, note: '右键行为（0/1→键位+1，2→31；raw 23722-23735 写字节 5536 ⇒ 下标 1384）' },
+  // ★这条**不是**简单布尔化，而是一段**带门的映射**（raw 23722-23735，字节 5536 ⇒ 下标 1384）：
+  //   `if (v >= 0) { if (v <= 1) 写 v+1; else if (v == 2) 写 31; }` ⇒ 其它取值**根本不写**（字段保持原值）。
+  //   此前无 map ⇒ 原样写 3/9/-1（引擎要么写 v+1/31、要么不动），右键行为静默错。
+  { key: CFG.messageRMouseEvent, field: 1384, map: (v) => (v <= 1 ? v + 1 : v === 2 ? 31 : null), note: '右键行为（0/1→键位+1，2→31，其它不写；raw 23722-23735 写字节 5536 ⇒ 下标 1384）' },
   // ★`message:MesWinAlpha` **不在这里**：引擎从不把它灌进持久字段，
   //   只由 0x131（sub_42F7D0 直读配置）/ 0x141（sub_4228C0 直写配置）按名存取。
   //   历史错误：曾绑到字段 21668，而 21668 正是 message:MessageSpeed 的字段
   //   ⇒ 两个键互相覆盖（随包 INI 里 MesWinAlpha=8 会把 MessageSpeed 的 5 顶掉），
   //   并且 0x7F（i07f 全工程 210 处）会读到错误的消息速度。
   { key: CFG.soundSound, field: 174810, note: '声音总开关（raw 23676-23678 写字节 699240 ⇒ 下标 174810）' },
-  { key: CFG.soundSE, field: 20980, note: 'SE 开关（raw 23689-23691 写字节 83920 ⇒ 下标 20980，布尔化）' },
-  { key: CFG.soundVoice, field: 21293, note: '语音开关（raw 23693-23695 写字节 85172 ⇒ 下标 21293，布尔化）' },
+  // ★布尔化（2026-09-23 补 `map`，`tickets/T-0125`）：raw 23689-23691 / 23693-23695 都是
+  //   `*(_DWORD *)(a1 + 83920) = v != 0;`（字节 83920 ⇒ 下标 20980；字节 85172 ⇒ 下标 21293）。
+  //   此前 note 写着"布尔化"却**没有 map** ⇒ `sound:Voice=2` 会原样写 2（引擎写 1），
+  //   而 `sound:Voice` 的消费者做 `== 1` 判断 ⇒ 静默把"开"读成"关"。
+  { key: CFG.soundSE, field: 20980, map: (v) => (v !== 0 ? 1 : 0), note: 'SE 开关（raw 23689-23691 `= v != 0` 写字节 83920 ⇒ 下标 20980）' },
+  { key: CFG.soundVoice, field: 21293, map: (v) => (v !== 0 ? 1 : 0), note: '语音开关（raw 23693-23695 `= v != 0` 写字节 85172 ⇒ 下标 21293）' },
 ];
 
 /** 把配置写入 `Engine.engineValues`（幂等：同键重复调用覆盖）。返回实际写入的 `[字段, 值]` 列表。 */
@@ -256,6 +268,8 @@ export function applyConfigToEngine(
     if (!cfg.values.has(key)) continue;
     const raw = cfgInt(cfg, key);
     const value = b.map ? b.map(raw) : raw;
+    // ★`null` = 该取值下引擎不写这个字段（见 `ConfigFieldBinding.map` 的说明）——不是"写 0"
+    if (value === null) continue;
     engineValues.set(b.field, value);
     applied.push({ field: b.field, value, key });
   }

@@ -93,3 +93,60 @@ not ok 1036 - 看板与真源同步（忘跑 build-tickets.mjs 会红）
 - 与此同时它**推翻/修正**了 2 条静态结论（`call-frame:81`、`overlay:121`）⇒ 变异是**双向**的：既不放过空洞，也不冤枉守卫。
 - 成本：12 条 × ~1.5 min ≈ **20 min**，且**完全离线**（不需要 Electron/人）。
   ⇒ 建议按 `T-0126` 落成 `npm run mutate`，作为"清理/重构之后"的常规档（不是每次提交都跑）。
+
+
+---
+
+## 6. 2026-09-23 复跑与订正（T-0125 / 闸门 E）
+
+首次实测（§1 表）里有 **一条无效变异** 和 **两条已闭合的零覆盖**，全部在这一节订正；同时把清单做成了可复跑的闸门。
+
+### 6.1 ★订正：`M7`（绘制项 z 序）的原始变异是**语义等价**的
+
+首测把 `presenter.ts:179` 的 `[...scene.drawItems.values()].sort((a,b)=> a.layer-b.layer || a.handle-b.handle)`
+反转，得到"全量无一红"，并据此判定 Z1 零覆盖。复跑发现**那处不是权威排序**：
+
+```ts
+// presenter.ts:365 —— 真正的归并排序（决定"谁盖住谁"）
+entries.sort((a, b) => a.key - b.key || a.order - b.order);
+```
+
+`:179` 那三行只决定**等键（同 layer）时**喂给 `entries` 的初始次序，而我的变异保留了 `|| a.handle - b.handle`
+⇒ 对同层项的相对次序没变、对不同层项又被 `entries.sort` 重新排过 ⇒ **改与不改结果相同**（实测：注入后
+`root.children` 的 x 序列一字不变）。⇒ 首测的 Z1 结论方向对、但**依据无效**。
+
+**重做**：变异改到权威排序上（`b.key - a.key`），并新增 `test/render-draw-order.test.ts`（2 例：正序 + 反向自检）：
+
+| 口径 | 结果 |
+|---|---|
+| 新用例 `render-draw-order.test.ts` | **2/2 红** ✅ |
+| 旧的 `draw-item-*` / `blend-mode` / `layer-direction` / `transition-render-wiring`（47 条） | **仍然 0 红** |
+
+⇒ **Z1 是真缺口**（原结论成立），已由 `render-draw-order.test.ts` 闭合；变异也换了依据（`M7_draw_order_reversed`
+现在打的是 `entries.sort`）。**教训**：写变异时必须先问"这处改动在运行时真的可观测吗"——否则"零覆盖"是假象。
+
+### 6.2 已闭合的两处零覆盖
+
+| 原判 | 闭合方式 | 证伪（现在会红吗） |
+|---|---|---|
+| **Z2** 快照 `drawable` 恒空 ⇒ 无一红 | `scene-report.test.ts` 的恒等式旁边补**独立下限**（`drawableItems >= 20`、`drawableItems > placeholderItems`；实测 32/24/8） | 注入 `drawable = []` ⇒ **红**（原来绿） |
+| **Z1** z 序（同上，见 6.1） | 新增 `test/render-draw-order.test.ts` | 注入权威排序反转 ⇒ **2/2 红** |
+
+**Z3**（`control/control.ts` 的 `opHex()` 前导零）仍然零覆盖，已登记 `T-0127`（补 `control/` 层最小测试）。
+
+### 6.3 新增两条变异 + 一条错 oracle 的证伪
+
+| 变异 | 语义 | 结果 |
+|---|---|---|
+| `M12_engine_config_voice_bool` | `sound:Voice` 少一步布尔化（引擎 raw 23695 = `v != 0`） | **1 条红**（`engine-config.test.ts`）。★这条变异**此前被测试挡着**：旧期望 `get(21293)===2` 与 raw 相反（T-0125），修掉后它才成为真守卫 |
+| `M13_ophex_padstart_removed` | 面板指令码去前导零 | 零覆盖（= 原 Z3，登记 T-0127） |
+
+### 6.4 闸门 E：`npm run mutate`（定向子集，实测 55.6 s）
+
+清单 `app/amayui-emulator/test/mutations.json`（13 条）；判据：
+
+- `expectCatch` 非空 ⇒ 跑那组文件，**至少 1 红**；全绿 ⇒ 闸门失败（"守卫丢了"，不是"测试少"）；
+- `knownGap` ⇒ 只记录，并在**被覆盖之后提醒翻牌**；
+- 每条跑完**自动还原并逐字节核对**（还原失败立刻抛）。
+
+实测输出：**caught 12 / known-gap 1**，`✅ 闸门 E 通过`。`--all` 是"发现模式"（每条跑全量 1085 例，约 1.5 min/条）。

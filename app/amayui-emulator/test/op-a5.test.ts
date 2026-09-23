@@ -38,12 +38,7 @@ function mk(native: NativeBridge = new StubNative(() => {}), input = new InputMa
 
 const A5 = [0x91, 0x92, 0x93, 0x94, 0x97, 0xd9, 0xad, 0x1ad, 0x1b1, 0x1bc, 0x1c9] as const;
 
-test('注册表棘轮：A5 的 11 条都已实现，且不在 ENGINE_INTERNAL_OPS', () => {
-  for (const op of A5) {
-    assert.ok(OPS.has(op) || NATIVE_OPS.has(op), `0x${op.toString(16)} 应已实现`);
-    assert.equal(ENGINE_INTERNAL_OPS.has(op), false, `0x${op.toString(16)} 不得留在 stub 表`);
-  }
-});
+// ★2026-09-23：`A5` 的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
 
 test('A5 0x93：清 effect_flags 0x800000 + 复位面板游标态 + toggle 12956/12957', () => {
   const { e, run } = mk();

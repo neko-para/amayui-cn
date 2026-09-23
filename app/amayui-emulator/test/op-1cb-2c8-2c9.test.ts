@@ -60,13 +60,7 @@ function mk(): { e: Engine; run: (op: number, args: BinArg[]) => void; inp: (op:
 // 注册表棘轮
 // ---------------------------------------------------------------------------
 
-test('注册表棘轮：0x1CB/0x2C8/0x2C9 都不再是任何形式的 stub', () => {
-  for (const op of [0x1cb, 0x2c8, 0x2c9]) {
-    assert.ok(OPS.has(op), `0x${op.toString(16)} 必须已实现（它回写操作数）`);
-    assert.ok(!ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 不应再是 engine-internal no-op`);
-    assert.ok(!NATIVE_OPS.has(op), `0x${op.toString(16)} 不应是 native stub`);
-  }
-});
+// ★2026-09-23：0x1CB/0x2C8/0x2C9 的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
 
 // ---------------------------------------------------------------------------
 // 0x1CB：op1 ← GetConfig("message:ReadTextSkip")

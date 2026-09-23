@@ -118,8 +118,11 @@ test('0x1D8：组内 ≤1 个元素 ⇒ 追加，op1 = (组号 << 24) | (新长�
   e.musicTable.groups = [[0]];
   step(0x1d8, [G(0x70801e), I(1), I(0x30003b2)]); // $3$AUTORUN.txt:68
   assert.deepEqual(e.musicTable.groups, [[0, 0x30003b2]]);
+  // ★2026-09-23 删除一条**纯字面量运算**的断言（`tickets/T-0125`）：
+  //   原来是 `assert.equal(0x1000001 & 0xffffff, 1, '低 24 位 = …')` —— 它不引用被测对象，
+  //   把 handler 整个改坏也照样绿。上一行 `gv(e, 0x70801e) === 0x1000001` 已经独立钉住了
+  //   "组号<<24 | 下标" 这个编码（含低 24 位语义）。
   assert.equal(gv(e, 0x70801e), 0x1000001, '★写进无人读取的 global 也必须有值（副作用）');
-  assert.equal(0x1000001 & 0xffffff, 1, '低 24 位 = 刚追加元素的下标（与 sub_48DB80 的直接下标自洽）');
 });
 
 test('0x1D8：组内 >1 ⇒ 从下标 1 起填第一个 0 槽，op1 = 槽下标；无洞 ⇒ 追加', () => {

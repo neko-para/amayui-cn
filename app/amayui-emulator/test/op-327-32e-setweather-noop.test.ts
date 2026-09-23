@@ -69,11 +69,8 @@ function script(opcode: number, argc: number): ScriptBinary {
   };
 }
 
-test('★SETWEATHER 族 5 条：都已注册进 ENGINE_INTERNAL_OPS', () => {
-  for (const { op } of FAMILY) {
-    assert.ok(ENGINE_INTERNAL_OPS.has(op), `0x${op.toString(16)} 必须在 ENGINE_INTERNAL_OPS（否则命中即 NotImplementedOp）`);
-  }
-});
+// ★2026-09-23：SETWEATHER 族的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）；
+//   本文件只保留**行为**用例（下面两条）。
 
 test('★SETWEATHER 族 5 条：带非平凡实参跑一步不抛错，且 ip 照常前进 1 条', async () => {
   for (const { op, argc, handler } of FAMILY) {

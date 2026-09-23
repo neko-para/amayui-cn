@@ -44,7 +44,17 @@ test('场景执行报告：产出 op 计数 / 模型快照 / 三张缺口清单'
   const c = report.snapshot.counts;
   assert.ok(c.drawItems > 0, '快照应有绘制项');
   assert.ok(c.drawableItems >= 0 && c.placeholderItems >= 0, '两个计数都应存在');
-  assert.equal(c.drawItems, c.drawableItems + c.placeholderItems, '空项 + 可绘制 = 总数');
+  // ★2026-09-23 补独立 oracle（`tickets/T-0125` / 变异实测 Z2）：原来这里**只有**下面那条恒等式，
+  //   而 `snapshot.ts` 就是 `placeholderItems: drawItems.length - drawable.length` —— 把 `drawable`
+  //   恒置空也照样绿（实测：全量 1078 例无一红）。恒等式保留作口径自检，但真正有判别力的是**冻结下限**：
+  //   这条路线（启动链 120k 步）实测 drawItems=32 / drawableItems=24 / placeholderItems=8。
+  assert.ok(c.drawItems >= 28, `绘制项应 >= 28（实测 32，实测值见本行注释）`);
+  assert.ok(c.drawableItems >= 20, '可绘制项应 >= 20（实测 24）—— 这是独立下限，不是 drawItems - placeholderItems');
+  assert.ok(
+    c.drawableItems > c.placeholderItems,
+    `可绘制项(${c.drawableItems}) 必须多于缺纹理项(${c.placeholderItems})：这条路线不该以缺纹理为主`,
+  );
+  assert.equal(c.drawItems, c.drawableItems + c.placeholderItems, '空项 + 可绘制 = 总数（口径自检）');
   assert.ok(snapshotText.includes('场景快照'), '应产出人可读快照文本');
 
   // ★闸门 A：这条路线确实会调用宿主没实现的 native（setLight / stringResourceId / unhandled …）

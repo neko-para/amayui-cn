@@ -1,0 +1,169 @@
+{
+ "_doc": [
+  "变异清单（闸门 E）—— 每条是**一处引擎语义破坏**，用来回答一个静态读码答不出的问题：",
+  "「这个语义被改坏时，**有测试会红吗**？」。见 tickets/T-0124/evidence/mutation-campaign.md（首次全量实测）。",
+  "",
+  "字段：id / 语义说明 / file+from+to（精确替换，必须在文件里唯一）/ expectCatch（应当抓到它的测试文件，相对 test/）/",
+  "      knownGap（已知零覆盖时写它的票号；闸门把它当**已登记的缺口**打印，并在它被覆盖后提醒翻牌）/ note",
+  "",
+  "★判据：expectCatch 非空 ⇒ 至少 1 个文件必须红（全绿 = 守卫丢了）；knownGap ⇒ 只记录。",
+  "★不许把 expectCatch 缩小来'消红'：它记的是**实测**抓到过它的文件（mutation-campaign.md 的原始数字）。"
+ ],
+ "mutations": [
+  {
+   "id": "M1_bits_dec_rotation",
+   "file": "src/vm/bits.ts",
+   "from": "return ror32(key ^ rol32(x, 11), 25) >>> 0;",
+   "to": "return ror32(key ^ rol32(x, 12), 25) >>> 0;",
+   "semantics": "int 池去混淆的旋转量 11→12（最广的一处：所有 global/local int 读写都经过它）",
+   "expectCatch": [
+    "op-147-2f2-region-hittest.test.ts",
+    "op-1cb-2c8-2c9.test.ts",
+    "engine-field-store.test.ts"
+   ],
+   "note": "全量实测 204 条红 / 61 个文件；这里取 3 个代表（够快且判别力明确）"
+  },
+  {
+   "id": "M2_bgr_to_rgb_removed",
+   "file": "src/vm/handlers/msgwin.ts",
+   "from": "fill: hex6(bgrToRgb(v(21664, 0xffffff))),",
+   "to": "fill: hex6(v(21664, 0xffffff)),",
+   "semantics": "T-0102 判据 4：角色名取色少翻一次字节序（期望 screen color = 脚本原值）",
+   "expectCatch": [
+    "text-style-snapshot.test.ts"
+   ],
+   "note": "全量实测 5 条真红（text-style-snapshot ×4 + adv-name-color-chain ×1）；此文件是 T1（真语料）"
+  },
+  {
+   "id": "M3_slot_imgid_cleared",
+   "file": "src/renderer/pixi/textureCache.ts",
+   "from": "    const n = this.#slotImgid.size;",
+   "to": "    const n = this.#slotImgid.size;\n    this.#slotImgid.clear();",
+   "semantics": "T-0102 白底根因：0x259 清槽记录时把 槽→imgid 表一起清掉（引擎 raw 25357-25374 只清记录表）",
+   "expectCatch": [
+    "clear-slot-records-keeps-bindings.test.ts"
+   ],
+   "note": "单点守卫"
+  },
+  {
+   "id": "M4_line_spacing_dropped",
+   "file": "src/text/layout.ts",
+   "from": "lineStartY += size + st.lineSpacing;",
+   "to": "lineStartY += size;",
+   "semantics": "T-0038：换行步进丢掉 Font+1380 行间距（注音会压到上一行）",
+   "expectCatch": [
+    "text-layout.test.ts"
+   ],
+   "note": "单点守卫"
+  },
+  {
+   "id": "M5_advance_uses_held",
+   "file": "src/vm/engine.ts",
+   "from": "    const mask = im.flushPending();\n    if (!panel.shown) return false;",
+   "to": "    const mask = im.flushHeld();\n    if (!panel.shown) return false;",
+   "semantics": "T-0027：等待推进泵把「按住态」当新按下（一次点击连翻多页、按住即每帧推进）",
+   "expectCatch": [
+    "adv-msgwin.test.ts"
+   ],
+   "note": "单点守卫（同文件两例）"
+  },
+  {
+   "id": "M6_key_edge_bit_dropped",
+   "file": "src/vm/input.ts",
+   "from": "    m |= this.keyEdge & 0x7f;",
+   "to": "    m |= this.keyEdge & 0x7c;",
+   "semantics": "键盘按下沿少并 bit0/bit1（键 0/1 不再进掩码）",
+   "expectCatch": [
+    "keyboard-mask.test.ts"
+   ],
+   "note": "单点守卫"
+  },
+  {
+   "id": "M7_draw_order_reversed",
+   "file": "src/renderer/pixi/presenter.ts",
+   "from": "    entries.sort((a, b) => a.key - b.key || a.order - b.order);",
+   "to": "    entries.sort((a, b) => b.key - a.key || a.order - b.order);",
+   "semantics": "★权威归并排序（presenter.ts 的 entries.sort）把层序反转 ⇒ 谁盖住谁反了",
+   "expectCatch": [
+    "render-draw-order.test.ts"
+   ],
+   "note": "★2026-09-23 订正：首次实测的 M7 改的是 `items` 的**预排序**，而那处只影响等键稳定性 ⇒ 那次是**语义等价**（全绿是假象）。改到权威排序上重测：新用例 2/2 红，而旧的 draw-item/blend/layer/transition 47 条仍然全绿 ⇒ Z1 是真缺口，已由 render-draw-order.test.ts 闭合"
+  },
+  {
+   "id": "M8_live2d_boxgrid_swapped",
+   "file": "src/live2d/deform.ts",
+   "from": "      const k = 2 * (r * cols + c);",
+   "to": "      const k = 2 * (c * (rowCount + 1) + r);",
+   "semantics": "Live2D 变形网格取点行列互换（几何错误）",
+   "expectCatch": [
+    "live2d-deform.test.ts"
+   ],
+   "note": "单点守卫；该文件的真资产用例是 T1（缺 raw-parts 时会 t.skip ⇒ 闸门会提示 skipped>0）"
+  },
+  {
+   "id": "M9_bgm_filename_off_by_one",
+   "file": "src/audio/audioEngine.ts",
+   "from": "return `BGM${String(Math.max(0, Math.floor(bgm))).padStart(3, '0')}.OGG`;",
+   "to": "return `BGM${String(Math.max(0, Math.floor(bgm)) + 1).padStart(3, '0')}.OGG`;",
+   "semantics": "BGM 统一 id → 文件名偏移 1（放错曲）",
+   "expectCatch": [
+    "audio-engine.test.ts"
+   ],
+   "note": "全量实测 6 条真红（audio-engine ×3 / audio-bgm-naming ×2 / audio-node-host ×1）"
+  },
+  {
+   "id": "M10_snapshot_drawable_always_empty",
+   "file": "src/renderer/scene/snapshot.ts",
+   "from": "  const drawable = drawItems.filter((d) => d.drawable);",
+   "to": "  const drawable: typeof drawItems = [];",
+   "semantics": "快照的「可绘制项」恒为空（派生量被改坏）",
+   "expectCatch": [
+    "scene-report.test.ts"
+   ],
+   "note": "★首次实测**零覆盖**（全量 1085 例无一红，只有我当时的看板伪影）；2026-09-23 由 T-0125 给 scene-report 补独立下限后闭合（该文件是 T1，15 s）"
+  },
+  {
+   "id": "M11_crc32_table_shift",
+   "file": "src/util/crc32.ts",
+   "from": "let v = (i & 0x80 ? ((i << 25) >>> 0) ^ 0x4c11db7 : (i << 25) >>> 0) >>> 0;",
+   "to": "let v = (i & 0x80 ? ((i << 24) >>> 0) ^ 0x4c11db7 : (i << 24) >>> 0) >>> 0;",
+   "semantics": "CRC32(MSB) 查表移位 25→24（表整个坏）",
+   "expectCatch": [
+    "engine-slot.test.ts"
+   ],
+   "note": "全量实测 3 条真红（engine-slot / gallery-bgm-list / keyboard-scenario-menu，都是 T1）。★save-data.test.ts:96 原来的自证断言抓不到它，2026-09-23 已换成 golden 0xfc891918"
+  },
+  {
+   "id": "M12_engine_config_voice_bool",
+   "file": "src/engineConfig.ts",
+   "from": "  { key: CFG.soundVoice, field: 21293, map: (v) => (v !== 0 ? 1 : 0), note: '语音开关（raw 23693-23695 `= v != 0` 写字节 85172 ⇒ 下标 21293）' },",
+   "to": "  { key: CFG.soundVoice, field: 21293, note: '语音开关（raw 23693-23695 `= v != 0` 写字节 85172 ⇒ 下标 21293）' },",
+   "semantics": "sound:Voice 少一步布尔化（引擎 raw 23695 是 `= v != 0`）⇒ `sound:Voice=2` 落成 2 而非 1，而消费者按 `== 1` 判 ⇒ 静默读成「关」",
+   "expectCatch": [
+    "engine-config.test.ts"
+   ],
+   "note": "2026-09-23 新增：这条变异**曾经被测试挡着**（旧期望 `get(21293)===2` 与 raw 相反，见 T-0125）。现在它必须红"
+  },
+  {
+   "id": "M13_ophex_padstart_removed",
+   "file": "control/control.ts",
+   "from": "  return `0x${opcode.toString(16).padStart(3, '0')}`;",
+   "to": "  return `0x${opcode.toString(16)}`;",
+   "semantics": "控制面板指令码去掉前导零（2026-09 用户实测把 0x0b5 看成 0x05b 的那个修复）",
+   "expectCatch": [],
+   "knownGap": "T-0127",
+   "note": "★首次实测**零覆盖**（全量 1078 例无一红）：`control/` 层没有任何测试。修在 T-0127（补 opHex 纯函数用例）；闸门会提醒翻牌"
+  },
+  {
+   "id": "M14_missing_texture_placeholder",
+   "file": "src/renderer/pixi/presenter.ts",
+   "from": "        return null;\n      }\n      const spr = cropSprite(tex, rect);",
+   "to": "        return cropSprite(Texture.WHITE, rect);\n      }\n      const spr = cropSprite(tex, rect);",
+   "semantics": "缺纹理时改回「画 1×1 白占位块」（引擎 raw 122952-122963 是报一行 + return 0，**没有替代纹理**）——这正是 T-0102 白底的形状",
+   "expectCatch": [
+    "missing-texture-skips-item.test.ts"
+   ],
+   "note": "2026-09-23 新增：它同时证明了「源码正则守卫」比行为守卫弱 —— 注入后**旧的正则断言仍然绿**（它只认 `#placeholder(it: Item)` 这个签名），只有新的 `itemSprite(...) === null` 行为断言会红"
+  }
+ ]
+}

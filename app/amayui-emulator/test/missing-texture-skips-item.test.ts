@@ -27,6 +27,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { Container, Texture } from 'pixi.js';
+import { ScenePresenter } from '../src/renderer/pixi/presenter.js';
+import { TextureCache } from '../src/renderer/pixi/textureCache.js';
+import { newSceneState } from '../src/renderer/scene/state.js';
+import { scConfigureDrawItem } from '../src/renderer/scene/ops.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,26 +68,30 @@ test('★T-0102 引擎棘轮：`DrawTexture` 对没有纹理的槽「报一行 +
   assert.ok(!body.includes('42456'), '★入队时**不校验**槽纹理（引擎把校验留到出画那一刻）');
 });
 
-test('★T-0102 emulator 棘轮：没有纹理时**跳过该项**，不许再有白占位块', () => {
-  const src = fs.readFileSync(PRESENTER, 'utf8');
-  // ★判"那个方法还在不在"要认**定义**（`#placeholder(it: Item)`），不认注释里提到的名字
-  assert.ok(
-    !/#placeholder\s*\(\s*it\s*:\s*Item\s*\)/.test(src),
-    '★`#placeholder`（1×1 白块）不得回来 —— 引擎没有替代纹理',
+test('★T-0102 行为守卫：槽没有纹理 ⇒ `itemSprite` 返回 null（整项不画，**不许有替代纹理**）', () => {
+  // ★2026-09-23 重写（`tickets/T-0125`）：原版是对 `presenter.ts` **源码文本**的正则棘轮
+  //   （认 `#placeholder(it: Item)` 这个签名、查日志文案、还要求分支注释里含 `raw 122952`）——
+  //   改名/重构即假红，而"把白占位块换个名字塞回来"可能假绿。现在断**行为**：
+  //   引擎的判据是「槽解析不到纹理 ⇒ 整笔不画」（raw 122952-122963 的 `return 0`），
+  //   emulator 的对应物就是 `ScenePresenter.itemSprite(...) === null`。
+  //
+  // ★自带**反面控制**：把同一个槽绑上图之后必须立刻画得出来 ⇒ 上一条"返回 null"不可能是恒真。
+  const root = new Container();
+  const cache = new TextureCache(() => {});
+  // 刻意**不**绑槽 3（引擎里 `CTexture* = 0` ⇒ DrawTexture 报错 + return 0，无替代纹理）
+  const presenter = new ScenePresenter(root, cache, Texture.WHITE, () => {}, 1280, 720);
+  const scene = newSceneState();
+  scConfigureDrawItem(scene, {
+    handle: 0x100, layer: 101000, tex: 3, srcX: 0, srcY: 0, srcW: 8, srcH: 8, dstX: 0, dstY: 0,
+  });
+  const it = [...scene.drawItems.values()][0]!;
+  assert.equal(
+    presenter.itemSprite(scene, it, 0, 'normal'),
+    null,
+    '★槽没有纹理 ⇒ 整项不画（不是白色占位块；引擎没有"替代纹理"这个概念）',
   );
-  assert.ok(
-    !/未绑定\s*→\s*占位块|→ 占位块/.test(src),
-    '日志不得再声称画了"占位块"（现在那一支是**跳过**）',
-  );
-
-  const at = src.indexOf('const { tex, imgid } = this.textures.resolve(it);');
-  assert.ok(at > 0, '`itemSprite` 里应有一处 `textures.resolve(it)`');
-  const seg = src.slice(at, at + 4200);
-  const branch = /if \(!tex\) \{([\s\S]*?)\n {6}\}/.exec(seg);
-  assert.ok(branch, '应有 `if (!tex) { … }` 这一支');
-  assert.ok(/return null;/.test(branch![1]!), '★没有纹理 ⇒ 必须 `return null`（= 按引擎语义跳过）');
-  assert.ok(
-    /raw 122952|DrawTexture 报错/.test(branch![1]!),
-    '该分支的注释要写明引擎依据（后来人否则会想"补个占位块更直观"）',
-  );
+  // 反面控制：绑上图 ⇒ 必须画得出来（否则"返回 null"可能是因为别的原因，这条守卫就没有判别力）
+  cache.slotTex.set(3, Texture.WHITE);
+  assert.ok(presenter.itemSprite(scene, it, 0, 'normal'), '绑上纹理后必须返回精灵（证明上一条不是恒真）');
 });
+

@@ -5,12 +5,14 @@
   "area": "emulator/test",
   "why": "T-0124 的全量审计确认：159 个测试文件里没有一个整文件无意义，但**断言级**有 >90 处不产生判别力。按\"改坏实现会不会红\"分三类，处置优先级不同：\n\n① **零断言假绿 5 处（最严重）**：回调里 `console.warn('[skip]…'); return;`，不接 `t`、不调 `t.skip()` ⇒ node:test 记 **pass**，**一条断言都没跑**。\n   位置：`test/live2d-moc.test.ts:62/183/188`、`test/live2d-deform.test.ts:246/288`（全仓 `t.skip(` 有 31 处，只有这 5 处是裸 return）。\n   `live2d-moc.test.ts:5` 的注释自称\"缺 ⇒ skip + 诊断（**不假装通过**）\"——**与行为相反**。\n\n② **恒真断言 ~10 处**：两侧同一表达式或纯字面量运算，**永不红**：\n   `op-2ed-and-bit-index.test.ts:112-122`（`instr()` 的定义就是 `argc:args.length`，见 `test/harness.ts:33`）、\n   `operand-plan.test.ts:523-527`（if/else 保证四桶之和 ≡ checked.length）、\n   `op-d0-wallclock.test.ts:94-97`（第二个 Engine 从未跑 0xD0，只 enc→dec 往返）、\n   `op-205-blank-extent.test.ts:75`（★且 Node 24 的 `assert.equal(NaN,NaN)` **不抛** ⇒ 注释声称的\"防 NaN\"也做不到）、\n   `music-table.test.ts:120`（`0x1000001 & 0xffffff` 纯字面量）、`script-ledger.test.ts:238`、\n   `save-data.test.ts:94`（`crc32MsbFirst(v) === msb` 同进程同函数自证；真 golden = `0xfc891918`）、\n   `slot-save-resume.test.ts:287-289`（JSON 往返自洽）、`config-keys.test.ts:68-77`（CFG vs 同一份手写常量表）。\n\n③ **错 oracle 1 处（会挡住正确修复）**：`engine-config.test.ts:160` 期望 `get(21293)===2`，而引擎 raw 23695 是 `= v37 != 0`（存 0/1）；\n   `src/engineConfig.ts:243-244` 的 note 自称\"布尔化\"却**没有 map**，`:236` 的 1384 同样无 map 且**测试零断言**。\n\n另有 **判据钉错地方**（断言源码文本/注释/日志文案/台账 prose）约 10 处，重构即假红、真坏可能不红：\n`missing-texture-skips-item.test.ts:64-85`（还要求注释里含 `raw 122952`）、`msg-text-range.test.ts:59-73`、\n`transition-render-wiring.test.ts:100-103`、`op-22a-22f-scene-xform.test.ts:206-209/253-263`、\n`op-1b2-text-buffer.test.ts:45-48`、`draw-string.test.ts:207-210`、`op-02-exit-minus11.test.ts:118-120`、\n`tool-paths.test.ts:98/110-113`、`audit-report-completeness.test.ts:66-90`。\n\n★纪律：**不许用\"删证据/降 status/删条目\"消红**；每处改动都要在 changes.md 写清\"反例实验（改什么会让它红，改什么不该红）\"，\n并且**只减不增**地报用例数前后对照。",
   "acceptance": [
-    "★已交付（由 T-0126 第 1 次变更落地）：5 处零断言假绿改成 `t.skip()`，并新增机械棘轮 `test/organization.test.ts` 的 R3（扫描全仓 test/*.test.ts，禁止「console.warn([skip]) + 裸 return 且无 t.skip」）",
-    "5 处零断言假绿改成 `t.skip()`（回调补 `t` 参数），并新增一条**机械棘轮**：扫描 `test/*.test.ts`，禁止「console.warn 跳过 + 裸 return 且无 t.skip」这种形态（防复发）",
-    "恒真断言逐条处置并在 changes.md 里给出**反例实验**（例：`save-data.test.ts:94` 换成 golden `0xfc891918` 后，把 `src/util/crc32.ts:33` 的 `i<<25` 改成 `i<<24` **必须红**）",
-    "修 `engine-config.test.ts:160` 的错 oracle：期望值改 1 **并**给 `src/engineConfig.ts:243-244` / `:236` 补 `map` + 新增 `get(1384)` 断言；验证方式是「只补 map 不改期望 ⇒ 该用例当场红」（证明它原本挡着修复）",
-    "判据钉错地方的那批：至少把 `missing-texture-skips-item.test.ts:64-85` 换成公开缝的行为断言（`presenter.itemSprite(...) === null` + 无子节点），保留其「引擎字面串」半边作为棘轮",
-    "收尾：`npm run verify` 全绿；三份台账 `--validate` 绿；changes.md 里写「清理前 / 清理后」的用例数与墙钟"
+    "★已交付（第 1 次变更，全文 tickets/T-0125/changes.md）：6 处恒真断言删/改（op-2ed 的 argc 自证、operand-plan 的分区恒等式、op-d0 的 enc/dec 往返、op-205 的\"自反\"、music-table 的纯字面量、save-data 的 CRC 自证 ⇒ golden 0xfc891918），每处都在 changes.md 里给了反例实验",
+    "★已交付：修掉 `engine-config.test.ts` 的**错 oracle**（期望 2 ↔ raw 23695 的 `!= 0`），并给 soundSE/soundVoice 补布尔化 map、给 messageRMouseEvent 补 raw 23722-23735 的带门映射（为此把 `ConfigFieldBinding.map` 放宽成 `number | null`）。**证伪已做**：只改 src 不改期望 ⇒ 该用例当场红（证明它原本挡着修复）",
+    "★已交付：补两处变异实测零覆盖 —— Z1 绘制项 z 序（新增 `test/render-draw-order.test.ts`，反转权威排序 ⇒ 2/2 红，而旧 47 条仍全绿）、Z2 快照 drawable（`scene-report.test.ts` 补独立下限，注入 `drawable=[]` ⇒ 红）",
+    "★已交付：5 处零断言假绿改成 `t.skip()`，并由 `test/organization.test.ts` 的 R3 棘轮防复发（见 T-0126 第 1 次变更）",
+    "剩余①：**镜像实现 ~15 处**（`OPS.has(op)` / `长度 === 21` 之类）合并成一张 `{op, class, ticket}` 数据表，而不是逐处删",
+    "剩余②：**判据钉错地方 ~10 处**换成公开缝上的行为断言 —— ★已做第一处：`missing-texture-skips-item.test.ts` 的源码正则改成 `itemSprite(...) === null` + 反面控制（并证伪：注入白占位块后**旧正则仍绿、新断言红**，该变异已收进闸门 E 的 M14）。其余优先：`transition-render-wiring.test.ts:100-103`（断言注释含\"类别 1\"）、`op-22a-22f-scene-xform.test.ts:206-209`（台账 prose）、`op-1b2`/`draw-string`/`op-02` 的日志文案判据",
+    "剩余③：`control/` 层零覆盖（Z3，`opHex` 前导零）见 T-0127；其余重复覆盖见 T-0129",
+    "★纪律：不许用\"删证据/降 status/删条目\"消红；每处改动都要在 changes.md 写清反例实验（改什么会让它红、改什么不该红）"
   ],
   "evidence": [
     {
@@ -45,7 +47,7 @@
     ]
   },
   "id": "T-0125",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-23",

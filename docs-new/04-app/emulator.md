@@ -15,7 +15,7 @@ state: live
 
 | 项 | 值 | 校验方式 |
 |---|---|---|
-| 测试 | **1085 条** node:test（1073 pass / 0 fail / 12 skip），分三档：**T0 120 文件 796 条**（默认档，5.8 s）+ **T1 40 文件 289 条**（真资产档，41.9 s） | `npm test`（T0）/ `npm run test:all`（全量）；组织法见 [`test-organization.md`](./test-organization.md) |
+| 测试 | **1082 条** node:test（1070 pass / 0 fail / 12 skip），分三档：**T0 122 文件 793 条**（默认档，~6 s）+ **T1 44 文件 289 条**（真资产档，22.2 s） | `npm test`（T0）/ `npm run test:all`（全量）；组织法见 [`test-organization.md`](./test-organization.md) |
 | 类型 | 3 个 tsconfig 全干净；`test/` 的类型检查由**闸门 D**（基线棘轮：131 条既有债、只许收敛不许增长）把住 | `npm run typecheck` / `npm run check:typecheck-test`（见 T-0126） |
 | 死写棘轮 | 基线 0 条 | `npm run check:dead-writes` |
 | 一条命令全绿 | `npm run verify` = typecheck + **check:typecheck-test**（闸门 D）+ **test:all** + dead-writes | — |
@@ -156,7 +156,7 @@ app/amayui-emulator/
 │  ├─ script/           bin.ts / alf / lzss / opcodes.ts
 │  └─ tools/            report / opInventory / diagText / gameStartChain / config1Chain / deadWrites / saveDump
 │                       scenarioBoot.ts（headless 启动装配）/ scenarioRun.ts（跑 Scenario）/ replay.ts（G3 回放）
-├─ test/                1085 条 / 160 文件（**分类与档位见 `test-organization.md`**；含棘轮：registry-tables /
+├─ test/                1082 条 / 166 文件（**分类与档位见 `test-organization.md`**；含棘轮：registry-tables /
 │                       game-start-chain / no-dead-writes / capability-* / organization /
 │                       script-ledger / frame-loop / frame-digest / scenario-replay / native-tap 宿主能力面）
 ├─ tools/               shot.cjs（G4 截图）/ record.cjs（G3 录制）/ boottime.cjs / scenarios/*.json
@@ -195,13 +195,15 @@ app/amayui-emulator/
 ## 7. 命令
 
 ```bash
-npm run verify         # ★提交前必跑：3×tsc + 闸门 D（test/ 类型债棘轮）+ **test:all**（1085 例）+ 死写棘轮
-npm test               # ★日常档：T0（120 文件 / 796 例 / ~6 s）—— 纯合成 + 纯函数 + 棘轮
-npm run test:corpus    # T1 真资产档（40 文件 / 289 例）：需要 install/ · raw/ · 真存档槽
+npm run verify         # ★提交前必跑：3×tsc + 闸门 D（test/ 类型债棘轮）+ **test:all**（1082 例）+ 死写棘轮（实测 ~32 s）
+npm test               # ★日常档：T0（122 文件 / 793 例 / ~6 s）—— 纯合成 + 纯函数 + 棘轮
+npm run test:corpus    # T1 真资产档（44 文件 / 289 例 / ~22 s）：需要 install/ · raw/ · 真存档槽
 npm run test:all       # T0+T1+T2 全量（= 旧 `npm test` 的口径）
 npm run test:list      # 打印三轴索引（tier / kind / subsystem）
 npm run test:org       # 只校验分类一致性（档位声明 ⟷ 机械证据）
-npm run typecheck:test # `test/` 的类型检查（★当前有 131 个历史错误待清，见 tickets/T-0126）
+npm run typecheck:test # `test/` 的完整类型检查（★当前有 131 个历史错误待清，见 tickets/T-0126）
+npm run check:typecheck-test # 闸门 D：上面那 131 条的基线棘轮（新增即红、只许收敛）
+npm run mutate         # 闸门 E：变异闸门 —— 每条"引擎语义破坏"必须有测试红（定向子集 ~1 min）
 npm run run            # 无界面跑（tsx src/run.ts）
 npm run report         # 场景执行报告（.tmp/<name>.{jsonl,json,txt}，txt 是人可读快照）
 npm run op:inventory -- --path start   # 链路 opcode 盘点（含"路径上未实现"清单）

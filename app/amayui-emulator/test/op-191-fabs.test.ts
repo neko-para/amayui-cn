@@ -56,8 +56,7 @@ async function fabs(op: number, v: number): Promise<number> {
 }
 
 test('★0x191：op1 = |op2|（浮点；此前三表全无 ⇒ 命中即硬停）', async () => {
-  assert.ok(OPS.has(0x191), '0x191 必须进已实现表');
-  assert.ok(!NATIVE_OPS.has(0x191) && !ENGINE_INTERNAL_OPS.has(0x191), '不得是 native 桩或 no-op');
+  // ★2026-09-23：0x191 的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
   assert.equal(await fabs(0x191, -3.5), 3.5);
   assert.equal(await fabs(0x191, 2.25), 2.25);
   assert.equal(await fabs(0x191, 0), 0);

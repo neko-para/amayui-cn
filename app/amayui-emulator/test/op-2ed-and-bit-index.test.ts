@@ -111,14 +111,9 @@ test('T-0098 ③ 反面：`0xFE` 合法值（0..0x1F）照写字段，不抛', a
   assert.equal(e.engineValues.get(ENGINE_FIELD.setKeyTotal), 12, '合法值写进 `Engine[517]`');
 });
 
-/** 操作数形状自检：本票四条指令的 argc 必须与 `scripts/asm/opcodes.json` 一致。 */
-test('T-0098：四条指令的 argc（0x2ED 1 / 0x2EE 1 / 0x107 2 / 0x10B 2 / 0xFE 1）', () => {
-  const cases: [number, BinArg[]][] = [
-    [0x2ed, [L(5)]],
-    [0x2ee, [im(1)]],
-    [0x107, [im(1), im(2)]],
-    [0x10b, [im(1), im(2)]],
-    [0xfe, [im(1)]],
-  ];
-  for (const [op, args] of cases) assert.equal(instr(op, args).argc, args.length, `0x${op.toString(16)} argc`);
-});
+// ★2026-09-23 删除一条**同义反复**（`tickets/T-0125`）：原来的
+//   `assert.equal(instr(op, args).argc, args.length)` 两侧是同一个表达式 —— `test/harness.ts` 的
+//   `instr()` 定义就是 `argc: args.length` ⇒ 换成任意 opcode、任意参数个数都永远绿。
+//   这四条指令的 argc 由两条**有独立 oracle** 的守卫覆盖：
+//   `test/opcode-arity.test.ts`（对照反编译体的 arity 槽）与 `test/operand-plan.test.ts`（对照
+//   `analysis/opcodes.json` 的声明 argc）。反例实验：把这里的 cases 换成任意值 ⇒ 原断言仍绿。

@@ -92,8 +92,10 @@ test('crc32MsbFirst：与标准值不同（引擎 sub_436D50 用的是另一张�
   const v = new TextEncoder().encode('123456789');
   const msb = crc32MsbFirst(v);
   assert.notEqual(msb, crc32(v));
-  // 同一输入必须稳定（这条锁住实现，防止以后手改表）
-  assert.equal(crc32MsbFirst(v), msb);
+  // ★2026-09-23 改（`tickets/T-0125`）：原版是 `assert.equal(crc32MsbFirst(v), msb)` —— 同一进程、
+  //   同一函数、同一个输入，**恒真**（把 `src/util/crc32.ts` 的 `i << 25` 改成 `i << 24` 也照样绿）。
+  //   改成**外部 golden**（`crc32MsbFirst("123456789")` 的标准 MSB-first 值），它才是真的锁住表。
+  assert.equal(msb, 0xfc891918, '★CRC32(MSB-first)("123456789") = 0xFC891918（独立 golden，不是自证）');
   assert.equal(crc32MsbFirst(new Uint8Array(0)), 0);
 });
 

@@ -8,7 +8,7 @@
 
 ## 定位与现状
 
-- **当前阶段**（2026-09 实测）：启动链 `SYSTEM4.BIN(0) → … → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 已跑通且**零未实现 opcode**；`npm run verify` 全绿（**1085 测试** + 3×tsc + 死写棘轮；测试分 T0/T1 两档，组织法见 `docs-new/04-app/test-organization.md`）。渲染壳（场景合成 / ADV 文本 / 音频 / 输入）、三闸门（意图丢弃 / 能力缺口 / 死写）、SAVE.DAT 读写与 overlay 保护全部接通。链路与产物的复核命令：`npm run op:inventory -- --path start`、`npm run shot -- --gamestart`、`npm run report`。
+- **当前阶段**（2026-09 实测）：启动链 `SYSTEM4.BIN(0) → … → LOGO → TITLE → CONFIG → GAMESTART → SN0000（序章正文）` 已跑通且**零未实现 opcode**；`npm run verify` 全绿（**1082 测试** + 3×tsc + 两道基线棘轮；测试分 T0/T1 两档，组织法见 `docs-new/04-app/test-organization.md`）。渲染壳（场景合成 / ADV 文本 / 音频 / 输入）、三闸门（意图丢弃 / 能力缺口 / 死写）、SAVE.DAT 读写与 overlay 保护全部接通。链路与产物的复核命令：`npm run op:inventory -- --path start`、`npm run shot -- --gamestart`、`npm run report`。
   架构总览见 `docs-new/04-app/emulator.md`；本文余下章节是**实现细节与事故复盘**（互补，不重复）。
   ★本行此前的"M0–M3 / `npm test` 12/12 / 停在消息循环"已过期（当时只跑到 TITLE）。
 - **第一里程碑（历史）**：在无任何界面层输入/输出的前提下让解释器执行启动链到 `src/TITLE.txt` 的执行点 —— ✅ 已达成（后续 M4+ 的界面/文本/音频/存档均已落地，见上）。

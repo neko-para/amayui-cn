@@ -74,7 +74,11 @@ test('★零回归：mode 0（= 随包默认）与改动前的纯算术逐字相
   for (const ch of ['天', 'A', '　', ' ', 'ｱ']) {
     assert.equal(advance(ch, 30, M0), advance(ch, 30), `${ch} 在 mode 0 下必须与改动前相同`);
     assert.equal(advance(ch, 30, { mode: 2 }), advance(ch, 30), 'mode != 1 一律走网格（引擎判据是 == 1）');
-    assert.equal(advance(ch, 30, M1).valueOf(), advance(ch, 30, M1), '自反（防 NaN）');
+    // ★2026-09-23 改（`tickets/T-0125`）：原版是 `assert.equal(f(x), f(x), '自反（防 NaN）')` ——
+    //   实测 node:test 的 `assert.equal(NaN, NaN)` **不抛**（官方对 NaN 特判）⇒ 连注释声称的
+    //   "防 NaN"都做不到，恒真。改成真正的有限性 + 正值判据（NaN/Infinity 都会红）。
+    const a1 = advance(ch, 30, M1);
+    assert.ok(Number.isFinite(a1) && a1 > 0, `${ch} 在 mode 1 下的推进必须是有限正数（实得 ${a1}）`);
   }
   // 排版层：同样的文本在 mode 0 / 未接线 / mode 2 下必须**完全相同**（深层相等）
   const text = 'あ　い　う　え';

@@ -37,8 +37,11 @@ import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js'
 const T_LOCAL = 0x9; // 出参：本地 int 槽
 
 /** 装一条 `0xD0` 进帧、注入时钟、真执行一次，返回读回的 op1（脚本可见值）。 */
-async function run(nowMs: number): Promise<{ got: number; kind: string }> {
-  const e = new Engine(new StubNative(() => {}), new InputManager());
+async function run(
+  nowMs: number,
+  opts: { engine?: Engine; afterLoad?: (e: Engine) => void } = {},
+): Promise<{ got: number; kind: string; engine: Engine }> {
+  const e = opts.engine ?? new Engine(new StubNative(() => {}), new InputManager());
   e.key = 0x12345678;
   const instr: BinInstruction = {
     opcode: 0xd0,
@@ -64,16 +67,16 @@ async function run(nowMs: number): Promise<{ got: number; kind: string }> {
     raw: new Uint8Array(0),
   };
   loadScriptIntoFrame(e.curScript(), sc, 'TEST.BIN');
+  // ★预置必须发生在**装载之后**：`loadScriptIntoFrame` 会 `locals.clear()` 重建局部池（引擎语义）
+  opts.afterLoad?.(e);
   e.nowMs = nowMs; // = 引擎 `timeGetTime()` 的注入点
   const t = await stepOnce(e);
-  return { got: dec(e.key, e.curScript().locals.int.get(0x50) ?? 0) | 0, kind: t.handlerKind };
+  return { got: dec(e.key, e.curScript().locals.int.get(0x50) ?? 0) | 0, kind: t.handlerKind, engine: e };
 }
 
-test('★0xD0：已真实现（在 OPS 里，且**不**在 no-op 表 / native 桩表里）', () => {
-  assert.ok(OPS.has(0xd0), '0xD0 必须是真实现（此前零注册 ⇒ 命中即 NotImplementedOp）');
-  assert.ok(!ENGINE_INTERNAL_OPS.has(0xd0), '不得注册进 no-op 表（体里有真实效果：写 op1）');
-  assert.ok(!NATIVE_OPS.has(0xd0), '纯 VM 侧读数（`timeGetTime()` 等价物 = `Engine.nowMs`），不经 NativeBridge');
-});
+// ★2026-09-23：本票的「注册表棘轮」已并入 `test/registry-classification.test.ts` 的**一张表**
+//   （`tickets/T-0129`：同一不变式在 8 个文件里各写一遍，改一处分类要改 9 个地方）。
+//   那条表同样能红，且会指出「原本该在哪一类」。
 
 test('★0xD0：注入 wallClock（`Engine.nowMs`）= 123456 ⇒ 读回 op1 = 123456', async () => {
   const { got, kind } = await run(123456);
@@ -89,12 +92,21 @@ test('0xD0：值随注入时钟变化（不是常量 / 不是静默 0）', async
   assert.notEqual((await run(7)).got, (await run(9)).got, '两次不同时钟必须给出不同结果（防"写死常量"）');
 });
 
-test('0xD0：argc = 1（体里 arity 槽 = 3 ⇒ `2*argc+1`）且只碰 op1', async () => {
-  const { got } = await run(42);
-  assert.equal(got, 42);
-  // 引擎体只调一次 `sub_42B4B0(_this, 1, …)` ⇒ 只写 op1；这里顺带核对"预置的旧值与本次无关"。
+test('0xD0：argc = 1（体里 arity 槽 = 3 ⇒ `2*argc+1`）且只写 op1（邻槽不动）', async () => {
+  // ★2026-09-23 重写（`tickets/T-0125`）：原版把「另一个引擎」的 `enc`→`dec` 往返当成"其它槽不受影响"
+  //   —— 那个引擎**从未跑过 0xD0**，是恒真（把 handler 改成写三个槽它也不会红）。
+  //   现在：**在真正要执行的那台引擎上**预置邻槽 0x51，真执行 0xD0，再断言邻槽原值。
+  //   反例实验：把 `op_wall_clock_ms` 改成同时写 0x51 ⇒ 本行必红。
   const e = new Engine(new StubNative(() => {}), new InputManager());
-  e.key = 0x12345678;
-  e.curScript().locals.int.set(0x51, enc(e.key, 0x9999));
-  assert.equal(dec(e.key, e.curScript().locals.int.get(0x51) ?? 0) | 0, 0x9999, '其它槽不受影响（口径对照）');
+  const { got, kind } = await run(42, {
+    engine: e,
+    afterLoad: (x) => x.curScript().locals.int.set(0x51, enc(x.key, 0x9999)),
+  });
+  assert.equal(kind, 'implemented');
+  assert.equal(got, 42, 'op1 = 墙钟');
+  assert.equal(
+    dec(e.key, e.curScript().locals.int.get(0x51) ?? 0) | 0,
+    0x9999,
+    '★邻槽 0x51 必须原值（引擎体只调一次 `sub_42B4B0(_this, 1, …)`）',
+  );
 });

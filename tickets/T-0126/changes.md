@@ -91,3 +91,55 @@
    （每条要求 ≥1 红；零红 = 覆盖空洞）。
 4. **T2 档从 0 起步**：真机（E4）目前由工具链承担，等 `T-0128` 把 `dbg:srv` 驱动脚本化后，T2 档才会有测试文件
    （`test/e4` 的选档逻辑已就位，现在选出来是 0 个文件）。
+
+---
+
+## 第 2 次变更（2026-09-23）：闸门 D / E 落地 + T1 拆进程并行
+
+### 1. 闸门 D（`test/` 的类型债）—— **已挂进 `verify`**
+
+131 条既有类型错误登记进 `test-typecheck.baseline.json`（`id → 次数`，**不含行号**），
+工具 `src/tools/typecheckTestBaseline.ts` + `npm run check:typecheck-test`：
+
+- **新增**（含"同 id 次数变多"）⇒ **红**；**减少** ⇒ 提示 `--recount` 收缩（棘轮只许收紧）；
+- `verify` = `typecheck && check:typecheck-test && test:all && check:dead-writes`；
+- **判别力实测**：注入 `const p: number = "x"` ⇒ `✗ 新增 1 条 … TS2322`；还原 ⇒ 绿。
+  ★并且它在**本次改动中真的抓到过一次**：`op-d0` 复制夹具缺 `ipTables` ⇒ 当场红，遂改为复用 `run()` 夹具。
+
+### 2. 闸门 E（变异闸门）—— `npm run mutate`
+
+清单 `test/mutations.json`（13 条），判据：`expectCatch` 非空 ⇒ 跑那组文件**至少 1 红**（全绿 = 守卫丢了）；
+`knownGap` ⇒ 只登记并在被覆盖后提醒翻牌；每条**自动还原并逐字节核对**。
+
+实测：**caught 12 / known-gap 1（`M13`→`T-0127`）**，`✅ 闸门 E 通过`，**55.6 s**（定向子集）。
+`--all` 是发现模式。★顺带修掉一个坑：裸 `node --test` 会把 `test/` 下的**基础设施**（`orgRules.ts`/`run.ts`…）
+当测试跑（默认发现给出 1092 ≠ 1086）⇒ 闸门**永远显式列文件**。
+
+### 3. T1 成本：`config1-chain` 拆成 5 个文件并行（**判据一字不改**）
+
+`config1-chain.test.ts` 原来在一个进程里**串行**跑 9 次 CONFIG1 全链路（单文件 59.2 s）。
+9 个变体的注入各不相同 ⇒ **没有可 memo 的共享状态**；但 node:test 按文件分进程 ⇒ 拆开即可并行：
+
+| 文件 | 全链路次数 |
+|---|---|
+| `config1-chain.test.ts`（8 条共享 `chain()`） | 1 |
+| `config1-chain-fontpicker-scroll.test.ts` | 2 |
+| `config1-chain-advreturn.test.ts` | 2 |
+| `config1-chain-advreturn-seed.test.ts` | 3 |
+| `config1-chain-advreturn-real.test.ts` | 1 |
+
+实测 **59.2 s → 15.2 s**（5 文件并行）；**T1 档 41.9 s → 22.2 s**；`verify` **51.4 s → 31.3 s**。
+另给 `adv-name-color-chain.test.ts` 加**按键 memo**（3 次链路有 2 次 opts 相同）：**21.9 s → 7.9 s**。
+
+★**retarget 申报**：`T-0102`/`T-0115`/`T-0124`/`T-0126` 四张票的 evidence 锚在
+`test/config1-chain.test.ts` 的 `★T-0102 判决实验` —— 该用例随拆分迁到
+`test/config1-chain-advreturn-seed.test.ts` ⇒ 按纪律 **retarget 到新文件**（断言未改，不是删证据）。
+
+### 4. 最终数字（2026-09-23 本机）
+
+| 口径 | 文件 | 用例 | 墙钟 |
+|---|---|---|---|
+| 旧 `npm test`（无档位） | 159 | 1078 | 108.0 s（同轮有负载）/ 66.6 s（半空闲） |
+| **新 `npm test`（T0）** | 121 | 797 | **5.8 s** |
+| `npm run test:corpus`（T1） | 44 | 289 | **22.2 s** |
+| **`npm run verify`（typecheck + D + test:all + 死写）** | 165 | **1086** | **31.3 s** |

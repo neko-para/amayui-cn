@@ -44,13 +44,7 @@ function mk(native: NativeBridge = new StubNative(() => {})) {
 const A4 = [0x1fc, 0x1fe, 0x207, 0x20e, 0x224, 0x229, 0x238, 0x242, 0x256, 0x258, 0x321, 0x32a, 0x32d];
 const A6 = [0x14b, 0x14c, 0x14d];
 
-test('注册表棘轮：A6（3 条）与 A4（13 条）都落在 OPS，且不在 ENGINE_INTERNAL_OPS', () => {
-  for (const op of [...A6, ...A4]) {
-    assert.ok(OPS.has(op), `0x${op.toString(16)} 应已实现（OPS）`);
-    assert.equal(ENGINE_INTERNAL_OPS.has(op), false, `0x${op.toString(16)} 不得留在 stub 表`);
-    assert.ok(!NATIVE_OPS.has(op), `0x${op.toString(16)} 不该同时在 NATIVE_OPS`);
-  }
-});
+// ★2026-09-23：`A6`/`A4` 的注册表棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
 
 // ---------------------------------------------------------------------------
 // A6：AGERC 模块接口
