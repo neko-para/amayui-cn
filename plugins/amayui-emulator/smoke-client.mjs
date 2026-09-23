@@ -819,5 +819,25 @@ check(code.indexOf('amayui-emulator-viewport') >= 0, '画面框容器 id = amayu
 check(code.indexOf("display:'none'") < 0 && code.indexOf('display: \'none\'') < 0, '源码里没有 display:none（收起靠 visibility，避免页面被挂起）')
 check(code.indexOf('visibility') >= 0, '收起用的是 visibility（只影响绘制，不挂起页面）')
 
+// ================================================================
+// [19] ★布局贴合（实测几何，不是猜常量）
+// ================================================================
+// 背景（2026-09-23 用户实测两条）：① 画面框与浮窗面板之间**悬空一段**（旧实现用常量
+// `CHROME_H + LIST_H` 假想面板高度，与实测差 26px）；② 点「放大」后**画面框压住模态自己的
+// 标题栏与实例行**（旧实现按常量 `MODAL_PAD + CHROME_H` 从模态**内部**起画，而模态实测高 98）。
+// 修法 = 量真实边界（`useChromeSizes` 的 ResizeObserver）⇒ 这两条棘轮钉住"别再退回猜常量"。
+section('[19] ★布局贴合：画面框按 chrome 的实测边界摆（不再猜常量）')
+check(code.indexOf('ResizeObserver') >= 0 && code.indexOf('new R(measure)') >= 0,
+  '★用 ResizeObserver 量 chrome 的真实尺寸（而不是只用常量算）')
+check(code.indexOf('chrome.panelH') >= 0,
+  '★展开态：画面框的位置用了**实测面板高**（`chrome.panelH`），不是只用 `CHROME_H + LIST_H` 猜')
+check(/top\s*=\s*oy\s*\+\s*bb\.h/.test(code),
+  '★模态：画面框排在模态**实测盒子的正下方**（`oy + bb.h`，不是从模态内部按常量起画）')
+check(code.indexOf('modalX') >= 0 && code.indexOf('modalY') >= 0,
+  '★模态位置也来自实测（`modalX`/`modalY`）—— 换行/告警条改变模态高度时画面框会跟着让位')
+// 反向棘轮：画面框的位置**不许**再只用那两个常量算出来（老 bug 的写法）。
+check(!/left\s*=\s*o\.x\s*\+\s*MODAL_PAD\s*\+\s*MODAL_LIST_W/.test(code),
+  '反向棘轮：没有"模态里按常量偏移摆放画面框"的老写法（`o.x + MODAL_PAD + MODAL_LIST_W`）')
+
 console.log('\n' + (fail.length ? '✗ 失败 ' + fail.length + ' 项：' + fail.join(' / ') : '✓ 全部通过') + '\n')
 process.exit(fail.length ? 1 : 0)

@@ -680,7 +680,8 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
       await run(30);
     }
     snap('滚到底');
-    // 左侧分类列表第 2 项的中心（190×26 的贴片画在 (24, 106+50i)）
+    // 左侧分类列表第 2 项的中心：贴片画在 `(24, 106+50i)`、190×26 ⇒ i=1 的中心 y=169。
+    // ★实测订正见下面「第 5 项」那段的注释（真命中带 `y = 100+50i .. 149+50i`，比 26 高的贴片高）。
     input.setCursor(120, 156);
     await run(60);
     input.pressMouse(0);
@@ -708,7 +709,15 @@ export async function runConfig1Chain(opt: ChainOptions = {}): Promise<ChainResu
     const win9Fills: string[] = [];
     const liveFills: string[] = [];
     const rowFills = new Set<string>();
-    // 左侧分类列表第 5 项的中心（190×26 贴片画在 (24, 106+50i) ⇒ 第 5 项 y = 306）
+    // 左侧分类列表第 5 项（角色设定）的中心：贴片画在 `(24, 106+50i)`、尺寸 190×26 ⇒ i=4 的中心 y=319。
+    //
+    // ★**实测订正**（`tickets/T-0141`，2026-09-23；x=120 逐 y 扫、每次读全局 `12721e`）：
+    //   真实的**命中带**是 `y = 100+50i .. 149+50i`（每项**整 50 高**、无缝隙），比上面那个 26 高的
+    //   贴片**高**（贴片只是绘制矩形，不是命中矩形）。所以：
+    //   * 本文件里用到的那几个 y（106 / 156 / 306 / 319 …）**都落在正确项内**，实测 6/6 命中正确分类；
+    //   * 反过来 `y = 150` 已经不是第 1 项而是第 2 项了 ⇒ **别把绘制矩形当命中矩形**去推算边界；
+    //   * 分类 ↔ 脚本：`src/CONFIG.txt:51` 判 `12721e == 4` ⇒ 只有 **i=4（角色设定）** call-script
+    //     CONFIG2，**i=0..3 与 i=5 全部是 CONFIG1**（所以"点 ADV 设定 ⇒ 进 CONFIG2"是错的）。
     input.setCursor(120, 306);
     await run(60);
     input.pressMouse(0);

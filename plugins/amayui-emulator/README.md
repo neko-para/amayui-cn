@@ -200,6 +200,50 @@ node --import tsx src/web/host.ts --instance dbg-a --port 0
   `实例 <id> 已在运行 pid=… port=…`（不静默抢 overlay/log）。要用新实例就换个 id。
 * 想让实例常驻：`--idle-sec 0`，并在自己的终端里保持它（或交给 agent 的会话管）。
 
+### 让 agent 不依赖人：`--attach-headless`（`tickets/T-0140`）
+
+```bash
+cd app/amayui-emulator
+# 宿主自己附一个**隐藏的渲染页**（哑窗，show:false）
+node --import tsx src/web/host.ts --instance dbg-a --port 0 --attach-headless
+```
+
+web 形态下 **VM 跑在页面里** ⇒ 没有渲染页附着的实例，`/health` 正常但 agent 的 `debug-query`
+**必然 503**。开这个开关之后，实例**不需要人打开面板**就能被 agent 直接驱动：
+
+```bash
+curl -s -X POST http://127.0.0.1:3080/dsh-emulator/dbg-a/api/debug-query \
+     -H 'content-type: application/json' -d '{"args":["move 640 360"]}'
+curl -s -X POST http://127.0.0.1:3080/dsh-emulator/dbg-a/api/debug-query \
+     -H 'content-type: application/json' -d '{"args":["capture"]}' | jq -r .png | base64 -d > /tmp/a.png
+```
+
+缺省**关**（起一个 Electron 渲染进程是要付代价的）。也可用 `AMAYUI_ATTACH_HEADLESS=1`。
+宿主的**静态产物**必须已构建（见下面「排障」）；缺了它无头页打开是白页，`capture` 会超时。
+
+## 排障
+
+* **面板里只有 `{"error":"not found: index.html"}`** ⇒ 被观察实例的 **web 产物没构建**
+  （`app/amayui-emulator/dist/web/` 整个目录缺失；`dist/` 在 `.gitignore` 里，不会自愈）。修法：
+
+  ```bash
+  cd app/amayui-emulator && node build-electron.mjs
+  ```
+
+  宿主启动时会在 stdout 打一条 `⚠ web 产物缺失（index.html / bridge.js / renderer.js）` 的告警，
+  含产物**绝对路径**与上面这条命令；`GET /` 的 404 正文里也带 `reason`/`distDir`/`fix` 三个字段
+  （`tickets/T-0143`）。**插件的反向代理只是原样透传**，所以这句报错来自实例宿主、不是插件。
+
+* **`debug-query` 回 503「没有渲染页」** ⇒ 这个实例没有任何页面附着（web 形态下没有页面就没有 VM）。
+  开 `--attach-headless`，或在面板里选中它让 iframe 挂上去。
+
+* **同一个实例被两个页面附着** ⇒ 就是**两个 VM** 抢同一份 overlay/log。宿主会打
+  `⚠ 第二渲染者：实例 <id> 现在有 N 个**外部**渲染页…`，`GET /health` 里也有
+  `viewers`/`viewersWarn` 可机读判断；面板侧也会在 `viewers > 1` 时告警。**刷新页面**时新旧 SSE
+  会短暂并存，所以策略是"允许 + 显著告警"而不是拒绝（拒了会把正常刷新打成故障）。
+  `renderer-status` 的日志形如 `[web] status obs=#<观察者序号> frames=<N> {…}`：多页面时
+  **按 `obs` 拆开**才能看出各自有没有回零（注册表心跳里的 `frames` 是"最后一个上报者"的值）。
+
 ## 安装 / 重启边界
 
 ```bash
@@ -245,6 +289,25 @@ dsh --profile web --dump-config | grep -A2 amayui-emulator-view
 * 插件**不持有子进程**，所以卸载时没有需要清理的钩子（`T-0135` 的 `SIGTERM` 收尾随之删除）。
 
 ## 变更历史
+
+* **`T-0143`**：**静态产物缺失不再只说 `not found`**。宿主 `listen()` 成功后自检
+  `dist/web/{index.html,bridge.js,renderer.js}`，缺了就打印含**绝对产物目录**与
+  `cd app/amayui-emulator && node build-electron.mjs` 的告警（**不阻止启动**：实例本身照常
+  `/health` 正常）；`GET /` 的 404 正文增 `reason`/`distDir`/`fix` 三个字段（原 `error` 形状不变）。
+  新增 CLI `--dist-dir`（守卫测试据此指向临时目录）。守卫 `test/host-dist-assets.test.ts`：
+  缺产物 ⇒ 告警 + 404 正文三字段 + `/health` 仍 ok；产物齐 ⇒ **不误报** + `GET /` 200 `text/html`。
+
+* **`T-0140`**：**宿主可自持无头渲染页**。`--attach-headless`（或 env `AMAYUI_ATTACH_HEADLESS=1`，
+  缺省关）在 `listen()` 成功后 spawn `tools/attach-headless.cjs` —— 一个隐藏 Electron 哑窗
+  （`show:false` + 三个 `disable-*-throttling/backgrounding` + `--no-sandbox`）加载实例根 URL ⇒
+  **agent 不需要人打开面板**就能 `move`/`capture`（web 形态下没有页面就没有 VM，否则 `debug-query`
+  必然 503）。宿主 `close()`/`detachHeadless()`/`process.on('exit')` 三条路径都会收掉它。
+  **第二渲染者防护**（策略 = **允许 + 显著告警**，不拒绝：浏览器刷新时新旧 SSE 会短暂并存，
+  硬拒会把正常刷新打成故障）：日志 `⚠ 第二渲染者：… N 个**外部**渲染页…`（自持的无头页不计入）、
+  `GET /health` 增 `viewers`（活 SSE 数）与 `viewersWarn`。顺带一条诊断改进：
+  `[web] status obs=#<观察者序号> frames=<N> {…}` —— 宿主在 SSE 首帧下发序号、`webBridge` 在
+  `renderer-status` 里回带，多页面时**按来源拆开**才看得出各自有没有回零（此前 `frames` 被
+  `slice(0,200)` 截掉、且两套计数器交错，害得 `T-0138` 把 `402→35` 误判成重启）。
 
 * **`T-0138`**（P0 修复）：**单一 iframe + 观察者数告警**。三种形态从"三个 JSX 分支各挂一个同 `src`
   的 iframe"改成**全树唯一一个 iframe**（无 `key`，`src` 只在换实例时变；源码里

@@ -199,7 +199,11 @@ function harnessHtml() {
     '};',
     'window.__state = function () {',
     '  var q = function (sel) { return !!document.querySelector(sel); };',
-    '  var box = document.getElementById("amayui-emulator-viewbox");',
+    // ★id 是 `amayui-emulator-viewport`（`T-0138` 把承载唯一 iframe 的容器从旧名 `-viewbox`
+    //   改成了承担定位/可见性的 `-viewport`）—— 这里**必须**跟着改，否则 `viewbox` 恒为 null、
+    //   而依赖它的断言（画面框 640×360）会**静默空转**（`!!null === false` 直接红，或者被
+    //   `s2.viewbox &&` 短路成假过）。本文件在 2026-09-23 就是带着这个 stale id 的。
+    '  var box = document.getElementById("amayui-emulator-viewport");',
     '  var r = box ? box.getBoundingClientRect() : null;',
     '  var pill = document.getElementById("amayui-emulator-pill");',
     '  var pr = pill ? pill.getBoundingClientRect() : null;',
@@ -217,7 +221,7 @@ function harnessHtml() {
     '    pill: q("#amayui-emulator-pill"),',
     '    panel: q("#amayui-emulator-panel"),',
     '    modal: q("#amayui-emulator-modal"),',
-    '    iframe: q("#amayui-emulator-viewbox iframe"),',
+    '    iframe: q("#amayui-emulator-viewport iframe"),',
     '    viewbox: r ? { w: Math.round(r.width), h: Math.round(r.height), cw: box.clientWidth, ch: box.clientHeight, x: Math.round(r.left), y: Math.round(r.top) } : null,',
     '    pillRect: pr ? { x: Math.round(pr.left), y: Math.round(pr.top), w: Math.round(pr.width), h: Math.round(pr.height) } : null,',
     '    panelRect: wr ? { x: Math.round(wr.left), y: Math.round(wr.top), w: Math.round(wr.width), h: Math.round(wr.height) } : null,',
@@ -325,6 +329,9 @@ function writeHarness() {
 
     // ---- 等挂载 ----
     const js = (code) => win.webContents.executeJavaScript(code, true);
+    // ★临时诊断：这一页到底有没有跑内联脚本、有没有 JS 异常（`T-0138` 之后本文件曾整页失败过）。
+    const boot = await js('({ url: location.href, hasState: typeof window.__state, hasAll: typeof window.__all, errs: window.__errors || null, keys: Object.keys(window).filter(function (k) { return k.indexOf("__") === 0; }).sort() })').catch((e) => ({ probeError: String(e && e.message) }));
+    console.log('[float] 载入后探针 = ' + JSON.stringify(boot));
     let state = null;
     for (let i = 0; i < 160; i++) {
       state = await js('window.__state ? window.__state() : null').catch(() => null);

@@ -81,6 +81,16 @@ export class WebBridge {
   /** channel → 订阅者集合（`onX` 的注册表）。 */
   readonly #listeners = new Map<string, Set<(value: unknown) => void>>();
   #es: EventSourceLike | null = null;
+  /**
+   * 本页面在**宿主**那边的观察者序号（`tickets/T-0140`）：宿主在 SSE 首帧用 `observer` 通道下发。
+   *
+   * ★为什么页面要记它：`renderer-status` 原本无法归因 —— 两个页面附着同一实例时，两套 `frames`
+   *   计数器交错写进宿主日志，看起来就像"一个 VM 的 frames 回落"（`T-0138` 实跑踩过）。
+   *   带上序号后每条状态都能按来源拆开看。
+   */
+  #observerId: number | null = null;
+  /** 宿主进程的 `startedAt`（随 `observer` 一起下发）。宿主重启 ⇒ 它变了 ⇒ 序号要重新认领。 */
+  #observerHost: number | null = null;
 
   constructor(opts: WebBridgeOptions = {}) {
     this.#base = (opts.base ?? '/dsh-emulator/api').replace(/\/$/, '');
@@ -191,6 +201,19 @@ export class WebBridge {
       return;
     }
     const channel = typeof o.channel === 'string' ? o.channel : '';
+    // ★观察者序号（`T-0140`）：宿主在 SSE 首帧下发，**不进订阅表**（没有业务订阅者）。
+    //   宿主重启后序号会从头再发 ⇒ 用它带来的 `startedAt` 判断"是不是同一个宿主"，避免旧序号留用。
+    if (channel === 'observer') {
+      const p = (Array.isArray(o.args) ? o.args[0] : null) as { id?: unknown; hostStartedAt?: unknown } | null;
+      if (p && typeof p.id === 'number') {
+        const host = typeof p.hostStartedAt === 'number' ? p.hostStartedAt : null;
+        if (this.#observerHost !== null && host !== null && this.#observerHost !== host) this.#observerId = null;
+        this.#observerHost = host;
+        this.#observerId = p.id;
+        this.#log(`[web] 观察者序号 #${p.id}（宿主 startedAt=${host ?? '?'}）`);
+      }
+      return;
+    }
     const set = this.#listeners.get(channel);
     if (!set || set.size === 0) return;
     const value = Array.isArray(o.args) ? o.args[0] : undefined;
@@ -277,7 +300,13 @@ export class WebBridge {
       },
       appendTraceLine: (line: string) => bridge.#send('append-trace-line', line),
       appendReplayLine: (line: string) => bridge.#send('append-replay-line', line),
-      sendRendererStatus: (s: unknown) => bridge.#send('renderer-status', s),
+      sendRendererStatus: (s: unknown) => {
+        // 附上观察者序号（`T-0140`）：宿主据此把每条状态归因到具体页面。`s` 是对象时浅拷贝加一个字段，
+        // 非对象（不该发生）就原样透传 —— 这条通道**绝不允许**因为加诊断字段而把状态本身弄丢。
+        const payload =
+          s && typeof s === 'object' && !Array.isArray(s) ? { ...(s as object), observer: bridge.#observerId } : s;
+        return bridge.#send('renderer-status', payload);
+      },
       sendDebugQueryResult: (payload: unknown) => bridge.#send('renderer-debug-query-result', payload),
       sendBreakPaused: (payload: unknown) => bridge.#send('renderer-break-paused', payload),
       sendBreakList: (payload: unknown) => bridge.#send('renderer-break-list', payload),

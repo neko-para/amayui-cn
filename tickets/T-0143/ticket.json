@@ -1,0 +1,82 @@
+{
+  "title": "emulator web 宿主：缺构建产物（dist/web 被删/没建）时只说 `not found: index.html`，指不出「你没构建」",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/hosts",
+  "why": "用户实测（2026-09-23）：「dsh 嵌入插件似乎坏掉了，提示的 {\"error\":\"not found: index.html\"}」。\n\n**真因**：`app/amayui-emulator/dist/web/` 整个目录**不在磁盘上**（`dist/` 被 `app/amayui-emulator/.gitignore` 全量忽略 ⇒ 没有任何工具会替它恢复；磁盘上只剩 `run.js`/`opcodes.js` 与 `arch`/`control`/`electron`/`renderer`/`script`/`tsc`/`util`/`vm`）。\nweb 宿主对 `GET /` 固定去读 `<distDir>/index.html`，文件不在 ⇒ 走 `serveStatic` 的 catch ⇒ 404 `{\"error\":\"not found: index.html\"}`。插件反向代理原样透传 ⇒ 在 GUI 里看到的就是这一句。\n\n**为什么这是缺陷而不是「自己没构建」**：这条报错把「产物缺失」和「路径写错/请求了一个不存在的资源」压成同一个 404，且文案里既没有 `distDir` 的**绝对路径**、也没有「用哪条命令构建」的提示。后果是排障方向被完全带偏——第一反应会是查插件路由/反向代理/端口，而真因在三层之外的构建产物上（本次就是这么绕了一圈）。\n修好只需一条命令：`cd app/amayui-emulator && node build-electron.mjs`（产出 `dist/web/{bridge.js,renderer.js,index.html}`；本次实测 bridge.js 14679B / renderer.js 2637356B / index.html 1401B，经真插件路由 `GET /dsh-emulator/<id>/` 返回 200/1401B）。",
+  "acceptance": [
+    "【启动自检】`createWebHost`（或 CLI 入口）在 `listen()` 时检查 `<distDir>/index.html` 是否存在；缺失则**在 stdout 打一条显著的告警**，含：绝对 `distDir`、缺失的具体文件、**可照抄的构建命令**（`cd app/amayui-emulator && node build-electron.mjs`）——但不阻止启动（宿主仍然要能起、能应答 `/health`、能进注册表，否则会连带把「实例活着」这件事也藏起来）",
+    "【错误可指向】静态产物缺失时 `GET /`（`index.html`）的 404 响应体里带上**机器可读的原因**：例如 `{ error:\"not found: index.html\", reason:\"web 产物未构建\", distDir:\"<绝对路径>\", missing:[\"index.html\"], fix:\"cd app/amayui-emulator && node build-electron.mjs\" }`；不得只留 `not found: <rel>`",
+    "【插件侧透传这个提示】DSH 插件（`plugins/amayui-emulator/lib/index.js`）在代理到实例的静态路径时保持原样透传（这条已经成立：它原样转发，不需要改写）——但要在插件 README 的排障节写清「看到 `not found: index.html` ⇒ 先跑构建」",
+    "【守卫】新增/扩展一个 node:test 用例：用**指向空目录的 `distDir`** 造宿主 ⇒ 断言 `GET /` 的 404 响应体里含 `distDir` 与构建命令（`build-electron.mjs`）；再指回真 `dist/web` ⇒ 断言 `GET /` 是 200 且 content-type 为 `text/html`。用例必须能在 `dist/web` 不存在时也**跑得通**（不能靠「本机恰好有产物」而通过）",
+    "【可复核证据】手工复现一次「把 `dist/web` 改名 ⇒ 起宿主 ⇒ 看告警与 404 正文 ⇒ 改回 ⇒ 200」四步，原始输出归档到本票 `evidence/`",
+    "【不改】宿主的既有语义（注册表、心跳、`--idle-sec`、`/health`、`/events`、`/api/*`、静态路径逃逸守卫）与插件路由语义"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "not found: ${rel}",
+      "note": "本次用户看到的报错就是这一行发出的（静态产物读不到时的兜底 404）；缺的是「为什么读不到」。★本票已修：同处现在会对 index.html/bridge.js/renderer.js 额外带 reason/distDir/fix 三个字段",
+      "line": 870
+    },
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "web 产物缺失",
+      "note": "本票新增的启动自检告警（含绝对产物目录与构建命令）——缺产物时**不再静默**",
+      "line": 846
+    },
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "path.join(opts.repoRoot, 'app', 'amayui-emulator', 'dist', 'web')",
+      "note": "静态产物目录的落点（缺省 <repoRoot>/app/amayui-emulator/dist/web）——告警与 404 正文都要把它打出来",
+      "line": 256
+    },
+    {
+      "file": "app/amayui-emulator/build-electron.mjs",
+      "anchor": "outfile: p('dist', 'web', 'bridge.js')",
+      "note": "唯一产出 dist/web 的构建入口（本次修好用的就是它：node build-electron.mjs）",
+      "line": 60
+    },
+    {
+      "file": "app/amayui-emulator/.gitignore",
+      "anchor": "dist/",
+      "note": "为什么不会自愈：整个 dist/ 被忽略 ⇒ 产物缺失只能靠人重跑构建",
+      "line": 2
+    },
+    {
+      "file": "app/amayui-emulator/test/host-dist-assets.test.ts",
+      "anchor": "缺 web 产物",
+      "note": "本票的守卫用例：空 distDir ⇒ 启动告警 + 404 三字段；真产物 ⇒ 不误报 + 200 text/html",
+      "line": 92
+    }
+  ],
+  "links": {
+    "docs": [
+      "tickets/T-0136/notes.md"
+    ],
+    "analysis": [],
+    "tickets": [
+      "T-0135",
+      "T-0136",
+      "T-0138"
+    ]
+  },
+  "id": "T-0143",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— 启动自检 + 404 带 reason/distDir/fix + CLI --dist-dir；守卫 2/2 pass（不依赖本机 dist/）；README 增排障节"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/host-dist-assets.test.ts",
+    "app/amayui-emulator/test/host-dist-assets.test.ts#缺 web 产物"
+  ]
+}

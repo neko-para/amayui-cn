@@ -43,12 +43,22 @@
     ]
   },
   "id": "T-0140",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— --attach-headless 端到端取证：无面板下 move/capture 全成功（1280x720 真标题画面，evidence/headless-agent-capture.png）；第二渲染者策略=允许+显著告警（日志 + /health.viewers/viewersWarn 实测 1→2→1）；观察者序号让 frames 可按来源归因"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/src/web/host.ts#attachHeadless",
+    "app/amayui-emulator/tools/attach-headless.cjs",
+    "plugins/amayui-emulator/float-e2e.cjs#每个观察者自己的 frames 计数器单调不减"
   ]
 }

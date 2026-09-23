@@ -14,15 +14,26 @@
   "evidence": [
     {
       "file": "app/amayui-emulator/src/tools/config1Chain.ts",
-      "anchor": "左侧分类列表第 2 项的中心",
-      "note": "仓库里已验证的贴片口径（(24, 106+50i)，190x26）—— 本票核查的就是它与实测是否一致",
-      "line": 683
+      "anchor": "真实的**命中带**是",
+      "note": "本票实测订正的那条注释：贴片(190x26)是**绘制**矩形，真实**命中**带是整 50 高（100+50i .. 149+50i）⇒ 边界不能按贴片推，且 y=150 已是第 2 项",
+      "line": 715
     },
     {
-      "file": "tickets/T-0138/evidence/iframe-reload-forensics.txt",
-      "anchor": "★完整一条**重引导链**",
-      "note": "当时那条重引导链的原始取证：它说明这次实验被 T-0138 的 P0 污染了（不能据此判坐标对错）",
-      "line": 19
+      "file": "src/CONFIG.txt",
+      "anchor": "eq (local-int c) (global-int 12721e) 4",
+      "note": "分类↔脚本的**脚本真源**：当前分类(12721e) == 4 ⇒ 载入 CONFIG2（第 53 行 call-script 51cb），否则 CONFIG1（第 57 行 call-script 51cc）⇒ 只有第 5 项角色设定进 CONFIG2",
+      "line": 51
+    },
+    {
+      "file": "tickets/T-0141/evidence/config2-character-page.png",
+      "anchor": "PNG",
+      "note": "角色设定页（= CONFIG2.BIN）的实测截图：9 个角色位 + 左侧「角色设定」高亮"
+    },
+    {
+      "file": "tickets/T-0141/notes.md",
+      "anchor": "真实命中带（每项整 50 高、无缝隙）",
+      "note": "完整实测表（6 分类 × 命中带 × 与公式对照）+ 第一次\"时序假象\"的复盘 + 复现命令",
+      "line": 79
     }
   ],
   "links": {
@@ -35,12 +46,18 @@
     ]
   },
   "id": "T-0141",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— 实测结论：坐标口径成立（6/6 分类命中，真命中带 100+50i..149+50i）；\"没切到 CONFIG2\" 的真因是**判据用错了脚本**（CONFIG.txt:51 ⇒ 只有 i=4 角色设定进 CONFIG2）+ 一次等待时序失误；已订正 config1Chain.ts 注释、归档两页截图、不改编任何坐标常量"
     }
-  ]
+  ],
+  "doneWhy": "analysis 票：判据是\"给出结论 + 可复核证据\"，已满足 —— ① 干净环境（--attach-headless，viewers 恒 1）下用 `frame` 活帧栈 + `global 12721e` 逐项实测，6/6 与脚本真源 src/CONFIG.txt:51 一致（只有 i=4 角色设定进 CONFIG2）；② 命中带实测 y=100+50i..149+50i，与 config1Chain.ts:683 的贴片口径逐条对照并订正注释；③ 两页截图归档 evidence/；④ 全部分析见 notes.md。★结论是\"坐标口径成立、原判据用错脚本\"，不是坐标缺陷。"
 }

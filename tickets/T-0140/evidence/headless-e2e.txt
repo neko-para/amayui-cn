@@ -1,0 +1,85 @@
+# T-0140 端到端实测原始记录（2026-09-23）
+
+## 1. 起实例（只带 `--attach-headless`，**全程没有打开任何面板**）
+
+```bash
+cd app/amayui-emulator
+node --import tsx src/web/host.ts --instance hl-a --port 0 --attach-headless
+```
+
+宿主 stdout（截取关键行；`[main] …` 是 VM 自己的启动日志）：
+
+```text
+[web] 实例 hl-a → base=…\.tmp\instances\hl-a\base overlay=…\overlay log=…\log\amayui-emulator.log
+[web] 已附无头渲染页：http://127.0.0.1:55311/（pid=16544；agent 现在可以直接 debug-query）
+[web] 就绪 http://127.0.0.1:55311/（实例 hl-a；已开 --attach-headless；Ctrl-C 收工）
+[web] 观察者 #0 接入（现共 1 个；这个是无头自持页）
+[web] status obs=#0 frames=1   {"bin":"INITCONFIG4.BIN",…
+[web] status obs=#0 frames=2   {"bin":"WDINIT.BIN",…
+[web] status obs=#0 frames=6   {"bin":"SKINIT.BIN",…
+[web] status obs=#0 frames=8   {"bin":"CGINIT.BIN",…
+[web] status obs=#0 frames=9   {"bin":"$2$EBINIT.BIN",…
+[web] status obs=#0 frames=10  {"bin":"$3$ITINIT.BIN",…
+[web] status obs=#0 frames=11  {"bin":"INIT2.BIN",…
+[web] status obs=#0 frames=12  {"bin":"TITLE.BIN",…
+[web] status obs=#0 frames=34  … 62 … 88 … 109 … 139 … 164 … 189 … 213 … 236 … 265 … 290 …
+[web] status obs=#0 frames=1570 {"bin":"TITLE.BIN",…      ← 到取证结束时
+```
+
+**`frames` 全程严格单调（1 → 1570，0 次回落）**，且**只有一个观察者（`#0`，无头自持页）**
+⇒ 这是一次**干净的"单 VM"观测量**，可以当作"pages 帧计数不会自己回零"的正面证据。
+
+## 2. agent 侧：经 DSH 插件的每实例路由驱动（**没开面板**）
+
+```text
+POST http://127.0.0.1:3080/dsh-emulator/hl-a/api/debug-query
+     {"args":["move 640 360"]}
+→ HTTP 200 {"query":"move 640 360","ok":true,"lines":["已注入 1 个输入事件（cursor）"]}
+
+POST …/debug-query {"args":["focus on"]}
+→ HTTP 200 {"query":"focus on","ok":true,"lines":["hostFocus=on"]}
+
+POST …/debug-query {"args":["capture"]}
+→ HTTP 200  png 字段 = 2395144 个 base64 字符
+→ 解码落盘：1796356B，PNG 头读出 **1280×720**
+```
+
+截图：`evidence/headless-agent-capture.png` —— 目视 = **真·标题画面**
+（「天結いキャッスルマイスター Version 1.07.00.3」标题 + Game Start / Load Data /
+Eushully-chan Room / Option / Quit 五个按钮 + 左下五个 INSTALL 槽）。
+⇒ 不是黑屏、不是空帧：宿主自持的无头页里 VM 真的在跑、真的在合成。
+
+## 3. 第二渲染者防护
+
+另开一条**真的** SSE 长连（就是第二个页面会做的事：`GET <实例>/events`，`Accept: text/event-stream`），
+在它活着的前后各读一次 `/health`：
+
+```text
+--- before（只有无头自持页）---
+{…,"viewers":1,"viewersWarn":false}
+
+--- after（多了第二个渲染者）---
+{…,"viewers":2,"viewersWarn":true}
+[web] 观察者 #1 接入（现共 2 个）
+[web] ⚠ 第二渲染者：实例 hl-a 现在有 2 个**外部**渲染页（另有无头自持页 1 个） ⇒ 多个 VM 会抢同一份 overlay/log。请只保留一个页面（关掉多余的标签/面板实例）。
+
+--- 第二个渲染者断开后 ---
+{…,"viewers":1,"viewersWarn":false}
+[web] 观察者 #1 断开（现共 1 个）
+```
+
+## 4. 复现命令（三条，按顺序）
+
+```bash
+# ① 起一个"agent 可直接驱动"的实例（不需要人开面板）
+cd app/amayui-emulator && node --import tsx src/web/host.ts --instance hl-a --port 0 --attach-headless
+
+# ② agent 驱动它（另开一个终端；坐标是引擎虚拟 1280×720）
+curl -s -X POST http://127.0.0.1:3080/dsh-emulator/hl-a/api/debug-query \
+     -H 'content-type: application/json' -d '{"args":["move 640 360"]}'
+curl -s -X POST http://127.0.0.1:3080/dsh-emulator/hl-a/api/debug-query \
+     -H 'content-type: application/json' -d '{"args":["capture"]}' > /tmp/cap.json
+
+# ③ 观察者数与告警
+curl -s http://127.0.0.1:<宿主端口>/health        # → {"viewers":N,"viewersWarn":N>1}
+```

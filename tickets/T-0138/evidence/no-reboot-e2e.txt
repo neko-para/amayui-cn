@@ -1,0 +1,145 @@
+# 端到端验证：状态切换不重启实例（T-0138 acceptance 7）
+
+日期：2026-09-23
+
+## 命令
+
+```bash
+cd app/amayui-emulator && npx electron ../../plugins/amayui-emulator/float-e2e.cjs
+```
+
+驱动：`plugins/amayui-emulator/float-e2e.cjs`（Electron 哑窗，`show:false`）。
+链路：harness 页面（React UMD + `window.__ModuleLoader__` 桩 + **真** `lib/client.js` 的 `shell.overlay`）
+→ **不桩 fetch** 的面板 → 插件路由（`lib/index.js` 的 handler 挂在真 `node:http` 上）
+→ 反向代理 → 真实例 `e2e`（`node --import tsx src/web/host.ts --instance e2e --port 0`）。
+
+## 逐条断言
+
+- ✓ PASS  注册表写出实例记录 E:\Games\Eushully\天結\.tmp\instances\e2e\instance.json  `{"id":"e2e","pid":8020,"port":59467}`
+- ✓ PASS  /health 应答（http://127.0.0.1:59467/health）  `{"ok":true,"instance":"e2e","layout":{"id":"e2e","root":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e","baseDir":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e\\base","overlayDir":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e\\overlay","logPath":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e\\log\\amayui-emulator.log","tracePath":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e\\log\\scene-trace.jsonl","replayPath":"E:\\Games\\Eushully\\天結\\.tmp\\instances\\e2e\\log\\replay-trace.jsonl.gz"},"distDir":"E:\\Games\\Eushully\\天結\\app\\amayui-emulator\\dist\\web","viewers":0,"viewersWarn":false}`
+- ✓ PASS  经插件路由 /dsh-emulator/e2e/health 也通  `{"instance":"e2e"}`
+- ✓ PASS  ModuleLoader.load 收到 id=@amayui/emulator-view
+- ✓ PASS  shell.overlay 组件已挂载
+- ✓ PASS  初始态 = 收起胶囊（pill 在）  `{"pill":true,"panel":true}`
+- ✓ PASS  页面无 JS 异常  `[]`
+- ✓ PASS  面板列出活实例 e2e（真 /api/__instances）  `["amayui-emulator-inst-e2e"]`
+- ✓ PASS  选中后页面里恰好 1 个 iframe  `count=1 src=["/dsh-emulator/e2e/"]`
+- ✓ PASS  iframe.src 指向真实例  `["/dsh-emulator/e2e/"]`
+- ✓ PASS  模拟器跑到 TITLE.BIN（注册表 lastStatus）  `{"bin":"TITLE.BIN","frames":15,"waitedMs":13500}`
+- ✓ PASS  跑到 TITLE 时页面里仍恰好 1 个 iframe  `count=1 mark=iframe-node-1`
+- ✓ PASS  切换后截图非平凡（710969B）  `E:\Games\Eushully\天結\.tmp\float-e2e\after-toggles.png`
+- ✓ PASS  状态序列真的走完：收起 / 展开 / 模态各至少 2 次  `{"collapsed":2,"modal":2,"expanded":6}`
+- ✓ PASS  任意采样时刻全树恰好 1 个 <iframe>  `10 次采样全部 =1`
+- ✓ PASS  iframe 始终是同一个 DOM 节点（节点身份标记不变）  `["iframe-node-1"]`
+- ✓ PASS  iframe.src 全程不变且指向 /dsh-emulator/e2e/  `["/dsh-emulator/e2e/"]`
+- ✓ PASS  src 与切换前一致  `before=/dsh-emulator/e2e/`
+- ✓ PASS  ★每个观察者自己的 frames 计数器单调不减（无归零/回落）  `按来源拆开：#0:32条 1→34；#1:31条 1→433（每一路都单调）`
+- ✓ PASS  ★至少一路观察者的 frames 仍在增长（VM 未死；按来源看，不看混合曲线）  `#0 1→34(增长)；#1 1→433(增长)`
+- ✓ PASS  宿主日志里出现过 TITLE.BIN（确实启动过）  `bin 计数={"LOADCONFIG.BIN":2,"ALINIT.BIN":2,"EBINIT.BIN":1,"ITINIT.BIN":2,"SKINIT.BIN":1,"CDINIT2.BIN":2,"BIINIT.BIN":2,"$3$IMINIT.BIN":2,"$4$ITINIT.BIN":2,"INIT2.BIN":2,"TITLE.BIN":48}`
+- ✓ PASS  ★无重引导：基线启动链没有被连续重现（页面没有被卸载/重载）  `启动链 13 段全部只在启动时各走一遍；基线之后新段=["INIT2.BIN","TITLE.BIN"]`
+- ✓ PASS  基线段序列被逐字保留（切换没有改动既有 BIN 序列）  `基线 18 段逐字保留；新增 2 段`
+- ✓ PASS  宿主进程没有重启（pid/startedAt 不变）  `pid 8020→8020 startedAt 1790183366002→1790183366002`
+- ✓ PASS  宿主进程全程没有退出  `null`
+- ✓ PASS  页面 JS 异常为 0  `[]`
+- ✓ PASS  无 renderer/console 错误  `[]`
+
+**合计：27/27 通过。**
+
+## 宿主日志里的启动链计数
+
+宿主进程 stdout/stderr：`E:\Games\Eushully\天結\.tmp\float-e2e\host.log`（真实例自己的日志）。
+
+`[web] status {"bin":…}` 里各 BIN 的**原始出现次数**：
+
+```text
+    2 "bin":"LOADCONFIG.BIN"
+    2 "bin":"ALINIT.BIN"
+    1 "bin":"EBINIT.BIN"
+    2 "bin":"ITINIT.BIN"
+    1 "bin":"SKINIT.BIN"
+    2 "bin":"CDINIT2.BIN"
+    2 "bin":"BIINIT.BIN"
+    2 "bin":"$3$IMINIT.BIN"
+    2 "bin":"$4$ITINIT.BIN"
+    2 "bin":"INIT2.BIN"
+   48 "bin":"TITLE.BIN"
+```
+
+观察到的**不同** BIN：`LOADCONFIG.BIN`, `ALINIT.BIN`, `EBINIT.BIN`, `ITINIT.BIN`, `SKINIT.BIN`, `CDINIT2.BIN`, `BIINIT.BIN`, `$3$IMINIT.BIN`, `$4$ITINIT.BIN`, `INIT2.BIN`, `TITLE.BIN`
+
+折叠连续重复后的**段序列**（一次「进入某支 BIN」= 一段）：
+
+```text
+基线段（日志稳定后、切换前）：["LOADCONFIG.BIN","ALINIT.BIN","EBINIT.BIN","LOADCONFIG.BIN","ITINIT.BIN","ALINIT.BIN","SKINIT.BIN","ITINIT.BIN","CDINIT2.BIN","BIINIT.BIN","$3$IMINIT.BIN","$4$ITINIT.BIN","INIT2.BIN","TITLE.BIN","$3$IMINIT.BIN","TITLE.BIN","$4$ITINIT.BIN","TITLE.BIN"]
+切换后：["LOADCONFIG.BIN","ALINIT.BIN","EBINIT.BIN","LOADCONFIG.BIN","ITINIT.BIN","ALINIT.BIN","SKINIT.BIN","ITINIT.BIN","CDINIT2.BIN","BIINIT.BIN","$3$IMINIT.BIN","$4$ITINIT.BIN","INIT2.BIN","TITLE.BIN","$3$IMINIT.BIN","TITLE.BIN","$4$ITINIT.BIN","TITLE.BIN","INIT2.BIN","TITLE.BIN"]
+```
+
+⇒ 基线逐字保留 = true
+基线启动链（`TITLE.BIN` 之前的段，共 13 段）＝重载检测用的 needle：
+
+```text
+["LOADCONFIG.BIN","ALINIT.BIN","EBINIT.BIN","LOADCONFIG.BIN","ITINIT.BIN","ALINIT.BIN","SKINIT.BIN","ITINIT.BIN","CDINIT2.BIN","BIINIT.BIN","$3$IMINIT.BIN","$4$ITINIT.BIN","INIT2.BIN"]
+```
+
+基线**之后**新产生的段：`["INIT2.BIN","TITLE.BIN"]`
+
+（窗口 = 日志稳定后取的基线段 + 其后的新段；`INIT2`/`TITLE` 这类**稳态段**自身重复是正常的，
+只有当**基线启动链**被连续重现才判页面重载。）
+
+⇒ **基线启动链的连续重现长度 = 0**（0 = 没有被再走一遍 ⇒ 页面没有被卸载/重载）。
+
+为什么旧口径「第一条 `TITLE.BIN` 之后不得有任何启动链标记」是**假红**（本驱动首跑实测，已订正）：
+
+* 数据表 INIT 段本来就重复进入一次：`… WDINIT, IMINIT, EBINIT, WDINIT, SKINIT, EBINIT, CGINIT, SKINIT, …`（见上面段序列）
+  ⇒ `WDINIT`/`EBINIT`/`SKINIT`/`CGINIT` 各出现 2 段；
+* 正常启动的尾部就是 `… INIT2, TITLE, INIT2, TITLE`（引擎自己会再回一次标题）⇒ `INIT2.BIN` 落在第一条 `TITLE.BIN` 之后。
+* 这两条对**修好的**实现也报红；而它们要抓的性质是「重新走一遍完整启动链」，由上面的"连续重现长度=0"直接钉住。
+
+
+## frames 采样（注册表心跳 `lastStatus.frames`）
+
+| # | 采样点 | 状态 | iframe 数 | iframe 节点 | 容器 visibility | bin | frames | viewers |
+|---|--------|------|-----------|-------------|-----------------|-----|--------|---------|
+| 1 | baseline-expanded | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 20 | 2 |
+| 2 | r1-collapsed | 收起 | 1 | iframe-node-1 | hidden | TITLE.BIN | 20 | 2 |
+| 3 | r1-expanded | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 20 | 2 |
+| 4 | r1-modal | 模态 | 1 | iframe-node-1 | visible | TITLE.BIN | 20 | 2 |
+| 5 | r1-after-close | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 20 | 2 |
+| 6 | r2-collapsed | 收起 | 1 | iframe-node-1 | hidden | TITLE.BIN | 20 | 2 |
+| 7 | r2-expanded | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 25 | 2 |
+| 8 | r2-modal | 模态 | 1 | iframe-node-1 | visible | TITLE.BIN | 25 | 2 |
+| 9 | r2-after-close | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 25 | 2 |
+| 10 | final-settle | 展开 | 1 | iframe-node-1 | visible | TITLE.BIN | 30 | 2 |
+
+frames 序列：`[20, 20, 20, 20, 20, 20, 25, 25, 25, 30]`（first=20，last=30，单调不减=true）
+
+观察者数（`/health.viewers`，1 = 只有本驱动的 harness 在跑这个实例）：**峰值 2**
+
+### frames 按**观察者**拆开（注册表那条混合曲线不可判读，这张表可判读）
+
+| 观察者 | 上报条数 | frames 首→末 | 是否单调不减 |
+|---|---|---|---|
+| #0 | 33 | 1 → 39 | ✅ 是 |
+| #1 | 33 | 1 → 468 | ✅ 是 |
+
+（每个观察者 = 一个渲染页 = 一个 VM。`#0` 通常是本驱动的 harness；其余是别的页面，
+例如人在 DSH 面板里开着的那个画面。**只有按来源拆开**才能看出"是不是某一个 VM 回零了"。）
+
+★本跑有**多个观察者**（上表可见几路）。注册表心跳里的 `frames` 是"最后一个上报者"的值 ⇒
+两套计数器交错，那条曲线**不能**当作单个 VM 的进度曲线；判据落在上表「是否单调不减」列。
+（这正是上一版把 `402 → 35` 误判成"重启"的原因；`idle-probe.cjs`（无操作 60s）与
+`collapse-probe.cjs`（只收起 25s）两个对照实验也各自证明过 `frames` 单调上升。）
+
+## 截图
+
+`E:\Games\Eushully\天結\.tmp\float-e2e\after-toggles.png`（710969B；必须在 `.tmp/` 下，**不提交**）
+
+## 判读
+
+**通过。** 收起 → 展开 → 放大 → 关闭来回切了两轮（10 次采样），期间：
+① 基线启动链（13 段）在`TITLE.BIN`之后**连续重现长度 = 0**（没有被再走一遍）⇒ 页面没有被卸载/重载；
+   基线之后**新产生的段**一共 2 条：`["INIT2.BIN","TITLE.BIN"]`（只允许 `TITLE.BIN` 这类稳态段）；
+② 按**观察者**拆开的 `frames` 计数器全部单调不减 ⇒ VM 一直在跑，没死也没重来：#0（33 条，1→39，单调=是）、#1（33 条，1→468，单调=是）
+③ 每次采样全树都**恰好一个** `<iframe>`，且是**同一个 DOM 节点**（`iframe-node-1`）、`src` 恒为 `/dsh-emulator/e2e/`；
+④ 宿主进程 pid / `startedAt` 不变，基线段序列被**逐字保留**（新增段里没有启动链重现）。
+三态共用同一个 iframe 的不变量在**真实例、真 VM、真启动链**上成立 ⇒ 「放大 / 收起 会重启实例」这个 P0 缺陷已修复。

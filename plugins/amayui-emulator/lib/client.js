@@ -173,8 +173,60 @@ window.__ModuleLoader__.load({
       return pair[0]
     }
 
-    function fmtClock(ms) {
-      if (!ms) return '—'
+    /**
+     * **两个 chrome 的实测尺寸**（`tickets/T-0138` 后续：用户实测"画面框悬空一段距离"）。
+     *
+     * 为什么要测量而不是全用常量：画面框是 chrome 的**兄弟节点**，它的位置只能由 chrome 的
+     * 真实边界推。用常量（`CHROME_H`/`LIST_H`/`MODAL_LIST_W`）是在"猜"面板有多高/多宽，
+     * 一旦列表项数、字号、`flex-wrap` 与常量不一致，画面框就会**悬空**（留一条缝）或**压进**面板：
+     *
+     * ```text
+     * 实测（1440×900，scale 0.5，一条实例）：
+     *   面板  bottom=888                        ← 锚在右下角（right/bottom:16）
+     *   画面框 bottom=714  ⇒ 与面板之间空出 26px  ← 应为 10px：旧实现把"面板高度"算成 CHROME_H+LIST_H
+     * ```
+     *
+     * 做法：`panelEl`（已有 ref）+ `ResizeObserver` ⇒ 面板尺寸一变就把真实值进 state；
+     * 模态那边量的是模态 chrome 的**宽度**（它 `boxSizing:'border-box'` + 显式 width ⇒ 量得准；
+     * 高度不用量，画面框只依赖标题栏那块常量 `CHROME_H`）。
+     * ★契约：**量不到就退回常量**（首次渲染 / SSR / 无 `ResizeObserver` 的环境照旧能画）。
+     */
+    function useChromeSizes(s) {
+      var pair = react.useState({ panelX: 0, panelY: 0, panelW: 0, panelH: 0, modalX: 0, modalY: 0, modalW: 0, modalH: 0 })
+      var set = pair[1]
+      var chrome = pair[0]
+      react.useEffect(function () {
+        var R = win() && win().ResizeObserver
+        if (!R) return
+        var measure = function () {
+          // 面板可能被**拖过**（`position:fixed` 在 `{x,y}`）⇒ 位置也要量，不能只量尺寸。
+          var pr = panelEl ? panelEl.getBoundingClientRect() : null
+          var mr = modalEl ? modalEl.getBoundingClientRect() : null
+          var next = {
+            panelX: pr ? Math.round(pr.left) : 0,
+            panelY: pr ? Math.round(pr.top) : 0,
+            panelW: pr ? Math.round(pr.width) : 0,
+            panelH: pr ? Math.round(pr.height) : 0,
+            modalX: mr ? Math.round(mr.left) : 0,
+            modalY: mr ? Math.round(mr.top) : 0,
+            modalW: mr ? Math.round(mr.width) : 0,
+            modalH: mr ? Math.round(mr.height) : 0,
+          }
+          set(function (prev) {
+            for (var k in next) { if (prev[k] !== next[k]) return next }
+            return prev
+          })
+        }
+        var ro = new R(measure)
+        if (panelEl) ro.observe(panelEl)
+        if (modalEl) ro.observe(modalEl)
+        measure()
+        return function () { ro.disconnect() }
+      }, [s.open])
+      return chrome
+    }
+
+    function fmtClock(ms) {      if (!ms) return '—'
       try {
         var d = new Date(ms)
         var p = function (n) { return (n < 10 ? '0' : '') + n }
@@ -230,6 +282,8 @@ window.__ModuleLoader__.load({
     // 处理函数放模块作用域（身份稳定）：这样「注册」与「清理」拿到的是同一个函数。
     var drag = null
     var panelEl = null
+    /** 模态 chrome 的 DOM（`useChromeSizes` 量它的真实宽度）。 */
+    var modalEl = null
 
     function onMove(ev) {
       if (!drag) return
@@ -377,7 +431,7 @@ window.__ModuleLoader__.load({
      * （位置稳定 + 无 key ⇒ 同类型同位置在协调里就是同一个实例）。收起态它仍然在 DOM 里，
      * 只是外层容器 hidden —— 见 `viewportStyle`。
      */
-    function viewEl(s, vp) {
+    function viewEl(s, vp, chrome) {
       var selected = selectedOf(s)
       var scale = s.scale
       var frame = {
@@ -387,7 +441,7 @@ window.__ModuleLoader__.load({
       // ★容器的定位/可见性**只能**来自 `viewportStyle`（它是三种形态的唯一几何真源）。
       //   漏掉这一步的后果（已实测）：容器退回静态位置 ⇒ 画面框被**无条件画在左上角**，
       //   而且收起时也不会隐藏（`visibility` 没人设）。
-      var style = viewportStyle(s, vp)
+      var style = viewportStyle(s, vp, chrome)
       delete style.id
       if (!selected) {
         // 没有选中实例时画面框本就该是空的 ⇒ 连容器一起藏掉（只留 chrome 里的列表与提示）。
@@ -418,54 +472,97 @@ window.__ModuleLoader__.load({
       }
     }
 
-    /** 模态「大屏细看」的盒子几何：由已知常量算出来（画面框的外框 + 内边距 + 列表 + 间距）。 */
-    function modalBox(s) {
+    /**
+     * 画面框的目标宽度：**实测优先**，量不到退回常量（见 `useChromeSizes`）。
+     * 面板与模态都用同一个值 ⇒ "画面框有多宽"只有一个真源，不会两个 chrome 各算一份。
+     */
+    function chromeWidth(s, chrome) {
+      return (chrome && (s.open ? chrome.modalW : chrome.panelW)) || (VIEW_W * s.scale + 24)
+    }
+
+    /**
+     * 模态「大屏细看」的盒子几何。
+     *
+     * ★**全用实测**（`tickets/T-0138` 后续实测修）：模态 chrome 是 `position:fixed` + 内容自适应，
+     *   它的真实高度**取决于内容**（标题栏会不会换行、有没有 `viewerWarn`/错误条、实例行多高），
+     *   所以"画面框该从哪开始"必须问它自己 —— 否则就是用户看到的那一幕：
+     *   **画面框压进模态自身的标题栏与实例行**（1440×900 实测：模态实测高 98，而常量口径
+     *   `MODAL_PAD + CHROME_H` = 58 ⇒ 画面框从模态内部 58px 处就开始画，把下面那行盖住了）。
+     *
+     * 量不到（首帧 / SSR / 无 `ResizeObserver`）才退回常量算的老口径。
+     */
+    function modalBox(s, chrome) {
       var vw = VIEW_W * s.scale
       var vh = VIEW_H * s.scale
+      var m = chrome && chrome.modalW ? chrome : null
       return {
-        w: vw + MODAL_PAD * 2 + MODAL_BODY_GAP + MODAL_LIST_W,
-        h: vh + MODAL_PAD * 2 + CHROME_H + MODAL_BODY_GAP,
+        w: m ? m.modalW : vw + MODAL_PAD * 2 + MODAL_BODY_GAP + MODAL_LIST_W,
+        h: m ? m.modalH : vh + MODAL_PAD * 2 + CHROME_H + MODAL_BODY_GAP,
+        x: m ? m.modalX : null,
+        y: m ? m.modalY : null,
         viewW: vw, viewH: vh,
       }
     }
-    function modalOrigin(s, vp) {
-      var b = modalBox(s)
+    function modalOrigin(s, vp, chrome) {
+      var b = modalBox(s, chrome)
+      if (isNum(b.x) && isNum(b.y)) return { x: b.x, y: b.y }
       return { x: Math.max(8, Math.round((vp.w - b.w) / 2)), y: Math.max(8, Math.round((vp.h - b.h) / 2)) }
     }
 
     /**
      * ★**承载唯一 iframe 的那个容器**的 style —— 收起 / 展开 / 模态的**唯一差异**就在这里。
      *
-     * * 展开：`position:fixed` 落在持久化的 `{x,y}` 上、排在标题栏 + 列表之下（`CHROME_H + LIST_H`）；
-     * * 模态：`position:fixed`、排在居中大盒子的标题栏 + 内边距之下，`zIndex = MODAL_Z + 10`；
+     * * 展开：`position:fixed`，排在面板**实测底边**之下（面板下方）或在面板**上方**（未拖过、面板锚右下角时）；
+     * * 模态：`position:fixed`，排在模态**实测盒子的正下方**（`y + 实测高`），`zIndex = MODAL_Z + 10`；
      * * 收起：**同一个盒子**（同位置、同尺寸）但 `visibility:'hidden'` + `pointerEvents:'none'`
      *   —— 不 unmount（否则 VM 死）、也**不用 `display:'none'`**（那会让浏览器挂起页面、
      *   帧计数停住；`visibility` 只影响绘制）。展开回来必须是同一个会话。
+     *
+     * ★**贴合由实测几何保证**（`chrome` 参数，见 `useChromeSizes`）：无论哪个形态，画面框都排在
+     *   对应 chrome 的**真实边界**之外 10px ⇒ 既不会"悬空一条缝"，也不会"压进 chrome 自己那几行"。
      */
-    function viewportStyle(s, vp) {
+    function viewportStyle(s, vp, chrome) {
       var w = VIEW_W * s.scale
       var h = VIEW_H * s.scale
+      var panelW = chromeWidth(s, chrome)
       var top
       var left
       if (s.open) {
-        var o = modalOrigin(s, vp)
-        left = o.x + MODAL_PAD + MODAL_LIST_W + MODAL_BODY_GAP
-        top = o.y + MODAL_PAD + CHROME_H
+        // ★画面框排在**模态实际占据的整块区域之下**（实测盒子的 `x+宽` / `y+高`），
+        //   不是"从模态内部某个常量偏移处开始"—— 后者就是"压住模态自己那行"的原因（见 `modalBox`）。
+        var bb = modalBox(s, chrome)
+        var ox = isNum(bb.x) ? bb.x : Math.max(8, Math.round((vp.w - bb.w) / 2))
+        var oy = isNum(bb.y) ? bb.y : Math.max(8, Math.round((vp.h - bb.h) / 2))
+        left = ox
+        top = oy + bb.h
       } else {
-        var panelW = VIEW_W * s.scale + 24
-        var listH = s.instances.length ? LIST_H : 74
         var vh = VIEW_H * s.scale
         if (isNum(s.x) && isNum(s.y)) {
-          // 拖过的位置：画面框排在面板**下方**（面板顶 + 标题栏 + 列表）。
+          // 拖过的位置：画面框排在面板**下方**（面板实测高 + 间隔；量不到才退回常量）。
           left = s.x + 10
-          top = s.y + 10 + CHROME_H + listH
+          top = s.y + (chrome && chrome.panelH ? chrome.panelH + 10 : 10 + CHROME_H + (s.instances.length ? LIST_H : 74))
         } else {
           // ★没拖过：面板按 `panelStyle` 锚在**右下角**（`right:16; bottom:16`，冒烟钉住了这条），
-          //   所以画面框只能排在面板**上方** —— 否则会垂出屏幕底。
-          //   实测教训（2026-09-23）：旧实现在这个分支里用常量假想「面板高 440」并往下叠，
-          //   1440×900 下算出 top=634、底边 994 > 900 ⇒ 画面框有一半在屏幕外。
-          left = Math.max(8, vp.w - 16 - panelW + 10)
-          top = Math.max(8, vp.h - 16 - (CHROME_H + listH) - 10 - vh)
+          //   所以画面框只能排在面板**上方**。
+          //   ★贴合口径（2026-09-23 实测修，用户："画面框悬空一段"）：
+          //     ① **横向居中对齐**：`left = 面板左缘 + (面板宽 − 画面宽)/2`
+          //        —— 用实测面板宽算，面板比画面宽的部分（左右 padding）对称分掉 ⇒ 看起来是"面板的一部分"，
+          //        而不是"贴在左上角、右边空一截"；
+          //     ② **纵向贴合**：`bottom = 面板顶边 − 2`（只留边框/子像素的余量，不留视觉上的缝）。
+          //     旧实现用常量假想面板高度（`CHROME_H + LIST_H`，与实测差 26px）⇒ 那条"悬空的缝"；
+          //     更早那版还把面板放在画面框下缘往下叠（1440×900 下 `top=634`、底边 994 > 900，一半在屏外）。
+          var panelH = chrome && chrome.panelH
+          var panelTop = vp.h - 16 - panelH
+          var panelLeft = vp.w - 16 - panelW
+          if (panelH) {
+            left = Math.max(8, Math.round(panelLeft + (panelW - w) / 2))
+            top = Math.max(8, panelTop - 2 - vh)
+          } else {
+            // 还没量到（首帧 / SSR / 无 ResizeObserver）：用常量保守排，量到之后下一帧修正。
+            var listH = s.instances.length ? LIST_H : 74
+            left = Math.max(8, panelLeft + (panelW - w) / 2)
+            top = Math.max(8, vp.h - 16 - (CHROME_H + listH) - 2 - vh)
+          }
         }
       }
       var hidden = !!s.collapsed && !s.open
@@ -587,15 +684,15 @@ window.__ModuleLoader__.load({
     function ModalChrome(props) {
       var s = props.s
       var scale = s.scale
-      var o = modalOrigin(s, props.vp)
-      var b = modalBox(s)
+      var o = modalOrigin(s, props.vp, props.chrome)
+      var b = modalBox(s, props.chrome)
       var chromeStyle = {
         position: 'fixed', left: px(o.x), top: px(o.y), zIndex: MODAL_ABOVE, pointerEvents: 'auto',
         width: b.w, maxHeight: '92vh', overflow: 'auto', boxSizing: 'border-box',
         background: '#1e1e1e', color: '#ddd', border: '1px solid #444', borderRadius: 6, padding: MODAL_PAD,
       }
       if (!s.open) return null
-      return react.createElement('div', { id: 'amayui-emulator-modal', style: chromeStyle },
+      return react.createElement('div', { id: 'amayui-emulator-modal', ref: function (node) { modalEl = node }, style: chromeStyle },
         react.createElement('div', { key: 'bar', style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' } },
           react.createElement('strong', { key: 't' }, '🖥 天結いキャッスルマイスター · 调试画面'),
           statusEl(s),
@@ -630,6 +727,7 @@ window.__ModuleLoader__.load({
     function Overlay() {
       var s = useShared()
       var vp = useViewportSize()
+      var chrome = useChromeSizes(s)
       var selected = selectedOf(s)
 
       react.useEffect(function () {
@@ -655,8 +753,8 @@ window.__ModuleLoader__.load({
       return react.createElement('div', { id: 'amayui-emulator-overlay' },
         react.createElement(ModalBackdrop, { key: 'backdrop', s: s }),
         react.createElement(PanelChrome, { key: 'panel', s: s, vp: vp }),
-        react.createElement(ModalChrome, { key: 'modal', s: s, vp: vp }),
-        viewEl(s, vp),
+        react.createElement(ModalChrome, { key: 'modal', s: s, vp: vp, chrome: chrome }),
+        viewEl(s, vp, chrome),
         (!s.open && s.collapsed) ? react.createElement(Pill, { key: 'pill' }) : null,
       )
     }

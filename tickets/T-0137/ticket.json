@@ -25,8 +25,8 @@
     {
       "file": "plugins/amayui-emulator/lib/client.js",
       "anchor": "amayui-emulator-pill",
-      "note": "现状：只有模态（`shell.overlay` 里渲染全屏 backdrop）；缩放常量在这里，浮窗要复用成两档｜★2026-09-23 retarget（T-0137 落地）：形态改成三态浮窗后旧常量 `var SCALE = 0.5` 改名/扩展为尺寸档数组，锚点改指默认态胶囊的 id（`amayui-emulator-pill`）—— 它才是\"常驻浮窗\"这条需求的落点。",
-      "line": 511
+      "note": "现状：只有模态（`shell.overlay` 里渲染全屏 backdrop）；缩放常量在这里，浮窗要复用成两档｜★2026-09-23 retarget（T-0137 落地）：形态改成三态浮窗后旧常量 `var SCALE = 0.5` 改名/扩展为尺寸档数组，锚点改指默认态胶囊的 id（`amayui-emulator-pill`）—— 它才是\"常驻浮窗\"这条需求的落点。 ★2026-09-23 复核：行号随 T-0138 变更 3（实测几何）下移，锚点串仍在（默认态胶囊 #amayui-emulator-pill）。",
+      "line": 608
     },
     {
       "file": "plugins/amayui-emulator/smoke-client.mjs",

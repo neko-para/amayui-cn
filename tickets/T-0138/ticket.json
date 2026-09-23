@@ -24,8 +24,8 @@
     {
       "file": "plugins/amayui-emulator/lib/client.js",
       "anchor": "amayui-emulator-viewport",
-      "note": "浮窗里的画面框（iframe 容器）；模态里另有同源的一份 ⇒ 两个分支各挂一个 iframe 就是本 bug｜★2026-09-23 retarget：修复把外层容器从 `#amayui-emulator-viewbox` 改成承担定位/可见性的 `#amayui-emulator-viewport`（`viewportStyle` 的落点）⇒ 锚点随同义新串。",
-      "line": 397
+      "note": "承载**唯一 iframe** 的容器（`#amayui-emulator-viewport`）—— 本 bug 的落点与修复点（`viewportStyle`）。★2026-09-23 retarget ×2：① 修复把外层容器从旧名 `#amayui-emulator-viewbox` 改成承担定位/可见性的 `-viewport`；② 变更 3 之后**模态里不再有同源的第二份**（单 iframe 不变量），且位置改由 chrome 的**实测边界**推（`useChromeSizes`）。",
+      "line": 451
     }
   ],
   "links": {
@@ -39,7 +39,7 @@
     ]
   },
   "id": "T-0138",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
@@ -50,6 +50,15 @@
       "at": "2026-09-23",
       "kind": "status",
       "what": "open → doing —— P0 实测 bug：状态切换重建 iframe ⇒ 实例重启。开工修（单一 iframe + viewers 告警）"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → done —— acceptance 1-8 全部取证：27/27 断言 PASS（evidence/no-reboot-e2e.txt）；no-reboot 由四条独立证据钉住（启动链 0 重现 / pid+startedAt 不变 / iframe 同一 DOM 节点 / 按观察者拆开的 frames 单调）；残留仅\"用户目视确认\""
     }
+  ],
+  "tests": [
+    "plugins/amayui-emulator/smoke-client.mjs",
+    "plugins/amayui-emulator/float-e2e.cjs"
   ]
 }

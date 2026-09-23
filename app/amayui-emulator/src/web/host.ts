@@ -47,6 +47,7 @@
  * node --import tsx src/web/host.ts --instance dbg-a --port 0 --idle-sec 600
  * ```
  */
+import { spawn, type ChildProcess } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as http from 'node:http';
 import * as path from 'node:path';
@@ -97,6 +98,18 @@ export interface WebHostOptions {
    * 缺省 `600`；`0` = 关。CLI `--idle-sec` 优先，其次 env `AMAYUI_WEB_IDLE_SEC`。
    */
   idleSec?: number;
+  /**
+   * **自持一个无头渲染页**（`tickets/T-0140`；CLI `--attach-headless`，缺省关）。
+   *
+   * 为什么需要它：web 形态下 **VM 跑在页面里** ⇒ 没有页面附着的实例，`/health` 正常但 agent 的
+   * `debug-query` 必然 503。要让 agent **不依赖人**就能驱动实例，宿主得自己附一个隐藏的渲染页
+   * （手法同 `plugins/amayui-emulator/e2e-shot.cjs` 的哑窗：`show:false` + 不抢焦点）。
+   *
+   * 缺省关（避免无谓地起一个 Electron 渲染进程）；开了才付出这个代价。
+   */
+  attachHeadless?: boolean;
+  /** 无头渲染页用哪个 Electron 可执行文件（缺省从 `app/amayui-emulator/node_modules/.bin` 找）。 */
+  electronPath?: string;
 }
 
 /** 渲染页状态摘要（`renderer-status` 的极小切片；注册表只发布这三项）。 */
@@ -173,6 +186,13 @@ export interface WebHost {
   push(channel: string, ...args: unknown[]): void;
   /** 关服务（含 SSE 长连）。 */
   close(): Promise<void>;
+  /**
+   * 只收掉**自持的无头渲染页**（`tickets/T-0140`；没附过就是 no-op）。
+   *
+   * 与 `close()` 分开的理由：`process.on('exit')` 里**不能 await**（同步钩子），而那是"异常退出也
+   * 别留一个孤儿渲染页"的唯一兜底点 ⇒ 需要一个同步的收尾动作。
+   */
+  detachHeadless?(): void;
 }
 
 /** 把 JSON 回出去。 */
@@ -278,8 +298,18 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
   });
   log(`[web] 实例 ${instance} → base=${app.layout.baseDir} overlay=${app.layout.overlayDir} log=${app.layout.logPath}`);
 
-  /** SSE 客户端（`push` 的扇出目标）。 */
+  /** SSE 客户端（`push` 的扇出目标`）。键即**观察者序号**：`0` = 宿主自附的无头渲染页，`>=1` = 外部页面。 */
   const clients = new Set<http.ServerResponse>();
+  /**
+   * 观察者序号（`tickets/T-0140`）：每来一个 SSE 连接 +1，随 `observers` 通道下发。
+   *
+   * ★为什么必须存在：`[web] status` 只说"有个渲染页报了帧"，不说**是哪一个**。实测（T-0138）
+   *   两个页面同时附着时，它们的 `frames` 两套计数器会交错着写进同一份日志 ⇒ 看起来像
+   *   "frames 自己掉回 35"，排障时极难判读。带上序号后每一条都能归因。
+   */
+  let viewerSeq = 0;
+  /** 每个响应自己的观察者序号（`WeakMap`：连接断了自动释放）。 */
+  const viewerId = new WeakMap<http.ServerResponse, number>();
   /** 调试查询的等待者（`id` → resolve）；与 `electron/ipc/control.ts` 的 `debugQueryWaiters` 同形。 */
   const waiters = new Map<number, (result: unknown) => void>();
   let querySeq = 0;
@@ -289,6 +319,8 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
   let lastActivityMs = Date.now();
   /** listen 成功的时刻（与 `InstanceRecord.startedAt` 同值）。 */
   let startedAt = 0;
+  /** 供页面识别"宿主是不是同一个"用的稳定标识（**不随心跳变**；`startedAt` 本来就是这种量）。 */
+  let observerStartedAt = 0;
   /** 要发布的那条记录；`listen()` 成功才建（**没有监听端口就不该出现在注册表里**）。 */
   let record: InstanceRecord | null = null;
   /** 最近一次 `renderer-status` 的摘要（心跳带上它）。 */
@@ -321,6 +353,16 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
   /** 收服务（含 SSE 长连）+ 摘掉注册项。`close()` / 信号 / 自停三条路径共用它。 */
   async function closeHost(): Promise<void> {
     clearTimers();
+    // ★先收无头渲染页（`T-0140`）：它的 SSE 也是 `clients` 里的一员，反过来的顺序会让我们
+    //   一边关 server 一边等它断连，白等一轮。杀不掉也要继续往下走（收不干净不能挡住退出）。
+    if (headlessChild) {
+      try {
+        headlessChild.kill('SIGTERM');
+      } catch {
+        /* 已经没了 */
+      }
+      headlessChild = null;
+    }
     for (const c of clients) {
       try {
         c.end();
@@ -366,8 +408,123 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
     }
   }
 
-  const server = http.createServer((req, res) => {
-    void handle(req, res).catch((err: Error) => {
+  // ---- 自持无头渲染页（`tickets/T-0140` 的 `--attach-headless`）----------------
+  /**
+   * 宿主自己附的那个隐藏渲染页的进程（缺省 `null` = 没附）。
+   *
+   * ★它**不是**"第二个渲染者"：它与本实例是 1:1 的（宿主退出/被闲置自停时一起收），
+   *   而"第二渲染者"指的是**第二个外部页面**（人开的面板标签、重复的 iframe）—— 那种才是
+   *   两个 VM 抢同一份 overlay/log。所以这里的告警口径是"**除了我自己的无头页之外**还有别人吗"。
+   */
+  let headlessChild: ChildProcess | null = null;
+  /** 无头页**当前**还连着几个 SSE（`0` = 没连/已断）—— 告警文案与"外部渲染者"的计数都要减掉它。 */
+  let headlessClients = 0;
+  /** 无头页**第一个** SSE 还没认领（认领后立刻置 false）。 */
+  let headlessFirstSse = false;
+
+  /** 找 Electron 可执行文件（缺省 `<app>/node_modules/.bin/electron`，Windows 上是 `.cmd`）。 */
+  function resolveElectron(): { exe: string; needsShell: boolean } | null {
+    const appDir = path.join(opts.repoRoot, 'app', 'amayui-emulator');
+    if (opts.electronPath) {
+      // 显式给了路径就照用；`.cmd/.bat` 在 Windows 上必须走 shell（见下）。
+      return { exe: opts.electronPath, needsShell: /\.(cmd|bat)$/i.test(opts.electronPath) };
+    }
+    const win = process.platform === 'win32';
+    const cands = win
+      ? [
+          // ★优先**真 exe**：`.cmd` 在 Windows 上必须 `shell: true` 才能 spawn（本机实测踩过
+          //   `Error: spawn EINVAL`，node 24 起 `.cmd` 不再被隐式套 shell）。
+          path.join(appDir, 'node_modules', 'electron', 'dist', 'electron.exe'),
+          path.join(appDir, 'node_modules', '.bin', 'electron.cmd'),
+        ]
+      : [
+          path.join(appDir, 'node_modules', '.bin', 'electron'),
+          path.join(appDir, 'node_modules', 'electron', 'dist', 'electron'),
+        ];
+    for (const c of cands) {
+      try {
+        if (!fs.existsSync(c)) continue;
+        // ★`/\.(cmd|bat)$/`（不是 `/\.cm?d$/`）：`.cmd` 与 `.bat` 都要 shell，写错了 `.bat` 会漏。
+        return { exe: c, needsShell: /\.(cmd|bat)$/i.test(c) };
+      } catch {
+        /* 继续找下一个 */
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 起一个隐藏的渲染页连到本实例（幂等：已经在跑就不重复起）。
+   *
+   * ★**为什么不用 `--headless` 之类的 Electron 开关**而是"哑窗"（`show:false`）：见
+   *   `plugins/amayui-emulator/e2e-shot.cjs` 的实测记录 —— 本机沙箱初始化会失败，所以哑窗脚本
+   *   里带 `--no-sandbox`，且窗口必须真的存在（离屏渲染 = 没有像素，`capture` 会拿不到画面）。
+   * ★**子进程必须由宿主收掉**：注册了 `process.on('exit')` 兜底（SIGKILL 之外的路径都能清干净）。
+   */
+  function attachHeadless(port: number): void {
+    if (headlessChild) return;
+    const found = resolveElectron();
+    if (!found) {
+      log(
+        '[web] ✗ --attach-headless：找不到 electron（找过 app/amayui-emulator/node_modules/{electron/dist,.bin}）' +
+          ' ⇒ 本实例仍然可用，但**没有渲染页**，agent 的 debug-query 会 503',
+      );
+      return;
+    }
+    const script = path.join(opts.repoRoot, 'app', 'amayui-emulator', 'tools', 'attach-headless.cjs');
+    if (!fs.existsSync(script)) {
+      log(`[web] ✗ --attach-headless：缺少 ${script}`);
+      return;
+    }
+    // 有别的页面已经在跑 ⇒ 再附一个就是**第二个 VM**（明确告警，但仍按用户要求附上；见 headlessChild 注释）。
+    if (clients.size > 0) {
+      log(
+        `[web] ⚠ --attach-headless：**已经**有 ${clients.size} 个观察者了（人开的面板/别的页面）⇒ ` +
+          '再附一个无头页就是第二个 VM，两者会抢同一份 overlay/log。建议先关掉那个页面。',
+      );
+    }
+    const url = `http://127.0.0.1:${port}/`;
+    let child: ChildProcess;
+    try {
+      child = spawn(found.exe, [script, '--url', url, '--instance', instance], {
+        cwd: path.join(opts.repoRoot, 'app', 'amayui-emulator'),
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+        // ★Windows 上 `.cmd`/`.bat` 不套 shell 会 `spawn EINVAL`（node 24 的实测）；
+        //   `shell: true` 时参数是直传的（无用户输入），路径已加引号处理空格。
+        ...(found.needsShell ? { shell: true } : {}),
+      });
+    } catch (err) {
+      // ★起不来**不能**把宿主带走：宿主的主要职责是服务渲染页，附页只是"让它不依赖人"。
+      log(`[web] ✗ --attach-headless 起不来（${(err as Error).message}）⇒ 实例仍可用但没有渲染页`);
+      return;
+    }
+    headlessChild = child;
+    headlessFirstSse = true; // 它的第一个 SSE 由上面的 `/events` 分支认领（见 `isSelfHeadless`）
+    child.stdout?.on('data', (b: Buffer) => log(`[headless] ${b.toString('utf8').trimEnd()}`));
+    child.stderr?.on('data', (b: Buffer) => log(`[headless] ${b.toString('utf8').trimEnd()}`));
+    // ★`spawn` 的失败也可能是**异步**的（ENOENT/EINVAL 走 'error' 事件）⇒ 必须接，否则崩进程。
+    child.on('error', (err) => {
+      if (headlessChild === child) {
+        headlessChild = null;
+        headlessFirstSse = false;
+      }
+      log(`[web] ✗ --attach-headless 子进程出错：${err.message} ⇒ 实例仍可用但没有渲染页`);
+    });
+    child.on('exit', (code, sig) => {
+      if (headlessChild === child) {
+        headlessChild = null;
+        headlessFirstSse = false;
+        // ★子进程一死，它那条 SSE 的 `close` 回调不一定来得及把名额减回去（连接是被进程死带走的）
+        //   ⇒ 在这里补一次；幂等（`headlessClients` 直接用 0，不做减法，避免减成负数）。
+        headlessClients = 0;
+      }
+      log(`[web] 无头渲染页退出 code=${code} sig=${sig ?? '-'}（实例 ${instance} 又变回"没有渲染页"）`);
+    });
+    log(`[web] 已附无头渲染页：${url}（pid=${child.pid}；agent 现在可以直接 debug-query）`);
+  }
+
+  const server = http.createServer((req, res) => {    void handle(req, res).catch((err: Error) => {
       log(`[web] ✗ ${req.method} ${req.url}：${err.message}`);
       try {
         sendJson(res, 500, { error: err.message });
@@ -393,6 +550,43 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
       });
       res.write(': connected\n\n');
       clients.add(res);
+      // ★**第二渲染者防护**（`tickets/T-0140`）：web 形态下 VM 跑在页面里 ⇒ 第二个页面附着
+      //   就是**第二个 VM**，两个 VM 抢同一份 overlay/log。这里的策略是**允许 + 显著告警**
+      //   （不是拒绝），理由：浏览器刷新时新旧 SSE 会**短暂并存**，硬拒会把正常刷新打成失败；
+      //   而"两个 VM 真的在抢"这件事必须留下可查的痕迹（日志 + `/health.viewers`）。
+      const vid = viewerSeq++;
+      viewerId.set(res, vid);
+      // 本宿主正自持无头页时，**第一个**连上来的观察者就是它自己（`--attach-headless` 在 listen
+      // 之后立刻起它，顺序上它就是第一个）⇒ 不算"第二个渲染者"；之后它断开时要能**减回去**。
+      const isSelfHeadless = headlessFirstSse;
+      if (isSelfHeadless) {
+        headlessFirstSse = false;
+        headlessClients++;
+      }
+      const externals = clients.size - headlessClients;
+      log(`[web] 观察者 #${vid} 接入（现共 ${clients.size} 个${isSelfHeadless ? '；这个是无头自持页' : ''}）`);
+      // ★**第二渲染者防护**（`tickets/T-0140`）：web 形态下 VM 跑在页面里 ⇒ 第二个**外部**页面
+      //   附着就是**第二个 VM**，两个 VM 抢同一份 overlay/log。策略是**允许 + 显著告警**（不是拒绝），
+      //   理由：浏览器刷新时新旧 SSE 会**短暂并存**，硬拒会把正常刷新打成失败；而"两个 VM 真的在抢"
+      //   必须留下可查的痕迹（日志 + `/health.viewers`）。自持的无头页不算外部渲染者。
+      if (externals > 1) {
+        log(
+          `[web] ⚠ 第二渲染者：实例 ${instance} 现在有 ${externals} 个**外部**渲染页` +
+            `（另有无头自持页 ${headlessClients} 个）` +
+            ' ⇒ 多个 VM 会抢同一份 overlay/log。请只保留一个页面（关掉多余的标签/面板实例）。',
+        );
+      }
+      // 序号 + 是否自持页：页面据此在日志里归因（`observer` 字段），`self` 让"我们自己那个无头页"一眼可辨。
+      try {
+        res.write(
+          `data: ${JSON.stringify({
+            channel: 'observer',
+            args: [{ id: vid, hostStartedAt: observerStartedAt, self: isSelfHeadless }],
+          })}\n\n`,
+        );
+      } catch {
+        /* 首帧写失败 = 页面已经走了；`close` 会清 */
+      }
       const hb = setInterval(() => {
         try {
           res.write(': hb\n\n');
@@ -403,13 +597,26 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
       req.on('close', () => {
         clearInterval(hb);
         clients.delete(res);
+        // 自持无头页断开 ⇒ 把它的名额还回去（否则"外部渲染者"数会永远少算一个）。
+        if (isSelfHeadless) headlessClients = Math.max(0, headlessClients - 1);
+        // 观察者退出也留一条（`clients.size === 0` 意味着"没人看了"，随时可能被闲置自停收走）。
+        log(`[web] 观察者 #${vid} 断开（现共 ${clients.size} 个）`);
       });
       return;
     }
 
     // ---- 健康检查（冒烟/代理就绪探测用）----
     if (p === '/health') {
-      sendJson(res, 200, { ok: true, instance, layout: app.layout, distDir });
+      // ★`viewers`（`tickets/T-0140`）：当前 SSE 观察者数 = 有几个渲染页在跑这个实例的 VM。
+      //   `>1` 就是"两个 VM 抢同一份 overlay/log"的**可机读**信号（面板与 agent 都据此告警）。
+      sendJson(res, 200, {
+        ok: true,
+        instance,
+        layout: app.layout,
+        distDir,
+        viewers: clients.size,
+        viewersWarn: clients.size > 1,
+      });
       return;
     }
 
@@ -505,7 +712,17 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
         return;
       case 'renderer-status': {
         // 状态上报：调试用途下只落日志（控制面板在 Phase 2 是"代理 + SSE"，见 notes §3）。
-        log(`[web] status ${JSON.stringify(args[0] ?? null).slice(0, 200)}`);
+        //
+        // ★`frames` **必须**提到前面来单独打（`tickets/T-0138`）：整条 payload 被
+        //   `slice(0, 200)` 截断，而 `frames` 窝在 `perf` 里、早就被截掉 ⇒ 排查"frames 会不会
+        //   回零/回落"时，日志里根本没有这个数（当时只能靠注册表每 5s 的心跳去猜，白绕了很多圈）。
+        //   它小且是判"实例有没有被重启"的关键量 ⇒ 顶到最前面，稳定可 grep。
+        const raw = args[0] as { perf?: { frames?: unknown }; observer?: unknown } | null | undefined;
+        const frames = raw && raw.perf && typeof raw.perf.frames === 'number' ? raw.perf.frames : null;
+        const who = raw && typeof raw.observer === 'number' ? `#${raw.observer}` : '#?';
+        // ★来源（`observer`）与 `frames` 并列打在最前：两个页面附着时，只有带上来源才看得出
+        //   "两套计数器在交错"（`T-0138` 的 `402→35` 就是这么来的，见 `viewerSeq` 注释）。
+        log(`[web] status obs=${who} frames=${frames === null ? '?' : frames} ${JSON.stringify(raw ?? null).slice(0, 200)}`);
         // ★`T-0136`：同一份 payload 顺手收窄成摘要，交给心跳发布（面板据此显示"跑到哪支 BIN/第几帧"）。
         //   形状不认识 ⇒ `lastStatus` 保持上一次的值，**不抛**（这条通道由渲染页发，字段集随版本演进）。
         const summary = summarizeStatus(args[0]);
@@ -607,6 +824,34 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
     }
   }
 
+  /**
+   * 静态产物自检（`tickets/T-0143`）：`index.html` 不在就**在启动时**把话说清楚。
+   *
+   * 为什么值得单做一件事（本工程实测踩过）：`dist/` 整个被 `.gitignore` 忽略，产物缺失只能靠人重跑
+   * 构建；而缺产物时宿主只会回一个 `{"error":"not found: index.html"}`——那句话把"你没构建"
+   * 和"请求了一个不存在的资源"压成同一个 404，排障方向会被带到插件路由/反向代理/端口上去。
+   * 这里在 listen 成功时打一条**含绝对路径 + 可照抄命令**的告警（不阻止启动：实例仍然活着，
+   * 这一点本身也是有用的信息）。
+   */
+  function checkDistAssets(): void {
+    const required = ['index.html', 'bridge.js', 'renderer.js'];
+    const missing = required.filter((f) => {
+      try {
+        return !fs.existsSync(path.join(distDir, f));
+      } catch {
+        return true;
+      }
+    });
+    if (missing.length === 0) return;
+    log(
+      `[web] ⚠ web 产物缺失（${missing.join(' / ')}）⇒ 渲染页打不开，DSH 面板会显示 ` +
+        `{"error":"not found: ${missing[0]}"}。\n` +
+        `[web]   产物目录：${distDir}\n` +
+        '[web]   修法：cd app/amayui-emulator && node build-electron.mjs\n' +
+        '[web]   （实例本身照常运行、/health 正常；缺的只是"给页面看的静态产物"）',
+    );
+  }
+
   function serveStatic(p: string, res: http.ServerResponse): void {
     const rel = decodeURIComponent(p).replace(/^\/+/, '');
     const full = path.resolve(distDir, rel);
@@ -619,7 +864,18 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
     try {
       data = fs.readFileSync(full);
     } catch {
-      sendJson(res, 404, { error: `not found: ${rel}` });
+      // ★缺的就是那几个产物 ⇒ 回一个**能指向修法**的 404（而不是光秃秃的 `not found`）。
+      const isBuildArtifact = rel === 'index.html' || rel === 'bridge.js' || rel === 'renderer.js';
+      sendJson(res, 404, {
+        error: `not found: ${rel}`,
+        ...(isBuildArtifact
+          ? {
+              reason: 'web 产物未构建（dist/web 里没有这个文件）',
+              distDir,
+              fix: 'cd app/amayui-emulator && node build-electron.mjs',
+            }
+          : {}),
+      });
       return;
     }
     const ext = path.extname(full).toLowerCase();
@@ -656,6 +912,15 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
     },
     push,
     close: closeHost,
+    detachHeadless: (): void => {
+      if (!headlessChild) return;
+      try {
+        headlessChild.kill('SIGTERM');
+      } catch {
+        /* 已经没了 */
+      }
+      headlessChild = null;
+    },
     listen: () =>
       new Promise<number>((resolve, reject) => {
         server.once('error', reject);
@@ -663,6 +928,7 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
           const port = (server.address() as { port: number }).port;
           // ---- 注册表（`T-0136`）：listen 成功才登记，端口用**真实**那一个（`--port 0` 时 OS 分配）----
           startedAt = Date.now();
+          observerStartedAt = startedAt;
           record = {
             id: instance,
             pid: process.pid,
@@ -682,13 +948,20 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
             idleTimer = setInterval(idleTick, every);
             idleTimer.unref?.();
           }
+          // ★静态产物自检（`T-0143`）：放在 `resolve(port)` **之前**，让所有启动期日志都先写完 ——
+          //   否则 `await web.listen()` 的调用方会在横幅（"就绪 http://…"）**之前**拿到端口，
+          //   于是任何"看到端口就断言横幅"的调用方（如 `host-registry.test.ts`）会偶发假红。
+          checkDistAssets();
           resolve(port);
+          // ★自持无头渲染页（`T-0140`）：**在 listen 之后**才附 —— 它要连的是这个真实端口
+          //   （`--port 0` 时端口只有这里才知道）。缺省关 ⇒ 这里一个字节的行为都不变。
+          if (opts.attachHeadless) attachHeadless(port);
         });
       }),
   };
 }
 
-/** CLI：`node --import tsx src/web/host.ts --instance a --port 8899 [--idle-sec 600]`。 */
+/** CLI：`node --import tsx src/web/host.ts --instance a --port 8899 [--idle-sec 600] [--attach-headless]`。 */
 if (process.argv[1] && /web[\\/]host\.[cm]?[jt]s$/.test(process.argv[1])) {
   const argOf = (name: string, dflt?: string): string | undefined => {
     const i = process.argv.indexOf(name);
@@ -696,6 +969,10 @@ if (process.argv[1] && /web[\\/]host\.[cm]?[jt]s$/.test(process.argv[1])) {
   };
   const repoRoot = argOf('--repo-root') ?? path.resolve(import.meta.dirname, '..', '..', '..', '..');
   const idleRaw = argOf('--idle-sec');
+  // `--attach-headless` 是**存在即真**的开关（不给值），也可用 env `AMAYUI_ATTACH_HEADLESS=1`。
+  const attachHeadless =
+    process.argv.includes('--attach-headless') ||
+    ['1', 'true', 'yes'].includes(String(process.env.AMAYUI_ATTACH_HEADLESS ?? '').toLowerCase());
   const web = createWebHost({
     repoRoot,
     instance: argOf('--instance', 'default'),
@@ -703,9 +980,16 @@ if (process.argv[1] && /web[\\/]host\.[cm]?[jt]s$/.test(process.argv[1])) {
     host: argOf('--bind', '127.0.0.1'),
     // 不给就用 env `AMAYUI_WEB_IDLE_SEC`，再缺省 600（`resolveIdleSec`）。
     idleSec: idleRaw !== undefined ? Number(idleRaw) : undefined,
+    attachHeadless,
+    // 缺省 `<repoRoot>/app/amayui-emulator/dist/web`；显式给是为了让守卫测试能指向临时目录
+    // （`tickets/T-0143`：缺产物与齐产物两种情形的判据都要能在**不依赖本机 dist/** 的情况下跑）。
+    distDir: argOf('--dist-dir'),
   });
   const port = await web.listen();
-  console.log(`[web] 就绪 http://127.0.0.1:${port}/（实例 ${argOf('--instance', 'default')}；Ctrl-C 收工）`);
+  console.log(
+    `[web] 就绪 http://127.0.0.1:${port}/（实例 ${argOf('--instance', 'default')}` +
+      `${attachHeadless ? '；已开 --attach-headless' : ''}；Ctrl-C 收工）`,
+  );
   const bye = async (): Promise<void> => {
     try {
       await web.close();
@@ -716,4 +1000,13 @@ if (process.argv[1] && /web[\\/]host\.[cm]?[jt]s$/.test(process.argv[1])) {
   };
   process.on('SIGINT', () => void bye());
   process.on('SIGTERM', () => void bye());
+  // ★兜底：任何非信号退出路径（未捕获异常、`close()` 之外的 `process.exit`）也要把无头子进程带走，
+  //   否则它会留着一个连着死宿主的渲染页（占着 Electron 窗口 + 重连风暴）。
+  process.on('exit', () => {
+    try {
+      web.detachHeadless?.();
+    } catch {
+      /* 退出路径尽力而为 */
+    }
+  });
 }
