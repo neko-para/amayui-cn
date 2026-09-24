@@ -22,12 +22,17 @@
     ]
   },
   "id": "T-0154",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → doing —— P1 0x22f 已修：层 20..29 上 op3/4/5 = D3DXMatrixRotationAxis 的轴（raw 117627-117632 + 117930 乘进 work）；四块矩阵改为可叠加（不再 kind 三选一）。守卫 test/op-22a-22f-scene-world.test.ts +3 例（红 3/28 → 绿 28/28）。扩展点：Scene+1844/+1856 无写点 ⇒ SceneState.sceneRotRad 由 setSceneRotationRad 注入"
     }
   ]
 }

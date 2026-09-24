@@ -1,3 +1,9 @@
+---
+kind: record
+state: consumed
+superseded_by: docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md
+---
+
 # 汇总（机器生成骨架；最终叙述见 records 报告）
 
 - 已校验批次：指令 43/32，能力 7/7

@@ -26,6 +26,7 @@ import {
   applyFlipbookLoop,
   applyMeshVertexColor,
   applyMeshVertexColorAlpha,
+  applyPrimAxisRotation,
   applyRotationAnim,
   applyRotationLoop,
   applyScaleAnim,
@@ -44,12 +45,23 @@ import {
   itemAnimationsPending,
   itemLoopAnimationsPending,
   meshWindowDone,
+  resetItemTransform,
 } from '../drawItem.js';
 import type { SceneState } from './state.js';
 import type { SceneXform, SceneXformKind } from './state.js';
 import { layoutWindow, type MsgWinInput, type TextFrame } from '../../text/layout.js';
 import { l2dAdvance, l2dComposeNodeAt, l2dNodeDrawable, l2dNodeWindowsPending } from '../../live2d/runtime.js';
 import { scTransitionsPending } from './transition.js';
+import {
+  ensureEffect3DSlots,
+  ensureSharedEffect3D,
+  weatherAdvance,
+  weatherCreate,
+  weatherDestroyAll,
+  weatherNodeKey,
+  weatherSetDestroyThresholds,
+} from './weather.js';
+import { SCENE_SCRATCH_SLOT_A, SCENE_SCRATCH_SLOT_B, sceneScratchMode } from './effectLevel.js';
 
 /**
  * `0x1FB` draw-texture：建/覆盖一个 DrawItem（等价引擎 `sub_4ACE50`），并置 bit0（可绘制）。
@@ -814,6 +826,12 @@ function freezeMeshColor(m: MeshObj): void {
  *   窗模型完全看不到它 ⇒ 玩家跳过等待门后窗照墙钟跑完（画面差异 + `needsRender` 多亮若干帧）。
  */
 export function scAdvance(s: SceneState, clock: number, freeze = false): void {
+  // ★★**帧级冻结总闸 `Scene+46676`**（审计 §4.2 #24）：非 0 ⇒ 引擎整趟渲染提交被跳过
+  //   （`sub_4B06D0` raw 134898、`sub_4AF1C0` raw 133547、`sub_49AA30` raw 117375、
+  //    文本行 raw 71833/72266 …）⇒ 窗**不按墙钟推进**、也不收尾。
+  //   ★放在 `freeze`（46512 = "立即收尾"）**之前**：46512 是"这一遍照画、但窗跳到终态"，
+  //     46676 是"这一遍根本不画" —— 两者是不同层级（见 `SceneState.frozen` 的说明）。
+  if (s.frozen) return;
   if (freeze) {
     // ★冻结路径与引擎同：每遍绘制**无条件**置 `46508`（raw 117839 / 133540 的 LABEL 不论在途与否都落这里）
     //   ⇒ 有窗可收尾就置脏，把终态画出来。
@@ -977,11 +995,206 @@ export function scL2dSlotProbe(s: SceneState): boolean {
  * 而"门等待期间持续合成"是**帧驱动**的职责（产品路径在门分支里无条件 present）。
  */
 export function sceneNeedsRender(s: SceneState, clock: number, dirty: boolean): boolean {
+  // ★第零项：**帧级冻结总闸**（`Scene+46676`，审计 §4.2 #24）—— 非 0 ⇒ 引擎整趟提交被跳过，
+  //   `46508` 也不会被置位 ⇒ "这一帧不用合成"。
+  if (s.frozen) return false;
+  // ★第一项：**池挂起位 `Scene+46516` 的场景侧锁存**（审计 §4.2 #2 的 P1 `missing-consumer`）：
+  //   引擎 `sub_4B4040` raw 136718-136719 的收尾是 `if (*(_QWORD *)(Scene+46512)) Scene[46508] = 1;`
+  //   —— 8 字节一起判 ⇒ **上一遍绘制时还有元素在动**（46516）与**强制冻结**（46512）都要把本遍标脏。
+  //   修前这一项只喂 `0x400` 等待门（`Engine.scenePending` → `Engine.gatePending`），判据里没有它
+  //   ⇒「绘制期置了 46516、但窗判据此刻已为假」会漏掉一帧终态。宿主用 `scSetScenePending` 锁存。
+  if (s.pending) return true;
   // ★第三项：**有活动转场窗**（引擎 `Scene+46508` 的置位点之一就是转场消费端 raw 136718-136719
   //   `if (46512 | 46516) 46508 = 1`，唯一读者 = `sub_40BE10` raw 16022 = needsRender）。
   //   少了这一项，转场期间 `present:'needsRender'` 档会**停止合成**，条带/淡入淡出只画一帧。
   // ★第四项：**L2D 槽非空**（`sub_4A1AF0`，raw 16025 的最后一个 `||`）—— 见 `scL2dSlotProbe`。
   return dirty || scAnimationsPending(s, clock) || scTransitionsPending(s) || scL2dSlotProbe(s);
+}
+
+/**
+ * ★**锁存池挂起位 `Scene+46516` 的场景侧值**（审计 §4.2 #2）—— 宿主在每帧末 `advanceModel` 之后
+ * 调一次，把 `Engine.scenePending`（= 引擎"上一遍绘制时还有元素在动"）交给共享模型。
+ *
+ * 为什么必须由宿主**推**进来而不是判据函数自己去问 `Engine`：`sceneNeedsRender` 是纯函数
+ * （`SceneState` + 时钟 + 脏位），两个宿主（pixi/headless）共用；`Engine` 在渲染层不可见
+ * （`tickets/T-0003` 的 B3 纪律：判据只能读共享模型）。
+ *
+ * 清零：宿主在**真的合成了一次**之后调 `scClearScenePending`（= 引擎下一遍绘制开头的 `46516 = 0`，
+ * raw 130427-130428 的第一句在 `sub_4AD9...` 前缀里；见 `scClearScenePending` 的说明）。
+ */
+export function scSetScenePending(s: SceneState, pending: boolean): void {
+  s.pending = pending;
+  // ★不需要置脏：本位本身就是"要不要再合成一遍"的输入（引擎也是读它、不是置 46508 之外的东西）。
+}
+
+/** 本遍合成已消费掉池挂起位（引擎每遍绘制开头 `46516 = 0`）。 */
+export function scClearScenePending(s: SceneState): void {
+  s.pending = false;
+}
+
+/**
+ * ★★**开始一遍绘制**（`sub_4B06D0` / `sub_4B4040` / `sub_4B4460` 的同一段开头）。
+ *
+ * 引擎里那三处开头都做同一件事：
+ * ```c
+ * Scene+46508 = 0;   // 本遍"要重画"位（收尾由 raw 136718-136719 按 46512|46516 置回）
+ * Scene+46516 = 0;   // 池挂起位（绘制期再置）
+ * ```
+ * （raw 130427-130428 的 `0x2xx` 前缀、raw 137035-137036 的 `0x222`、raw 136792-136793 的帧提交）
+ * ⇒ emulator 的等价物 = 清 `dirty` 与 `pending`。调用点 = `0x222` handler 与宿主每次真正合成之前。
+ */
+export function scBeginRenderPass(s: SceneState): void {
+  s.dirty = false;
+  s.pending = false;
+}
+
+/**
+ * ★**`0x222` 的逐节点 bit0 分派**（`sub_4B4460` raw 136905/136915/136926/136936：
+ * `if ((node[0] & 0x10001) == 1) sub_4B4020 / sub_4AF1C0 / sub_4B0360`）。
+ *
+ * emulator 侧能做的部分：把该 handle 的绘制项/mesh 的 **work 变换复位**（`+0x10000` 是引擎给
+ * "被转场占用"打的标记位，`& 10001 == 1` 实际等价于"可绘制"）——`0x221`/`0x321` 的参数在
+ * emulator 侧无从取值（3D 层节点表未建模，见 `handlers/scene-commit.ts` 的"未落地"②）。
+ *
+ * @returns 真的碰到了模型（`false` = 该 handle 两侧都不存在 ⇒ 只置脏）。
+ */
+export function scPrimDispatch(s: SceneState, handle: number): boolean {
+  const it = s.drawItems.get(handle);
+  const m = s.meshes.get(handle);
+  if (!it && !m) return false;
+  if (it && (it.flags & 1) !== 0) resetItemTransform(it);
+  if (m && (m.flags & 1) !== 0) {
+    m.anim = undefined; // 3D mesh 路径的对应物：颜色窗当帧收尾（`sub_4AF1C0` raw 133531-133538）
+    m.flags &= ~2;
+  }
+  s.dirty = true;
+  return true;
+}
+
+/** 管理器创建一路效果（`0x326` Snow / `0x327` Rain / `0x328` Leaf 的共享半边）。 */
+export function scWeatherCreate(s: SceneState, which: number, params: readonly number[]): boolean {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  return weatherCreate(s.weather, which, params);
+}
+
+/** 销毁全部效果 + 清旗标（`0x324` → thunk `sub_453530` → `sub_453150`）。 */
+export function scWeatherDestroyAll(s: SceneState): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  weatherDestroyAll(s.weather);
+}
+
+/** 写两个销毁阈值（`0x325` → `sub_426DC0`）。 */
+export function scWeatherSetDestroyThresholds(s: SceneState, rainAt: number, othersAt: number): void {
+  weatherSetDestroyThresholds(s.weather, rainAt, othersAt);
+}
+
+/**
+ * **`sub_4535F0(管理器, key)` 的销毁半边**（raw 65890-65909）—— 逐节点销毁判据。
+ * 调用点 = `sub_4B06D0` 的三表归并（raw 136903/136913/136924）与 `0x222`（raw 137169/137208/137218）。
+ */
+export function scWeatherNodeKey(s: SceneState, key: number): number[] {
+  return weatherNodeKey(s.weather, key);
+}
+
+/**
+ * **`sub_453540`：每帧按墙钟推进三路效果**（审计 §4.2 #18；raw 65791-65839）。
+ *
+ * 时钟口径 = **宿主注入的 `s.weather.clockMs`**（引擎是 `timeGetTime()`；驱动传 `Engine.nowMs`
+ * —— 产品路径上就是墙钟，headless 走虚拟时钟以保确定性）。上限 100 步/帧在 `weather.ts` 里。
+ *
+ * @returns 本帧推进的步数（0..100）。
+ */
+export function scWeatherAdvance(s: SceneState): number {
+  // ★帧级冻结总闸（`Scene+46676`）在这里也成立：冻结期间 `sub_4B06D0` 整段被跳过
+  //   ⇒ `sub_453540` 也不会被调用（raw 136828 在 `sub_4B06D0` 体内）。
+  if (s.frozen) return 0;
+  const steps = weatherAdvance(s.weather, s.weather.clockMs);
+  if (steps > 0) s.dirty = true; // ★真的推进了 ⇒ 本帧要重画（否则雨雪在 present:needsRender 档下会冻住）
+  return steps;
+}
+
+/** 注入本帧时钟（`0x118`/`0x23C` 之类的帧钟由驱动给；天气推进用它，见 `scWeatherAdvance`）。 */
+export function scWeatherSetClock(s: SceneState, clockMs: number): void {
+  s.weather.clockMs = clockMs;
+}
+
+// ---------------------------------------------------------------------------
+// `Scene+46668` 3D 效果等级（审计 §4.2 #20 `scene-3d-effect-level-writer`）
+//   ★等级 → 槽 mode / 效果资源 id 的**纯映射**在 `scene/effectLevel.ts`（无循环依赖：
+//     `state.ts` 需要 `sceneScratchMode`，而它不能 import 本文件）。
+// ---------------------------------------------------------------------------
+
+/**
+ * ★★**写 3D 效果等级**（`Scene+46668`）。
+ *
+ * 写端在引擎里是构造/设备切换（`sub_4A6EE0` raw 126561 的 `Scene+46668 = a3`）；emulator 没有
+ * D3D 设备版本可读 ⇒ 由宿主/驱动/守卫经本函数注入（默认 2 = 满档，见 `SceneState.effect3DLevel`）。
+ *
+ * 三件持续后果（全在这一次调用里落地）：
+ *  1. 两个 scratch 槽（36/37）的 mode 跟着等级重写（`sceneScratchMode`）；
+ *  2. 主/副 `ID3DXEffect` 按等级惰性建（`ensureEffect3DSlots`）；
+ *  3. 降级**不**主动释放已建的槽（引擎只在 `>1` 时惰性建、降级也不会回头释放 ⇒ 与体的惰性语义一致）。
+ */
+export function scSetEffect3DLevel(s: SceneState, level: number): number {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  const lv = Math.max(0, Math.min(2, Math.trunc(level)));
+  s.effect3DLevel = lv;
+  const mode = sceneScratchMode(lv);
+  scSetSlotMode(s, SCENE_SCRATCH_SLOT_A, mode);
+  scSetSlotMode(s, SCENE_SCRATCH_SLOT_B, mode);
+  ensureEffect3DSlots(s.effect3DSlots, lv);
+  return lv;
+}
+
+/**
+ * ★**绘制期按等级补齐效果槽**（`sub_4B06D0` raw 134820-134855 的惰性建）——
+ * 由宿主每帧经 `scSceneCommitRange` 调用（不是"构造时一次"：引擎也是**每帧**判空后惰性建）。
+ *
+ * @returns 这一次新建了哪些槽（空 = 都已建 / 门未过）。
+ */
+export function scEnsureEffect3DSlots(s: SceneState): string[] {
+  return ensureEffect3DSlots(s.effect3DSlots, s.effect3DLevel);
+}
+
+/**
+ * ★**`0x326` Set3DEffectSnow 的两半**（审计 §4.2 #20 的 (c) / #21 的 `0x326` 那一半）。
+ *
+ * 引擎（`sub_426E10` raw 33941-33954 → `sub_418340` raw 23910-23947）：
+ *  - **门**：`Scene+46668 >= 1`（raw 23917）；
+ *  - **共享效果懒建**：`Scene[42456 + 4*op4]`（纹理槽 `op4`）非空 ⇒ 若 `Scene+46496` 为空则
+ *    `D3DXCreateEffectFromResourceA(设备, 0, 202, …, Scene+46496)`（raw 23922-23932）；
+ *  - **重建 Snow**：`sub_453330(管理器, op1, f2, op3, 纹理, effect)`（raw 23935）。
+ *
+ * @param textureReady 纹理槽 `op4` 是否已有纹理（"槽里有没有 CTexture"是宿主侧的事实）。
+ * @returns `false` = 门未过或纹理缺失（引擎在后者打 `Set3DEffectSnow エラー` 并**什么都不做**）。
+ */
+export function scSet3DEffectSnow(
+  s: SceneState,
+  op1: number,
+  f2: number,
+  op3: number,
+  textureReady: boolean,
+): boolean {
+  const gate = ensureSharedEffect3D(s.effect3DSlots, s.effect3DLevel, textureReady);
+  if (!gate.built) return false; // 等级 < 1 或纹理槽空 ⇒ 引擎什么都不做（只报错串）
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  // `sub_453330(管理器, op1, f2, op3, 纹理, effect)`：重建 Snow（`operator new(0xE4)`），
+  // 16-dword 参数块前三位 = 引擎真读的三格（其余由效果对象自己解释）。
+  weatherCreate(s.weather, 1, [op1, f2, op3]);
+  return true;
+}
+
+/**
+ * ★★**写渲染冻结总闸 `Scene+46676`**（审计 §4.2 #24）。
+ *
+ * 反编译里这一格**只有读点（105 处）、零写点** ⇒ 它的运行期取值无法静态判定（同 `Scene+1856`
+ * 的处置）。默认 `false` = 与修前逐字节相同；需要复现冻结的宿主/回归走本函数注入。
+ */
+export function scSetSceneFrozen(s: SceneState, frozen: boolean): void {
+  s.frozen = !!frozen;
+  // ★**不置脏**：本位的唯一消费者是 `sceneNeedsRender` 的"第零项早退"（frozen ⇒ 恒假）
+  //   ⇒ 置脏没有任何后果（判据先看它）。清位时"重新开始合成"由**窗/脏位**自然给出
+  //   （冻结期间脚本的改动照旧置脏，只是那些帧不合成）⇒ 这不会静默丢掉一帧。
 }
 // ---------------------------------------------------------------------------
 // 消息窗文本（引擎「每窗一张离屏表面 + 逐行显现」的等价物）
@@ -1077,17 +1290,39 @@ export function scMsgWinClearAll(s: SceneState): void {
 // emulator 记录进 `SceneState.render4`（渲染器可选消费，见该字段的说明）。
 // ---------------------------------------------------------------------------
 
-/** `0x1FC` 复位图元变换（`sub_4AC470`）：清该 DrawItem 的缩放/旋转/平移字段。 */
+/**
+ * `0x1FC` 复位图元变换（`sub_4AC470`：清该 DrawItem 的缩放/旋转/平移字段）。
+ *
+ * ★**2026-09（审计 §4.2 #8）不再只是"记录"**：引擎把三块 work 矩阵复位成单位元
+ * （`sub_4AC470` raw 131276-131327），所以这里真的把 `Item` 的 work/target 三元组复位
+ * （`resetItemTransform`）。消费者 = `presenter.#buildItemSprite` 的 `itemRenderPlacement`
+ * （它读 `itemScale`/`itemRotationRad`/`itemTranslation`）⇒ 复位之后画面立刻回正。
+ * 台账字段 `render4.primReset` 保留（报告/快照要能看到脚本下发的这一次复位）。
+ */
 export function scResetPrimTransform(s: SceneState, handle: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.primReset = handle;
   s.render4.primTransform.delete(handle);
+  const it = s.drawItems.get(handle);
+  if (it) resetItemTransform(it); // 引擎 `sub_4AAA50` 建的是"缺失即建"的默认项 ⇒ 不存在则只记台账
 }
 
-/** `0x1FE` 图元变换 4 浮点（`sub_4AC660`；**不除 100**，与 0x1FD 的缩放不同）。 */
+/**
+ * `0x1FE` 图元变换 4 浮点（`sub_4AC660`；**不除 100**，与 0x1FD 的缩放不同）。
+ *
+ * ★这四个量是 `(轴 x, 轴 y, 轴 z, 角°)`——**绕任意轴旋转**，不是"四个自由浮点"（读体得，见
+ * `applyPrimAxisRotation` 的引擎逐句）。修前只写台账 ⇒ 画面完全没有这一笔（审计 §4.2 #8）。
+ */
 export function scSetPrimTransform4(s: SceneState, handle: number, a: number, b: number, c: number, d: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.primTransform.set(handle, [a, b, c, d]);
+  let it = s.drawItems.get(handle);
+  if (!it) {
+    // 引擎 `sub_4AC660` 第一步就是 `sub_4AAA50(Scene, a2)`（缺失即建项，`flags = 0` ⇒ 尚不可画）
+    it = makeDefaultItem(handle);
+    s.drawItems.set(handle, it);
+  }
+  applyPrimAxisRotation(it, a, b, c, d);
 }
 
 /** `0x207` 槽→槽 StretchRect（`sub_4A3980`）：源/目标同尺寸矩形。 */
@@ -1228,7 +1463,13 @@ export function scSetSlotParams(
   return applied > 0 ? 'applied' : 'created-gated';
 }
 
-/** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。 */
+/** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。
+ *
+ * ★**2026-09（审计 §4.2 #8）消费者已接**：`presenter.drawMesh` 把这个 map 交给
+ * `meshColor`/`meshVertexColor`（`drawitem/eval.ts` 的 `meshAttrsTint`）⇒ 改属性真的改画面。
+ * ★`scSetDrawEntryParam` 那类"台账 + 模型双写"的口径这里不需要：`render4.meshAttrs` **就是**
+ * 消费者读的那一份（唯一真源）。
+ */
 export function scSetMeshEntryAttr(s: SceneState, mesh: number, index: number, value: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   let m = s.render4.meshAttrs.get(mesh);
@@ -1246,10 +1487,40 @@ export function scRelease3DSlot(s: SceneState, slot: number): void {
   s.meshes.delete(slot);
 }
 
-/** `0x32D` 3D 颜色（`sub_499DF0`：四分量各 ÷255 后下发）。 */
+/**
+ * `0x32D` 3D 颜色（`sub_499DF0`：四分量各 ÷255 后下发）。
+ *
+ * ★**2026-09（审计 §4.2 #8）消费者已接**：引擎的四分量被组装成一个 ARGB 写进
+ * `Engine[13947]` 并 `SetRenderState(139 = D3DRS_TEXTUREFACTOR, 该值)`（raw 116637 / 116693-116696）
+ * —— 那是**纹理阶段常量**，Pixi 没有对应档 ⇒ emulator 把它当**网格通路的全局染色倍率**
+ * （`presenter.drawMesh` → `meshColor`/`meshVertexColor` 的 `color3DTint`）。
+ * 恒等 `[1,1,1,1]`（初值）**不参与乘法** ⇒ 与修前逐字节相同。
+ * ★口径差异如实登记：真机上 TEXTUREFACTOR 只影响**用了该 stage 常量**的纹理阶段
+ * （本作 3D 通路的 shader 用法未在反编译里逐条确证）⇒ 这里是"全局网格染色"的近似。
+ */
 export function scSet3DColor(s: SceneState, r: number, g: number, b: number, a: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.color3D = [r, g, b, a];
+}
+
+/**
+ * ★★**`sub_4A1E90`：把 Scene 自己的变换记录复位成单位阵**（raw 122129-122157）。
+ *
+ * 引擎体：`_this[11650]`（= `Scene+46600`，Scene 世界矩阵）置单位阵，再调
+ * `sub_49AA30(this, Scene+1120, Scene+46600, …)` 把**元素记录**（四条 `0x22A`/`0x22C`/`0x22D`/`0x22F`
+ * 写的那个）按当前值合成一次。调用点 = `sub_4B4040` raw 136795（每帧 2D 提交）与
+ * `sub_4B4460`（`0x222`）raw 137038。
+ *
+ * emulator 侧的等价物 = **清掉 `SceneXform`**（`sceneAffine2DOf` 对 `null` 返回单位变换）
+ * ⇒ 那些 `scSetScene*` 的分量不再参与后续合成。这是 `0x222` 能落地的一半里最有观测意义的一件
+ * （审计 §4.2 #19 的"世界矩阵复位"）。
+ */
+export function scResetSceneWorldMatrix(s: SceneState): 'applied' | 'noop' {
+  const had = s.sceneXform !== null;
+  s.sceneXform = null;
+  s.sceneRotRad = 0;
+  if (had) s.dirty = true; // 真的变了才置脏（否则每帧都亮，脏位失去意义 —— `tickets/T-0003`）
+  return had ? 'applied' : 'noop';
 }
 
 /**
@@ -1375,6 +1646,172 @@ export function sceneLayerAffected(layer: number): boolean {
 /** 一份"还没算 world·scene 的 work 矩阵"的 2D 结果（`itemRenderPlacement` 的形状）。 */
 type Affine2D = { position: { x: number; y: number }; scale: { x: number; y: number } };
 
+// ---------------------------------------------------------------------------
+// ★Scene 世界矩阵的**四块矩阵合成**（`0x22A`/`0x22C`/`0x22D`/`0x22F`）
+//   —— 依据 = `sub_49AA30` 的**收尾**（LABEL_72，raw 117927-117933）：
+//        v73 = v90;
+//        D3DXMatrixMultiply(v90, v90, v118);      // v118 = 元素 +0x6C  = 动画「缩放」块 current
+//        D3DXMatrixMultiply(v73, v73, v120);      // v120 = 元素 +0xEC  = 动画「旋转」块 current
+//        D3DXMatrixMultiply(v73, v73, v121);      // v121 = 元素 +0x16C = 动画「work」块 current
+//        D3DXMatrixTranslation(v119, v111, v110, v91);
+//        return D3DXMatrixMultiply(v73, v73, v119);
+//   D3DX 是**行向量**约定（`v' = v·M`）⇒ `work ← work·v118·v120·v121·T(pos)`。
+//   四块矩阵各自独立（raw 117123 `D3DXMatrixScaling(Scene+307)` / 117159
+//   `D3DXMatrixTranslation(Scene+371)` / 117175 `D3DXMatrixScaling(Scene+323)` / 117232
+//   `D3DXMatrixTranslation(Scene+387)`；进链处 = 117496 / 117646 的 `qmemcpy` + 424 的 pivot 平移）
+//   ⇒ **不再用互斥的 `kind` 选择分量**（修前：`applySceneXformToPlacement` 按 `kind` 三选一，
+//   跨种类混用只应用最近一次下发的那一种；引擎四块同时在）。
+//
+//   ★P1（本文件本轮修的那条）：**`0x22F` 的 op3/4/5 对层 20..29 是旋转轴，不是屏幕空间 2D 平移**。
+//   体（`sub_49AA30` 层号支 raw 117624-117632，逐字）：
+//        if ( !*(_DWORD *)(v113 + 46676) && *(_DWORD *)(*(_DWORD *)(v113 + 1860) + 1164) == 2 )
+//        {
+//          v55 = *((_DWORD *)a2 + 1);              // 元素 +4 = 层号
+//          if ( v55 >= 20 && v55 < 30 )
+//          {
+//            ((void (__stdcall *)(_DWORD, _DWORD, _DWORD))j_D3DXMatrixRotationAxis)(v120, a2 + 181, a2[184]);
+//            v26 = 0.0; v42 = 1.0;
+//          }
+//        }
+//   `a2` = 元素（740 B DrawItem），`a2 + 181` = 元素 +724 = **轴三分量**、`a2[184]` = 元素 +736 =
+//   **角（弧度）**；`v120` 随后在 117930 被乘进 work ⇒ 层 20..29 上这三格**是旋转**。
+//   修前的两处错：①`presenter.ts` 的 `sceneXform2D` 把 `x.axisTranslate.x/.y` 当 `tx/ty` 做 2D 平移；
+//   ②`scene/state.ts` 的注释写「`v120` 在 20..29 支里被置成单位阵 ⇒ `0x22F` 的轴分量对该区间
+//   不产生任何影响」——紧跟 `D3DXMatrixRotationAxis` 的 `v26 = 0.0; v42 = 1.0;` 是给**后面
+//   `+0x1B0` 那块矩阵**（raw 117647-117662 用 v26/v42 填零/一、再 `qmemcpy(v121, a2 + 91)`）用的，
+//   不是"把 `v120` 置成单位阵"。
+//
+//   ★**由上述四块合成得到的 Scene 变换是 2D 仿射**（这解释了 RenderScene 层号支里的 decompose）：
+//     `z` 在两次投影中都被丢掉 ⇒ 3D 复合的 (1,1)/(1,2)/(2,1)/(2,2)/(4,1)/(4,2) 六个分量与
+//     "先把每块矩阵投到 2D 再乘"**逐位相同**。所以这里就按体做 4×4 合成、再取那六个分量。
+// ---------------------------------------------------------------------------
+
+/** 行主序 4×4（D3DX 行向量约定：`v' = v·M`）—— 与 `nodeMatrix.ts` 的 `Affine` 同一转置口径。 */
+type Mat4 = [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number];
+
+/** `M = A·B`（行向量约定：先 A 后 B）。 */
+function mat4Mul(a: Mat4, b: Mat4): Mat4 {
+  const out = new Array<number>(16).fill(0) as Mat4;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      let s = 0;
+      for (let k = 0; k < 4; k++) s += a[i * 4 + k]! * b[k * 4 + j]!;
+      out[i * 4 + j] = s;
+    }
+  }
+  return out;
+}
+
+/** `D3DXMatrixTranslation`（raw 117159/117232/117429）。 */
+function mat4Translation(x: number, y: number, z: number): Mat4 {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1];
+}
+
+/** `D3DXMatrixScaling`（raw 117123/117175）。三轴可为 0/负（引擎不拦）。 */
+function mat4Scaling(x: number, y: number, z: number): Mat4 {
+  return [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
+}
+
+/**
+ * `D3DXMatrixRotationAxis`（raw 117630）—— 标准 Rodrigues，D3DX 的**行向量**矩阵。
+ *
+ * ★**先归一化**：`.c` 里轴是原样传进去的（raw 117630 `a2 + 181`），归一化发生在 `d3dx9_43.dll`
+ * 内部（与 `live2d/nodeMatrix.ts:277-296` 同一条实测结论；那里还把这个 3×3 的 2D 部分
+ * `M11/M12/M21/M22` 逐位钉在测试里）。轴长为 0 ⇒ d3dx 那头是 0 除（无定义）⇒ 这里退化成单位阵。
+ */
+function mat4RotationAxis(ax: number, ay: number, az: number, rad: number): Mat4 {
+  const len = Math.sqrt(ax * ax + ay * ay + az * az);
+  if (!(len > 0) || !Number.isFinite(len)) {
+    return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+  }
+  const x = ax / len;
+  const y = ay / len;
+  const z = az / len;
+  const c = Math.cos(rad);
+  const s = Math.sin(rad);
+  const t = 1 - c;
+  return [
+    t * x * x + c, t * x * y + s * z, t * x * z - s * y, 0,
+    t * x * y - s * z, t * y * y + c, t * y * z + s * x, 0,
+    t * x * z + s * y, t * y * z - s * x, t * z * z + c, 0,
+    0, 0, 0, 1,
+  ];
+}
+
+/** 单位阵（字面量，避免共享可变对象）。 */
+function mat4Identity(): Mat4 {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+
+/**
+ * **Scene 变换在层 20..29 上的 2D 仿射形式**（= 引擎 RenderScene 层号支 raw 133411-133438 的
+ * `D3DXMatrixDecompose` 后重建的净结果）。
+ *
+ * 返回的六个分量正是**D3DX 4×4 的前两列 + 第四行**（`M11/M12/M21/M22/M41/M42`）——
+ * 点映射 `(x,y) → (x·M11 + y·M21 + M41, x·M12 + y·M22 + M42)`。之所以**不**把它压成
+ * "scale + rotation"两样：两轴缩放不同（`axisScale.x ≠ axisScale.y`）且带旋转时那个 2×2
+ * 不是"缩放∘旋转"可表示的（会留剪切项），而这六个数是引擎拿到的**同一组数**
+ * （`D3DXMatrixDecompose` 的输出就是它们，随后 `D3DXMatrixScaling/ RotationAxis/ Translation` 重建）。
+ *
+ * 返回 `null` = 这一层不吃 Scene 变换（层号不在 `[20,30)`）或**四块矩阵全为默认 + 角 0**
+ * （`sceneXform` 锚为 null 且 `sceneRotRad === 0`）⇒ 调用方必须保持"与接线前逐字节相同"。
+ *
+ * 组合序（**行向量约定，从左到右作用**；依据 = `sub_49AA30` 的 117425-117431 + 收尾 117927-117933）：
+ * ```
+ * 点 ← 点 ·T(−pivot)·S(axisScale_x, axisScale_y, 1)·R(axis, angle)·T(axisTranslate)
+ *          ·S(scale_x, scale_y, 1)·T(translate_x, translate_y, 0)
+ * ```
+ * 即"先按 `0x22D` 的轴缩放 → 绕 `0x22F` 的轴旋转 → 加 `0x22F` 的分量 → 乘 `0x22A` 的缩放
+ * → 加 `0x22C` 的平移"，四块**互相独立、可叠加**（修前是一个 `kind` 互斥三选一）。
+ */
+export function sceneAffine2DOf(
+  s: SceneState,
+  layer: number,
+): { a: number; b: number; c: number; d: number; tx: number; ty: number } | null {
+  if (!sceneLayerAffected(layer)) return null;
+  const x = s.sceneXform;
+  if (!x && s.sceneRotRad === 0) return null;
+  const asx = x ? x.axisScale.x : 1;
+  const asy = x ? x.axisScale.y : 1;
+  const ax = x ? x.axisTranslate.x : 0;
+  const ay = x ? x.axisTranslate.y : 0;
+  const az = x ? x.axisTranslate.z : 0;
+  const sx = x ? x.scale.x : 1;
+  const sy = x ? x.scale.y : 1;
+  const tx = x ? x.translate.x : 0;
+  const ty = x ? x.translate.y : 0;
+  // ★修前：op3/4/5 被当屏幕空间 2D 平移（直接当 `tx/ty`）；修后：它们是**旋转轴**。
+  const axis = x ? x.axis : { x: 0, y: 0, z: 0 };
+  const m = mat4Mul(
+    mat4Mul(
+      mat4Mul(mat4Mul(mat4Scaling(asx, asy, 1), mat4RotationAxis(axis.x, axis.y, axis.z, s.sceneRotRad)), mat4Translation(ax, ay, az)),
+      mat4Scaling(sx, sy, 1),
+    ),
+    mat4Translation(tx, ty, 0),
+  );
+  return { a: m[0]!, b: m[1]!, c: m[4]!, d: m[5]!, tx: m[12]!, ty: m[13]! };
+}
+
+/**
+ * 把 2D 仿射套到一个点上（`(x,y) → (x·a + y·c + tx, x·b + y·d + ty)`；行向量序）。
+ * 与 `snapshot.ts` 的 `before→after`、以及 `presenter.ts` 的父容器是**同一条式子**。
+ */
+export function sceneAffineApply(
+  m: { a: number; b: number; c: number; d: number; tx: number; ty: number },
+  x: number,
+  y: number,
+): { x: number; y: number } {
+  return { x: x * m.a + y * m.c + m.tx, y: x * m.b + y * m.d + m.ty };
+}
+
+/**
+ * 仿射的**旋转分量**（`atan2(b, a)`，与 `Item.rotRad` 同口径的弧度；Pixi 的 `Container.rotation` 直接可用）。
+ * 只在"两轴缩放相同"时它才是完整的旋转（否则那个 2×2 带剪切，见 `sceneAffine2DOf` 的说明）。
+ */
+export function sceneAffineRotation(m: { a: number; b: number }): number {
+  return m.a === 0 && m.b === 0 ? 0 : Math.atan2(m.b, m.a);
+}
+
 /**
  * **把 Scene 世界矩阵按引擎的左右序叠加到一个绘制项的 work 矩阵结果上**。
  *
@@ -1385,35 +1822,34 @@ type Affine2D = { position: { x: number; y: number }; scale: { x: number; y: num
  * （屏幕空间），平移分量因此**不被该项的缩放旋转放大**。项自身的组合序仍是既有的
  * `T(−pivot)·S·R·T(t)·T(pos)`（`itemRenderPlacement`），Scene 那一级**接在它后面**。
  *
- * 而在 `层号 ∈ [20,30)` 这一支里，引擎随后 `D3DXMatrixDecompose` 再**只装回 2D 缩放与平移**
- * （raw 133411-133438 / 117748-117772：`v131` 的旋转项被清零），且**把旋转矩阵 `v120` 置成单位阵**
- * （raw 117629-117631 + 117647-117662）—— 那个单位阵仍会被乘进最终合成（`sub_49AA30` 的
- * LABEL_72，raw 117930），所以净效果就是：
- * ```
- * 屏幕点 ← (屏幕点 × (sx, sy)) + (tx, ty)
- * ```
- * ★**缩放是绕屏幕原点 (0,0) 的**（不是绕项的中心）—— 这是 `v·S` 的直接后果，不是近似。
- * ★顺带结论：`0x22F` 的轴分量（→ `D3DXMatrixRotationAxis(a2+181, a2[184])`）**对 20..29 层
- *   不产生任何影响**（它算出的旋转正是在这一支里被换成单位阵的那个 `v120`）。
+ * `scale` 的取值 = 2×2 两列的**长度**（= 引擎 `D3DXMatrixDecompose` 给出的两轴缩放）；
+ * Scene 的**旋转分量不在返回值里**（`Affine2D` 的 `scale` 只承载缩放）—— 需要旋转的调用方
+ * （`presenter.ts`）用 `sceneAffine2DOf` + 父容器施加，见那里的说明。
+ * ★**缩放/旋转是绕屏幕原点 (0,0) 的**（不是绕项的中心）—— 这是 `v·S`/`v·R` 的直接后果。
  *
- * @returns **已叠加**的 `{position, scale}`；`layer` 不在区间内或从未下发过变换 ⇒ 原对象返回。
+ * @returns **已叠加**的 `{position, scale}`；`layer` 不在区间内或四块矩阵全默认 ⇒ 原对象返回。
  */
 export function applySceneXformToPlacement<T extends Affine2D>(s: SceneState, layer: number, pl: T): T {
-  if (!sceneLayerAffected(layer)) return pl;
-  const x = s.sceneXform;
-  if (!x) return pl;
-  const sx = x.kind === 'scale' ? x.scale.x : x.kind === 'axis-scale' ? x.axisScale.x : 1;
-  const sy = x.kind === 'scale' ? x.scale.y : x.kind === 'axis-scale' ? x.axisScale.y : 1;
-  const tx = x.kind === 'translate' ? x.translate.x : x.kind === 'axis-scale' ? x.axisTranslate.x : 0;
-  const ty = x.kind === 'translate' ? x.translate.y : x.kind === 'axis-scale' ? x.axisTranslate.y : 0;
+  const m = sceneAffine2DOf(s, layer);
+  if (!m) return pl;
+  const p = sceneAffineApply(m, pl.position.x, pl.position.y);
+  // 两轴缩放 = 两列长度（行向量矩阵：第一列 = (M11,M12) = (a,b)、第二列 = (M21,M22) = (c,d)）。
+  const sx = Math.hypot(m.a, m.b);
+  const sy = Math.hypot(m.c, m.d);
   return {
     ...pl,
-    position: { x: pl.position.x * sx + tx, y: pl.position.y * sy + ty },
+    position: p,
     scale: { x: pl.scale.x * sx, y: pl.scale.y * sy },
   };
 }
 
-/** 取（必要时新建）Scene 变换锚；`kind` 是本次指令设的种类（引擎 `Scene[306] = 1`）。 */
+/**
+ * 取（必要时新建）Scene 变换锚；`kind` 只是**"最近一次下发的是哪一种"的参考字段**
+ * （引擎 `Scene[306] = 1` —— 四条指令都写同一个值，体上不可区分）。
+ *
+ * ★**它不再是合成选择子**（修前 `applySceneXformToPlacement` 按 `kind` 三选一 ⇒ 跨种类混用
+ * 只剩最近一次那一种）。现在合成走 `sceneAffine2DOf` 的四块矩阵乘积，`kind` 只供快照/诊断。
+ */
 function sceneXformOf(s: SceneState, kind: SceneXformKind): SceneXform {
   s.sceneXform ??= {
     kind,
@@ -1421,6 +1857,7 @@ function sceneXformOf(s: SceneState, kind: SceneXformKind): SceneXform {
     translate: { x: 0, y: 0, z: 0 },
     axisScale: { x: 1, y: 1, z: 1 },
     axisTranslate: { x: 0, y: 0, z: 0 },
+    axis: { x: 0, y: 0, z: 0 },
     maskA: null,
     maskB: null,
   };
@@ -1469,19 +1906,56 @@ export function scSetSceneAxisScale(s: SceneState, a: number, b: number, sx: num
 }
 
 /**
- * `0x22F`（`sub_424330` raw 32087-32103 → `sub_49A9C0` raw 117222-117236）：**Scene 级带轴平移**。
+ * `0x22F`（`sub_424330` raw 32087-32103 → `sub_49A9C0` raw 117222-117236）：**Scene 级带轴成分**。
  * ★**以体订正筛体**：被调体写的是 **`D3DXMatrixTranslation(Scene+387)`**（`+323`/`D3DXMatrixScaling`
- * 属 `0x22D` 的 `sub_49A870`，筛体把两条的被调体记混了）；`op3/4/5` 是浮点轴分量、**不除**。
+ * 属 `0x22D` 的 `sub_49A870`，筛体把两条的被调体记混了）；`op3/4/5` 是浮点分量、**不除**。
  * 被调体还写 `Scene[280] |= 2`、`Scene[293] = 0`、`Scene[297] = op1`、`Scene[302] = op2`。
  * ★语料 7 处（`ALLMAP:1393` / `FIELD:2203,11436` / `LOOK:98` / `MOVERUIN:176` / `REIGN:1015` /
  *   `SHOWALLMAP:150`），`op1` 恒为 0。
+ *
+ * ★★**这一条的 op3/4/5 在不同层上落到不同的矩阵块**（同一份 op 数，两条消费路径，依据 raw 117624-117632）：
+ *  - **层号 ∉ [20,30)**：走 `D3DXMatrixMultiply(work, work, Scene+46600)` 那一支 ⇒ 拿到的是
+ *    `sub_49AA30` 里 **`v121`（T(axisTranslate)）** 那一块 ⇒ 净效果 = **平移** `(op3, op4, op5)`；
+ *  - **层号 ∈ [20,30)**：该支把 `v120` **重建成** `D3DXMatrixRotationAxis(a2 + 181, a2[184])` ——
+ *    轴 = 这三格（元素 +724/+728/+732 = `a2[181..183]`）、角 = `a2[184]`（元素 +736）——
+ *    然后 117930 把 `v120` 乘进 work ⇒ 这三格**是旋转轴**、不是屏幕空间 2D 平移。
+ *    `a2` 那份"轴/角"由动画块 raw 117610-117620（`a2[181..184] = 轴/角`）与瞬时写 117242-117255
+ *    （`*(float *)(this + 1624/1628/1632) = a4/a5/a6`、`+1640 = a7`；`j_D3DXMatrixRotationAxis(this + 1420, …)`）
+ *    共同供给 ⇒ **`i22f` 自己只写"分量"，不写"轴"**，但两条路径消费的正是同一个三格。
+ *    所以这里**同时**记两份：`axis`（旋转轴；给层 20..29 的合成）与 `axisTranslate`
+ *    （平移分量；给非 [20,30) 的完整 3D 世界矩阵那一条路，emulator 尚未实现那条）。
  */
 export function scSetSceneAxisTranslation(s: SceneState, a: number, b: number, x: number, y: number, z: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const xf = sceneXformOf(s, 'axis-scale');
+  xf.axis = { x, y, z }; // ★修前：这三格只落进 `axisTranslate`、且被当屏幕空间 2D 平移用
   xf.axisTranslate = { x, y, z };
   xf.maskA = a;
   xf.maskB = b;
+}
+
+/**
+ * **Scene 变换记录里的"角"**（引擎 raw 117630 的 `a2[184]`，弧度）。
+ *
+ * ★`i22f` 的五个操作数里**没有角** —— 体上它是 `D3DXMatrixRotationAxis(v120, a2 + 181, a2[184])`：
+ * 轴来自 `i22f` 的三格、**角来自元素自己的 `a2[184]`**（`a2` = 模板 `Scene+1120` 或它的副本
+ * `sub_4AEEA0` 的 740 B 局部拷贝，raw 117641-117646）。`a2[184]` 的写点只有动画块（raw 117616）
+ * 与瞬时写（raw 117255 `*(float *)(this + 1640) = a7`），**都不是 `i22f`**。
+ *
+ * ★**emulator 侧的卡点（如实披露）**：`RenderScene` 的层号支读的是 **`Scene` 自己那份**
+ * `j_D3DXMatrixRotationAxis(v28, _this + 1844, *(float *)(_this + 1856))`（raw 133427，`_this` = Scene）
+ * —— 即 Scene 字节 1844/1856 = **dword 461/464**。这两个格在反编译里**只有这一个读点、没有任何
+ * 写点**（全文件检索 `1844`/`1856`/`461`/`464` 无写；Scene 的 465 格是 D3D 设备指针，
+ * 与 `sub_49AA30` 的元素记录不同物）⇒ 它的运行期取值**无法从反编译静态判定**。
+ * 故这里把它建成**显式模型字段**：默认 `0`（= 恒等旋转，画面与"修前"逐字节相同 —— 这是保守取法），
+ * 由宿主经 {@link scSetSceneRotationRad} 注入。**未解析出的那个字段值**是本条唯一的已知缺口
+ * （见 `presenter.ts` 的 `sceneXform2D` 说明与报告）。
+ */
+export function scSetSceneRotationRad(s: SceneState, rad: number): void {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  s.sceneRotRad = rad;
+  // 只有角、四块矩阵全默认时也要有锚（否则 `sceneAffine2DOf` 提前返回"没下发过"）。
+  sceneXformOf(s, 'axis-scale');
 }
 
 /**

@@ -98,6 +98,34 @@ test('0xC7：sound:SE/Voice/Movie 布尔化后写回 op2', () => {
   assert.equal(rd(e, f, 0x31), 0, 'sound:Movie=0 → 0');
 });
 
+/**
+ * ★P1（审计 `docs-new/99-records/2026-09-impl-audit/` §4.1 / 票 `T-0161`）：
+ * 引擎 `sub_42E670`（raw 38678-38714）对四条属性的判据**不对称** —— `sound:Music` 走 `v2 >= 0`
+ * （raw 38683，**只有负值算关**），`SE`/`Voice`/`Movie` 走 `v != 0`（raw 38697/38709）。
+ * 修前 emulator 用同一个 `bool` 把四条统一按「非 0 ⇒ 1」，于是 `Music=0` 时引擎写 1、emulator 写 0。
+ * 本机 overlay `SYS4REG.INI` 正是 `Music=0`，而 `CONFIG1.txt:1621-1627` 的 selector 1..3 含 Music
+ * ⇒ 设置界面的"音乐开/关"读反（真实可见）。
+ */
+test('★0xC7：`sound:Music` 判据是 `v >= 0`（只有负值算关），SE/Voice/Movie 才是 `!= 0`', () => {
+  const zero = mk();
+  zero.e.config = parseIni(INI.replace('Music=1', 'Music=0'));
+  zero.step(0xc7, [im(1), li(0x70)]);
+  assert.equal(rd(zero.e, zero.f, 0x70), 1, '★Music=0 ⇒ 1（引擎 `v2 >= 0`；修前这里是 0）');
+  zero.step(0xc7, [im(3), li(0x71)]);
+  assert.equal(rd(zero.e, zero.f, 0x71), 1, 'Voice=1 ⇒ 1（`!= 0`）');
+
+  const neg = mk();
+  neg.e.config = parseIni(INI.replace('Music=1', 'Music=-1'));
+  neg.step(0xc7, [im(1), li(0x72)]);
+  assert.equal(rd(neg.e, neg.f, 0x72), 0, 'Music=-1 ⇒ 0（唯一判 0 的情形：负音源槽）');
+
+  // 反向对照：SE 取负值时引擎写 1（`!= 0`）—— 与 Music 的口径相反
+  const seNeg = mk();
+  seNeg.e.config = parseIni(INI.replace('SE=1', 'SE=-1'));
+  seNeg.step(0xc7, [im(2), li(0x73)]);
+  assert.equal(rd(seNeg.e, seNeg.f, 0x73), 1, 'SE=-1 ⇒ 1（`!= 0`；与 Music 的 `>= 0` 相反）');
+});
+
 test('0x1B8 / 0x2E6：op1 选 0/1 → AutoMessageTime/Pitch 写回 op2', () => {
   const { e, f, step } = mk();
   step(0x1b8, [im(0), li(0x40)]);

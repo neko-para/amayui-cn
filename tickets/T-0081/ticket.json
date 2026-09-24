@@ -29,10 +29,10 @@
       "line": 89
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
-      "anchor": "[0x10c, op_engine_internal]",
-      "note": "可疑 no-op 的典型条：体写的是引擎每帧输入扫描读的 VK→掩码位表",
-      "line": 258
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "[0x10c, op_set_key_multi]",
+      "note": "原「可疑 no-op 的典型条」已消除：0x10C 现在注册在 `INPUT_OPS` → `OPS`（handlerKind=implemented），`ENGINE_INTERNAL_OPS` 不再含它；写的是 `Input[1176 + Input[1432+键码]]`（= 引擎每帧 `sub_4770A0` 扫描的那张 VK→掩码位表），消费者 = `InputManager.pressKey/releaseKey`。",
+      "line": 481
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -65,6 +65,11 @@
       "at": "2026-09-19",
       "what": "open → done —— B0 完成：① analysis/opcode-gaps.json（真源，69 条：58 未实现 / 4 unjustified no-op / 5 有据 no-op / 2 已实现；语料累计 2394 次调用）；② scripts/build-opcode-gaps.mjs（可复算：语料按 iXX+名字两种写法统计、注册状态认 [op,handler] 与 0xNN:{…} 两种登记形态、引擎 dispatch 表推 handler 体行号；--check 供 CI）；③ 生成物 docs-new/03-engine/opcode-gaps.md；④ 守卫 test/opcode-gaps.test.ts（3 条：生成器校验+md 最新 / 与运行时三张表一致+未登记即红 / 审计 P0/P1 与 4 条 unjustified 不许缩水）。副产：修正两个统计口径（名字形式指令、对象键注册），发现 0x7C local-ret 668 处此前未被计入语料统计。",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— T-0163 修复 0x10C 后，本票 evidence 里那个 anchor 随 stubs.ts 旧桩消失 ⇒ 改指到新实现（同一修复）。"
     }
   ]
 }

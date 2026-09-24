@@ -251,6 +251,56 @@ export function applyDrawScale(it: Item, sx: number, sy: number, sz: number): vo
 }
 
 /**
+ * `0x1FE`（`sub_423060` raw 31330-31345 → `sub_4AC660` raw 131355-131398）：
+ * **图元变换 4 浮点 = 绕任意轴旋转**（审计 §4.2 #8 的消费者接线）。
+ *
+ * 引擎逐句：
+ * ```
+ * sub_4AAA50(Scene, op1);                    // 缺失即建项
+ * it = lookup(op1); *(it + 104) = 1;         // +0x68 = 用世界矩阵
+ * *(float*)(it + 492) = op2;                 // +0x1EC 轴 x
+ * *(float*)(it + 496) = op3;                 // +0x1F0 轴 y
+ * *(float*)(it + 500) = op4;                 // +0x1F4 轴 z
+ * *(float*)(it + 516) = op5;                 // +0x204 角（**度**）
+ * D3DXMatrixRotationAxis(it + 236, &axis, op5 * π / 180);   // +0xEC = 旋转 **work** 矩阵
+ * Scene[11627] = 1;                          // 置脏
+ * ```
+ * ⇒ 与 `0x21F`（旋转**动画窗**，写 `+0x12C` 目标矩阵）不同：本条写的是 **work** 矩阵、**立即生效**、
+ * 且**不动** target、**不开窗**（与 `0x1FD` 写缩放 work / `0x1FF` 写平移 work 同一族）。
+ *
+ * ★emulator 的等价：`itemRotationRad` 在"无窗"时返回 `rotTarget.deg`（见 `eval.ts`）——
+ * 所以这里 work/target 都写（与 `applyDrawScale` 的取舍逐字相同，理由见那里：只写 work 则求值仍返回旧值）。
+ * ★轴：emulator 的 sprite 只有一个屏幕内的旋转角（`itemRotationRad` 是标量），与 `loopRotationDeg`
+ * 同一处置 —— 用轴的 **z 分量符号**定方向；语料 7 处的轴恒为 `(0,0,1)`，`d` 是度。
+ */
+export function applyPrimAxisRotation(it: Item, ax: number, ay: number, az: number, deg: number): void {
+  it.useWorld = true; // raw 131379：`*(it + 104) = 1`
+  const d = az < 0 ? -deg : deg; // 标量角的近似（见说明）
+  it.rotWork = { axis: { x: ax, y: ay, z: az }, deg: d };
+  it.rotTarget = { axis: { x: ax, y: ay, z: az }, deg: d };
+}
+
+/**
+ * ★**复位一个 DrawItem 的全部变换**（`sub_4AC470` raw 131268-131330，`0x1FC` 的体）。
+ *
+ * 引擎把三块 16-float 矩阵（`+0x6C` 缩放 work / `+0xEC` 旋转 work / `+0x16C` 平移 work）
+ * 逐格清 0 并把对角线置 1，再把 `+104`（变换种类）清 0，最后 `Scene[11627] = 1`。
+ * ⇒ emulator 侧等价 = 把 `Item` 的 work/target 三元组复位成单位（缩放 1 / 角 0 / 平移 0）。
+ *
+ * ★**不动 `+0x68`（`useWorld`）**：体里 `sub_4AC470` 一次都没碰它（raw 131275-131328 无 `+104` 之外的
+ *   `_this` 写）⇒ 复位变换**不会**把项退出世界矩阵路径。修前 emulator 只记了一个 `primReset` 台账
+ *   字段、**没有任何渲染消费者**（审计 §4.2 #8 的 `missing-consumer`）。
+ */
+export function resetItemTransform(it: Item): void {
+  it.scaleWork = { x: 1, y: 1, z: 1 };
+  it.scaleTarget = { x: 1, y: 1, z: 1 };
+  it.rotWork = { axis: { x: 0, y: 0, z: 0 }, deg: 0 };
+  it.rotTarget = { axis: { x: 0, y: 0, z: 0 }, deg: 0 };
+  it.transWork = { x: 0, y: 0, z: 0 };
+  it.transTarget = { x: 0, y: 0, z: 0 };
+}
+
+/**
  * `0x322`（`sub_4AE2C0` raw 132810-132823）：写 `entry[9] = op2`（alpha 混合模式选择子，
  * 消费者是 D3D 绘制 `sub_49E390` ⇒ emulator 未接）、`entry[13] = state0`，
  * 随后 `CalcDiffuse(entry, 0.0)` 立即烘焙（本模型按帧求值 ⇒ 等价），**不动 bit1/窗**。

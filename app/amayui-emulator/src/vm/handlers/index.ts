@@ -39,6 +39,7 @@ import { RESOURCE_USAGE_OPS } from './resource-usage.js';
 import { SAVE_SLOT_OPS } from './save-slot.js';
 import { STAGE_OPS } from './stage.js';
 import { REGION_HITTEST_OPS } from './region-hittest.js';
+import { SCENE_COMMIT_OPS } from './scene-commit.js';
 import { STUB_NATIVE_OPS } from './stubs.js';
 
 /** 已实现的最小 VM 指令表（`implemented`）。 */
@@ -67,6 +68,7 @@ export const OPS: Map<number, OpHandler> = new Map<number, OpHandler>([
   ...SAVE_SLOT_OPS, // 0x19E/0x19F/0x1A0/0x1A1/0x1AB/0x1AC/0x1AE/0x1AF：存档槽链路（存档/读档/读头/删/复制/.STH）
   ...STAGE_OPS, // 0xD3/0xD4/0xD5：阶梯动画调度器（时间表 + 0x40 门；消费者是 frame/loop.ts 的 stage 分支）
   ...REGION_HITTEST_OPS, // 0x147/0x2F2：GDI 区域命中测试（WINDING 多边形 / 内切椭圆，纯几何、零宿主缝）
+  ...SCENE_COMMIT_OPS, // 0x222：3D 层区间提交（op1 = 起始 handle、op2 = 跨度 ⇒ 宿主缝 sceneCommitRange）
 ]);
 
 /** 子系统 opcode → NativeBridge（`native`）。 */

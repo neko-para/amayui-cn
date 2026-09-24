@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { InputManager } from '../src/vm/input.js';
-import { StubNative } from '../src/vm/native.js';
+import { StubNative, ShowMessageError } from '../src/vm/native.js';
 import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
@@ -104,6 +104,18 @@ test('★按住态自愈：syncButtons 按宿主真值重建，releaseAllMouse �
   assert.equal(im.buttons, 3, '回到窗口后按真值重建（左+右）');
 });
 
+// ---- 0xCD 的推进门槽（P1，票 T-0158）----
+test('★0xCD 的推进门槽：未注册目标 ⇒ 槽 = 1（前进 1 条）；自行定 ip ⇒ 槽 = 0（见 TITLE 端到端）', async () => {
+  // 对照面：目标未注册（引擎 raw 25852 `v4 == -1` 支）⇒ 槽**保持 1**、ip 前进 1 条。
+  const eng = mkEngine([instr(0xcd, []), instr(0x1a7, [])]);
+  eng.input.mouseJump = -1;
+  eng.nowMs = 1000; // 节流 = 0 ⇒ 过闸（`tickets/T-0047` 的已知偏差：emulator 不节流）
+  const t = await stepOnce(eng);
+  assert.equal(t.opcode, 0xcd);
+  assert.equal(t.operandCount, 1, '未注册目标 ⇒ 引擎保持槽 = 1（前进 1 条）');
+  assert.equal(eng.curScript().ip, 1, 'ip 前进 1 条（emulator 的下标制等价于引擎 +4 字节）');
+});
+
 // ---- TITLE 端到端：派发（时间节流 get-input-type + hover 命中）----
 test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠标 handler 不崩', async () => {
   const src = new NodeFileSource({ resourceDir: RAW_DIR });
@@ -161,6 +173,10 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   const t = await stepSafe();
   assert.equal(t.opcode, 0xcd, '应步进到 get-input-type');
   assert.equal(e.curScript().ip, targetPos, `get-input-type 时间节流派发应跳到目标 (0x${targetLabel.toString(16)})`);
+  // ★P1 `0xcd`（票 T-0158）：引擎在"自己定 ip"的那条支把推进门槽写成 **0**（raw 25870-25872）；
+  //   修前 emulator 恒报静态的 1（控制窗/追踪看到的门值与引擎不同）。
+  assert.equal(t.operandCount, 0, '★自行定 ip ⇒ 推进门槽 = 0（引擎 raw 25872）');
+  assert.equal(e.curScript().operandCount, 0, '帧字段与 trace 同源');
   // 0xCD 不消费鼠标/手把边沿（引擎：触发由时间节流/ADV 激活决定，与鼠标活动无关）
   assert.equal(input.hasPending(), true, '0xCD 不应消费鼠标/手把边沿（hasPending 保持）');
 
@@ -204,7 +220,146 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
 });
 
 // ---------------------------------------------------------------------------
-// ★`0x100` 的「默认键」分支（`tickets/T-0046`）
+// ★`0x10C`（`i10c`，**SetKeyMulti**）：脚本驱动的**键位重映射**（`tickets/T-0163`；审计 §4.1 的
+// P1 `stale-ledger` + P2 `missing-consumer` + P3 `missing-branch`）
+//
+// 引擎 `sub_4220B0`（raw 30616-30634）：`op2` = 键码、`op1` = 掩码位（unsigned > 0x1F 抛
+// 「SetKeyMultiの引数が不正です．」**且不写表**）⇒ `Input[1176 + Input[1432+op2]] = op1`。
+// 语料 `src/SYSTEM4.txt:87-97` 共 11 处 `i10c`，**全部绑 mask 位 4**；其中
+//   `i10c 4 2c` ⇒ 键码 0x2c → VK 90 = 'Z'
+//   `i10c 4 1c` ⇒ 键码 0x1c → VK 13 = RETURN（本就在默认表里 ⇒ 修前唯一"碰巧有效"的一条）
+// ⇒ 修好后「按 Z 触发确认位（bit4）」才成立（`0x100` 的掩码扫描 / `joy-callback 4`）。
+// ---------------------------------------------------------------------------
+
+/** 跑一条**合成** `i10c`（`bit` = 引擎 op1、`keycode` = 引擎 op2）。 */
+function runSetKeyMulti(e: Engine, bit: number, keycode: number): void {
+  const f = e.curScript();
+  const instr10c = instr(0x10c, [im(bit), im(keycode)]);
+  OPS.get(0x10c)!(makeCtx(e, f, instr10c, e.native, () => {}));
+}
+
+test('★0x10C ①：`i10c 4 2c` ⇒ 键码 0x2c(Z) 绑到掩码位 4 ⇒ 按 VK 90 产生 bit4（修前：写入无消费者）', () => {
+  // 默认表：`0x2c → VK 90`（sub_476AA0 raw 91367 的 `_this[1476] = 90`）
+  assert.equal(new InputManager().keycodeToVk.get(0x2c), 90, '默认键码表：0x2c 必须 → VK 90（=Z）');
+
+  const e = mkEngine([instr(0x1a7, [])]);
+  // ① 未重映射时：Z 不在默认 VK→位表里 ⇒ 不产生任何位 ← **这就是修前的行为**（本用例是红的那一半）
+  assert.equal(e.input.pressKey(90), false, '★修前：Z 未绑定 ⇒ 不产生掩码位（默认表只有 7 个 VK）');
+  assert.equal(e.input.keyEdge, 0, '★修前：按下 Z 后 keyEdge 仍为 0 ⇒ 确认位（bit4）永远不会触发');
+  e.input.releaseKey(90);
+
+  // ② 脚本改键位：`i10c 4 2c`
+  runSetKeyMulti(e, 4, 0x2c);
+  assert.equal(e.input.vkToBit.get(90), 4, '写入生效：VK 90 → 掩码位 4（引擎 Input[1176+90]=4）');
+
+  // ③ 现在按 Z ⇒ bit4（= 鼠标左键位/确认位）进掩码
+  e.input.consumeEdges();
+  assert.equal(e.input.pressKey(90), true, '重映射后 Z 命中映射表');
+  assert.equal(e.input.flushPending() & (1 << 4), 1 << 4, '★按 Z 必须产生 mask 位 4（`joy-callback 4` 的派发前提）');
+  assert.equal(e.input.flushHeld() & (1 << 4), 1 << 4, '实时刷同样带 bit4');
+  assert.equal(e.input.keyEdge & ~(1 << 4), 0, '按下沿只有 bit4（键码 0x2c 只映射到这一个位）');
+
+  // ④ 松开 ⇒ 清该位（不再污染 bit4）
+  e.input.releaseKey(90);
+  e.input.consumeEdges();
+  assert.equal(e.input.flushHeld() & (1 << 4), 0, '松开 Z ⇒ bit4 清（不会把"确认"永久按住）');
+});
+
+test('★0x10C ①补：语料实参各条都按 mask 位 4 生效（含 `i10c 4 1c` 与 ≥7 的位不被截断）', () => {
+  const e = mkEngine([instr(0x1a7, [])]);
+  // `i10c 4 1c`：键码 0x1c → VK 13 = RETURN（默认已在表里；本条是"修复不破坏既有行为"的对照）
+  assert.equal(e.input.vkToBit.get(13), 4, '默认：Enter 本来就在 bit4');
+  runSetKeyMulti(e, 4, 0x1c);
+  assert.equal(e.input.vkToBit.get(13), 4, '重写同一个绑定 ⇒ 仍是 bit4');
+  e.input.consumeEdges();
+  assert.equal(e.input.pressKey(13), true);
+  assert.equal(e.input.flushPending() & (1 << 4), 1 << 4, 'Enter 仍是 bit4（既有行为不变）');
+
+  // ★位号 > 6 不被截断（`tickets/T-0163` 修的第二个地方）：旧键盘掩码 `& 0x7f` 会把 bit11 吃掉。
+  //   用**默认表里也有**的键码 0x0e（→ VK 8 = BackSpace）绑 bit11，确保测的是"位号不截断"而不是"键码能不能查"。
+  runSetKeyMulti(e, 0x0b, 0x0e);
+  e.input.consumeEdges();
+  assert.equal(e.input.vkToBit.get(8), 0x0b, '键码 0x0e → VK 8，写入 bit11');
+  assert.equal(e.input.pressKey(8), true);
+  assert.equal(e.input.flushPending() & (1 << 11), 1 << 11, '★bit11 必须进掩码（旧实现 `& 0x7f` 会静默截掉）');
+  assert.equal(e.input.flushHeld() & (1 << 11), 1 << 11, '实时刷同样带 bit11');
+  e.input.releaseKey(8);
+  e.input.consumeEdges();
+  assert.equal(e.input.flushHeld() & (1 << 11), 0, '松开 + 消费沿 ⇒ bit11 全清');
+});
+
+test('★0x10C ②：未重映射时 Z **不产生**该位（机械证明修前是坏的）', () => {
+  const im = new InputManager();
+  // ★`flushPending()` 会消费 `mouseMoved`（它只并"事件"，不并"移动"）⇒ 先显式清一次边沿，
+  //   让下面的断言只看键盘这一条通路（否则 `setCursor` 留下的移动标记会污染第二次调用）。
+  im.consumeEdges();
+  assert.equal(im.vkToBit.get(90), undefined, '默认 VK→位表里没有 VK 90（Z）');
+  assert.equal(im.pressKey(90), false, '★按 Z 什么位都不动 ⇒ 修前 `i10c 4 2c` 是纯 no-op');
+  assert.equal(im.keyEdge, 0);
+  assert.equal(im.keysHeld, 0);
+  assert.equal(im.flushHeld(), 0, '掩码里没有确认位');
+  assert.equal(im.flushPending(), 0, '消费刷同样空（键盘按下沿=0）');
+  // 而且在**本条不注册**的前提下，`0x100` 的掩码里永远不会出现 bit4
+  //   ⇒ Z 想触发的那个 `joy-callback 4` 处理器**不可能被派发**（这条才是"Z 键无效"的机械形态）。
+  const e = mkEngine([instr(0x100, []), instr(0x5, []), instr(0x5, [])]);
+  e.input.pressKey(90);
+  e.engineValues.set(517, 12);
+  e.input.joyJump[4] = 2; // `joy-callback 4` 登记的确认处理器
+  const ctx = makeCtx(e, e.curScript(), instr(0x100, []), e.native, () => {});
+  OPS.get(0x100)!(ctx);
+  assert.equal(ctx._nextIp, null, '★掩码为空、默认键槽 12 未登记 ⇒ 不派发（确认处理器永不运行 = Z 键无效）');
+  // 对照：同一次按下，只要把 Z 重映射到 bit4，`0x100` 立刻派发到该处理器（证明差别就是本指令）
+  runSetKeyMulti(e, 4, 0x2c);
+  e.input.consumeEdges();
+  e.input.pressKey(90);
+  const ctx2 = makeCtx(e, e.curScript(), instr(0x100, []), e.native, () => {});
+  OPS.get(0x100)!(ctx2);
+  assert.equal(ctx2._nextIp, 2, '★重映射后 ⇒ 派发 joy-callback 4 的处理器（这正是修复带来的能力）');
+});
+
+test('★0x10C ③：位号 unsigned > 0x1F ⇒ 抛引擎同文 ShowMessageError，且**两张表一格未动**', () => {
+  const e = mkEngine([instr(0x1a7, [])]);
+  const before = [...e.input.vkToBit.entries()].sort((a, b) => a[0] - b[0]);
+  const beforeCode = [...e.input.keycodeToVk.entries()].sort((a, b) => a[0] - b[0]);
+
+  const cases: [number, string][] = [
+    [0x20, '0x20（刚好越界）'],
+    [0x100, '0x100'],
+    [-1, '负数（引擎是 unsigned 比较 ⇒ 0xFFFFFFFF > 0x1F ⇒ 同样抛）'],
+  ];
+  for (const [bit, what] of cases) {
+    assert.throws(
+      () => runSetKeyMulti(e, bit, 0x2c),
+      (err: unknown) => {
+        assert.ok(err instanceof ShowMessageError, `${what}：应抛 ShowMessageError（走产品错误通路，不静默）`);
+        assert.equal(err.engineText, 'SetKeyMultiの引数が不正です．', `${what}：错误串必须与引擎同文`);
+        assert.equal(err.opcode, 0x10c);
+        return true;
+      },
+      `${what} 必须抛`,
+    );
+  }
+  // 抛在写之前（引擎 raw 30626-30631 在 30632 之前）⇒ 表必须一格未动
+  assert.deepEqual([...e.input.vkToBit.entries()].sort((a, b) => a[0] - b[0]), before, '★越界 ⇒ VK→位表未写');
+  assert.deepEqual([...e.input.keycodeToVk.entries()].sort((a, b) => a[0] - b[0]), beforeCode, '★越界 ⇒ 键码表未写');
+  assert.equal(e.input.vkToBit.get(90), undefined, '★Z 仍然未绑定（越界实参不是"静默吞掉"）');
+
+  // 边界内侧：0x1F 合法
+  runSetKeyMulti(e, 0x1f, 0x2c);
+  assert.equal(e.input.vkToBit.get(90), 0x1f, '0x1F 是合法位号（门是 > 0x1F）');
+  assert.equal(e.input.pressKey(90), true);
+  assert.equal(e.input.flushHeld(), 1 << 31, 'bit31 也在掩码里（int32 负值取值一致；位号上界 = 31）');
+  e.input.releaseKey(90);
+});
+
+test('★0x10C ④：注册表分类（`OPS`=implemented，不在 no-op 表；不再是旧桩）', () => {
+  assert.ok(OPS.has(0x10c), '0x10C 必须在已实现表里');
+  assert.ok(!ENGINE_INTERNAL_OPS.has(0x10c), '★不得再留在 `ENGINE_INTERNAL_OPS`（否则旧桩会静默掩盖真实现）');
+  assert.equal(new InputManager().keycodeToVk.get(0x1c), 13, '默认键码表：0x1c → VK 13（RETURN）');
+  assert.equal(new InputManager().keycodeToVk.get(0x0e), 8, '默认键码表：0x0e → VK 8（BackSpace）');
+});
+
+
 //
 // 引擎 `sub_419AF0`（raw 25012-25066）有**两条**分支：
 //   掩码非 0 → 从游标起扫最低置位（上界 = `Engine[517]` = SetKeyTotal）→ 跳 `joy-callback` 登记的目标；

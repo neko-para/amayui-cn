@@ -44,6 +44,12 @@ import {
   TRANSITION_BLUR_CENTER_WEIGHT,
   scPoolPending,
   sceneNeedsRender,
+  scClearScenePending,
+  scSetScenePending,
+  scSetSceneFrozen,
+  scWeatherSetClock,
+  scSceneCommitRange,
+  enqueueSceneCommitNodes,
   scClearDrawContainer,
   scClearMeshSlots,
   scDropFrameItems,
@@ -75,6 +81,7 @@ import {
   scSetSceneTranslation,
   scSetSceneAxisScale,
   scSetSceneAxisTranslation,
+  scSetSceneRotationRad,
   scSetFlipbook,
   scSetRotationAnim,
   scSetScale,
@@ -529,6 +536,34 @@ export class PixiBackend implements NativeBridge {
     this.#markDirty();
     scSetSceneAxisTranslation(this.scene, a, b, x, y, z);
     this.#pushLog(`setSceneAxisTranslation a=${a} b=${b} t=(${x},${y},${z}) [仅层 20..29]`);
+  }
+
+  /**
+   * ★**Scene 自己的"绕轴旋转"角（弧度）** —— 引擎 `RenderScene` 层号支 raw 133427 的第二个实参
+   * `*(float *)(Scene + 1856)`（配套轴 = `Scene + 1844`，即 `0x22F` 那三格当轴）。
+   *
+   * 为什么需要这个入口：那一格在反编译里**只有读点、没有写点**（见 `scene/state.ts` 的
+   * `sceneRotRad` 说明）⇒ 运行期取值无法静态判定，默认 0（恒等旋转 = 画面与修前逐字节相同）。
+   * 与 `HeadlessScene.setSceneRotationRad` 成对存在（两个宿主都要有，否则 `native-tap.test.ts`
+   * 的"差异只允许一个方向"会红）。
+   */
+  setSceneRotationRad(rad: number): void {
+    this.#markDirty();
+    scSetSceneRotationRad(this.scene, rad);
+    this.#pushLog(`setSceneRotationRad rad=${rad} [仅层 20..29；引擎 Scene+1856]`);
+  }
+
+  /**
+   * **`0x222` 3D 层区间提交**（审计 §4.2 #19 / `tickets/T-0167`）：`start` = 起始 handle、
+   * `count` = 跨度 ⇒ 区间 `[start, start + count)`。压进 `SceneState.commitQueue`，
+   * 由帧末的 `scSceneCommitRange`（`advanceModel` 里）消费 —— 与引擎"当帧跑完整趟
+   * `sub_4B4460`"最多差一帧（完整披露见 `vm/handlers/scene-commit.ts`）。
+   * 与 `HeadlessScene.sceneCommitRange` 成对存在（两个宿主都要有）。
+   */
+  sceneCommitRange(start: number, count: number): void {
+    this.#markDirty();
+    enqueueSceneCommitNodes(this.scene, start, count);
+    this.#pushLog(`sceneCommitRange start=${start} count=${count} [引擎 sub_4B4460 raw 136968-137285]`);
   }
 
   // ---- A4 族（2026-09）：与 HeadlessScene 走同一份共享语义（`scXxx`），只额外标脏/记日志 ----
@@ -1424,6 +1459,17 @@ export class PixiBackend implements NativeBridge {
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);
     if (drawn.length > 0) this.#l2dDrawnKeys = drawn;
+    // ★★**3D 层提交的帧级部分**（审计 §4.2 #19）：清脏位 / 世界矩阵复位 / `0x222` 排队区间的
+    //   逐 key 天气节点判据 / bit0 分派 / `sub_453540` 按墙钟推进（审计 §4.2 #18/#21）——
+    //   与 headless 共用 `scene/commit.ts` 一份实现。
+    //   ★**位置要紧**：它在下面的 `poolPending()` 探针之上（提交末尾会清 `46516`，而探针读的
+    //   正是"这一遍绘制期有没有东西在动"）。
+    scWeatherSetClock(this.scene, nowMs);
+    scSceneCommitRange(this.scene, nowMs);
+    // ★★**池挂起位 `Scene+46516` 的场景侧锁存**（审计 §4.2 #2）：引擎在每遍绘制末尾按
+    //   `46512|46516` 置 `46508`（raw 136718-136719）⇒ 下一次 `needsRender()` 必须看得到它。
+    //   探针与引擎同序取（所有推进之后），`freeze` 时按引擎"冻结 ⇒ 窗立即收尾 ⇒ 不置位"处理。
+    scSetScenePending(this.scene, freeze ? false : this.poolPending());
     // ★Live2D 纹理：在本帧**开头**发起载入，帧末的 `texturesIdle`（`session.#present` 的次序 =
     //   推进模型 → 屏障 → 合成）就能在同一帧里等到它们 ⇒ 与引擎 `0x345` 的同步装载同观感。
     this.#ensureL2dTextures();
@@ -1521,6 +1567,25 @@ export class PixiBackend implements NativeBridge {
     const gc = this.textures.collectGarbage();
     if (gc > 0) this.#pushLog(`[texture] 延迟销毁旧纹理 ${gc} 张`);
     this.sceneDirty = false; // present 已消费本次"脏"标记
+    // ★同时消费**池挂起位**（`Scene+46516`）：引擎每一遍绘制开头把它清 0（raw 130427-130428），
+    //   而 `present()` 就是这一遍绘制 ⇒ 两格一起清（审计 §4.2 #2；`dirty` 与 `pending` 同源）。
+    scClearScenePending(this.scene);
+  }
+
+  /**
+   * ★★**渲染冻结总闸 `Scene+46676`**（审计 §4.2 #24）。
+   *
+   * 引擎该格**零写点**（105 处读、0 处写）⇒ 只能由宿主/驱动注入。置位后：
+   * `scAdvance` 不推进窗、`sceneNeedsRender` 恒假（整趟渲染提交被跳过）、`advanceModel` 也不锁存
+   * 池挂起位。清位恢复。与 `HeadlessScene.setSceneFrozen` 落同一个共享字段。
+   */
+  setSceneFrozen(frozen: boolean): void {
+    scSetSceneFrozen(this.scene, frozen);
+  }
+
+  /** `Scene+46676` 的当前值（审计 §4.2 #24）。 */
+  sceneFrozen(): boolean {
+    return this.scene.frozen;
   }
 
   /** 绘制项 → 纹理（回归测试与诊断用；实现见 `TextureCache.resolve`）。 */

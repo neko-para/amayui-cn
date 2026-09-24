@@ -218,6 +218,7 @@ export const BRIDGE_METHODS = [
   'setSystemCursor',
   'setTexture',
   'setSceneBlend',
+  'sceneCommitRange', // 0x222：3D 层区间提交（P1 §4.2 #19；落点 = renderer/scene/commit.ts 的 enqueueSceneCommitNodes）
   'setRenderTarget',
   'setTextureObjectFloat',
   'setTextureObjectParam',

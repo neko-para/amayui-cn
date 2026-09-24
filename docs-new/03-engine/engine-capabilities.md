@@ -20,60 +20,60 @@ generated_by: scripts/build-capabilities.mjs
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 62 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 17 | 引擎有、emulator 完全没有 |
-| `n/a-known` | 23 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **139** | 需要关注（非 n/a 且非已核验）= **54** |
+| `modeled-verified` | 78 | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 27 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 6 | 引擎有、emulator 完全没有 |
+| `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
+| **合计** | **140** | 需要关注（非 n/a 且非已核验）= **38** |
 
 ## 按子系统
 
 | 子系统 | 条数 | 其中 缺失/部分 |
 |---|---|---|
-| 3D | 17 | 4 |
+| 3D | 17 | 1 |
+| AGERC | 1 | 0 |
 | Live2D | 7 | 1 |
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
-| 帧循环 | 17 | 8 |
-| 消息窗 | 30 | 18 |
-| 渲染 | 30 | 11 |
-| 资源 | 18 | 4 |
-| 转场 | 4 | 1 |
-| 输入 | 7 | 0 |
+| 帧循环 | 17 | 4 |
+| 消息窗 | 32 | 14 |
+| 渲染 | 30 | 9 |
+| 资源 | 17 | 3 |
+| 转场 | 4 | 0 |
+| 输入 | 6 | 0 |
 
 ## 全部条目
 
 | id | 子系统 | 能力 | emulator | 依据 / 守卫 |
 |---|---|---|---|---|
 | `frame-pump-sound-channels` | 声音 | 每帧声音通道老化 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
-| `frame-pump-input-refresh` | 输入 | 每帧输入态刷新 | 🟡 已建模未核验 | E1 · `test/input.test.ts` |
 | `frame-pump-music-fade` | 声音 | 每帧 BGM 淡出推进 | ✅ 已核验 | E2 · `test/audio-engine.test.ts` |
-| `frame-render-gate-mainloop` | 帧循环 | 主循环帧提交门控 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
+| `frame-render-gate-mainloop` | 帧循环 | 主循环帧提交门控 | 🟠 部分 | E3 · `test/frame-render-gate.test.ts` |
 | `scene-frame-commit` | 渲染 | Scene 逐帧提交（四路归并 + 绘制） | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
 | `scene-beginscene-recursion-gate` | 渲染 | BeginScene/EndScene 递归门 | ➖ n/a | E1 |
 | `scene-frame-texture-gate-46672` | 3D | 帧纹理（离屏表面）指针门 | ➖ n/a | E1 |
 | `scene-framebuffer-offset-compensate-46696` | 渲染 | 双缓冲显示偏移补偿开关 | ➖ n/a | E1 |
 | `scene-capture-target-flag-46680` | 渲染 | Capture 目标为主/后缓冲（38 号）标记 | ➖ n/a | E1 |
 | `scene-render-3d-frame-request-46700` | 3D | 请求显式渲染一帧 3D | ➖ n/a | E1 |
-| `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | 🟠 部分 | E1 |
+| `scene-3d-effect-level-writer` | 3D | 3D 效果等级的初始化决策 | ✅ 已核验 | E3 · `test/scene-3d-effect-level.test.ts` |
 | `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | ✅ 已核验 | E2 · `test/headless-needs-render.test.ts` |
 | `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
 | `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | ✅ 已核验 | E3 · `test/wait-gate-timer.test.ts` |
-| `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ❌ 缺失 | E0 |
-| `scene-norender-mode` | 渲染 | Engine+167990 无渲染/隐藏窗口模式 | 🟠 部分 | E1 · `test/engine-config.test.ts` |
+| `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
+| `scene-norender-mode` | 渲染 | Engine+167990 = display:ScreenMode 镜像（窗口/全屏模式；非 0 时跳过一批窗口同步门） | 🟠 部分 | E1 · `test/engine-config.test.ts` |
 | `3d-effect-level-gate` | 3D | Scene+46668 3D 特效等级 | ➖ n/a | E1 |
-| `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ❌ 缺失 | E0 |
+| `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ✅ 已核验 | E3 · `test/scene-freeze-46676-gate.test.ts` |
 | `engine-main-window-hwnd` | 渲染 | Engine+387924 主窗口 HWND（旧名 FileSource） | ➖ n/a | E1 |
 | `filesource-script-load` | 资源 | 脚本装载把主窗口 HWND 当资源来源传入 | ➖ n/a | E1 · `test/boot.test.ts` |
 | `scene-draw-total-gate-1056` | 渲染 | Scene+1056 转场记录表条数（★订正：不是主绘制总门） | ❌ 缺失 | E0 |
-| `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E2 · `test/frame-loop.test.ts` |
+| `clock-write-clock-freeze` | 帧循环 | 每帧时钟写入与时钟冻结门 | 🟠 部分 | E3 · `test/frame-render-gate.test.ts` |
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
 | `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | ✅ 已核验 | E3 · `test/transition-corpus-e3.test.ts` |
 | `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ✅ 已核验 | E2 · `test/transition-render-wiring.test.ts#D3` |
 | `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | ✅ 已核验 | E2 · `test/transition-render-wiring.test.ts#D3` |
-| `render-3d-layer-dual-commit` | 3D | 3D 层对偶逐帧提交 | ❌ 缺失 | E1 |
+| `render-3d-layer-dual-commit` | 3D | 3D 层对偶逐帧提交 | ✅ 已核验 | E3 · `test/op-222-scene-commit.test.ts` |
 | `render-endscene-and-2d-stack` | 渲染 | 2D 矩阵栈 Begin/End 配对与 EndScene | ➖ n/a | E1 |
 | `transition-table-flush` | 转场 | 转场表帧尾收尾（sub_4A9BE0） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts#T-0091 G2` |
 | `lazy-effect-200-201-release` | 3D | 2D/3D effect 槽（46480 起 5 槽）的批量释放 | ➖ n/a | E1 |
@@ -81,11 +81,11 @@ generated_by: scripts/build-capabilities.mjs
 | `audio-device-init` | 声音 | DirectSound 设备/对象重建 | 🟠 部分 | E2 · `test/audio-engine.test.ts` |
 | `movie-object-lifecycle` | 帧循环 | 电影对象帧内生命周期 | ❌ 缺失 | E0 |
 | `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | ✅ 已核验 | E2 · `test/l2d-clear-on-container-ops.test.ts` |
-| `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ❌ 缺失 | E0 |
+| `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ✅ 已核验 | E3 · `test/append-packs.test.ts` |
 | `script-frame-refresh-opcode-20c` | 帧循环 | opcode 0x20C 脚本帧刷新并提交 | ✅ 已核验 | E2 · `test/engine-config.test.ts` |
 | `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ✅ 已核验 | E3 · `test/l2d-render-pending.test.ts` |
 | `vertex-buffer-lock-scale` | 渲染 | 顶点缓冲 Lock/Unlock + 视口缩放改写 | ❌ 缺失 | E0 |
-| `world-matrix-identity-refresh` | 3D | 每帧世界/投影矩阵复位与链乘 | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
+| `world-matrix-identity-refresh` | 3D | 每帧世界/投影矩阵复位与链乘 | ✅ 已核验 | E2 · `test/op-22a-22f-scene-world.test.ts` |
 | `sprite-2d-draw-layer` | 渲染 | 无脚本/标题态额外 2D 层绘制 | ❌ 缺失 | E0 |
 | `scene-slot-release-1000` | 渲染 | 1000 个场景对象槽的逐帧老化释放 | 🟠 部分 | E1 |
 | `lazy-effect-200-201` | 3D | 惰性创建 2D/3D effect（资源 200/201） | ➖ n/a | E1 |
@@ -100,16 +100,16 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-vram-query-32` | 资源 | 显存容量查询惰性缓存（32 位） | ➖ n/a | E1 |
 | `lazy-vram-query-64` | 资源 | 显存容量查询惰性缓存（64 位 QWORD） | ➖ n/a | E1 |
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
-| `lazy-movie-dll` | 资源 | 电影解码 DLL 重载与函数指针惰性解析 | ❌ 缺失 | E0 |
+| `lazy-movie-dll` | AGERC | 惰性模块加载 = AGERC 模块接口（0x14B/0x14C/0x14D；**不是**影片解码库） | ✅ 已核验 | E2 · `test/op-a4-a6.test.ts` |
 | `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | ❌ 缺失 | E0 |
-| `lazy-gdi-font-set` | 消息窗 | 消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4） | ❌ 缺失 | E0 |
+| `lazy-gdi-font-set` | 消息窗 | 消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4） | ✅ 已核验 | E2 · `test/config1-chain.test.ts` |
 | `lazy-script-operand-hashmap-node` | 资源 | 脚本 VM 操作数 HashMap 节点惰性分配 | 🟡 已建模未核验 | E1 · `test/xval.test.ts` |
-| `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ❌ 缺失 | E0 |
+| `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts` |
 | `lazy-drawitem-map-node` | 渲染 | DrawItem 表节点惰性插入（表头 eager 130312） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `lazy-mesh-map-node` | 3D | MeshEntry 表节点惰性插入（表头 eager 130348） | 🟡 已建模未核验 | E1 |
 | `lazy-572b-node-map` | 渲染 | 572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384） | 🟠 部分 | E3 · `test/live2d-chain.test.ts` |
 | `lazy-scene-effect-release-gap` | 3D | Scene+46492 / +46496 两张 effect 的释放缺口 | ➖ n/a | E1 |
-| `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | 🟠 部分 | E1 |
+| `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | ✅ 已核验 | E3 · `test/headless-needs-render.test.ts` |
 | `chained-3d-layer-commit` | 3D | 572B「立绘 / 变换节点」层的归并与提交（原被误标为「3D 场景层」） | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
 | `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV` |
 | `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#ADV 每帧服务：未显示完判定成立时清掉 ADV` |
@@ -120,17 +120,17 @@ generated_by: scripts/build-capabilities.mjs
 | `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#set:CancelMesSkipOnClick 下按住 ⇒ 三态机进 stage2` |
 | `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#★0x72 wait-for-input：结束一页并置等待推进门` |
 | `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#★重跑 0x72（悬停 ret 回到门指令）不得重启已显完的逐字显现` |
-| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x2DE = 字体名 → 字体表下标` |
-| `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E3 · `test/route-dispatch.test.ts` |
-| `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
+| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | ✅ 已核验 | E2 · `test/text-style-snapshot.test.ts` |
+| `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E2 · `test/adv-right-click-cancel-route.test.ts` |
+| `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | ✅ 已核验 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
-| `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ❌ 缺失 | E0 |
+| `text-layout-wrap-ruby` | 消息窗 | 文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30） | ✅ 已核验 | E2 · `test/text-layout.test.ts` |
 | `msgwin-offscreen-surface-lifecycle` | 消息窗 | 每窗一张离屏表面：0x70 重建 / 0x71 清底 / sub_45BE20 逐行贴出 | 🟠 部分 | E0 |
 | `msgwin-line-fade-window` | 消息窗 | 行淡入：DrawItem 颜色动画窗，时长 = MessageSpeed × MessageFade / 100 ms | 🟠 部分 | E2 · `test/draw-item-anim-window.test.ts` |
-| `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | ❌ 缺失 | E0 |
+| `msgwin-backlog-cursor` | 消息窗 | 已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770 | 🟠 部分 | E2 · `test/msgwin-backlog-wheel.test.ts` |
 | `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
 | `text-font-rebuild-cascade` | 消息窗 | 字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0） | 🟠 部分 | E2 · `test/text-layout.test.ts` |
-| `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」闸门 + 贴出完成后的延时清场循环（Engine[122466+win] bit0/bit16、Engine[122476+win]；op 0x300 = sub_426990） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
+| `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」闸门 + 贴出完成后的延时清场循环（Engine[122466+win] bit0/bit16、Engine[122476+win]；op 0x300 = sub_426990） | ✅ 已核验 | E3 · `test/char-reveal.test.ts` |
 | `msgwin-char-reveal-grid` | 消息窗 | 字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
 | `gfx-texture-load-sync` | 资源 | 纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位 | ✅ 已核验 | E2 · `test/texture-frame-barrier.test.ts` |
 | `drawitem-world-matrix-composition` | 渲染 | DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门 | ✅ 已核验 | E2 · `test/draw-item-scale.test.ts` |
@@ -146,12 +146,12 @@ generated_by: scripts/build-capabilities.mjs
 | `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
 | `texture-bind-synchronous-then-query` | 资源 | set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致 | 🟠 部分 | E2 · `test/texture-frame-barrier.test.ts` |
 | `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
-| `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | ❌ 缺失 | E1 |
-| `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ❌ 缺失 | E1 |
+| `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | 🟠 部分 | E3 · `test/scene-3d-weather.test.ts` |
+| `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ✅ 已核验 | E3 · `test/scene-3d-weather.test.ts` |
 | `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | ✅ 已核验 | E3 · `test/op-a4-a6.test.ts` |
 | `text-item-record-table` | 消息窗 | 文本项记录表（Font+3364 的 72B/条 vector）：回想/历史与语音重播的账本 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
 | `text-redisplay-rewind` | 消息窗 | 文本重显示：`0x7B` 设本帧回退游标 + `0x199` 回退重画 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
-| `gfx-prim-mesh-and-render-state` | 渲染 | A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条） | 🟠 部分 | E3 · `test/op-a4-a6.test.ts` |
+| `gfx-prim-mesh-and-render-state` | 渲染 | A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条） | 🟠 部分 | E3 · `test/gfx-prim-mesh-consumers.test.ts` |
 | `single-field-timers-audio-device` | 帧循环 | A5：单行字段写 / 秒计时器 / 消息面 / 音频设备（9 条） | ✅ 已核验 | E2 · `test/op-a5.test.ts` |
 | `hover-ret-reruns-gate-op` | 输入 | 悬停/点击 label 的返回点 = 门指令（ret 回到门指令重跑） | ✅ 已核验 | E3 · `test/game-start-chain.test.ts` |
 | `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts#★逐字显现速度定律：MessageSpeed = **每字**毫秒` |
@@ -163,7 +163,7 @@ generated_by: scripts/build-capabilities.mjs
 | `text-line-pitch-font-1380` | 消息窗 | 换行步进 = 字号 + 行间距 Font+1380（i08b）—— 注音不压上一行的唯一来源 | ✅ 已核验 | E2 · `test/text-layout.test.ts` |
 | `drawitem-mesh-blend-selector` | 渲染 | DrawItem+0x30 / MeshEntry[9] 的 alpha 混合选择子（0/1/2/3 一套枚举） | ✅ 已核验 | E2 · `test/blend-mode.test.ts` |
 | `text-face-source-memory-vs-system` | 消息窗 | 正文面名的来源：引擎只注册一份内存字体（游戏自带的 AGE-EXTEND.TTF / 面 'AGE Extend'），message:Font 指定的正文面由**系统字体表**解析 | ➖ n/a | E1 |
-| `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | 🟠 部分 | E4 · `test/draw-string.test.ts` |
+| `text-white-level-on-composite` | 消息窗 | 引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位 | ✅ 已核验 | E4 · `test/text-aa.test.ts` |
 | `text-glyph-coverage-alpha-composite` | 渲染 | 文字字形按覆盖率 α 合成（写入面：RGB 按 α 混合、A = max(A_dst, α)）——"白字"永不纯白、"往透明表面画字"偏灰 | ✅ 已核验 | E2 · `test/text-aa.test.ts` |
 | `key-dispatch-default-slot` | 输入 | 0x100 空掩码时的「默认键」槽派发（下标 = SetKeyTotal） | ✅ 已核验 | E2 · `test/input.test.ts` |
 | `host-cursor-warp` | 输入 | 把系统光标移到虚拟屏坐标（0x10A 的宿主侧 / SetCursorPos） | ✅ 已核验 | E3 · `test/native-host.test.ts` |
@@ -175,16 +175,18 @@ generated_by: scripts/build-capabilities.mjs
 | `music-runtime-current-track-lifecycle` | 声音 | BGM 运行态「当前曲 id」的生命周期（起播/停/换曲/存档/读档重播） | ✅ 已核验 | E2 · `test/slot-save-resume.test.ts` |
 | `load-restores-image-slots-and-scoped-pools` | 存档槽 | 读档装载：按槽表重建图像 + int 池只覆盖 0..池长 | ✅ 已核验 | E2 · `test/slot-load-resume.test.ts` |
 | `load-runs-callback-before-record0` | 存档槽 | 读档时帧 0 先跑 CALLBACK_LOAD.BIN（上一个画面的收尾），它 exit 后才装记录 0 的脚本 | ✅ 已核验 | E2 · `test/slot-load-resume.test.ts` |
-| `scene-teardown-on-load-point` | 渲染 | 读档装载点清空绘制项容器 + 从存档 body 还原绘制项清单（raw 19806-19832） | 🟠 部分 | E4 · `test/slot-load-resume.test.ts` |
+| `scene-teardown-on-load-point` | 渲染 | 读档装载点清空绘制项容器 + 从存档 body 还原绘制项清单（raw 19806-19832） | ✅ 已核验 | E3 · `test/slot-load-screen.test.ts` |
 | `drawitem-loop-anim-frame-drive` | 渲染 | 绘制项 B 族（flags bit2）周期/循环动画的逐帧求值 | 🟠 部分 | E2 · `test/draw-item-loop-anim.test.ts` |
 | `text-blank-extent-mode-gate` | 消息窗 | 空白字前进量的配置门 set:BlankExtentMode | 🟠 部分 | E2 · `test/op-205-blank-extent.test.ts` |
-| `scene-layer-xform-compose-20-29` | 渲染 | Scene 世界矩阵的合成与「只作用于层号 ∈ [20,30) 的项」这一级 | ✅ 已核验 | E2 · `test/op-22a-22f-scene-world.test.ts` |
+| `scene-layer-xform-compose-20-29` | 渲染 | Scene 世界矩阵的合成与「只作用于层号 ∈ [20,30) 的项」这一级 | ✅ 已核验 | E3 · `test/op-22a-22f-scene-world.test.ts` |
 | `save-load-drawitem-clear-and-restore` | 资源 | 读档装载点：清空绘制项容器 + 还原存档里的绘制项清单（Scene+1032） | ✅ 已核验 | E4 · `test/engine-slot.test.ts` |
 | `live2d-node-matrix-compose` | Live2D | 572B 节点的矩阵合成（sub_4A07F0）：4 个窗求值 + 行向量组合 + 就地推进 | ✅ 已核验 | E3 · `test/l2d-node-compose.test.ts` |
 | `texture-bind-async-stale-writeback` | 资源 | 纹理槽绑定的时序：引擎 set-texture 同步，宿主异步 ⇒ 陈旧载入不得覆盖脚本后来画的表面 | ✅ 已核验 | E3 · `test/texture-bind-race.test.ts` |
 | `input-keyboard-to-mask-bits` | 输入 | 键盘 VK → 掩码位 0..6（每帧 GetAsyncKeyState 轮询） | ✅ 已核验 | E2 · `test/keyboard-mask.test.ts` |
 | `copyright-effect` | 帧循环 | 版权页（LOGO）的 frame 效果：mesh 顶点色窗 + draw-item diffuse-alpha 窗 + timeGetTime 时钟 | ✅ 已核验 | E2 · `test/mesh-vertex-quad.test.ts` |
 | `texture-absent-draw-is-dropped` | 渲染 | 槽没有纹理对象时，所有"用这个槽"的绘制/处理**整笔丢弃**（只写一行 Error.log，无替代纹理） | 🟡 已建模未核验 | E1 · `test/missing-texture-skips-item.test.ts` |
+| `msgwin-coexist-auto-message` | 消息窗 | 共存自动翻页（0x1B7 置位 → 0x72 尾段武装计时器 → 等待泵 LABEL_44 到期自动推进） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `msgwin-vertical-rect-pad` | 消息窗 | 竖排文本的字形补白：目标矩形与采样原点**同步**位移（0x260 的四个值） | ➖ n/a | E1 · `test/adv-msgwin.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -195,7 +197,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：门不满足时整条 `sub_4B4040` 调用被跳过，画面保持上一帧且无任何诊断输出
 - **引擎**：sub_412290, sub_40BE10 @ raw 20740-20760
 - **读的字段**：Engine+667856, Engine+667860, Engine+699204, Engine+369332, Scene+46508
-- **emulator 现状**：『帧』现在由唯一驱动 runFrameLoop 定义（门 → 批 → 帧末 present），产品路径（session.ts）与全部 headless 入口都经它 ⇒ 不再是『PixiBackend.present 由渲染循环调用』那种结构。emulator 的等价门 = gates 四档（anim/sleep/stage/advance）+ present:needsRender（判据 scen…
+- **emulator 现状**：2026-09 T-0167（审计 §4.2 #3/#6/#7）已把引擎门逐项落地为纯函数 `frameRenderGate(e, suspended)`（src/frame/loop.ts；逐字复刻 raw 20740-20761）：① `Engine+667856==1`（`set:DrawMode`）② `Engine+675968`（宿主 `renderSuspended()` 缝；写点 …
 
 ### `scene-frame-commit`（partial）
 
@@ -206,41 +208,14 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Scene+46508, Scene+46516, Scene+46512, Scene+46500, Scene+1860, Scene+46456, Scene+46676, Scene+1056
 - **emulator 现状**：声明已按审计收窄（2026-09-21，收口 T-0075 审计的 no-evidence）：本条的 `guard`（`test/draw-item-slot-coverage.test.ts`）只断言「`draw-texture` 绘制项按槽绑定（比例 ≥0.95、存在 tex≠layer 项）」，不覆盖"四路归并"这条声明；原 note 里的「MeshEntry 黑罩」是已作废的旧近似（`re…
 
-### `scene-3d-effect-level-writer`（partial）
-
-- **能力**：3D 效果等级的初始化决策
-- **触发**：`sub_4A6EE0` 被调用（Engine 初始化 raw 11941 传 Scene）
-- **缺失时为什么静默**：按 D3D 版本能力（0xFFFF0100/0xFFFF0200）自动落 0/1/2 档；档位低只是少画特效，无报错
-- **引擎**：sub_4A6EE0 @ raw 126552-126561
-- **读的字段**：Scene+46668, Scene+42456, Scene+1860
-- **emulator 现状**：Scene+46668 不只是 3D 档（写端 raw 126552-126561），它是 2D 绘制循环 sub_4B06D0 的分支门（raw 136517/136024/135518 的 <2、136199 的 >=1）；emulator 完全未建模（绘制侧等价恒 0，presenter.ts:157 只实现 bit0 门）。
-
-### `scene-flag-46528-bits`（absent）
-
-- **能力**：Scene+46528 bit1/bit2 冻结豁免
-- **触发**：bit1 非零 ⇒ 拒绝 sub_407EA0 置冻结（raw 12793）；bit2（=0 时）⇒ sub_49AA30 不提前收尾动画窗（raw 117440-117449，进入门 = MeshEntry flags&2 且 flags&1）
-- **缺失时为什么静默**：两个函数各读一位 bit，读错极性只会让动画窗「提前收尾」或「不冻结」，没有断言/日志；进入门（flags&2 且 flags&1）漏掉时该分支完全不进。
-- **引擎**：sub_407EA0, sub_49AA30 @ raw 117430-117449
-- **读的字段**：Scene+46528
-- **emulator 现状**：冻结豁免位（bit1 阻止置冻结 / bit2 忽略已置冻结）随 46512 一起未建模
-
 ### `scene-norender-mode`（partial）
 
-- **能力**：Engine+167990 无渲染/隐藏窗口模式
+- **能力**：Engine+167990 = display:ScreenMode 镜像（窗口/全屏模式；非 0 时跳过一批窗口同步门）
 - **触发**：启动参数（WinMain raw 142044 配套置 effect_flags|0x80000）或脚本经 raw 40114 读取该值；本文件内无写入点
 - **缺失时为什么静默**：19 处门全是 `if (!_this[167990])`：非零时跳过「消息框前后隐藏/恢复窗口」「窗口尺寸同步」，脚本继续跑，完全无日志
 - **引擎**：sub_41A1A0, sub_412290, sub_405530, sub_4065F0, sub_406650, sub_40A4C0, sub_430A20 @ raw 11120-40120
 - **读的字段**：Engine+167990
-- **emulator 现状**：语义冲突待复核：emulator 把 display:ScreenMode 绑到 167990（当"显示模式"读），而引擎里它是「无渲染/隐藏窗口模式」（19 处门 + 经 raw 40114 暴露给脚本）⇒ 绑定可能错位
-
-### `scene-render-freeze-46676`（absent）
-
-- **能力**：Scene+46676 3D/文字渲染冻结总闸
-- **触发**：外部（脚本/命令层）把该字段置非零；本文件内 105 处引用全部是读、**零写入**
-- **缺失时为什么静默**：非零时 `sub_49FCD0` 整帧直接 `return 1`、相机矩阵/抖动/缩放补偿全部跳过 —— 合法路径、无报错，只是 3D 世界被冻结在最后一帧
-- **引擎**：sub_49AA30, sub_49FCD0, sub_4A1F00, sub_4A2D50, sub_4A7DA0, sub_4AEEA0, sub_4AF1C0, sub_4B06D0, sub_4B4040, sub_4B4460, sub_4B4910, sub_4B4B90 @ raw 117239-137597
-- **读的字段**：Scene+46676
-- **emulator 现状**：引擎里 105 读 / 0 写的"渲染冻结总闸"（含 2D 与文字路径）⇒ emulator 无对应开关，相关表现差异无从解释
+- **emulator 现状**：`Engine+167990` = `display:ScreenMode` 的镜像：唯一写入点 raw 11980（`GetConfig("display:ScreenMode") != 0`），并有 19 处 `!Engine[167990]` 门控窗口/全屏相关操作（raw 14778、21498-21860），21643 还有 `671960 != 0 ? 0 : 2` 的全屏档；emul…
 
 ### `scene-draw-total-gate-1056`（absent）
 
@@ -258,16 +233,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：时钟停走时动画只是静止，所有基于时间的比较都合法
 - **引擎**：sub_412290, sub_41A090, sub_41A2C0, sub_41A1A0 @ raw 20750-20751
 - **读的字段**：Engine+369332, Engine+369336, Engine+107438
-- **emulator 现状**：时钟已是单一时间域 —— 驱动每帧读 host.now() 写进 Engine.nowMs，宿主（pixi）经 advanceModel(nowMs) 接收，不再自己算 performance.now()-wallStart（旧 note 里的『present 用墙钟』已过期）。守卫 test/frame-loop.test.ts（每帧时钟前进/冻结档）+ test/frame-digest.te…
-
-### `render-3d-layer-dual-commit`（absent）
-
-- **能力**：3D 层对偶逐帧提交
-- **触发**：其它子系统直接调用（本文件未见主循环调用点）
-- **缺失时为什么静默**：与 `sub_4B4040` 同型的静默门控（脏标志/递归门），门不满足即正常返回
-- **引擎**：sub_4B4460 @ raw 136969-137427
-- **读的字段**：Scene+46508, Scene+46516, Scene+46512, Scene+1860, Scene+46456
-- **emulator 现状**：该对象 sub_4B4460 就是 opcode 0x222（handler sub_423EC0，dispatch 表 678180）的体；emulator 三张表都没有 0x222 ⇒ 语料 i222 10 处（SETPOLYGON/INFOxx）命中即 NotImplementedOp。原先标 n/a-known 掩盖了缺口；待补实现（T-0076）。
+- **emulator 现状**：主循环那条时钟写已落地 —— `frameRenderGate()`（src/frame/loop.ts）在门成立时执行 `ENGINE_FIELD.clockPrev ← clock; clock ← nowMs`（raw 20750-20751 逐字），守卫 test/frame-render-gate.test.ts 第 ⑤/⑥/⑦ 例（DrawMode=1+667860 才写；默认 Dra…
 
 ### `audio-device-init`（partial）
 
@@ -287,15 +253,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+699204, Engine+378684, Engine+699208
 - **emulator 现状**：影片播放未实现（0x20F 只记录）
 
-### `script-queue-dispatch`（absent）
-
-- **能力**：脚本派发队列出队
-- **触发**：`Engine+497380 < Engine+497384`（队列有货）且 `Engine+497400==0`（未在派发中）
-- **缺失时为什么静默**：队列空时整个函数体被外层 if 挡住，静默返回
-- **引擎**：sub_40FB60, sub_40FC90, sub_41A000 @ raw 18954-19016
-- **读的字段**：Engine+497380, Engine+497384, Engine+497376, Engine+497400, Engine+387924
-- **emulator 现状**：引擎的脚本派发队列（sub_40FB60，由帧末/unlock/0x143 驱动）未建模 ⇒ 依赖"延迟派发"的流程在 emulator 里不会发生（0x143 是 no-op）
-
 ### `vertex-buffer-lock-scale`（absent）
 
 - **能力**：顶点缓冲 Lock/Unlock + 视口缩放改写
@@ -304,15 +261,6 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_4AF1C0, sub_4A1F00, sub_4A2050 @ raw 133571-133612
 - **读的字段**：Scene+46676, Scene+1860, Scene+46456
 - **emulator 现状**：顶点缓冲 Lock/Unlock + 视口缩放改写未建模 ⇒ mesh 曾只能画成整屏色块（2026-09 已按真实四边形绘制），顶点几何曾全丢（2026-09 已建模） ★2026-09 订正：mesh 的顶点几何与逐顶点色已建模（见 `mesh-vertex-quad-and-per-vertex-color`，modeled-verified/E3，守卫 `test/mesh-vertex-…
-
-### `world-matrix-identity-refresh`（partial）
-
-- **能力**：每帧世界/投影矩阵复位与链乘
-- **触发**：每帧 `sub_4A1E90` 与逐项 `sub_4AEEA0`/`sub_4AEDD0` 调用
-- **缺失时为什么静默**：矩阵数值错误不会抛异常，只是坐标不对（纯表现问题）
-- **引擎**：sub_4A1E90, sub_4AEEA0, sub_49AA30 @ raw 122130-122157
-- **读的字段**：Scene+1116, Scene+46600, Scene+46536, Scene+46660
-- **emulator 现状**：scale/rot/trans 用 Vec3/{axis,deg} 等价建模并接入 Pixi；但没有 4×4 世界矩阵链与投影矩阵复位
 
 ### `sprite-2d-draw-layer`（absent）
 
@@ -341,15 +289,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+697620, Engine+378684
 - **emulator 现状**：影片未实现
 
-### `lazy-movie-dll`（absent）
-
-- **能力**：电影解码 DLL 重载与函数指针惰性解析
-- **触发**：`sub_4229D0` 被调用；`Engine+490072` 已加载则先 `FreeLibrary`
-- **缺失时为什么静默**：LoadLibrary 失败时 `GetLastError` + `_CxxThrowException(Command_ShowMessage)` ⇒ **会报错**
-- **引擎**：sub_4229D0, sub_422AB0 @ raw 31056-31110
-- **读的字段**：Engine+490072
-- **emulator 现状**：影片未实现
-
 ### `lazy-movie-texture-slot`（absent）
 
 - **能力**：电影纹理槽（每索引）惰性创建
@@ -359,24 +298,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+378688
 - **emulator 现状**：影片未实现
 
-### `lazy-gdi-font-set`（absent）
-
-- **能力**：消息窗字体句柄组的重建（主/注音两套，CreateFontIndirectA ×8 / ×4）
-- **触发**：字体变更或消息窗子系统重建（`sub_40DF10` 复位区）
-- **缺失时为什么静默**：字体句柄为 0 时 GDI SelectObject 静默退化；面名为空（Font+1260 首字节 0）则 sub_459F40 直接 return ⇒ 句柄全 0、文字用系统默认字体画出来，全程无错误输出
-- **引擎**：sub_465390, sub_459F40, sub_45A6E0, sub_456C90 @ raw 70940-71273
-- **读的字段**：Font+1084, Font+1096, Font+1100, Font+1232, Font+1292, Font+201684, Font+218584, Font+101972, Font+102032, Font+201788, Font+235068..+235104
-- **emulator 现状**：缺失：字体系（面名/字号/粗体/竖排模板 → HFONT）完全未建模。改用浏览器字体后仍需保留「面名→内嵌字族」映射与 0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB 的参数面。
-
-### `lazy-transition-map-node`（absent）
-
-- **能力**：过渡表节点惰性插入（表头 eager）
-- **触发**：首次写入某个过渡 key（`sub_4AA190`/`sub_4AAE10` 在 map 中找不到该 key）
-- **缺失时为什么静默**：map 内分配失败会走 bad_alloc 抛出；正常路径完全静默
-- **引擎**：sub_4AA190, sub_4AAE10, sub_4A95D0 @ raw 129586-129596
-- **读的字段**：Scene+1048, Scene+1052
-- **emulator 现状**：转场表未建模
-
 ### `lazy-572b-node-map`（partial）
 
 - **能力**：572B 节点表（精灵/特效）惰性插入（表头 eager 130366/130384）
@@ -385,15 +306,6 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_4AAEC0, sub_4A9D70 @ raw 129394-129427
 - **读的字段**：Scene+1080, Scene+1084, Scene+1096, Scene+1100
 - **emulator 现状**：立绘那一半已建模：`Scene+1096` 的 572B 立绘节点表 = `Engine.l2dNodes`（`src/vm/engine.ts`），节点模型在 `src/live2d/runtime.ts`（`l2dCreateNode` = `0x344` 的 op1=key/op2=槽），出画门 `l2dNodeDrawable`；守卫用真实 TITLE 资产（`test/live2d-ch…
-
-### `bullet-dirty-from-freeze-or-pending`（partial）
-
-- **能力**：冻结/pending 强制延续刷帧
-- **触发**：`*(_QWORD*)(Scene+46512)` 非零（冻结或 pending 任一）
-- **缺失时为什么静默**：只是把脏标志置 1 让下一帧继续画，无日志
-- **引擎**：sub_4B06D0 @ raw 136718-136719
-- **读的字段**：Scene+46512, Scene+46516, Scene+46508
-- **emulator 现状**：emulator 的 needsRender() = sceneNeedsRender（脏 || 还有窗在跑；后者 = scAnimationsPending 扫 mesh 全窗 + draw item 5 窗）；旧 note 里的 waitFlags&0x400 一项已随 waitFlags 镜像一起删除（门状态的真源是 Engine.waitFlags，『门等待期间持续合成』由帧驱动负责）。★…
 
 ### `adv-flag-lifecycle`（partial）
 
@@ -447,16 +359,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：这些 handler 体只有「读操作数 → 调文本对象方法」，没有回写操作数、不改 ip；emulator 把它们当 no-op 跳过时，脚本拿到的是「已执行」的状态，控制流正常，只是消息窗永远没有内容/几何 —— 无日志无报错
 - **引擎**：sub_41ED20, sub_41F250, sub_41F350, sub_41F490, sub_425EF0, sub_426200, sub_4332D0, sub_456430, sub_45D660, sub_4563A0, sub_4185F0, sub_432DD0 @ raw 28401-41818
 - **读的字段**：Engine+21324, Engine+21585, Engine+166964, Engine+430600
-- **emulator 现状**：部分：消息窗对象表三条（0x212/0x213/0x25D）已实现；其余约 22 条纯转发器（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1BB/0x1C1/0x1C9/0x1CE/0x324…）仍是 no-op —— 它们转发到不存在的文本布局子系统，不假装实现。
-
-### `msgwin-attr-font-opcodes`（partial）
-
-- **能力**：文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集**
-- **触发**：脚本设置字体/文本属性时调用；0x196 display-furigana 在消息文本里插注音；0xC5 读音量配置写操作数
-- **缺失时为什么静默**：多是"改模板字段 + 重建句柄"的纯属性写入：不实现则参数保持默认（白字/黑投影/24px），画面还能看，只是**失去脚本指定的观感与阅读体验**。0x1C5/0xC5 一类会回写操作数，被跳过时脚本读到旧值。
-- **引擎**：sub_41F350, sub_41F390, sub_41F3F0, sub_41F450, sub_41F6C0, sub_41FBF0, sub_41FE60, sub_41FDD0, sub_433290, sub_426200, sub_426260, sub_426500, sub_4332D0, sub_41FC20, sub_455ED0 @ raw 28652-29163
-- **读的字段**：Font+1360/+1364/+1368/+1372/+1380/+1384/+1388/+1392(颜色与描边), Font+1232/+1248/+1260(主字体), Font+1292/+1308/+1320(注音字体), Font+218516/+218588(字重), Font+201684/+218584(字号), Font+235108(竖排)
-- **emulator 现状**：部分：0x196 display-furigana 已实现（记录注音对）。仍为 no-op 且属 P0（阅读体验）：0x75 字号 / 0x76 填充色 / 0x77 描边色 / 0x78 描边档位 / 0x1A4 描边偏移 / 0x8B 第三色 / 0x197 注音字号 / 0x2BD/0x2BE 加粗 / 0x1A5/0x2FE 面名。★描边四档（0 无 / 1 单向投影 / 2 1-4 强度…
+- **emulator 现状**：消息窗对象表三条（0x212/0x213/0x25D）与 note 旧名单里点名的九条（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1C1/0x1CE）都已是真实现（各写窗对象/字体面，见 `handlers/msgwin.ts` 与 `engine-fields.ts`），`0x1BB`（记账门）/`0x1C9`（音频设备初始化）/`0x324`（Effect…
 
 ### `adv-advance-route-table`（partial）
 
@@ -465,25 +368,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：表为空或游标 -1 时 `sub_403E70`/`sub_403D70` 都返回 -1，调用方只是「继续等下一帧」，无日志无错误码；只有表满时 `0x090` 才抛 ShowMessage
 - **引擎**：sub_420640, sub_403B30, sub_403C50, sub_403D70, sub_403E70, sub_411BC0, sub_411900 @ raw 9740-29518
 - **读的字段**：Engine+21976(表基址 0x55D8), Engine+29872(游标), Engine+29864(推进标志)
-- **emulator 现状**：已按 .tmp/mouse-dispatch-spec.md 忠实重做（2026-09）： ① 点击/键命中一律走 labelC（[459+i]：sub_403D70 raw 9862 / sub_404E00 raw 10675 / 主循环 raw 20182）；旧实现取 labelA 是错的。 ② 悬停 label 是带返回点的子程序：sub_405360(Engine, -3)（raw 11…
-
-### `msgwin-config-gates`（partial）
-
-- **能力**：消息/ADV 路径上的配置门与「当前走不到的分支」
-- **触发**：各 handler 体内的 `GetConfig("…")`；随包 SYS4REG.INI 的取值决定走哪一支
-- **缺失时为什么静默**：配置门是普通 if：取值为假时对应分支整段不执行，没有日志也没有错误码；更隐蔽的是**配置回读类指令被当 no-op 时脚本读到旧值**（不报错、只算错）
-- **引擎**：sub_41EB20, sub_41ED80, sub_41EEF0, sub_411900, sub_411BC0, sub_409400, sub_42E540, sub_42E670, sub_4309E0, sub_431110, sub_4311B0, sub_42D2F0 @ raw 20096-40386
-- **读的字段**：Engine+697620, Engine+174405, Engine+86672
-- **emulator 现状**：清单与逐键分支见 `docs-new/03-engine/message-config-gates.md`。要点：(a) `message:ReadTextSkip=0` ⇒ 0x6E/0x71/0x72 不置 ADV（emulator 已按门实现）；(b) `message:MesWinAlpha=8` ⇒ 每段文本 8ms 节流（已实现）；(c) `set:CancelMesSkipOnCli…
-
-### `text-layout-wrap-ruby`（absent）
-
-- **能力**：文本排版：逐字像素量宽 + 边界硬断 + 注音配对（sub_46BE30）
-- **触发**：0x6E show-text / 0x196 display-furigana / 0x7D 每次入队时
-- **缺失时为什么静默**：排版产出的只是一串记录与源矩形；不排版不报错，只表现为「文字不出现」「位置不对」。更隐蔽的是：断行规则与引擎不一致时，行数/每行字数与脚本可观测的 0x83(当前行)、0x1C5/0x2C2(读回已显示文本)、0x2F3(行坐标) 全部对不上 —— 静默错误会从像素层渗到 VM 层。
-- **引擎**：sub_46BE30, sub_45E870, sub_475CF0, sub_4572A0, sub_45D120 @ raw 83363-83997
-- **读的字段**：FontVWindow+36/+40(右/下边界), FontVWindow+44/+48(24B 行记录), FontVWindow+208(120B 文本记录), Font+201684(字号), Font+1236(字宽), Font+218592/+218596(缩放)
-- **emulator 现状**：缺口：逐字 GetTextExtentPoint32A 量宽、右/下边界硬断、注音配对（24B 记录 +0 种类 / +20 组 ID）与按比例缩短都未建模。★引擎的等宽网格（lfWidth = 字高/2 ⇒ 全角 1em / 半角 0.5em）使排版可退化为纯算术，不需要浏览器度量。★引擎无禁则、无 0x0A 换行处理。
+- **emulator 现状**：右键「取消/跳读」路由已接线。引擎 sub_411BC0 raw 20365-20374：`v6 = frames[cur]`；`*v2 = 0`（消费输入）；`Engine[489488 + 4*v6] == -1` ⇒ 直接 return，什么都不做；否则 `489808 = effect_flags | 0x6000000`、`effect_flags = 0`（清整个）、`489812 =…
 
 ### `msgwin-offscreen-surface-lifecycle`（partial）
 
@@ -503,14 +388,14 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Font+1376(= message:MessageSpeed), Font+235128(= message:MessageFade), DrawItem+52/+56/+76/+100
 - **emulator 现状**：部分：DrawItem 颜色动画窗（含整数截断插值、共享起点、窗末收尾）已建模并有守卫；缺的是把它接到消息窗行上（按 MessageSpeed×MessageFade/100 设时长）。
 
-### `msgwin-backlog-cursor`（absent）
+### `msgwin-backlog-cursor`（partial）
 
 - **能力**：已读文本回看：页表 Font+3380 + 72B 回看项 + 光标 sub_459770
 - **触发**：0x71/0x70 登记一页；滚轮（输入位 0x8/0x2）与 0x84 移动光标
 - **缺失时为什么静默**：页表不建则回看与滚轮完全无反应；更关键的是 0x84「翻到底」时本应置 effect_flags |= 0x100000 并弹保存栈让脚本继续 —— 页表为空则这个"到达末尾"永远不发生，脚本会停在自旋里（表现为卡住，而不是报错）。
 - **引擎**：sub_459770, sub_45EFA0, sub_45EBE0, sub_45EC60, sub_45D660 @ raw 70575-70627
 - **读的字段**：Font+3380/+3384(8B 页表), Font+3364(72B 回看项), Font+859/+860(末项/当前光标)
-- **emulator 现状**：缺口：无回看页表与光标。CONFIG1 链路上不触发，但真实剧本的滚轮回看与 0x84 依赖它。
+- **emulator 现状**：（原文见 git 历史）2026-09（T-0167 的 P1 §4.2 #14 的 missing-consumer）：moveCursor 的消费者已接上。引擎 sub_411BC0 raw 20341-20363（整块被 effect_flags & 0x4000000 门控 —— 那是 CHAR_REVEAL_ACTIVE）：`v7 = Conf(set:WheelKeyUp)` 当掩码位…
 
 ### `text-font-rebuild-cascade`（partial）
 
@@ -539,23 +424,14 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Scene[5*slot+466] = imgid, CTexture+1040/+1044 宽高, DrawItem+4 纹理槽号
 - **emulator 现状**：两道屏障：① `renderer/app/session.ts` 的 `#present()` 前 `texturesIdle()`（既有，防「文本先出现、背景晚几帧」）；② `0x1F9` 之后立刻 `await texturesIdle()`（2026-09 新增，`#awaitTextureBound`）—— 后者才修得掉 `0x208` 读到 0×0。`texture-frame-barr…
 
-### `scene-3d-weather-effects-rain-snow-leaf`（absent）
+### `scene-3d-weather-effects-rain-snow-leaf`（partial）
 
 - **能力**：3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁
 - **触发**：Scene 初始化 `sub_4A6EE0` 里建管理器；脚本用 `0x327`(Rain) / `0x326`(Snow) / `0x328`(Leaf) 懒建或重建单个效果；`0x325` 写管理器的两个字段；`0x324` 一次性销毁全部；帧循环每帧推进
 - **缺失时为什么静默**：管理器与三个效果对象都不在脚本可见状态里：漏掉它**不报错、不改控制流**，只是**雨/雪/落叶完全不出现或永远不更新**（`0x324`/`0x325`/`0x326` 当 no-op 时），而 `0x327`/`0x328` 因为**没有注册 handler** 会以 `NotImplementedOp` 的形式暴露 —— 两条路都不指向"真正的缺陷是缺了整个子系统"
 - **引擎**：sub_4A6EE0, sub_4530B0, sub_453280, sub_453330, sub_453410, sub_453150, sub_4535F0, sub_453540 @ raw 126522-126570
 - **读的字段**：Engine+0x5B320（= Scene+50704）3D 效果管理器指针, Manager[258] Rain / [259] Snow / [260] Leaf, Manager[262..309] 三组 16-dword 参数块 / [310]/[311] / [312] 清空标记, Scene+46668 3D 特效等级门槛 / Scene+46496 共享 ID3DXEffect(资源 202), Scene+4*mesh+50708 网格层级槽表
-- **emulator 现状**：emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义见 live 表格 `docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行（`opcode-table.md` 是生成…
-
-### `passive-camera-and-effect-render-state`（absent）
-
-- **能力**：3D 效果的逐帧渲染状态重设（不是 opcode 设置的）
-- **触发**：帧循环每帧：`sub_4535F0(管理器, -1)` 下发 SetRenderState(7/14/27/…) 并按管理器 `[315]` 分支，再 `sub_453540(管理器)` 按 `timeGetTime()` 步进粒子
-- **缺失时为什么静默**：这两个调用在**帧循环**里，不在任何 opcode 上：缺失时粒子不会动、渲染状态不重置 ⇒ 画面错但不报错。★这条正是"第二层能力面"的典型 —— 把所有 opcode 都实现对了它仍然会缺
-- **引擎**：sub_4535F0, sub_453540 @ raw 136828-136829
-- **读的字段**：Manager[261] 设备, Manager[313]/[314] 时间基准, Manager[315] 渲染模式
-- **emulator 现状**：emulator 的 PixiBackend 每帧 present 时不重设 D3D 级渲染状态（本来就无 D3D），但"粒子按墙钟时间步进"这一行为需要随 3D 效果子系统一起建模
+- **emulator 现状**：引擎：管理器 `Scene+50704`（`operator new(0x4F4)`，`sub_4530B0` raw 65345-65363；创建点 `sub_4A6EE0` raw 126541-126545），三效果槽 `[258]` Rain / `[259]` Snow / `[260]` Leaf、三组 16-dword 参数块、销毁阈值 `[+0x4D8]`/`[+0x4DC]`（`…
 
 ### `gfx-prim-mesh-and-render-state`（partial）
 
@@ -564,7 +440,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：★这一族**从不回写脚本操作数、也不改控制流** ⇒ 从 VM 视角完全不可观测：漏掉它们**不会报错**，只表现为「画面与真机不一致」（变换/裁剪/blit/清屏/槽标志/网格属性失真）。正因如此它们长期被当作「无依据的 no-op」（`ENGINE_INTERNAL_OPS` 与 `STUB_NATIVE_OPS`），缺口在纯脚本链路里永远看不到 —— 属闸门 B（能力缺口）那一类。
 - **引擎**：sub_422F80, sub_423060, sub_423480, sub_41A200, sub_41A290, sub_423FE0, sub_4248C0, sub_4251A0, sub_425C30, sub_425D20, sub_426BD0, sub_426F80, sub_427040, sub_4AC470, sub_4AC660, sub_4A3980, sub_498B60, sub_4AA180, sub_49A690, sub_49A6C0, sub_49A6F0, sub_4AD9A0, sub_4ACD10, sub_4AE280, sub_4A0750, sub_499DF0 @ raw 31303-31345
 - **读的字段**：DrawItem 变换字段（`+104`、`+132..+164`）, Scene 纹理槽表（槽→槽 blit）, Scene+1048（转场容器）, Scene[278]/[279] 与 Scene[286..288]（绘制模式）, Engine[92338]/[92339]（画布尺寸对）, DrawItem `+720`（与相邻对象 `+504`）, Scene+1872/+21872 的两张纹理槽标志镜像表, Scene+1064（网格属性表）, Scene[op1 + 12677]（3D 模型槽）
-- **emulator 现状**：除 0x207（槽→槽 blit）已由 TextureCache.blitSlotToSlot 真转送像素外，其余按宿主缝记录；原 note 的「11 条只记录」不成立。
+- **emulator 现状**：审计 §4.2 #8：`0x1FC`/`0x1FE`（图元变换）、`0x321`（网格属性）、`0x32D`（3D 颜色）写进 render4 后没有渲染消费者。本轮四条都接上真消费者（`src/renderer/pixi/presenter.ts` 的 `drawMesh`）：`0x1FC` ⇒ `resetItemTransform`（三块 work/target 复位成单位；不碰 `+0x6…
 
 ### `text-aa-config-gate`（partial）
 
@@ -575,15 +451,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Font+1352（AA 开关；= Engine[21662]）, 配置 set:EnableAntiFont / message:UseAntiFont
 - **emulator 现状**：前半（两键门 + 阈值机具）为真；后半为假：字段 21662（aaEnabled）在渲染侧没有消费者（全库唯一出现点就是它的定义），msgwin.ts:146 直接写死 antiAlias: true ⇒ AA-off 的 drawAliasedLayer 分支在产品路径不可达（test/text-aa.test.ts:54-65 反而断言了「不跟随字段」）。审计 audit-2026-09-ca…
 
-### `text-white-level-on-composite`（partial）
-
-- **能力**：引擎画的文字在成片上被压到 ≈0.89×白（实测；同屏美术图不受影响）—— 机制未定位
-- **触发**：所有由引擎自己绘制的文字（ADV 正文、设置界行标签、字体样例预览、直绘串）；同一屏的美术图（按钮面、局部化 UI 图、ON/OFF 图）**不受影响**。取色链读到绘制之前：绘制用的是 Font+1360（= 脚本全局 f807b，序章为 0xFFFFFF，raw 79666 行路径 / raw 79259-79273 ADV 路径都是逐字传该字段）⇒ 这一档发生在 GDI 画完之后的合成里，不在颜色链上。
-- **缺失时为什么静默**：★缺失时完全静默：宿主把文字画成 255 纯白，而引擎成片是 ≈226-232 ⇒ 观感上「文字更白更粗」（正是 T-0035/T-0042 用户实测的症状），没有任何报错或日志；只有把**同屏截图逐区域比对**才看得出来 —— 且很容易误判成字重/字体问题（T-0035 前几轮就误判过）。
-- **引擎**：sub_455ED0, sub_43C8D0, sub_45E870 @ raw 68011-68129
-- **读的字段**：Font+1360(填充色), Font+1364(描边色)
-- **emulator 现状**：实测（T-0042）：引擎 vs emulator 同屏（OPTION 系统设定）逐区域比对 —— 引擎画的文字核心恒 226-232，其中字体样例预览横跨「亮天空→暗照片」（背景 7→49）时核心只动 0.3 ⇒ 是常数压暗，不是与场景的 alpha 混合、也不是重采样；而美术图（米白按钮面 (254,243,229) 在两边是 9542 vs 9553 px、纯白高光 374/374）逐像素一…
-
 ### `live2d-enabled-config-flag`（partial）
 
 - **能力**：Live2D 开关（`global a9d0`）与静态贴图回落
@@ -592,15 +459,6 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_427BA0 @ raw 34460-34495
 - **读的字段**：脚本 global a9d0(Live2D 关标志；脚本层开关，非引擎字段), 脚本 global f8c46(要装的 MOC 文件 id), 脚本 global f8c47(L2D 槽号)
 - **emulator 现状**：L2D 支已能装载并有场景级证据（2026-09，`tickets/T-0054` M2/M3）：`i341/i345/i34E` 从桩转真实现（`handlers/live2d.ts` 的 LIVE2D_NATIVE_OPS，宿主按统一文件 id 读 `.MOC`/PNG/`.MTN`），真 TITLE 资产的装载/纹理绑定/动作入队/节点出画都有 E3 守卫（test/live2d-chain…
-
-### `scene-teardown-on-load-point`（partial）
-
-- **能力**：读档装载点清空绘制项容器 + 从存档 body 还原绘制项清单（raw 19806-19832）
-- **触发**：每次真槽读档（sub_410160 装完槽表之后）
-- **缺失时为什么静默**：★★不报错、只让画面完全不对，而且方向与直觉相反：不清+不还原时，上一屏（TITLE/菜单）的绘制项留在容器里，而装载段紧接着按存档重绑槽表（`records[4].flag==1 ⇒ 槽 4 ← 0xB37 = BG050ABL`）⇒ 残留项当场改画成存档那张图：TITLE 的 6 个引用槽 4 的项按各自的源矩形去采样 2048×1152 的 BG050ABL ⇒ 5 块 156×156 菜单板在 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554) 排成「天空碎片阶梯」，0x64 那条的源 y=1161 已越过图高 1152（灰块）。引擎读档后画面上是**存档那一屏的绘制项**（含 SN0000 背景项 handle 0x18A88、slot 4、src (0,0,2048,1152) @ dst (0,0)；键 101000 ≫ TITLE 的 0x135 ⇒ 天然盖住一切）。
-- **引擎**：sub_410160, sub_49A300, sub_40C910, sub_40C310, sub_40BB60 @ raw 19806-19832
-- **读的字段**：Engine+323864 = Scene+0x408（绘制项容器：+0 计数 / +4 树根 / +8 size）, Engine+323872 = Scene+0x410（容器元素数）, file body 末段 {u32 740、u32 count、(u32 handle + 740 B DrawItem 记录) × count}
-- **emulator 现状**：本条的原始实现是对的 —— 装载点调 clearDrawContainer() + clearMeshSlots() 并有 E4（读档后只剩 ADV 场景）。随后 (B) 步以「sub_410160 的 27 个被调函数里没有清容器」为由删掉了这一刀、换成 Item.ownerFrame + dropFrameItems ⇒ 残留回归（用户报的阶梯）。源码证明 (B) 的前提错：清容器是 sub_…
 
 ### `drawitem-loop-anim-frame-drive`（partial）
 
@@ -619,3 +477,12 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_404EE0, sub_4072F0 @ raw 10716-10739
 - **读的字段**：配置 set:BlankExtentMode, Engine+71744, Engine+71745, Engine+21632
 - **emulator 现状**：门已接线（src/text/layout.ts 的 BlankExtent/blankAdvance/numberCellExtent + handlers/msgwin.ts 的 emitWin 逐次读 set:BlankExtentMode）：mode === 1 时空白字改走 BlankExtent.measure（引擎 sub_404EE0 的等价物）且 0x205 的 cy 按 raw …
+
+### `msgwin-coexist-auto-message`（partial）
+
+- **能力**：共存自动翻页（0x1B7 置位 → 0x72 尾段武装计时器 → 等待泵 LABEL_44 到期自动推进）
+- **触发**：`Engine[97052] != 0`（`0x1B7` 写 `1`；引擎侧由 AGERC 系统命令 40037「进设置画面」触发 `sub_4090F0`）
+- **缺失时为什么静默**：没接时 `i1b7 1` 之后没有任何可观察后果（ADV 页不会自己往下走），而 `i1b6` 读回值照旧 ⇒ 不报错、只行为不对
+- **引擎**：sub_4090F0, sub_411BC0, sub_453A60, sub_453AF0, sub_453BC0, sub_453BD0 @ raw 13699-13707
+- **读的字段**：Engine+97052, Engine+97053, Engine+122464, Engine+122371, Engine+122454, Engine+122501, Engine+430180
+- **emulator 现状**：2026-09 T-0151/T-0167（审计 §4.2 #16 与 §4.1 的 `0x1b6`/`0x1b7` P1）：读端 + 行为端都已落地。读端 = `handlers/msgwin.ts` 的 `armCoexistAutoMessage`（0x72 尾段 raw 28556-28586 逐字：`v7 = _this[97052]==0; _this[97053]=0; if (!v…

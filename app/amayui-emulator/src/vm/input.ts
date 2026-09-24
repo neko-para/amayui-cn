@@ -6,7 +6,10 @@
  *    鼠标**滚轮增量**（引擎单位：上滚正/下滚负、一格 ±120；0x10D 读并清零）。
  *  - 记录"自上次消费以来**新按下**"的边沿（mouse/joy），供 get-input-type(0xCD)/0x100 派发跳转。
  *  - 保存 mouse_callback(0xCC)/joy_callback(0xFB) 注册的**跳转目标**（raw label dword 值）。
- *  - 维护输入**位掩码**（poll-input(0x101)/0x100 读）：鼠标→bit4/5、手把→bit(4+i)、键盘→bit0..6（本任务只登记）。
+ *  - 维护输入**位掩码**（poll-input(0x101)/0x100 读）：鼠标→bit4/5、手把→bit(4+i)、
+ *    键盘→**VK→位表**（`0x10C` 可改写；默认 7 键→bit0..6）。
+ *  - 持有**两张按键表**（键码→VK、VK→掩码位，引擎 `Input[1432+键码]` / `Input[1176+VK]`，
+ *    `tickets/T-0163`）：`0x10C`（`set-key-multi`）改写 VK→位表 ⇒ 脚本驱动的键位重映射。
  *
  * 位约定（与引擎一致，见 docs-new/03-engine/input-system.md）：
  *  - 鼠标按钮值读取（0x108 走 sub_477220）：**bit0=左、bit1=右**（随 SM_SWAPBUTTON 互换，emulator 不模拟互换）。
@@ -55,33 +58,118 @@ export interface InputSnapshot {
 export type HostFocus = 'auto' | 'on' | 'off';
 
 /**
+ * ★★**两张可改写的按键表**（`tickets/T-0163`；引擎 `Input` 对象的两段数组）★★
+ *
+ * 引擎 `Input` 是 `Engine` 的**内嵌对象**（基址 = `Engine+1032` 字节 ⇒ `Engine[258]` 即其 vftable，
+ * `sub_477DD0` raw 92374-92380）⇒ `Engine[1690+k]` 就是 `Input[1690-258+k] = Input[1432+k]`。
+ * `0x10C`（`sub_4220B0`）写的 `Engine[1434 + Engine[1690+op2]]` 因此逐字等于
+ * **`Input[1176 + Input[1432+键码]] = 掩码位`**（汇编清单 53610-53659：
+ * `mov edx,[esi+edi*4+1A68h]` / `mov [esi+edx*4+1668h],eax`）。
+ *
+ * | 表 | 引擎格子 | 大小 | 初值 | 谁写 |
+ * |---|---|---|---|---|
+ * | **键码 → VK** | `Input[1432+键码]` = `Engine[1690+键码]` | 256 dword | `sub_476AA0` 填默认 | 只读（无脚本指令写它） |
+ * | **VK → 掩码位** | `Input[1176+VK]` | 256 dword | `memset(...,255)` = **-1（未绑定）** | Input 构造 7 条 + `0x10C` 改写 |
+ *
+ * 消费端（两张表都读的地方）：
+ *  - `sub_4770A0`（raw 91551-91570）：`for vk in 0..255: if (Input[1176+vk] >= 0 && GetAsyncKeyState(vk) & 0xFF00)
+ *    mask |= 1 << Input[1176+vk]` —— **掩码位完全由 VK→位表决定**；
+ *  - `sub_477100`（raw 91572-91578）：`GetAsyncKeyState(Input[1432+键码])` —— 按**键码**问按键真值。
+ *
+ * ⇒ `pressKey`/`releaseKey` 必须查**运行期**的 VK→位表（不是冻结常量），
+ *   否则 `0x10C`（脚本改键位）写进去的东西没有消费者 —— 这正是审计 §4.1 的 P2 `missing-consumer`。
+ */
+
+/**
+ * **默认 键码 → VK**（引擎 `sub_476AA0` 逐条抄录；`tickets/T-0163`）。
+ *
+ * ## 表基址与键码口径（三方独立证据，别再猜）
+ * 1. **机器码**：该函数共 93 条 `mov [ecx+disp], V`（另 2 条是与本表无关的
+ *    `mov [ecx+1708h]/[ecx+1738h], eax`），disp 全部 4 字节对齐、范围 `0x1664..0x19d4`。
+ * 2. **段边界**：`sub_477DD0` 里 `memset(_this+1432, 0, 0x400)`（键码表 = `Input[1432..1687]`）
+ *    与 `memset(_this+1176, 255, 0x400)`（VK→位表 = `Input[1176..1431]`，初值 **-1 = 未映射**）；
+ *    未赋值键码其 VK = **0**（`memset` 0），而 VK 0 在 VK→位表里恒为 -1 ⇒ 按了不产生掩码位。
+ * 3. **语义锚**：`sub_477DD0` 里 7 条默认绑定的键码存在 `_this[260..266]`（raw 92386-92393）
+ *    = `{0xC8, 0xCD, 0xD0, 0xCB, 0x1C, 0x39, 0x0E}`，配 raw 92394-92400 的位 0..6。
+ *
+ * 三条合起来把（键码 → 表内下标）的平移量唯一确定：**shift = -6**，即
+ * `真实键码 = (disp - 0x1648)/4 - 6`。验证（本表逐条核对，`test/keyboard-mask.test.ts` 也钉住）：
+ *
+ * | 键码 | VK | 键 | 键码 | VK | 键 |
+ * |---|---|---|---|---|---|
+ * | `0xC8` | 38 | ↑ | `0x1C` | 13 | Enter |
+ * | `0xCD` | 39 | → | `0x39` | 32 | Space |
+ * | `0xD0` | 40 | ↓ | `0x0E` | 8 | BackSpace |
+ * | `0xCB` | 37 | ← | `0x2C` | 90 | **'Z'** |
+ *
+ * 最后一行是语料锚：`src/SYSTEM4.txt:87` 的 `i10c 4 2c` 必须让 **Z** 触发确认位（bit 4）。
+ *
+ * ★修前 **这张表在 emulator 里根本不存在**（审计 §4.1 的 P3 `missing-operand-io`）；
+ *   `pressKey` 拿到的直接是宿主 VK、只查冻结常量 `DEFAULT_VK_TO_BIT` ⇒ `0x10C` 的 `op2`（键码）
+ *   无处可查。现在它是 `0x10C` 与 `sub_477100`（按键码问 `GetAsyncKeyState`）两条路径的共同真源。
+ */
+export const DEFAULT_KEYCODE_TO_VK: ReadonlyMap<number, number> = new Map<number, number>([
+  [0x01, 27], [0x02, 49], [0x03, 50], [0x04, 51], [0x05, 52], [0x06, 53], [0x07, 54], [0x08, 55],
+  [0x09, 56], [0x0a, 57], [0x0b, 48], [0x0c, 109], [0x0e, 8], [0x0f, 9], [0x10, 81], [0x11, 87],
+  [0x12, 69], [0x13, 82], [0x14, 84], [0x15, 89], [0x16, 85], [0x17, 73], [0x18, 79], [0x19, 80],
+  [0x1c, 13], [0x1d, 17], [0x1e, 65], [0x1f, 83], [0x20, 68], [0x21, 70], [0x22, 71], [0x23, 72],
+  [0x24, 74], [0x25, 75], [0x26, 76], [0x2a, 16], [0x2c, 90], [0x2d, 88], [0x2e, 67], [0x2f, 86],
+  [0x30, 66], [0x31, 78], [0x32, 77], [0x36, 16], [0x38, 18], [0x39, 32], [0x3b, 112], [0x3c, 113],
+  [0x3d, 114], [0x3e, 115], [0x3f, 116], [0x40, 117], [0x41, 118], [0x42, 119], [0x43, 120], [0x44, 121],
+  [0x45, 144], [0x46, 145], [0x47, 103], [0x48, 104], [0x49, 105], [0x4a, 109], [0x4b, 100], [0x4c, 101],
+  [0x4d, 102], [0x4e, 107], [0x4f, 97], [0x50, 98], [0x51, 99], [0x52, 96], [0x53, 110], [0x57, 122],
+  [0x58, 123], [0x70, 21], [0x79, 28], [0x7b, 29], [0x94, 25], [0x9c, 13], [0x9d, 17], [0xb5, 111],
+  [0xb8, 18], [0xc7, 18], [0xc8, 38], [0xc9, 33], [0xcb, 37], [0xcd, 39], [0xcf, 35], [0xd0, 40],
+  [0xd1, 34], [0xd2, 45], [0xdb, 91], [0xdc, 92], [0xdd, 93],
+]);
+
+/**
+ * 七条默认绑定用的键码（引擎 `sub_477DD0` raw 92386-92393 的 `_this[260..266]`，顺序 = 掩码位 0..6）。
+ * ★**不是** `0x48/0x4d/0x50/0x4b/0x28/0x39/0x0e`（那组是"把 `_this[260..266]` 当成键码"的误读）。
+ */
+const DEFAULT_BOUND_KEYCODES = [0xc8, 0xcd, 0xd0, 0xcb, 0x1c, 0x39, 0x0e] as const;
+
+/** 取默认键码表里某个键码的 VK；缺项 = `undefined`（**不抛** —— 模块加载期不许有断言，
+ *  否则一个数据笔误会把所有 import `vm/engine` 的测试带红）。守卫在 `test/keyboard-mask.test.ts` ①。 */
+function defaultVkOf(keycode: number): number | undefined {
+  return DEFAULT_KEYCODE_TO_VK.get(keycode);
+}
+
+/**
  * **默认 VK → 虚拟掩码位**（引擎 Input 构造 raw 92394-92400；`tickets/T-0052`）。
  *
- * 引擎那 7 条赋值（`_this[_this[<字段>] + 1176] = <位>`）与 `sub_476AA0` 的默认 VK
- * （raw 91344-91415）合起来就是这张表：
+ * | 虚拟位 | 键码 | VK | 键 |
+ * |---|---|---|---|
+ * | 0 | `0xC8` | 38 | ↑ |
+ * | 1 | `0xCD` | 39 | → |
+ * | 2 | `0xD0` | 40 | ↓ |
+ * | 3 | `0xCB` | 37 | ← |
+ * | 4 | `0x1C` | 13 | Enter |
+ * | 5 | `0x39` | 32 | Space |
+ * | 6 | `0x0E` | 8 | BackSpace |
  *
- * | 虚拟位 | VK | 键 |
- * |---|---|---|
- * | 0 | 38 | ↑ |
- * | 1 | 39 | → |
- * | 2 | 40 | ↓ |
- * | 3 | 37 | ← |
- * | 4 | 13 | Enter |
- * | 5 | 32 | Space |
- * | 6 | 8 | BackSpace |
+ * ★这里的 7 条**恒等于** `Input` 构造里那 7 个赋值（`_this[_this[<键码>] + 1176] = <位>`，
+ * 键码逐个列在上表的第二列 ⇒ 从 `DEFAULT_KEYCODE_TO_VK` 派生，见下方导出）——
+ * 这是"两张表同一个真源"的机械保证，不是巧合。缺项自动跳过（不抛），缺项由守卫报红。
+ * ★**键码是 `0x39`（空格）与 `0x0e`（退格），不是 `0x3f`/`0x1c`** —— 别按常识猜：
+ *   `0x3f` 在 `sub_476AA0` 里是 VK 116(F5)，`0x1c` 是 VK 13(Enter)。
+ *   真源 = 构造体的三个槽 `_this[1460](=0x1c)`/`_this[1489](=0x39)`/`_this[1446](=0x0e)`
+ *   与 `sub_476AA0` 的 `13/32/8`（raw 91356/91375/91344）两侧同时对上。
  *
- * 其余 VK **未映射**（引擎那格是 0/-1 语义 ⇒ `mask |= 1 << 0` 会污染 ↑ 位；所以这里**返回 undefined**、
- * 不并入掩码）。`0x107`/`0x10B`/`0x10C` 那族"按键绑定"指令可以改写这张表 ⇒ 登记为缺口（见票据）。
+ * ★**键码是 `0xC8/0xCD/0xD0/0xCB`（方向键族）与 `0x1C`（回车）/`0x39`（空格）/`0x0E`（退格）**，
+ *   逐个取自 `sub_477DD0` raw 92386-92393 的 `_this[260..266]`，并已与本表逐条对上
+ *   （`test/keyboard-mask.test.ts` ① 会钉住这 7 对）。
+ *
+ * ★与 `T-0052` 的差别（`tickets/T-0163`）：它已**不再是运行期唯一口径** ——
+ * `InputManager` 每个实例持有一份**可改写**的 VK→位表（初值 = 本常量），`0x10C` 改的是那一份；
+ * 本常量现在的身份是"**默认值真源**"（守卫据此核对默认表，见 `test/keyboard-mask.test.ts` ①）。
+ * 其余 VK **未映射**（引擎那格是 -1）⇒ `pressKey` 返回 `false`、**不动任何位**。
  */
-export const DEFAULT_VK_TO_BIT: ReadonlyMap<number, number> = new Map<number, number>([
-  [38, 0],
-  [39, 1],
-  [40, 2],
-  [37, 3],
-  [13, 4],
-  [32, 5],
-  [8, 6],
-]);
+export const DEFAULT_VK_TO_BIT: ReadonlyMap<number, number> = new Map<number, number>(
+  DEFAULT_BOUND_KEYCODES.map((kc, bit): [number, number] => [defaultVkOf(kc) ?? 0, bit]).filter(
+    ([vk]) => vk !== 0,
+  ),
+);
 
 export class InputManager {
   /** 虚拟 X；未初始化/出窗为 -100000 */
@@ -135,38 +223,78 @@ export class InputManager {
   /** 手把按钮按下沿（0..31 序号）。 */
   joyEdge: number[] = [];
   /**
-   * 键盘键位**按下沿**（bitmask，虚拟位 0..6）—— `tickets/T-0052` 起它**真的进掩码**了
+   * 键盘键位**按下沿**（bitmask，虚拟位 **0..31**）—— `tickets/T-0052` 起它**真的进掩码**了
    * （修前注释写"本任务仅登记，不驱动跳转"：那时 `flushPending`/`flushHeld` 都不并它
    * ⇒ 脚本里 `joy-callback 0..4` 永远不触发、`0x100` 扫不到键盘位）。
    *
    * 引擎依据：`sub_4770A0`（raw 91551-91570）遍历 VK，`GetAsyncKeyState(vk) & 0xFF00` 命中就
-   * `mask |= 1 << _this[1176+vk]`；而 `_this[1176+VK]` 由 Input 构造填成 0..6
-   * （raw 92394-92400，见 `DEFAULT_VK_TO_BIT`）。
+   * `mask |= 1 << _this[1176+vk]`；`_this[1176+VK]` 是**可改写**的 VK→位表（见文件头的两张表）。
+   *
+   * ★位号上界（`tickets/T-0163` 修）：**不是** 0..6 —— `0x10C` 的位号是脚本给的 0..0x1F，
+   *   语料 `src/SYSTEM4.txt:87-97` 就用到了 **bit 4/5/6/7/8/9/a/b**（例如 `i10c 8 c9`：
+   *   键码 `0xc9` → VK 33 = PageUp，绑 bit 8；`i10c b 2a`：键码 `0x2a` → VK 16 = Shift，绑 bit 11）。
+   *   旧实现把键盘掩码 `& 0x7f` 截断 ⇒ 重映射到 ≥7 的位会被静默吃掉（写入有消费者，但消费者看不见）。
    */
   keyEdge = 0;
 
-  /** 键盘**按住态**（虚拟位 0..6 的并集；引擎那侧由 `GetAsyncKeyState` 每帧轮询真值）。 */
+  /** 键盘**按住态**（虚拟位 0..31 的并集；引擎那侧由 `GetAsyncKeyState` 每帧轮询真值）。 */
   keysHeld = 0;
 
   /**
+   * **键码(scan code) → VK** 表（引擎 `Input[1432+键码]`，默认值 = `sub_476AA0` raw 91325-91423）。
+   *
+   * 运行期**可改写表**（`0x10C` 不写它，但 `sub_477100` 按它问按键真值）：
+   * 之所以在这里也实例化一份，是为了让"键码"这条路在 emulator 里有落点 ——
+   * 修前它在 emulator 里**根本不存在**（审计 §4.1 的 P3 `missing-operand-io`）。
+   * 索引越界/未列出 ⇒ `undefined`（引擎那格是 0 ⇒ VK 0 ⇒ 永不产生掩码位）。
+   */
+  readonly keycodeToVk = new Map<number, number>(DEFAULT_KEYCODE_TO_VK);
+
+  /**
+   * **VK → 掩码位**表（引擎 `Input[1176+VK]`；`-1`/缺项 = 未绑定）。
+   *
+   * 初值 = Input 构造那 7 条（raw 92394-92400 ⇒ `DEFAULT_VK_TO_BIT`）；
+   * `0x10C`（`set-key-multi`）按体改写它（`tickets/T-0163`）⇒ `pressKey`/`releaseKey` 读的是**它**，
+   * 而不是常量 —— 这就是"脚本改键位"的消费者。
+   */
+  readonly vkToBit = new Map<number, number>(DEFAULT_VK_TO_BIT);
+
+  /**
+   * **`0x10C`（SetKeyMulti）的写入端**：`Input[1176 + Input[1432+键码]] = 位号`（raw 30632）。
+   *
+   * @param keycode 引擎 `op2`（键码；查 `keycodeToVk`）
+   * @param bit     引擎 `op1`（掩码位；调用方已按引擎口径校验 `unsigned <= 0x1F`）
+   * @returns 写入是否发生（键码未映射 ⇒ 引擎那格 VK = 0 ⇒ 绑到 VK 0，永不产生掩码位 ⇒ `false`）
+   */
+  setKeyBinding(keycode: number, bit: number): boolean {
+    const vk = this.keycodeToVk.get(keycode);
+    if (vk === undefined) return false;
+    this.vkToBit.set(vk, bit);
+    return true;
+  }
+
+  /**
    * **键盘按下**（宿主 keydown → 这里）：置按下沿 + 按住态（`tickets/T-0052`）。
+   *
+   * ★查的是**运行期** `vkToBit`（`tickets/T-0163`）：修前查冻结常量 `DEFAULT_VK_TO_BIT`，
+   *   于是 `0x10C` 写进去的绑定对宿主键盘完全无效（审计 P2 `missing-consumer`）。
    *
    * @returns 是否命中映射表（未映射的 VK ⇒ `false` 且**不动任何位** —— 引擎那格没映射时
    *   `1 << 0` 会污染 ↑ 位，所以这里必须显式忽略而不是"当成位 0"）
    */
   pressKey(vk: number): boolean {
-    const bit = DEFAULT_VK_TO_BIT.get(vk);
-    if (bit === undefined) return false;
-    this.keyEdge |= 1 << bit;
-    this.keysHeld |= 1 << bit;
+    const bit = this.vkToBit.get(vk);
+    if (bit === undefined || bit < 0) return false;
+    this.keyEdge = (this.keyEdge | (1 << bit)) | 0;
+    this.keysHeld = (this.keysHeld | (1 << bit)) | 0;
     return true;
   }
 
-  /** **键盘松开**（宿主 keyup）：只清按住态（按下沿由 `consumeEdges()` 清）。 */
+  /** **键盘松开**（宿主 keyup）：只清按住态（按下沿由 `consumeEdges()` 清）。同样查运行期表。 */
   releaseKey(vk: number): void {
-    const bit = DEFAULT_VK_TO_BIT.get(vk);
-    if (bit === undefined) return;
-    this.keysHeld &= ~(1 << bit);
+    const bit = this.vkToBit.get(vk);
+    if (bit === undefined || bit < 0) return;
+    this.keysHeld = (this.keysHeld & ~(1 << bit)) | 0;
   }
 
   /** 释放全部键盘按住态（失焦/隐藏时用，与 `releaseAllMouse` 同因）。 */
@@ -416,9 +544,11 @@ export class InputManager {
       if (i < 0 || i >= 32) continue;
       m |= 1 << (4 + i);
     }
-    // ★键盘按下沿（虚拟位 0..6）：引擎的消费刷 `sub_478090` 吸的就是"键挂起"（`_this[1159]`）
+    // ★键盘按下沿：引擎的消费刷 `sub_478090` 吸的就是"键挂起"（`_this[1159]`）
     //   ⇒ 这里只并**按下沿**，不含按住态（按住态归 `flushHeld`）。`tickets/T-0052`。
-    m |= this.keyEdge & 0x7f;
+    //   ★不限 0..6（`tickets/T-0163`）：位号由 `0x10C` 可改写到 0..0x1F，
+    //     旧实现 `& 0x7f` 会把 ≥7 的重映射位静默吃掉。
+    m |= this.keyEdge;
     this.inputMask = m;
     return m;
   }
@@ -443,7 +573,8 @@ export class InputManager {
     }
     // ★键盘：**按住态 + 按下沿**（与鼠标同一条"两把刷子"语义；`tickets/T-0052`）。
     //   引擎的实时刷用 `GetAsyncKeyState` 轮询真值 ⇒ 按住期间每帧都为真。
-    m |= (this.keysHeld | this.keyEdge) & 0x7f;
+    //   ★不限 0..6（`tickets/T-0163`）：位号是 `0x10C` 可改写的 0..0x1F。
+    m |= this.keysHeld | this.keyEdge;
     this.inputMask = m;
     return m;
   }
@@ -476,6 +607,10 @@ export class InputManager {
    *
    * ★**不包含**脚本自己注册的目标（`mouseSlot`/`mouseJump`/`mouseJumpOwner`/`joyJump`）：那些由
    * `0xCC`/`0xFB` 写，是**脚本状态的函数**，回放同一条脚本会自己写出来；记进来反而会掩盖"脚本走岔了"。
+   *
+   * ★同理**不包含**两张按键表（`keycodeToVk`/`vkToBit`，`tickets/T-0163`）：它们的唯一写入口是
+   * `0x10C`（脚本指令）—— 状态完全由"跑到哪条指令"决定，回放会自己重建。快照带上它们只会让
+   * "脚本走岔了 ⇒ 键位表不同"这件事被掩盖（与上面 `mouseJump` 同一条理由）。
    */
   snapshot(): InputSnapshot {
     return {

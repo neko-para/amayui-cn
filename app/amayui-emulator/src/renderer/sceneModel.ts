@@ -22,3 +22,6 @@ export * from './scene/ops.js';
 export * from './scene/transition.js';
 export * from './scene/snapshot.js';
 export * from './scene/present.js';
+export * from './scene/weather.js';
+export * from './scene/commit.js';
+export * from './scene/effectLevel.js';

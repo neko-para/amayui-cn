@@ -92,6 +92,20 @@ export interface MsgWinStyle {
    * 排版例程不读它；它只改绘制期的源矩形，而重写侧没有源矩形这一步）。
    */
   vertical: boolean;
+  /**
+   * 引擎 `Font+235112/+235116/+235120/+235124`（op `0x260` 的四个操作数）——竖排 blit 矩形的内边距。
+   *
+   * ★这是 **Font 级**字段（全局），与 `vertical` 同层；`MsgWinStyle` 里带它只是为了**把值发布给宿主**
+   * （快照/诊断能看到脚本设过什么），**不参与排版**（引擎的排版例程 `sub_46BE30` 完全不读它）。
+   *
+   * ★**它对渲染没有等价物**（审计 §4.1 P1 `0x260` 的核验结论，见 `vm/msgwin.ts` 的 `FontStyle.vPad`）：
+   * 引擎在绘制期把目标矩形左/上边外移 `(x,y)`、右/下边外扩 `(dw,dh)`，并把源点按同一量
+   * 除以表面缩放 —— 目标位移与源位移严格同步 ⇒ **字形内容的屏幕落点不变**，只有"从离屏表面
+   * 复制哪一块"变大（防旋转字形边缘被裁）。重写侧不走"表面矩形复制"、也没有逐字裁切，
+   * 所以这里**没有可消费的等价物**；随包语料的值也印证它只是 2px 级的边缘补白
+   * （`i260 2 0 2 2` / `i260 2 2 2 2`，全部紧跟 `i261 1`）。
+   */
+  vPad: { x: number; y: number; dw: number; dh: number };
   /** 对齐模式 0=左 / 1=中 / 2=右（引擎 `win+288`，op `0x303`）。 */
   align: 0 | 1 | 2;
   /** 对齐用行宽上限（引擎 `win+292`）。 */
@@ -168,6 +182,8 @@ export interface FontStyleSnapshot {
   lineSpacing: number;
   /** 竖排是全局的（`Font+235108`，`0x261`），同样按入队时刻钉住。 */
   vertical: boolean;
+  /** 竖排 blit 内边距（`Font+235112..+235124`，`0x260`）—— 同样是 Font 级，按入队时刻钉住（见 `MsgWinStyle.vPad`）。 */
+  vPad: { x: number; y: number; dw: number; dh: number };
 }
 
 /** 排版输入（= 一个窗口的完整快照；VM 每次改动后交宿主重算）。 */
@@ -483,6 +499,7 @@ export function defaultWinStyle(): MsgWinStyle {
     wrapRight: 800,
     wrapBottom: 720,
     vertical: false,
+    vPad: { x: 0, y: 0, dw: 0, dh: 0 },
     align: 0,
     alignWidth: 0,
     outlineMode: 1,

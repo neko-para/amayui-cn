@@ -161,15 +161,21 @@ test('★0x1BA SetSoundMode：op1 = 1 音乐 / 2 SE / 3 语音 / 4 影片；四�
   const { e, native, step, logs } = mk();
 
   // ① op1 = 1（音乐）：体 = `sub_408CF0(this, op2)`（raw 29994-29998）。★与 0xBC 的唯一差别是 a2 = op2 原值。
-  step(0x1ba, [im(1), im(1)]); // 开音乐（sound:Music = 1 ≥ 0 ⇒ 只切模式，不做 ±3）
-  assert.deepEqual(
-    native.intents.slice(-2),
-    [{ kind: 'bgm-mode', mode: 1 }, { kind: 'bgm-stop' }],
-    '音乐分支 = 切模式 + 停一次（此刻无当前曲 ⇒ 不重播）',
-  );
+  // ★P1 修复（票 T-0152）：`sound:Music = 1 ≥ 0` ⇒ 引擎**无需改动** ⇒ 整条早退（raw 13523-13541 的落空路径）
+  //   ⇒ 一条意图都不发。修前这里断言的是 `['bgm-mode','bgm-stop']`（把"点已开的开关会掐断 BGM"写成了期望）。
+  const beforeMusicOn = native.intents.length;
+  step(0x1ba, [im(1), im(1)]); // 开音乐（sound:Music = 1 ≥ 0 ⇒ 早退）
+  assert.equal(native.intents.length, beforeMusicOn, '★已开时"开音乐"不产生任何意图（引擎整条早退）');
+  assert.equal(e.config!.values.get('sound:music'), 1, '★配置也不写（早退发生在 set 之前）');
   step(0x1ba, [im(1), im(0)]); // 关音乐：1 − 3 = −2
   assert.deepEqual(native.intents.at(-2), { kind: 'bgm-mode', mode: 0 });
   assert.equal(e.config!.values.get('sound:music'), -2, '关音乐 = `sound:Music` 减 3（引擎 ±3，raw 13525-13540）');
+  // 反向：已关（−2）时再"关" ⇒ 同样早退；而"开"则 −2 + 3 = 1 并重启当前曲
+  const beforeMusicOff = native.intents.length;
+  step(0x1ba, [im(1), im(0)]);
+  assert.equal(native.intents.length, beforeMusicOff, '已关时再"关" ⇒ 早退（引擎 raw 13537 的 else if 不成立）');
+  step(0x1ba, [im(1), im(1)]);
+  assert.equal(e.config!.values.get('sound:music'), 1, '关 → 开：−2 + 3 = 1（±3 把槽在正负之间搬）');
 
   // ② op1 = 2（SE）：体 = `sub_408D90`（raw 13545-13571），关时释放 SE 通道 0..9
   const n1 = native.intents.length;
@@ -251,17 +257,60 @@ test('语音：0x2F4 (id, 附带, 通道) / 0x2C0 / 0x2F5 (id, 附带, 延迟, �
 });
 
 test('语音：0x2F6 复位 / 0x2F7 状态位 / 0x2F8 pan / 0x2FF 预备 / 0x302 生效', () => {
-  const { native, step } = mk();
+  const { e, native, step } = mk();
   step(0x2f6, [im(2)]); // i2f6 2
   assert.deepEqual(native.last, { kind: 'voice-reset', ch: 2 });
   step(0x2f7, [im(1)]);
   assert.deepEqual(native.last, { kind: 'voice-flag', ch: 1 });
+  assert.equal(e.engineValues.get(21315 + 1), 1, '★0x2F7 = `Engine[21315+ch] = 1`（落盘，供 0xC4 翻转）');
   step(0x2f8, [im(0), im(0)]); // i2f8 0 0（全库 1.4 万处：pan 归中）
   assert.deepEqual(native.last, { kind: 'voice-pan', ch: 0, pan: 0 });
   step(0x2ff, [im(0), im(5000)]);
   assert.deepEqual(native.last, { kind: 'voice-factor-prepare', ch: 0, value: 5000 });
+  assert.equal(e.engineValues.get(21318), 1, '0x2FF = `Engine[21318+ch] = 1`');
+  assert.equal(e.engineValues.get(21321), 5000, '0x2FF = `Engine[21321+ch] = op2`');
   step(0x302, [im(0), im(10000)]); // i302 0 2710
   assert.deepEqual(native.last, { kind: 'voice-factor-apply', ch: 0, value: 10000 });
+  assert.equal(e.engineValues.get(21318), 0x10000, '0x302 = `Engine[21318+ch] = 0x10000`');
+  assert.equal(e.engineValues.get(21321), 10000, '0x302 = `Engine[21321+ch] = op2`');
+  // 0x2F6 清四个槽（raw 33685-33690）
+  step(0x2f7, [im(0)]);
+  step(0x2f6, [im(0)]);
+  assert.equal(e.engineValues.get(21315), 0, '0x2F6 清状态位');
+  assert.equal(e.engineValues.get(21318), 0, '0x2F6 清因子位');
+});
+
+/**
+ * ★P1（审计 `docs-new/99-records/2026-09-impl-audit/` §4.1 的 `0xc4`，票 `T-0152`）：
+ * `0xC4`/`0x1BD` 体开头对 `Engine[21315]`/`[21318]` 做**二态翻转**（raw 29872-29889）：
+ * `0x10000` 已置 ⇒ 整个清 0；否则若有 bit0 ⇒ 置 `| 0x10000`。宿主侧此前只增不减 ⇒ 协议不存在。
+ * 末尾还有 `if (Engine[21293]) Engine[122501] = 1`（raw 29910-29911；21293 = `sound:Voice` 运行态）。
+ */
+test('★0xC4/0x1BD：语音槽的二态翻转 + `sound:Voice` 开时置 122501', () => {
+  const { e, step } = mk();
+  // ① 已武装（0x2F7 写 1）⇒ 播语音把它"烧"成 0x10001（引擎 `v2 | 0x10000`，保留 bit0）
+  step(0x2f7, [im(0)]);
+  step(0xc4, [im(162)]);
+  assert.equal(e.engineValues.get(21315), 0x10001, '★bit0 已置 ⇒ `v | 0x10000`（修前恒为 1）');
+  // ② 再播一次 ⇒ 0x10000 已置 ⇒ 整个清 0
+  step(0xc4, [im(163)]);
+  assert.equal(e.engineValues.get(21315), 0, '★0x10000 已置 ⇒ 清 0');
+  // ③ 因子槽同理（0x2FF 武装 → 0xC4 烧）
+  step(0x2ff, [im(0), im(5000)]);
+  assert.equal(e.engineValues.get(21318), 1);
+  step(0x1bd, [im(164)]);
+  assert.equal(e.engineValues.get(21318), 0x10001, '0x1BD 与 0xC4 共用同一段体');
+  // ④ `sound:Voice` 运行态（21293）：0x1BA op1=3 有幂等门（与现状相同则不写）⇒ 先关再开
+  step(0x1ba, [im(3), im(0)]); // fixture 是 Voice=1 ⇒ 关这一次会真的写
+  assert.equal(e.engineValues.get(21293), 0, '0x1BA op1=3 关语音 ⇒ 写 `Engine[21293] = 0`');
+  e.engineValues.set(122501, 0);
+  step(0xc4, [im(165)]);
+  assert.equal(e.engineValues.get(122501), 0, '语音关 ⇒ 不置 122501');
+  step(0x1ba, [im(3), im(1)]);
+  assert.equal(e.engineValues.get(21293), 1, '0x1BA op1=3 开语音 ⇒ 写 `Engine[21293] = 1`');
+  e.engineValues.set(122501, 0);
+  step(0xc4, [im(166)]);
+  assert.equal(e.engineValues.get(122501), 1, '★`if (Engine[21293]) Engine[122501] = 1`');
 });
 
 test('启动灌值：audioBootIntents 把 SYS4REG.INI 的音量/开关/策略翻成意图', () => {

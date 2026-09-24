@@ -317,6 +317,20 @@ export interface NativeBridge {
   /** `0x32D`（sub_427040 → `sub_499DF0`）：**3D 颜色**（op1 截断为 alpha、op2 低 3 字节为 RGB，四分量各 ÷255）。 */
   set3DColor?(r: number, g: number, b: number, a: number): void;
   /**
+   * **`0x222` 3D 层区间提交**（`sub_423EC0` raw 31924-31934 → `sub_4B4460` raw 136968-137285；
+   * 审计 §4.2 #19 `render-3d-layer-dual-commit`，P1，`tickets/T-0167`）。
+   *
+   * `start` = `op1`（起始 handle）、`count` = `op2`（跨度）⇒ 作用区间 = `[start, start + count)`
+   * （体里 `v4 = sub_41BF50(_this, 2); v2 = sub_41BF50(_this, 1); … v15 = a2 + a3`）。
+   * 语料 10 处，最典型 = `src/SETPOLYGON.txt:58` 的 `i222 30d40 1`（把刚 `create-mesh` 的
+   * 两条 0x30d40/0x30d41 立刻提交一遍）。
+   *
+   * 落点 = `renderer/scene/commit.ts` 的 `enqueueSceneCommitNodes(scene, start, count)`：把区间压进
+   * `SceneState.commitQueue`，由帧级提交 `scSceneCommitRange`（两个宿主的 `advanceModel` 每帧都调）
+   * 在**同一帧的帧末**消费 ⇒ 与引擎"当帧提交"最多差一帧（审计 §4.2 #19 的登记里写明）。
+   */
+  sceneCommitRange?(start: number, count: number): void;
+  /**
    * 0x23B（sub_424970）：**按 CG 数字条画数值**。
    * 实现方负责：先删 DrawItem/Mesh 的 `[id, id+digits)` 区间，再按记录逐位建 DrawItem。
    * `rec` = 7 dword（[0] 纹理槽 / [1] x0 / [2] y0 / [3] 单字宽 / [4] 字高 / [5] 字内空隙 / [6] 字距）；

@@ -18,11 +18,11 @@ generated_by: scripts/build-opcode-gaps.mjs
 
 ## 1. 结论速览
 
-- 语料出现的 opcode：**338** 种；handler 表注册：**365** 种（其中 no-op 插桩 13 种）
+- 语料出现的 opcode：**338** 种；handler 表注册：**366** 种（其中 no-op 插桩 12 种）
 - **语料用到但未注册**（命中即 `NotImplementedOp`）：**0** 条，合计 **0** 次调用
 - **已注册为 no-op 但体内有真实效果**（待改）：**0** 条
-- 已实现（曾为缺口，保留记录）：**39** 条
-- **已评估、按当前范围不实现（`deferred`，每条必须写扩展点）**：**19** 条（语料合计 275 次调用）—— 明细见 §6
+- 已实现（曾为缺口，保留记录）：**41** 条
+- **已评估、按当前范围不实现（`deferred`，每条必须写扩展点）**：**18** 条（语料合计 265 次调用）—— 明细见 §6
 
 ## 2. 未实现（按语料命中数排序）
 
@@ -39,7 +39,6 @@ generated_by: scripts/build-opcode-gaps.mjs
 | opcode | 助记符 | 语料 | 引擎 handler | 体起始行 | 依据（一句话） |
 |---|---|---|---|---|---|
 | 0xaf | iaf | 0 | sub_419690 | 24775 | 唯一一条体里只写 arity 槽、不写任何引擎字段/操作数的指令（raw 24775-24783） |
-| 0x10c | i10c | 11 | sub_4220B0 | 30616 | 体已读（raw 30616-30634；汇编 天结_unpacked.exe_utf8.lst 53610-53659）：arity 槽 `Engine[30*cur+95805]=5` → op1=掩码位（>0x1F 抛 ShowMess… |
 | 0x137 | i137 | 1 | sub_4222B0 | 30703 | ResetStack(n)：删+建空栈；int 栈家族语料仅 1 处且无压栈 ⇒ 观测等价（T-0072） |
 | 0x2fa | i2fa | 1 | sub_426910 | 33717 | 只写 Engine[1951]，全反编译无读取点 ⇒ 观测等价 no-op（T-0073） |
 | 0x30a | i30a | 1 | sub_426B60 | 33818 | 键位注册（op1≤0x1F 且 op2≤7）；emulator 无按键表 ⇒ 不可观测（设计如此） |
@@ -61,6 +60,7 @@ generated_by: scripts/build-opcode-gaps.mjs
 | 0x85 | i85 | 1 | sub_418F50 | 24471 | T-0076 | sub_418F50（raw 24471-24476）→ sub_45EBE0（raw 74182-74194）清的是本票的两张 vector（Font+3364 的 72B 记录表 + Font+3380 的 8B 回看页表），不是 GD… |
 | 0xc1 | ic1 | 1 | sub_419770 | 24831 | T-0076 | 音频子系统对象上的标志翻转（不是未读体）：体 raw 24831-24841 = `v1 = _this + 174454`（同族 raw 24828 就是 sub_489B50＝停 BGM/清当前曲 id ⇒ 这是音乐子系统对象）、`v1… |
 | 0xd0 | id0 | 6 | sub_42E910 | 38790 | T-0076 | 引擎 handler sub_42E910（体起始 raw 38790）；文档状态「仅映射」；未读体 ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：体已读（raw 38790-38798）= arity 槽 3、`sub… |
+| 0x10c | i10c | 11 | sub_4220B0 | 30616 | T-0163 | 已真实现（T-0163；原判 engine-internal 的豁免理由随 T-0052/T-0163 落地而失效）。按体 raw 30616-30634：arity 槽 5 ⇒ op1=掩码位、op2=键码；op1 unsigned > … |
 | 0x132 | i132 | 5 | sub_422150 | 30647 | T-0076 | raw 30647-30699；审计 P1。★筛体(2026-09)：体已读（raw 30647-30680）= 通用 `Queue_int` 重建：`op1 > 0xA` ⇒ 打「RESETQ」错误串、不动队列；否则析构旧队列（`(v4)… |
 | 0x133 | i133 | 10 | sub_422240 | 30683 | T-0076 | raw 30647-30699；审计 P1。★筛体(2026-09)：体已读（raw 30683-30701）= 通用 `Queue_int` push：`op1 > 0xA` ⇒ 打「ADDQ」错误串；否则 `sub_409E10(Eng… |
 | 0x134 | i134 | 5 | sub_42F810 | 39359 | T-0076 | 引擎 handler sub_42F810（体起始 raw 39359）；文档状态「仅映射」；未读体 ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：体已读（raw 39359-39398）= 通用 `Queue_int`… |
@@ -74,6 +74,7 @@ generated_by: scripts/build-opcode-gaps.mjs
 | 0x1c8 | i1c8 to-string | 11 | sub_433820 | 41989 | T-0076 | to-string：op1 = "%d" 的十进制字符串(op2)。体 raw 41989-42010 全文 = arity 槽 5、v2 = sub_41BF50(_this,2)、sub_408050(Buffer,256,"%d",v… |
 | 0x1d0 | i1d0 | 5 | sub_42D440 | 38098 | T-0076 | 页表 Font+3380（8B/条 {窗号, 起始记录下标}）+ 双游标 Font+859/[860] 已建在 src/vm/textItems.ts（pages/cursor/baseCursor）；读端 = handlers/text-… |
 | 0x20b | i20b | 204 | sub_423690 | 31568 | T-0076 | FillTexture：往纹理槽表面填纯色矩形（op4/op5=宽/高、op6 α 夹 255、op7 → 0xFFRRGGBB）；B3 已实现（GFX_TEXTURE_NATIVE_OPS + TextureCache.fillSlotR… |
+| 0x222 | i222 | 10 | sub_423EC0 | 31924 | T-0167 | SETPOLYGON/INFOxx 10 处（handler `sub_423EC0` raw 31924-31934 → 真身 `sub_4B4460` raw 136968-137285）。★2026-09-24 已真实现（T-0167… |
 | 0x223 | i223 | 178 | sub_423F00 | 31936 | T-0076 | 给绘制项登记区域记录（9 dword，键=handle）：按引擎 sub_4ADDB0 逐格原样存进 Engine.itemRegions（[2]=op7 [3]=op8 [4]=op2槽 [5]=op3 [6]=op5 [7]=op4 [… |
 | 0x228 | i228 | 1097 | sub_430650 | 39972 | T-0076 | 绘制项当前平移 getter（+0x16C work 矩阵）；B1 已实现（GFX_ITEM_OPS + 宿主缝 getDrawItemTranslation） |
 | 0x22a | i22a | 2 | sub_424080 | 32003 | T-0076 | Scene 级「立即缩放」（tickets/T-0076；体 raw 32003-32016 → sub_49A720 raw 117117-117126）：三条操作数全是 float（sub_41C300），op1 不是 handle（体… |
@@ -106,7 +107,6 @@ generated_by: scripts/build-opcode-gaps.mjs
 | 0x140 | i140 | 181 | 181 | 4 | sub_42FBC0 | 39570 | T-0076 | AGERC 对话框（外部 DLL）——目标已静态定位（★推翻旧结论「静态定不了目标服务／需真机动态调试」）：`dword_55E1B4` = `AGERC.DLL!_ShowDialog@12`，不是函数表、不是对象指针、不是运行时装入的模… |
 | 0x28 | i28 | 32 | 15 | 4 | sub_41D860 | 27500 | T-0076 | 体已读开头（raw 27500-27519）⇒ 卡子系统：长度槽 = 9（argc 4）；`op4 < 0 \|\| op4 > 4` ⇒ `sprintf(_this+8, aComefbl2Type01)` + `sub_4034D0`（打… |
 | 0x86 | i86 | 16 | 5 | 1 | sub_41FA20 | 28944 | T-0076 | 体已读（raw 28944-28961）⇒ 卡子系统：`v2 = op1` → `sub_4559C0(FileDB, …, v2, &v6)`（按统一 id 解析记录、带 size 出参）→ `sub_455560` 取字节 → `sub… |
-| 0x222 | i222 | 10 | 10 | 2 | sub_423EC0 | 31924 | T-0076 | SETPOLYGON/INFOxx 10 处（handler sub_423EC0 → sub_4B4460）；capabilities 台账曾误标 n/a-known；审计 P0 render-3d-layer-dual-commit。★… |
 | 0x87 | i87 | 9 | 5 | 0 | sub_418F80 | 24478 | T-0076 | 引擎 handler sub_418F80（体起始 raw 24478）；文档状态「仅映射」；未读体 ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：体已读（raw 24478-24488）= arity 槽 1；`res… |
 | 0x236 | i236 | 6 | 3 | 4 | sub_4246B0 | 32221 | T-0076 | 引擎 handler sub_4246B0（体起始 raw 32221）；文档状态「仅映射」；未读体 ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：体已读（raw 32221-32288）⇒ 不是消息窗/文本族，而是网格… |
 | 0x36 | i36 | 5 | 3 | 3 | sub_41E7E0 | 28168 | T-0076 | 引擎 handler sub_41E7E0（体起始 raw 28168）；文档状态「仅映射」；未读体 ⇒ 实现前必须先读体（审计未逐条覆盖）。★筛体(2026-09)：体已读（raw 28168-28200）= 非 ADV 时 `effec… |

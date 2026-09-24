@@ -104,13 +104,6 @@ export interface WinGeom {
    *   真要修"窗底色没画"得去槽路径（`0x1F8`+`0x20B`+`draw-texture`），**不是**这里。
    */
   background: string | null;
-  /**
-   * 竖排源矩形修正（引擎 `Font+235112/+235116/+235120/+235124`，op `0x260`）。
-   * 引擎在竖排时把**离屏表面的源矩形**按这四个值平移/放大（raw 71665-71671、71844-71851），
-   * 目的是避免旋转字形的边缘被裁掉。重写侧直接光栅化字形、不经过源矩形，
-   * 因此**只记录不消费**（见 ADR §7）；保留它是为了不把这条脚本意图静默丢掉。
-   */
-  vPad: { x: number; y: number; dw: number; dh: number };
 }
 
 /** 一个窗的逐字显现状态（引擎 `Engine[107704]` 游标 + `Engine[107650]` 节拍定时器）。 */
@@ -268,7 +261,6 @@ export function defaultWinGeom(): WinGeom {
     align: 0,
     alignWidth: 0,
     background: null,
-    vPad: { x: 0, y: 0, dw: 0, dh: 0 },
   };
 }
 
@@ -297,6 +289,26 @@ export interface FontStyle {
    * `i261 1` 全工程 878 处，与 `i261 0`（170 处）配对切换。
    */
   vertical: boolean;
+  /**
+   * **竖排 blit 矩形内边距**（引擎 `Font+235112/+235116/+235120/+235124` ← op `0x260` 的四个操作数）。
+   *
+   * ★**这是 Font 级（全局）字段，不是逐窗字段**（审计 §4.1 P3 `0x260` 的"写入归属错"）：
+   * 写入端 `sub_426080`（raw 33310-33328）逐字是
+   * `_this[80102] = op1; _this[80103] = op2; _this[80104] = op3; _this[80105] = op4;`
+   * 而 `_this` 是 **Font 对象**（`Font+235112 = 235112/4 = 58778` … 四个连续 dword，基址 `Engine+85296`）。
+   * ⇒ 与 `vertical` 同源、同一层；改默认窗（op `0x80`）**不会**把它换到别的窗名下。
+   * （旧实现写进 `geom(defaultWin).vPad`：一旦 `i080 N` 换默认窗，这四个值就"归"到旧窗上、
+   *   新默认窗读到 0 —— 这次按体订正。）
+   *
+   * ★**消费端（重写侧）**: 引擎只在**绘制**时读它（`grep 235112` 的读点全在 `sub_45A940` 一族），
+   * 做的是"把离屏表面的 blit 矩形左/上边各外移 (x,y)、右/下边各外扩 (dw,dh)，同时把源点
+   * 按同一量除以表面缩放 (218592, 218596)"。**内容的落点不变** —— 目标位移与源位移严格同步：
+   * 目标像素 `p` 采样的表面坐标 = `(S − x/s) + (p − (L − x))/s = S + (p − L)/s`，与 x 无关
+   * （`s` 由 raw 78765/78767 初始化为 1.0）⇒ 这四个值**只改变被复制的矩形范围**（防旋转字形边缘被裁）。
+   * 重写侧直接光栅化字形、没有"源矩形复制"这一步，也没有逐字裁切 ⇒ **没有可消费的等价物**
+   * （详见 `handlers/msgwin.ts` 的 `op_vertical_rect_pad`）。保留字段只为不把这条脚本意图静默丢掉。
+   */
+  vPad: { x: number; y: number; dw: number; dh: number };
 }
 
 export function defaultFontStyle(): FontStyle {
@@ -308,6 +320,7 @@ export function defaultFontStyle(): FontStyle {
     mainBold: false,
     rubyBold: false,
     vertical: false,
+    vPad: { x: 0, y: 0, dw: 0, dh: 0 },
   };
 }
 

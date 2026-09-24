@@ -14,6 +14,18 @@
       "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
       "anchor": "0x10c 的豁免理由（『宿主键盘也不进掩码 ⇒ 写入无消费者』）在 T-0052（status=done）落地后事实面",
       "note": "批次 stubs-native 的代表 finding（报告 §4.1）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "[0x10c, op_set_key_multi]",
+      "note": "本票 P1（0x10c）已修：真实现读 op1=位号/op2=键码、unsigned >0x1F 抛引擎同文 ShowMessageError、写 `Input[1176 + Input[1432+键码]] = 位号`。两张运行期表见 src/vm/input.ts 的 keycodeToVk / vkToBit。",
+      "line": 481
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/input.ts",
+      "anchor": "DEFAULT_BOUND_KEYCODES",
+      "note": "键码→VK 默认表（93 条，sub_476AA0）与「七条默认绑定键码」的真源；语料锚 `i10c 4 2c` ⇒ keycode 0x2c → VK 90(Z)。",
+      "line": 130
     }
   ],
   "links": {
@@ -22,12 +34,23 @@
     ]
   },
   "id": "T-0163",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/input.test.ts",
+    "app/amayui-emulator/test/keyboard-mask.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts",
+    "app/amayui-emulator/test/registry-classification.test.ts"
   ]
 }

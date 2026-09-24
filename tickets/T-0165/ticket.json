@@ -22,12 +22,17 @@
     ]
   },
   "id": "T-0165",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → doing —— 根因已修：operand.ts 数字型实参按引擎 sub_41B640/sub_42A420/sub_41B9B0 规则强转十进制/%lf，0x193 两处字符串缺口闭合；守卫 test/op-string-coercion.test.ts"
     }
   ]
 }

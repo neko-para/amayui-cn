@@ -22,12 +22,22 @@
     ]
   },
   "id": "T-0152",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → doing —— P1 已处置：0xbc 早退（+修错断言）、0x2c0/0x2f5 循环位=op2 bit0；另两条 P1「op2=pan」经地址算式复核判定为非缺口（详见 changes.md）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → doing —— P1 全部处置：0xbc 早退（+订正旧错断言）、0x2c0/0x2f5 循环位=op2 bit0、0xc4/0x1bd 语音状态位翻转 + 0x2f6/0x2f7/0x2ff/0x302 字段写；两条 P1「op2=pan」经地址算式与 sub_4B7110=dsbSetPan 复核**推翻**（报告 §4.4 第 11 条）。详见 changes.md"
     }
   ]
 }

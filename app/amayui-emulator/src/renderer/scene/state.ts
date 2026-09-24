@@ -5,6 +5,10 @@ import type { Item, MeshObj } from '../drawItem.js';
 import type { TextFrame } from '../../text/layout.js';
 import type { L2dHost } from '../../live2d/runtime.js';
 import type { TransitionRuntime } from './transition.js';
+import type { Effect3DManagerState, Effect3DSlots } from './weather.js';
+import { newEffect3DSlots, newWeatherManager } from './weather.js';
+import type { SceneCommitRequest } from './commit.js';
+import { SCENE_SCRATCH_SLOT_A, SCENE_SCRATCH_SLOT_B, sceneScratchMode } from './effectLevel.js';
 
 
 /** 场景模型状态（= `Scene` 在 emulator 侧的可见部分）。 */
@@ -19,6 +23,42 @@ export interface SceneState {
    * headless 在 `snapshot()` 里清 —— "取快照 = 消费当前状态"。
    */
   dirty: boolean;
+  /**
+   * ★**池挂起位 `Scene+46516` 的场景侧锁存**（审计 §4.2 #2 `bullet-dirty-from-freeze-or-pending`，P1）。
+   *
+   * 引擎的**唯一**语义读点是一句收尾（`sub_4B4040` raw 136718-136719，`sub_4B4460` 同族）：
+   * ```c
+   * if ( *(_QWORD *)(_this + 46512) )   // 46512 强制冻结 | 46516 池挂起（8 字节一起判）
+   *   *(_DWORD *)(_this + 46508) = 1;   // 46508 = "本遍要重画"
+   * ```
+   * ⇒ **「上一遍绘制时还有元素在动」= 本遍必须再合成一次**。修前这条只喂 `0x400` 等待门
+   * （`Engine.scenePending` → `Engine.gatePending`），`sceneNeedsRender` 的判据里**没有它**
+   * ⇒ 「绘制期置了 46516、但窗判据此刻已为假」的组合会漏掉一帧终态（不报错、只是画面少动一下）。
+   *
+   * 为什么落在 `SceneState` 而不是 `Engine`：判据 `sceneNeedsRender` 是**共享函数**，两个宿主
+   * （`pixiBackend` / `headlessScene`）必须读同一份量（`tickets/T-0003` 的 B3 纪律：模型状态只存共享层，
+   * 宿主各存一份镜像就是 `T-0008` 的 `waitFlags` 事故）。宿主在每帧末 `advanceModel` 之后把
+   * `Engine.scenePending` 的值**锁存**进这里（见 `scSetScenePending`），下次合成消费后由宿主清零。
+   */
+  pending: boolean;
+  /**
+   * ★★**渲染冻结总闸 `Scene+46676`**（审计 §4.2 #24 `scene-render-freeze-46676`，P1）。
+   *
+   * 引擎里它是一个**只读帧级门**（全文件 105 处读、**0 处写** ⇒ 由非脚本路径置位）：
+   *  - `sub_4B06D0` raw 134898 / `sub_49AA30` raw 117375：非 0 ⇒ **整段 2D 提交/逐项提交被跳过**；
+   *  - `sub_4AF1C0` raw 133547：非 0 ⇒ 网格的顶点锁定 + 缩放整段跳过；
+   *  - 文本行绘制 raw 71833/72266 与 draw-item 混合覆盖 raw 123117：同为门；
+   *  - `sub_4B4040` raw 136790 / `sub_4B4460` raw 137033：非 0 ⇒ 连"进 mode-38 渲染目标"都不做。
+   *
+   * ⇒ 语义 = **本帧整个渲染提交不进行**（画面停在上一帧、窗也不按墙钟推进）。emulator 侧此前只有一个
+   * 窗口级的近似（`scAdvance` 的 `freeze` 形参 = `Scene+46512` 强制收尾），**没有**帧级跳过。
+   *
+   * 消费点（两处，都读同一个字段，口径**一处**实现）：
+   *  - `scAdvance`：非 0 ⇒ 直接 return（不推进任何窗，与引擎"整段跳过"同观测）；
+   *  - `sceneNeedsRender`：非 0 ⇒ 恒假（`46508` 也不会被置位 ⇒ 引擎那一帧确实不重画）。
+   * 置位端 = `scSetSceneFrozen`（宿主缝；反编译里无写点 ⇒ 由驱动/实测注入，默认 `false`）。
+   */
+  frozen: boolean;
   /**
    * **正在执行哪一帧**（emulator 记账，引擎没有这一格；`-1` = 未知）—— 由 VM 每条指令派发前下发
    * （`interpreter.ts` → `NativeBridge.setCurrentFrame`）。用途只有一个：**所有建项路径**都要把
@@ -150,7 +190,7 @@ export interface SceneState {
   /**
    * ★**Scene 变换锚 + 它的作用层区间（引擎 `Scene+1120` 起的那个变换记录）** ——
    * 写端 = `0x22A`/`0x22C`/`0x22D`/`0x22F`（`scSetScene*`），消费端 = 两个宿主合成时的
-   * `sceneLayerXform()`（`renderer/scene/ops.ts`）。
+   * `sceneAffine2DOf`（`renderer/scene/ops.ts`）。
    *
    * 引擎语义（逐行读体的结论，raw 锚见各字段）：
    *  - 四条指令把 Scene **自己的**变换写进四组矩阵格（`+307` 缩放 / `+371` 平移 / `+323` 轴缩放 /
@@ -160,27 +200,31 @@ export interface SceneState {
    *  - RenderScene（raw 133403-133407）的那处 `if` **门是「层号 ∉ [20,30)」**：
    *    `*(Scene+46676) || *(*(Scene+1860)+1164) != 2 || (unsigned)(层号 − 20) > 9` ⇒ 门为真 ⇒
    *    `D3DXMatrixMultiply(Scene+46536, Scene+46536, Scene+46600)`（**完整** Scene 世界矩阵乘进
-   *    该项的 work 矩阵）。★**订正上一轮记录的读法**：那个乘法**不是**"只对 20..29 层生效"——
-   *    真正**只作用于 `层号 ∈ [20,30)`** 的是 `else` 支（raw 133411-133438）：`D3DXMatrixDecompose`
-   *    出缩放/旋转/平移后**只把 2D 缩放与平移**装回 work 矩阵（旋转项被清零，raw 133749-133765），
-   *    ⇒ 该区间的项拿到的是**被压成 2D 的**Scene 世界矩阵。
-   *    `层号` = 元素 `+4`（`v26[1]` / `a2[1]`，raw 133405 / 117388）。
+   *    该项的 work 矩阵）；门假（层号 ∈ [20,30)）⇒ `D3DXMatrixDecompose` 后按
+   *    `raw 133421-133438` 重建：`S(scale.x, scale.y, 1)` → `RotationAxis(Scene+1844, Scene[1856])`
+   *    → `T(pos.x·k, pos.y·k, pos.z)`（k = `0x18D0` 侧的 2D 视口比，见 raw 117394-117410）。
    *  - **最终合成本身在 `sub_49AA30` 的收尾**（LABEL_72，raw 117927-117933）：
-   *    `M ← M·v118·v120·v121·T(pos)`，其中 `v121` 是**上面那条 Scene 世界矩阵**
-   *    （1D 支里由 `v131`/`v108` 装上，raw 117739/117920/117773），`v120` 是**旋转矩阵**。
-   *    ★关键：在 `层号 ∈ [20,30)` 那一支里 `v120` 被**显式置成单位阵**
-   *    （raw 117629-117631 紧跟 `v26 = 0.0; v42 = 1.0;`，再由 raw 117647-117662 的 `v26/v42`
-   *    填出单位阵/单位缩放），**就是"丢掉旋转"的实现方式** —— 而 `v120`（= 单位阵）**仍然会被乘进
-   *    去**（raw 117930），所以净效果正是 `v121` = 纯 2D 缩放 + 平移。这解释了为什么
-   *    `0x22F` 的轴分量（→ `a2+181`/`a2[184]` → `D3DXMatrixRotationAxis`）对 20..29 层
-   *    **不产生任何影响**。
-   *    （副作用：`else` 支**没有**任何"矩阵是否有效"的门 ⇒ 即便四条指令一条都没下发（`Scene+46600`
-   *    为单位阵），20..29 层也照样走 decompose 重建 —— 单位阵重建后仍是单位阵，结果等同。）
+   *    `M ← M·v118·v120·v121·T(pos)`，其中 `v118`/`v120`/`v121` 是元素的**三块 current 矩阵**
+   *    （`+0x6C` 缩放 / `+0xEC` 旋转 / `+0x16C` work），四块 Scene 矩阵靠 raw 117496/117646 的
+   *    `qmemcpy` 与 117425-117431 的 pivot 平移进入其中。
+   *
+   *  ★**2026-09 第二轮订正（本文件原注释有一处读错，留档）**：原文写「在 `层号 ∈ [20,30)` 那一支里
+   *    `v120` 被**显式置成单位阵**（raw 117629-117631 紧跟 `v26 = 0.0; v42 = 1.0;`）… 这解释了为什么
+   *    `0x22F` 的轴分量对 20..29 层**不产生任何影响**」。**体与此不符**：
+   *    ① raw 117624-117632 在层号支里做的恰恰相反 —— 它用 `j_D3DXMatrixRotationAxis(v120, a2 + 181,
+   *       a2[184])` **重建了非单位的 `v120`**，随后 117930 把 `v120` 乘进 work；
+   *    ② 紧跟其后的 `v26 = 0.0; v42 = 1.0;` 是给**后面 `+0x1B0` 那块矩阵**（raw 117647-117662 用
+   *       `v26`/`v42` 填零/一，再 `qmemcpy(v121, a2 + 91)`）用的**零/一填充**，不是"把 `v120` 置单位阵"。
+   *    ⇒ 层 20..29 上 `0x22F` 的 op3/4/5 **是旋转轴**（角 = `a2[184]`）。修前的 emulator 把它当
+   *    屏幕空间 2D 平移（`presenter.ts` 的 `tx/ty`），已于本轮按体改正。
+   *
+   * ★**四块矩阵互相独立**（渲染端 `raw 117123/117159/117175/117232` 各写各的 64 B 块，收尾一起乘进
+   *   work）⇒ 合成不再用"最近一次 `kind` 互斥三选一"（修前跨种类混用只剩一种；`kind` 现在只是参考字段）。
    *
    * ★**落地轮实测（2026-09）**：emulator 里**原来没有**这一级 —— `render4` 只是"逐条记录、渲染器
-   * 不消费"，`pixi/presenter.ts` 的四路归并（item/text/mesh/L2D）也没有"Scene 根矩阵"这一层。
-   * 本轮把它建出来（本节 + `ops.ts` 的 `scSetScene*`/`sceneLayerXform` + 两个宿主 + `presenter` 的
-   * 归并循环），所以四条指令**有真实消费者**（不再是有写无读）。
+   *   不消费"，`pixi/presenter.ts` 的四路归并（item/text/mesh/L2D）也没有"Scene 根矩阵"这一层。
+   *   本轮把它建出来（本节 + `ops.ts` 的 `scSetScene*`/`sceneAffine2DOf` + 两个宿主 + `presenter`
+   *   的归并循环），所以四条指令**有真实消费者**（不再是有写无读）。
    *
    * ★**只建模 [20,30) 这一支**：语料 20 处全部落在 `0x22A`/`0x22C`/`0x22D`/`0x22F`，
    * 而引擎把 Scene 世界矩阵**无论层号都乘进 work 矩阵**（只有"取哪一支"按层号分）。
@@ -188,6 +232,73 @@ export interface SceneState {
    * **未实现**，登记为本条的缺口（见 `opcode-gaps.json` 四条 note 与 `engine-capabilities.json`）。
    */
   sceneXform: SceneXform | null;
+  /**
+   * ★**Scene 自己的"绕轴旋转"角（弧度）** —— 引擎 RenderScene 层号支 raw 133427 的第二个实参
+   * `*(float *)(Scene + 1856)`（= dword 464），配套轴在 `Scene + 1844`（= dword 461，三 float）。
+   *
+   * **为什么是独立一格而不是 `i22f` 的操作数**：`i22f` 只写"轴"（`Scene+387` 的平移分量同时兼作
+   * 元素 `a2[181..183]` 的轴），**角来自元素自己的 `a2[184]`**（raw 117630），其写点是动画块
+   * （raw 117616）与瞬时写（raw 117255）—— `i22f` 一次都不碰。
+   *
+   * ★**卡点（如实披露）**：`Scene+1844/+1856` 在反编译里**只有 raw 133427 一个读点、没有任何写点**
+   * （全文件检索 `1844`/`1856`/dword `461`/`464` 均无写）⇒ 它的运行期取值无法静态判定。
+   * 默认 `0`（恒等旋转 ⇒ 与修前逐字节相同）是本轮最保守的取法；宿主可用
+   * `scSetSceneRotationRad` 注入实测值/回归值。**这是本条唯一未解析出的字段**。
+   */
+  sceneRotRad: number;
+  /**
+   * ★★**3D 天气/粒子效果管理器**（引擎 `Scene+50704`，`operator new(0x4F4)`，`sub_4530B0` 构造；
+   * 创建点 = `sub_4A6EE0` raw 126541-126545）—— 审计 §4.2 #21 / #18 的核心缺口。
+   *
+   * 引擎里它每帧被推进两次：
+   *  - `sub_4535F0(管理器, -1)`（raw 136828-136829 / 137169-137170）：按三表归并的**节点键**做销毁判据
+   *    （`[+0x4D8]`/`[+0x4DC]` 两个阈值，写端 = `0x325`）；
+   *  - `sub_453540(管理器)`（raw 65806-65812，体在 `scene/weather.ts`）：**按墙钟 `timeGetTime()` 推进**，
+   *    每帧对三路效果对象（`[258]` Rain / `[259]` Snow / `[260]` Leaf）各推进**上限 100 次**。
+   *
+   * 为什么放在 `SceneState`（= 两个宿主共享）：推进是**模型**行为（脚本 `SETWEATHER` 族写参数、
+   * 帧循环推进时相），若各宿主自己推就会漂移（`tickets/T-0003` 的 B3 纪律）。Pixi 宿主负责把
+   * `particles` 画成点精灵（`presenter` 的天气层），headless 只把它导出进快照。
+   */
+  weather: Effect3DManagerState;
+  /**
+   * ★**`0x222` 点名的提交区间队列**（`[op1, op1+op2)`；审计 §4.2 #19）。
+   *
+   * 为什么在共享模型里：`0x222` 是**脚本时序**的事件，而引擎的提交发生在**渲染时序**
+   * （`sub_4B4460` 的三表归并）。emulator 的渲染时序入口 = 宿主 `advanceModel` ⇒ 脚本入队、
+   * 帧末出队（`renderer/scene/commit.ts` 的 `scSceneCommitRange`）。
+   *
+   * ★**当前生产路径没有人入队**：把 `0x222` 的两个 int 操作数送到这里需要一条 `NativeBridge` 缝
+   * （`src/vm/native.ts` + `nativeTap.ts` 在别的执行者所有权里）。见 `handlers/scene-commit.ts`
+   * 的重开条件 ①。队列空时提交仍照做（对全部 mesh 走一遍 bit0 分派）。
+   */
+  commitQueue: SceneCommitRequest[];
+  /**
+   * ★★**3D 效果等级 `Scene+46668`**（审计 §4.2 #20 `scene-3d-effect-level-writer`，P1）。
+   *
+   * 引擎里它是 **0 / 1 / 2** 三档，由 D3D 版本能力决定、也可由构造实参显式给
+   * （`sub_4A6EE0` raw 126548-126562）：
+   * ```c
+   * if (a3 < -1 || a3 > 2 || a3 == -1) {                 // 没显式给 ⇒ 读设备能力
+   *   if (v13 < 0xFFFF0200) Scene+46668 = (v13 >= 0xFFFF0100);   // 0 或 1
+   *   else                  Scene+46668 = 2;
+   * } else Scene+46668 = a3;
+   * if (Scene+46668 >= 2) { sub_4A2C10(Scene, 36, …, 1); sub_4A2C10(Scene, 37, …, 1); }   // ★mode 1
+   * else                  { sub_4A2C10(Scene, 36, …, 2); sub_4A2C10(Scene, 37, …, 2); }   // ★mode 2
+   * ```
+   * 它的**持续后果**（本轮建模的三条，全部可断言）：
+   *  1. **36/37 两个 scratch 槽的 mode** 跟着等级（`>=2 ⇒ 1`、否则 `2`）—— `sceneScratchMode`；
+   *  2. 三个 `ID3DXEffect` 惰性建（`Scene+46480` ⇒ 等级≥2 资源 201 / ≥1 资源 200；
+   *     `Scene+46492` ⇒ 等级 **>1** 资源 203）—— `weather.ts` 的 `ensureEffect3DSlots`；
+   *  3. `0x326` 的**共享**效果（资源 202）与 Snow 重建带 `>=1` 门 —— `ensureSharedEffect3D`。
+   *
+   * ★初值取 **2**（不是 0）：emulator 的呈现后端是 WebGL（Pixi）——它**没有** D3D9 的
+   * `0xFFFF0100` 版本上限，等价于"设备能力满档"。取 0 会让 `>=2` 的那条支永远走不到，
+   * 恰好复刻审计点名的"恒等于等级 0 的无效果支"。守卫：`test/scene-3d-effect-level.test.ts`。
+   */
+  effect3DLevel: number;
+  /** 三个 3D 效果槽（`Scene+46480`/`+46492`/`+46496`）—— 见 `weather.ts` 的 `Effect3DSlots`。 */
+  effect3DSlots: Effect3DSlots;
 }
 
 /** 变换种类（引擎 `Scene+306` = 记录内 dword 306−280；`0x22A`/`0x22D`/`0x22F` 都写 1）。 */
@@ -199,14 +310,11 @@ export type SceneXformKind = 'scale' | 'translate' | 'axis-scale';
  * 四个 opcode 写的是**各自那一组**矩阵格，所以这里也逐组记（而不是合成一个矩阵）：这样
  * "`0x22F` 到底写的是哪个矩阵函数"这种问题可以在快照里一眼核对。
  *
- * ★**已披露的近似（一处，语料里未触发）**：引擎那四组矩阵格是**互相独立**的 ——
- * `0x22A`(+0x1228 缩放) / `0x22C`(+0x1358 平移) / `0x22D`(+0x1430 轴缩放) / `0x22F`(+0x1548 轴平移)
- * 各写各的，`D3DXMatrixScaling/Translation` 都作用于 16 个 f32 的**独立**区块
- * （所以 `sub_49AA30` 的 `v121` 里会同时体现）；而本模型用**一个 `kind`** 表达
- * "最近一次指令是哪一种"，因此**只应用最近一次设的那一种**。
- * 依据（为什么这样可接受）：语料 20 处里，四条**从不同时生效** ——
- * `i22a`/`i22d` 的缩放恒为 `(1,1,1)`（`64` = 100 与 `global-int b234`），`i22c`/`i22f` 是纯平移，
- * 且每个脚本每次只下发其中一条。真要同时生效时需要把 `kind` 改成"四组各自的有效位"。
+ * ★**四块矩阵互相独立、可叠加**（引擎 `raw 117123/117159/117175/117232` 各写各的 64 B 块，
+ * 收尾 `raw 117927-117933` 一起乘进 work）⇒ 合成走 `sceneAffine2DOf` 的四块矩阵乘积。
+ * `kind` **只是"最近一次下发的是哪一种"的参考字段**（引擎 `Scene[306] = 1`，四条都写 1、体上不可区分），
+ * **不再是合成选择子** —— 修前 `applySceneXformToPlacement` 按它三选一，跨种类混用（如 `i22a` 之后再
+ * `i22f`）会把前者的分量整体丢掉。那一处近似（P2）已在本轮改成"两个/四个分量叠加"。
  */
 export interface SceneXform {
   /** 最近一次指令设的变换种类（引擎 `Scene[306]`：`0x22A`→缩放、`0x22D`→轴缩放；见各 op 注释）。 */
@@ -217,8 +325,19 @@ export interface SceneXform {
   translate: { x: number; y: number; z: number };
   /** `0x22D`（`sub_49A870` raw 117165-117179）：`D3DXMatrixScaling(Scene+323)` 的三轴（op3/4/5 ÷100）。 */
   axisScale: { x: number; y: number; z: number };
-  /** `0x22F`（`sub_49A9C0` raw 117222-117236）：`D3DXMatrixTranslation(Scene+387)` 的三分量（op3/4/5 不除）。 */
+  /**
+   * `0x22F`（`sub_49A9C0` raw 117222-117236）：`D3DXMatrixTranslation(Scene+387)` 的三分量（不除）。
+   * ★**层号 ∉ [20,30)** 的项看到的就是这一块（平移）；层 20..29 看到的是同一三格当旋转轴（见 `axis`）。
+   */
   axisTranslate: { x: number; y: number; z: number };
+  /**
+   * ★**`0x22F` 的 op3/4/5 当"旋转轴"的那一份**（层 20..29 的路径；raw 117630 的 `a2 + 181`）。
+   *
+   * 与 `axisTranslate` **是同一个三格**（引擎里元素 +724/+728/+732），只是两条消费路径的语义不同：
+   * `axisTranslate` = 非 [20,30) 的完整世界矩阵支（平移），`axis` = [20,30) 的 2D 支（旋转轴，
+   * 角 = `SceneState.sceneRotRad`）。**修前 emulator 只有前者、且把它当屏幕空间 2D 平移用**。
+   */
+  axis: { x: number; y: number; z: number };
   /**
    * `0x22D` 的 op1 / `0x22F` 的 op1（引擎 `a2` → `Scene[295]` / `Scene[297]`，**int**）。
    * ★`0x22C`/`0x22A` 体内没有这两个格子（所以 `null`）。
@@ -232,9 +351,13 @@ export interface SceneXform {
 }
 
 export function newSceneState(): SceneState {
-  return {
+  const st: SceneState = {
     // ★初始为 true：第一帧必须合成一次（与 pixi 的 `sceneDirty` 初值同义）。
     dirty: true,
+    // ★`Scene+46516` 的场景侧锁存（见字段说明）：初值 false（还没跑过任何一遍绘制）。
+    pending: false,
+    // ★`Scene+46676` 渲染冻结总闸：反编译里**无写点** ⇒ 默认 false（与修前逐字节相同）。
+    frozen: false,
     currentFrame: -1,
     drawItems: new Map<number, Item>(),
     meshes: new Map<number, MeshObj>(),
@@ -264,8 +387,25 @@ export function newSceneState(): SceneState {
       slotModes: new Map<number, number>(),
       sceneBlend: 0,
     },
-    // ★Scene 变换锚：`null` = 四条指令一条都没下发 ⇒ `sceneLayerXform` 回单位变换，
+    // ★Scene 变换锚：`null` = 四条指令一条都没下发 ⇒ `sceneAffine2DOf` 回单位变换，
     //   20..29 层的合成结果与"没有这一级"逐字节相同（所以接线本身不会改变既有画面）。
     sceneXform: null,
+    // ★Scene 自己的"绕轴旋转"角（引擎 `Scene+1856`，raw 133427）：反编译里**无写点** ⇒ 默认 0
+    //   （恒等旋转 = 与修前逐字节相同），由宿主经 `scSetSceneRotationRad` 注入实测值。见 `sceneRotRad` 说明。
+    sceneRotRad: 0,
+    // ★3D 天气/粒子管理器（`Scene+50704`）：新建场景 = 管理器已建、三效果槽全空（`sub_4530B0` raw 65353-65355）。
+    weather: newWeatherManager(),
+    // ★`0x222` 的区间队列（见字段说明）：新场景 = 没有脚本点名过任何区间。
+    commitQueue: [],
+    // ★`Scene+46668` 的初值 = 2（= "设备能力满档"，见字段说明）；槽全未建（惰性建由绘制期做）。
+    effect3DLevel: 2,
+    effect3DSlots: newEffect3DSlots(),
   };
+  // ★等级 ⇒ 36/37 两个 scratch 槽的 mode（`>=2 ⇒ 1`、否则 `2`；`sub_4A6EE0` raw 126563-126572）：
+  //   与 `0x1F8` 写的 `slotModes` 是同一张表（`scene/slotMode.ts` 的 `sceneScratchMode`）。
+  //   守卫 = `test/scene-3d-effect-level.test.ts` 的三档断言。
+  const mode = sceneScratchMode(st.effect3DLevel);
+  st.render4.slotModes.set(SCENE_SCRATCH_SLOT_A, mode);
+  st.render4.slotModes.set(SCENE_SCRATCH_SLOT_B, mode);
+  return st;
 }

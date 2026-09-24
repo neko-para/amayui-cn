@@ -386,11 +386,31 @@ export class AudioEngine {
     v.deferred = { id, loop };
   }
 
-  /** `0x2C0`/`0x2F5`：把语音排入通道（带延迟；引擎 `sub_4BBA40` → 每帧 `sub_4BBAB0`）。 */
-  voiceQueue(ch: number, id: number, _aux: number, delayMs: number): void {
+  /**
+   * `0x2C0`/`0x2F5`：把语音排入通道（带延迟；引擎 `sub_4BBA40` → 每帧 `sub_4BBAB0`）。
+   *
+   * ★**循环位取 `op2`（"附带值"）的 bit0** —— 这是本次审计 P1（`0x2c0`/`0x2f5`，票 `T-0152`）的落点，
+   * 修前这里硬编码 `loop: false`。引擎依据：
+   * ```c
+   * // 排队写入端 sub_4BBA40（raw 142562-142571）：_this[ch+277] = op2   ← "附带值"存进 ch+277 槽
+   * // 到期起播端 sub_4BBAB0（raw 142661-142667）：
+   * //   v3 = _this + 265;  sub_4BB840(_this, ch, v3[9] = id, (unsigned)v3[12] & 1, 设备 pan 槽)
+   * //   v3[12] = _this[277+ch] ⇒ 第 4 实参 = **op2 & 1** → sub_4B6020(设备, ch+12, 该位) → sub_4B73E0(buffer, 该位)
+   * ```
+   * 同族旁证：SE 的排队指令 `0x2BF`（`sub_4B5170`）把 op2 直接叫**循环标志**存 `SE[292+ch]`，
+   * 起播时同样照它播一次/循环 ⇒ 这一族的第 2 操作数就是循环位。
+   *
+   * ★**同一次复核推翻了审计里"op2 是 pan"的说法**（`0x2c0`/`0x2f5` 的两条 missing-operand-io P1）：
+   * `sub_4BBAB0` 的第 5 实参地址 = `(char*)v3 + 设备基址 + (488 − Voice 基址)` = **设备对象 + 1548 + 4·ch**
+   * = `设备[387+ch]`，即**该语音通道当前的 pan 槽**（由 `0x2F8` 经 `sub_4B6940(设备, 12+ch, pan)` 写；
+   * 语音通道号是 12..14 ⇒ 375+12+ch = 387+ch）—— 它是"把通道当前 pan 再下发一次"，
+   * 与排队时写下的 op2 无关（op2 只被取 bit0 当循环位）。⇒ **不实现 op2→pan**，避免造出假语义。
+   */
+  voiceQueue(ch: number, id: number, aux: number, delayMs: number): void {
     const v = this.#voiceChannel(ch, 'voice-queue');
     if (!v) return;
-    v.request = { delayMs: Math.max(0, delayMs), armedAtMs: null, id, loop: false };
+    // op2 的 bit0 = 循环位（见方法注释的 raw 依据）；op2 的其它位在本作语料里恒为 1（30 处 op2 = 3）。
+    v.request = { delayMs: Math.max(0, delayMs), armedAtMs: null, id, loop: (aux & 1) !== 0 };
   }
 
   /** `0x2F6`：复位语音通道（停播 + 清状态 + **丢弃寄存**；引擎还会刷新 `Engine[122501]`）。 */

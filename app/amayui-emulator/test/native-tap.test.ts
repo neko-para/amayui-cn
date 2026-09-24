@@ -165,7 +165,19 @@ const NON_BRIDGE = {
     'digestState',
     'drainTextureSizeLog',
     'resolveItemTexture',
-    'setAudioSilent', // 同 `audioSilent`（T-0106）；清单按字典序：它在最后
+    // ★`sceneFrozen` / `setSceneFrozen`（审计 §4.2 #24 `scene-render-freeze-46676`）：**实测/回归注入缝**，
+    //   与 `setSceneRotationRad` 同类 —— `Scene+46676` 在反编译里**零写点**（105 处读、0 处写），
+    //   emulator 无法从脚本推出它 ⇒ 默认 false（= 与修前逐字节相同），要复现"冻结帧"必须由宿主/测试注入。
+    //   没有一条 opcode 调它（`0x222` 只是把它当门读）。清单按**字典序**写。
+    'sceneFrozen',
+    'setAudioSilent', // 同 `audioSilent`（T-0106）
+    'setSceneFrozen',
+    // ★`setSceneRotationRad`（`tickets/T-0154` 的 `0x22f` P1）：**实测/回归注入缝**，不是"VM 让宿主做事" ——
+    //   引擎那一格（`Scene+1856`，raw 133427 的第二个实参）在反编译里**只有读点、没有写点**，
+    //   emulator 无法从脚本推出它 ⇒ 默认 0（恒等旋转），要断言"层 20..29 上 `0x22f` 的三格是旋转轴"
+    //   必须由测试注入一个非 0 角。没有一条 opcode 调它（`0x22F` 只写"轴"）。
+    //   ★清单必须按**字典序**写（守卫拿排序后的集合比对）：它排在 `setAudioSilent` 之后。
+    'setSceneRotationRad',
   ],
   'headlessScene.ts': [
     'advance',
@@ -175,6 +187,9 @@ const NON_BRIDGE = {
     'drainTextureSizeLog',
     'note',
     'outcome',
+    'sceneFrozen', // 同 pixiBackend.ts（审计 §4.2 #24：`Scene+46676` 的注入缝）
+    'setSceneFrozen', // 同上
+    'setSceneRotationRad', // 同 pixiBackend.ts（T-0154：`Scene+1856` 的注入缝）
     'setTextureSizeAnswers',
     'slotTable',
     'snapshot',

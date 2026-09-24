@@ -27,6 +27,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
 import { ENGINE_INTERNAL_OPS, NATIVE_OPS } from '../src/vm/ops.js';
 import { dec } from '../src/vm/bits.js';
+import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { layoutWindow } from '../src/text/layout.js';
 import { styleOfWin } from '../src/vm/handlers/msgwin.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
@@ -782,4 +783,245 @@ test('★0x1D2（文本项记录表 push）：OPS 真实现、push 一条记录�
   step(0x1d2, [im(3), im(4)]);
   assert.equal(e.textItems.records.length, 2, 'i1bb 1 后恢复记账');
 });
+
+// ---------------------------------------------------------------------------
+// `tickets/T-0151`（审计 P1 批 · 消息窗）：`0x1b6`/`0x1b7` · `0x260` · `0xfa`
+// ---------------------------------------------------------------------------
+
+/** 最小配置（`parseIni` 存**小写键**；见本文件前面那条 `set:cancelmesskiponclick` 的写法）。 */
+function cfgOf(pairs: Record<string, string>): Engine['config'] {
+  return { values: new Map(Object.entries(pairs)), sections: [], order: new Map() } as unknown as Engine['config'];
+}
+
+/**
+ * ★审计 §4.1 P1 `op-4`/`op-5`（`0x1b6`/`0x1b7`）：`Engine[97052]` 的**消费端**。
+ *
+ * 引擎的读点之一 = `0x72 wait-for-input` 尾段（raw 28556-28586）：`v7 = (Engine[97052] == 0)`、
+ * `Engine[97053] = 0`，非 0 时按"该窗行数 − 1 − 行基准"算出自动翻页时长并
+ * `sub_453A60(Engine+107545, max(100, 时长))` 起节拍。
+ *
+ * 守卫三件事：① 不为 0 时**必须**武装（三格 = `[2]=1` / `[5]=now` / `[6]=时长`）；
+ * ② 时长的算术逐项对上（4 行 − 1 − 基准 1 = 2 ⇒ `2 × Pitch1(250) + Time1(1000) = 1500`）；
+ * ③ 为 0 时**不得**武装（否则等于把 97052 当恒真）。
+ * 修前 `Engine[97052]` 除整表 `clear()` 外无任何读取点 ⇒ 这个测试在修前必红（键全 undefined）。
+ */
+test('★T-0151：`0x72` 尾段的共存块消费 `Engine[97052]` ⇒ 起自动翻页节拍（raw 28556-28586）', () => {
+  const { e, step } = mk();
+  e.config = cfgOf({
+    'message:automessagepitch1': '250',
+    'message:automessagetime1': '1000',
+  });
+  e.engineValues.set(ENGINE_FIELD.autoMessageBaseline, 1); // = `i2e9 1`（0x2E9 写的"行基准"）
+  // 该窗 4 行文本（3 个 end-text-line ⇒ 4 行）
+  step(0x80, [im(9)]);
+  step(0x6e, [im(0), str('一')]);
+  step(0x6f, [im(0)]);
+  step(0x6e, [im(0), str('二')]);
+  step(0x6f, [im(0)]);
+  step(0x6e, [im(0), str('三')]);
+  step(0x6f, [im(0)]);
+  step(0x6e, [im(0), str('四')]);
+  e.nowMs = 4242;
+
+  step(0x72, [im(9)]); // 97052 == 0 ⇒ 不武装
+  assert.equal(e.engineValues.get(107545 + 6), undefined, '共存标志为 0 时不得武装自动翻页计时器');
+
+  step(0x1b7, [im(1)]); // 置共存标志
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 2), 1, '`sub_453A60` 的 `t[2] = 1`（周期序号）');
+  assert.equal(e.engineValues.get(107545 + 5), 4242, '`t[5] = timeGetTime()`（起点 = 现在）');
+  assert.equal(
+    e.engineValues.get(107545 + 6),
+    1500,
+    '(行数 4 − 1 − 基准 1) × Pitch1(250) + Time1(1000) = 1500（raw 28579-28585）',
+  );
+  assert.equal(e.engineValues.get(97053), 0, 'raw 28557：`Engine[97053] = 0`');
+
+  // 下限 100ms（raw 28583-28584）：基准大于行数 ⇒ 负数也要抬到 100
+  e.engineValues.set(ENGINE_FIELD.autoMessageBaseline, 9);
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 6), 100, '`if (v10 <= 100) v10 = 100`');
+});
+
+test('★T-0151：自动翻页的两组参数按 `Engine[122501]`（语音忙碌）二选一，且受 AutoMessageOption 门控', () => {
+  const { e, step } = mk();
+  e.config = cfgOf({
+    'message:automessageoption': '1',
+    'message:automessagepitch0': '10',
+    'message:automessagetime0': '5000',
+    'message:automessagepitch1': '250',
+    'message:automessagetime1': '1000',
+  });
+  step(0x80, [im(9)]);
+  step(0x6e, [im(0), str('一')]);
+  step(0x6f, [im(0)]);
+  step(0x6e, [im(0), str('二')]); // 2 行
+  step(0x1b7, [im(1)]);
+  e.engineValues.set(122501, 1); // 有语音在播 ⇒ Pitch0/Time0
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 6), 5010, '(2−1−0) × Pitch0(10) + Time0(5000)');
+  // 门关（AutoMessageOption bit0 = 0）⇒ 不武装
+  e.engineValues.set(107545 + 6, 0);
+  e.config = cfgOf({
+    'message:automessageoption': '0',
+    'message:automessagepitch0': '10',
+    'message:automessagetime0': '5000',
+  });
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 6), 0, 'AutoMessageOption bit0 = 0 时不得武装（raw 28563-28564）');
+  // 门开 ⇒ 武装
+  e.config = cfgOf({
+    'message:automessageoption': '1',
+    'message:automessagepitch0': '10',
+    'message:automessagetime0': '5000',
+  });
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 6), 5010, '门开 ⇒ 按 Pitch0/Time0 武装');
+  e.engineValues.set(122501, 0); // 没有语音 ⇒ Pitch1/Time1（配置缺项 ⇒ 0 ⇒ 抬到下限 100）
+  step(0x72, [im(9)]);
+  assert.equal(e.engineValues.get(107545 + 6), 100, '缺 Pitch1/Time1 ⇒ 0 ⇒ 下限 100');
+});
+
+/**
+ * ★审计 §4.1 P3 `op-225`（`0x260` 的**写入归属错**）：这四个值是 **Font 级全局**字段
+ * （`Font+235112..+235124` = `_this[80102..80105]`），不是逐窗字段。
+ *
+ * 守卫：写完之后**换默认窗**（`i080 9`）再读 —— 值必须还在（旧实现写在"写入时刻 defaultWin 的
+ * geom 对象"上 ⇒ 换默认窗后归到别的窗名下、新窗读到 0）。同时核发布链：`0x6E` 入队快照
+ * 必须把 `vPad` 一起带进 `MsgWinInput.style`。
+ */
+test('★T-0151：`0x260` 的四个值是 Font 级（换默认窗不丢），并进样式快照', () => {
+  const native = new HeadlessScene({});
+  const e = new Engine(native);
+  const f = new Frame();
+  const step = (op: number, args: BinArg[] = []): void => {
+    const h = OPS.get(op);
+    assert.ok(h, `0x${op.toString(16)} 应在 OPS 里`);
+    h!(makeCtx(e, f, instr(op, args), native, () => {}));
+  };
+  step(0x80, [im(1)]); // 先默认窗 = 1
+  step(0x260, [im(2), im(0), im(2), im(2)]); // 语料固定形态 `i260 2 0 2 2`
+  assert.deepEqual(e.msgwin.font.vPad, { x: 2, dw: 0, y: 2, dh: 2 }, 'Font+235112/116/120/124 = op1/op2/op3/op4');
+  step(0x80, [im(9)]); // ★换默认窗
+  assert.deepEqual(
+    e.msgwin.font.vPad,
+    { x: 2, dw: 0, y: 2, dh: 2 },
+    'Font 级字段不随默认窗改嫁（旧实现写在 geom(defaultWin) 上 ⇒ 这里读到 0）',
+  );
+  // 发布链：入队快照 + 样式
+  step(0x6e, [im(0), str('あ')]);
+  const sent = native.scene.msgWins.get(9);
+  assert.ok(sent, '窗 9 应已发布');
+  assert.deepEqual(sent.style.vPad, { x: 2, dw: 0, y: 2, dh: 2 }, '竖排内边距随样式快照发布给宿主');
+  assert.deepEqual(
+    e.msgwin.slot(9).fontStyle?.vPad,
+    { x: 2, dw: 0, y: 2, dh: 2 },
+    'FontStyleSnapshot 里也要有（与 vertical 同层，按入队时刻钉住）',
+  );
+});
+
+/**
+ * ★审计 §4.1 P2 `op-130`（`0xfa` 的 approximation）：raw 24981-24986
+ * `sub_478090(Engine+258, Engine+174802); Engine[174801] |= 0x80000000; Engine[174802] = 0;`
+ * —— 消费刷把掩码写进那一格之后**当帧清零**。emulator 的对应格 = `InputManager.inputMask`
+ * （唯二写者 = `flushPending`/`flushHeld`，进输入快照）⇒ 必须跟着清。
+ */
+test('★T-0151：`0xfa` 清掉刚被消费刷吸取的掩码格（raw 24985 的 `Engine[174802] = 0`）', () => {
+  const { e, step } = mk();
+  e.input.pressKey(38); // 按下沿（默认表：VK38 = ↑ ⇒ 掩码位 0）
+  step(0xfa, []);
+  assert.equal(e.input.inputMask, 0, '0xFA 出口必须把掩码格清零（修前留着 flushHeld 写进去的值）');
+  assert.equal(e.awaitingAdvance, true, '顺带置等待门（raw 24984）');
+});
+
+test('★T-0151：`0x1b6`/`0x1b7` 的读回语义（置位 / 清零 / 语料的读-减-写回习语）', () => {
+  const { e, f, step } = mk();
+  const read = (slot: number): number => dec(e.key, f.locals.int.get(slot) ?? 0) | 0;
+  step(0x1b6, [loc(0)]); // 初始 0
+  assert.equal(read(0), 0, '未置位时读回 0');
+  step(0x1b7, [im(1)]);
+  step(0x1b6, [loc(0)]);
+  assert.equal(read(0), 1, '`i1b7 1` 之后读回 1（`Engine[97052] = (op1 != 0)`）');
+  // 语料 334 处的固定习语：`i1b6 <g>` / `sub <g> 1 <g>` / `i1b7 <g>` ⇒ 值 1 变 0
+  step(0x1b6, [loc(1)]);
+  step(0x1b7, [loc(1)]); // 这里 loc(1) 未经 sub ⇒ 写回 (1 != 0) = 1（等价于习语里的"还没减到 0"）
+  step(0x1b6, [loc(0)]);
+  assert.equal(read(0), 1, '未减到 0 时习语写回 1');
+  step(0x1b7, [im(0)]); // = `i1b7 0`
+  step(0x1b6, [loc(0)]);
+  assert.equal(read(0), 0, '`i1b7 0` 清位');
+});
+
+/**
+ * ★★审计 §4.1 P1 `op-4`/`op-5`（`tickets/T-0151`）：`Engine[97052]` 的**行为消费端**
+ * = 等待泵 `sub_411BC0` 的 `LABEL_44` 自动翻页块（raw 20376-20461）。
+ *
+ * 引擎：`if (!Engine[97052]) return;` 是整块的**唯一门**；门内每帧按「该窗行数 − 1 − 行基准」
+ * 起 `Engine[430180]` 计时器，`sub_453AF0` 到期 ⇒ 清等待门（bit31）+ `sub_4051A0` +
+ * `sub_48E870/sub_48EB30`（**页内推进，不动 ip**）⇒ 「`i1b7 1` ⇒ ADV 页自己往下走」。
+ *
+ * 守卫：置 97052、让等待门挂着、把时钟推过计时器周期 ⇒ ① 等待门被清（自动翻页发生了）；
+ * ② 周期序号 `t[2]` 从 1 变 2（计时器周期性重复）；③ 97052 = 0 时同样的时钟**什么都不发生**。
+ */
+test('★T-0151：等待泵的自动翻页块（`sub_411BC0` LABEL_44）：97052 置位 ⇒ 到期自动翻页', () => {
+  const { e, step } = mk();
+  e.config = cfgOf({ 'message:automessagepitch1': '50', 'message:automessagetime1': '200' });
+  step(0x80, [im(9)]);
+  step(0x6e, [im(0), str('一')]);
+  step(0x6f, [im(0)]);
+  step(0x6e, [im(0), str('二')]); // 该窗 2 行
+  e.nowMs = 1000;
+  step(0x1b7, [im(1)]); // 置 97052（共存消息 / 自动翻页模式）
+  step(0x72, [im(9)]); // 武装：ms = (2−1−0)×50 + 200 = 250
+  assert.equal(e.engineValues.get(107545 + 6), 250, '节拍 = Pitch1×行数 + Time1');
+  e.msgwin.showing = 1; // 让"自动翻页"有可观察的收尾
+  e.awaitingAdvance = true; // 等待门挂着（引擎只在 bit31 分支调 `sub_411BC0`）
+
+  // 未到期：什么都不该发生
+  e.nowMs = 1100;
+  e.serviceAdvanceWait();
+  assert.equal(e.awaitingAdvance, true, '未到期 ⇒ 等待门保留');
+
+  // 到期：自动翻页
+  e.nowMs = 1250;
+  const handled = e.serviceAdvanceWait();
+  assert.equal(handled, false, '这一帧没有输入被处理（是自动翻页，不是玩家推进）');
+  assert.equal(e.awaitingAdvance, false, '★到期 ⇒ 清等待门（raw 20432）＝ 这一页自己往下走了');
+  assert.equal(e.msgwin.showing, 0, '页内推进的收尾（raw 20434-20443 的 `sub_48EB30` 语义）');
+  assert.equal(e.engineValues.get(107545 + 2), 2, '周期序号推进（`sub_453AF0` raw 66184）');
+  assert.equal(e.engineValues.get(107545 + 5), 1000, '起点没被改写（`sub_453BD0` 只在停表时重臂）');
+
+  // 对照：97052 = 0 ⇒ 同一个时钟下等待门**不动**（门是整块唯一的门）
+  step(0x1b7, [im(0)]);
+  e.awaitingAdvance = true;
+  e.nowMs = 2000;
+  e.serviceAdvanceWait();
+  assert.equal(e.awaitingAdvance, true, '97052 = 0 ⇒ 自动翻页块整块不跑（raw 20376）');
+});
+
+test('★T-0151：自动翻页表被"文本回卷态"停住（raw 20378-20383 `sub_453BC0`）', () => {
+  const { e, step } = mk();
+  e.config = cfgOf({ 'message:automessagepitch1': '50', 'message:automessagetime1': '200' });
+  step(0x80, [im(9)]);
+  step(0x6e, [im(0), str('一')]);
+  e.nowMs = 0;
+  step(0x1b7, [im(1)]);
+  step(0x72, [im(9)]);
+  e.engineValues.set(122454, 1); // 玩家正在文本回卷（`Engine[489816] != 0`）
+  e.awaitingAdvance = true;
+  e.nowMs = 10_000; // 远远超过周期
+  e.serviceAdvanceWait();
+  assert.equal(e.awaitingAdvance, true, '回卷中 ⇒ 停表（t[4] = 1）⇒ 到期判定返回 -1、不自动翻页');
+  assert.equal(e.engineValues.get(107545 + 4), 1, '`sub_453BC0`：t[4] = 1');
+  // 回卷结束 ⇒ `sub_453BD0` 重臂（t[4] = 0），再过一拍就自动翻页
+  e.engineValues.set(122454, 0);
+  e.nowMs = 10_050;
+  e.serviceAdvanceWait();
+  assert.equal(e.engineValues.get(107545 + 4), 0, '`sub_453BD0`：t[4] = 0（重臂）');
+  assert.equal(e.engineValues.get(107545 + 5), 10_050, '重臂时起点 = 现在');
+  e.nowMs = 10_300;
+  e.serviceAdvanceWait();
+  assert.equal(e.awaitingAdvance, false, '重臂后再到点 ⇒ 自动翻页');
+});
+
 

@@ -251,9 +251,9 @@
       "argc": 2,
       "docStatus": "仅映射",
       "source": "corpus-unregistered",
-      "disposition": "deferred",
-      "note": "SETPOLYGON/INFOxx 10 处（handler sub_423EC0 → sub_4B4460）；capabilities 台账曾误标 n/a-known；审计 P0 render-3d-layer-dual-commit。★筛体(2026-09)：**体=raw 31924-31934**（arity 槽 5；`v4 = op2`、`v2 = op1` → `sub_4B4460(_this + 80708, v2, v4)`）；真身 sub_4B4460 = raw 136968 起、150+ 局部：在 `Scene+1036` / `+1068` / `+1100` / `+16424` 四张场景表里按键范围查项，依次 `sub_4535F0(Scene[12676], key)` 选中并 `*flags &= ~0x10000u`（多选/范围拾取），另检 `Scene+46460 & 2` 与 `Scene+46508` 脏位。⇒ 体内走 **`sub_4Bxxxx` 设备族**（场景多边形/拾取层）⇒ **deferred**；扩展点 = 先建宿主侧「场景多边形 / 拾取范围」原语（`Scene+80708` 的多选层，与 `render-3d-layer-dual-commit` 同一缺口）。",
-      "ticket": "T-0076"
+      "disposition": "implemented",
+      "note": "SETPOLYGON/INFOxx 10 处（handler `sub_423EC0` raw 31924-31934 → 真身 `sub_4B4460` raw 136968-137285）。★2026-09-24 已真实现（T-0167；审计 §4.2 #19 P1 `render-3d-layer-dual-commit`）：arity 槽 5 ⇒`op1` = 起始 handle、`op2` = **跨度**（区间 `[op1, op1+op2)`；体里 `v4 = sub_41BF50(_this, 2);v2 = sub_41BF50(_this, 1); … v15 = a2 + a3`）。实现链：`OPS` 的 `op_scene_commit_range`（`src/vm/handlers/scene-commit.ts`；`operandPlan.ts` 已声明 `[int, int] / [r, r]`）→ 宿主缝`NativeBridge.sceneCommitRange(start, count)`（`src/vm/native.ts` + `nativeTap.ts` 的 BRIDGE_METHODS）→两侧宿主 `HeadlessScene` / `PixiBackend` 各一句 `enqueueSceneCommitNodes(scene, start, count)`（`src/renderer/scene/commit.ts`）压进 `SceneState.commitQueue` → 帧末 `scSceneCommitRange` 消费（清 `46508`/`46516`、`sub_4A1E90` 世界矩阵复位、逐 key `sub_4535F0` 天气销毁判据、`sub_453540` 按墙钟推进 + **上限 100**、`(node[0] & 0x10001) == 1` 的 bit0 分派）。★披露的唯一差别：引擎在 `i222` 那一刻**当帧**跑完整趟 `sub_4B4460`，emulator 最多晚一帧（提交在帧末 `advanceModel`）；**重开条件** = 实测发现当帧必须出画面时改成宿主同步提交口。守卫：`test/op-222-scene-commit.test.ts`（4 例）、`test/registry-classification.test.ts`（0x222 → OPS）、`test/opcode-operands.test.ts`（旧「缺消费端」白名单条目已删）。",
+      "ticket": "T-0167"
     },
     {
       "opcode": 135,
@@ -810,9 +810,9 @@
       "argc": 2,
       "docStatus": "已核对",
       "source": "engine-internal",
-      "disposition": "engine-internal",
-      "note": "体已读（raw 30616-30634；汇编 天结_unpacked.exe_utf8.lst 53610-53659）：arity 槽 `Engine[30*cur+95805]=5` → op1=掩码位（>0x1F 抛 ShowMessage「SetKeyMultiの引数が不正です．」）、op2=键码 → 写 `Engine[1434+Engine[1690+op2]] = op1`（汇编 `mov edx,[esi+edi*4+1A68h]` / `mov [esi+edx*4+1668h],eax`）。Input 是 Engine 的内嵌对象（`Input = Engine+1032` 字节、`Engine[258]` 即其 vftable，raw 92374-92380）⇒ 等价于 `Input[1176+Input[1432+op2]] = op1`：目标 `Input[1176+VK]` 正是引擎每帧扫描读的 **VK→掩码位表**（`sub_4770A0` raw 91551-91570 `mask |= 1 << _this[1176+VK]`，掩码落 `Engine[174802]` → 0x100/0x101/ADV）；中间层 `Input[1432+键码] = VK` 是**键码表**（`sub_476AA0` raw 91325-91423 填默认：键码 0x1c→13=RETURN、0x2c→90='Z'，与 `src/SYSTEM4.txt:87-97` 的 `i10c 4 1c` / `i10c 4 2c` 对上）。★判定 **engine-internal（有据跳过）**——T-0077 验收 2 的两种处置之一；原注 raw 30623-30632 只到 arity 槽与读操作数，真正的写表在 30632。理由：emulator **没有这条链路** —— 无键码表、无 VK→位表、宿主键盘也不进掩码（`InputManager.keyEdge` 只登记，`flushHeld/flushPending` 不并 0..6）⇒ 本指令的写入在 emulator 里**一个消费者都没有**（同族 0x30a「键位注册」同一口径），对 VM 不可观测。★但引擎侧确有消费者（每帧 `sub_4770A0` ⇒ 输入掩码 ⇒ 0x100/joy-callback）⇒ **一旦 `tickets/T-0052`（键盘掩码位 0..6）落地，本指令必须从 `ENGINE_INTERNAL_OPS` 移到 `OPS`**：扩展点 = `handlers/input.ts` 的 `op_set_key_multi`（先落 `Input[1176+VK]` 默认 7 键→位 0..6 与 `Input[1432+键码]` 默认表）",
-      "ticket": "T-0077"
+      "disposition": "implemented",
+      "note": "已真实现（T-0163；原判 engine-internal 的豁免理由随 T-0052/T-0163 落地而失效）。按体 raw 30616-30634：arity 槽 5 ⇒ op1=掩码位、op2=键码；op1 unsigned > 0x1F 抛 ShowMessage「SetKeyMultiの引数が不正です．」且**不写表**；否则写 Input[1176 + Input[1432+键码]] = op1（= Engine[1434 + Engine[1690+op2]]）。两张运行期表落在 src/vm/input.ts：keycodeToVk（默认值逐条取自 sub_476AA0 raw 91325-91423 的 93 条，标定锚 = Input 构造 raw 92386-92393 的七条默认绑定键码 {0xC8,0xCD,0xD0,0xCB,0x1C,0x39,0x0E}）与 \u000bkToBit（初值 = Input 构造 raw 92394-92400 的 7 条，运行期可改写）；消费者 = InputManager.pressKey/releaseKey（旧实现是冻结常量 DEFAULT_VK_TO_BIT ⇒ 脚本改不动）。语料锚 src/SYSTEM4.txt:87 的 i10c 4 2c（键码 0x2c → VK 90='Z' → 掩码位 4）与 i10c 4 1c（→ 13 Enter）均已成立；同批还修掉掩码被 & 0x7f 截断（重映射到 bit ≥ 7 会被静默吃掉）。守卫：test/input.test.ts 0x10C ①②③④、test/keyboard-mask.test.ts ⑤、test/registry-classification.test.ts、test/opcode-operands.test.ts（白名单条目已删）。证据锚点见 tickets/T-0163。",
+      "ticket": "T-0163"
     },
     {
       "opcode": 311,
@@ -936,10 +936,10 @@
     "entries": 71,
     "byDisposition": {
       "unimplemented": 0,
-      "engine-internal": 13,
+      "engine-internal": 12,
       "engine-internal-unjustified": 0,
-      "implemented": 39,
-      "deferred": 19
+      "implemented": 41,
+      "deferred": 18
     }
   }
 }

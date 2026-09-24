@@ -39,6 +39,8 @@ import {
   SCENE_LAYER_HI,
   SCENE_LAYER_LO,
   applySceneXformToPlacement,
+  sceneAffine2DOf,
+  sceneAffineRotation,
   sceneLayerAffected,
 } from '../src/renderer/sceneModel.js';
 
@@ -231,4 +233,98 @@ test('★快照文本里有 `scene-xform` 行，且写出层区间与逐项 befo
   assert.match(t, /scene-xform/, '必须有一行 scene-xform（否则"写进去了"与"真的动了"无法区分）');
   assert.match(t, /只作用于层号 ∈ \[20,30\)/, '行里必须写明作用层区间');
   assert.match(t, /0x12:\(50,60\)→\(57,69\)/, '逐项写出 before→after');
+});
+
+// ---------------------------------------------------------------------------
+// ④ ★★`0x22F` 的 op3/4/5 在层 20..29 上是**旋转轴**（2026-09 审计 P1，本轮修）
+// ---------------------------------------------------------------------------
+
+/**
+ * **`0x22F` 对层号 ∈ [20,30) 是轴角旋转，不是屏幕空间 2D 平移**（`tickets/T-0154`）。
+ *
+ * 体（`sub_49AA30` 层号支 raw 117624-117632，逐字）：
+ * ```c
+ * if ( !*(_DWORD *)(v113 + 46676) && *(_DWORD *)(*(_DWORD *)(v113 + 1860) + 1164) == 2 ) {
+ *   v55 = *((_DWORD *)a2 + 1);                       // 元素 +4 = 层号
+ *   if ( v55 >= 20 && v55 < 30 ) {
+ *     ((… )j_D3DXMatrixRotationAxis)(v120, a2 + 181, a2[184]);   // 轴 = op3/4/5、角 = a2[184]
+ *     v26 = 0.0; v42 = 1.0;
+ *   }
+ * }
+ * ```
+ * 随后收尾 raw 117930 `D3DXMatrixMultiply(v73, v73, v120)` 把 `v120` 乘进 work
+ * （`v118`=117929 缩放块、`v120`=117930 **旋转块**、`v121`=117931 work 块）⇒ `0x22F` 的三格
+ * **是旋转轴**。而 RenderScene 层号支 raw 133427 又用 `D3DXMatrixRotationAxis(v28, Scene+1844,
+ * Scene[1856])` 重建旋转 ⇒ 该支**没有丢掉旋转**（修前 emulator 把它当 `tx/ty` 用，且完全没有旋转项）。
+ */
+
+/** `hs.setSceneRotationRad(π/2)` = 引擎 `Scene+1856`（raw 133427 的第二个实参；该格反编译里无写点）。 */
+const HALF_PI = Math.PI / 2;
+
+test('★★0x22f 在层 20 上是**旋转**：轴 (0,0,1) + 角 90° 把 (100,100) 转到 (−100,100)（修前它只是一次 2D 平移）', async () => {
+  const hs = new HeadlessScene({});
+  const e = new Engine(hs);
+  await runOp(e, 0x22f, 5, [I(0), I(2000), F(0), F(0), F(1)]); // 轴 = (0,0,1)、不进平移
+  hs.setSceneRotationRad(HALF_PI); // 引擎 `Scene+1856`（emulator 侧唯一注入点，默认 0 = 恒等）
+  assert.deepEqual(
+    hs.snapshot().sceneXform?.axis,
+    { x: 0, y: 0, z: 1 },
+    'op3/4/5 必须落进 `axis`（旋转轴）—— 修前它只落进 `axisTranslate`，且被当屏幕空间平移用',
+  );
+  const pl = applySceneXformToPlacement(hs.scene, 20, { position: { x: 100, y: 100 }, scale: { x: 1, y: 1 } });
+  // ★符号口径 = 本仓**已逐位实证**的 D3DX 行向量约定：轴 = z、90° ⇒ `M11=0, M12=1, M21=−1, M22=0`
+  //   （`test/l2d-node-compose.test.ts:160-173` 把这四个分量连同 `t_eff` 一起钉住了），
+  //   点映射 `p' = p·M`（不是 `M·p`）⇒ `(x,y) → (x·M11 + y·M21, x·M12 + y·M22) = (−y, x)`
+  //   ⇒ `(100,100) → (−100,100)`。修前（把它当 2D 平移 + 完全没有旋转项）这里是 `(100,100)`。
+  assert.ok(
+    Math.abs(pl.position.x + 100) < 1e-6 && Math.abs(pl.position.y - 100) < 1e-6,
+    `层 20 必须吃旋转：期望 (−100,100)，实得 (${pl.position.x},${pl.position.y})`,
+  );
+  const a = sceneAffine2DOf(hs.scene, 20)!;
+  assert.ok(Math.abs(sceneAffineRotation(a) - HALF_PI) < 1e-9, `旋转角必须恰好是 π/2，实得 ${sceneAffineRotation(a)}`);
+});
+
+test('★★跨种类叠加：i22d 的缩放 + i22f 的旋转**同时**生效（修前 `kind` 互斥只剩最近一次那种）', async () => {
+  const hs = new HeadlessScene({});
+  const e = new Engine(hs);
+  // 同一场景、同一层：先 i22d 设缩放 (2,2,1)（op3/4/5 各 ÷100 ⇒ 送 200）
+  await runOp(e, 0x22d, 5, [I(0), I(300), F(200), F(200), F(100)]);
+  // 再 i22f 设轴 (0,0,1)（分量 (0,0,1) 同时是那条旋转的轴）
+  await runOp(e, 0x22f, 5, [I(0), I(2000), F(0), F(0), F(1)]);
+  hs.setSceneRotationRad(HALF_PI);
+  const x = hs.snapshot().sceneXform!;
+  assert.deepEqual(x.axisScale, { x: 2, y: 2, z: 1 }, 'i22d 的轴缩放必须仍在（引擎那两块矩阵互相独立）');
+  assert.deepEqual(x.axis, { x: 0, y: 0, z: 1 }, 'i22f 的轴必须同时生效');
+  const pl = applySceneXformToPlacement(hs.scene, 20, { position: { x: 100, y: 100 }, scale: { x: 1, y: 1 } });
+  // 先缩放 (100,100)→(200,200)，再绕原点转 90°（行向量序 `p' = p·M` ⇒ `(x,y)→(−y,x)`）⇒ (−200,200)；
+  // 缩放必须跟着一起转（修前 `kind` 互斥时这里只剩 i22f 那一支，压根没有 (2,2) 这一级）。
+  assert.ok(
+    Math.abs(pl.position.x + 200) < 1e-6 && Math.abs(pl.position.y - 200) < 1e-6,
+    `两个分量必须叠加（先 S 后 R）：期望 (−200,200)，实得 (${pl.position.x},${pl.position.y})`,
+  );
+  assert.ok(Math.abs(pl.scale.x - 2) < 1e-9 && Math.abs(pl.scale.y - 2) < 1e-9, 'i22d 的缩放必须留在 scale 里');
+});
+
+test('★层号区间外不吃这一级：同一份轴角下 19/30 层原对象返回（引擎那条路走完整 3D 世界矩阵）', async () => {
+  const hs = new HeadlessScene({});
+  const e = new Engine(hs);
+  await runOp(e, 0x22f, 5, [I(0), I(2000), F(0), F(0), F(1)]);
+  hs.setSceneRotationRad(HALF_PI);
+  const base = { position: { x: 100, y: 100 }, scale: { x: 1, y: 1 } };
+  assert.equal(applySceneXformToPlacement(hs.scene, 19, base), base, '19 层：连对象都不重建');
+  assert.equal(applySceneXformToPlacement(hs.scene, 30, base), base, '30 层：同上');
+  assert.equal(sceneAffine2DOf(hs.scene, 19), null, '区间外没有 2D 仿射');
+});
+
+test('★轴与角都在但角为 0 ⇒ 恒等旋转（三层分量仍必须各自落进模型，不能互相顶掉）', async () => {
+  const hs = new HeadlessScene({});
+  const e = new Engine(hs);
+  // 一条 i22a（缩放 (3,3,1)：送 300）+ 一条 i22c（平移 (10,20,0)）+ 一条 i22f（轴 (0,0,1)）
+  await runOp(e, 0x22a, 3, [F(300), F(300), F(100)]);
+  await runOp(e, 0x22c, 3, [F(10), F(20), F(0)]);
+  await runOp(e, 0x22f, 5, [I(0), I(2000), F(0), F(0), F(1)]);
+  const pl = applySceneXformToPlacement(hs.scene, 20, { position: { x: 100, y: 100 }, scale: { x: 1, y: 1 } });
+  // 角 0 ⇒ 纯缩放+平移：(100·3+10, 100·3+20) = (310,320)
+  assert.deepEqual(pl.position, { x: 310, y: 320 }, '角 0 ⇒ 旋转是恒等，但缩放/平移三块必须同时生效');
+  assert.deepEqual(pl.scale, { x: 3, y: 3 }, 'i22a 的缩放（修前会在 i22f 之后被整体丢掉）');
 });

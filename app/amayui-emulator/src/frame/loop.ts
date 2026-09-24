@@ -34,6 +34,9 @@
  * 不在 B1 范围内 —— 把那套顺序编码进共享驱动等于把缺陷固化。它随 B2 一起改。
  */
 import { SLEEP_GATE, type Engine, type Frame } from '../vm/engine.js';
+import { ENGINE_FIELD } from '../vm/engineFieldIds.js';
+import { CFG } from '../configRegistry.js';
+import { cfgInt } from '../engineConfig.js';
 import { STAGE_GATE } from '../vm/stageLoop.js';
 import { NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
 import { ExitScript } from '../vm/ops.js';
@@ -72,6 +75,89 @@ export interface FrameLoopGates {
 
 /** 本帧走了哪条分支（引擎主循环的不同段；观察者与调用方记账用）。 */
 export type FrameBranch = 'anim' | 'sleep' | 'stage' | 'text-reveal' | 'advance' | 'adv' | 'batch';
+
+/**
+ * **帧提交门**（引擎主循环 raw 20740-20761；`tickets/T-0167` 的 §4.2 #3/#6/#7）。
+ *
+ * 引擎那一段逐字是：
+ * ```c
+ * if ( *(_DWORD *)(_this + 667856) == 1 )                        // ① DrawMode == 1（set:DrawMode）
+ * {
+ *   if ( *(_DWORD *)(_this + 675968) ) { v92 = 0; }              // ② 外部挂起 ⇒ 整块跳过
+ *   else if ( *(_DWORD *)(_this + 667860)                        // ③ 通用布尔位（0x21B 写）
+ *          || (*(_DWORD *)(_this + 699204) & 0x2400) != 0 )      //    或 effect_flags 的 0x2400 位
+ *   {
+ *     v92 = 1;
+ *     *(_DWORD *)(_this + 369336) = *(_DWORD *)(_this + 369332); // ④ 帧时钟：clockPrev ← clock
+ *     *(_DWORD *)(_this + 369332) = v94;                         //            clock     ← 本帧时刻
+ *     v16 = *(_DWORD *)(_this + 699204);
+ *     if ( (v16 & 0x1000000) == 0 && !v93                        // ⑤ 提交内层门（见下）
+ *       && (!*(_DWORD *)(_this + 429752) || (v16 & 0x400) != 0)
+ *       && (sub_40BE10((_DWORD *)(_this + 322832)) == 1 || v90 == 1) )
+ *     {
+ *       sub_4B4040(_this + 322832);                              // ⑥ 2D 绘制循环 / 帧提交
+ *       *(_DWORD *)(_this + 675992) = 0;
+ *     }
+ *   }
+ *   else { v92 = 0; }
+ *   if ( sub_404C20((_DWORD *)(_this + 321572)) )                // ⑦ LostDevice 回调（与门无关，恒执行）
+ *     sub_411560((_DWORD *)_this, aCallbackLostBi);
+ * }
+ * ```
+ *
+ * ★**为什么 emulator 的 `present` 不按这个门开关**：本块的 `sub_4B4040` 是 **DrawMode==1 的 D3D 提交**，
+ *   而随包 INI 实测 `DrawMode=0` ⇒ 真机默认配置**根本不进这一块**（它在另一条 GDI 路径上出帧）。
+ *   emulator 的 `host.present()` 同时代表两条路径的"出帧"，所以按 `drawMode==1` 去门它会让默认配置
+ *   **一帧都不画**（实测回归）。⇒ 这里把门**建模成可观察量**（`clockWrite` / `d3dCommit`）+ 把门内
+ *   **唯一会改变 VM 状态的副作用**（④ 帧时钟写）真正接上；`d3dCommit` 是"引擎在该帧会走 D3D 提交"的
+ *   等价信号，交给 `onFrameRenderGate` 的消费者（headless 记账 / 以后接真 D3D 路径）。
+ *
+ * ★⑤ 里 `v93`、`v90` 与 `sub_40BE10`（池查询）三者在反编译里是主循环局部量，未定位到脚本可见来源
+ *   ⇒ 本模型只落**能判定的两条**（`effect_flags & 0x1000000` 与停靠锁/`0x400`），并在 `unknown`
+ *   字段里显式标出这半条与 raw 锚点（不许假装完整）。
+ */
+export interface FrameRenderGate {
+  /** ① `Engine+667856 == 1`（`set:DrawMode`）。为假 ⇒ 引擎整块不进。 */
+  drawMode: boolean;
+  /** ② 宿主报告"外部挂起渲染"（`Engine+675968`）。 */
+  suspended: boolean;
+  /** ③ 门是否开（`engineBool` 或 `effect_flags & 0x2400`）。 */
+  gateOpen: boolean;
+  /** ④ 本帧**是否写了**帧时钟（`engineValues` 的 `clockPrev`/`clock`）。 */
+  clockWrite: boolean;
+  /** ⑤/⑥ 在**可判定条件**下引擎本帧会不会走 `sub_4B4040` 提交。 */
+  d3dCommit: boolean;
+  /** 未落地的条件（`raw 20753-20756` 的 `!v93`、`sub_40BE10(...) == 1 || v90 == 1`）。 */
+  unknown: string[];
+}
+
+/**
+ * 判定一帧的帧提交门（纯函数；**不改任何状态**——写时钟由调用方做）。
+ * `suspended` 缺省 false（宿主没实现该缝 = 未挂起）。
+ */
+export function frameRenderGate(e: Engine, suspended = false): FrameRenderGate {
+  const drawMode = e.config != null && cfgInt(e.config, CFG.setDrawMode, 0) === 1;
+  if (!drawMode) {
+    return { drawMode, suspended, gateOpen: false, clockWrite: false, d3dCommit: false, unknown: [] };
+  }
+  if (suspended) {
+    return { drawMode, suspended, gateOpen: false, clockWrite: false, d3dCommit: false, unknown: [] };
+  }
+  const engineBool = e.engineValues.get(ENGINE_FIELD.engineBool) ?? 0;
+  const gateOpen = engineBool !== 0 || (e.effectFlags & 0x2400) !== 0;
+  if (!gateOpen) {
+    return { drawMode, suspended, gateOpen: false, clockWrite: false, d3dCommit: false, unknown: [] };
+  }
+  // ⑤ 内层门：能判定的两条 + 显式登记的未知两条。
+  const lock = e.engineValues.get(ENGINE_FIELD.frameTickLock) ?? 0;
+  const known = (e.effectFlags & 0x1000000) === 0 && (lock === 0 || (e.effectFlags & 0x400) !== 0);
+  const unknown = [
+    'raw 20754 `!v93`：主循环局部量，未定位来源',
+    'raw 20756 `sub_40BE10(pool) == 1 || v90 == 1`：池查询/局部量',
+  ];
+  return { drawMode, suspended, gateOpen: true, clockWrite: true, d3dCommit: known, unknown };
+}
+
 
 export interface FrameLoopOptions {
   gates?: FrameLoopGates;
@@ -172,6 +258,12 @@ export interface FrameLoopOptions {
   stopAfterStep?(t: StepTrace, e: Engine): boolean;
   /** 本次调用最多跑多少帧。 */
   maxFrames?: number;
+  /**
+   * **帧提交门的观察点**（`tickets/T-0167`；`frameRenderGate()` 的返回值）。
+   * 门内唯一改 VM 状态的副作用（帧时钟写）由驱动自己落地，本钩子只把"这一帧引擎会怎么走"交出去
+   * （headless 记账 / 以后接真 D3D 路径）。`present: 'never'` 的入口（report.ts 的 tracer）不触发。
+   */
+  onFrameRenderGate?(gate: FrameRenderGate, e: Engine): void;
   /**
    * **帧观察者**（设计文档 §2 的 L3；`tickets/T-0004` 的 B4 靠它把 Electron 的
    * 控制窗/trace/遥测/jsonl 从会话里搬出来）。
@@ -414,6 +506,18 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     //   撞脚本尾/退出/重置的那一帧**不算完整帧** ⇒ 不发（与 session 的 `break outer` 一致）。
     if (audioPolicy !== 'never') host.audio?.({ kind: 'tick', nowMs, advActive: e.advActive });
     if (opt.present !== 'never') {
+      // ★★**帧提交门**（引擎主循环 raw 20740-20761；`tickets/T-0167` 的 §4.2 #3/#6/#7）：
+      //   门内 ④ 的帧时钟写在这里落地 —— 修前 `engineValues` 的 `clock`/`clockPrev` **只**由
+      //   `0x1F4`/`0x20C`/`0x23C` 三条脚本指令维护，主循环那条写没有等价物（默认配置 DrawMode=0
+      //   时门不进 ⇒ 与旧行为一致；`DrawMode=1` 的配置下才是可观测差异）。
+      //   ★次序：引擎在同一块里"先写时钟（20750-20751）再提交（20758）"，本驱动保持同序。
+      const renderGate = frameRenderGate(e, host.renderSuspended?.() ?? false);
+      if (renderGate.clockWrite) {
+        const prevClock = e.engineValues.get(ENGINE_FIELD.clock) ?? 0;
+        e.engineValues.set(ENGINE_FIELD.clockPrev, prevClock);
+        e.engineValues.set(ENGINE_FIELD.clock, nowMs);
+      }
+      opt.onFrameRenderGate?.(renderGate, e);
       // 帧末两件事分开做（B2；设计 D5）：先推进模型到本帧时钟，再让宿主合成
       // ★`{ freeze: e.sceneFreeze }`（`tickets/T-0091` 的 G1）：引擎 `Scene+46512` 在**本帧绘制期**
       //   就把所有窗算结束（raw 117449 / 133517 / 134941）⇒ 冻结必须随"推进模型"一起传进宿主，

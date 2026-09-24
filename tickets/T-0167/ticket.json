@@ -22,12 +22,37 @@
     ]
   },
   "id": "T-0167",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests —— 15 条 P1 全部处置完毕：12 条已修（带守卫）、1 条 registered-n/a（停靠锁挡住的两段本体未建模）、2 条合并入 T-0157/T-0151 的对应条目；台账 140 条 --validate 绿；见 changes.md 与报告 §4.8"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-render-gate.test.ts",
+    "app/amayui-emulator/test/headless-needs-render.test.ts",
+    "app/amayui-emulator/test/scene-freeze-46676-gate.test.ts",
+    "app/amayui-emulator/test/op-222-scene-commit.test.ts",
+    "app/amayui-emulator/test/scene-3d-effect-level.test.ts",
+    "app/amayui-emulator/test/scene-3d-weather.test.ts",
+    "app/amayui-emulator/test/gfx-prim-mesh-consumers.test.ts",
+    "app/amayui-emulator/test/adv-right-click-cancel-route.test.ts",
+    "app/amayui-emulator/test/msgwin-backlog-wheel.test.ts",
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/char-reveal.test.ts",
+    "app/amayui-emulator/test/op-1f5-dequeue.test.ts",
+    "app/amayui-emulator/test/capability-ledger.test.ts"
   ]
 }

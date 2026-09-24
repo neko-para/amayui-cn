@@ -44,6 +44,12 @@ interface CfgReadSpec {
   key?: string;
   /** 布尔化（非 0 → 1）。 */
   bool?: boolean;
+  /**
+   * ★**逐选择器的布尔口径**（覆盖 `bool`）：引擎在 `0xC7`（`sub_42E670` raw 38678-38714）里对
+   * `sound:Music` 用的是 `v2 >= 0`（**只有负值算关**），而 `SE`/`Voice`/`Movie` 用的是 `v != 0`
+   * （raw 38697/38709）。同一不对称口径在 raw 11090（`sub_405460` case 1）也出现。
+   */
+  boolMode?: Record<number, 'nonzero' | 'nonneg'>;
   /** 选择器越界时的行为：'skip' 只记不写（引擎在 0xC5 里是报错路径）。 */
   onBadSelector?: 'skip';
 }
@@ -61,7 +67,14 @@ const CFG_READ: Record<number, CfgReadSpec> = {
     operand: 2,
     selector: 1,
     keys: { 1: CFG.soundMusic, 2: CFG.soundSE, 3: CFG.soundVoice, 4: CFG.soundMovie },
-    bool: true,
+    /**
+     * ★引擎 `sub_42E670`（raw 38678-38714）逐支口径**不同**：
+     * `op1 == 1`（`sound:Music`）判 `v2 >= 0`（raw 38683：**只有负值**才写 0）；
+     * `op1 == 2/3/4`（SE/Voice/Movie）判 `v != 0`（raw 38697/38709）。
+     * 修前统一按「非 0 ⇒ 1」处理 ⇒ `Music=0`（本机 overlay 正是 0）时引擎写 1、emulator 写 0，
+     * 设置界面的"音乐开/关"读反（审计 P1 `0xc7`/票 `T-0161`）。
+     */
+    boolMode: { 1: 'nonneg', 2: 'nonzero', 3: 'nonzero', 4: 'nonzero' },
     onBadSelector: 'skip',
   },
   // message:AutoMessageTime0/1 → op2（op1 = 0/1）
@@ -101,15 +114,19 @@ const op_cfg_read: OpHandler = (c) => {
     );
   }
   let key: string | undefined = spec.key;
+  let sel: number | undefined;
   if (spec.selector !== undefined) {
-    const sel = p.int(spec.selector);
+    sel = p.int(spec.selector);
     if (sel === undefined) return;
     key = spec.keys?.[sel];
     if (key === undefined) return; // 越界：引擎走报错分支（不写操作数）
   }
   if (key === undefined) return;
   let v = cfg(c, key);
-  if (spec.bool) v = v !== 0 ? 1 : 0;
+  // ★逐选择器口径（`0xC7` 的 `sound:Music` 是 `>= 0`，其余是 `!= 0`）见 `CfgReadSpec.boolMode`。
+  const mode = sel !== undefined ? spec.boolMode?.[sel] : undefined;
+  if (mode === 'nonneg') v = v >= 0 ? 1 : 0;
+  else if (mode === 'nonzero' || spec.bool) v = v !== 0 ? 1 : 0;
   p.setInt(spec.operand, v);
 };
 

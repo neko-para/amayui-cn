@@ -17,7 +17,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { scAdvance } from '../src/renderer/sceneModel.js';
+import { scAdvance, scClearScenePending } from '../src/renderer/sceneModel.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const H = 0x100;
@@ -84,6 +84,38 @@ test('needsRender：只读的 getter / 判据不置脏', () => {
 });
 
 /**
+ * ★★**池挂起位 `Scene+46516` 必须进合成判据**（审计 §4.2 #2 的 P1 `missing-consumer`；
+ * 引擎 `sub_4B4040` raw 136718-136719）：
+ *
+ * ```c
+ * if ( *(_QWORD *)(_this + 46512) )   // 46512 强制冻结 | 46516 池挂起（8 字节一起判）
+ *   *(_DWORD *)(_this + 46508) = 1;   // 46508 = "本遍要重画"
+ * ```
+ *
+ * ⇒ 「上一遍绘制时还有元素在动」这件事**本身**就要把本遍标脏。修前这一项只喂 `0x400` 等待门
+ * （`Engine.scenePending` → `Engine.gatePending`），`sceneNeedsRender` 完全不看它
+ * ⇒ 「绘制期置了 46516、但窗判据此刻已为假」的组合会漏掉一帧终态（不报错，只是画面少动一下）。
+ *
+ * 本用例构造的正是那个差集：**场景不脏、没有窗在跑、没有转场、没有 L2D 槽** —— 唯一的输入是 pending。
+ */
+test('★★needsRender：池挂起位（`Scene+46516`）本身就要强制合成（审计 §4.2 #2；raw 136718-136719）', () => {
+  const s = sceneWithItem();
+  s.snapshot();
+  assert.equal(s.needsRender(), false, '基线：不脏、无窗、无转场 ⇒ 不必合成');
+
+  s.scene.pending = true;
+  assert.equal(s.needsRender(), true, '★上一遍绘制还有元素在动 ⇒ 本遍必须再合成一次（修前这里为 false）');
+
+  // 取一次快照 = 消费掉它（引擎每遍绘制开头 `46516 = 0`，raw 130427-130428）
+  s.snapshot();
+  assert.equal(s.needsRender(), false, '消费之后回落（否则会变成"永久为真"）');
+
+  s.scene.pending = true;
+  scClearScenePending(s.scene);
+  assert.equal(s.needsRender(), false, '显式清位也回落（宿主缝）');
+});
+
+/**
  * **源码棘轮**：变更型 `sc*` 必须置 `s.dirty = true`；只读的必须在下面的白名单里（白名单 = 契约）。
  * 用"按 `export function` 切片"的文本扫描（够用且不引入 AST 依赖）。
  */
@@ -106,6 +138,16 @@ test('源码棘轮：`scene/ops.ts` 里变更型 sc* 都要置脏，只读的白
     'scGetDrawItemTexSlot', // getter
     'scGetDrawItemTranslation', // getter（0x228：绘制项当前平移，`+0x16C` work 矩阵；响应 audit P0 op-4-01）
     'scTransitionDefaultRecord', // 纯工厂：返回 24 格默认记录，不碰 SceneState（0x24F/0x250/0x251，`sub_49A640` raw 117059-117077）
+    // ★审计 §4.2 #2 / #24：这一族是**帧驱动/门**的入口，不是"场景内容变更" ⇒ 不进置脏名单。
+    'scSetScenePending', // 锁存池挂起位 `Scene+46516`（它**本身**就是"要不要再合成"的输入；置脏无意义）
+    'scClearScenePending', // 消费掉本位（= 引擎每遍绘制开头的 `46516 = 0`）
+    'scSetSceneFrozen', // 写 `Scene+46676`（判据是"frozen ⇒ 恒假"，置脏没有任何后果）
+    'scBeginRenderPass', // 每遍绘制开头：**清** dirty/pending（与"变更型 op 置 dirty"正好相反）
+    'scEnsureEffect3DSlots', // 惰性补齐 3D 效果槽（引擎也是绘制期判空后建；不改变可见内容）
+    // ★审计 §4.2 #18/#21：气象/效果推进与阈值写入（推进本身由 `scWeatherAdvance` 置脏，其余两条是参数面）
+    'scWeatherSetClock', // 注入本帧时钟（引擎 `Scene+46500` 的等价物；不改变模型内容）
+    'scWeatherNodeKey', // `sub_4535F0` 的销毁判据半边（只在**命中阈值**时改槽；由调用方按需置脏）
+    'scWeatherSetDestroyThresholds', // `0x325` 的两个阈值（引擎也不置脏）
   ];
   assert.deepEqual(
     readOnly.sort(),

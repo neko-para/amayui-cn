@@ -127,7 +127,7 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "releaseAllMouse(): void",
       "note": "【第三轮·决定 ①】现状：本工程「焦点」的唯一作用就是这次兜底释放（配 releaseAllKeys）⇒ 提升为调试器显式控制（focus off 等价于这两个调用）改动很小；InputSnapshot 里没有引擎焦点态",
-      "line": 301
+      "line": 429
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -139,7 +139,7 @@
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "this.hitTestPending = true; // 等待泵消费它时做一次 sub_403C50",
       "note": "【订正 5】hover 可注入（1/4）：setCursor 位置**变化**即置 mouseMoved + hitTestPending，并回调 onCursorMove",
-      "line": 259
+      "line": 387
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",

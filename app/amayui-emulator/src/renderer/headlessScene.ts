@@ -14,7 +14,13 @@
 import { agfSizeOf } from '../arch/agfSize.js';
 import {
   scAdvance,
+  scBeginRenderPass,
   scPoolPending,
+  scSetScenePending,
+  scSetSceneFrozen,
+  scWeatherSetClock,
+  scSceneCommitRange,
+  enqueueSceneCommitNodes,
   scAnimationsPending,
   sceneNeedsRender,
   scClearDrawContainer,
@@ -46,6 +52,7 @@ import {
   scSetSceneTranslation,
   scSetSceneAxisScale,
   scSetSceneAxisTranslation,
+  scSetSceneRotationRad,
   scSetFlipbook,
   scSetRotationAnim,
   scSetScale,
@@ -509,9 +516,43 @@ export class HeadlessScene implements NativeBridge {
     scSetSceneAxisScale(this.scene, a, b, sx, sy, sz);
   }
 
-  /** `0x22F` Scene 级带轴平移（op1/op2 = int，op3/4/5 不除）。 */
+  /** `0x22F` Scene 级带轴成分（op1/op2 = int，op3/4/5 不除）。 */
   setSceneAxisTranslation(a: number, b: number, x: number, y: number, z: number): void {
     scSetSceneAxisTranslation(this.scene, a, b, x, y, z);
+  }
+
+  /**
+   * ★**Scene 自己的"绕轴旋转"角（度）** —— 引擎 `RenderScene` 层号支 raw 133427 的第二个实参
+   * `*(float *)(Scene + 1856)`（配套轴 = `Scene + 1844`）。
+   *
+   * 为什么要有这个入口：那个格在反编译里**只有读点、没有写点**（见 `scene/state.ts` 的
+   * `sceneRotRad` 说明）⇒ 它的运行期取值无法静态判定，默认 0（恒等旋转 = 与修前逐字节相同）。
+   * 实测/回归需要注入时走这里（内部存**弧度**，与 `Item.rotRad` 同口径）。
+   */
+  setSceneRotationRad(rad: number): void {
+    scSetSceneRotationRad(this.scene, rad);
+  }
+
+  /**
+   * ★★**渲染冻结总闸 `Scene+46676`**（审计 §4.2 #24，`tickets/T-0167` 的 §4.2 #8 同族）。
+   *
+   * 引擎里该格**零写点**（105 处读、0 处写）⇒ 运行期取值只能由宿主注入：这个入口就是那条缝
+   * （pixi 宿主同名方法；两个宿主都落同一个共享字段 `SceneState.frozen`）。
+   * 置位 ⇒ `scAdvance` 不推进任何窗、`sceneNeedsRender` 恒假（整趟渲染提交被跳过）。
+   */
+  setSceneFrozen(frozen: boolean): void {
+    scSetSceneFrozen(this.scene, frozen);
+  }
+
+  /**
+   * **`0x222` 3D 层区间提交**（审计 §4.2 #19 / `tickets/T-0167`）：`start` = 起始 handle、
+   * `count` = 跨度 ⇒ 区间 `[start, start + count)`。压进 `SceneState.commitQueue`，
+   * 由帧末的 `scSceneCommitRange`（本宿主 `advanceModel` 里）消费。
+   *
+   * ★与 pixi 宿主同名同语义（两个宿主都必须有 ⇒ `native-tap.test.ts` 的"差异只允许一个方向"）。
+   */
+  sceneCommitRange(start: number, count: number): void {
+    enqueueSceneCommitNodes(this.scene, start, count);
   }
 
   // ---- A4 族（2026-09）：全部走共享场景语义（`scene/ops.ts` 的 `scXxx`）----
@@ -797,6 +838,17 @@ export class HeadlessScene implements NativeBridge {
     // ★Live2D：动作推进**只在"这一帧真要画的节点"上**发生（引擎 `sub_4783D0` → `sub_4BCB50`）——
     //   与上面 `advance` 同一个时钟域，两个宿主共用 `scL2dTick` 一份实现（T-0054）。
     scL2dTick(this.scene, nowMs);
+    // ★★**3D 层提交的帧级部分**（审计 §4.2 #19：`sub_4B4460` 的清脏位 / `sub_4A1E90` 世界矩阵复位 /
+    //   `0x222` 排队区间的逐 key 天气节点判据 / bit0 分派 / `sub_453540` 按墙钟推进）。
+    //   ★**位置要紧**：它在 `poolPending()` 探针之下 —— 提交末尾会清 `46516`（引擎每遍绘制开头清），
+    //   而探针读的正是"这一遍绘制期有没有东西在动" ⇒ 必须先让它把 `46516` 置起来再锁存
+    //   （见下面 `scSetScenePending`；顺序反了就会把这一次的池挂起位吞掉）。
+    scWeatherSetClock(this.scene, nowMs);
+    scSceneCommitRange(this.scene, nowMs);
+    // ★★**池挂起位 `Scene+46516` 的场景侧锁存**（审计 §4.2 #2）：探针与引擎同序取
+    //   （所有推进之后 = "本遍绘制期置位、帧末读它"）⇒ 下一次 `needsRender()` 就能看到它
+    //   （引擎 raw 136718-136719 的 `46512|46516 ⇒ 46508 = 1`）。
+    scSetScenePending(this.scene, freeze ? false : scPoolPending(this.scene, nowMs));
   }
 
   /**
@@ -823,13 +875,21 @@ export class HeadlessScene implements NativeBridge {
     return sceneNeedsRender(this.scene, this.clockMs, this.scene.dirty);
   }
 
+  /** `Scene+46676` 的当前值（审计 §4.2 #24；报告/守卫可读）。 */
+  sceneFrozen(): boolean {
+    return this.scene.frozen;
+  }
+
   /**
    * 导出确定性快照。**同时清脏位**：快照就是 headless 的"合成一帧"，
    * 之后若模型没再变、也没有窗在跑，`needsRender()` 就应当回到 false。
+   *
+   * ★同时清**池挂起位**（`Scene+46516`）：引擎每一遍绘制开头都把它清 0（raw 130427-130428），
+   * 而"取快照"就是 headless 的那一遍绘制 ⇒ 两格一起消费（审计 §4.2 #2）。
    */
   snapshot(): SceneSnapshot {
     const s = scSnapshot(this.scene, this.clockMs, this.scene.l2dHost);
-    this.scene.dirty = false;
+    scBeginRenderPass(this.scene); // dirty + pending 一起清 = 引擎每遍绘制开头的 46508/46516 = 0
     return s;
   }
 

@@ -55,6 +55,21 @@ export interface FrameHost {
   /** 音频帧泵（`Engine+430600` 那一族的等价物）。目前只有 Electron 有（见 T-0006）。 */
   audio?(intent: AudioIntent): void;
   /**
+   * **外部挂起渲染**（引擎 `Engine+675968`，dword 下标 **168992**；`tickets/T-0167` 的 §4.2 #7）。
+   *
+   * 引擎的**两个**写入点都在窗口/显示层，而不是脚本层：
+   *  - 置 1：`sub_406050`（raw 11517-11544）—— 弹模态框 / 切显示模式**之前**「挂起渲染」
+   *    （`*(_DWORD *)(_this + 675968) = 1;`，随即 `SendMessageA(hwnd, 0x1400, …)` 并置 `effect_flags |= 0x200000`）；
+   *  - 清 0：`sub_406220`（raw 11625-11631）—— `SetWindowPos` 之后恢复。
+   * 主循环的帧提交门（raw 20742-20745）读到它非 0 时 `v92 = 0`：**整个 D3D 提交块被跳过**
+   * （含 raw 20750-20751 的帧时钟写与 raw 20758 的 `sub_4B4040`）。
+   *
+   * ⇒ emulator 里"弹窗/切显示模式"就是宿主（窗口层）的事，所以它是宿主缝；未实现 ⇒ 视为"未挂起"。
+   * ★注意名字：字段名 `aSetIsreggist` 与 raw 20577 的 `set:IsReggist` 配置读**无关**（那是局部量 `v97`），
+   *   审计报告 §4.2 #7 把它写成「外部暂停（aSetIsreggist）」是张冠李戴。
+   */
+  renderSuspended?(): boolean;
+  /**
    * **本宿主的场景模型**（`FrameDigest` 的输入之一；`tickets/T-0003` 验收 4）。
    *
    * ★为什么不按设计文档 §3 把 `digest()` 整个放在宿主上：digest 的 engine 段大部分是 **Engine**

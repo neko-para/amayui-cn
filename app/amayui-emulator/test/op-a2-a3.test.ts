@@ -333,7 +333,7 @@ test('0x7A / 0x25C / 0x25E / 0x25F：写消息窗对象字段（含颜色组装�
   assert.equal(o.f268, ((0xdd & 0xff) << 24) | (0x0a << 16) | (0x0b << 8) | 0x0c);
 });
 
-test('0x205：数字格式化（补零/符号/溢出）+ op2 写回（x 前进量）', () => {
+test('0x205：数字格式化（补零/符号/溢出）+ op2 只读、不回写（x 前进量只进绘制）', () => {
   // ★引擎的缓冲区是**从右往左填**、只有写过的格子才有字符（未写的格子是 NUL，串从首个写过的格子开始）
   //   ⇒ 返回的 ascii 不含前导空格，"左侧空了几格"由 `start`（引擎的 v13）表达。
   assert.deepEqual(formatNumberCell(123, 4, 0), { ascii: '123', start: 1 }, '宽 4 的右对齐 ⇒ 左侧空 1 格');
@@ -342,7 +342,12 @@ test('0x205：数字格式化（补零/符号/溢出）+ op2 写回（x 前进�
   assert.deepEqual(formatNumberCell(-42, 4, 0), { ascii: '-42', start: 1 }, '负数符号占一格');
   assert.deepEqual(formatNumberCell(-5, 1, 0), { ascii: '#', start: 0 }, '字段太窄（宽-2<0）⇒ 溢出标记 #');
 
-  // handler 部分：op2（x）是 in/out —— 引擎 `*x = x + 前进量`
+  // handler 部分：op2（x）**只读** —— 引擎 `sub_4233E0`（raw 31470-31491）把 op2 读进栈局部
+  //   （`int v8; // BYREF`），只更新 `&v8` 后交给 `sub_456710` 绘制，**从不回写操作数**。
+  //   `tickets/T-0147`（审计 §4.1 的 P1 `0x205 host-invented`）已按体订正实现；
+  //   ★本处原断言写的是旧实现（`*x = x + 前进量`）的错期望 ⇒ 按纪律**改指**为体证（不是放宽）：
+  //   三种 flags 下 op2 都必须保持原值。"前进量真的进了绘制 x"这一面由
+  //   `test/op-205-no-writeback.test.ts` 第 3 例守卫（那里注入 drawString 宿主看 x=190）。
   const { e, f, step } = mk();
   const rd = (slot: number): number => dec(e.key, f.locals.int.get(slot) ?? 0) | 0;
   const set = (slot: number, v: number): void => void f.locals.int.set(slot, enc(e.key, v));
@@ -350,16 +355,18 @@ test('0x205：数字格式化（补零/符号/溢出）+ op2 写回（x 前进�
   e.engineValues.set(71745, 10); // cy = 字号 = 10
   set(5, 100); // x
   step(0x205, [im(196), loc(5), im(50), im(7), im(4), im(0)]);
-  // 右对齐全角：宽 4 装 1 位数 ⇒ 左侧空 3 格，前进量 = start*cy = 3*10
-  assert.equal(rd(5), 130, 'op2 应被回写为 x + 前进量（3 个空格 × cy=10）');
-  // 左对齐（bit2）⇒ 前进量 0 ⇒ x 不变
+  // 右对齐全角：宽 4 装 1 位数 ⇒ 左侧空 3 格（前进量 3*cy 只作用于绘制，不回写）
+  assert.equal(rd(5), 100, 'op2 必须保持原值（引擎的 x 前进量只在栈局部 v8 上）');
+  // 左对齐（bit2）
   set(5, 100);
   step(0x205, [im(196), loc(5), im(50), im(7), im(4), im(4)]);
   assert.equal(rd(5), 100);
-  // 半角（bit16）+ 居中（bit1）⇒ start*cy/2 = 3*10/2
+  // 半角（bit16）+ 居中（bit1）
   set(5, 100);
   step(0x205, [im(196), loc(5), im(50), im(7), im(4), im(0x10000 | 2)]);
-  assert.equal(rd(5), 115);
+  assert.equal(rd(5), 100, '三种 flags 下都不回写 —— `plan.setInt(2, nx)` 是 host-invented');
+  // 立即数 op2（语料 `i205 c5 166 50 …` 的第二格就是立即数）：修前 `writeIntOperand` 会硬抛
+  assert.doesNotThrow(() => step(0x205, [im(196), im(50), im(50), im(7), im(4), im(0)]));
 });
 
 test('0x249 / 0x245 / 0x246：纹理槽绑定与对象参数转发', () => {

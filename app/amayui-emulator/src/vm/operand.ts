@@ -148,10 +148,50 @@ export function setRefOperand(e: Engine, frame: Frame, instr: BinInstruction, n:
   }
 }
 
-/** 读第 n 个操作数为字符串（用于 string→resource-id 之类的子系统 op；非字符串型取 raw 兜底）。 */
+/** 引擎 `_itoa_s(v, buf, 0x400, 10)` 的等价物：**有符号 32 位十进制**（无前导零/空格）。 */
+function intToDecimal(v: number): string {
+  return String(v | 0);
+}
+
+/**
+ * 引擎 `sub_408050(buf, 1024, "%lf", v)` 的等价物：C `%lf` 的**默认精度 6**（非有限值按 C 的 `nan`/`inf` 形态）。
+ */
+function floatToLf(v: number): string {
+  if (Number.isNaN(v)) return 'nan';
+  if (!Number.isFinite(v)) return v > 0 ? 'inf' : '-inf';
+  return v.toFixed(6);
+}
+
+/**
+ * 读第 n 个操作数为字符串（引擎「取字符串」原语：`sub_41B640` raw 26248-26359 / `sub_42A420` raw 36317-36544 /
+ * `sub_41B9B0` raw 26365-26470 三条**同构**）。
+ *
+ * ★**引擎的这条原语带"数值 → 字符串"强制转换**，逐 case 对照（以 `sub_41B640` 为准，另两条同形）：
+ *
+ * | operand tag | 引擎行为 | 本实现 |
+ * |---|---|---|
+ * | `0` 立即 int | `_itoa_s(*v8, buf, 0x400, 10)` | `String(raw \| 0)` |
+ * | `1` 立即 float | `sub_408050(…, "%lf", *(float*)v8)` | `floatBits(raw).toFixed(6)` |
+ * | `2` 内嵌字面量（倒置存储：逐 dword 取反到 0xFF 结尾） | 解倒置后原样用 | 解析器已解出 `a.str` |
+ * | `3`/`9` 全局/局部 int 值池 | `_itoa_s(DEC(池值), …, 10)` | `readIntOperand`（含 DEC）→ 十进制 |
+ * | `4`/`10` 全局/局部 float 值池 | `%lf` | `readFloatOperand` → `%lf` |
+ * | `5`/`11` 全局/局部 string 值池 | 取串（SSO：`+20 < 0x10` 内联） | 池取串 |
+ * | `6`/`12` int 指针族 | `_itoa_s(DEC(*指针), …, 10)` | `readIntOperand`（解引用 + DEC）→ 十进制 |
+ * | `7`/`13` float 指针族 | **`default:` ⇒ 抛 `Command_Type_Exception`**（引擎不支持） | 同样抛错 |
+ * | `8`/`14` string 指针族 | 解引用取串 | `readStringRef` |
+ * | `0x8003`/`0x8009` int 数组 | 首元素 `DEC` → `_itoa_s`；空容器 ⇒ 哨兵串 `asc_5205D4`(2 字节) | **未建模**（语料 0 处触发，见下） |
+ *
+ * 修前本函数对**全部数值族**一律 `String(a.raw)` —— 那返回的是**槽号**而不是值，于是 `0x192 set-string`/
+ * `0x193 concat`/`0x1B2 text-append` 在真实语料上产出错串。语料命中（本次审计 `T-0165`）：
+ * `COMMITDR.txt:9`（`concat … (global-int a40e1)`）、`FIELD.txt:8595/8710/9416`（`local-ptr`）、
+ * `FIELD.txt:9365`（`local-int`）、`ALCHEMY.txt:1063`（`local-ptr`）、`REACH.txt:2243/2264`（`local-ptr`）、
+ * `SYSTEM4.txt:463-464`（`i1b2 (global-int 0)`）。
+ * 引擎依据：`analysis/functions.json` 的 `sub_41B640`/`sub_42A420`/`sub_41B9B0`；守卫 `test/op-string-coercion.test.ts`。
+ */
 export function readStringOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): string {
   const a = operandArg(instr, n);
   switch (a.type) {
+    // ── 字符串族：原样取串（引擎 case 2/5/8/11/14）──
     case TYPE_LOCAL_STRING:
     case TYPE_LOCAL_STRING2:
       return a.str ?? String(frame.locals.str.get(a.raw) ?? '');
@@ -161,8 +201,26 @@ export function readStringOperand(e: Engine, frame: Frame, instr: BinInstruction
       return readStringRef(e, frame, readRefSlot(e.globals.strPtr, a.raw));
     case TYPE_LOCAL_STRING_PTR:
       return readStringRef(e, frame, readRefSlot(frame.locals.strPtr, a.raw));
+    // ── 数值族：按引擎**转成十进制/浮点串**（★本轮修复：此前返回槽号）──
     case TYPE_IMMEDIATE_INT:
+      return intToDecimal(a.raw);
     case TYPE_IMMEDIATE_FLOAT:
+      return floatToLf(floatBits(a.raw));
+    case TYPE_GLOBAL_INT:
+    case TYPE_LOCAL_INT:
+    case TYPE_GLOBAL_PTR:
+    case TYPE_LOCAL_PTR:
+      return intToDecimal(readIntOperand(e, frame, instr, n));
+    case TYPE_GLOBAL_FLOAT:
+    case TYPE_LOCAL_FLOAT:
+      return floatToLf(readFloatOperand(e, frame, instr, n));
+    // 引擎对 float 指针族走 `default:` ⇒ 抛 `Command_Type_Exception`（不是静默给个值）。
+    case TYPE_GLOBAL_FLOAT_PTR:
+    case TYPE_LOCAL_FLOAT_PTR:
+      throw new Error(
+        `readStringOperand: float 指针族 0x${a.type.toString(16)} 不能转字符串（引擎 sub_41B640/sub_42A420 的 default 分支抛 Command_Type_Exception）`,
+      );
+    // 数组族和其它未建模 tag：保持旧口径（语料 0 处触发），不静默改变已有行为。
     default:
       return String(a.raw);
   }

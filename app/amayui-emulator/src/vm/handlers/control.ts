@@ -328,25 +328,51 @@ const DISPATCH_FRAME = 37;
 const DISPATCH_SENTINEL = -10;
 
 /**
+ * 把「派发中」写进**引擎字段** `_this[124350]`（byte 497400）并同步 JS 侧镜像 `Engine.dispatching`。
+ *
+ * 为什么要成对写（`tickets/T-0157`）：`ENGINE_FIELD.dispatchInProgress` 在本票之前**只有读没有写**
+ * （读点：`0xD9` 的 `handlers/engine-fields.ts:437`、`0x1F5` 的派发门 raw 25226）⇒ 它永远读回 0，
+ * 0x1F5 的门就成了"恒为真"的死键。引擎的写点有 5 处：raw 18149（构造清 0）、18980（`sub_40FB60`
+ * 装载时置 1）、25176/25187（`0x143` 的入队循环）、25667（`exit` 的 -10 收尾清 0）。
+ * `Engine` 类本身（`src/vm/engine.ts`）不在本票的可写路径内 ⇒ 用这个**唯一的成对写点**代替
+ * getter/setter 代理：本文件里所有写 `dispatching` 的地方都必须走它，两个表示才不会各自漂移。
+ */
+function setDispatching(e: Engine, on: boolean): void {
+  e.dispatching = on;
+  e.engineValues.set(ENGINE_FIELD.dispatchInProgress, on ? 1 : 0);
+}
+
+/**
  * 把队列里的下一条请求装载起来执行（引擎 `sub_40FB60`，raw 18954-19016）。
  *
  * 引擎语义（逐条对齐）：
+ *  - **入口停靠闸**（raw 18966 `if ( !*(_DWORD *)(_this + 429752) )`）：停靠标志为 1 时**整段不执行**
+ *    —— 不弹队、不装帧、不动 `dispatching`。请求留在队列里，等 0x1F5（raw 25227 先清标志、25229 再调）
+ *    或 0x7C（raw 25822）那一刻的重试；
  *  - 弹出队首请求 `id`（正数 = 装载脚本）；
- *  - `saved_cur/saved_flags = cur/effect_flags`（383112/383116），`dispatching = 1`（497400），
- *    `cur = 37`，`sub_40ED40(this, …, id)` 装载并开始执行 —— **发起者（INIT2）被挂起**；
- *  - 队列排空时由 `exit` 的 `-10` 分支还原 `cur/effect_flags`（raw 25663-25668）⇒ 发起者接着跑下一条指令。
+ *  - `saved_cur/saved_flags = cur/effect_flags`（383112/383116），`dispatching = 1`（497400，raw 18980），
+ *    `cur = 37`（raw 18987），`sub_40ED40(this, …, id)` 装载并开始执行 —— **发起者（INIT2）被挂起**；
+ *  - 队列排空（或停靠中不派发）时由 `exit` 的 `-10` 分支还原 `cur/effect_flags`（raw 25663-25668）⇒ 发起者接着跑下一条指令。
  *
- * 调用方：`op_dispatch_script_requests`（首条）与 `op_exit` 的 `-10` 分支（后续各条）。
+ * 调用方：`op_frame_countdown`（`0x1F5`，raw 25229 —— **停靠结束那一刻的重试派发点**，见 `handlers/frame.ts`）、
+ * `op_dispatch_script_requests`（`0x143` 尾部的首条，raw 25190）与 `op_exit` 的 `-10` 分支（后续各条，raw 25672）。
+ * ★导出给 `handlers/frame.ts` 用：本函数是本仓 `sub_40FB60` 的**唯一实现**，不得再抄第二份。
  */
-async function dispatchNextRequest(c: StepCtx): Promise<void> {
+export async function dispatchNextRequest(c: StepCtx): Promise<void> {
   const e = c.e;
-  if (e.scriptRequests.length === 0) {
-    // 队列排空：还原派发前的现场（引擎 383112/383116）⇒ 发起者（INIT2）在 ip 已推进处继续。
+  // ★raw 18966 的停靠闸。修前（`tickets/T-0157` 之前）这道闸在重写侧**完全不存在** ⇒ 队列任何时刻
+  //   都能被直接派发（审计 2026-09 §4.1 第 283 条 `0x1f5 missing-dispatch`）。
+  const docked = (e.engineValues.get(ENGINE_FIELD.frameTickLock) ?? 0) !== 0;
+  if (e.scriptRequests.length === 0 || docked) {
+    // 队列排空 / 停靠中不派发：还原派发前的现场（引擎 383112/383116；`-10` 分支 raw 25663-25668）
+    // ⇒ 发起者（INIT2）在 ip 已推进处继续。
+    // ★停靠中与排空走同一条收尾：引擎在停靠中也是「`sub_40FB60` 什么都不做」，
+    //   调用方（`-10` 分支）在调它**之前**已经还原完现场 ⇒ 发起者照常继续，请求留在队列里。
     if (e.dispatchSavedCur >= 0) {
       e.cur = e.dispatchSavedCur;
       e.effectFlags = e.dispatchSavedFlags;
       e.dispatchSavedCur = -1;
-      e.dispatching = false;
+      setDispatching(e, false); // 引擎 raw 25667（497400 = 0）
     }
     c.jump(-1); // 控制流已回到发起者，不要让 stepOnce 再推进它的 ip（i143 已手动 +1）
     return;
@@ -367,7 +393,7 @@ async function dispatchNextRequest(c: StepCtx): Promise<void> {
   loadScriptIntoFrame(frame, script, src.name, id);
   frame.caller = DISPATCH_SENTINEL;
   frame.frameArg = 0;
-  e.dispatching = true;
+  setDispatching(e, true); // 引擎 raw 18980（497400 = 1）
   e.cur = DISPATCH_FRAME;
   frame.ip = 0;
   c.log(`  [dispatch] 0x${id.toString(16)} -> ${src.name}（扩展包 ${id >>> 24} 的 $n$AUTORUN，帧 ${DISPATCH_FRAME}）`);
@@ -393,11 +419,11 @@ const op_dispatch_script_requests: OpHandler = async (c) => {
   if (!e.fileSource?.appendPackNumbers) return; // 宿主未提供扩展包表 ⇒ 视作「一个包都没装」
   const packs = await e.fileSource.appendPackNumbers();
   if (packs.length === 0) return;
-  e.dispatching = true; // 循环内只入队（与引擎 497400=1 同义）
+  setDispatching(e, true); // 引擎 raw 25176（循环内只入队：497400 = 1）
   // ★按包号升序入队：引擎遍历的是 `FileDB.packs` 槽 1..255（槽序 = 包号序），与宿主给的顺序无关。
   for (const n of [...packs].sort((a, b) => a - b)) e.scriptRequests.push(n << 24); // 包号<<24 = 该包文件 #0
-  e.dispatching = false;
-  await dispatchNextRequest(c);
+  setDispatching(e, false); // 引擎 raw 25187（循环结束：497400 = 0）
+  await dispatchNextRequest(c); // 引擎 raw 25190（0x143 尾部调 sub_40FB60 派发首条）
 };
 
 /**
@@ -484,7 +510,7 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.effectFlags = 0;
   // 引擎 exit-script 是整体复位（sub_428A60：释放 40 帧 + 清全局内存池 + 引擎复位）⇒ 派发队列与现场一并作废。
   c.e.scriptRequests.length = 0;
-  c.e.dispatching = false;
+  setDispatching(c.e, false); // 引擎整体复位 ⇒ 497400 回初值 0（构造点 raw 18149）
   c.e.dispatchSavedCur = -1;
   c.e.advFields.clear();
   c.e.globalSlot97058 = 0;

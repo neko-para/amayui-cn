@@ -38,10 +38,10 @@
       "line": 194
     },
     {
-      "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
-      "anchor": "[0x10c, op_engine_internal]",
-      "note": "0x10C(SetKeyMulti) 被注册成无条件 no-op，但它写的是引擎每帧输入扫描读的 VK→掩码位表（raw 30623-30632）",
-      "line": 258
+      "file": "app/amayui-emulator/src/vm/handlers/input.ts",
+      "anchor": "[0x10c, op_set_key_multi]",
+      "note": "0x10C(SetKeyMulti) 已按体真实现（T-0163）：读 op1=位号 / op2=键码、unsigned >0x1F 抛引擎同文 ShowMessageError、写 `Input[1176 + Input[1432+键码]] = 位号`。两张运行期表 = `src/vm/input.ts` 的 `keycodeToVk` / `vkToBit`；守卫 = `test/input.test.ts` 的 0x10C ①②③④ 与 `test/keyboard-mask.test.ts` ⑤。原文（「被注册成无条件 no-op」）已不成立。",
+      "line": 481
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -79,6 +79,11 @@
       "at": "2026-09-20",
       "what": "open → done —— 轮 6 收口（13 处剩余条目全部落地，守卫全绿）；① 0x12E 按体重写（sub_42F230 raw 39199-39252：首项 = op1+1、两道边界门 raw 39230-32/39248-49、四点判据 raw 39242、x/y 平面按记录下标 j 步进 raw 39245-46、margin 基址==记录基址⇒跳过 raw 39239-44）⇒ ALLOW_UNDERRUN 里最后一条「确认是 bug」条目已删，守卫仍绿（= 机械证明）；② Live2D 节点族 7 条按体订正：0x348 **是轴角旋转**（轴 +464/468/472、角 +488，sub_4AFE90 raw 134058-134100）不再复用缩放 handler；0x347/0x349/0x34A/0x34B/0x34C/0x34D 改按体读 float 与正确 delay/dur/分量顺序（0x34B 的 op2/op3 是 int、op4..op6 是 float 三分量）；补窗门 record[0]&1。真语料收益：i34d 12 处（BTL）此前 delay/dur 与平移分量整体错位；③ 0x203 按体补 clamp（α>255⇒255）与负值回退（α<0⇒当前 α、color<0⇒当前 ARGB，取 sub_4ADD60 = DrawItem+0x60）；新增宿主缝 native.getDrawItemColor（五处同步）；④ 0x323 的裸命名订正（op2/op3 只是透传给 sub_4AE330 的记录窗参数字段，raw 132826-132846；clamp/回退在 scene/ops.ts 的 vertexColorArg，已有 test/mesh-vertex-quad.test.ts）；⑤ 0x325/0x10C/0x324 的 no-op 定性（此前已完成）；★仍未做（另立票）：Live2D 节点矩阵合成器 sub_4A07F0（raw 121131-121520）未实现 ⇒ 节点变换字段暂无消费端（语料下不可观测）；0x33f 的效果常量通路仍缺消费端（回链 T-0017）",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— T-0163 修复 0x10C 后，本条 evidence 的 anchor `[0x10c, op_engine_internal]` 随 stubs.ts 的旧桩一起消失 ⇒ 按票据纪律**改指**到新实现（anchors 是 ABI，只许改指不许删）。"
     }
   ]
 }

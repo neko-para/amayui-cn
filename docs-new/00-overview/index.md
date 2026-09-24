@@ -15,7 +15,7 @@ generated_by: scripts/build-doc-index.mjs
 > ★**读文档前先看 `state`**：`live` 才是现行结论；`record` 是**一次性取证的历史快照**（结论已落台账，
 > 只作票据证据锚点用）；`generated` 一律勿手改，改真源后重跑生成器。
 
-共 **105** 份：📋 流程 18 · ⚙️ 生成物 40 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 13；按 state：live 92 · consumed 13
+共 **108** 份：📋 流程 18 · ⚙️ 生成物 40 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 16；按 state：live 92 · consumed 16
 
 ## `00-overview/`（7）
 
@@ -138,7 +138,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/SYSTEM4.md`](./../05-scripts/SYSTEM4.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SYSTEM4 |
 | [`05-scripts/TITLE.md`](./../05-scripts/TITLE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · TITLE |
 
-## `99-records/`（13）
+## `99-records/`（16）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
@@ -150,6 +150,9 @@ generated_by: scripts/build-doc-index.mjs
 | [`99-records/2026-09-b3/b3-bit2-model-spec-2026-09.md`](./../99-records/2026-09-b3/b3-bit2-model-spec-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | B3 实现规格：Item.flags bit2 族（opcode 0x230 / 0x231 / 0x235，连带 0x（结论已落 `analysis/engine-capabilities.json`） |
 | [`99-records/2026-09-b3/b3-screening-2026-09.md`](./../99-records/2026-09-b3/b3-screening-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | B3 剩余未实现指令 · 逐条筛体（2026-09）（结论已落 `analysis/opcode-gaps.json`） |
 | [`99-records/2026-09-datamodel/data-model-2026-09.md`](./../99-records/2026-09-datamodel/data-model-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 数据模型（2026-09 重新设计 · 提案，未生效）（结论已落 `docs-new/00-overview/authority.md`） |
+| [`99-records/2026-09-impl-audit/impl-audit-2026-09.md`](./../99-records/2026-09-impl-audit/impl-audit-2026-09.md) | 🗄 历史记录 | 📤 已消费 | `docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）（结论已落 `tickets/README.md`） |
+| [`99-records/2026-09-impl-audit/raw/coverage.md`](./../99-records/2026-09-impl-audit/raw/coverage.md) | 🗄 历史记录 | 📤 已消费 | — | 覆盖账（机器生成）（结论已落 `docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md`） |
+| [`99-records/2026-09-impl-audit/raw/summary.md`](./../99-records/2026-09-impl-audit/raw/summary.md) | 🗄 历史记录 | 📤 已消费 | — | 汇总（机器生成骨架；最终叙述见 records 报告）（结论已落 `docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md`） |
 | [`99-records/2026-09-live2d/CONTEXT.md`](./../99-records/2026-09-live2d/CONTEXT.md) | 🗄 历史记录 | 📤 已消费 | — | CONTEXT — Live2D（TITLE）实现进度快照（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-live2d/live2d-deform-semantics.md`](./../99-records/2026-09-live2d/live2d-deform-semantics.md) | 🗄 历史记录 | 📤 已消费 | — | Live2D（Cubism 2.0.06 for DirectX）变形与顶点生成 + 每帧求值语义（结论已落 `tickets/T-0054/notes.md`） |
 | [`99-records/2026-09-route-c/route-c-text-metrics-2026-09.md`](./../99-records/2026-09-route-c/route-c-text-metrics-2026-09.md) | 🗄 历史记录 | 📤 已消费 | — | 扩展路线 C「字形度量」实测：0x1D0 / 0x1D1 的真身与处置（结论已落 `analysis/opcode-gaps.json`） |

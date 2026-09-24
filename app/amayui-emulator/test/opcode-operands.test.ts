@@ -45,7 +45,9 @@ const ROOT = path.join(HERE, '..', '..', '..');
  */
 const ALLOW_UNDERRUN: Record<string, string> = {
   // ---- 已登记为 no-op / engine-internal（见 analysis/opcode-gaps.json；它们本就不读操作数）----
-  '0x10c': 'engine-internal no-op（有据跳过 —— 体写 VK→掩码位表 `Input[1176+VK]`（op2 经键码表 `Input[1432+键码]`），但 emulator 无键码表/VK→位表、宿主键盘也不进掩码 ⇒ 写入无消费者；T-0052 落地后必须转真实现）',
+  // ★`0x10c`（SetKeyMulti）**已按体修复**（2026-09，`tickets/T-0163`，审计 §4.1 的 P1/P2/P3）：
+  //   它现在在 `OPS`（`handlers/input.ts` 的 `op_set_key_multi`）里读满 op1(位号)/op2(键码)、
+  //   越界抛 `ShowMessageError`、写两张可改写按键表 ⇒ 白名单条目已删（删后本测试仍绿 = 修好的机械证明）。
   '0x137': 'engine-internal no-op（ResetStack；int 栈家族语料 1 处、无压栈 ⇒ 观测等价）',
   '0x2fa': 'engine-internal no-op（只写无人读的 Engine[1951]）',
   '0x308': 'STUB_NATIVE_OPS 的 unhandled 桩（op1/Engine[1954] 未建模；见 stubs.ts 注释）',
@@ -53,6 +55,13 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x30a': 'engine-internal no-op（键位注册；emulator 无按键表）',
   '0x325': 'engine-internal no-op（有据：体写 Effect3D 管理器 [+0x4D8]/[+0x4DC] 的销毁判据，emulator 无 Effect3D 子系统）',
   '0x326': 'engine-internal no-op；体建 ID3DXEffect 并重建 Snow（3D 子系统缺口 ⇒ T-0076）',
+  // ★`0x222`（3D 层区间提交，审计 §4.2 #19 `render-3d-layer-dual-commit`）：**本条目已删**
+  //   （2026-09-24 接通）：宿主缝 `NativeBridge.sceneCommitRange(op1, op2)` 已加
+  //   （`src/vm/native.ts` + `nativeTap.ts` 的 `BRIDGE_METHODS`），handler = `OPS` 的
+  //   `op_scene_commit_range`（`handlers/scene-commit.ts`），两侧宿主各一句
+  //   `enqueueSceneCommitNodes(scene, start, count)` 压进 `SceneState.commitQueue`，
+  //   帧末由 `scSceneCommitRange` 消费 ⇒ `operandPlan` 已为它声明 `['int','int'] / ['r','r']`，
+  //   两个操作数**真的被读并被消费** ⇒ 不再需要"缺消费端"豁免（本表判据即此）。
   // ★SETWEATHER 族 5 条（`tickets/T-0093`，轮 6）：体内**没有**任何操作数写原语（逐条机械扫描过
   //   `sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0`），且**引擎确实读**这些操作数 ——
   //   所以这里是「缺消费端（emulator 无 3D 子系统）」的有据豁免，**不是**引擎死读。

@@ -40,7 +40,7 @@
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
       "anchor": "(this.buttons & 1)",
-      "line": 438,
+      "line": 568,
       "note": "两把刷子：这一行是实时刷 flushHeld（保留按住态）；消费刷 flushPending 不含它｜★2026-09-23 行号刷新：T-0134 WS-1 往 input.ts 插了 hostFocus/setHostFocus ⇒ 该锚下移，行号 396→438。"
     },
     {
@@ -74,8 +74,7 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ],
     "analysis": [
-      "adv-input-pump-perframe",
-      "frame-pump-input-refresh"
+      "adv-input-pump-perframe"
     ],
     "tickets": [
       "T-0007",

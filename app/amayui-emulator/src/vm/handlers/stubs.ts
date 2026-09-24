@@ -104,7 +104,13 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // ★0x326/0x325 属 **3D 天气/粒子效果管理器**（见本文件 0x324 处的说明）：
   //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
   //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
-  [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + 重建 Snow（自带 `Scene+46668>=1` 门槛）→ sub_426E10/sub_418340
+  [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + `Scene+46668>=1` 门槛 → sub_426E10/sub_418340
+  // ★`0x222`（3D 层区间提交）**已移出本表**（2026-09-24，`tickets/T-0167` 的 §4.2 #19）：
+  //   它现在是 `OPS` 的真实现（`handlers/scene-commit.ts` 的 `SCENE_COMMIT_OPS`）——
+  //   宿主缝 `NativeBridge.sceneCommitRange(start, count)` 已加，落到
+  //   `renderer/scene/commit.ts` 的 `enqueueSceneCommitNodes(scene, op1, op2)`，
+  //   由帧末的 `scSceneCommitRange` 消费（与引擎"当帧提交"最多差一帧；完整引擎体与
+  //   那一条披露见 `handlers/scene-commit.ts`）。
   /**
    * `0x325`（`sub_426DC0` raw 33924-33938，argc=2）：**Effect3D 管理器（`Engine[93384]` = 字节 `0x5B320`
    * = `Scene+50704`）的 `[+0x4D8] = op1`、`[+0x4DC] = op2`**（汇编清单 61806-61820：
@@ -234,28 +240,24 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 采集与逐条评估见 docs-new/03-engine/scene-start-flow.md。
   // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
   /**
-   * `0x10C`（`sub_4220B0` raw 30616-30634，argc=2，**SetKeyMulti**）：
-   * `arity 槽 = 5` → `op1` = 掩码位（`>0x1F` 抛 ShowMessage「SetKeyMultiの引数が不正です．」）、
-   * `op2` = **键码** → 写 `Engine[1434+Engine[1690+op2]] = op1`（汇编清单 53610-53659：
-   * `mov edx,[esi+edi*4+1A68h]` / `mov [esi+edx*4+1668h],eax`）。
-   * 因 `Input` 是 Engine 的内嵌对象（`Input = Engine+1032` 字节，`Engine[258]` 即其 vftable，
-   * raw 92374-92380），等价于 `Input[1176 + Input[1432+op2]] = op1`：
-   *   - `Input[1176+VK]` = **VK→掩码位表**（引擎每帧 `sub_4770A0` raw 91551-91570 扫 0..255 个 VK，
-   *     `mask |= 1 << _this[1176+VK]`，落 `Engine[174802]` → `0x100`/`0x101`/ADV 派发）；
-   *   - `Input[1432+键码]` = **键码表**（`Input[1476] = 90` ⇒ 键码 `0x2c`='Z'、`Input[1460] = 13`
-   *     ⇒ 键码 `0x1c`=RETURN；默认值由 `sub_476AA0` raw 91325-91423 填，
-   *     `src/SYSTEM4.txt:87-97` 的 `i10c 4 1c` / `i10c 4 2c` 正对上）。
+   * ★**`0x10C`（SetKeyMulti）已从本表移出 ⇒ 真实现**（2026-09，`tickets/T-0163`，审计 §4.1 的 P1
+   * `stale-ledger` + P2 `missing-consumer` + P3 `missing-branch`）。
    *
-   * ★**台账处置 = `engine-internal`（有据跳过；T-0077 验收 2 的两种处置之一）**，理由：体确有真实效果，
-   *   但 emulator **没有这条链路** —— 无键码表、无 `Input[1176+VK]`、宿主键盘也不进掩码
-   *   （`InputManager.keyEdge` 只登记，`flushHeld`/`flushPending` 不并 0..6）⇒ 本指令的写入在 emulator
-   *   里**一个消费者都没有**（同族 `0x30a`「键位注册」同一口径），对 VM 不可观测。
-   *   ★但引擎侧**确有**消费者（每帧 `sub_4770A0` ⇒ 输入掩码 ⇒ `0x100`/`joy-callback`）⇒
-   *   **一旦 `tickets/T-0052`（键盘掩码位 0..6）落地，本指令必须从 `ENGINE_INTERNAL_OPS` 移进 `OPS`**。
-   *   扩展点 = `handlers/input.ts` 的 `op_set_key_multi`（先落 `Input[1176+VK]` 默认 7 键→位 0..6
-   *   与 `Input[1432+键码]` 默认表）。
+   * 修前：它在**这里**当纯 no-op，豁免理由写的是"emulator 无键码表 `Input[1432+键码]`、无运行期
+   * `Input[1176+VK]` 表、宿主键盘也不进掩码 ⇒ 本指令的写入一个消费者都没有"。
+   * 该理由在 `T-0052`（键盘→掩码位）落地后**已过期**，但 `T-0052` 交付的是**冻结常量**
+   * `DEFAULT_VK_TO_BIT`（只由 `pressKey`/`releaseKey` 直查、无运行期改写口）⇒ 本条的两处写入
+   * 其实仍零消费者，且 `op1 > 0x1F` 的越界实参被静默吞掉（既不抛也不写）。
+   * **真缺口是两张表都不存在**：
+   *   - `Input[1432+键码]`（**键码→VK**，默认值 = `sub_476AA0` raw 91325-91423）；
+   *   - `Input[1176+VK]`（**VK→掩码位**，**可改写**；消费者 = `sub_4770A0` raw 91551-91570 每帧扫 0..255 个 VK）。
+   *
+   * 现在：两张表都在 `InputManager` 上（`keycodeToVk` / `vkToBit`，默认值 = `sub_476AA0` 逐条抄录），
+   * 实现 = `handlers/input.ts` 的 `op_set_key_multi`（进 `INPUT_OPS` → `OPS`；体内零宿主缝 ⇒ 不是 native）。
+   * 实机后果对照（语料 `src/SYSTEM4.txt:87-97` 的 11 处 `i10c`，全绑 **mask 位 4**）：
+   * `i10c 4 2c`（键码 `0x2c` → VK 90 = 'Z'）之后按 Z 才触发确认位 —— 修前**只有 Enter**
+   * （键码 `0x1c` → VK 13，本就在默认表里）有效，Z 键与键位设置界面的选择一律无效。
    */
-  [0x10c, op_engine_internal], // SetKeyMulti：Input[1176+VK] = op1（VK = 键码表[op2]）→ sub_4220B0；有据跳过，见上
   [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
   // ============ 字符串 / 查表 / 配置 ============
   // 0x2C7（SBSubstr）与 0x2EB（GetConfig("set:GameVersion") → 字符串）**已转真实现**：

@@ -22,12 +22,17 @@
     ]
   },
   "id": "T-0157",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → doing —— P1 0x1f5 已修（三层门 + dispatchNextRequest 导出 + 停靠闸 + setDispatching 接上 124350 的 5 个写点）；守卫 test/op-1f5-dequeue.test.ts 6 例（红 1/6、写点回潮 0/6 → 绿 6/6）。残余：0x7C 的 raw 25816-25822 收尾（P2，下一轮）"
     }
   ]
 }

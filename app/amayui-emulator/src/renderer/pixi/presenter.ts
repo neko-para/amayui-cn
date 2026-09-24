@@ -24,7 +24,7 @@ import {
   type Item,
 } from '../drawItem.js';
 import type { SceneState } from '../sceneModel.js';
-import { applySceneXformToPlacement, sceneLayerAffected } from '../scene/ops.js';
+import { sceneAffine2DOf, sceneAffineRotation } from '../scene/ops.js';
 // ★消息窗正文行的 id 区间（`0x213`/`0x25D` 登记）：那批 id 上的 DrawItem 是"文本行"而不是图元
 //   （emulator 的文本由 `textLayer` 画）⇒ 无纹理槽时不能当图元画成白块。见 `T-0102`。
 import { inMsgTextRange } from '../drawitem/msgTextRange.js';
@@ -219,7 +219,12 @@ export class ScenePresenter {
       // ★D3：mesh 表（`Scene+1064`）同样被打 `|0x10000`（raw 135772/135995/136301…）⇒ 也要排除
       if (skipped(m.handle)) return;
       const state = calcDiffuse(m, clock);
-      const color = meshColor(m, state);
+      // ★审计 §4.2 #8 的两个消费者接线：`0x321` 的 MeshEntry 属性（`render4.meshAttrs`）
+      //   与 `0x32D` 的 3D 颜色（`render4.color3D`，`sub_499DF0` 的 `D3DRS_TEXTUREFACTOR`）。
+      //   两者都缺省 ⇒ 与修前逐字节相同（`meshAttrsTint` 对 index 0/1 返回 null、`color3DTint`
+      //   对恒等 [1,1,1,1] 返回 null）。见 `drawitem/eval.ts` 的两条说明。
+      const attrs = scene.render4.meshAttrs.get(m.handle);
+      const color = meshColor(m, state, attrs, scene.render4.color3D);
       const alpha = (color >>> 24) & 0xff;
       if (alpha <= 0) return;
       const g = new Graphics();
@@ -242,7 +247,7 @@ export class ScenePresenter {
           for (const k of idx) {
             const v = m.verts[k]!;
             pts.push(v.x, v.y);
-            const c = meshVertexColor(m, state, k);
+            const c = meshVertexColor(m, state, k, attrs, scene.render4.color3D);
             a += (c >>> 24) & 0xff;
             r += (c >>> 16) & 0xff;
             gg += (c >>> 8) & 0xff;
@@ -260,11 +265,13 @@ export class ScenePresenter {
       g.blendMode = PIXI_BLEND[blendMode] as never; // 自定义档名（见上）
       // ★Scene 世界矩阵那一级（引擎 raw 133407 的 `work ← work · Scene+46600`，只作用于层 20..29）：
       //   mesh 的顶点是**屏幕像素坐标**，与绘制项走同一条式子
-      //   `屏幕点 ← 屏幕点 × (sx,sy) + (tx,ty)`。用 `Graphics` 自身的变换实现（绕屏幕原点缩放 +
-      //   平移），避免改动几何顶点（`0x322` 那条"顶点色"路径仍按原坐标求值）。
+      //   `屏幕点 ← 屏幕点 · M2D + (tx,ty)`（`M2D` = 缩放 × **绕轴旋转**，见 `sceneAffine2DOf`）。
+      //   用 `Graphics` 自身的变换实现（绕屏幕原点缩放/旋转 + 平移），避免改动几何顶点
+      //   （`0x322` 那条"顶点色"路径仍按原坐标求值）。
       const xf = sceneXform2D(scene, m.layer);
       if (xf) {
-        g.scale.set(xf.sx, xf.sy);
+        g.scale.set(Math.hypot(xf.a, xf.b), Math.hypot(xf.c, xf.d));
+        g.rotation = sceneAffineRotation(xf); // ★Scene 的绕轴旋转（引擎 raw 133427 的 `v28`）
         g.position.set(xf.tx, xf.ty);
       }
       this.drawRoot.addChild(g);
@@ -372,7 +379,8 @@ export class ScenePresenter {
           return;
         }
         const wrap = new Container();
-        wrap.scale.set(xf.sx, xf.sy);
+        wrap.scale.set(Math.hypot(xf.a, xf.b), Math.hypot(xf.c, xf.d));
+        wrap.rotation = sceneAffineRotation(xf); // ★Scene 的绕轴旋转（引擎 raw 133427 的 `v28`）
         wrap.position.set(xf.tx, xf.ty);
         wrap.addChild(t.sprite);
         this.drawRoot.addChild(wrap);
@@ -387,6 +395,10 @@ export class ScenePresenter {
     const env: BlendEnv = {
       renderTargetSlot: scene.render4.renderTargetSlot,
       slotMode: (slot) => scene.render4.slotModes.get(slot),
+      // ★**`Scene+46676` 的生产侧接线**（审计 §4.2 #24 的 P2 `missing-consumer`）：
+      //   修前这个字段只有声明 + 一个纯函数判据 + 一条手搓 BlendEnv 的单测 ⇒ 生产里恒 `undefined`
+      //   （`!env.sceneFrozen` 永远为真，判据静默退化成"只看渲染目标槽"）。现在从共享模型来。
+      sceneFrozen: scene.frozen,
     };
     const modes = walkBlendSequence(
       entries.map((e) => ({ kind: e.kind, blend: e.blend })),
@@ -421,7 +433,43 @@ export class ScenePresenter {
    * （raw 136014-136176 的两趟重绘）—— 若子集渲染另写一套画法，"主画面"与"转场用的那一层"
    * 迟早会漂移（本工程已有多次同类事故）。`null` = 该项不该画（`flags & 1` 门 / 全透明）。
    */
-  itemSprite(scene: SceneState, it: Item, clock: number, blendMode: BlendState): Sprite | null {
+  itemSprite(scene: SceneState, it: Item, clock: number, blendMode: BlendState): Sprite | Container | null {
+      // ★Scene 世界矩阵那一级：**先**把项自己的 work 矩阵算出来（下面 `#buildItemSprite`），
+      //   再套一层承载 Scene 的 2D 仿射（`sceneAffine2DOf` = 缩放/平移/**旋转**）。
+      const spr = this.#buildItemSprite(scene, it, clock, blendMode);
+      if (!spr) return null;
+      const xf = sceneXform2D(scene, it.layer);
+      if (!xf) return spr;
+      // ★为什么用父容器而不是把 Scene 的缩放/旋转乘进 sprite：Pixi 的 `Sprite` 只有"一个旋转 + 一个
+      //   缩放"，而引擎的工作矩阵是 `item · scene`（项在前、Scene 在后，行向量序）—— 两轴缩放不同
+      //   （`axisScale.x ≠ axisScale.y`）且 Scene 带旋转时那个乘积**不是**"缩放∘旋转"可表示的
+      //   （会留下剪切项）。父容器把 Scene 那一级放在项那一级**之后**，正是引擎的左右序；
+      //   同时也保住了项自己的 `pivot`/`rotRad` 语义（否则换 pivot 会平移错项）。
+      //   与文本那一支（`t.sprite` 外面套 `wrap`）是同一处置，理由见那里的注释。
+      //
+      // ★已知缺口（如实披露）：Scene 的旋转角取自 `SceneState.sceneRotRad`（引擎 `Scene+1856`，
+      //   raw 133427）。那个格在反编译里**只有读点、没有写点** ⇒ 默认 0（恒等旋转，画面与修前一致），
+      //   实测值需由宿主经 `setSceneRotRad` 注入。见 `scene/state.ts` 的 `sceneRotRad` 说明。
+      const wrap = new Container();
+      // ★父容器按**列长 + 列方向**装载：Pixi 的 `Container` 变换是 `(q·scale)·rotation`（点在该容器
+      //   局部坐标里先缩放再旋转）⇒ 取 `sx = |第一列|`、`rotation = atan2(b, a)` 时
+      //   `M11 = sx·cos = a`、`M12 = sx·sin = b`，与 `sceneAffine2DOf` 的前两格**逐位一致**。
+      //   （两轴缩放不同时第二列只能近似 —— 那是 Pixi `Container` 无法表达的剪切，语料里
+      //    `0x22D` 的缩放恒 `(1,1,1)`；见 `sceneAffine2DOf` 的说明。）
+      wrap.scale.set(Math.hypot(xf.a, xf.b), Math.hypot(xf.c, xf.d));
+      wrap.rotation = sceneAffineRotation(xf);
+      wrap.position.set(xf.tx, xf.ty);
+      wrap.addChild(spr);
+      return wrap;
+  }
+
+  /**
+   * **一个绘制项的 Sprite 本身**（不含 Scene 那一级；由 {@link itemSprite} 在其外套一层父容器）。
+   *
+   * 拆开的理由：Scene 的 2D 仿射必须作用在"项自己变换完"的点上（引擎 `work ← work·sceneWorld`
+   * 的左右序）⇒ 两条路都走同一个 sprite 构造，避免"世界矩阵支"与"非世界矩阵支"各写一份。
+   */
+  #buildItemSprite(scene: SceneState, it: Item, clock: number, blendMode: BlendState): Sprite | null {
       // ★bit0 门：引擎渲染器 `sub_4AEEA0` 以 `(*elem & 1) != 0` 为绘制门（raw 133361）。
       //   任何"缺失即建项"的 setter（sub_4AAA50）建出的空项 flags=0 ⇒ **不画**。
       //   早前漏了这个门，空项会被当成正常项画出来（用 alpha 0 的色掩盖了症状）。
@@ -502,7 +550,10 @@ export class ScenePresenter {
         // **同时**取 `position = pivot + t`、`sprite.pivot = pivot − pos`（见 `itemRenderPlacement`）。
         // ★历史上这里位置用的是 `pos`：只有 `pivot == pos` 时才等价 ⇒ 一旦脚本给出偏离 pos 的
         //   绝对 pivot（`CONFIG1` 滚动条中段的 `707ffa + 32e`），缩放项就整体平移 `(pivot − pos)`。
-        const pl = applySceneXformToPlacement(scene, it.layer, itemRenderPlacement(it, clock));
+        // ★Scene 那一级**不在这里**：本函数只给"项自己"的位姿，Scene 的 2D 仿射（含旋转）由
+        //   `itemSprite` 在外层套一个父容器施加 —— 引擎的左右序是 `work·sceneWorld`（Scene 在后），
+        //   用父容器才不会把 Scene 的旋转混进项自己的 pivot 语义。
+        const pl = itemRenderPlacement(it, clock);
         spr.pivot.set(pl.pivot.x, pl.pivot.y);
         spr.scale.set(pl.scale.x, pl.scale.y);
         spr.rotation = pl.rotRad;
@@ -510,13 +561,9 @@ export class ScenePresenter {
       } else {
         // ★无世界矩阵的项也**照样**吃 Scene 那一级（引擎 raw 133407 的乘法在 `Scene+46532` 门**之外**：
         //   那一门只管项自己的 work 矩阵，Scene 世界矩阵是另一个矩阵）。引擎里"没设过变换"的项
-        //   work = 单位阵·sceneWorld = sceneWorld，屏幕上就是"描画位置被 Scene 平移推走"。
-        const pl = applySceneXformToPlacement(scene, it.layer, {
-          position: { x: it.posX, y: it.posY },
-          scale: { x: 1, y: 1 },
-        });
-        spr.position.set(pl.position.x, pl.position.y);
-        if (pl.scale.x !== 1 || pl.scale.y !== 1) spr.scale.set(pl.scale.x, pl.scale.y);
+        //   work = 单位阵·sceneWorld = sceneWorld，屏幕上就是"描画位置被 Scene 推走"。
+        //   项自己走纯 2D 路径（pivot/缩放/旋转一律不参与）⇒ 位置就是描画位置。
+        spr.position.set(it.posX, it.posY);
       }
       spr.tint = color & 0xffffff; // diffuse RGB 调制纹理（逐像素 RGB×α）
       spr.alpha = alpha / 255; // diffuse alpha 淡入
@@ -549,6 +596,7 @@ export class ScenePresenter {
     const env: BlendEnv = {
       renderTargetSlot: scene.render4.renderTargetSlot,
       slotMode: (slot) => scene.render4.slotModes.get(slot),
+      sceneFrozen: scene.frozen, // ★同 `present()`：`Scene+46676` 的生产侧接线（审计 §4.2 #24）
     };
     const modes = walkBlendSequence(
       items.map((it) => ({ kind: 'item' as const, blend: it.blend })),
@@ -638,29 +686,34 @@ export class ScenePresenter {
 }
 
 /**
- * **Scene 世界矩阵在「层号 ∈ [20,30)」那一支的 2D 形式**（引擎 raw 133411-133438 的 `else` 支：
- * `D3DXMatrixDecompose` 后**只把 2D 缩放与平移装回**；旋转那一项被显式置成**单位阵**
- * `v120`（raw 117629-117631 + 117647-117662），而这个单位阵**仍会**被乘进最终合成
- * （`sub_49AA30` 的 LABEL_72，raw 117930）⇒ 净效果就是纯 2D 缩放 + 平移）。
+ * **Scene 世界矩阵在「层号 ∈ [20,30)」那一支的 2D 仿射**（= `sceneAffine2DOf` 的薄包装）。
  *
- * 返回 `null` = 这一层不吃 Scene 变换（层号不在区间内）或四条指令一条都没下发过。
+ * 引擎依据（raw 133411-133438 的 `else` 支 + `sub_49AA30` 的收尾 raw 117927-117933）：
+ * `D3DXMatrixDecompose` 出缩放/旋转/平移后**逐项重建**：
+ * ```text
+ * D3DXMatrixScaling(v27, scale[0], scale[1], 1.0);   _this+46536 ← _this+46536 · v27
+ * D3DXMatrixRotationAxis(v28, _this + 1844, *(float *)(_this + 1856));   ← · v28
+ * D3DXMatrixTranslation(v29, kx·pos[0], ky·pos[1], pos[2]);              ← · v29
+ * ```
+ * ⇒ 这一支里**旋转没有被丢掉**（`v28` 用的是 `Scene+1844`/`Scene+1856` 那对"Scene 自己的轴角"）。
+ *
+ * ★★**修前是什么（P1）**：本函数按 `x.kind` 三选一，`kind === 'axis-scale'` 时
+ * `return { sx: x.axisScale.x, sy: x.axisScale.y, tx: x.axisTranslate.x, ty: x.axisTranslate.y }`
+ * —— 把 `0x22F` 的 op3/4/5 当**屏幕空间 2D 平移**用，且**完全没有旋转项**。
+ * 体（`sub_49AA30` 层号支 raw 117624-117632）与此不符：那三格是
+ * `j_D3DXMatrixRotationAxis(v120, a2 + 181, a2[184])` 的**轴**，随后 117930 把 `v120` 乘进 work。
+ * 修后：`tx/ty` 只来自四块矩阵复合后的平移分量（`0x22F` 的三格进入的是**旋转轴**），
+ * 旋转由 `{a,b,c,d}` 与 `sceneAffineRotation` 承载。
+ *
+ * 返回 `null` = 这一层不吃 Scene 变换（层号不在区间内）或四块矩阵全默认 + 角 0
+ * （`sceneXform === null && sceneRotRad === 0`）⇒ 调用方必须保持"与接线前逐字节相同"。
  * 注意调用方**不能就地改跨帧复用的对象**（见文本精灵那处的说明）。
  */
 function sceneXform2D(
   scene: SceneState,
   layer: number,
-): { sx: number; sy: number; tx: number; ty: number } | null {
-  if (!sceneLayerAffected(layer)) return null;
-  const x = scene.sceneXform;
-  if (!x) return null;
-  switch (x.kind) {
-    case 'scale':
-      return { sx: x.scale.x, sy: x.scale.y, tx: 0, ty: 0 };
-    case 'translate':
-      return { sx: 1, sy: 1, tx: x.translate.x, ty: x.translate.y };
-    case 'axis-scale':
-      return { sx: x.axisScale.x, sy: x.axisScale.y, tx: x.axisTranslate.x, ty: x.axisTranslate.y };
-  }
+): { a: number; b: number; c: number; d: number; tx: number; ty: number } | null {
+  return sceneAffine2DOf(scene, layer);
 }
 
 function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): Sprite {  const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);

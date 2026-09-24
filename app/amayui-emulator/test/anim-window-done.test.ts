@@ -199,8 +199,11 @@ test('T-0014：`Engine` 不得再挂"只被测试调用"的悬停门面（`pickH
     'Engine 不应有 pickHoverLabel（产品路径用 `serviceAdvanceWait`；测试门面在 test/harness.ts）',
   );
   // 产品路径那一对调用必须还在（删门面不许把产品路径一起删掉）
+  // ★2026-09（P1 `adv-advance-route-table` / `msgwin-backlog-cursor`）：`hoverDispatchAllowed` 现在
+  //   收本帧掩码当参数（泵算一次后复用，与 raw 20315 的 `*v2` 同口径）⇒ 调用点是
+  //   `hoverDispatchAllowed(mask)`。断言因此只钉**方法名 + 那一对调用**，不钉括号里的实参形状。
   assert.ok(
-    /hoverDispatchAllowed\(\)/.test(engineSrc) && /nextHoverLabel\(\)/.test(engineSrc),
-    '引擎里必须仍有 hoverDispatchAllowed() + routes.nextHoverLabel() 这一对（产品悬停派发的真身）',
+    /hoverDispatchAllowed\s*\(/.test(engineSrc) && /nextHoverLabel\s*\(\)/.test(engineSrc),
+    '引擎里必须仍有 hoverDispatchAllowed(...) + routes.nextHoverLabel() 这一对（产品悬停派发的真身）',
   );
 });

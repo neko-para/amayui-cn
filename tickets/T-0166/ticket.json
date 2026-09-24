@@ -22,12 +22,18 @@
     ]
   },
   "id": "T-0166",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 本轮（T-0148 主票下）实施完毕；后续 T-0167 又新增 2 条/更新 3 条台账条目（见 changes.md §五）"
     }
-  ]
+  ],
+  "doneWhy": "能力台账 stale-ledger 同步完成（T-0148 主票下的 unit 7）：14 条条目改写（status/evidence/guard/note，逐条给引擎锚点与守卫）+ `frame-pump-input-refresh` 删除（误分类的重复条目，真正覆盖在 input-keyboard-to-mask-bits）+ `lazy-movie-dll` 改名为 lazy-movie-dll-agerc 并订正 subsystem；`capabilities.js --recount` 修 counts（absent 17→10、需关注 54→42、139→138 条）、`build-capabilities.mjs` 重生成、`capabilities.js --validate` 全绿；T-0027 的悬空 links.analysis 已清。后续 T-0167 又新增 2 条（msgwin-coexist-auto-message / msgwin-vertical-rect-pad）、更新 3 条（frame-render-gate-mainloop / clock-write-clock-freeze / scene-layer-xform-compose-20-29 / msgwin-window-reveal-gate-300 / voice-request-deferral-and-adv-gate / msgwin-config-gates）"
 }

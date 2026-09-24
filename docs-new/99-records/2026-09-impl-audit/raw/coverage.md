@@ -1,3 +1,9 @@
+---
+kind: record
+state: consumed
+superseded_by: docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md
+---
+
 # 覆盖账（机器生成）
 
 - 未产出任何批的批次（0）：（无）

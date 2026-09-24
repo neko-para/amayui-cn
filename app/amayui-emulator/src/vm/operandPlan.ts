@@ -928,6 +928,7 @@ const GFX_ITEM_PLANS: [number, number, OperandKind[], OperandIo[], string][] = [
   [0x21f, 7, ['int', 'int', 'int', 'float', 'float', 'float', 'float'], ['r', 'r', 'r', 'r', 'r', 'r', 'r'], '旋转动画窗（窗2）：handle/delay/dur + 轴 xyz + 角度'],
   [0x220, 6, ['int', 'int', 'int', 'float', 'float', 'float'], ['r', 'r', 'r', 'r', 'r', 'r'], '平移动画窗（窗3）：handle/delay/dur + 位移（不除 256）'],
   [0x223, 8, ['int', 'int', 'int', 'int', 'int', 'int', 'int', 'int'], ['r', 'r', 'r', 'r', 'r', 'r', 'r', 'r'], '转场记录 Scene+1048 写入端 · 类别 0（全屏交叉淡化）：**无条件读满 op1..op8**'],
+  [0x222, 2, ['int', 'int'], ['r', 'r'], '★3D 层区间提交（`sub_423EC0`→`sub_4B4460`，P1 §4.2 #19）：op1 = 起始 handle、op2 = **跨度**（区间 `[op1, op1+op2)`）；落点 = 宿主缝 `sceneCommitRange` → `enqueueSceneCommitNodes`（帧末由 `scSceneCommitRange` 消费）'],
   [0x228, 5, ['int', 'int', 'float', 'float', 'float'], ['w', 'r', 'w', 'w', 'w'], 'getter：op1 = 查表失败?1:0、op3/4/5 = 当前平移（**失败分支不写** op3..5）'],
   [0x22a, 3, ['float', 'float', 'float'], ['r', 'r', 'r'], 'Scene 级「立即缩放」：sx/sy/sz（÷100）'],
   [0x22c, 3, ['float', 'float', 'float'], ['r', 'r', 'r'], 'Scene 级「立即平移」：x/y/z（像素）'],
@@ -1147,7 +1148,7 @@ for (const [op, argc, io, what] of CONTROL_PLANS) {
 //  - **只读**（44 条）：`0x6e` show-text / `0x70` 窗口几何 / 文本原点 / 换行 / 对齐 / 窗对象字段…
 //  - **写 op1 的 getter**（9 条）：`0x7f` 消息速度 / `0x19a` 跳读模式 / `0x1b6` 共存态 / `0x1c7` ADV 激活 /
 //    `0x1cb` 跳读态 / `0x1cc` 是否有消息 / `0x2dc` 字体数 / `0x2dd` 字体名（**写字符串**）/ `0x2de` 字体名→下标；
-//  - **混合**：`0x6e`(int+str) / `0x196`(int+str+str) / `0x204`(3×int+str) / `0x205`(**op2 是 rw**：读原值再写回) /
+//  - **混合**：`0x6e`(int+str) / `0x196`(int+str+str) / `0x204`(3×int+str) / `0x205`(**op2 只读**：x 前进量是引擎体内的栈局部) /
 //    `0x1a5`/`0x2fe`(str) / `0x2dd`/`0x2de`(str ↔ int)。
 //
 // ★三条用**变量 n 的辅助读法**（`rd(n)`、`[1..N].map((n) => readIntOperand(…, n))`）——
@@ -1188,7 +1189,7 @@ const MSGWIN_PLANS: [number, number, OperandKind[], OperandIo[], string][] = [
   [0x1cb, 1, ['int'], ['w'], '**getter**：op1 = 跳读文本态'],
   [0x1cc, 1, ['int'], ['w'], '**getter**：op1 = 当前是否有消息'],
   [0x204, 4, ['int', 'int', 'int', 'str'], ['r', 'r', 'r', 'r'], 'draw-string：槽/x/y + 字符串（直绘）'],
-  [0x205, 6, ['int', 'int', 'int', 'int', 'int', 'int'], ['r', 'rw', 'r', 'r', 'r', 'r'], 'draw-number-string：读 op1..op6，**op2 读后写回**'],
+  [0x205, 6, ['int', 'int', 'int', 'int', 'int', 'int'], ['r', 'r', 'r', 'r', 'r', 'r'], 'draw-number-string：读 op1..op6；★op2 只读（x 前进量落在引擎体里的栈局部 &v8 上，不回写 op2；tickets/T-0147）'],
   [0x20a, 1, ['int'], ['r'], '窗重排：op1 = 窗'],
   [0x212, 2, ['int', 'int'], ['r', 'r'], '窗对象 +100'],
   [0x213, 3, ['int', 'int', 'int'], ['r', 'r', 'r'], '窗对象区间（+104/+108）'],
@@ -1275,6 +1276,7 @@ const INPUT_PLANS: [number, number, OperandKind[], OperandIo[], string][] = [
   [0x108, 1, ['int'], ['w'], '**getter**：op1 = 鼠标按钮值'],
   [0x109, 2, ['int', 'int'], ['w', 'w'], '**getter**：op1 = X、op2 = Y'],
   [0x10a, 2, ['int', 'int'], ['r', 'r'], '把光标移到虚拟屏坐标（X/Y）'],
+  [0x10c, 2, ['int', 'int'], ['r', 'r'], '**SetKeyMulti**：op1 = 掩码位（unsigned > 0x1F ⇒ 抛）、op2 = **键码**（查键码表）'],
   [0x10d, 1, ['int'], ['w'], '**getter**：op1 = 滚轮增量（一次性消费）'],
   [0x12e, 8, ['int', 'ptr', 'int', 'int', 'ptr', 'ptr', 'ptr', 'int'], ['rw', 'r', 'r', 'r', 'r', 'r', 'r', 'r'], '悬停命中测试：op1 起始下标（**读后写回**）、op2/op5/op6/op7 是**指针位**（margin/盒表/平面）、op3/op4/op8 是 int'],
   [0x2e5, 1, ['int'], ['w'], '**getter**：op1 = 水平滚轮增量'],

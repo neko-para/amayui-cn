@@ -386,10 +386,85 @@ export function mulArgb(base: number, blend: number): number {
   return (((ch(24) << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)) >>> 0) >>> 0;
 }
 
-/** 单个顶点在这一帧的实际颜色 = 顶点基础色 × 插值态色。 */
-export function meshVertexColor(m: MeshObj, state: number, i: number): number {
+/**
+ * **`0x321` 的逐顶点着色倍率**（引擎 `MeshEntry` 的 `[op2 + 7]` 槽；审计 §4.2 #8 的消费者）。
+ *
+ * 引擎里那个槽是顶点缓冲记录里的一个 dword（36 字节步长，`sub_4AF1C0` raw 133601 的 `v15 += 36`）
+ * ⇒ 写它属于"网格条目的绘制参数"这一类。**下标语义的近似（披露）**：
+ *  - `index 0/1` 在引擎里是内部记账（`SETPOLYGON.txt:53` 的 `i321 30d40 0 2a` 落在 index 0，
+ *    而该 mesh 的 `create-mesh` 参数在 emulator 侧无从逐位对位），⇒ **不参与着色**（恒白）；
+ *  - `index >= 2` = 逐顶点亮度倍率（低 8 位 ÷255）——这是 emulator 明确**消费**的语义。
+ *
+ * `null` = 没有可用的着色参数（不改变画面）。扩展点 = 逐位对齐顶点缓冲记录里那 4 个 dword
+ * （需要真机 dump 或 `.lst` 逐指令跟 `sub_4A2280` 的填充）。
+ */
+export function meshAttrsTint(attrs: ReadonlyMap<number, number> | undefined): number | null {
+  if (!attrs) return null;
+  let tint: number | null = null;
+  for (const [index, value] of attrs) {
+    if (index < 2) continue;
+    tint = (value & 0xff) / 255;
+  }
+  return tint;
+}
+
+/**
+ * 单个顶点在这一帧的实际颜色 = 顶点基础色 × 插值态色。
+ *
+ * `attrs`/`color3D` 是本轮（审计 §4.2 #8）接上的两个额外倍率：
+ *  - `attrs` = `0x321` 的 MeshEntry 属性（见 `meshAttrsTint`）；
+ *  - `color3D` = `0x32D` 的 3D 颜色（`sub_499DF0` 的 `D3DRS_TEXTUREFACTOR`）。
+ * 两者都缺省 ⇒ 与修前**逐字节相同**（不做任何乘法）。
+ */
+export function meshVertexColor(
+  m: MeshObj,
+  state: number,
+  i: number,
+  attrs?: ReadonlyMap<number, number>,
+  color3D?: readonly number[],
+): number {
   const base = m.baseColors[i] ?? 0xffffffff;
-  return mulArgb(base, state);
+  let c = mulArgb(base, state);
+  const tint = meshAttrsTint(attrs);
+  if (tint !== null) c = scaleArgb(c, tint, tint, tint, tint);
+  const c3 = color3DTint(color3D);
+  if (c3) c = scaleArgb(c, c3[0] ?? 1, c3[1] ?? 1, c3[2] ?? 1, c3[3] ?? 1);
+  return c;
+}
+
+/**
+ * **逐通道浮点倍率**（每个分量 ∈ [0,1]，与引擎 `sub_499DF0` 把 0..1 折成 0..255 同一口径）。
+ * 只用于 `meshVertexColor` 的两个附加倍率；缺省参数不参与 ⇒ 不改变既有结果。
+ */
+export function scaleArgb(c: number, kr: number, kg: number, kb: number, ka: number): number {
+  const ch = (v: number): number => {
+    const x = Math.round(v);
+    return x < 0 ? 0 : x > 255 ? 255 : x;
+  };
+  // ★通道次序与 `mulArgb` 一致：ARGB（`>>>24` = α、`>>>16` = R、`>>>8` = G、`&0xff` = B）。
+  //   ★每个分量显式 `& 0xff` 再位移：`ch()` 已夹到 0..255，但 `<< 24` 会把结果推成负数
+  //   （JS 位运算是 **int32**）—— 多一道掩码让"写侧不越位"不依赖调用点的假设
+  //   （实测过：漏了 `& 0xff` 时 `0xff | (0xff << 8)` 之类会叠出 `0xff00`，把绿色叠进红色）。
+  return (
+    ((ch(((c >>> 24) & 0xff) * ka) & 0xff) << 24) |
+    (((ch(((c >>> 16) & 0xff) * kr) & 0xff) << 16) |
+      (((ch(((c >>> 8) & 0xff) * kg) & 0xff) << 8) | (ch((c & 0xff) * kb) & 0xff))) >>>
+    0
+  );
+}
+
+/**
+ * `0x32D` 的 3D 颜色倍率；`null` = **与未下发等价**（四个分量都是 1 = 恒等）。
+ *
+ * 为什么要有这一层判断：`render4.color3D` 的初值就是 `[1,1,1,1]`（= 引擎顶点缓冲里的
+ * `0xFFFFFFFF`），恒等乘法不该改变任何像素 ⇒ 这里显式判掉，既保住"逐字节相同"的既有行为，
+ * 又让"真的下发过 `0x32D`"这件事成为可断言的消费者（守卫：`test/gfx-prim-mesh-consumers.test.ts`）。
+ */
+export function color3DTint(color3D: readonly number[] | undefined): readonly number[] | null {
+  if (!color3D) return null;
+  const [r = 1, g = 1, b = 1, a = 1] = color3D;
+  if (r === 1 && g === 1 && b === 1 && a === 1) return null;
+  return color3D;
 }
 
 /**
@@ -399,16 +474,30 @@ export function meshVertexColor(m: MeshObj, state: number, i: number): number {
  * 取各顶点实际颜色的均值 —— 语料里所有 `0x320` 站点的基础色都是 `0xFFFFFFFF`（INIT2 的
  * `copy-local-array (global-int f8c48/f8c4c)` 全白），顶点间无差异 ⇒ 本例无损。
  * 逐顶点渐变的幕布会退化成均值色（已在第二层台账登记为残余近似）。
+ *
+ * ★`attrs`/`color3D` 透给 `meshVertexColor`（审计 §4.2 #8 的两个消费者接线）。
  */
-export function meshColor(m: MeshObj, state: number): number {
+export function meshColor(
+  m: MeshObj,
+  state: number,
+  attrs?: ReadonlyMap<number, number>,
+  color3D?: readonly number[],
+): number {
   const n = Math.max(1, m.verts.length);
-  if (m.baseColors.length === 0) return mulArgb(0xffffffff, state);
+  if (m.baseColors.length === 0) {
+    let c = mulArgb(0xffffffff, state);
+    const tint = meshAttrsTint(attrs);
+    if (tint !== null) c = scaleArgb(c, tint, tint, tint, tint);
+    const c3 = color3DTint(color3D);
+    if (c3) c = scaleArgb(c, c3[0] ?? 1, c3[1] ?? 1, c3[2] ?? 1, c3[3] ?? 1);
+    return c;
+  }
   let a = 0;
   let r = 0;
   let g = 0;
   let b = 0;
   for (let i = 0; i < n; i++) {
-    const c = meshVertexColor(m, state, i);
+    const c = meshVertexColor(m, state, i, attrs, color3D);
     a += (c >>> 24) & 0xff;
     r += (c >>> 16) & 0xff;
     g += (c >>> 8) & 0xff;

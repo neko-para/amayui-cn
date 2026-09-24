@@ -198,6 +198,34 @@ test('0x2C0 / 0x2F5 语音排队（带延迟；到点且通道空闲才起播）
   assert.equal(host.plays[0]!.id, 320);
 });
 
+test('★0x2C0 / 0x2F5 排队语音的循环位取 op2（"附带值"）的 bit0（审计 P1，票 T-0152）', async () => {
+  // 引擎：sub_4BBA40 把 op2 存 Voice[ch+277]；起播 sub_4BBAB0 取 `v3[12] & 1` 当第 4 实参
+  //（= op2 & 1）交给 sub_4B6020 → sub_4B73E0（raw 142661-142667）。修前宿主硬编码 loop:false。
+  const a = mk();
+  a.eng.voiceQueue(0, 320, 3, 0); // 语料形态 `i2f5 <id> 3 <delay> <ch>`：bit0 = 1 ⇒ 循环
+  a.eng.tick(1000, false);
+  await a.eng.idle();
+  assert.equal(a.host.plays.length, 1, '到期起播');
+  assert.equal(a.host.plays[0]!.opts.loop, true, '★op2 = 3 ⇒ bit0 = 1 ⇒ 循环（修前恒 false）');
+
+  const b = mk();
+  b.eng.voiceQueue(1, 321, 2, 0); // bit0 = 0 ⇒ 播一次
+  b.eng.tick(1000, false);
+  await b.eng.idle();
+  assert.equal(b.host.plays.at(-1)!.opts.loop, false, 'op2 = 2 ⇒ bit0 = 0 ⇒ 播一次');
+});
+
+test('★0x2F8 的 pan 与排队 op2 无关：排队起播沿用通道当前 pan（复核推翻"op2=pan"）', async () => {
+  // 引擎 sub_4BBAB0 的第 5 实参 = 设备[387+ch]（该语音通道当前 pan 槽），不是排队时写的 op2
+  // ⇒ 排队起播的 pan 应该等于 0x2F8 设过的值。
+  const { host, eng } = mk();
+  eng.voicePan(0, -VOLUME_MAX); // i2f8 0 -2710（全左）
+  eng.voiceQueue(0, 322, 3, 0);
+  eng.tick(1000, false);
+  await eng.idle();
+  assert.equal(host.plays.at(-1)!.pan, -1, '沿用通道 pan（op2=3 只贡献循环位，不参与 pan）');
+});
+
 test('0x2F8 设语音通道 pan（±10000 → -1..+1；0 = 中央）', async () => {
   const { host, eng } = mk();
   eng.voicePlay(0, 162, false);

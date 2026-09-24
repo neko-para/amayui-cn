@@ -40,6 +40,7 @@ import type { StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ADV_ACTIVE } from '../engine.js';
+import type { Engine } from '../engine.js';
 import { pushVoiceRecord } from './text-items.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
 import { setConfigValue } from './msgwin.js';
@@ -328,6 +329,9 @@ function switchVoiceEnable(c: StepCtx, a2: number): void {
   const cur = c.e.config ? cfgInt(c.e.config, CFG.soundVoice, -1) !== 0 : true;
   if (on === cur) return;
   setConfigValue(c.e, CFG.soundVoice, on ? 1 : 0);
+  // ★引擎 `sub_408E20` 体里写 `*(_DWORD *)(_this + 85172) = 1/0`（= `Engine[21293]`）。
+  //   `0xC4`/`0x1BD` 末尾读它（`if (Engine[21293]) Engine[122501] = 1`）⇒ 必须落盘（审计 P1 `0xc4` 的一半）。
+  c.e.engineValues.set(ENGINE_FIELD.voiceEnabledField, on ? 1 : 0);
   emit(c, { kind: 'enable', target: 'voice', on });
 }
 
@@ -354,7 +358,9 @@ function switchMovieEnable(c: StepCtx, a2: number): void {
  * v3 = get(sound:Music);                            // 音源槽/音量：< 0 = 关
  * if (a2) { if (v3 < 0) v4 = v3 + 3; }              // 开：−1 → 2（PCM，默认音源）
  * else    { if (v3 >= 0) v4 = v3 - 3; }             // 关：≥ 0 → −3
- * setConfig(sound:Music, v4); Music[258] = v4;      // 两个副本都写
+ * if (无需改动) return 1;                           // ★整条早退（raw 13523-13541：a2≠0 且 v3≥0、
+ *                                                   //   或 a2==0 且 v3<0 时**什么都不做**）
+ * set(sound:Music, v4); Music[258] = v4;            // 两个副本都写
  * sub_489B50(Music);                                // 停（清 Music[259]/[260]）
  * Music[259] = v6;                                  // 装回
  * sub_489F80(Music, 0, Music[261]);                 // 用当前循环位重播
@@ -362,11 +368,18 @@ function switchMovieEnable(c: StepCtx, a2: number): void {
  * ```
  * ★`a2` 的语义是「**0 = 关 / 非 0 = 开**」，不是档位：`±3` 只把配置在正负之间搬。
  * ⇒ 下发给宿主的 `bgm-mode.mode` 归一成 0/1（`audioBootIntents` 用的也是这个口径）。
+ *
+ * ★P1 修复（审计 `docs-new/99-records/2026-09-impl-audit/` §4.1 的 `0xbc`，票 `T-0152`）：
+ * 修前**没有这条早退** —— 在 `sound:Music >= 0`（已开）时点「开音乐」，引擎什么都不做，
+ * emulator 却照发 `bgm-mode` + `bgm-stop`（宿主还真停一次 BGM）。语料里"开关"是设置界面同一行的
+ * 反复下发，症状 = 点已开的开关会把 BGM 掐断一下。
  */
 function switchMusicEnable(c: StepCtx, a2: number): void {
   const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMusic, 0) : 0;
-  if (a2 !== 0 && cur < 0) setConfigValue(c.e, CFG.soundMusic, cur + 3);
-  else if (a2 === 0 && cur >= 0) setConfigValue(c.e, CFG.soundMusic, cur - 3);
+  // 与引擎同构的"要不要改"判据：开 = 只有负值才要改；关 = 只有非负值才要改。
+  const next = a2 !== 0 ? (cur < 0 ? cur + 3 : null) : cur >= 0 ? cur - 3 : null;
+  if (next === null) return; // ★引擎 raw 13536/13541 的落空路径：整条早退
+  setConfigValue(c.e, CFG.soundMusic, next);
   emit(c, { kind: 'bgm-mode', mode: a2 !== 0 ? 1 : 0 });
   const id = musicId(c.e);
   const loop = musicLoop(c.e);
@@ -511,6 +524,23 @@ const op_set_music_field: OpHandlerLike = (c) => {
   setMusicId(c.e, (p.int(1) ?? 0));
 };
 
+/**
+ * **语音通道状态槽的二态翻转协议**（引擎 `0xC4`/`0x1BD` 共用体 `sub_420F70` raw 29872-29889）：
+ * ```c
+ * v = _this[21315];                     // 通道状态位（0x2F7 写 1）
+ * if (v & 0x10000) _this[21315] = 0;    // 已"消费"⇒ 整个清 0
+ * else if (v & 1)  _this[21315] = v | 0x10000;  // 已武装 ⇒ 置"消费"位
+ * （对 [21318] 即音量因子槽做同一件事）
+ * ```
+ * ★这是本次审计 P1（`0xc4`，票 `T-0152`）：宿主侧 `voice-flag`/`voice-factor` 此前**只增不减**，
+ * 于是这个"用一次就烧掉"的协议在重写侧完全不存在。
+ */
+function toggleVoiceSlot(e: Engine, field: number): void {
+  const v = e.engineValues.get(field) ?? 0;
+  if ((v & 0x10000) !== 0) e.engineValues.set(field, 0);
+  else if ((v & 1) !== 0) e.engineValues.set(field, v | 0x10000);
+}
+
 /** `0xC4`（循环位 0）/ `0x1BD`（循环位 1）：播语音到通道 0（ADV 位在时寄存）。 */
 const op_play_voice: OpHandlerLike = (c) => {
   const loop = c.instr.opcode === 0x1bd;
@@ -518,11 +548,18 @@ const op_play_voice: OpHandlerLike = (c) => {
   const p = operandsFor(c);
   if (!p) throw new Error(`0x${c.instr.opcode.toString(16)}：播语音走操作数计划层，但没有声明计划`);
   const id = p.int(1) ?? 0;
+  // ★体开头（raw 29872-29889）：两个槽各做一次二态翻转（通道 0，固定下标 21315/21318）。
+  toggleVoiceSlot(c.e, ENGINE_FIELD.voiceChannelStateBase);
+  toggleVoiceSlot(c.e, ENGINE_FIELD.voiceChannelFactorBase);
   voicePlayOrDefer(c, 0, id, loop);
   // 引擎在同一 handler 末尾（raw 29904-29908 / 30058-30062）往**文本项记录表**压一条语音记录：
   //   `if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 循环位, 0, Engine[5053])`
   // 它是 `0x1D4`/`0x2F3`（`REPLAYVOICE` 的"重播这条语音"）的数据源 ⇒ 必须一起做。
   pushVoiceRecord(c.e, id, loop ? 1 : 0, 0);
+  // ★收尾（raw 29910-29911）：`sound:Voice` 开着的话，把「本帧有语音」记进单格寄存槽。
+  if ((c.e.engineValues.get(ENGINE_FIELD.voiceEnabledField) ?? 0) !== 0) {
+    c.e.engineValues.set(ENGINE_FIELD.voiceRegSingle, 1);
+  }
 };
 
 /** `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录。 */
@@ -552,16 +589,39 @@ const op_voice_queue: OpHandlerLike = (c) => {
   });
 };
 
-/** `0x2F6`：复位语音通道（停播 + 清状态 + 丢弃寄存）。 */
+/**
+ * `0x2F6`：复位语音通道（停播 + 清状态 + 丢弃寄存）。
+ *
+ * 引擎 `sub_426820`（raw 33677-33692）：`sub_4BB9F0(Voice, op1)` 释放设备通道并清
+ * `Voice[op1+280/262/265/277]`，随后**清四个 Engine 槽**：`[21315+op1]`（状态位）、`[21318+op1]`（因子位）、
+ * `[122505+op1]`/`[122508+op1]`（寄存语音），最后 `Engine[122501] = sub_404CB0(Voice)`
+ * （"3 路里是否有正忙"—— 宿主状态查询，emulator 侧无同步回读口 ⇒ 该格留作已知缺口，见报告 §4.2）。
+ */
 const op_voice_reset: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, { kind: 'voice-reset', ch: (p.int(1) ?? 0) });
+  const ch = p.int(1) ?? 0;
+  emit(c, { kind: 'voice-reset', ch });
+  // ★四个 Engine 槽的清零（raw 33685-33690）。
+  for (const base of [
+    ENGINE_FIELD.voiceChannelStateBase,
+    ENGINE_FIELD.voiceChannelFactorBase,
+    ENGINE_FIELD.voiceRegBase,
+    ENGINE_FIELD.voiceRegFlagBase,
+  ]) {
+    c.e.engineValues.set(base + ch, 0);
+  }
 };
 
-/** `0x2F7`：置语音通道状态位（引擎 `Engine[21315+ch] = 1`）。 */
+/**
+ * `0x2F7`：置语音通道状态位（引擎 `Engine[21315+ch] = 1`，raw 33694-33703）。
+ *
+ * ★该槽是 `0xC4`/`0x1BD` 翻转协议的输入（见 `toggleVoiceSlot`），必须真的落盘 —— 修前只发宿主意图。
+ */
 const op_voice_flag: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, { kind: 'voice-flag', ch: (p.int(1) ?? 0) });
+  const ch = p.int(1) ?? 0;
+  c.e.engineValues.set(ENGINE_FIELD.voiceChannelStateBase + ch, 1);
+  emit(c, { kind: 'voice-flag', ch });
 };
 
 /** `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。 */
@@ -574,14 +634,17 @@ const op_voice_pan: OpHandlerLike = (c) => {
   });
 };
 
-/** `0x2FF`：语音通道音量因子**预备**（引擎 `Engine[21318+ch]=1`、`[21321+ch]=op2`，尚未生效）。 */
+/**
+ * `0x2FF`：语音通道音量因子**预备**（引擎 `sub_426940` raw 33728-33740）：
+ * `Engine[21318+ch] = 1`（低位置 1）、`Engine[21321+ch] = op2`（因子值，`0x2710` = 100%）。
+ */
 const op_voice_factor_prepare: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, {
-    kind: 'voice-factor-prepare',
-    ch: (p.int(1) ?? 0),
-    value: (p.int(2) ?? 0),
-  });
+  const ch = p.int(1) ?? 0;
+  const value = p.int(2) ?? 0;
+  c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + ch, 1);
+  c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorValueBase + ch, value);
+  emit(c, { kind: 'voice-factor-prepare', ch, value });
 };
 
 // ---------------------------------------------------------------------------
@@ -638,14 +701,21 @@ const op_audio_device_init: OpHandlerLike = (c) => {
   );
 };
 
-/** `0x302`：语音通道音量因子**生效**并应用（引擎 `Engine[21318+ch]=0x10000` → `sub_4BBC30`）。 */
+/**
+ * `0x302`：语音通道音量因子**生效**并应用。
+ *
+ * 引擎 `sub_426A30`（raw 33767-33777）：`Engine[21318+ch] = 0x10000`（"有因子值"位）、
+ * `Engine[21321+ch] = op2`，随后 `sub_4BBC30(Voice, ch, sound:Volume3)` 下发到设备通道
+ * （`设备[402+ch] = (Voice[286+ch] & 0x10000) ? Voice[289+ch] : -1`）。
+ */
 const op_voice_factor_apply: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, {
-    kind: 'voice-factor-apply',
-    ch: (p.int(1) ?? 0),
-    value: (p.int(2) ?? 0),
-  });
+  const ch = p.int(1) ?? 0;
+  const value = p.int(2) ?? 0;
+  // ★两个 Engine 槽（raw 33768-33769）：0x10000 = "因子已生效"，值进 21321。
+  c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + ch, 0x10000);
+  c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorValueBase + ch, value);
+  emit(c, { kind: 'voice-factor-apply', ch, value });
 };
 
 /**

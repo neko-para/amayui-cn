@@ -217,6 +217,8 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     wrapBottom: g.wrapBottom,
     // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）—— 同样按入队时刻钉住
     vertical: core.vertical,
+    // 竖排 blit 内边距（Font+235112..+235124，0x260）—— 同为 Font 级，随快照发布（渲染侧有意忽略，见字段说明）
+    vPad: core.vPad,
     align: g.align,
     alignWidth: g.alignWidth,
     outlineMode: core.outlineMode,
@@ -259,6 +261,8 @@ function globalFontSnapshot(e: Engine): FontStyleSnapshot {
     lineSpacing: core.lineSpacing,
     // 引擎 `Font+235108` bit0（0x261 写）；未写时用随包 INI 的默认值
     vertical: ((e.engineValues.get(ENGINE_FIELD.verticalText) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
+    // 引擎 `Font+235112..+235124`（0x260 写）：Font 级，按入队时刻钉住（同 `vertical`）
+    vPad: { ...m.font.vPad },
   };
 }
 
@@ -590,6 +594,11 @@ const op_wait_for_input: OpHandler = (c) => {
   const m = e.msgwin;
   m.lastArg = (plan.int(1) ?? 0);
   const w = m.resolveWin(m.lastArg);
+  // ★raw 28556-28586：**共存消息标志 `Engine[97052]` 的消费端**（审计 §4.1 P1 `0x1b6`/`0x1b7`）。
+  //   引擎 `0x72` 的**所有**控制流都汇到 `LABEL_17`（raw 28539），而共存块紧跟在它后面
+  //   ⇒ 即使这一页还在逐字显示也要起"自动翻页"节拍（`sub_453A60(Engine+107545, max(100, 时长))`）；
+  //   `Engine[97053] = 0` 在同一段里（raw 28557；该格全库只写不读，照写）。
+  armCoexistAutoMessage(e, w);
   // 引擎 `sub_45A940(..., -1, Engine+107705)`：把该窗字格数写进模数槽（字格未设时 win+92 = 0）。
   // ★这条查询同时是"**▼ 图标动画的武装**"：模数 = 精灵表格数 op9；`sub_453A90` 重启节拍 ⇒ 帧号归零。
   const grid = m.gridOf(w);
@@ -620,15 +629,100 @@ const op_wait_for_input: OpHandler = (c) => {
     e.awaitingAdvance = true; // 门已置，但显现未完 ⇒ 由帧循环的 text-reveal 分支继续推进
     return;
   }
-  if (advanceReveal(e)) return; // 仍在显示中 ⇒ 不挂起（引擎在 LABEL_17 之前就 return）
+  if (advanceReveal(e)) return; // 仍在显示中（= 引擎 `122455` 非 0）⇒ 不走 LABEL_11 的语音交付；LABEL_17 仍会走（见上）
   clearAdv(e);
   // 引擎：`if (!122496 && !(mask & 0x40))` —— 0x40 = 「跳读中」（Engine[1415] 合成）
   if (m.alt === 0 && m.skipMirror === 0) m.finishPage(w);
   if ((e.effectFlags & ADV_ACTIVE) === 0) {
     e.input.consumeEdges(); // 引擎 sub_478090(Engine+258, …)
+    // raw 28543 `Engine[174802] = 0`：消费刷把掩码写进那一格后**当帧清零**
+    // （emulator 的对应格 = `InputManager.inputMask`，唯二写者是两把刷子）。
+    e.input.inputMask = 0;
     e.awaitingAdvance = true; // ★ effect_flags |= 0x80000000
   }
 };
+
+/**
+ * 引擎 `Engine[122501]`：**语音 3 路里是否有正忙**（`sub_404CB0(Voice)` 的结果，由 `0xC4`/`0x2F5`/`0x2F6`
+ * 一族写）。自动翻页的两组参数按它二选一（raw 28560/28573）。
+ */
+const FIELD_VOICE_BUSY = 122501;
+
+/** 引擎 `Engine[97053]`：与共存消息同段的记账格（raw 28557 只写 0）。 */
+const FIELD_COEXIST_AUX = 97053;
+
+/**
+ * **自动翻页计时器对象**（引擎 `Engine+107545` 起 7 个 dword 的计时器块，`sub_453A60` 写 `[2]/[5]/[6]`）。
+ *
+ * ★`sub_453A60`（raw 66101-66112）逐字：`t[2] = 1`（周期序号）、`t[5] = timeGetTime()`（起点）、
+ * `t[6] = ms`（周期，**0 取 1**）。这里按同一形态写进 `engineValues`（= 引擎内存视图）。
+ * ★**这一格的到期读者在本 build 里不存在**：全 .c 只有两处 arm 它（raw 13726 的 `sub_4090F0`、
+ * raw 28585 的 `0x72`），而 `sub_453AF0`/`sub_453B60` 的调用点（raw 20430/20889/…/21192）里
+ * **没有** `Engine+107545`（主循环只查 107440/107461/107468/107475/107482/107489/107496/107503/
+ * 107524/107650 这几格）。⇒ 忠实模型 = **照引擎只写不读到点判定**，不自己发明"到点自动翻页"。
+ */
+const TIMER_AUTO_MESSAGE = 107545;
+
+/**
+ * `0x72` 尾段的**共存/自动翻页块**（raw 28556-28586）—— `Engine[97052]` 的真实消费者。
+ *
+ * ```c
+ * v7 = (Engine[97052] == 0);  Engine[97053] = 0;
+ * if (!v7) {                                   // 97052 != 0 ⇒ 起自动翻页节拍
+ *   if (Engine[122501]) {                      // 有语音在播 ⇒ 用 Pitch0/Time0
+ *     if ((GetConfig("message:AutoMessageOption") & 1) == 0) goto LABEL_32;   // 关着就不武装
+ *     v11 = Engine[122371]; if (!v11) v11 = Engine[21631];                    // 当前窗 / 默认窗
+ *     v12 = (该窗 24B 行记录数) - 1;
+ *     v10 = (v12 - Engine[122464]) * GetConfig("message:AutoMessagePitch0") + GetConfig("message:AutoMessageTime0");
+ *   } else {                                   // 没有语音 ⇒ Pitch1/Time1
+ *     v8 = Engine[122371]; if (!v8) v8 = Engine[21631];
+ *     v9 = (该窗行记录数) - 1;
+ *     v10 = (v9 - Engine[122464]) * GetConfig("message:AutoMessagePitch1") + GetConfig("message:AutoMessageTime1");
+ *   }
+ *   if (v10 <= 100) v10 = 100;
+ *   sub_453A60(Engine+107545, v10);
+ * }
+ * ```
+ * `Engine[122464]` = `0x2E9` 写的"行基准"（`ENGINE_FIELD.autoMessageBaseline`，此前只有写者）
+ * ⇒ 本函数是它的**第一个读者**。"行记录数"在重写侧的等价物 = `layoutWindow(...).lines.length`
+ * （引擎的 `(win_obj+48 - win_obj+44)/24` 就是排版推入的 24B **行**记录条数）。
+ *
+ * ★与 `sub_4090F0`（raw 13708-13727）的关系：那是**同一段逻辑的另一处**，但它的**入口**
+ * 在 AGERC 的系统命令层（`IAGEService` vtable +132 = `sub_4764E0`，由 AGERC 的
+ * `case 40035/40037`（开设置画面）调用 —— 见 `engine/AGERC.DLL_utf8.c:2426/2441` 与
+ * `.data:00526B78`）⇒ emulator 没有那一层，**清零点 `Engine[97052] = 0` 至今无落点**
+ * （见 `op_get_coexist_state` 的说明）。本函数至少把"读"这一半接上了。
+ */
+function armCoexistAutoMessage(e: Engine, win: number): void {
+  if ((e.advFields.get(97052) ?? 0) === 0) return;
+  e.engineValues.set(FIELD_COEXIST_AUX, 0); // raw 28557
+  const conf = (k: string, d: number): number => (e.config ? cfgInt(e.config, k, d) : d);
+  const voiceBusy = (e.engineValues.get(FIELD_VOICE_BUSY) ?? 0) !== 0;
+  let ms: number;
+  if (voiceBusy) {
+    if ((conf(CFG.messageAutoMessageOption, 0) & 1) === 0) return; // raw 28563-28564：门关 ⇒ 不武装
+    ms =
+      (lineCountOf(e, win) - 1 - (e.engineValues.get(ENGINE_FIELD.autoMessageBaseline) ?? 0)) *
+        conf(CFG.messageAutoMessagePitch0, 0) +
+      conf(CFG.messageAutoMessageTime0, 0);
+  } else {
+    ms =
+      (lineCountOf(e, win) - 1 - (e.engineValues.get(ENGINE_FIELD.autoMessageBaseline) ?? 0)) *
+        conf(CFG.messageAutoMessagePitch1, 0) +
+      conf(CFG.messageAutoMessageTime1, 0);
+  }
+  if (ms <= 100) ms = 100; // raw 28583-28584
+  // `sub_453A60` 的三格（raw 66105-66110）
+  e.engineValues.set(TIMER_AUTO_MESSAGE + 2, 1);
+  e.engineValues.set(TIMER_AUTO_MESSAGE + 5, e.nowMs | 0);
+  e.engineValues.set(TIMER_AUTO_MESSAGE + 6, ms > 0 ? ms : 1);
+}
+
+/** 该窗文本**行数**（引擎 `(win_obj+48 - win_obj+44)/24` = 排版推入的 24B 行记录条数）。 */
+function lineCountOf(e: Engine, win: number): number {
+  const w = e.msgwin.resolveWin(win);
+  return layoutWindow(w, { style: styleOfWin(e, w), segments: e.msgwin.slot(w).segments }).lines.length;
+}
 
 /**
  * `0xFA poll-msg-advance`（sub_4199B0 raw 24952-24987）：消息收尾 / 快速推进。
@@ -636,6 +730,21 @@ const op_wait_for_input: OpHandler = (c) => {
  * 消费输入边沿并置 bit31（等待门）。
  *
  * ★这条过去**未在任何注册表**里 —— 脚本一旦命中就抛 `NotImplementedOp` 硬报错。
+ *
+ * ★审计 §4.1 P1 `op-18`（"3 个待播语音槽没有消费者"）的核验结论 = **重写侧在别处已有等价物**：
+ * 引擎那 3 个槽是 `Engine[122505+i]`（语音 id）/`Engine[122508+i]`（循环位）/`Engine[5053+i]`（pan），
+ * 写入端 = `0xC4`/`0x1BD`（raw 29893-29894/30047-30048，只在 ADV 位**已置**时写槽）与
+ * `0x2F5`（raw 33641-33647）。emulator 把同一状态放在**宿主**：`0xC4`/`0x1BD` → `voice-defer`
+ * 意图 → `AudioEngine.voiceDefer` 的 `v.deferred`，由 `AudioEngine.tick(nowMs, advActive)` 在
+ * **ADV 位清除时统一冲刷**（`audioEngine.ts:641-651`，注释里就写着 `raw 20146/24966` 的冲刷点，
+ * 而 raw 24966 正是本指令体里的 `_this[174801] &= ~0x8000000`）⇒ 「ADV 退出时补播」不丢。
+ * ★同时**订正原文的槽步长**：不是 `122505 + 3*i`，而是 `122505 + i`（`v4` 每次 `++`），
+ * 另两格在 `122508 + i` 与 `5053 + i`（`*(v4 - 117452)`）。
+ * 残留（不属本票）：`0x2F5` 在 ADV 位已置时引擎是**写槽**、emulator 的 `op_voice_queue` 直接发
+ * `voice-queue`（宿主按 delayMs 到期就播，不看 ADV 位）—— 那是 `T-0152`（audio 侧）的范围。
+ * ★订正（审计 §4.1 P2 `op-130`）：raw 24985 的 `_this[174802] = 0`（刚被消费刷吸取的那一格掩码）
+ * 此前没做 —— emulator 的对应格是 `InputManager.inputMask`（唯二写者 = 两把刷子），
+ * 现按体清零（它进输入快照 ⇒ 是可观察状态）。
  */
 const op_poll_msg_advance: OpHandler = (c) => {
   const plan = planFor(c);
@@ -649,6 +758,7 @@ const op_poll_msg_advance: OpHandler = (c) => {
   }
   if ((e.effectFlags & ADV_ACTIVE) === 0) {
     e.input.consumeEdges();
+    e.input.inputMask = 0; // raw 24985：`_this[174802] = 0`
     e.awaitingAdvance = true;
   }
 };
@@ -937,19 +1047,36 @@ const op_text_block_begin: OpHandler = (c) => {
 };
 
 /**
- * `0x305`（sub_41B1C0 raw 25096-25170，argc=0）：**文本块结束**。
- * 引擎：`win+132 = win+296`（取回行游标）→ `message:ReadTextSkip`/ADV 判定 →
- * `while (!sub_45BE20(Font, 窗))`（**把余下的行一次性贴出**）→ 必要时排空/清 ADV。
+ * `0x305`（sub_41B1C0 raw 26034-26102，argc=0）：**文本块结束**。
  *
- * 重写侧：`finishReveal`（= 整段显示完并 emit）就是"把余下的行贴出去"的等价物；
- * 行游标的存取由 `0x304`/`0x305` 的 `lineCursorSave` 承担。
+ * 引擎逐行（**门在第一条**）：
+ * ```c
+ * Engine[120*cur + 383220] = 1;                       // frame 状态槽（不建模）
+ * if ((Engine[122497] & 0x10001) != 65537) { Engine[122497] = 0; return; }   // ★else 出口：只清 flags
+ * v4 = 该窗对象;  if (v4) v4+132 = v4+296;            // 取回行游标（0x304 保存的）
+ * if (ReadTextSkip) { if (sub_48F000(...)) { effect_flags |= 0x8000000; 122455 = 1; }
+ *                     else if (!Engine[97050]) 122455 = 0; }
+ * else if (122455) 122455 = 0;
+ * if (Engine[86672] /*MessageSpeed*​/) {
+ *     if (!(effect_flags & 0x8000000)) { effect_flags |= 0x20000000; 起节拍计时器(MessageSpeed); 清 flags; return; }
+ * }
+ * while (!sub_45BE20(Font, Engine[122371])) ;          // 把该窗余下的行一次性贴出
+ * if (Engine[667856] == 1 && (Engine[369360] & 2) == 0) { 369352 = 0; 369356 = 0; 369344 = 1; }
+ * Engine[122497] = 0;
+ * ```
+ * 重写侧映射：`finishReveal(当前窗)` = "把余下的行贴出"（引擎只泵 `Engine[122491]` 这一窗）；
+ * 行游标存取由 `0x304`/`0x305` 的 `lineCursorSave` 承担；`0x20000000` 复用 `SLEEP_GATE`/`sleepUntil`
+ * （与 `0x6E` raw 28380-28382、`0x196` raw 29093-29095 同形）；等待门计时器三格里
+ * `369352`/`369356` = `Engine.gateWaitStart`/`gateWaitMs`，第三格 `369344` 只写不读 ⇒ 按既有口径不建模。
  *
- * ★订正（审计 P2 `op-7-0x305-flags-not-cleared`，`tickets/T-0077`）：引擎的**三条出口**都清
- * `Engine[489988]`（= dword `122497` = `msgwin.flags`）：raw 26083/26095（共享 `LABEL_12` 与等待门分支）
- * 与 raw 26099（else 出口）。emulator 此前不清 ⇒ `0x304` 置 1 后**永久留在"注音/内嵌模式"**，
- * 之后的 `show-text` 一直走 `sub_46BE30` 分支（文本表现错）。
- * 引擎在出口处还顺手：置 `effect_flags |= 0x20000000` 并按 `Engine[86672]` 起 `sub_453A60`、
- * 或清等待计时器三格（`369344/369352/369356`）—— 这两段 emulator 未建模（记在缺口台账）。
+ * ★订正（审计 P1 `op-13`，`tickets/T-0151`）：**总门此前整个缺失** —— 旧实现无条件
+ * `finishReveal` 所有窗。bit0 由 `0x304` 置、bit16 由 `0x6E` 在 bit0 已置时补写
+ * （raw 28332-28334）⇒ 只有「`0x304` 之后真的插了 `0x6E`/`0x196`」才满足 `0x10001`；
+ * 「`0x304` 后紧跟 `0x305`」（注音插入被判空内容、bit16 未补）引擎**只清 flags**、
+ * 一个字都不贴。旧实现那一路会多贴一整段文本。
+ *
+ * ★订正（审计 P2 `op-78`）：出口侧的**两段**（`0x20000000` 节拍 + 等待计时器三格）也补上了
+ * ——它们只在 `MessageSpeed != 0`（节拍）或 `set:DrawMode == 1`（计时器）时才可见。
  */
 const op_text_block_end: OpHandler = (c) => {
   const e = c.e;
@@ -957,11 +1084,47 @@ const op_text_block_end: OpHandler = (c) => {
   // ★argc 0（计划层照声明 `kinds: []`，`tickets/T-0082`）：本指令没有操作数。
   if (!operandsFor(c)) throw new Error('0x305：文本块结束走操作数计划层，但没有声明计划');
   const win = m.resolveWin(m.lastArg);
-  m.lineCursorSave.delete(win);
-  for (const w of m.reveal.keys()) m.finishReveal(w);
+  // ★总门（raw 26045）：`(flags & 0x10001) == 0x10001` 才贴余下的行；否则 only 清 flags（raw 26099）。
+  if ((m.flags & 0x10001) !== 0x10001) {
+    m.flags = 0;
+    return;
+  }
+  m.lineCursorSave.delete(win); // raw 26052：`win+132 = win+296`（取回 0x304 保存的行游标）
+  // raw 26087 `while (!sub_45BE20(Font, Engine[122371]))`：只把**当前窗**余下的行贴出
+  // （引擎只泵 `Engine[122371]` 一窗，不是所有窗 —— 与 `T-0100` 同一条纪律）。
+  // ★游标按**当前**文本重算，但**只在已有显现条目、且新内容更多时**才刷新：
+  //   ① 文本块里的 `0x6E` 会往该窗追加行，而显现状态里的 `total` 是上次武装时的旧值
+  //      （块内 `0x6E` 提前 return、不碰显现状态）⇒ 不刷新会只贴出旧那一段；
+  //   ② **但不能在这里新造条目**：没有条目时 `revealedOf` 本来就是 `-1`（全显示）/`0`（未武装），
+  //      而新造一条 `shown = total` 会让随后的 `0x72` 武装（`beginReveal(..., speed>0)` ⇒ `shown = 0`）
+  //      在"内容版本不变而游标变小 = 重放"的判据下变成**假重放**
+  //      （`test/game-start-chain.test.ts` 判据⑦ 实测 1 次；A/B：只回退这一处即转绿）。
+  const st = m.reveal.get(win);
+  const laid = layoutWindow(win, { style: styleOfWin(e, win), segments: m.slot(win).segments });
+  if (st && laid.glyphCount > st.total) {
+    // `speedMs = 0` ⇒ `beginReveal` 走 instant 支（`shown = total`、`active = false`）= 一次贴满
+    m.beginReveal(win, laid.glyphCount, e.nowMs, 0);
+  } else {
+    m.finishReveal(win);
+  }
   if (m.charMode) e.endCharReveal();
   e.serviceTextReveal(e.nowMs);
   emitWin(e, win);
+  // raw 26074-26086：MessageSpeed 非 0 且 ADV 未置 ⇒ 置 `0x20000000` + 起 MessageSpeed 节拍，
+  // 然后清 flags 直接返回（这一支**不碰**等待门计时器）。
+  const speed = messageSpeedOf(e);
+  if (speed > 0 && (e.effectFlags & ADV_ACTIVE) === 0) {
+    e.effectFlags |= SLEEP_GATE;
+    e.sleepUntil = e.nowMs + Math.max(1, speed);
+  } else if (
+    // raw 26090-26094：`Engine[667856] == 1`（=`set:DrawMode`）且 `Engine[369360] & 2 == 0`
+    // ⇒ 清等待门计时器两格（`369352/369356`）；第三格 `369344 = 1` 全库只写不读 ⇒ 不建模。
+    (e.config ? cfgInt(e.config, CFG.setDrawMode, 0) : 0) === 1 &&
+    ((e.engineValues.get(ENGINE_FIELD.msgField92340) ?? 0) & 2) === 0
+  ) {
+    e.gateWaitStart = 0;
+    e.gateWaitMs = 0;
+  }
   // ★引擎三条出口都清 `Engine[122497]`（raw 26083/26095/26099）⇒ 文本块结束后必须退出"注音/内嵌模式"。
   m.flags = 0;
 };
@@ -1069,11 +1232,28 @@ const op_get_skip_mode: OpHandler = (c) => {
 /**
  * `0x1B6`（sub_42D2C0 raw 38038-38042）：`op1 = (Engine[97052] != 0)`。
  *
- * `Engine[97052]` 是**「共存消息」状态**（引擎的配置键串是 `set:CoexistMess`，raw 13706）：
- *  - 置位端 = `0x1B7`（sub_41FF20 raw 29181-29189）`97052 = (op1 != 0)`；
- *  - 引擎帧循环（raw 13699-13705）每帧看到它就 `97052 = 0` 并提前 return，
- *    同时按 `set:CoexistMess` 决定 `97050 = 0`（关掉跳读）。
- * emulator 把 97052 放在 `Engine.advFields`（与 `0x1B7` 成对，可往返测试）。
+ * `Engine[97052]` 是**「共存消息」标记**（配置键串 = `"set:CoexistMesSkip"`；raw 4276 的
+ * `aSetCoexistmess[19] = "set:CoexistMesSkip"` —— 符号名少两个字母，**串本身**才是键名，
+ * `configRegistry.ts` 用的也是 `set:CoexistMesSkip`）：
+ *  - 写入端 = `0x1B7`（sub_41FF20 raw 29181-29189）`97052 = (op1 != 0)`；
+ *  - **读出端之一** = 本指令（`sub_42D2C0` 回写 `_this[97052] != 0`）；
+ *  - **读出端之二** = `0x72 wait-for-input` 尾段（raw 28556 `v7 = (97052 == 0)` ⇒ 非 0 时给该窗起
+ *    自动翻页节拍）—— emulator 见 `armCoexistAutoMessage`；
+ *  - **清零点** = `sub_4090F0` 开头的"消费即清零"（raw 13699-13703）与 `sub_4764F0`（raw 90964）。
+ *
+ * ★**订正（审计 §4.1 P1 `op-4`/`op-5` + P3 `op-174`）**：旧注释把 `sub_4090F0` 说成
+ * 「引擎帧循环每帧看到它就清 0」、且把键名写成 `set:CoexistMess` —— **两处都不对**：
+ *  - 它的入口**不是帧循环**：`sub_4090F0` 是 `IAGEService` vtable 的 **+132** 槽
+ *    （`.data:00526B78 = sub_4764E0`，`sub_4764E0` 的体只有一行 `sub_4090F0(Engine, a1)`），
+ *    由 **AGERC.DLL 的系统命令** `case 40035`（vtable +136 = `sub_4764F0`）与 `case 40037`
+ *    （vtable +132 = `sub_4764E0`）调用，两处后面都跟着装 `CALLBACK_SETTING.BIN`
+ *    （`engine/AGERC.DLL_utf8.c:2426/2441`）⇒ 触发点是**进设置画面**，不是每帧；
+ *  - 键名是 `"set:CoexistMesSkip"`（见上）。
+ *  emulator 侧：`Engine[97052]` 存 `Engine.advFields`，**读**已由 `0x72` 接上（本次），
+ *  **清零**仍无落点 —— 因为清零点在 AGERC 的系统命令层，emulator 没有那一层（登记为缺口）。
+ *  另注意语料：置 1 的只有 `src/FELLOW.txt:1324 i1b7 1`（调试菜单），而 334 处
+ *  `i1b6 <g> / sub <g> 1 <g> / i1b7 <g>` 是**脚本侧**的"读-减-写回"消费习语
+ *  （值 1 ⇒ 减成 0 ⇒ 写回 0）⇒ "永久读回 1"只在脚本不跑那个习语时成立。
  */
 const op_get_coexist_state: OpHandler = (c) => {
   const plan = planFor(c);
@@ -1542,17 +1722,29 @@ const op_set_ruby_bold: OpHandler = (c) => {
 };
 
 /**
- * `0x260 <a> <b> <c> <d>`（sub_426080 raw 33310-33328）：竖排**源矩形修正**
- * `Font+235112/235116/235120/235124 = op1/op2/op3/op4`。
- * ★这正是报告 A 里"找不到写入点"的那四个字段的写入者。重写侧直接光栅化字形、
- * 不经过离屏源矩形 ⇒ **只记录不消费**（见 ADR §7）。
+ * `0x260 <x> <dw> <y> <dh>`（sub_426080 raw 33310-33328）：竖排 blit 内边距
+ * `Font+235112/235116/235120/235124 = op1/op2/op3/op4`（`_this[80102..80105]`，`_this` = **Font**）。
+ *
+ * ★**订正（审计 §4.1 P3 `0x260`，写入归属错）**：这四个是 **Font 级全局字段**，不是逐窗字段。
+ * 旧实现写 `geom(defaultWin).vPad` ⇒ `i080 N`（`0x80` 换默认窗）之后这四个值就"归"到旧窗名下、
+ * 新默认窗读到 0；现在落 `msgwin.font.vPad`（与 `vertical` 同层，按入队时刻进 `FontStyleSnapshot`）。
+ *
+ * ★**P1「无消费者」的核验结论 = 重写侧没有可消费的等价物**（不是"忘了接"）：
+ * 引擎的读点全在 `sub_45A940` 一族的**绘制**路径（raw 71663-71674、71844-71853、72302-72311 …），
+ * 逐字是「`if (Font+235108 & 1) { 目标左边 -= x; 目标上边 -= y; 目标右边 += dw; 目标下边 += dh;
+ * 源点x -= x/218592; 源点y -= y/218596; }`」—— **目标位移与源位移严格同步**：
+ * 目标像素 `p` 采样的表面坐标 = `(S − x/s) + (p − (L − x))/s = S + (p − L)/s`，与 x 无关
+ * （`s` = `Font+218592/218596`，raw 78765/78767 初始化为 **1.0**）。
+ * ⇒ 这四个值**只改变"从离屏表面复制哪一块"**（把旋转字形的边缘也包进来），
+ * 字形内容的屏幕落点一个像素都不变。重写侧直接光栅化字形（`renderer/text/raster.ts`）、
+ * 既没有"源矩形复制"这一步，也没有逐字裁切 ⇒ 复制范围放大**没有可观察结果**。
+ * 因此这里**不再假装有消费者**：值按 Font 级发布给宿主（`MsgWinStyle.vPad`，供诊断/快照），
+ * 渲染侧有意忽略它。对照：`0x261`（`vertical`）同理只记录 —— 引擎的排版例程不读它。
  */
 const op_vertical_rect_pad: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
-  const win = e.msgwin.defaultWin;
-  const g = e.msgwin.geom(win);
-  g.vPad = {
+  e.msgwin.font.vPad = {
     x: (plan.int(1) ?? 0),
     dw: (plan.int(2) ?? 0),
     y: (plan.int(3) ?? 0),
@@ -1662,13 +1854,21 @@ const op_draw_string: OpHandler = (c) => {
 /**
  * **`0x205`（`sub_4233E0` raw 31470-31491）：把**数值**按格式画进纹理槽（GDI 数字文本）。**
  *
- * 引擎体只有 6 步（`op2` 是 **in/out**）：
+ * 引擎体全文（**`op2` 只读**；x 前进量落在**栈局部** `v8` 上，脚本看不见）：
  * ```c
- * v8 = op2;  v6 = op6;  v4 = op5;  v2 = op4;         // x / 格式标志 / 字段宽 / 数值
- * sub_4072F0(_this, buf, &v8, v2, v4, v6);           // ★把数值格式化，并**回写 v8 = 新的 x**
- * v7 = op3;  sub_456710(Font, op1, buf, v8, v7);     // 用新 x 把串直绘进槽 op1（与 0x204 同一个 GDI 缝）
+ * v8 = sub_41BF50(_this, 2);                          // x（读进局部）
+ * v6 = sub_41BF50(_this, 6);  v4 = sub_41BF50(_this, 5);  v2 = sub_41BF50(_this, 4);
+ * sub_4072F0(_this, v9, &v8, v2, v4, v6);             // ★&v8 = **栈地址**（`int v8; // BYREF`）
+ * v5 = v8;  v3 = sub_41BF50(_this, 1);
+ * sub_456710(_this + 21324, v3, v9, v5, v7);          // 用新 x 把串直绘进槽 op1（与 0x204 同一个 GDI 缝）
  * ```
- * ⇒ 脚本可观测的部分是 **`op2` 的写回**（数字排完后 x 前进到哪），其次是那张槽上出现的数字。
+ * ★**订正（`tickets/T-0147`，审计 P1）**：此前 handler 注释、`operandPlan.ts` 的 io 与
+ * `analysis/opcodes.json` 的语义**三处一致地**写成"`op2` 是 in/out、会把 x 前进量回写脚本"——
+ * 那是错的：`&v8` 是 `[ebp-28h]` 的栈局部，**引擎从不回写操作数**。错实现的后果有两面：
+ * ① `op2` 是立即数时 `writeIntOperand` 直接抛（真实语料 `i205 … 50 …` 就是立即数 ⇒ 硬停）；
+ * ② `op2` 是可写槽时**静默污染**脚本状态（脚本下一次读该槽会拿到"数字排完后"的 x）。
+ * ⇒ 现在只把 §"格式语义"里的 `x` 前进量当**内部量**交给 `drawString`。
+ *
  * 语料：`i205` **313 处 / 35 个脚本**（`INFOSK` / `DRAWLINKTIP` / `INFOIT` / `ALCHEMY` / `INFOEN` …），
  * 典型写法 `i205 c5 166 50 (local-int 2776) 1 10000`。
  *
@@ -1720,8 +1920,7 @@ const op_draw_number_string: OpHandler = (c) => {
         : halfWidth
           ? Math.trunc((cell.start * cy) / 2)
           : cell.start * cy;
-  const nx = x + advance;
-  plan.setInt(2, nx); // ★op2 是 in/out
+  const nx = x + advance; // ★引擎的 x 前进量只在**栈局部** `v8` 上（raw 31482/31486/31488）⇒ 不回写 op2
   if (cell.ascii.length === 0) return;
   const st = globalTextStyle(e);
   c.native.drawString?.(slot, nx, y, halfWidth ? cell.ascii : toFullWidth(cell.ascii), {
@@ -1796,7 +1995,7 @@ export const MSGWIN_OPS: OpTable = [
   [0x6e, op_show_text], // show-text：追加文本 + 分段节流
   [0x6f, op_end_text_line], // end-text-line
   [0x204, op_draw_string], // draw-string：把一整串文本直绘进某个纹理槽（不走消息窗）
-  [0x205, op_draw_number_string], // ★数字直绘进纹理槽（op2 是 in/out：回写 x 前进量），313 处
+  [0x205, op_draw_number_string], // ★数字直绘进纹理槽（★op2 **只读**：x 前进量是引擎体内的栈局部，`tickets/T-0147`），313 处
   [0x071, op_message_show], // message-show（修正：不再无条件置 ADV）
   [0x072, op_wait_for_input], // wait-for-input：结束一页并挂起（bit31 等待门）
   [0x0fa, op_poll_msg_advance], // poll-msg-advance（★过去未注册 ⇒ 命中即硬报错）

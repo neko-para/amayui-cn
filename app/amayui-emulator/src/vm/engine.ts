@@ -8,13 +8,13 @@ import { MsgWindow } from './msgwin.js';
 import { PANEL_BASE } from './handlers/panel.js';
 import { RoutePanel } from './route.js';
 import type { PanelField } from './route.js';
-import { TextItemTable } from './textItems.js';
+import { ITEM_REFLOW, TextItemTable } from './textItems.js';
 import { StageLoop, runStageService } from './stageLoop.js';
 import { TEXT_BASE_GATE } from './handlers/text-items.js';
 import { cfgInt } from '../engineConfig.js';
 import { CFG } from '../configRegistry.js';
-import { emitWin, messageSpeedOf, winStyle } from './handlers/msgwin.js';
-import { FIELD_CHAR_CURSOR, FIELD_WIN_REVEAL_GATE } from './engineFieldIds.js';
+import { emitWin, messageSpeedOf, styleOfWin, winStyle } from './handlers/msgwin.js';
+import { ENGINE_FIELD, FIELD_CHAR_CURSOR, FIELD_WIN_REVEAL_GATE } from './engineFieldIds.js';
 import { layoutWindow } from '../text/layout.js';
 import type { Ref } from './ref.js';
 
@@ -41,6 +41,19 @@ export const ADV_ACTIVE = 0x8000000;
  * ⇒ `sub_45A940(Font, 当前窗, Engine[107704], 0)`（贴出第 k 个字格）⇒ `k = (k+1) % Engine[107705]`。
  */
 export const CHAR_REVEAL_ACTIVE = 0x40000000;
+
+/**
+ * **自动翻页计时器对象**（引擎 `Engine+430180` = `_this[107545]` 起 7 个 dword 的计时器块；
+ * `t[2]` = 周期序号、`t[4]` = 停表、`t[5]` = 起点 `timeGetTime()`、`t[6]` = 周期 ms）。
+ *
+ * 谁写：`0x72` 尾段（raw 28585 `sub_453A60`）、`sub_4090F0`（raw 13726）、等待泵 `sub_411BC0`
+ * （raw 20399 `sub_453BD0` / raw 20425 `sub_453A60`）。谁读：**只有** `sub_411BC0` raw 20430
+ * 的 `sub_453AF0`（到期 ⇒ 自动翻页）⇒ 这就是 `Engine[97052]` 的消费端（见 `#serviceAutoMessage`）。
+ */
+const AUTO_MESSAGE_TIMER = 107545;
+
+/** 引擎 `Engine[122501]`（= `Input`… 不，是设备）：语音 3 路里是否有正忙（`sub_404CB0`；emulator 恒 0，见 audio 侧缺口）。 */
+const FIELD_VOICE_BUSY = 122501;
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
@@ -1128,24 +1141,42 @@ export class Engine {
    *              clear bit31 (20250)
    *              dispatch(label, -3)                       // 压返回点 -3 → ip = labelC (20251-20258)
    *              cursor = -1; enterPending = 0             // LABEL_68 (20456-20457)
-   * ② 推进输入 (mask & 0x10) 或 滚轮键：                    // 20262-20267
+   * ② 推进输入 (mask & 0x50) 或 滚轮键：                    // 20262-20267
    *    clear bit31 (20276)
    *    if (mask & 0x10 && panel.shown && 0 <= cursor < count)   // 20284-20288（鼠标左键）
    *        guard(owner); dispatch(labelC of cursor, -3); cursor = -1; enterPending = 0   // 20289-20292
    *    else messageAdvanceInWindow()                       // sub_48E870/sub_48EB30 (20296-20305)：★不动 ip
-   * ③ 悬停（两段式 enter/leave）：                          // 20315-20339
+   * ③ 输入丢弃门 / 文本回卷门：                            // 20315-20321
+   *    右键 (mask & 0x20) 或 [滚轮键按下 && 97055 >= 0 && Conf(set:ReDrawTextOnKey) == 1]
+   *        ⇒ 跳过悬停（前者继续走 ⑥ 的取消路由；后者直接 `*v2 = 0` → LABEL_44）
+   * ④ 文本回卷（滚轮键，★要求 ADV 位 0x40000000）：        // 20341-20363
+   *    conf(set:WheelKeyUp) 命中 ⇒ moveCursor(-1) + 489816 = -1    （20345-20348）
+   *    else conf(set:WheelKeyDown) 命中 ⇒ moveCursor(+1) 真 ⇒ 489816 = +1（20355-20357）
+   *    else 489816 = 0                                     // 20360
+   *    命中 ⇒ effect_flags |= 0x100000、跑 CALLBACK_TEXT.BIN、`*v2 = 0`（20349-20352）
+   * ⑤ 悬停（两段式 enter/leave）：                          // 20322-20339
    *    gated ⇒ r = panel.nextHoverLabel() (sub_403E70, 20324)
    *    r != -1 ⇒ guard(owner); dispatch(r, -3); clear bit31 (20327-20334)
    *              if (!Conf(set:ControlDisibleCursor)) finishCharReveal()   // 20335-20336
+   * ⑥ 右键「取消 / 跳读」路由（★**直接 return，不落 LABEL_44**）：  // 20365-20368
+   *    jump = Engine[489488 + 4*cur]                        // 本帧 0xCC 注册的 mouseJump label（dword 偏移）
+   *    jump == -1 ⇒ **直接 return，什么都不做**
+   *    否则 ⇒ 489808 = effect_flags | 0x6000000、effect_flags = 0、489812 = 帧指令条数、
+   *            430712 = 本帧脚本身份、**ip = ip_base + 4*jump**
    * ```
    *
    * ★**与旧实现的差别**（旧实现已删）：
    *  - 点击走 **labelC**（`sub_404E00` / 主循环 20182），**不是** labelA——旧实现取 `labelNext` 是错的；
    *  - 悬停 label **带返回点**（`-3`）当子程序跑，`ret` 回到门指令重跑 ⇒ 不需要"跑完还原 ip"；
    *  - **泵里不做命中测试**（`sub_403C50` 只在鼠标移动/面板首次显示时调）；
-   *  - 没有热点时 = **在消息窗内推进文本**（不动 ip），不是"放行脚本自己跑"。
+   *  - 没有热点时 = **在消息窗内推进文本**（不动 ip），不是"放行脚本自己跑"；
+   *  - ★2026-09（本简报）：**右键不是"什么都不做"** —— 本帧 `0xCC` 注册过 mouseJump 时要把
+   *    帧 ip 改写到那个 label 并清整个 `effect_flags`（`#cancelRoute`）；**滚轮键**也不再只是
+   *    "另一种推进"：它走 ④ 的文本回卷（`moveCursor`），而"推进"只认 `set:WheelKeyDown`。
    *
-   * @returns `true` = 本帧处理过一次输入（派发了 label 或推进了页内文本）。
+   * @returns `true` = 本帧处理过一次输入（派发了 label 或推进了页内文本）；
+   *          右键取消路由**一律返回 `false`**（引擎 raw 20368/20374 不落 `LABEL_44` ⇒ 不算"推进"，
+   *          也不跑自动翻页块；与既有断言 `test/adv-msgwin.test.ts:458` 的语义一致）。
    */
   serviceAdvanceWait(): boolean {
     if (!this.awaitingAdvance) return false;
@@ -1155,7 +1186,7 @@ export class Engine {
     //   若用 `flushHeld()`（含按住态），按住左键期间本泵会**每帧**满足 `advancePressed` ⇒
     //   每帧翻一页（用户实测：单击一次快进多页、按住就一直推进）。见 `tickets/T-0027`。
     const mask = im.flushPending();
-    if (!panel.shown) return false;
+    if (!panel.shown) return this.#endWaitPump(mask, false);
 
     // ★命中测试**只在鼠标移动过时**重做（引擎 `sub_4B8D50` raw 140827-140830 在 WM_MOUSEMOVE 里调
     //   `sub_403C50`；等待泵里没有它）。`hitTestPending` = "游标还没按最新位置重算过" ⇒ 做完即消费
@@ -1176,11 +1207,13 @@ export class Engine {
       this.lastDispatch = { label: keyLabel, kind: 'key' };
       panel.cursor = -1; // LABEL_68
       panel.enterPending = 0;
-      return true;
+      return this.#endWaitPump(mask, true);
     }
 
-    // ② 推进输入：`(mask & 0x50) != 0`（鼠标左/右）或滚轮键位命中（受 set:WheelKeyDown +
-    //    message:AdvanceMesOnWheel 位 0 门控）。**没有推进输入时继续看 ③ 悬停**。
+    // ② 推进输入：`(mask & 0x50) != 0`（鼠标左/右）或 `set:WheelKeyDown` 键位命中（受
+    //    message:AdvanceMesOnWheel 位 0 门控，且跳读中不推进）。★右键在 ③ 已经返回，到不了这里
+    //    ⇒ 实际生效的是「鼠标左键」与「滚轮下键 + 配置位」两条（raw 20262-20267 的 `0x50` 里
+    //    bit5 那条只对"面板未显示"的情况有意义，而面板未显示时上面已经 return）。
     if (this.advancePressed(mask)) {
       this.awaitingAdvance = false; // 20276
       // 20278-20282：收尾逐字显现（同 sub_4051A0）
@@ -1200,23 +1233,319 @@ export class Engine {
       }
       im.consumeWheelDelta();
       im.consumeEdges(); // `*v2 &= ~0x10`（20312）+ 掩码整体弃用
-      return true;
+      return this.#endWaitPump(mask, true);
     }
 
-    // ③ 悬停（两段式 enter/leave；raw 20315-20339）。
-    //    ★与规格 §D.1 的字面描述相反：`set:ReDrawTextOnKey == 1` 是**跳过**悬停的条件之一
-    //    （汇编 0x411DBF-0x411DEB：`cmp eax,1 / jnz 悬停分支`），且只在"滚轮键按下 + `97055>=0`"时才生效
-    //    ⇒ 随包 INI 缺该键（= 0）时悬停**是生效的**（见 `hoverDispatchAllowed` 的注释）。
-    if (!this.hoverDispatchAllowed()) return false;
+    // ③ 两条「本帧不再看悬停」的门（raw 20315-20321）。★**次序照 raw**：
+    //    ① 右键（`mask & 0x20`）⇒ 一直走到 **⑥ 的取消 / 跳读路由**（raw 20365-20374）才收口；
+    //    ② 滚轮键按下 + `Engine[388220]`（= `97055` 文本对象槽参数）>= 0 + `Conf(set:ReDrawTextOnKey) == 1`
+    //       ⇒ 什么都不派发，`*v2 = 0` 后直接 `goto LABEL_44`。
+    //    ★两条都**不**经过滚轮分支（raw 20341 在 20315 的 `else` 里），但①要落到 20365 那条。
+    if ((mask & 0x20) !== 0) {
+      // raw 20366 `*v2 = 0`（消费这次输入）→ raw 20367-20368（未注册则**直接 return**）→ 20369-20374。
+      im.consumeEdges();
+      this.#cancelRoute();
+      // raw 20368/20374 **都不是 `goto LABEL_44`** ⇒ 不跑自动翻页块，也不算"处理过一次推进"。
+      return false;
+    }
+
+    // ④ 文本回卷（滚轮键；引擎 raw 20341-20363，**整个块被 ADV 位 0x40000000 门控**）。
+    if ((this.effectFlags & CHAR_REVEAL_ACTIVE) !== 0 && this.#textRewindWheel(mask)) {
+      return this.#endWaitPump(mask, true);
+    }
+    if (this.#advInputDropped(mask)) {
+      // ② 的那条：什么都不派发（raw 20362 `*v2 = 0` ⇒ LABEL_44）。
+      return this.#endWaitPump(mask, false);
+    }
+
+    // ⑤ 悬停（两段式 enter/leave；raw 20322-20339）。
+    if (!this.hoverDispatchAllowed(mask)) return this.#endWaitPump(mask, false);
     const hoverLabel = panel.nextHoverLabel(); // sub_403E70 (20324)
-    if (hoverLabel === -1) return false;
+    if (hoverLabel === -1) return this.#endWaitPump(mask, false);
     this.guardScriptIdentity(panel.ownerScriptId); // sub_4083B0 (20327)
     this.dispatchWithReturn(hoverLabel, -3); // sub_405360(-3) + ip = label (20328-20332)
     // 观测：`[7466]` 已置 ⇒ 这一条是"离开"（`sub_403E70` 的 9944），否则是"进入"（9949）
     this.lastDispatch = { label: hoverLabel, kind: panel.enterPending !== 0 ? 'hover-leave' : 'hover-enter' };
     this.awaitingAdvance = false; // effect_flags &= ~0x80000000 (20334)
     if (this.controlDisableCursor() === 0) this.finishCharReveal(); // sub_4051A0 (20335-20336)
+    return this.#endWaitPump(mask, true);
+  }
+
+  /**
+   * **右键「取消 / 跳读」路由**（引擎 `sub_411BC0` raw 20365-20374，`tickets/T-0167` 的 §4.2 #1）。
+   *
+   * ```c
+   * v6 = *(_DWORD *)(_this + 383104);                                 // 20365：当前帧号
+   * *v2 = 0;                                                          // 20366：消费掉这次输入
+   * if ( *(_DWORD *)(_this + 4 * v6 + 489488) == -1 ) return;         // 20367-20368：★本帧没注册 ⇒ 直接 return
+   * *(_DWORD *)(_this + 489808) = *(_DWORD *)(_this + 699204) | 0x6000000;  // 20369
+   * *(_DWORD *)(_this + 699204) = 0;                                  // 20370：清**整个** effect_flags
+   * *(_DWORD *)(_this + 489812) = (…383128 − …383124) >> 2;           // 20371：本帧指令条数
+   * *(_DWORD *)(_this + 430712) = *(_DWORD *)(_this + 120*v6 + 383184);      // 20372：本帧脚本身份
+   * *(_DWORD *)(_this + 120*v6 + 383128) = …383124 + 4 * *(_DWORD *)(…489488);  // 20373-20374：改写帧 ip
+   * ```
+   *
+   * ## 引擎里三格的下落（**emulator 的落点与缺口，逐格给**）
+   * | 引擎格 | emulator | 状态 |
+   * |---|---|---|
+   * | `489808` = `_this[122452]` | `ENGINE_FIELD.redisplayMode`（122452） | **已接线**：读者 = `0x7C`（`handlers/frame.ts:265-280`，`mode & 0x2000000` 门 + `effect_flags = mode & 0xFDFFFFFF` + 清 0）—— 本改动照引擎写 `effect_flags \| 0x6000000`，于是那个读者对右键取消**天然成立**（写 0x6000000 是与 `0x199`（`handlers/frame.ts:224`）同一形状） |
+   * | `489812` = `_this[122453]` | `ENGINE_FIELD.redisplayReturn`（122453） | ★**登记缺口**：读者现成（同一 `0x7C` 的 `jumpToDword`，`handlers/frame.ts:277-278`），但**写不出正确值**——它要求"回调脚本跑完那一刻 `(ip−ip_base)>>2`"，而 emulator **不装载/不跑 `CALLBACK_TEXT.BIN`**（那要 `sub_411560`→`sub_40FC90`→`sub_40FB60` 的按名装载+派发链，emulator 无"按名装载并把控制立刻交给它"的口，见 `#textRewindWheel` 的登记）。写标签下标或 `instructions.length` 只会把 ip 还原到**错的地方**（比不动更坏）⇒ 治本前**不写**；`redisplayMode` 已被写成 `0x6000000`（**不含** `0x2000000`）⇒ 真到了 `0x7C` 会照引擎 raw 25791-25796 抛 `END.HWL`（= "那条回调没跑"的可观测后果），而不是静默乱跳。 |
+   * | `430712` = `_this[107678]` | `ENGINE_FIELD.redisplayScriptId`（107678） | **已接线**：读者 = `0x7C` raw 25799 的深度校验（`handlers/frame.ts:271-276`：`frame.scriptId` 必须等于它）；值与 `0x199`（`handlers/frame.ts:228`）写的是同一格、同一口径（`frame.scriptId`） |
+   *
+   * ★**为什么三格能复用 `0x7C`（`local-ret`）的那一套**：引擎体里**本来就是同一批格子**
+   * （raw 20369 的 `489808/489812` 与 raw 20872-20874 的 `0x4000000` 分支**逐字相同**），
+   * `0x7C` 的注释（`handlers/frame.ts:243`）也早已把 `489808`/`489812` 标成 `122452`/`122453`
+   * ⇒ 复用同一个 `ENGINE_FIELD` 常量是**忠于引擎**，不是 emulator 自造的别名。
+   *
+   * ★**本路由不压返回点、也不装载脚本**：引擎直接改写 `ip`（不是 `sub_405360` 的调用形态）
+   * ⇒ emulator 直接 `frame.ip = p`，与 `0x199`（`jumpToDword`）同一条"自行定 ip"的口径。
+   * `stepOnce` 之后照常从新 ip 继续派发。
+   *
+   * @returns `true` = 本帧有注册的 mouseJump label 且已被派发；`false` = 未注册（**什么都不变**）。
+   */
+  #cancelRoute(): boolean {
+    // `Engine[489488 + 4*cur]`：本帧的 mouseJump 表（`0xCC` 的 op2 写 `input.mouseJump`）。
+    const jump = this.input.mouseJump | 0;
+    if (jump === -1 || jump === 0xffffffff) return false; // raw 20367-20368：★直接 return
+    const f = this.curScript();
+    const p = f.labelMap.get(jump);
+    if (p === undefined) {
+      // ★**已知口径差**：引擎这里是 `ip = ip_base + 4*表项`，表项不在映像里时会跑到**非法地址**
+      //   （真机崩/野跳）。emulator 的 `ip` 是脚本映像的**下标**，没有"地址"可野跳 ⇒ 这里选择
+      //   **什么都不做**（与"未注册"同路），并把这件事记下来而不是编一个目标。重开条件：若将来
+      //   要把"脚本与其 mouseJump 表不一致"当硬错误，这里应改成抛错（那需要先确认真机的表现）。
+      return false;
+    }
+    const saved = this.effectFlags | 0;
+    this.effectFlags = 0; // raw 20370：清**整个** effect_flags
+    this.engineValues.set(ENGINE_FIELD.redisplayMode, (saved | 0x6000000) | 0); // raw 20369
+    this.engineValues.set(ENGINE_FIELD.redisplayScriptId, f.scriptId); // raw 20372（= `frame[95796]`）
+    // raw 20371（`489812` 的指令条数）**有意不写** —— 理由见上面表格那一行。
+    f.ip = p; // raw 20373-20374：ip = ip_base + 4 * 表项
+    this.lastDispatch = { label: jump, kind: 'cancel-route' };
     return true;
+  }
+
+  /**
+   * **本帧「不再看悬停」的滚轮门**（引擎 `sub_411BC0` raw 20315-20321 的 `else` 一侧）。
+   *
+   * ```c
+   * if ( (*(_BYTE *)v2 & 0x20) == 0 )            // ★右键：**不**走下面那一对，走 20365 的取消路由
+   * { v26 = 1 << Conf(set:WheelKeyUp);
+   *   if ( ((v26 | (1 << Conf(set:WheelKeyDown))) & *v2) == 0
+   *     || *(int *)(_this + 388220) < 0                       // = Engine[97055]（文本记账门）
+   *     || Conf(set:ReDrawTextOnKey) != 1 )   ⇒ 悬停分支（20322-20339）
+   *   else ⇒ `*v2 = 0; goto LABEL_44;`          // 20362-20363：本帧什么都不派发
+   * }
+   * ```
+   *
+   * ★**右键那一支不归本函数**：泵在调它**之前**就已经 `return`（走 `#cancelRoute`）。两者的效果
+   * 完全不同（滚轮那条什么都不做；右键那条会改写帧 ip 并清整个 `effect_flags`）⇒ 不合并成一个
+   * 谓词，否则右键的行为会被"什么都不做"吃掉。
+   */
+  #advInputDropped(mask: number): boolean {
+    const cfg = this.config;
+    const wheelUp = cfg ? cfgInt(cfg, CFG.setWheelKeyUp, 0) : 0;
+    const wheelDown = cfg ? cfgInt(cfg, CFG.setWheelKeyDown, 0) : 0;
+    const wheelBits = ((1 << (wheelUp & 31)) | (1 << (wheelDown & 31))) >>> 0;
+    if ((mask & wheelBits) === 0) return false; // 滚轮键没按 ⇒ 不丢
+    // `Engine[388220]` 有符号 < 0（= `i1bb 0` 写的 0x80000000）⇒ 不丢（照常悬停）
+    if (((this.engineValues.get(TEXT_BASE_GATE) ?? 0) | 0) < 0) return false;
+    if (!cfg) return false;
+    return cfgInt(cfg, CFG.setReDrawTextOnKey, 0) === 1; // `== 1` ⇒ 丢
+  }
+
+  /**
+   * **文本回卷（滚轮键）**（引擎 `sub_411BC0` raw 20341-20363，`tickets/T-0167` 的 §4.2 #14）——
+   * `TextItemTable.moveCursor`（`src/vm/textItems.ts:320`，逐行复刻 `sub_459770`）的**唯一产品消费者**。
+   *
+   * ```c
+   * if ( (*(_DWORD *)(_this + 699204) & 0x40000000) != 0 )    // 20341：★ADV 位（= CHAR_REVEAL_ACTIVE）
+   * { v7 = Conf(set:WheelKeyUp);  v8 = (_DWORD *)(_this + 85296);
+   *   if ( ((1 << v7) & *v2) != 0 )                           // 20345：上滚键位命中
+   *   { sub_459770(v8, -1, 2);                                // 20347：游标**后退一行**
+   *     *(_DWORD *)(_this + 489816) = -1;                     // 20348：回看方向 = -1
+   * LABEL_21:
+   *     *(_DWORD *)(_this + 699204) |= 0x100000u;             // 20350：置"跳读中"位
+   *     sub_411560((_DWORD *)_this, aCallbackTextBi);          // 20351：跑 CALLBACK_TEXT.BIN
+   *     *v2 = 0; goto LABEL_44; }                              // 20352：消费掉这次输入
+   *   if ( sub_459770(v8, 1, 2) )                             // 20355：前进一行
+   *   { *(_DWORD *)(_this + 489816) = 1; goto LABEL_21; }      // 20357-20358
+   *   *(_DWORD *)(_this + 489816) = 0; }                       // 20360：无回看事件
+   * *v2 = 0; goto LABEL_44;                                    // 20362
+   * ```
+   *
+   * ## 逐字口径（三处容易写错，**照抄引擎**）
+   * 1. **上滚键位没有单独判**：raw 20355 是 `if (sub_459770(v8, 1, 2))`，**没有** `1 << Conf(set:WheelKeyDown)`
+   *    的前置 `& *v2`（对照 raw 20345 那一行是有的）。⇒ 只有"上滚键命中"才保证进这一块；下滚键命中时
+   *    这里会**试着前进**，成功就当成"下滚回看"。这是反编译的 `v7` 复用（`v7` 只在 20343 被赋过值）
+   *    —— 若真机其实是第二轴的别名，本文也照它跑（见下方"已知偏差"）。
+   * 2. **方向**：`-1` = 后退/回看更早（上滚）、`+1` = 前进（下滚）—— 与 `set:WheelKeyUp = 3`（掩码 bit3）
+   *    的默认配置不矛盾：滚轮**上**给"上滚键"，把页游标**往回**拨。
+   * 3. **`0x100000`（跳读位）是"或"上去的**（20350 `|= 0x100000u`），不是赋值 —— 所以它会被
+   *    `advancePressed`（raw 20265 `(699204 & 0x100000) == 0`）与 `serviceAdv` 的收尾分支读到。
+   *
+   * ## `489816`（`_this[122454]`）在 emulator 的落点
+   * 它**不是新字段**：`ENGINE_FIELD` 家族里紧邻 `redisplayMode`(122452)/`redisplayReturn`(122453)，
+   * 语义 = **文本回卷方向**（`0x84`/`0x199` 一族与本节会写它；`#serviceAutoMessage` 已经在读它：
+   * 非 0 ⇒ 停自动翻页计时器，raw 20378-20383）。emulator 侧用 `engineValues` 的 `122454` 格承载
+   * （`ENGINE_FIELD.textRewind`，已由父代理从本节私有常量提升为注册表常量，字节 489816），
+   * **写者 = 本节**、**读者 = `#serviceAutoMessage`** ⇒ 不是死写。
+   *
+   * ## 已知缺口（明确登记）
+   * - **`sub_411560(Engine, "CALLBACK_TEXT.BIN")` 未建模**：它 = `sub_455000`（按名取统一文件 id）+
+   *   `sub_40FC90`（`sub_409E10` 入队 + `sub_40FB60` 立即派发）。emulator 的按名装载口只有
+   *   `FileSource.readScriptByName`（现在**唯一**调用点是读档的 `CALLBACK_LOAD.BIN`，
+   *   `handlers/save-slot.ts:379`），**没有**"装载回调脚本并立刻把控制交给它"的机制。
+   *   ⇒ 本节只落**游标 + `489816` + `0x100000` + 消费输入**这四件事（引擎体里 `sub_459770` 前后、
+   *   `LABEL_21` 里可独立观测的部分）；**`CALLBACK_TEXT.BIN` 那一跳不假装**。
+   *   可观测后果：真机上滚轮回看会弹出「回想/回看」画面，emulator 里只回拨游标（页表/记录表已动，
+   *   `0x1D0` 与 `HISTORY.txt` 那条链仍读得到）。**重开条件** = 有了"按名装载 + 立即派发回调脚本"
+   *   的口（即把 `sub_411560`/`sub_40FC90` 建模）时，在这里补 `#runNamedCallback('CALLBACK_TEXT.BIN')`。
+   *
+   * @returns `true` = 本帧被这次滚轮回看消费掉（调用方不要再走悬停）。
+   */
+  #textRewindWheel(mask: number): boolean {
+    const cfg = this.config;
+    const wheelUp = cfg ? cfgInt(cfg, CFG.setWheelKeyUp, 0) : 0;
+    const t = this.textItems; // 引擎 `_this + 85296`（ADV 侧文本对象）的等价物 = emulator 唯一的记录表
+    let dir = 0;
+    let moved = false;
+    if (wheelUp >= 0 && wheelUp < 32 && (mask & (1 << wheelUp)) !== 0) {
+      // raw 20345-20348：上滚键位命中 ⇒ 后退一行，**不检查返回值**
+      t.moveCursor(-1, ITEM_REFLOW);
+      dir = -1;
+      moved = true;
+    } else if (t.moveCursor(1, ITEM_REFLOW) !== 0) {
+      // raw 20355-20357：★这里**没有** `1 << Conf(set:WheelKeyDown)` 的前置判（见函数头第 1 条）
+      dir = 1;
+      moved = true;
+    }
+    if (!moved) {
+      // raw 20360：两条都没走 ⇒ `489816 = 0`（"本帧没有回看事件"）且**不置** `0x100000`
+      this.engineValues.set(ENGINE_FIELD.textRewind, 0);
+      return false;
+    }
+    this.engineValues.set(ENGINE_FIELD.textRewind, dir); // raw 20348 / 20357
+    this.effectFlags |= 0x100000; // raw 20350（`|=`：跳读位，不是赋值）
+    // raw 20351 `sub_411560(_this, aCallbackTextBi)`：未建模，见函数头"已知缺口"
+    // raw 20352 的 `*v2 = 0`：把这次输入从待处理里拿掉（emulator = 清按下沿；**按住态不清** ——
+    // 引擎那格是 WndProc 挂起位，不是"物理键还按着"）。
+    this.input.consumeEdges();
+    return true;
+  }
+
+  /**
+   * **等待泵的出口**（引擎 `sub_411BC0` 的 `LABEL_44`，raw 20375-20461）——
+   * 三条输入分支（键/推进/悬停）**每一条**都 `goto LABEL_44`，所以自动翻页块在**每一帧的每一次
+   * 泵调用**上都会跑（不是"只在没输入时跑"）。这里因此把五个出口统一收进本函数。
+   */
+  #endWaitPump(mask: number, handled: boolean): boolean {
+    this.#serviceAutoMessage(mask);
+    return handled;
+  }
+
+  /**
+   * **自动翻页块**（引擎 `sub_411BC0` raw 20376-20461）＝ `Engine[97052]` 的真实消费端
+   * （审计 §4.1 P1 `op-4`/`op-5`，`tickets/T-0151`）。
+   *
+   * ```c
+   * LABEL_44:
+   * if (!Engine[97052]) return;                      // ★整个块的**唯一门**（共存消息 / 自动翻页模式）
+   * if (Engine[489816] == 122454 文本回卷态 != 0) sub_453BC0(timer);     // 停表（t[4] = 1）
+   * else { ms = (该窗行数 − 1 − Engine[122464]) * Pitch1 + Time1; if (ms <= 100) ms = 100;
+   *        sub_453BD0(timer, ms); }                   // 只在**已停表**时重臂（t[4]=0;t[2]=1;t[5]=now;t[6]=ms）
+   * if (!Engine[122501] 语音忙碌) goto LABEL_63;
+   * ...（语音忙碌支：sub_404D10/sub_404D50/sub_404CB0 三条查询，见下）...
+   * LABEL_58: if ((AutoMessageOption & 1) == 0) { if (!122501) sub_453A60(timer, Pitch0·…+Time0); return; }
+   * LABEL_63:
+   * if (sub_453AF0(timer) >= 0) {                    // ★到期 ⇒ **自动翻页**
+   *     effect_flags &= ~0x80000000;                 // 清等待门
+   *     sub_4051A0(Engine);                          // 收尾逐字显现
+   *     sub_48E870/sub_48EB30(…);                    // 页内推进（**不动脚本 ip**）
+   *     if ((mask & 0x10) && Engine[51828] && 游标有效) { sub_4083B0; sub_405360(-3); 派发游标 labelC; }
+   * }
+   * ```
+   * ⇒ **`i1b7 1` 的真实效果**：ADV 页在 `Pitch×行数 + Time` 毫秒后自己往下走（免点击）。
+   * 语料里只有 `src/FELLOW.txt:1324`（调试菜单）置位 ⇒ 默认路径不可见，但这是这一格的**唯一**
+   * 行为消费者，接上它之后 `0x1b6`/`0x1b7` 才不是"只写不读"。
+   *
+   * ★**未实现的一支（明确登记）**：`Engine[122501]`（语音 3 路是否有正忙）非 0 时的
+   * `sub_404D10`/`sub_404D50`/`sub_404CB0` 三条**语音队列同步回读**在 emulator 里不存在
+   * （见 `handlers/audio.ts` 的 `sub_426820` 注释：`Engine[122501]` 是已知缺口、恒 0）
+   * ⇒ 那一支当前不可达；若将来把 122501 接上，必须同时补这三条查询，否则会走错支。
+   * 计时器对象 = `Engine+430180`（= `_this[107545]`）：`sub_453A60`/`sub_453BD0`/`sub_453BC0`/
+   * `sub_453AF0` 的 `t[2]=1`(周期序号)、`t[4]`(停表)、`t[5]=timeGetTime()`、`t[6]=周期 ms`。
+   */
+  #serviceAutoMessage(mask: number): void {
+    /** `Engine[97052]`：共存消息 / 自动翻页模式（`0x1b6`/`0x1b7` 读写；见 `advFields`）。 */
+    if ((this.advFields.get(97052) ?? 0) === 0) return; // raw 20376
+    const T = AUTO_MESSAGE_TIMER;
+    const t = (k: number): number => this.engineValues.get(T + k) ?? 0;
+    // raw 20378-20383：文本回卷态（`Engine[489816]` = 122454）非 0 ⇒ 停表（`sub_453BC0`）
+    if ((this.engineValues.get(ENGINE_FIELD.textRewind) ?? 0) !== 0) {
+      if (t(4) === 0) this.engineValues.set(T + 4, 1);
+    } else {
+      // raw 20384-20399：按"该窗行数 − 1 − 行基准"的 Pitch1/Time1 算时长（下限 100）后重臂
+      let ms = this.#autoMessageInterval(CFG.messageAutoMessagePitch1, CFG.messageAutoMessageTime1);
+      if (ms <= 100) ms = 100;
+      // `sub_453BD0`（raw 453BD0）：**只在已停表时**重臂（`if (t[4]) { t[4]=0; t[2]=1; t[5]=now; t[6]=ms }`）
+      if (t(4) !== 0) this.#armAutoMessage(ms);
+    }
+    // raw 20401：语音不忙 ⇒ 直接做到期判定；忙 ⇒ 见函数头"未实现的一支"
+    if ((this.engineValues.get(FIELD_VOICE_BUSY) ?? 0) !== 0) return;
+    // raw 20430-20443：到期 ⇒ 清等待门 + 收尾逐字 + **页内推进**（与"点空白处翻页"同一条路）
+    if (!this.#autoMessageExpired()) return;
+    this.awaitingAdvance = false; // effect_flags &= ~0x80000000（20432）
+    this.finishCharReveal(); // sub_4051A0（20433）
+    this.messageAdvanceInWindow(); // sub_48E870/sub_48EB30（20434-20443）
+    // raw 20444-20460：同一帧里还有左键按下且游标有效 ⇒ 把这次到期当"点了那个热点"
+    if ((mask & 0x10) !== 0 && this.routes.shown && this.routes.cursorValid()) {
+      this.guardScriptIdentity(this.routes.ownerScriptId);
+      this.dispatchWithReturn(this.routes.currentLabelClick(), -3);
+      this.lastDispatch = { label: this.routes.entries[this.routes.cursor]?.labelClick ?? -1, kind: 'click' };
+      this.routes.cursor = -1;
+      this.routes.enterPending = 0;
+    }
+  }
+
+  /** 该窗"自动翻页时长" = `(行数 − 1 − Engine[122464]) × pitch + time`（raw 20389-20394 / 28568-28581）。 */
+  #autoMessageInterval(pitchKey: string, timeKey: string): number {
+    const conf = (k: string): number => (this.config ? cfgInt(this.config, k, 0) : 0);
+    const w = this.msgwin.resolveWin(this.msgwin.lastArg);
+    const lines = layoutWindow(w, { style: styleOfWin(this, w), segments: this.msgwin.slot(w).segments }).lines.length;
+    return (lines - 1 - (this.engineValues.get(ENGINE_FIELD.autoMessageBaseline) ?? 0)) * conf(pitchKey) + conf(timeKey);
+  }
+
+  /** `sub_453A60`（raw 66101-66112）：`t[2]=1; t[5]=now; t[6]=ms||1` —— 无条件重臂。 */
+  #armAutoMessage(ms: number): void {
+    this.engineValues.set(AUTO_MESSAGE_TIMER + 2, 1);
+    this.engineValues.set(AUTO_MESSAGE_TIMER + 4, 0);
+    this.engineValues.set(AUTO_MESSAGE_TIMER + 5, this.nowMs | 0);
+    this.engineValues.set(AUTO_MESSAGE_TIMER + 6, ms > 0 ? ms : 1);
+  }
+
+  /**
+   * `sub_453AF0`（raw 66149-66186）的到期判定：停表（`t[4]`）或周期 ≤ 0 ⇒ 未到期；
+   * 到期时把已过周期数写回 `t[2]`、余量写 `t[3]`（计时器**周期性重复**：下一次到期 = 起点 + 2×周期）。
+   */
+  #autoMessageExpired(): boolean {
+    const T = AUTO_MESSAGE_TIMER;
+    const t = (k: number): number => this.engineValues.get(T + k) ?? 0;
+    if (t(4) !== 0) return false; // raw 66161-66162
+    const period = t(6);
+    if (period <= 0) return false; // raw 66198
+    const count = t(2) !== 0 ? t(2) : 1;
+    const elapsed = (this.nowMs | 0) - t(5);
+    this.engineValues.set(T + 1, elapsed); // raw 66169
+    const want = period * count;
+    if (want - elapsed >= 5) return false; // raw 66170-66171：还早
+    // raw 66172-66179：`0 < 剩余 < 5` 时引擎 `Sleep(剩余)` 忙等 ⇒ 这里直接当已到点（wall clock 同步）
+    const used = Math.max(elapsed, want);
+    this.engineValues.set(T + 3, used - want); // raw 66181
+    const next = Math.floor(used / period) + 1;
+    this.engineValues.set(T + 2, next); // raw 66184
+    return Math.floor(used / period) - count >= 0; // raw 66183
   }
 
   /**
@@ -1310,24 +1639,32 @@ export class Engine {
    *
    * 整体条件（`sub_411BC0` 的 `if (~((mask & 0x20) == 0 && …))`，raw 20315-20321）：
    * ```
-   * (mask & 0x20) != 0          → 跳过整个悬停/推进段（右键走 20365 的"取消/跳读"通路）
-   * 或 (mask & 滚轮键位) != 0 且 Engine[388220] >= 0 且 Conf(set:ReDrawTextOnKey) == 1 → 跳过
+   * (mask & 滚轮键位) != 0 且 Engine[388220] >= 0 且 Conf(set:ReDrawTextOnKey) == 1 → 跳过悬停
    * ```
+   * ★**右键（`mask & 0x20`）不在本函数里**：它走 20365 的「取消 / 跳读」通路（`#cancelRoute`），
+   * 而泵在调本函数**之前**就已经 `return` 了（`#advInputDropped`）。理由：右键那一条会**改写帧 ip**
+   * 并清整个 `effect_flags`，与"什么都不派发"完全不是一回事，混在一个谓词里会把它的行为弄丢。
+   * （本函数以前把右键也判成"不许悬停"，那只是"不做悬停"这一半；现在那一半由 `#advInputDropped`
+   * 承担，本函数的返回值语义收敛成"悬停这一支是否放行"。）
+   *
    * 其余情况**都走悬停派发**（`sub_403E70`，20324）。
    *
-   * ★消费点只有两处、都是**同一对调用**（`if (!hoverDispatchAllowed()) …; routes.nextHoverLabel()`）：
-   * 产品路径 = `serviceAdvanceWait()`（本文件 `:994-995`）；测试 = `test/harness.ts` 的
+   * @param mask 本帧的输入掩码（引擎 `*v2`，由泵算一次后**复用**）。缺省时自己 `flushPending()`
+   *        —— 测试门面（`test/harness.ts` 的 `pickHoverLabel`）与 `test/route-dispatch.test.ts`
+   *        就是这么调的。
+   *
+   * ★消费点只有两处、都是**同一对调用**（`if (!hoverDispatchAllowed(mask)) …; routes.nextHoverLabel()`）：
+   * 产品路径 = `serviceAdvanceWait()`（本文件 `:1265-1266`）；测试 = `test/harness.ts` 的
    * `pickHoverLabel(e)` 门面。修前引擎上还挂着一个 `pickHoverLabel()` 方法（只被测试调用），
    * `tickets/T-0014` 把它删掉了 —— 引擎不该为测试保留产品路径不走的方法。
    */
-  hoverDispatchAllowed(): boolean {
-    // `(mask & 0x20)` = 鼠标**右**键（`sub_477150` 的 bit5）⇒ 右击时整段悬停/推进被跳过。
-    if ((this.input.flushPending() & 0x20) !== 0) return false;
+  hoverDispatchAllowed(mask?: number): boolean {
+    const m = mask ?? this.input.flushPending();
     const cfg = this.config;
     const wheelUp = cfg ? cfgInt(cfg, CFG.setWheelKeyUp, 0) : 0;
     const wheelDown = cfg ? cfgInt(cfg, CFG.setWheelKeyDown, 0) : 0;
     const wheelBits = (1 << (wheelUp & 31)) | (1 << (wheelDown & 31));
-    if ((this.input.flushPending() & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
+    if ((m & wheelBits) === 0) return true; // 滚轮键没按 ⇒ 悬停
     if (((this.engineValues.get(TEXT_BASE_GATE) ?? 0) | 0) < 0) return true; // `i1bb 0`（0x80000000，有符号为负）⇒ 悬停
     if (!cfg) return true;
     return cfgInt(cfg, CFG.setReDrawTextOnKey, 0) !== 1; // redraw==1 ⇒ **跳过**悬停

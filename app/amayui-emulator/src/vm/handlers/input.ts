@@ -10,6 +10,10 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand, operandArg, refFromOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readRef, refAt, type Ref } from '../ref.js';
+import { ShowMessageError } from '../native.js';
+
+/** 引擎 `aSetkeymulti`（raw 4419 附近；体 raw 30628 引用）= 「SetKeyMultiの引数が不正です．」。 */
+const ENGINE_TEXT_SET_KEY_MULTI = 'SetKeyMultiの引数が不正です．';
 
 /**
  * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
@@ -235,7 +239,16 @@ const op_poll_input: OpHandler = (c) => {
  *  都登记 `mouse-callback 10`（= 0x10）⇒ 真机推进间隔 **16ms**（登记 `32` 的脚本是 50ms）。旧注"全工程无写入 ⇒ 恒不节流"是错的；
  *  ⚠emulator 仍按 0（不节流）跑 = **已知偏差**，见 `tickets/T-0047`（改它要同步改 headless 时钟模型）。
  * 推进即：压返回地址 + CALL 注册的 mouseJump 目标（handler 的 ret 回到循环）。**不读/不消费鼠标移动或按下沿**；
- * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。 */
+ * 未注册目标(==-1/0xFFFFFFFF) → 原地不跳。emulator 旧实现"有鼠标移动/按下才触发"为错。
+ *
+ * ★**本帧「推进门」槽**（审计 P1 `0xcd`，票 `T-0158`）：引擎体首写 `_this[30*cur+95805] = 1`（= 前进 1 条），
+ * 而在**自己定 ip** 的那条支（raw 25870-25872：`ip = ip_base + 4*target` 之后）把它改写成 **0**
+ * （派发器 raw 21218-21221 消费 `383128 += 4*该槽`；0 = 不再自动前进）。emulator 的 ip 是**指令下标**、
+ * 走 `ctx.jump` 就等价，所以这里只把**同一个槽值**镜像进 `frame.operandCount`（0 = 本帧自行定过 ip）。
+ * 修前该槽恒为静态的 1（`operandCountSlotValue`），控制窗/追踪看到的门值与引擎不同。
+ * （★复核订正：审计原文把 0/1 的含义写成"0 = 下一条 / 1 = 跳过一条"是反的 ——
+ *  0 = 本指令已自行定 ip，1 = 前进 1 条；「原地重跑」不是这条指令的语义。）
+ */
 const op_get_input_type: OpHandler = (c) => {
   const plan = planFor(c);
   const input = c.e.input;
@@ -249,6 +262,9 @@ const op_get_input_type: OpHandler = (c) => {
   // 压返回点：引擎 `sub_41ACD0` raw 25845-25849 压 `((ip-ip_base)>>2) + 1`（**dword 偏移**）。
   c.frame.retStack.push((c.frame.script?.instructions[c.frame.ip]?.index ?? 0) + 1);
   c.jump(p);
+  // ★引擎 raw 25872：自行定 ip 之后把「推进门」槽写成 0（派发器据此**不再**自动前进）。
+  //   emulator 用指令下标 + `ctx.jump` 实现同一件事；这里镜像槽值，让追踪/控制窗与引擎一致。
+  c.frame.operandCount = 0;
 };
 
 /**
@@ -402,11 +418,67 @@ const op_set_mouse_pos: OpHandler = (c) => {
   c.native.setSystemCursor?.(x, y);
 };
 
+/**
+ * `0x10C`（`i10c`，**SetKeyMulti**，`sub_4220B0` raw 30616-30634）：**脚本驱动的键位重映射**。
+ *
+ * 引擎体逐字（raw 30623-30632）：
+ * ```
+ * _this[30 * _this[95776] + 95805] = 5;        // arity 槽 ⇒ 2 个操作数
+ * v2     = sub_41BF50(_this, 2);               // op2 = **键码**（scan code，查键码表）
+ * result = sub_41BF50(_this, 1);               // op1 = **掩码位**
+ * if ( result > 0x1F )                         // ★ unsigned 比较（result 是 unsigned int）
+ *     _CxxThrowException(Command_ShowMessage("SetKeyMultiの引数が不正です．"), 65541);
+ * _this[_this[v2 + 1690] + 1434] = result;     // = Input[1176 + Input[1432+op2]] = op1
+ * ```
+ * `Input` 是 `Engine` 的**内嵌对象**（`Engine[258]` = 其 vftable，raw 92374-92380 ⇒
+ * `Engine[1690+k] ≡ Input[1432+k]`、`Engine[1434+VK] ≡ Input[1176+VK]`）⇒ 写的是两张运行期表：
+ * `Input[1432+键码]` = **键码→VK**、`Input[1176+VK]` = **VK→掩码位**（见 `src/vm/input.ts` 文件头）。
+ *
+ * ★**修前是什么**（审计 §4.1，`tickets/T-0163`）：本条在 `ENGINE_INTERNAL_OPS` 里当**纯 no-op**
+ * （`handlers/stubs.ts` 的 0x10c 块），豁免理由写的是"宿主键盘也不进掩码 ⇒ 写入无消费者"。
+ * 该理由在 `T-0052`（键盘→掩码位 0..6）落地后**已过期**，但 `T-0052` 交付的是**冻结常量**
+ * `DEFAULT_VK_TO_BIT`（只由 `pressKey`/`releaseKey` 直查、无任何运行期改写口）⇒ 本条的两处写入
+ * 在 emulator 里**仍然零消费者**（P2 `missing-consumer`），`> 0x1F` 的越界实参也被静默吞掉
+ * （P3 `missing-branch`）。实机后果（语料 `src/SYSTEM4.txt:87-97` 共 11 处 `i10c`，全绑 **mask 位 4**）：
+ * `i10c 4 2c`（键码 0x2c→VK 90='Z'）/ `i10c 4 1c`（键码 0x1c→VK 13=RETURN）里**只有 Enter 生效**
+ * （它本来就在默认表里），**Z 键永远不触发确认位**（键位设置界面的选择同理全部无效）。
+ *
+ * 三条行为要点（都按体）：
+ *  ① 读 **op1 = 位号、op2 = 键码**（顺带一提：同族的 `0x107`/`0x10B` 顺序彼此相反，
+ *     见 `handlers/engine-fields.ts` —— 别照抄）；
+ *  ② `位号 > 0x1F` 是 **unsigned** 比较（`result` 的类型是 `unsigned int` ⇒ `-1` 也是 `0xFFFFFFFF > 0x1F`）
+ *     ⇒ 抛 `ShowMessageError`（引擎同文「SetKeyMultiの引数が不正です．」，raw 30628 的 `aSetkeymulti`），
+ *     且**抛在写之前** ⇒ 两张表一格不动。emulator 走 `session.#onError` 的既有通路（同 `0xFE` 的处置）。
+ *  ③ 键码查不到（未列出的键码）⇒ 引擎那格 VK = 0，位号被绑到 VK 0 —— 而 VK 0 在 `sub_4770A0` 的
+ *     循环里因 `Input[1176+0] == -1` 永不参与 ⇒ **可观测等价于没绑**（`setKeyBinding` 返回 `false`）。
+ *
+ * ★为什么进 `OPS`（`implemented`）而不是 `NATIVE_OPS`：体内只有"读两个操作数 + 写 emulator 自己的
+ *   输入表"这两件事，**零宿主缝**（不碰 `NativeBridge`）—— 与 `0x107`/`0x10B`（同族的按键绑定，
+ *   早已在 `OPS`）以及 `0x109`/`0x10A`（读/写 `InputManager`）同一分类。
+ */
+const op_set_key_multi: OpHandler = (c) => {
+  const plan = planFor(c);
+  const bit = (plan.int(1) ?? 0);
+  const keycode = (plan.int(2) ?? 0);
+  if ((bit >>> 0) > 0x1f) {
+    throw new ShowMessageError(
+      ENGINE_TEXT_SET_KEY_MULTI,
+      c.instr.opcode,
+      `op1=${bit} 越界（unsigned > 0x1F）⇒ 两张按键表一格未动（引擎 raw 30626-30631 抛在写之前）`,
+    );
+  }
+  // ★体：`Input[1176 + Input[1432+键码]] = 位号`（raw 30632）。键码未映射 ⇒ 绑到 VK 0（= 不可观测）。
+  if (!c.e.input.setKeyBinding(keycode, bit)) {
+    c.log(`0x10C 键码 0x${keycode.toString(16)} 不在默认键码表里（引擎那格 VK=0 ⇒ 绑到 VK 0，永不产生掩码位）`);
+  }
+};
+
 /** 鼠标/键盘/手柄输入（真实现：读操作数 / 注册跳转目标 / 派发）。 */
 export const INPUT_OPS: OpTable = [
   [0x108, op_read_mouse_button], // read-mouse-button：读鼠标按钮值 → op1
   [0x109, op_read_mouse_pos], // read-mouse-pos：读鼠标位置 → op1=X, op2=Y
   [0x10a, op_set_mouse_pos], // i10a：把光标移到虚拟坐标 (op1, op2)（0x109 的逆；ADV 侧边栏钉光标用）
+  [0x10c, op_set_key_multi], // ★SetKeyMulti：Input[1176+Input[1432+op2]] = op1（脚本驱动的键位重映射；T-0163）
   [0x10d, op_read_mouse_wheel], // read-mouse-wheel：读鼠标滚轮增量（一次性消费）→ op1
   [0x2e5, op_read_mouse_hwheel], // 读水平滚轮增量（一次性消费）→ op1（存档/读档列表的横滚翻页）
   [0xcc, op_mouse_callback],

@@ -19,10 +19,11 @@
  *     `flushHeld` 含**按住态**（按住期间每帧都为真，与引擎 `GetAsyncKeyState` 轮询真值同效）；
  *  ③ `0x100` 真派发：按下 ↑ ⇒ 掩码 bit0 ⇒ 跳 `joy-callback 0` 登记的 label（修前会走"空掩码"的默认键分支）；
  *  ④ 不破坏鼠标路径的形状（鼠标位仍是 bit4/bit5），快照能带上键盘按住态。
+ *  ⑤ ★`T-0163` 起：`DEFAULT_VK_TO_BIT` 只是**默认值**，运行期表可被 `0x10C` 改写 ⇒ 见本文件末尾两条。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { InputManager, DEFAULT_VK_TO_BIT } from '../src/vm/input.js';
+import { InputManager, DEFAULT_VK_TO_BIT, DEFAULT_KEYCODE_TO_VK } from '../src/vm/input.js';
 import { mkEngine, instr } from './harness.js';
 import { makeCtx } from '../src/vm/step.js';
 import { OPS } from '../src/vm/ops.js';
@@ -136,4 +137,35 @@ test('★T-0052 ④：快照/还原带上键盘按住态（`--record`/`--replay`
   const im2 = new InputManager();
   im2.restore(snap);
   assert.equal(im2.flushHeld() & (1 << 2), 1 << 2, '还原后按住态成立');
+});
+
+/**
+ * ★★`T-0163` ⑤：**运行期表**真的被 `pressKey` 读（不是冻结常量）★★
+ *
+ * 引擎 `sub_4770A0`（raw 91551-91570）每帧扫 `Input[1176+VK]`（**可改写表**）产生掩码；
+ * emulator 修前只查冻结常量 `DEFAULT_VK_TO_BIT` ⇒ `0x10C` 的写入没有消费者。
+ * 这里不经过 opcode，直接改写 `InputManager` 的运行期表来钉住"查的是哪张表"。
+ */
+test('★T-0163 ⑤：`input.vkToBit` 是运行期真源 —— 改写它立刻改变按键产生的位（Z→bit4，修前不可能）', () => {
+  const im = new InputManager();
+  assert.equal(im.pressKey(90), false, 'VK 90(Z) 默认未绑定');
+  assert.equal(im.keyEdge, 0);
+  im.vkToBit.set(90, 4); // = `0x10C` 写的同一张表（`Input[1176+VK] = 位`）
+  assert.equal(im.pressKey(90), true, '★改写运行期表后立即生效（修前查常量 ⇒ 这里会是 false）');
+  assert.equal(im.flushHeld() & (1 << 4), 1 << 4, 'Z ⇒ bit4');
+  im.releaseKey(90);
+  // ★两把刷子口径：`flushHeld` = **按住态 | 按下沿** ⇒ 松开后还要消费掉按下沿才彻底干净
+  //   （见本文件 ② 那条既有断言；这里先消费再断言"清位"）
+  im.consumeEdges();
+  assert.equal(im.flushHeld() & (1 << 4), 0, '松开 + 消费沿 ⇒ 清位');
+  // 两张表**同一真源**：默认 VK→位表 = 从默认键码表派生的那 7 条
+  assert.equal(DEFAULT_VK_TO_BIT.size, 7);
+  // ★语料/真源锚：`i10c 4 2c` 绑的是键码 0x2c ⇒ VK 90 = 'Z'（`sub_476AA0` 该行 .lst 注释就是 `; 'Z'`）
+  assert.equal(DEFAULT_KEYCODE_TO_VK.get(0x2c), 90, '默认键码表：0x2c → VK 90');
+  // ★`sub_477DD0` raw 92386-92393 的 `_this[260..266]` = 七条默认绑定的**键码**（顺序 = 位 0..6）
+  const bound = [[0xc8, 38], [0xcd, 39], [0xd0, 40], [0xcb, 37], [0x1c, 13], [0x39, 32], [0x0e, 8]] as const;
+  bound.forEach(([kc, vk], bit) => {
+    assert.equal(DEFAULT_KEYCODE_TO_VK.get(kc), vk, `默认绑定键码 0x${kc.toString(16)} 必须 → VK ${vk}（位 ${bit}）`);
+    assert.equal(DEFAULT_VK_TO_BIT.get(vk), bit, `默认位 ${bit} ⟷ 键码 0x${kc.toString(16)}`);
+  });
 });

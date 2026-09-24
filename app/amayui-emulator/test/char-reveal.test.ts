@@ -286,11 +286,134 @@ test('★0x304/0x305 文本块括号：保存/取回行游标 + 把余下的行�
   assert.equal(e.msgwin.revealedOf(8), 1);
   step(0x304, []); // 保存（引擎 win+296 ← win+132）
   assert.equal(e.msgwin.flags, 1, 'Engine[122497] = 1（文本块内的注音/内嵌模式）');
+  // ★总门（`tickets/T-0151`，审计 P1 `op-13`）：文本块里**必须真的写进一条文本**，
+  //   引擎才会把 bit16 补上（`0x6E` raw 28332-28334 `flags |= 0x10000`）⇒ 0x305 的门才满足。
+  step(0x6e, [im(0), str('かきくけこ')]);
+  assert.equal(e.msgwin.flags, 0x10001, '文本块内 `0x6E` 补写 bit16（门 = `(flags & 0x10001) == 0x10001`）');
   step(0x305, []); // 取回 + 把余下的行一次性贴出
-  assert.equal(e.msgwin.revealedOf(8), 5, '0x305 的 `while(!sub_45BE20())` = 整段贴出');
+  assert.equal(e.msgwin.revealedOf(8), 10, '0x305 的 `while(!sub_45BE20())` = 整段贴出');
   assert.equal(e.msgwin.flags, 0, '★引擎三条出口都清 Engine[122497]（raw 26083/26095/26099）⇒ 文本块结束即退出注音模式');
   assert.equal(e.msgwin.charMode, false);
   assert.ok(native.scene.msgWins.has(8), '文本仍在渲染模型里（只是全部显示完）');
+});
+
+/**
+ * ★★**回归守卫（T-0151 收尾）**：`0x305` **不得替"还没武装过显现"的窗新造显现条目**。
+ *
+ * 事故链（2026-09 实测，`test/game-start-chain.test.ts` 的 E3 判据⑦ `revealRestarts === 0` 变红）：
+ *  `src/SN0000.txt:460-462` 的 `i1b6 <g> / sub <g> 1 <g> / i1b7 <g>` 是"读-减-写回"习语，从 0 起算时
+ *  写回的是 **1**（`i1b7` 存的是 `op1 != 0`）⇒ 这条真实链路上 `Engine[97052]` 真的会被置位。
+ *  但这与症状无关；症状来自本票给 `0x305` 加的"total 按当前文本重算"：
+ *  `beginReveal(win, glyphCount, now, 0)` 会**创建**一条 `shown = total` 的显现条目，而引擎那一侧
+ *  此时**没有**显现状态（引擎游标在窗对象的 `+132` 上，`0x305` 只是把它推到末尾）。
+ *  `src/tools/gameStartChain.ts:389-397` 的采样器只遍历 `msgwin.reveal` 里已有的窗 ⇒ 新造的条目
+ *  一进表，随后的 `0x72` 正常武装（`beginReveal(..., speed>0)` ⇒ `shown = 0`）就被判成
+ *  "内容版本不变而游标变小 = 重放"（实测正好 1 次）。
+ *  A/B：只把这一处还原成修前的 `m.finishReveal(win)`（`engine.ts` 的自动翻页块保留）⇒ 立刻转绿。
+ *  ⇒ 正确的落点：**只在已有条目、且当前排版字数更多时**刷新（块内新写的字才要显示），
+ *    没有条目时保持 `revealedOf = -1`（全显示）语义、把武装交给后面的 `0x72`。
+ */
+test('★T-0151 回归：`0x305` 不得新造显现条目；已有条目时按当前文本刷新 total', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.engineValues.set(21668, 5);
+  step(0x80, [im(8)]);
+  step(0x6e, [im(0), str('あいうえお')]);
+  assert.equal(e.msgwin.reveal.has(8), false, '前提：这一页还没被 0x72 武装过');
+  step(0x304, []);
+  step(0x6e, [im(0), str('かきくけこ')]); // 块内追加（补 bit16 ⇒ 门满足）
+  step(0x305, []);
+  assert.equal(e.msgwin.reveal.has(8), false, '★没有条目时不得新造（否则随后的 0x72 武装会被判成"重放"）');
+  assert.equal(e.msgwin.revealedOf(8), -1, '没有显现状态 ⇒ 仍是"全显示"（−1），不是被改成部分游标');
+
+  // 对照（同一守卫的另一半）：**已有**条目时 0x305 仍要把 total 刷到当前文本，
+  // 否则块内新写的字永远不显示（这正是当初加"重算"的理由，不能被这次修掉）。
+  step(0x73, grid(8, -5, -280));
+  showPanel(step);
+  step(0x72, [im(8)]);
+  assert.equal(e.msgwin.reveal.get(8)!.total, 10, '武装后 total = 当前 10 字');
+  e.serviceTextReveal(160);
+  assert.equal(e.msgwin.revealedOf(8), 1, '逐字推进到 1 字');
+  step(0x304, []);
+  step(0x6e, [im(0), str('さしすせそ')]); // 块内再加 5 字
+  step(0x305, []);
+  assert.equal(e.msgwin.reveal.get(8)!.total, 15, '★已有条目 ⇒ total 刷到当前 15 字（块内新写的字才显示）');
+  assert.equal(e.msgwin.revealedOf(8), 15, '刷新走 instant 支 ⇒ 一次贴满（`while(!sub_45BE20)`）');
+});
+
+/**
+ * ★审计 §4.1 P1 `op-13`（`tickets/T-0151`）：**`0x305` 的总门此前整个缺失**。
+ *
+ * 引擎 raw 26045：`if ((Engine[122497] & 0x10001) == 65537) { …贴余下的行… } else { Engine[122497] = 0; }`
+ * —— bit0 由 `0x304` 置、bit16 由 `0x6E` **只在 bit0 已置时**补写（raw 28332-28334）。
+ * 所以「`0x304` 之后紧跟 `0x305`（中间没有 `show-text`/`display-furigana`）」这一形态，
+ * 引擎**一个字都不贴**、只清 flags；旧实现无条件 `finishReveal` 所有窗 ⇒ 会多贴一整段文本。
+ */
+test('★T-0151：`0x305` 总门未满足（0x304 后未插 0x6E）⇒ 只清 flags、余下的行一个字都不贴', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.engineValues.set(21668, 5);
+  step(0x80, [im(8)]);
+  step(0x73, grid(8, -5, -280));
+  step(0x6e, [im(0), str('あいうえお')]);
+  step(0x72, [im(8)]);
+  e.serviceTextReveal(160);
+  assert.equal(e.msgwin.revealedOf(8), 1, '逐字推进到 1 个字');
+  const revBefore = native.scene.msgRev.get(8) ?? 0;
+  step(0x304, []); // 只置 bit0（没有 0x6E ⇒ 没有 bit16）
+  assert.equal(e.msgwin.flags, 1);
+  step(0x305, []);
+  assert.equal(e.msgwin.revealedOf(8), 1, '★门未满足 ⇒ 不得把余下的行贴出（修前这里会变成 5）');
+  assert.equal(e.msgwin.flags, 0, '门外出口照样清 flags（raw 26099）');
+  assert.equal(native.scene.msgRev.get(8) ?? 0, revBefore, '门外出口也不得重新发布该窗');
+});
+
+/**
+ * ★审计 §4.1 P2 `op-78`（`tickets/T-0151`）：`0x305` 出口侧的**两段**。
+ *
+ * - raw 26074-26086：`Engine[86672]`（`message:MessageSpeed`）非 0 **且** ADV 位未置
+ *   ⇒ `effect_flags |= 0x20000000` + 起 `sub_453A60(Engine+430572, MessageSpeed)` 节拍，
+ *   然后清 flags 直接返回（emulator 复用 `SLEEP_GATE`/`sleepUntil`）。
+ * - raw 26090-26094：`Engine[667856] == 1`（`set:DrawMode`）且 `(Engine[369360] & 2) == 0`
+ *   ⇒ 清等待门计时器两格（`Engine[369352]/[369356]` = `gateWaitStart`/`gateWaitMs`）。
+ */
+test('★T-0151：`0x305` 出口的节拍段（MessageSpeed≠0 且 ADV 未置 ⇒ 置 sleep 门 + 到期时刻）', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.engineValues.set(21668, 40); // message:MessageSpeed = 40ms
+  e.nowMs = 900;
+  step(0x80, [im(8)]);
+  step(0x6e, [im(0), str('あ')]);
+  step(0x304, []);
+  step(0x6e, [im(0), str('い')]);
+  assert.equal((e.effectFlags & 0x8000000) === 0, true, '前提：ReadTextSkip=0 ⇒ ADV 位未置');
+  step(0x305, []);
+  assert.equal((e.effectFlags & 0x20000000) !== 0, true, 'raw 26080：`effect_flags |= 0x20000000`');
+  assert.equal(e.sleepUntil, 940, 'raw 26081：节拍 = now + MessageSpeed');
+  assert.equal(e.msgwin.flags, 0, '该支也清 flags（共享 LABEL_12）');
+});
+
+test('★T-0151：`0x305` 出口的等待门计时器段（set:DrawMode=1 且 92340 bit1 未置 ⇒ 清两格）', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.config = { values: new Map([['set:drawmode', '1']]), sections: [], order: new Map() } as unknown as typeof e.config;
+  e.gateWaitMs = 500;
+  e.gateWaitStart = 100;
+  step(0x80, [im(8)]);
+  step(0x6e, [im(0), str('あ')]);
+  step(0x304, []);
+  step(0x6e, [im(0), str('い')]);
+  step(0x305, []);
+  assert.equal(e.gateWaitMs, 0, 'raw 26093：`Engine[369356] = 0`');
+  assert.equal(e.gateWaitStart, 0, 'raw 26092：`Engine[369352] = 0`');
+  // 对照：`Engine[92340]` bit1 置位 ⇒ 条件不成立、计时器保留
+  e.gateWaitMs = 700;
+  e.gateWaitStart = 200;
+  e.engineValues.set(92340, 2);
+  step(0x304, []);
+  step(0x6e, [im(0), str('う')]);
+  step(0x305, []);
+  assert.equal(e.gateWaitMs, 700, '`(Engine[369360] & 2) != 0` ⇒ 不清计时器（raw 26090）');
 });
 
 test('★真实序章页序列（SN0000：i304 → show-text → i305 → i073 → wait-for-input → 点击 → i071 清场）', () => {

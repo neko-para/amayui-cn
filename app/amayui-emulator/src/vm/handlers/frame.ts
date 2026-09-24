@@ -31,6 +31,8 @@ import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotResumeIp, resolveSlotRetStack } from '../engineSlot.js';
 import { applySlotPresentation } from './save-slot.js';
+// ★`0x1F5` 的队列重试派发 = 引擎 `sub_40FB60`（raw 25229）⇒ 直接调 control.ts 的那**唯一一份**实现。
+import { dispatchNextRequest } from './control.js';
 import type { OpTable } from './shared.js';
 
 /** 把「指令的 dword 偏移」换成「指令数组下标」并跳转（引擎里 ip 就是 dword 偏移，重写侧是下标）。 */
@@ -46,8 +48,9 @@ function jumpToDword(c: StepCtx, dword: number): void {
  * - `0x1F4`（sub_41A090, raw 25194）：**帧计时**。`if (_this[107438]) ++_this[107439]`（累加帧计数）
  *   `else { _this[107438]=1; _this[92334]=_this[92333]; _this[92333]=timeGetTime(); }`
  *   —— 脚本的"帧循环"就是 **反复 i1F4 轮询**（全工程 66510 处），它本身**不是等待**，只是记时间/计帧。
- * - `0x1F5`（sub_41A0E0, raw 25214）：**帧倒计**。`v1=_this[429756]; if (v1<=0) { if (_this[429752]) { park=0; if(!dispatch_in_progress) sub_40FB60(); } } else _this[429756]=v1-1;`
- *   —— 计到 0 时清"停靠"标志，并在非派发中时派发排队脚本（`sub_40FB60` = emulator 未建模的脚本队列 → no-op）。
+ * - `0x1F5`（sub_41A0E0, raw 25214）：**帧倒计 + 队列重试派发**。`v1=_this[429756]; if (v1<=0) { if (_this[429752]) { v2 = (_this[497400]==0); _this[429752]=0; if (v2) sub_40FB60(); } } else _this[429756]=v1-1;`
+ *   —— 计到 0、且停靠标志原值为 1 时清"停靠"标志，并在**非派发中**时调 `sub_40FB60` 放行排队脚本
+ *   （= emulator 的 `dispatchNextRequest`，见 `handlers/control.ts`；`tickets/T-0157`）。
  * - `0x261`/`0x2DB`… 同族见 `ENGINE_FIELD_STORE`；`0x20C`（sub_41A1A0, raw 25259）**每帧**刷时钟 +
  *   调绘制容器的 `sub_4B4040`（帧刷新）——emulator 的渲染帧循环已自行 present，故 `sub_4B4040` 无需复刻。
  */
@@ -64,23 +67,49 @@ const op_frame_tick: OpHandler = (c) => {
 };
 
 /**
- * `0x1F5`（sub_41A0E0）：帧倒计到 0 → 清**帧计时停靠锁**（`_this[107438]`）。
+ * `0x1F5`（sub_41A0E0, raw 25214-25236）：帧倒计到 0 → 清**帧计时停靠锁**（`_this[107438]`）+ 重试派发。
  *
- * ★T-0057 R3 修正：raw 的 `*(_DWORD *)(_this + 429756)` 是**字节**偏移 ⇒ dword 下标 = `429756/4 = 107439`，
+ * 体（raw 25221-25235）三层门，缺一层都会静默偏掉：
+ * ```c
+ * v1 = *(_DWORD *)(_this + 429756);                 // ① 锁深度（dword 107439）
+ * if ( v1 <= 0 ) {
+ *   if ( *(_DWORD *)(_this + 429752) ) {            // ② 停靠标志原值必须为 1（dword 107438）
+ *     v2 = *(_DWORD *)(_this + 497400) == 0;        // ③ 派发中标志（字节 497400 = dword 124350）
+ *     *(_DWORD *)(_this + 429752) = 0;              //    先无条件清停靠标志
+ *     if ( v2 ) sub_40FB60(_this);                  //    再按 ③ 决定是否放行脚本队列
+ *   }
+ * } else { *(_DWORD *)(_this + 429756) = v1 - 1; }
+ * ```
+ * ★T-0057 R3 修正（保留）：raw 的 `*(_DWORD *)(_this + 429756)` 是**字节**偏移 ⇒ dword 下标 = `429756/4 = 107439`，
  * 与 `0x1F4`（`sub_41A090` 的 `_this[107439]/[107438]`）**是同一对字段**。此前把字节偏移当
  * `engineValues` 的键，结果是"帧计数只增不减 + 停靠锁永不释放 + 0x1F4 再不刷新时钟"（静默）。
+ *
+ * ★T-0157 修的三处（修前 = 无条件 `frameCount <= 0 ⇒ frameTickLock = 0`，既没有 ② 也没有 ③）：
+ *  - **② 停靠标志为 0 ⇒ 整段不进**（连那次 `= 0` 的写都没有）：修前多写一次 0。这一格在停靠结束后
+ *    恒 0，多写本身不产生可观测差异，但少了它就无法表达"②"这个门（审计 §4.1 第 181 条的复核结论：
+ *    "折叠成一个键"的指控不成立，缺的是这一次派发）；
+ *  - **③ 派发中标志为 0 才派发**（raw 25226）：修前完全没有这个判据 —— 见 `dispatchNextRequest` 的
+ *    `dispatchInProgress` 写点说明（本票之前该字段只有读没有写，门会退化成恒真）；
+ *  - **这一次 `sub_40FB60` 调用整体缺席**（审计 §4.1 第 107/283 条，P1）：修前只清锁，
+ *    「停靠期间入队的请求在清停靠那一刻重试派发」这条语义在重写侧不存在。
+ *    `dispatchNextRequest`（control.ts）就是本仓的 `sub_40FB60`，其入口停靠闸（raw 18966）在
+ *    **清完标志之后**才被调用 ⇒ 必然放行，与引擎同日。
+ * ★复核纠正：报告把「队列恰剩 1 项」（`497380 < 497384 && 497384 - 497380 == 1`）记在 0x1F5 头上，
+ *   那条判据属于 **0x7C**（`sub_41AB80` raw 25819-25821）；0x1F5 的体里**没有**任何队列长度判据。
  */
-const op_frame_countdown: OpHandler = (c) => {
+const op_frame_countdown: OpHandler = async (c) => {
   const plan = planFor(c);
   const e = c.e;
   const left = e.engineValues.get(ENGINE_FIELD.frameCount) ?? 0;
   if (left > 0) {
-    e.engineValues.set(ENGINE_FIELD.frameCount, left - 1);
-  } else {
-    e.engineValues.set(ENGINE_FIELD.frameTickLock, 0);
-    // 引擎此处还会 `sub_40FB60(_this)` 派发脚本队列（`dispatch_in_progress` 为 0 时）——
-    // emulator 的队列派发走 `dispatchNextRequest`（control.ts，`0x143` 的路径），本条尚未接线（T-0057 记录）。
+    e.engineValues.set(ENGINE_FIELD.frameCount, left - 1); // raw 25234
+    return;
   }
+  // ② raw 25224：停靠标志原值为 0 ⇒ 什么都不做（引擎连"写 0"都不发生）。
+  if (!e.engineValues.get(ENGINE_FIELD.frameTickLock)) return;
+  const dispatchAllowed = (e.engineValues.get(ENGINE_FIELD.dispatchInProgress) ?? 0) === 0; // ③ raw 25226
+  e.engineValues.set(ENGINE_FIELD.frameTickLock, 0); // raw 25227：先清停靠标志
+  if (dispatchAllowed) await dispatchNextRequest(c); // raw 25228-25229：再放行队列（本仓的 sub_40FB60）
 };
 
 /** `0x20C`（sub_41A1A0, raw 25259）：每帧刷时钟 + `sub_4B4040(_this+80708)`（帧刷新）。 */

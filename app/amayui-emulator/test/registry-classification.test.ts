@@ -61,6 +61,8 @@ const CLASSIFICATION: Array<[number, Cls | Cls[], string]> = [
   ...[0x327, 0x328, 0x329, 0x32c, 0x32e].map(
     (op): [number, Cls, string] => [op, 'ENGINE_INTERNAL_OPS', 'T-0111：登记为引擎内部 no-op（否则命中即 NotImplementedOp）'],
   ),
+  // ---- 0x222（原 test/opcode-operands.test.ts 的"缺消费端"白名单 → 2026-09-24 已转真实现）----
+  [0x222, 'OPS', 'T-0167（审计 §4.2 #19）：3D 层区间提交 ⇒ 宿主缝 sceneCommitRange + enqueueSceneCommitNodes'],
 ];
 
 test('★opcode 实现类别（一张表）：恰好在一张表里，且就在它该在的那张', () => {

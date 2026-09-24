@@ -251,6 +251,16 @@ export interface SceneSnapshot {
     translate: { x: number; y: number; z: number };
     axisScale: { x: number; y: number; z: number };
     axisTranslate: { x: number; y: number; z: number };
+    /**
+     * ★`0x22F` 的 op3/4/5 当**旋转轴**的那一份（引擎 raw 117630 的 `a2 + 181`，层 20..29 的支）。
+     * 与 `axisTranslate` 是同一个三格、两条消费路径（见 `scene/state.ts` 的 `SceneXform.axis`）。
+     */
+    axis: { x: number; y: number; z: number };
+    /**
+     * ★**Scene 自己的绕轴旋转角（弧度）**（引擎 raw 133427 的 `Scene+1856`）—— 层 20..29 那一支
+     * 「没丢旋转」的那一半。默认 0（该格在反编译里无写点，见 `scene/state.ts` 的 `sceneRotRad`）。
+     */
+    angleRad: number;
     maskA: number | null;
     maskB: number | null;
     /** 作用层号区间（引擎 raw 133405 的 `(层号 − 20) > 9` 取反）。 */
@@ -496,6 +506,8 @@ export function scSnapshot(s: SceneState, clock: number, l2d?: L2dSnapshotHost |
           translate: { ...s.sceneXform.translate },
           axisScale: { ...s.sceneXform.axisScale },
           axisTranslate: { ...s.sceneXform.axisTranslate },
+          axis: { ...s.sceneXform.axis },
+          angleRad: s.sceneRotRad,
           maskA: s.sceneXform.maskA,
           maskB: s.sceneXform.maskB,
           layers: [SCENE_LAYER_LO, SCENE_LAYER_HI] as [number, number],
@@ -628,6 +640,9 @@ export function snapshotToText(snap: SceneSnapshot): string {
         ` scale=(${x.scale.x},${x.scale.y},${x.scale.z}) translate=(${x.translate.x},${x.translate.y},${x.translate.z})` +
         ` axisScale=(${x.axisScale.x},${x.axisScale.y},${x.axisScale.z})` +
         ` axisTranslate=(${x.axisTranslate.x},${x.axisTranslate.y},${x.axisTranslate.z})` +
+        // ★`axis`/`angleRad` 是层 20..29 那一支的**旋转**（引擎 raw 117630 + 133427）——
+        //   修前这一支被当成"没有旋转"，所以快照里必须能看出它。
+        ` rotAxis=(${x.axis.x},${x.axis.y},${x.axis.z}) angleRad=${x.angleRad}` +
         ` maskA=${x.maskA ?? '-'} maskB=${x.maskB ?? '-'} 受影响项=${x.items.length}${mv ? ` ${mv}` : ''}`,
     );
   }
