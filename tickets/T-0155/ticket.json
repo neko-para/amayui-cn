@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：绘制项与动画窗（7 条：P1 0 / P2 4 / P3 3）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `gfx-item`）。合计 7 条缺口，其中 P1 0 条、P2 4 条。最典型一条：`0x202`/`0x203`/`0x232` 共用的回退源 `sub_4ADD60` 读 `DrawItem+0x60`（工作色 FROM，raw 132587），而引擎在 A 层颜色窗**窗内**就把逐帧插值结果写回该格（`sub_49AA30` 窗内分支 raw 117470/117479 写局部 → 渲染器 raw 133447 的 `qmemcpy(result, v26, 0x2E4u)` 整块回写元素；窗末另有 raw 1",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "`0x202`/`0x203`/`0x232` 共用的回退源 `sub_4ADD60` 读 `DrawItem+0x60",
+      "note": "批次 gfx-item 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0155",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

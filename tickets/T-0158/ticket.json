@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：面板 / 菜单 / 输入（14 条：P1 1 / P2 4 / P3 9）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/input",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `panel-input`）。合计 14 条缺口，其中 P1 1 条、P2 4 条。最典型一条：引擎 0xCD 每次执行都写本帧的 `Engine[120*cur + 383220]`（进入置 1、真正推进后 raw 25872 落回 0、节流未到且未注册/未激活时 raw 25856 提前 return 保持 1），而派发器用这一格当**相对 `383128` 的 dword 步进量**消费（raw 21218-21221 `383128 += 4 * gate`）：0 = 本指令原地重跑（下一帧再来一次，即 handler 被",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "引擎 0xCD 每次执行都写本帧的 `Engine[120*cur + 383220]`（进入置 1、真正推进后 raw",
+      "note": "批次 panel-input 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0158",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

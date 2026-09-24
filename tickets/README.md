@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **145** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **14** · ✅ done **127** · 🚫 dropped **1**（P0 8 / P1 55）
+共 **165** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **34** · ✅ done **127** · 🚫 dropped **1**（P0 8 / P1 67）
 
-按域：`emulator/render` 22 · `emulator/hosts` 15 · `emulator/test` 12 · `emulator/frame-loop` 10 · `emulator/adv` 10 · `emulator/vm` 10 · `emulator/save-slot` 8 · `emulator/input` 6 · `emulator/ops` 6 · `docs/03-engine` 6 · `emulator/tooling` 5 · `emulator/msgwin` 3 · `analysis/emulator/verify` 3 · `emulator/audio` 2 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1
+按域：`emulator/render` 25 · `emulator/hosts` 15 · `emulator/vm` 13 · `emulator/test` 13 · `emulator/frame-loop` 12 · `emulator/adv` 10 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 7 · `docs/03-engine` 6 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `emulator/live2d` 1 · `docs/analysis/engine-capabilities` 1
 
 ## 🔜 doing（3）
 
@@ -19,15 +19,35 @@
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 10 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
 | [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（14）
+## ⬜ open（34）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0147`](./T-0147/ticket.json) | P1 | bug | `emulator/vm` | 0x205 数字直绘把 x 回写到脚本 op2（引擎只更新局部量）⇒ op2 是立即数时硬抛 writeIntOperand，是可写槽时静默污染脚本状态 | 5 | — | `notes.md` `repro.md` | — |
+| [`T-0148`](./T-0148/ticket.json) | P1 | analysis | `analysis/emulator/vm` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目 | 3 | — | — | — |
+| [`T-0149`](./T-0149/ticket.json) | P1 | tooling | `analysis/opcode-gaps` | 缺口台账增设 `partial` 处置位：把"已注册但未完全实现"变成可棘轮的一等状态 | 3 | — | — | — |
+| [`T-0151`](./T-0151/ticket.json) | P1 | bug | `emulator/msgwin` | 指令实现缺口修复批：消息窗 / 文本渲染（含字体与排版）（58 条：P1 6 / P2 16 / P3 36） | 3 | — | — | — |
+| [`T-0152`](./T-0152/ticket.json) | P1 | bug | `emulator/audio` | 指令实现缺口修复批：音频子系统（42 条：P1 5 / P2 13 / P3 24） | 3 | — | — | — |
+| [`T-0153`](./T-0153/ticket.json) | P1 | bug | `emulator/render` | 指令实现缺口修复批：纹理槽与表面（22 条：P1 0 / P2 11 / P3 11） | 3 | — | — | — |
+| [`T-0156`](./T-0156/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：控制流 / 帧管理 / 脚本装载（24 条：P1 0 / P2 5 / P3 19） | 3 | — | — | — |
+| [`T-0157`](./T-0157/ticket.json) | P1 | bug | `emulator/frame-loop` | 指令实现缺口修复批：帧循环 / 阶梯调度 / 队列派发（12 条：P1 1 / P2 4 / P3 7） | 3 | — | — | — |
+| [`T-0161`](./T-0161/ticket.json) | P1 | bug | `emulator/ops` | 指令实现缺口修复批：引擎字段 / 配置读写（16 条：P1 1 / P2 5 / P3 10） | 3 | — | — | — |
+| [`T-0162`](./T-0162/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：操作数与内存原语（含字符串族转串根因）（6 条：P1 0 / P2 3 / P3 3） | 3 | — | — | — |
+| [`T-0165`](./T-0165/ticket.json) | P1 | bug | `emulator/vm` | 字符串族"int/ptr/float 操作数不转十进制"根因修复（0x192/0x193/0x1b2 共用 readStringOperand） | 3 | — | — | — |
+| [`T-0166`](./T-0166/ticket.json) | P1 | docs | `docs/analysis/engine-capabilities` | 能力台账同步：75 条"描述过期 / overreach / guard 名不副实"逐条订正 | 3 | — | — | — |
+| [`T-0167`](./T-0167/ticket.json) | P1 | req | `emulator/frame-loop` | 能力台账缺口：27 条"引擎有、emulator 缺的持续行为"逐条落地或登记 | 3 | — | — | — |
 | [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
 | [`T-0122`](./T-0122/ticket.json) | P2 | req | `emulator/tooling` | 调试器第 3 步：内存快照/恢复（引擎态 dump 与回灌） | 7 | — | — | — |
 | [`T-0142`](./T-0142/ticket.json) | P2 | refactor | `emulator/tooling` | 把 Electron 侧的 agent 调试通道也收敛到 VM 外层桥（debugsrv 的 sendInputEvent → ScenarioEvent、s… | 5 | — | — | — |
 | [`T-0145`](./T-0145/ticket.json) | P2 | docs | `docs/05-scripts` | 文档/注释与体不符三处：`global 3f90` 门极性读反（NOVEL.md/SYSTEM4.md）+ T-0090 的旁注依据 + 留帧注释自相矛盾 | 5 | — | `notes.md` | — |
+| [`T-0150`](./T-0150/ticket.json) | P2 | refactor | `emulator/test` | 死写闸门（闸门 C）覆盖面从 Item/MeshObj 扩到 Engine/SceneState 等模型 | 2 | — | — | — |
+| [`T-0154`](./T-0154/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：场景状态 / 转场 / 混合（25 条：P1 0 / P2 11 / P3 14） | 3 | — | — | — |
+| [`T-0155`](./T-0155/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：绘制项与动画窗（7 条：P1 0 / P2 4 / P3 3） | 3 | — | — | — |
+| [`T-0158`](./T-0158/ticket.json) | P2 | bug | `emulator/input` | 指令实现缺口修复批：面板 / 菜单 / 输入（14 条：P1 1 / P2 4 / P3 9） | 3 | — | — | — |
+| [`T-0159`](./T-0159/ticket.json) | P2 | bug | `emulator/save-slot` | 指令实现缺口修复批：存档槽链路（12 条：P1 0 / P2 6 / P3 6） | 3 | — | — | — |
+| [`T-0160`](./T-0160/ticket.json) | P2 | bug | `emulator/live2d` | 指令实现缺口修复批：Live2D（16 条：P1 0 / P2 12 / P3 4） | 3 | — | — | — |
+| [`T-0163`](./T-0163/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：有据 no-op 与宿主缝（native）（19 条：P1 1 / P2 3 / P3 15） | 3 | — | — | — |
+| [`T-0164`](./T-0164/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：跨模块其余指令（agerc/arithmetic/text-items/gfx-misc 等）（30 条：P1 1 / P2 11 / P… | 3 | — | — | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |

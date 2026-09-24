@@ -1,0 +1,59 @@
+{
+  "title": "全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目",
+  "type": "analysis",
+  "priority": "P1",
+  "area": "analysis/emulator/vm",
+  "why": "emulator 里\"不会硬报错\"的指令（三表注册 364 条）此前没有任何机制回答\"它的分支/能力是否与引擎一致\"——`opcode-gaps.json` 只回答\"注册了没有\"，于是\"注册了但只实现了一部分\"没有落脚点（先例：`0x205` 声称真实现却把 x 回写进脚本 op2）。本轮逐条核完并做了对抗复核：初检 383 条 → 推翻 10 / 订正 63 / 复核补漏 63，最终 436 条（P1 48 / P2 158 / P3 230）。",
+  "acceptance": [
+    "汇总报告存在且可复算：`docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md`（§3 覆盖账 + §4 findings 全表 + §4.4 推翻清单 + §4.5 复核补漏 + §5 处置）",
+    "raw 证据齐备：`raw/impl-audit-findings.json`、`raw/findings-final.json`、`raw/opcode-verdicts.json`（364 条各一行裁决）、`raw/cap-verdicts.json`（54 条）、`raw/verify-verdicts.json`（27 组复核）、`raw/handler-crosscheck.json`（派发表交叉核对 0 不一致）",
+    "按修复批次开出的子票全部存在并回链本报告（§5.1 的批次 ↔ tickets/）"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "## 3. 完备性账（本报告可被复算的部分）",
+      "note": "覆盖账与四道闸门的可复算入口"
+    },
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "### 4.4 被对抗复核**推翻**的初检条目",
+      "note": "复核推翻清单（含被推翻的初检 P0）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ],
+    "tickets": [
+      "T-0149",
+      "T-0150",
+      "T-0151",
+      "T-0152",
+      "T-0153",
+      "T-0154",
+      "T-0155",
+      "T-0156",
+      "T-0157",
+      "T-0158",
+      "T-0159",
+      "T-0160",
+      "T-0161",
+      "T-0162",
+      "T-0163",
+      "T-0164",
+      "T-0165",
+      "T-0166",
+      "T-0167"
+    ]
+  },
+  "id": "T-0148",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

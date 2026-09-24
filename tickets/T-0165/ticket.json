@@ -1,0 +1,33 @@
+{
+  "title": "字符串族\"int/ptr/float 操作数不转十进制\"根因修复（0x192/0x193/0x1b2 共用 readStringOperand）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "引擎 `sub_42A420`/`sub_41B9B0` 会把 int/float/指针型操作数转成十进制串（`_itoa_s(...,10)` / `%lf`），emulator 的 `operand.ts:readStringOperand` 对非字符串 tag 直接返回槽号字面量 ⇒ `concat`/文本缓冲三类指令在真实语料上产出错值（已核到 9 处命中：COMMITDR.txt:9、FIELD.txt 多处、ALCHEMY、REACH、SYSTEM4.txt:463-464）。",
+  "acceptance": [
+    "`readStringOperand`（或计划层）按引擎 tag 分派：int/指针族 `_itoa_s` 十进制、float `%lf`、local-string 的按 dword 取反路径",
+    "守卫覆盖 0x192/0x193/0x1b2 各一条（含真语料锚点 COMMITDR.txt:9 / SYSTEM4.txt:464）",
+    "`npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "第 2/3 格操作数的**指针解引用与整数/浮点转串**能力缺失：引擎 `sub_42A420` 对 `local-pt",
+      "note": "根因 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0165",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

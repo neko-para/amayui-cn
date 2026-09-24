@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：场景状态 / 转场 / 混合（25 条：P1 0 / P2 11 / P3 14）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/render",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `gfx-scene`）。合计 25 条缺口，其中 P1 0 条、P2 11 条。最典型一条：`sub_4AB7A0` 清的第三张表 `sub_4A9D10(v1 + 270)`（Scene+1080，与 Scene+1096 同为 572B 负载表的 A/B 两份）在 emulator **只有单个字段的台账**：`0x242` 会把该表项的 `+504` 记进 `render4.entryParams`（ops.ts:1185），但 emulator 没有完整的 572B 项容器，`scClearDrawContainer`",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "`sub_4AB7A0` 清的第三张表 `sub_4A9D10(v1 + 270)`（Scene+1080，与 Scen",
+      "note": "批次 gfx-scene 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0154",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+[
+  {
+    "id": "lazy-gdi-font-set",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 3,
+    "verdictWhy": "台账把 status 记成 absent、note 写『完全未建模』，但仓库里 src/text/fontSet.ts（面名映射）+ src/vm/msgwin.ts（字号/字重/竖排字段）+ src/vm/handlers/msgwin.ts（6 条 op 写入）+ src/renderer/pixi/textLayer.ts（ensureFont 消费）已经构成一个 partial 的字体系 ⇒ 台账与代码相反，判 描述过期。"
+  },
+  {
+    "id": "adv-flag-lifecycle",
+    "batch": "cap-消息窗-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "ADV 位本身的置位/清除门控（ReadTextSkip 门 + sub_48F000 + 0x19B/0x19C/0x88/0xFA/0x101）与每帧清除者 serviceAdv 都已建模且有 E2 守卫，但 0x72 尾段的 AutoMessage 自动放行分支在 emulator 里不存在（写了 message:AutoMessage* 却无消费者）⇒ 属『引擎有、实现不完整』，判 有缺口；note 里『三态机未建模』的自述另有 stale-ledger finding。"
+  },
+  {
+    "id": "adv-text-reveal-progress",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账 note 说『仍未建模引擎真正的逐字/逐行推进泵』，但台账自己的 text-reveal-pump-409400 记的是 modeled-verified/E3，实现（src/vm/msgwin.ts:467-528 + Engine.serviceTextReveal）与守卫（test/adv-msgwin.test.ts:542 速度定律）都在 ⇒ 台账与代码相反，判 描述过期；同时 emulator 对 sub_48F000 的返回值是伪造的，作为 approximation finding 另记。"
+  },
+  {
+    "id": "msgwin-text-object",
+    "batch": "cap-消息窗-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "触发链里点名的 0x7D 在 emulator 里根本没有注册（不是 no-op，是命中即硬报错/被吞），且条目自己的『仍未建模』清单漏记它——属『引擎有、实现无』的缺口；同时 reads 里混入了不属于该区间读点的绘制容器字段，故不判『一致』。"
+  },
+  {
+    "id": "msgwin-object-table",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "note 说『sub_404F80 的布局重算（移除图元区间）仍未建模』，但 0x301 的 handler 已逐步照抄该体（清 +122486、清对象 +132、msgWinClear 删绘制项、闸门开着时重新武装）并有 test/adv-msgwin.test.ts:521 断言，台账与代码相反 ⇒ 判 描述过期；trigger 把 0x300 也说成会触发 sub_404F80 是 overreach。"
+  },
+  {
+    "id": "msgwin-cancel-key-state",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账 note 对『引擎门控键名』与『随包 INI 是否含该键』两条事实的描述都与引擎体/工程证据相反（键名实为 set:CancelMesSkipOnClick，且它确实在生成的 INI 与引擎内建注册表里、缺省 0），属描述过期；结论（默认休眠）虽对，但依据是错的，会误导后续把『休眠』归因于缺键而非取值。"
+  },
+  {
+    "id": "msgwin-text-method-opcodes",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "note 的『仍 no-op 的约 22 条纯转发器』名单里有九条（0x70/0x73/0x74/0x75/0x197/0x198/0x1B5/0x1C1/0x1CE）在 src/vm/handlers/msgwin.ts 的 MSGWIN_OPS 里已是真实现，名单里还有 0x1BB（记账门）/0x1C9（音频设备）/0x324（Effect3D）三条根本不是文本转发器，而真正没注册的 0x7D 反而不在名单里 ⇒ 台账与代码相反，判 描述过期。"
+  },
+  {
+    "id": "msgwin-attr-font-opcodes",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 3,
+    "verdictWhy": "note 把 0x75/0x76/0x77/0x78/0x1A4/0x8B/0x197/0x2BD/0x2BE/0x1A5/0x2FE 十一条全列成『仍为 no-op 且属 P0』，实际十一条都已实现（handlers/msgwin.ts 六条 + handlers/engine-fields.ts 五条）并被 globalTextStyle/raster/textureCache 消费；声称的 guard 是另一条无关用例（0x2DE 字体表下标）⇒ 台账与代码相反且 guard 名不副实，判 描述过期。"
+  },
+  {
+    "id": "adv-advance-route-table",
+    "batch": "cap-消息窗-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "note 的机制描述基本忠实（有 E3 守卫支撑），但 reads 的量纲把表内下标写成了 Engine 绝对字节偏移，且条目自己点名的四处缺口在 emulator 里确实不存在——按『引擎有、实现无/不完整』判 有缺口（缺口本身已被条目与 handlers/panel.ts 登记）。"
+  },
+  {
+    "id": "msgwin-config-gates",
+    "batch": "cap-消息窗-1",
+    "verdict": "描述过期",
+    "findings": 3,
+    "verdictWhy": "条目把四条配置门判成『随包 INI 缺失 ⇒ 当前走不到』，但随包资源里根本没有 SYS4REG.INI，有效默认来自引擎内建注册表（ReDrawTextOnKey=1 / WheelKeyUp=3 / WheelKeyDown=1），所以这些分支**是可走到的**；同时 emulator 侧滚轮/重绘门已实现（note 说未建模）⇒ 台账与代码相反，判 描述过期。"
+  },
+  {
+    "id": "scene-frame-commit",
+    "batch": "cap-渲染-1",
+    "verdict": "一致",
+    "findings": 2,
+    "verdictWhy": "两侧核对全部落到行：引擎四路归并与 0x20C 接线成立，emulator 的四路归并 + sort 键存在、guard 与 note 自述一致、note 的锚点订正与体一致。保住“一致”的同时登记两条与实测相反的细节（等键优先级、note 说无守卫但其实有守卫）——它们不改变本条的主声明。"
+  },
+  {
+    "id": "scene-norender-mode",
+    "batch": "cap-渲染-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把「INI 读配置填字段」写成「启动参数/无渲染隐藏窗口模式」，并据此断言「绑定可能错位」——三者全与体/代码相反（同一个字段在两侧都叫 display:ScreenMode 且读点一致），故判描述过期；真实待补的是 19 个门里那几处窗口尺寸/显示同步的宿主行为（emulator 侧无窗口），而不是字段绑定。"
+  },
+  {
+    "id": "scene-render-freeze-46676",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "台账的 status=absent 与 note 的「emulator 无对应开关」被 src/renderer/scene/blend.ts 的 sceneFrozen 与 test/blend-mode.test.ts:159 打脸（半建模、无生产者、无消费者）；同时引擎侧的**持续行为**（帧级冻结门）确实缺失，且 raw/fns 覆盖不到 ~90 处读点。两侧都需订正，故判有缺口。"
+  },
+  {
+    "id": "scene-draw-total-gate-1056",
+    "batch": "cap-渲染-1",
+    "verdict": "一致",
+    "findings": 2,
+    "verdictWhy": "trigger/raw/whySilent 三件都能在体里逐字复核，note 的轮 7 订正与 emulator 侧接线也对；仅两处描述不完整（1056 的全部写者/生命周期、reads 漏列），不改变主声明，故判一致。"
+  },
+  {
+    "id": "vertex-buffer-lock-scale",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "引擎侧 trigger 被过度一般化（只有 sub_4AF1C0 有那个门，sub_4A1F00 冻结时照样写顶点），emulator 侧真缺视口缩放与两条索引顶点路径；台账的 absent 与 note 的订正都成立，故判有缺口（缺持续行为 + trigger 描述不准）。"
+  },
+  {
+    "id": "sprite-2d-draw-layer",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "引擎侧机制成立但条目把它写成「无脚本/标题态额外 2D 层」、trigger 漏掉外层 `v3 == 39` 的门（真正的发生条件是 39 档，不是任意 <0/38 帧），emulator 侧确实没有这条路径 ⇒ 判有缺口（附带 trigger 描述过期）。"
+  },
+  {
+    "id": "scene-slot-release-1000",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "引擎侧的 1000 槽老化释放逐字成立，emulator 侧确认整块缺失（note 自己也这么写），因此是 missing-behavior；同时 status=partial 与 note 自述相反、且 guard 为空 ⇒ 台账状态需订正。"
+  },
+  {
+    "id": "lazy-572b-node-map",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "工程侧立绘半边与守卫都属实（E3 站得住），但「仍未建模」的那半边在引擎里有真实的建/查/提交三段，条目把它写成「语义未明」低估成缺口；同时 engine.raw 129394-129427 里没有任何一条能证实 name 里的「表头 eager 130366/130384」（那两处是另一张表、且在区间外），reads 也把表对象当字段列 ⇒ 触发/描述两侧都要订正。"
+  },
+  {
+    "id": "gfx-prim-mesh-and-render-state",
+    "batch": "cap-渲染-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "emulator 侧确实把这一族从 no-op 提升成了 handler + 宿主缝（0x238/0x258/0x207 有真效果、E3 守卫也真有断言），所以不是描述过期；但除这三条以外的记录型条目在渲染侧没有消费者（snapshot.ts:160 自认「渲染器尚未逐条消费」），属引擎有、实现不完整 ⇒ 有缺口。"
+  },
+  {
+    "id": "scene-teardown-on-load-point",
+    "batch": "cap-渲染-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "引擎侧与 note 的 (B)/(C) 叙述都对，实现也真的恢复了 restoreDrawItems（有消费者 + 有守卫），因此 note 的两句结论都已过期：末句「只留 handle、无消费者」与首段「正解 = 恢复 clearDrawContainer/clearMeshSlots + 新增 body 清单解析还原」——后者尤其与实际相反（emulator 刻意不清网格，因为那个缝与体不符）⇒ 判描述过期。"
+  },
+  {
+    "id": "text-layout-wrap-ruby",
+    "batch": "cap-消息窗-2",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账的 engine.fns / trigger / reads 大体成立（+36/+40 的名字有出入，见 findings），但 emulator 三格（status=absent、evidence=E0、guard=（无））全部与代码相反，且 note 的“未建模清单”漏掉了已实现的三项（等宽网格/边界硬断/注音配对），故判 `描述过期`（不是 `一致`，也不是 `有缺口`：缺口只剩体明确列出的那三项）。"
+  },
+  {
+    "id": "msgwin-offscreen-surface-lifecycle",
+    "batch": "cap-消息窗-2",
+    "verdict": "一致",
+    "findings": 0,
+    "verdictWhy": "台账这一条是**自认缺口**的诚实条目：status=partial 与代码一致（确实没有离屏表面/DC 配对），engine.raw 与 fns 逐条在体里成立（本批唯一我逐行核过 body 头尾的条目），note 里的自述也都能在 raw 里复现，故判 `一致`（缺口已列进 missingBehaviors，不另开 finding）。"
+  },
+  {
+    "id": "msgwin-line-fade-window",
+    "batch": "cap-消息窗-2",
+    "verdict": "有缺口",
+    "findings": 1,
+    "verdictWhy": "引擎有、emulator 有一半（动画窗机制在、消息窗行的接线与门都不在），且缺的正是这条 capability 的 `name`（“行淡入”），故判 `有缺口`。"
+  },
+  {
+    "id": "msgwin-backlog-cursor",
+    "batch": "cap-消息窗-2",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账三格（absent/E0/无守卫）与代码相反：模型层（页表 + 双游标 + 0x1D0 读端）**已实现且有守卫**；但 note 里那句「0x84 … 脚本会停在自旋里（表现为卡住，而不是报错）」在本 emulator 里**不成立**——0x84 未注册 ⇒ 命中即 `NotImplementedOp` 抛错（`src/vm/interpreter.ts:80` 返回 `kind: 'unimplemented'`，:69 注释写明「由 stepOnce 抛 NotImplementedOp」），这一点已被 `docs-new/99-records/2026-09-audit/audit-2026-09-capabilities.md:125` 记过一次。两处错（状态过期 + 静默口径错）同源，故判 `描述过期` 而非 `有缺口`。"
+  },
+  {
+    "id": "text-font-rebuild-cascade",
+    "batch": "cap-消息窗-2",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账的 emulator 三格在**实质**上对（partial/E2 成立、缺口确实是句柄层），但 note 与 guard 的**出处全部指错位置**（:1146-1189 与 text-layout.test.ts:248-264），属于台账已过时/名不副实，故判 `描述过期`；若只看结论不看出处则会误判为一致。"
+  },
+  {
+    "id": "text-aa-config-gate",
+    "batch": "cap-消息窗-2",
+    "verdict": "有缺口",
+    "findings": 1,
+    "verdictWhy": "前半（两键门 + 字段写入 + 守卫）真、后半（无消费者、渲染侧恒开）也真，但 note 里有一处**事实夸大**（“全库唯一出现点”）与一处**行号错**（msgwin.ts:146 vs :184），且「AA 门在渲染侧无消费者」这一缺口本身仍在，故判 `有缺口` 而不是 `一致`。"
+  },
+  {
+    "id": "text-white-level-on-composite",
+    "batch": "cap-消息窗-2",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账这一条把**已经定位并落地**的机制写成“机制未定位”，且 note 里点名的常量、行号与三处守卫断言在代码里全部不存在（改为覆盖率 α 路径）——这正是本轨要抓的 stale-ledger。引擎侧该条 raw 区间本身没错（字体色字段确实在那），错的是“机制不在颜色链上”这个结论已被推翻：机制在字形覆盖率合成（raw 84974-84979 + 86028-86038）。"
+  },
+  {
+    "id": "text-blank-extent-mode-gate",
+    "batch": "cap-消息窗-2",
+    "verdict": "描述过期",
+    "findings": 1,
+    "verdictWhy": "台账的**技术内容全部成立**（门、两支公式、默认 0 的潜伏性、缺口清单），但 name/trigger 里出现两种可证伪的**格式笔误**：「0x8140 全角空格」（0x8140 是**全角空格**的 SJIS 编码，这一处其实对）与「raw 12222-12235 取 font_metrics_mode ? 字号 : -lfHeight」（raw 12221-12224 是 `if (_this[71744]) v7 = _this[71745]; else v7 = -_this[21632];` ⇒ 字段读的是 `Engine[71745]`，**不是**“字号” `Engine[201684]`），以及消费点行号（85126/85366/…）本次**未逐点复核**。这些是台账文本与体的偏差（读者会照错的字段名去接线），故判 `描述过期`；机制与缺口本身不受影响 ⇒ 没有 missing-behavior 级的新缺口。"
+  },
+  {
+    "id": "frame-render-gate-mainloop",
+    "batch": "cap-帧循环-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "机制（主循环门 → 帧提交）在引擎里成立且 emulator 有结构相似的帧驱动，但引擎门的三道子条件（675968 外部暂停、429752 停靠锁、v93）在 emulator 里没有任何等价物，条目也未如实列全 ⇒ 判有缺口而不是描述过期（台账没写反，只是不全）。"
+  },
+  {
+    "id": "scene-flag-46528-bits",
+    "batch": "cap-帧循环-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把整条记为 `absent`/E0「随 46512 一起未建模」，但实现里 bit2 的豁免语义（`46528 & 4 == 0` ⇒ 清零冻结值）已用「`+720` bit0 等价」的方式建模，并有 test/wait-gate-timer.test.ts 的两条真实断言 ⇒ 台账与代码相反、且 trigger 里 bit2 的极性写反（凡 bit2=0 才清冻结值），故判描述过期。"
+  },
+  {
+    "id": "clock-write-clock-freeze",
+    "batch": "cap-帧循环-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "emulator 有单一时间域与每帧时钟写（partial 正确），但引擎「主循环写时钟」自带两道门（667856/667860 门 + 107438 停靠锁语义），台账 trigger 写成「每帧写」为过度概括，实现侧也没有这两道 ⇒ 判有缺口。"
+  },
+  {
+    "id": "movie-object-lifecycle",
+    "batch": "cap-帧循环-1",
+    "verdict": "一致",
+    "findings": 0,
+    "verdictWhy": "台账两侧（引擎机制、emulator absent/E0、0x20F 只记录）都与体/代码一致，故判一致；缺的是整个影片子系统，属条目已如实登记的缺口。"
+  },
+  {
+    "id": "script-queue-dispatch",
+    "batch": "cap-帧循环-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账 `absent`/E0「引擎的脚本派发队列未建模 ⇒ 0x143 是 no-op」与代码完全相反：队列、入队、出队、帧 37 装载、-10 续派发都已实现且有 test/append-packs.test.ts 守卫 ⇒ 判描述过期；残余缺口只是「帧驱动点未接线」与「429752 外层门」。"
+  },
+  {
+    "id": "lazy-movie-object",
+    "batch": "cap-帧循环-1",
+    "verdict": "一致",
+    "findings": 0,
+    "verdictWhy": "台账两侧与体/代码一致（引擎机制成立、emulator 确实没有影片对象），故判一致。"
+  },
+  {
+    "id": "bullet-dirty-from-freeze-or-pending",
+    "batch": "cap-帧循环-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把 `46512` 的一半记成「没有逐字建模」而代码里已有 freeze ⇒ 置脏 的实现（且有守卫），属台账落后于代码；同时 pending 那一半确实缺消费者 ⇒ 判描述过期（并如实标出剩余缺口）。"
+  },
+  {
+    "id": "passive-camera-and-effect-render-state",
+    "batch": "cap-帧循环-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把本条记成 `absent`/E1（「PixiBackend 每帧 present 时不重设 D3D 级渲染状态」），但 `sub_4535F0` 的唯一分支字段 `Scene+1260` 已被 emulator 建模并由 `sceneDefaultBlend`+`walkBlendSequence` 消费（含 test/blend-mode.test.ts 的断言）⇒ 台账与代码不一致（不是完全没接），故判描述过期；粒子/效果推进那一半确实是缺的。"
+  },
+  {
+    "id": "drawitem-loop-anim-frame-drive",
+    "batch": "cap-misc",
+    "verdict": "一致",
+    "findings": 1,
+    "verdictWhy": "机制、trigger、reads 与反编译体一致；emulator 侧 partial 的姿态诚实（五通道 + 世界矩阵位都真实现并被真断言），note 里「仍缺」的三项经代码核实确实仍缺且已在台账披露 ⇒ 没有新缺口，判一致。"
+  },
+  {
+    "id": "texture-absent-draw-is-dropped",
+    "batch": "cap-misc",
+    "verdict": "一致",
+    "findings": 0,
+    "verdictWhy": "引擎侧「入队不校验 / 出画丢弃 + 只写 Error.log / 无替代纹理」在体里逐条成立，且 emulator 侧行为与守卫**双双**与之一致（守卫同时钉了引擎事实与 emulator 行为，还带反面控制）⇒ 判一致。"
+  },
+  {
+    "id": "live2d-enabled-config-flag",
+    "batch": "cap-misc",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把这一条写成「E1 / guard 为空 / 仍缺开关的显式断言」，而 `test/live2d-enabled-flag.test.ts` 已经用真语料断言了两条支路（含回落图 0x5273 落到槽 5），台账与代码相反 ⇒ 判**描述过期**（不是新缺口：行为已实现且已被守卫）。★这一条**已被 `tickets/T-0124` 独立发现**（notes.md:327 与 §7.4 把它叫「孤儿守卫」，G5-texture-l2d.md:42/255 建议回填 `guard: test/live2d-enabled-flag.test.ts`）——即审计前已知、未落地。"
+  },
+  {
+    "id": "live2d-node-draw-advance",
+    "batch": "cap-misc",
+    "verdict": "描述过期",
+    "findings": 1,
+    "verdictWhy": "条目 name/trigger/reads 与体一致，E3 守卫真在断言「不传节点 ⇒ 不推进」，但 note 自报的**唯一缺口（宿主合成循环没接线）已在代码里落地**（headlessScene.ts:799 / pixiBackend.ts:1425 / ops.ts:1506）⇒ 台账比代码旧，判**描述过期**。"
+  },
+  {
+    "id": "frame-pump-input-refresh",
+    "batch": "cap-misc",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "条目把「音频语音队列的每帧泵（`sub_4BBAB0`）」误标成「输入」子系统，并在 emulator 侧填了一个与该行为无关的守卫（test/input.test.ts）与一条「未逐项核对」的 note；实际上该行为已实现且另有真相邻条目（frame-pump-sound-channels，声音，E2/modeled-verified）⇒ 判**描述过期**（台账与代码相反：说未核对其实已实现、guard 名不副实），不是新缺口。"
+  },
+  {
+    "id": "audio-device-init",
+    "batch": "cap-misc",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "引擎侧「DirectSound 设备/对象建立、失败分支、按存档重载 10 通道、以及关闭声音标志后的静默降级」在体里齐全（条目只引对了 DSOUND.DLL 惰性装载那一半，且把析构当 ctor），emulator 侧对应的**三件都没有**（宿主用 WebAudio，没有设备概念，也没有声音标志的静默降级）⇒ 判有缺口；同时把条目自身两处 engine 错引（析构当 ctor、whySilent 说无报错）作为 finding 记下。"
+  },
+  {
+    "id": "lazy-transition-map-node",
+    "batch": "cap-misc",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账写 `absent`/`E0`/`guard:\"\"`/「转场表未建模」，而代码里转场表（含惰性运行期创建与整表清空）已实现并有 4 个测试文件真断言 ⇒ 台账与代码相反，判**描述过期**；同时把条目 `engine.fns` 里 `sub_4AA190` 不是插入点这一处不准确记为 overreach。"
+  },
+  {
+    "id": "lazy-texture-slot",
+    "batch": "cap-资源-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "引擎侧机制成立（旧槽释放-重建 + 失败留槽 + 两套类分派），emulator 侧槽表/绑定/重建也在，但 (a) 台账 reads/whySilent 里的『失败仅置空槽』与体相反（体是日志 + 留下半初始化对象），(b) 台账 guard 文件并不覆盖它自己声称的『释放-重建』用例，(c) 引擎的 mode==3 分派（DividedTexture）无对应实现 ⇒ 判有缺口（含 overreach 与 guard 名不副实两条 finding）。"
+  },
+  {
+    "id": "lazy-movie-dll",
+    "batch": "cap-资源-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "台账把这条写成 absent/E0/『影片未实现』，而 0x14B/0x14C（引擎侧同名同 raw 的 sub_4229D0/sub_422AB0）在 emulator 里已有真实现且已进派发表 ⇒ 属『台账说没做其实做了』；同时条目名把通用模块加载读成『电影解码 DLL』，属推断当事实。两处都判在描述过期项下（findings: stale-ledger + overreach）。"
+  },
+  {
+    "id": "lazy-movie-texture-slot",
+    "batch": "cap-资源-1",
+    "verdict": "有缺口",
+    "findings": 2,
+    "verdictWhy": "引擎侧确有『每索引惰性创建影片对象槽』这一持续行为（且条目给出的 4 个同型调用点、whySilent 的『失败按空槽处理、无日志』方向都对），emulator 侧该表与对象完全不存在（只有日志桩），故判有缺口；同时条目的 fns/name/reads 三处与体错位（把 CMovieToTexture 对象槽叫成纹理槽、只列 ctor、漏 365288 的 throw 门），另计一条 overreach。"
+  },
+  {
+    "id": "lazy-script-operand-hashmap-node",
+    "batch": "cap-资源-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "机制本身在体里成立、emulator 的 Map 等价物也在（所以不是有缺口），但台账两处细节与事实相反：reads 指向的是影片对象表与 CTexture 槽表（体里 36830-37477 一次都不出现），guard 指的 xval.test.ts 断言的是 BIN↔反汇编指令名一致——两处都是『说做了其实没做/指错对象』，故判描述过期。"
+  },
+  {
+    "id": "gallery-unlock-file-used-flags",
+    "batch": "cap-资源-1",
+    "verdict": "一致",
+    "findings": 0,
+    "verdictWhy": "台账的 trigger/reads/whySilent/emulator.status(partial)/evidence(E3 有真断言、E4 有真机存档用例 + 出图)/note（含三个残留缺口）逐条能在体与代码里落地，未发现相反或过时之处，故判一致。仅两处细枝末节记在两侧核对里不另立 finding：① note 的『写 sub_40AAE0 → sub_438320 的 a7/a8』实际标志数组是第 9/10 个实参（a9/a10，15063-15074 的调用清单）；② `src/vm/handlers/resource-usage.ts` 的『已知缺口』注释已过期（说只做会话内打点），它不影响运行、也不影响台账判定，但会让下一个读者以为持久化还没做。"
+  },
+  {
+    "id": "texture-bind-synchronous-then-query",
+    "batch": "cap-资源-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "引擎侧机制完全成立（0x1F9/0x249 都是当场打开+解码+写槽 imgid），emulator 也实现了 0x1F9 之后的屏障，但 (a) 同一句注释声称已覆盖的 0x249 屏障因调用点过滤而**不可达**（引擎有、实现实际无），(b) 该屏障没有任何测试断言，note 引的人工证据（gs2 运行）自带日志把 SN0000 两图判为几乎全黑，(c) 0x249 之后 imgid 的引擎语义（−1）与 emulator（写 op1）相反 ⇒ 判有缺口。"
+  },
+  {
+    "id": "scene-3d-effect-level-writer",
+    "batch": "cap-3D-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "引擎侧的机制成立、实现侧也确实是『有缺口』：等级字段及其全部消费者在 emulator 里一个都没有（grep `46668` 只命中一条注释），而台账的 status=partial 与 note『完全未建模』自相矛盾，note 的验证落点（presenter.ts:157）还指错了行 ⇒ 判『有缺口』（不是『描述过期』：机制确实没实现；也不是『无法判定』：体与代码两侧都已读到）。"
+  },
+  {
+    "id": "render-3d-layer-dual-commit",
+    "batch": "cap-3D-1",
+    "verdict": "描述过期",
+    "findings": 3,
+    "verdictWhy": "判『描述过期』而不是『有缺口』：实现侧的 status=absent 与 note 都是**对的**（缺口已登记在 T-0076），真正与代码相反的是本条的 `trigger`（『本文件未见主循环调用点』—— 唯一调用点就在 0x222 的 handler 里，raw 31933）与由它派生的 name『对偶逐帧提交』；条目自己的 note（P0 订正）已经写明这件事，trigger 字段却没同步 ⇒ 台账自相矛盾且过时。"
+  },
+  {
+    "id": "world-matrix-identity-refresh",
+    "batch": "cap-3D-1",
+    "verdict": "描述过期",
+    "findings": 3,
+    "verdictWhy": "判『描述过期』：引擎侧成立，而 emulator.note 的『没有 4×4 世界矩阵链』与代码相反（state.ts:158-166 已把该级建出来并有两个专门守卫），guard 又指了一个断言别的东西的测试文件 ⇒ 台账已过时（不是『有缺口』：那条链确实在；也不是『无法判定』：体与代码都读到了）。"
+  },
+  {
+    "id": "lazy-mesh-map-node",
+    "batch": "cap-3D-1",
+    "verdict": "描述过期",
+    "findings": 2,
+    "verdictWhy": "判『描述过期』：引擎侧三条主张（体、memset 60、bit0 门、表头 eager 130348）全部成立，实现也确实在；过期的是实现侧口径 —— note 把 0x322/0x323 的建项路径记成 scCreateMesh（代码是 scEnsureMesh，且两者被明确要求分开），并声称『无专门测试』而 test/mesh-vertex-quad.test.ts + test/blend-mode.test.ts 正好断言了这件事（status 该从 modeled-unverified 升为 modeled-verified 并补 guard）。"
+  },
+  {
+    "id": "scene-3d-weather-effects-rain-snow-leaf",
+    "batch": "cap-3D-1",
+    "verdict": "有缺口",
+    "findings": 3,
+    "verdictWhy": "判『有缺口』：引擎侧（管理器、三效果、0x324-0x328 映射、帧推进、全部 reads）已逐条读体确认，而 emulator 侧确实整套不存在（no-op 登记只是为了让脚本不硬停，note 也如实说明）；同时 note 的 guard 字段与 stubs.ts 内的一段注释已过期 —— 这两个缺口不影响 verdict 的『有缺口』定性，因为子系统本身仍然缺失。"
+  }
+]

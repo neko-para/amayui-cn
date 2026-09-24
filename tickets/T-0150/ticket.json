@@ -1,0 +1,32 @@
+{
+  "title": "死写闸门（闸门 C）覆盖面从 Item/MeshObj 扩到 Engine/SceneState 等模型",
+  "type": "refactor",
+  "priority": "P2",
+  "area": "emulator/test",
+  "why": "`src/tools/deadWrites.ts` 只扫 `drawitem/model.ts` 的 `Item`/`MeshObj` 字段；本次 `missing-consumer` 类 finding 大多落在 `Engine`/`SceneState`/文本对象上，闸门看不见 ⇒ 不会红。",
+  "acceptance": [
+    "`findDeadWrites` 覆盖 `Engine`/`SceneState`（或按 scope 可配置），基线 `dead-writes.baseline.json` 登记存量并写明理由",
+    "`test/no-dead-writes.test.ts` 对新增死写仍红；对存量只记录"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "## 5. 分类与处置",
+      "note": "§5.0 第 2 条建议"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0150",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

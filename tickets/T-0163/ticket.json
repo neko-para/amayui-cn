@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：有据 no-op 与宿主缝（native）（19 条：P1 1 / P2 3 / P3 15）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/ops",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `stubs-native`）。合计 19 条缺口，其中 P1 1 条、P2 3 条。最典型一条：0x10c 的豁免理由（『宿主键盘也不进掩码 ⇒ 写入无消费者』）在 T-0052（status=done）落地后事实面已过期，但 T-0052 交付的是 DEFAULT_VK_TO_BIT 这份**冻结的** VK→位常量表，不是本指令写入口的消费者：emulator 里既无 Input[1176+VK] 运行期表、也无 Input[1432+键码]→VK 键码表，DEFAULT_VK_TO_BIT 只由 pressKey/relea",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "0x10c 的豁免理由（『宿主键盘也不进掩码 ⇒ 写入无消费者』）在 T-0052（status=done）落地后事实面",
+      "note": "批次 stubs-native 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0163",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

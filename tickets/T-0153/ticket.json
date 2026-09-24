@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：纹理槽与表面（22 条：P1 0 / P2 11 / P3 11）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `gfx-texture`）。合计 22 条缺口，其中 P1 0 条、P2 11 条。最典型一条：op3（颜色）在引擎里是**被消费**的：归一化后作 a5 传 sub_4A3800 → sub_49E9D0，最终作为第 4 实参进表面对象 vtable+28 的装载调用（raw 119762-119766），并写进**与 CTexture 表面表并列的第二个数组** `Scene[5*slot+467]`（raw 123380；注意它**不是**『槽记录』，0x1F8 建表面时不重置它）。emulator 把它交给 `native",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "op3（颜色）在引擎里是**被消费**的：归一化后作 a5 传 sub_4A3800 → sub_49E9D0，最终作为",
+      "note": "批次 gfx-texture 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0153",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

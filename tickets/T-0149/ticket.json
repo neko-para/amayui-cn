@@ -1,0 +1,33 @@
+{
+  "title": "缺口台账增设 `partial` 处置位：把\"已注册但未完全实现\"变成可棘轮的一等状态",
+  "type": "tooling",
+  "priority": "P1",
+  "area": "analysis/opcode-gaps",
+  "why": "`analysis/opcode-gaps.json` 的 disposition 只有 unimplemented/engine-internal(-unjustified)/implemented/deferred —— 它回答\"注册了没有\"，一旦写 `implemented` 就再也不会有人回来核对。本次 436 条缺口里绝大多数正落在这一类（已注册但缺分支/缺消费端/近似）。若不加这个处置位，下一轮同类问题仍会\"静默存在\"。",
+  "acceptance": [
+    "`analysis/opcode-gaps.json` 支持 `partial`（每条带 `missing[]`：缺哪条分支/能力 + 票号 + raw 锚点）",
+    "`scripts/build-opcode-gaps.mjs` 渲染 §\"部分实现\"段；`test/opcode-gaps.test.ts` 增棘轮：标 `partial` 的必须带 missing[] 与票号，未登记的 partial 即红",
+    "本报告 §4.1 的 P1/P2 条目作为首批内容迁入（或逐条回链到票）"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "## 5. 分类与处置",
+      "note": "§5.0 第 1 条建议的出处"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0149",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

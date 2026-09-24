@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：音频子系统（42 条：P1 5 / P2 13 / P3 24）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/audio",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `audio`）。合计 42 条缺口，其中 P1 5 条、P2 13 条。最典型一条：缺 `sub_408CF0` 的「无需改动 ⇒ 整条早退」分支（raw 13523-13541 的 `if (a2) {...} else if (v3 >= 0) {...}` 结构）：引擎在 `a2 != 0 && sound:Music >= 0`（或 `a2 == 0 && sound:Music < 0`）时不做任何事，emulator 仍发 `bgm-stop` ⇒ 正在播的 BGM 被**停一次**（若卸载了 bgm-pl",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "缺 `sub_408CF0` 的「无需改动 ⇒ 整条早退」分支（raw 13523-13541 的 `if (a2) {",
+      "note": "批次 audio 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0152",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

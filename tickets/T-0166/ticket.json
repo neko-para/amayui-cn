@@ -1,0 +1,33 @@
+{
+  "title": "能力台账同步：75 条\"描述过期 / overreach / guard 名不副实\"逐条订正",
+  "type": "docs",
+  "priority": "P1",
+  "area": "docs/analysis/engine-capabilities",
+  "why": "本批对账发现台账大量滞后于实现：条目说 `absent`/未建模而代码已实现（`lazy-transition-map-node`、`lazy-gdi-font-set`、`msgwin-text-method-opcodes`、`text-layout-wrap-ruby`…），或条目细节在体里找不到支持（`overreach`），或 guard 指向的测试断言的是别的东西。这些不改行为，但会让后来人按错的前提工作（本工程已实证多次）。",
+  "acceptance": [
+    "报告 §4.2 中 `stale-ledger`/`overreach` 条目逐条：`status`/`evidence`/`guard`/`note` 与代码一致；`capabilities.js --validate` 绿",
+    "`node scripts/build-capabilities.mjs` 后 `test/capability-ledger.test.ts` 绿",
+    "对\"随包 INI 缺失 ⇒ 分支走不到\"一类措辞，按引擎内建注册表（`sub_491880`）的默认值重判"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "### 4.2 Track 2 · 能力台账缺口（按严重度）",
+      "note": "能力台账缺口全表"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0166",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

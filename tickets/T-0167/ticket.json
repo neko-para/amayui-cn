@@ -1,0 +1,33 @@
+{
+  "title": "能力台账缺口：27 条\"引擎有、emulator 缺的持续行为\"逐条落地或登记",
+  "type": "req",
+  "priority": "P1",
+  "area": "emulator/frame-loop",
+  "why": "这类缺口不是任何一条 opcode，而是引擎自己在后台一直做的事（帧级门/每帧效果推进/停靠锁/待播语音交付/影片槽生命周期…），缺失时**不报错、只表现不对**（例：`sub_453540` 每帧效果推进缺失 ⇒ 雨雪永远不动）。",
+  "acceptance": [
+    "报告 §4.2 中 `missing-behavior`/`missing-consumer` 条目逐条：实现（带守卫）或登记 `n/a-known`（必须写 `why:`）并回链本报告",
+    "涉及帧循环的条目要在 `test/` 有可失败的断言（合成或真语料）",
+    "`npm run verify` + `capabilities.js --validate` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "### 4.2 Track 2 · 能力台账缺口（按严重度）",
+      "note": "能力缺口全表"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0167",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

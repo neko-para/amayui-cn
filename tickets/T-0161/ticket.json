@@ -1,0 +1,33 @@
+{
+  "title": "指令实现缺口修复批：引擎字段 / 配置读写（16 条：P1 1 / P2 5 / P3 10）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/ops",
+  "why": "本批来自 2026-09 全指令核对（报告 §5.1 批次 `engine-fields-config`）。合计 16 条缺口，其中 P1 1 条、P2 5 条。最典型一条：引擎 `sound:Music` 支写的是 `(v2 >= 0)`（只有负值算关），SE/Voice/Movie 才是 `!= 0`；emulator 用同一个 `bool: true` 把四条都按「非 0 ⇒ 1」处理 ⇒ selector=1 时取值口径相反：`sound:Music == 0` 引擎写 1、emulator 写 0；`sound:Music < 0` 引擎写 0、emulator 写 1（仅 >0 时一致）。",
+  "acceptance": [
+    "报告 §4.1 中属于本批的 **P1/P2** 条目逐条给出结论：修（带命名守卫）或在 `analysis/opcode-gaps.json`（partial，见另一票）登记为\"有意保留 + 扩展点 + 重新评估条件\"",
+    "本批 P1 条目至少各有一个能失败的守卫（合成指令或真语料 E3），守卫文件写进票据 tests[]",
+    "`cd app/amayui-emulator && npm run verify` 全绿"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
+      "anchor": "引擎 `sound:Music` 支写的是 `(v2 >= 0)`（只有负值算关），SE/Voice/Movie 才是 ",
+      "note": "批次 engine-fields-config 的代表 finding（报告 §4.1）"
+    }
+  ],
+  "links": {
+    "docs": [
+      "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md"
+    ]
+  },
+  "id": "T-0161",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}
