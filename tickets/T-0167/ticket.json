@@ -38,6 +38,11 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → done"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests —— 收尾补修：滚轮事件修前从不进输入掩码（引擎 WndProc 的两条路只实现了累加器那条）⇒ ADV 里所有滚轮键位判据恒假，用户实测滚轮无反应。已按体落地 wheelKeyBits/wheelKeyPolicy + 守卫 test/wheel-as-key.test.ts（9 例，含端到端）；台账 input-wheel-two-accumulators 与 docs-new/03-engine/input-system.md §15 同步。"
     }
   ],
   "tests": [
@@ -50,6 +55,7 @@
     "app/amayui-emulator/test/gfx-prim-mesh-consumers.test.ts",
     "app/amayui-emulator/test/adv-right-click-cancel-route.test.ts",
     "app/amayui-emulator/test/msgwin-backlog-wheel.test.ts",
+    "app/amayui-emulator/test/wheel-as-key.test.ts",
     "app/amayui-emulator/test/adv-msgwin.test.ts",
     "app/amayui-emulator/test/char-reveal.test.ts",
     "app/amayui-emulator/test/op-1f5-dequeue.test.ts",

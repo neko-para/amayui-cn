@@ -40,6 +40,30 @@
 6. **`0x2F5` 的 ADV 位写槽语义**（audio 批 T-0152 的 P2 残余）：ADV 位置位时引擎写槽不起播，emulator 的 `op_voice_queue` 直接发 `voice-queue`。
 7. **`0x7C` 的 raw 25816-25822 收尾**（frame-loop 批的 P2 残余）：`if (387940) { 387940 = 0; if (队列恰剩 1 项) dispatchNextRequest(c) }` —— `dispatchNextRequest` 现已导出可复用。
 
+## 六、收尾补修：**滚轮事件从来没有进过输入掩码**（用户实测反馈）
+
+用户实测："在 ADV 界面滚动滚轮无法进入历史消息/回看界面"。逐层查证后定位到一个**结构性缺口**（不属于原 48 条 P1，是 #14 那条修好之后仍然"看不见效果"的根因）：
+
+- 引擎 WndProc 对 `WM_MOUSEWHEEL`(0x20A) / `WM_MOUSEHWHEEL`(0x20E) 有**两条路**（raw 141520-141611）：
+  `(Engine+699204 & 0x90100000) != 0` 时**不累加增量**，而是取 `set:WheelKeyUp/Down`（横滚 `HWheelKeyUp/Down`）
+  当**掩码位号**执行 `Engine[699208] |= 1 << 位`；否则才 `Engine[7796]/[7800] += delta`。
+- 而 ADV 侧所有"滚轮键位"判据读的都是**掩码**（`sub_411BC0` raw 20345/20355、`sub_411590` raw 20047-20055、
+  `sub_411900` raw 20264）⇒ emulator 修前只喂 `wheelDelta` ⇒ 那些判据**恒假**、滚轮在 ADV 里"完全没有反应"。
+- 修法（引擎逐字）：`InputManager.wheelKeyBits` + `wheelKeyPolicy`（`Engine` 构造时注入的**活值闭包**：
+  `asKey = effectFlags & 0x90100000`；四个位号来自 `CFG.setWheelKeyUp/Down/HWheelKeyUp/HWheelKeyDown`，
+  缺键 = -1 不映射；位号非法 ⇒ 引擎那条 `if (v19 >= 0)` 不成立、也不回流到累加器）；
+  `flushPending`/`flushHeld` 把它并进掩码；`consumeEdges` 随掩码一起消费（引擎每轮收尾 `*v9 = 0`）；
+  `snapshot`/`restore` 带上它（旧轨迹无此格 ⇒ 按 0 降级）。
+- 守卫：`test/wheel-as-key.test.ts`（9 例，全绿；含"一次真实滚轮事件 ⇒ 等待泵回看分支（游标后退 + `489816=-1`
+  + `effect_flags |= 0x100000`）"的端到端例）。快速档 959 / 958 pass / 0 fail。
+- 台账/文档同步：`analysis/engine-capabilities.json` 的 `input-wheel-two-accumulators`（E3 + 新守卫 + 两条路的说明）、
+  `docs-new/03-engine/input-system.md` §15。
+- ★**同一次查证还纠正了一条登记**：`sub_411560(Engine, "CALLBACK_TEXT.BIN")` 那一跳**不是缺口** ——
+  `sub_455000` 按名找不到返回 **-1**（raw 67420），`sub_40FC90(Engine, -1)` 体首 `if (a2 != -1)` 直接早退
+  （raw 19021-19026）；而本机数据（`install/SYS4INI.BIN` 21109 条 / 565 个 `.BIN`、`raw-parts/DATA1/` 抽取）
+  里**没有** `CALLBACK_TEXT.BIN`，也没有任何条目名含 "text"。⇒ 真机同样是 no-op，台账两条 note 已改正，
+  重开条件 = 数据里出现该文件（或换用带它的版本）。
+
 ## 五、台账同步（本轮写入 `analysis/engine-capabilities.json`，140 条 / `--validate` 绿）
 
 - 新增：`msgwin-coexist-auto-message`（partial）、`msgwin-vertical-rect-pad`（n/a-known，0x260 P1 推翻的登记）。

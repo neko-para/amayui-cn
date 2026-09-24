@@ -156,7 +156,7 @@ generated_by: scripts/build-capabilities.mjs
 | `hover-ret-reruns-gate-op` | 输入 | 悬停/点击 label 的返回点 = 门指令（ret 回到门指令重跑） | ✅ 已核验 | E3 · `test/game-start-chain.test.ts` |
 | `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts#★逐字显现速度定律：MessageSpeed = **每字**毫秒` |
 | `save-slot-chain` | 资源 | 存档槽链路：SAVE%2.2d.DAT（0x19E 存 / 0x1A1 读 / 0x1A0 读头 / 0x19F 短读 / 0x1AB 删 / 0x1AC 复制）与 .STH 状态块（0x1AE/0x1AF） | ✅ 已核验 | E4 · `test/save-slot-chain.test.ts` |
-| `input-wheel-two-accumulators` | 输入 | 两个滚轮累加器：竖直（WM_MOUSEWHEEL）与水平（WM_MOUSEHWHEEL）各自独立、各自一次性消费 | ✅ 已核验 | E2 · `test/wheel.test.ts` |
+| `input-wheel-two-accumulators` | 输入 | 两个滚轮累加器：竖直（WM_MOUSEWHEEL）与水平（WM_MOUSEHWHEEL）各自独立、各自一次性消费 | ✅ 已核验 | E3 · `test/wheel-as-key.test.ts` |
 | `text-aa-config-gate` | 消息窗 | 文本抗锯齿是一把配置门：只有 set:EnableAntiFont 为真才读 message:UseAntiFont 写 Font+1352 | 🟠 部分 | E2 · `test/text-aa.test.ts` |
 | `save-slot-thumbnail-bmp` | 资源 | 存档缩略图：SAVE%2.2d.STH = 320x180 24bpp BMP（0x1AE 按 op3 纹理槽写 / 0x1AF 按 op3 纹理槽读） | ✅ 已核验 | E4 · `test/save-thumb.test.ts` |
 | `bold-is-lfweight-face-mapping` | 消息窗 | 加粗 = 一次 lfWeight=700 的字体映射请求（引擎不做合成加粗，配置里也没有独立的「粗体面」键） | ✅ 已核验 | E2 · `test/font-bold-face.test.ts` |
@@ -395,7 +395,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：页表不建则回看与滚轮完全无反应；更关键的是 0x84「翻到底」时本应置 effect_flags |= 0x100000 并弹保存栈让脚本继续 —— 页表为空则这个"到达末尾"永远不发生，脚本会停在自旋里（表现为卡住，而不是报错）。
 - **引擎**：sub_459770, sub_45EFA0, sub_45EBE0, sub_45EC60, sub_45D660 @ raw 70575-70627
 - **读的字段**：Font+3380/+3384(8B 页表), Font+3364(72B 回看项), Font+859/+860(末项/当前光标)
-- **emulator 现状**：（原文见 git 历史）2026-09（T-0167 的 P1 §4.2 #14 的 missing-consumer）：moveCursor 的消费者已接上。引擎 sub_411BC0 raw 20341-20363（整块被 effect_flags & 0x4000000 门控 —— 那是 CHAR_REVEAL_ACTIVE）：`v7 = Conf(set:WheelKeyUp)` 当掩码位…
+- **emulator 现状**：（原文见 git 历史）2026-09（T-0167 的 P1 §4.2 #14 的 missing-consumer）：moveCursor 的消费者已接上。引擎 sub_411BC0 raw 20341-20363（整块被 effect_flags & 0x40000000 门控 —— 那是 CHAR_REVEAL_ACTIVE）：`v7 = Conf(set:WheelKeyUp)` 当掩码…
 
 ### `text-font-rebuild-cascade`（partial）
 

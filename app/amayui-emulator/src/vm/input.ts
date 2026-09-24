@@ -32,6 +32,11 @@ export interface InputSnapshot {
   wheelDelta: number;
   /** 水平滚轮累加器（`0x2E5` 读它并清零；引擎 `_this[1950]`）。 */
   hwheelDelta: number;
+  /**
+   * **"滚轮当按键"模式攒下的掩码位**（引擎 WndProc raw 141605-141606 的 `Engine[699208] |= 1 << 位`）。
+   * 见 `InputManager.wheelKeyBits` 的说明；它由**宿主事件**写、由掩码消费端清 ⇒ 必须进快照。
+   */
+  wheelKeyBits: number;
   mouseEdge: number;
   joyEdge: number[];
   keyEdge: number;
@@ -216,6 +221,37 @@ export class InputManager {
    * 单位与方向：一格 = ±120（`WHEEL_DELTA`），**右滚为正 / 左滚为负**（DOM `deltaX` 同向，不再取反）。
    */
   hwheelDelta = 0;
+
+  /**
+   * ★★**"滚轮当按键"模式**（`tickets/T-0167` 的后续缺口；引擎 WndProc raw 141520-141611）★★
+   *
+   * 引擎的 `WM_MOUSEWHEEL`(0x20A) / `WM_MOUSEHWHEEL`(0x20E) 处理**有两条路**：
+   * ```c
+   * if ( (*(_DWORD *)(dword_55E1BC + 699204) & 0x90100000) != 0 ) {   // ← 模式开
+   *   v19 = Conf(delta > 0 ? "set:WheelKeyUp" : "set:WheelKeyDown");  //    配的是**掩码位号**
+   *   if ( v19 >= 0 ) *(_DWORD *)(dword_55E1BC + 699208) |= 1 << v19;  //    ★直接进"输入掩码"
+   * } else {
+   *   *(_DWORD *)(dword_55E1BC + 7796) += SHIWORD(wParam);             //   否则进增量累加器
+   * }
+   * ```
+   * （横滚同形：`set:HWheelKeyUp`/`HWheelKeyDown` → `Engine[7800]`；raw 141588-141611。）
+   *
+   * ★为什么必须有它：**ADV 里滚轮回看（backlog）整套判据读的都是掩码位**
+   * （`sub_411BC0` raw 20345/20355、`sub_411590` raw 20047-20055、`sub_411900` raw 20264…），
+   * 而修前 emulator 的滚轮事件**只喂增量累加器** ⇒ 那些判据恒假、滚轮在 ADV 里"什么都不做"。
+   * 模式位 = `effect_flags & 0x90100000`（`0x80000000` 等待门 | `0x1000000` | `0x100000` 跳读/回看位），
+   * 由 `Engine` 经 `wheelKeyPolicy` 在**事件发生的那一刻**读活值（引擎也是当场读 `Engine[699204]`）。
+   */
+  wheelKeyBits = 0;
+
+  /**
+   * **滚轮模式判据 + 四个键位的提供者**（由 `Engine` 在构造时注入；返回活值，不是缓存的常量）。
+   *
+   * `{ asKey, up, down, hUp, hDown }`：`asKey` = `(effect_flags & 0x90100000) !== 0`；
+   * 四个位号 = `set:WheelKeyUp`/`WheelKeyDown`/`HWheelKeyUp`/`HWheelKeyDown`（缺键 ⇒ -1 = 不映射）。
+   * 没有提供者（纯 `new InputManager()`，例如工具/测试）⇒ 永远走增量累加器那条路（与修前一致）。
+   */
+  wheelKeyPolicy: (() => { asKey: boolean; up: number; down: number; hUp: number; hDown: number }) | null = null;
 
   // --- 按下沿（自上次消费以来新按下）---
   /** 鼠标按钮按下沿（bit0=左、bit1=右）。get-input-type(0xCD)/0x100 依此派发。 */
@@ -456,18 +492,41 @@ export class InputManager {
    * 注入鼠标滚轮增量（渲染器 wheel 事件调用）。
    * 约定：`delta` 用**引擎单位与方向**（上滚正 / 下滚负，一格 ±120）；DOM 的 `WheelEvent.deltaY` 是反的，
    * 渲染器侧做 `-e.deltaY` 换算后再传进来。
+   *
+   * ★**两条路照抄引擎 WndProc**（raw 141572-141583）：`effect_flags & 0x90100000` 置位时滚轮**不进累加器**，
+   * 而是把 `1 << Conf(set:WheelKeyUp/Down)` 或进掩码（`wheelKeyBits`，由 `flushPending`/`flushHeld` 并进掩码、
+   * 由 `consumeEdges()` 随掩码一起消费）；否则才累加到 `wheelDelta`（`0x10D` 读并清零）。
    */
   addWheel(delta: number): void {
+    const d = delta | 0;
+    const policy = this.wheelKeyPolicy?.();
+    if (policy?.asKey) {
+      const bit = d > 0 ? policy.up : d < 0 ? policy.down : -1;
+      if (bit >= 0 && bit < 32) {
+        this.wheelKeyBits = (this.wheelKeyBits | (1 << bit)) >>> 0;
+        return; // 引擎：模式开 ⇒ **不**累加增量
+      }
+    }
     // |0 截断为 32 位（引擎累加器是 int32；正常滚一格 120，不会溢出）
-    this.wheelDelta = (this.wheelDelta + (delta | 0)) | 0;
+    this.wheelDelta = (this.wheelDelta + d) | 0;
   }
 
   /**
    * 注入**水平**滚轮增量（渲染器 wheel 事件的 `deltaX`；见 `hwheelDelta` 的说明）。
    * 方向与 DOM 一致：右滚为正、左滚为负，一格 = ±120（引擎单位）。
+   * ★模式开时同竖直滚轮：走 `set:HWheelKeyUp/Down` 的掩码位（raw 141588-141606），不进累加器。
    */
   addHWheel(delta: number): void {
-    this.hwheelDelta = (this.hwheelDelta + (delta | 0)) | 0;
+    const d = delta | 0;
+    const policy = this.wheelKeyPolicy?.();
+    if (policy?.asKey) {
+      const bit = d > 0 ? policy.hUp : d < 0 ? policy.hDown : -1;
+      if (bit >= 0 && bit < 32) {
+        this.wheelKeyBits = (this.wheelKeyBits | (1 << bit)) >>> 0;
+        return;
+      }
+    }
+    this.hwheelDelta = (this.hwheelDelta + d) | 0;
   }
 
   // ---------- VM 读取（0x108 / 0x109）----------
@@ -549,6 +608,8 @@ export class InputManager {
     //   ★不限 0..6（`tickets/T-0163`）：位号由 `0x10C` 可改写到 0..0x1F，
     //     旧实现 `& 0x7f` 会把 ≥7 的重映射位静默吃掉。
     m |= this.keyEdge;
+    // ★"滚轮当按键"攒下的位（引擎里那一位是 WndProc 直接 `|=` 进同一张掩码的，raw 141606）
+    m = (m | this.wheelKeyBits) >>> 0;
     this.inputMask = m;
     return m;
   }
@@ -575,6 +636,7 @@ export class InputManager {
     //   引擎的实时刷用 `GetAsyncKeyState` 轮询真值 ⇒ 按住期间每帧都为真。
     //   ★不限 0..6（`tickets/T-0163`）：位号是 `0x10C` 可改写的 0..0x1F。
     m |= this.keysHeld | this.keyEdge;
+    m = (m | this.wheelKeyBits) >>> 0; // 同上：滚轮当按键那一位并进实时刷
     this.inputMask = m;
     return m;
   }
@@ -586,6 +648,10 @@ export class InputManager {
     this.joyEdge.length = 0;
     this.keyEdge = 0;
     this.mouseMoved = false;
+    // ★滚轮当按键的位也在这里消费：引擎每处理完一轮就把整张掩码清 0
+    //   （`sub_411BC0` raw 20036/20043/20362 的 `*v9 = 0`、`sub_411590` raw 20036/20043）
+    //   ⇒ 一次滚轮事件只触发一次回看，不会每帧重复。
+    this.wheelKeyBits = 0;
   }
 
   /** 取鼠标派发目标 raw label（无按下沿或未注册 => null）。不消费边沿。 */
@@ -630,6 +696,7 @@ export class InputManager {
       lastAdvance: this.lastAdvance,
       touchId: this.touchId,
       inputMask: this.inputMask,
+      wheelKeyBits: this.wheelKeyBits,
     };
   }
 
@@ -655,6 +722,7 @@ export class InputManager {
     this.lastAdvance = s.lastAdvance;
     this.touchId = s.touchId;
     this.inputMask = s.inputMask;
+    this.wheelKeyBits = s.wheelKeyBits ?? 0; // 旧录制轨迹没有这一格 ⇒ 按"没有滚轮按键"降级
   }
 
   /** 取首个"已注册跳转目标"的手把按钮对应 raw label（无 => null）。不消费边沿。

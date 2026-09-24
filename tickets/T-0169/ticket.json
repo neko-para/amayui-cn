@@ -1,0 +1,46 @@
+{
+  "id": "T-0169",
+  "title": "帧循环口径差：逐字显现帧不跑等待泵（引擎同一轮里 20887 与 21226 都会跑到）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/frame-loop",
+  "why": "2026-09-24 追查滚轮链时发现：emulator 的 `runFrameLoop` 把「逐字显现中」做成**互斥分支**（`src/frame/loop.ts:448` 的 `else if (e.textRevealing)`），那一帧只跑 `serviceRevealAdvanceInput` + `serviceTextReveal`，**不跑等待泵**（`serviceAdvanceWait`，`:457-464`）；而引擎主循环在**同一轮**里 20887 的逐字泵与 21224 的等待泵都会跑到。后果：逐字期间的输入（键位路由 ①/悬停/④ 回看）在 emulator 里被推迟到「显现结束之后那一帧」，而那时 `endCharReveal()` 已清 bit30 ⇒ ④（`#textRewindWheel` 的 `effect_flags & 0x40000000` 门）在「位被路由绑定时」永不可达。",
+  "acceptance": [
+    "逐条给出引擎主循环的**真实次序**（raw 20887-20895 的逐字泵段 / 21158 的 ADV 段 / 21224 的等待泵段）与它们各自的**门**（`0x40000000` / `0x8000000` / 等待位）",
+    "判定 emulator 的 `textRevealing` 互斥分支是否需要拆开；若需要，给出改动 + 命名守卫（红→绿），并跑全量 `npm run test` 证明既有 ADV/逐字守卫不回归",
+    "若结论是「引擎其实也是互斥（两段门不会同时成立）」，则把结论写进 `src/frame/loop.ts` 的注释与台账 `frame-*` 条目，并把本票以 doneWhy 关闭（不许空口）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/frame/loop.ts",
+      "anchor": "} else if (e.textRevealing) {",
+      "note": "emulator 的逐字分支（互斥于等待泵分支）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( (v25 & 0x40000000) != 0 )",
+      "note": "主循环逐字泵段（raw 20887 起）；同一轮的 21224 才是等待泵"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0168",
+      "T-0157"
+    ],
+    "analysis": [
+      "adv-flag-lifecycle",
+      "msgwin-char-reveal-grid"
+    ],
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md"
+    ]
+  },
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建：滚轮链追查中发现的帧循环口径差（逐字帧不跑等待泵）"
+    }
+  ]
+}

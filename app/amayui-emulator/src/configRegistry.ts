@@ -202,6 +202,9 @@ export const CFG = {
   setDrawMode: 'set:DrawMode',
   setWheelKeyUp: 'set:WheelKeyUp',
   setWheelKeyDown: 'set:WheelKeyDown',
+  /** 横滚的键位（引擎 WndProc `WM_MOUSEHWHEEL` 的 `set:HWheelKeyUp/Down`，raw 141596/141602；缺省 -1 = 不映射）。 */
+  setHWheelKeyUp: 'set:HWheelKeyUp',
+  setHWheelKeyDown: 'set:HWheelKeyDown',
   setReDrawTextOnKey: 'set:ReDrawTextOnKey',
   /**
    * 空白字前进量的门（引擎 raw 12230 / 85126 / 87272 … 共 20 余处 `GetConfig(..., aSetBlankextent) == 1`）。

@@ -450,8 +450,22 @@ E3 实测 `revealRestarts = 2` → 修后 0）。常态行为条目见 `engine-c
 - 两条都是 **`v2 = _this[N]; _this[N] = 0; writeIntOperand(1, v2);`** 的形状（一次性消费）。
 - 值语义：自上次读取以来该轴的 `+= (short)HIWORD(wParam)` 累计；**一格 = ±120**（`WHEEL_DELTA`）。
   方向：竖直**上滚正/下滚负**（`0x10D`，脚本 `gr (local 403) 0` 判上滚）；水平**右滚正/左滚负**（`0x2E5`）。
-- ★`0x20E` 还有一条前置分支（raw 141588）：当 `(Engine+699204 & 0x90100000) != 0`（= 玩家把"横滚"当按键用）
-  时**不累加**，改为派发 `set:HWheelKeyUp` / `set:HWheelKeyDown`（raw 141594-141602）。emulator 未建模这组键绑定。
+- ★**两个轴都有"当按键"分支**（竖直 raw 141572-141583、水平 raw 141588-141611），判据同一句
+  `(Engine+699204 & 0x90100000) != 0`：为真时**不累加**，而是取键位配置
+  （竖直 `set:WheelKeyUp` 上滚 / `set:WheelKeyDown` 下滚；水平 `set:HWheelKeyUp/Down`），
+  若该值 `>= 0` 就把它当**掩码位号**执行 `Engine[699208] |= 1 << 位`（`Engine[699208]` 就是输入掩码）。
+  - 为什么必须建模：ADV 的回看/推进判据读的全是**掩码位**（等待泵 `sub_411BC0` raw 20345/20355、
+    `sub_411590` raw 20047-20055、ADV 分支 `sub_411900` raw 20264 的 `set:WheelKeyDown`），
+    缺失时"滚轮在 ADV 里"表现为**完全没有反应**（不是"回看不完整"）。
+  - emulator 落点：`InputManager.wheelKeyBits` + `wheelKeyPolicy`（`Engine` 构造时注入的活值闭包，
+    `asKey` 读的就是 `effect_flags & 0x90100000`），`flushPending`/`flushHeld` 把这一位并进掩码、
+    `consumeEdges` 随掩码一起消费（引擎每轮收尾 `*v9 = 0`）、`snapshot`/`restore` 带上它。
+    守卫 `test/wheel-as-key.test.ts`（两条路分岔 / 方向 / 横滚 / 位号非法 / 消费 / 回放 /
+    "一次真实滚轮事件 ⇒ 等待泵回看分支"端到端）。
+  - ★掩码位对应的**可见后果**在 ADV 侧是"回看光标移动 + `effect_flags |= 0x100000`"；
+    引擎里那三处还会调 `sub_411560(Engine, "CALLBACK_TEXT.BIN")`，但本机数据索引
+    （`install/SYS4INI.BIN` 的 21109 条）里**没有**这个名字，而 `sub_455000` 找不到返回 `-1`、
+    `sub_40FC90(Engine, -1)` 体首即早退（raw 19021-19026）⇒ 该跳在真机与 emulator 上**同样是 no-op**。
 - **真实用例**（`src/SAVE.txt:204-205`，存档/读档列表）：同一次轮询里先 `read-mouse-wheel (local 14)`
   再 `i2e5 (local 15)`，之后分别按这两个局部量翻页 ⇒ **只实现竖直那个会让列表横向翻页失效**（旧状态：
   `0x2E5` 是"仅映射"、命中即硬报错）。emulator 侧 `InputManager` 有 `wheelDelta` / `hwheelDelta`

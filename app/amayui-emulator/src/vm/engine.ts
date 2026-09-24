@@ -737,6 +737,23 @@ export class Engine {
     this.input = input ?? new InputManager();
     // 共享给 native（渲染器经 native.input 写鼠标事件）
     native.input = this.input;
+    // ★★**滚轮当按键的模式判据**（引擎 WndProc raw 141520-141611 的等价物；`tickets/T-0167`）：
+    //   引擎在 WM_MOUSEWHEEL 现场读 `Engine[699204] & 0x90100000` 决定"进掩码位"还是"进增量累加器"，
+    //   并把 `1 << Conf(set:WheelKeyUp/Down)` 直接 `|=` 进输入掩码。这里把**同一个活值**的读取做成闭包
+    //   （事件发生时求值，不是构造时缓存），四个键位来自 `set:WheelKeyUp/Down`/`HWheelKeyUp/Down`。
+    //   ★没有这条，ADV 里所有"滚轮键位"判据（回看/推进/菜单）都恒假 —— 实测用户症状：
+    //     "滚轮无法从 ADV 进入历史消息/回看界面"。
+    this.input.wheelKeyPolicy = () => {
+      const cfg = this.config;
+      const bit = (key: string): number => (cfg ? cfgInt(cfg, key, -1) : -1);
+      return {
+        asKey: (this.effectFlags & 0x90100000) !== 0,
+        up: bit(CFG.setWheelKeyUp),
+        down: bit(CFG.setWheelKeyDown),
+        hUp: bit(CFG.setHWheelKeyUp),
+        hDown: bit(CFG.setHWheelKeyDown),
+      };
+    };
     for (let i = 0; i < 40; i++) this.frames.push(new Frame());
     // ★引擎 `sub_4B8D50`（raw 140825-140836，WM_MOUSEMOVE）：只在**鼠标移动**时做命中测试。
     //   等待泵 / 主循环里**没有** `sub_403C50` ⇒ 不能每帧重算（否则"表重登记后立刻重新命中"
