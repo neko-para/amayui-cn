@@ -28,25 +28,25 @@
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
       "anchor": "scTransitionRangeHandles",
       "note": "★记录那两条 item 区间的项集合（引擎 36/37 的真身，raw 136014-136176）",
-      "line": 665
+      "line": 725
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "renderItemSubset",
       "note": "★子集离屏合成：与主合成共用 itemSprite 一份画法",
-      "line": 188
+      "line": 205
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "#renderRangeCanvas",
       "note": "★宿主侧：把一段区间渲染成离屏画布（按项集合每帧缓存），类别 0/2 的源",
-      "line": 1193
+      "line": 1206
     },
     {
       "file": "app/amayui-emulator/test/transition-render-wiring.test.ts",
       "anchor": "★写端 → 记录格 → 区间选择",
       "note": "★端到端棘轮：语料形态的 i223 实参 → 记录格 → 区间选择",
-      "line": 233
+      "line": 286
     },
     {
       "file": "analysis/opcode-gaps.json",
@@ -58,7 +58,7 @@
       "file": "app/amayui-emulator/test/sc-transition-window.test.ts",
       "anchor": "★类别 3 的画法参数逐条对应引擎的 SetTechnique/SetFloat",
       "note": "★类别 3 守卫：参数/归一化/采样几何/偏差标记",
-      "line": 313
+      "line": 352
     }
   ],
   "links": {

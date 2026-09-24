@@ -12,7 +12,9 @@
     "npm run verify 全绿；四份台账 `--validate` 绿",
     "★**第③项（Scene+46508/+46512/+46516 三标志本身）规格已完成（轮 7，只读分析，全文 `tickets/T-0091/design.md`）**：scope 已钉死（155 个出现点/83 函数**全部**是 Scene；基址 = `Engine+80708` dword = byte 322832 = **`Engine+0x4ED10`**；旧记 0x4ECD0 偏 64 字节，已全库订正）；语义 = `+46508` **present 脏位**（唯一读者 `sub_40BE10` raw 16022；置 1 90 处/清 0 4 处）、`+46512` **强制冻结**（所有窗当帧收尾 + 等待计时器立刻到期）、`+46516` **池挂起位**（且是转场记录表清空的门）",
     "★**第③项的落地（两条真缺口，实现路径已在 design.md §5.3 给全）**：**G1** `+46512` 冻结没传进窗模型（`scAdvance`/`scAnimationsPending`/`scTransitionTick` 加 freeze 形参、`frame/host.ts` 的 `advanceModel(nowMs, {freeze})`、两宿主转发；守卫 = `test/wait-gate-timer.test.ts` 加「起 3000ms 窗 → skipWaitGate → 同帧 advanceModel(freeze) 后三项 pending 全 false + work=target」，E3 = `SN0000:1043-1048` 的 `i238 64`+wait+跳过路径）；**G2** 转场表清空门错位（引擎 = `46516 == 0` 全场景，emulator = 「没有活动转场」）⇒ 改判 `active.length === 0 && !scPoolPending(s, clock)`，守卫加「转场到期那帧另有 mesh 窗在跑 ⇒ 表不能清」",
-    "★**第③项落地后**：把能力台账 `scene-dirty-flag-lifecycle` 从 partial 升回 modeled-verified（并补 G1/G2 的守卫），把 `Scene+46528` 三死位登记为「本 exe 无写者」（`Scene/0xB5C0 wait_gate_deadbits`）"
+    "★**第③项落地后**：把能力台账 `scene-dirty-flag-lifecycle` 从 partial 升回 modeled-verified（并补 G1/G2 的守卫），把 `Scene+46528` 三死位登记为「本 exe 无写者」（`Scene/0xB5C0 wait_gate_deadbits`）",
+    "**⑤ 转场「到期帧」必须仍把终值合成进 `[4]`（轮 15 新增，T-0103 审计的 D2）**：引擎在到期帧仍渲一遍（raw 135808-135811 只把四通道锁成终值、135824 之后无分支跳过），记录要到帧尾才被 `sub_4A9BE0` 清（raw 136840-136841）；emulator 现在到期帧 `scTransitionWindow` 返回 `active:false`（`renderer/scene/transition.ts:126-129`）⇒ `scTransitionsPending` 假 ⇒ 宿主 `present()` 跳过 `#compositeTransitions`（`pixiBackend.ts:1470` + `:1494`）⇒ **槽 `[4]` 收不到 t=1**（`rt.channels` 算了没人用，`:588`）。守卫断言「到期帧 `[4]` 收到终值」。",
+    "**⑥ 区间项的屏幕排除（`|0x10000` 两趟重排 / `render-range-clip-by-index`，轮 15 新增）**：引擎给被画进 36/37 的项置 bit16，屏幕 pass 只画 `(flags & 0x10001) == 1`（raw 135580/135595/135609）；emulator 全仓无 `0x10000` 处理（`scTransitionRangeHandles` 只在 `pixiBackend.ts:1300` 用于取子集）⇒ 源项与转场结果同时在屏。本链上展示项恰为「源项 handle + 2」的全屏不透明项 ⇒ 多数被盖住，**但换一条记录就会露出来**；实现或有据登记（capability `render-range-clip-by-index` 现为 `absent`）。"
   ],
   "evidence": [
     {
@@ -31,7 +33,7 @@
       "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
       "anchor": "rt.start, false",
       "note": "★G1 的落点：immediateFinish 硬编码 false（transition.ts:557）—— 引擎的 Scene+46512 冻结传不进来",
-      "line": 579
+      "line": 627
     },
     {
       "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
@@ -63,6 +65,11 @@
       "at": "2026-09-21",
       "what": "open → doing —— 轮 9：**第③项（`Scene+46508/46512/46516` 三标志）已落地**（子代理实施，主 agent 已核报告）；**G1**（`46512` 冻结传进窗模型）：`scAdvance(s, clock, freeze)`（非豁免 A 层开窗当帧收尾 + mesh 收尾）、`scAnimationsPending(s, clock, freeze)`、`scTransitionTick(s, clock, freeze, poolPending)` 替掉 `scTransitionWindow(..., false)` 的硬编码；`FrameHost.advanceModel(nowMs, {freeze})` 全链转发（`loop.ts` → `headlessFrameHost`/`session.ts` → 两宿主）。★**两处以体订正 design.md §5.3**：① `+720` bit0 的项**豁免冻结**（raw 117441-117442；`SN0000:1043` 的 80 000 ms 慢推不许被跳过截断）；② **B 层（bit2）循环动画不受冻结影响**（唯一读者 `sub_40BE10` raw 16028 判 `flags & 4`）。；**G2**（转场表清空门）：引擎 = `Scene+46516 == 0`（raw 136840-136841 / 137181；`46516` 是**全场景**池挂起位）⇒ 判据改为 `active.length === 0 && !poolPending()`，探针由两宿主注入、在 `scAdvance` 之后求值。**模块环走「注入判据」**（路线 2 要新建 `scene/pending.ts`，超票面白名单）。；**守卫**：`test/wait-gate-timer.test.ts`（3 条：freeze ⇒ 当帧收尾 + 三判据归零；`+720` 豁免对照；**驱动级**真 `runFrameLoop` 一条）、`test/sc-transition-window.test.ts`（2 条：转场到期那帧另有 mesh 窗在跑 ⇒ 表不能清 + 缺省探针对照）、`test/transition-render-wiring.test.ts`（两宿主源码棘轮）。**6 个撤销实验**全部「撤销→红 / 还原→绿 / sha256 == 修复态」（如 `g1-scadvance` 9→6 pass/3 fail；`g2-probe` 18→17/1）。；**台账**（主 agent 已落）：`scene-dirty-flag-lifecycle` 回 `modeled-verified/E2`；`scene-freeze-flag` 的「②绘制期窗立刻算结束 + `+720` 豁免」已由 G1 修掉 ⇒ 该条也回 `modeled-verified/E2`，只剩 ①「门等待期间的玩家输入跳过（raw 21113-21135）」。；★**仍未做（本票剩余）**：① 类别 3 的精确核（**仍缺**：`(2L+1)²` 核逐点权重 / SlideBlur 采样密度）；② `[4]` 指向非 `create-texture` 槽；④ E4 像素级可达路径。★另：`scene-freeze-flag` ①「门等待期间的玩家输入跳过」未实现 ⇒ G1 目前只有 E2 + 驱动级整合守卫（真语料 `SN0000`/`HISTORY` 各 3000 帧 `ADV_ACTIVE` 从未置位）。",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "doing → doing —— D2/D3/D4 落地（到期帧交付终值 / 区间项屏幕排除 / 类别 3 披露收口）+ E4 通道固化（load-slot.mjs）；仅剩 ② `[4]` 非 create-texture 槽"
     }
   ],
   "tests": [

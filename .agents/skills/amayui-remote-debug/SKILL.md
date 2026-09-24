@@ -137,6 +137,24 @@ curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["<命令>"]}
 3. 命令的执行侧是**渲染页**（`session.ts` 用共享的 `applyScenarioEvent` 逐个事件落到 `InputManager`，
    不经 DOM ⇒ 浏览器宿主与 Electron 宿主同一套词汇）。
 
+### 3.2 ★读档固定流程（`scripts/load-slot.mjs`）—— 后续大量读档就用它，别每次重对坐标
+
+```bash
+# 从 TITLE 起跑（若已在存档列表也能接着用）：载入槽 78 并做日志判据
+node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance t0103 --slot 78
+node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --list     # 只列活实例 + 槽目录口径
+```
+
+* **前置**：实例活着且 `viewers ≥ 1`（`--attach-headless`，否则 debug-query 503）；槽文件要能被该实例的文件源看到
+  （`<repo>/.tmp/instances/<id>/{overlay,base}/SAVE/SAVE<NN>.DAT`；槽缓存是启动时建的 ⇒ **加槽后要重起实例**）。
+* **判据**：日志出现 `[slot-load]`（退出码 0/1/2 = 成功 / 起跑状态问题 / 载入未发生）。日志**不含槽号**
+  ⇒ 「载入的是不是目标槽」要用内容指纹核（`src/tools/slotThumbPng.ts <SAVE78.STH> out.png` 或 `capture` 看画面）。
+* **已实测的坐标与坑**（2026-09-24，`debug-query` 虚拟坐标 = `capture` 的 1280×720 像素坐标）：
+  Load Data `(1070,480)`；页号按钮「N0」`(606 + 42*N, 30)`（页 0 → x606、页 70 → x900，绿高亮像素扫描标定）；
+  第 i 行 `y = 90 + 60*i`（行分隔带 64/124/…/604）；LOAD `(145,686)`；确认「是」`(636,321)`。
+  ★**左右大箭头点不动**（实测 `(41,359)`/`(1238,359)` 点了不翻页）⇒ 只用页号按钮。
+  ★**别用 `tools/shot.cjs --load N` 当"载入第 N 槽"**：它自陈只是标记，实际载入列表当前行（`shot.cjs:254-256`）。
+
 ---
 
 ## 4. 读结果

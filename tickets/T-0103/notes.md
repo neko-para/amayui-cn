@@ -78,3 +78,156 @@ npm run replay -- ../../.tmp/t0103-record.jsonl        # headless 复现（`engi
 ## 2026-09-22
 
 2026-09-23：本票验收里「文字/底色」那一支委托给 T-0102，现已随 T-0102 结案 —— ADV 窗口白底根因 = 0x202 set-draw-color 缺「操作数为负则取当前色」回退，已修复、有守卫、用户 E4 确认。其余分支（章头转场条带 / 上一屏残留 / 时序粒度）仍需各自取证。
+
+## 2026-09-24 · 轮 14 —— 读法订正 + 五段落点 + 根因分流（含用户新线索：新游戏路径的 TITLE Live2D）
+
+> 本轮做的是**只读分析 + 定点取证**（不是逐帧连拍）：脚本侧读到 `exit`、引擎侧读到 raw 体、运行期只做"触发 + 读变量"（`frame` / `[present …] l2d=` 日志）。
+> 结论按本票判据 ② 分流：**确属新缺陷的已单列 `T-0144`**，其余归已知票。
+
+### 0. ★先记住这条（本段最容易读反）：`jcc v mask label` 是 **v == 0 才跳**
+
+判据 = emulator 实现 `app/amayui-emulator/src/vm/handlers/control.ts:81-105`（`cond != 0` → `op2 = 0xFFFFFFFF` = 落下句）
++ 运行期日志反证（`SC0000:1451 jcc 1` ⇒ 1452/1453 确实执行）。
+⇒ `SC0000:1504-1507`、`SC0000:1647-1651`、`SN0000:3013` 这些"看起来更合理"的分支**都不执行**；
+`SC0000:1503 jcc 0 …` 与 `1646 jcc 0 …` 才是**跳**（走 1510 / 1653）。本段所有"哪条窗被挂上"的判读都以此为准。
+
+### 1. 五段的脚本落点（用户口径 → 真源行号 → 归票）
+
+| # | 用户口径 | 脚本落点（真源） | 机制 | 归票 |
+|---|---|---|---|---|
+| 1 | 塔状**云柱背景** | **`src/SN0000.txt:2041-2043`**（层2 ← 图 `0x6c2` = **BG010AA.AGF** 1280×720，槽 43） | 序章自己的背景绘制 | 本票（已知落点） |
+| 1 | **横向模糊** | `src/SN0000.txt:3036 i250`（类别 3 SlideBlur，工作槽 **63**，**2500ms**，源项 `0x18AEE`） | `0x250` 转场窗 | `T-0091`（类别 3 的核/源/时序） |
+| 1 | **向黑色渐变** | ★**不在 SN0000**，在 **`src/SC0000.txt:1607-1621`**：`create-mesh 19258` → `set-vertex-color 19258 0 ff 0`（瞬时 `0xFF000000`）→ `set-vertex-color-alpha 19258 0 bb8 0 (4fd5=0)`（**3000ms 保持黑**） | mesh 顶点色窗 + 全屏黑 mesh | 本票（脚本侧已定；差异要看 `0x323` 窗与绘制次序） |
+| 2 | 白晕**减弱** → 显现背景与文字 | 白晕 = mesh `19258` 的**两段窗**：`1444-1458` 淡入 **1000ms** + `1503→1510`（落 `1510`）淡出 **2000ms**；四张 1280×720 章头背景（层5/0/1/6 = AE910AD/AE900AB/AE900AA/AE902AA）在 `1468-1501` 上屏 | mesh 顶点色窗（`0x322`/`0x323`）+ `label_0006ff6c` 设层 | 本票（层次/时序） |
+| 3 | 文字**随光晕渐变** | ★**G0001 段没有任何文字绘制指令**（无 `i2da/i2eb/i23b/i2c7/i2ec/i304/i305`）——章名「序章 / 現に目覚めし女神」是**贴片图**（AE910AA/AE910AB…），"渐变"= 图元的 ARGB 窗 | 图元颜色窗（`0x202`/`0x203`） | 本票（判据①：帧级对照待做） |
+| 4 | 又一次横向模糊（时序错位） | `src/SC0000.txt:1574 i250`（工作槽 **9** = `3f59`，**3000ms**），脚本上它排在人物轮廓之前，且有 `1596-1597` 的 3000ms wait | `0x250` 转场窗 | `T-0091`（`[1]` 起点首帧锁存 / `46516` 共享 pending / 清表门） |
+| 4 | **人物轮廓** | `src/SC0000.txt:1640-1643`（层1 ← 图 `0x7d` = **EV002AD.AGF**），显形靠 `1647-1653` 的**黑→透明 2400ms** 窗 | mesh 顶点色窗 | 本票 |
+| 5 | 渐变到 SC0000 第一句 | `src/SC0000.txt:1694-1705`（G0001 段唯一文字 + `wait-for-input`） | ADV 管线 | `T-0102`（已结案：ADV 白底/文字色） |
+| — | **新游戏路径见 TITLE 的 Live2D**（用户本轮新线索） | TITLE 的节点 = `src/TITLE.txt:590 i344 14 0`；清它的是 TITLE 退场例程的 `src/TITLE.txt:810 i1f6` | 引擎 `0x1F6` 清 **4 张表**（含 `Scene+1096` 572B 立绘节点表），emulator 只清 2 张 | ★**根因单列 `T-0144`**（bug/P1），证据见下 |
+
+### 2. ★新线索的根因（已双侧确证，**不是**"GAMESTART 少做了步骤"）
+
+- **引擎**：`0x1F6`（`sub_4AB7A0`）清 4 张表 —— `Scene+1032`(DrawItem) / `+1064`(MeshEntry) / **`+1080`** / **`+1096`（572B 立绘 = Live2D 节点表）**，raw **130699 / 130764 / 130765 / 130766**；`0x1F7`（单 key 与区间）**也擦** `Scene+1096`（raw 130831-130835 / **131077**）。
+- **emulator**：`scClearDrawContainer`（`src/renderer/scene/ops.ts:263-273`）只清 `drawItems + meshes + msgwin` ⇒ **TITLE 的节点活过整条新游戏链**。
+- **读档路径没有症状**的原因 = emulator 在装载点单独补了一刀 `src/vm/handlers/save-slot.ts:321 l2dResetHost(e)`（全仓唯一调用点）——它遮住了 `0x1F6` 的缺口。
+- **运行期对照（本机 headless 实例，判据字段 = `[present …] l2d=`）**：
+  - 新游戏路径：最后一次 `-> SN0000.BIN`（日志 line 42091）之后 **513 条** present 带 `l2d={槽1 节点1 可画1 纹理3 缓存60}`；
+  - 读档路径：装载日志自己写着「清掉上一个执行链的 L2D 运行态：**实例槽 1 个 / 立绘节点 1 个**」（= 读档前 TITLE 的节点还活着），之后 **0 条**带节点。
+  - ⇒ 归档：`tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md`。
+- **为什么"本该黑却看见立绘"**：四路归并**按 handle 升序**（引擎 raw 136814-136941；emulator `presenter.ts:331-365`），节点 key `0x14`=20 是最低档 ⇒ 它只在"上面的东西全没了"时露出来；而 `SN0000:3072 exit` → `SC0000:1321` 之间正好把绘制项清了（`NOVEL.txt:191 i1f6`）又撤了黑幕（`SC0000:1309 detach-texture 19258 1`）。
+  ★注意：这不是"层序错"，而是"**该被清掉的节点没被清**"。⇒ 修 `T-0144`，**不要**去改排序或给 L2D 单独置顶层。
+
+### 3. 其余分支的现状（不要再当新问题）
+
+- **段 1/4 的模糊与"时序错位"** → `T-0091`。本轮新增两条**可用于判据**的引擎口径：类别 3 的窗口起点 `[1]` 是**首帧被处理时锁存**（raw 134867-134870，不是脚本写记录时）、清表门 `Scene+46516 == 0` 是**共享 pending**（转场 raw 135822 / DrawItem 窗 raw 117844 / mesh 窗 raw 131503）⇒「同一段效果被排到后面」最可疑的就是这两条；另外 `[4]` 槽在引擎里是"**先清黑再写模糊图**"（raw 135829-135831），窗末仍渲一帧 ⇒ `[4]` 是"黑底模糊冻结图"。
+- **段 2/3 的层次/时序**：两侧机制同构（按 key 归并 + ARGB 窗），本机 save-78 路径已能正确出章头 —— 证据（本轮归档）：`tickets/T-0103/evidence/save78-last-page.png`（载入后停在序章最后一页，云柱背景 + 正文）与 `tickets/T-0103/evidence/chapter-title-card-save78.png`（切章后的章节标题卡「序章／現に目覚めし女神」= 贴片图）；**差异到底还在不在，要等 `T-0144` 修完再连拍对照**（否则会被残留立绘干扰判断）。
+- **段 5** → `T-0102` 已结案（`0x202` 负值回退）。
+- **各段时长** → `T-0099`（sleep 门帧粒度）。
+
+### 4. 本轮顺带发现（待开票/待订正，**未动手**）
+
+1. **文档极性错误**：`docs-new/05-scripts/NOVEL.md:25` 与 `SYSTEM4.md:31` 把 `global 3f90` 那道门读反了 —— 按 `jcc`（v==0 才跳）语义，`3f90 == 0` ⇒ **执行** `NOVEL.txt:35-117` / `SYSTEM4.txt:186-268`（含 `i1f6`、`i23d`、满屏黑幕 `create-mesh 19258`、`SETCHARM`）。三条佐证：全语料 `mov (global-int 3f90) 0` 恒 0、运行期 trace 的 `g0==6` 同形判决、SCJUMP 实测 ip 一致。★需先核 `test/t0102-chapter-chain.test.ts` 是否按旧极性钉着。
+2. **T-0090 的旁注依据错**（行为对）：`save-slot.ts:314-315` / `live2d/runtime.ts:187-188` 引 `sub_403EF0`（已被 `src/vm/native.ts:527-529` 订正为"仮想ディスプレイ复位，不碰显示容器"）；正确依据 = `sub_410160` raw 19385-19388。
+3. **注释自相矛盾**：`pixiBackend.ts:848-849`（"容器被整批清空 ⇒ 画面本就该是空的/黑的"）vs `:1071-1076`（"清容器不再解除留帧"）。
+4. `i1f6` **不该**动 10 个 L2D 实例槽（引擎体只清两张 map）—— 修 `T-0144` 时别顺手把 `l2dResetHost` 整个搬进来。
+
+### 5. 工具（本轮固化，后续大量读档直接用）
+
+```bash
+node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance <id> --slot 78
+```
+
+- 固定流程：TITLE → Load Data `(1070,480)` → 页号按钮 `(606 + 42*N, 30)` → 第 i 行 `y = 90 + 60*i` → LOAD `(145,686)` → 确认 `(636,321)`；判据 = 实例日志出现 `[slot-load]`（退出码 0/1/2）。
+- 已实测的坑：**左右大箭头点不动**（`(41,359)`/`(1238,359)` 不翻页）⇒ 只用页号按钮；槽文件要落在 `<repo>/.tmp/instances/<id>/{base,overlay}/SAVE/`（**加槽后要重起实例**，槽缓存是启动时建的）；`tools/shot.cjs --load N` **只是标记**（实际载入列表当前行）。
+- 文档落点：`.agents/skills/amayui-remote-debug/SKILL.md` §3.2。
+
+## 2026-09-24 · 轮 15 —— 交接链**指令 × 能力（capabilities）**的定义/实现核对（回应用户「为什么和真机不一致」）
+
+> 只读 + 台账机械核对（未再驱动模拟；运行期只用过一次「触发 + 读 `l2d=` 字段」，见 §2）。
+> 全文（含 96 个助记符的逐条表与 23 条能力的判定表）：**`tickets/T-0103/evidence/chain-audit-instructions-capabilities.md`**（由 `.tmp/t0103-audit/report.mjs` 机器生成，非手抄）。
+
+### 1. 指令侧：**这条链不缺指令**
+
+- 审计窗口 13 个（`SN0000:2994-3073/3075-3110`、`NOVEL:148-267`、`SYSTEM4:170-181/183-268/299-424/427-470`、`ALLMAP:31-58`、`SCJUMP:6-54`、`SC0000:1008-1084/1256-1705`、整脚本 `SETCHARM`/`SETWEATHER`），共 **96 个不同助记符**，台账状态**全部 `已核对`**。
+- `opcode-gaps.json` 里**没有一条 `unimplemented`/硬停**；有缺口条目的只有 8 条，且都属「有据 no-op」族：`0x140`（AGERC 外部 DLL，`deferred`）+ **SETWEATHER 族的 `0x324/0x325/0x326/0x327/0x329/0x32C/0x32E`（`engine-internal`）**。
+- ⇒ **差异不是"指令没实现"**。唯一与本次现象直接相关的是**定义不清**：`0x1F6` 的语义原文只写「4 张表」**不点名**、`0x1F7` 写「删绘制项/网格」，于是实现侧只清了 2 张 —— 已在轮 15 订正 `analysis/opcodes.json`（逐张点名，含 `Scene+1096` = Live2D 立绘节点表），见 `T-0144`。
+
+### 2. 能力（第二层）侧：相关 23 条，多数已 `modeled-verified`，但有 3 处**定义↔实现失同步**
+
+| 现象 | 台账原文 | 实际情况 | 处置 |
+|---|---|---|---|
+| `transition-table-flush` | [absent/E0]「未建模」 | **已建模**：`transition.ts:597-607` 的清表门 + `test/sc-transition-window.test.ts` 的 T-0091 G2 | 轮 15 订正为 `modeled-verified/E2` + guard |
+| `scene-3d-weather-effects-rain-snow-leaf` | note「`0x327`/`0x328` **根本没注册**（命中即硬报错）」 | **已注册**：`T-0093` 轮 6 起与同族一起是 `ENGINE_INTERNAL_OPS` 的有据 no-op（`handlers/stubs.ts`；守卫 `opcode-gaps.test.ts` 通过） | 轮 15 订正 note（子系统仍 absent，但不会硬报错） |
+| `clock-read-transition-window` | 只写「到点杀记录」 | **漏了「到期帧不再合成」**（见 D2） | 轮 15 把 D2 登记进 note |
+
+### 3. 分歧清单（本机 vs 真机）—— 7 条，带证据与归属
+
+| # | 分歧 | 证据（引擎 raw / emulator 行号） | 归属 |
+|---|---|---|---|
+| **D1** | ★**`0x1F6`/`0x1F7` 没擦 572B 立绘节点表** ⇒ TITLE 的 Live2D 残留（新游戏路径可见） | 引擎 raw 130699/130764/**130765**/**130766** 与 130825-130837/**131044**/**131077**；emulator `scene/ops.ts:263-273` | **`T-0144`**（已确证） |
+| **D2** | 转场**到期帧不再合成** ⇒ 记录 `[4]` 收不到 t=1 终帧（比引擎少渲一帧） | 引擎 raw 135808-135811 + 帧尾清表 136840-136841；emulator `transition.ts:126-129/612-615` + `pixiBackend.ts:1470/1494` | `T-0091`（本轮新发现） |
+| **D3** | 区间项**没有从屏幕 pass 排除**（`|0x10000` 两趟重排未建模）⇒ 源项与转场结果同时在屏 | 引擎 raw 135580/135595/135609；emulator 全仓无 `0x10000` 处理（`pixiBackend.ts:1300` 只用于取子集） | `T-0091`（已知缺口，本轮补可见后果） |
+| **D4** | 类别 3 的**模糊源**=本帧屏幕（引擎读陈旧 scratch 层 36）+ 核是累积近似 | emulator `pixiBackend.ts:1256-1266`（注释声明是有意改正）、`transition.ts:392-435` 三处 `approximate` | `T-0091`（U3） |
+| **D5** | `transition-table-flush` 台账过期（已建模却记 absent） | 见上表 | 轮 15 已订正 |
+| **D6** | **3D 天气/粒子子系统整体缺失**（`SETWEATHER` 在链上，两条路径都跑） | `src/SETWEATHER.txt:6-84` 用 `0x324`-`0x33F`；emulator 全是 no-op；本链只在 `global 4fdb != 0` 时才走到 `0x327`（`:14` 的门） | 潜在（`T-0093`/`T-0105`） |
+| **D7** | **撤幕留帧**（`#holdFrames`）是 emulator 自有机制，**能力台账里没有条目** | `pixiBackend.ts:838-853/1064-1066/1470-1476`；引擎对照 = 主 present 不清后缓冲（raw 130425 唯一写点 / 136785 读点） | `T-0103`（本轮登记为未建模能力） |
+
+### 4. 结论（对用户那句「为什么和真机不一致」）
+
+**不是缺指令、也不是四路归并的次序错**（两侧都按 handle 升序、且本机的 `it.layer` 就是脚本 handle）——差异来自四处：
+① **拆场没清 572B 立绘节点表**（D1，已确证 ⇒ 先修它）；
+② **转场末帧不合成**（D2）+ **区间项没被排除**（D3）+ **类别 3 的源/核是近似**（D4）；
+③ 天气子系统缺失（D6，`4fdb != 0` 才暴露）；
+④ 留帧是 emulator 自有机制、时间线与引擎不完全同构（D7）。
+⇒ 顺序建议：**修 D1 → 再按 `T-0091` 收 D2/D3/D4 → 最后才做"章节演出观感"的帧级对照**（否则残留立绘会污染判读）。
+
+### 5. 轮 15 的台账改动（都已跑生成器 + 自检）
+
+- `analysis/opcodes.json`：`0x1F6`/`0x1F7` 语义**逐张点名四表**（含 572B 立绘节点表）→ `node scripts/build-opcode-table.mjs`。
+- `analysis/engine-capabilities.json`：`transition-table-flush` 判定订正（+guard）、`scene-drawtable-flush-and-dirty` 口径收窄、`clock-read-transition-window` 补 D2、`render-merge-two-pass-reorder` 补 D3 的可见后果、`scene-3d-weather-effects-rain-snow-leaf` 订正过期 note → `node scripts/build-capabilities.mjs`。
+- 守卫：`opcode-json-sync` / `opcode-arity` / `opcode-gaps` / `capability-ledger` 全绿（15 项）。
+
+## 2026-09-24 · 轮 16 —— D1~D4 落地（用户：「请按计划实施 D1~D4」）
+
+> 本轮是**实现轮**（不是分析轮）。改动集中在 `app/amayui-emulator/src/renderer/**`（场景模型 / 转场 / 合成器）+ 两处依据注释；
+> 每条都带守卫，并做了**撤销实验**（撤销 → 红、还原 → 绿）。
+
+### D1（`T-0144`，**done**）：拆场也擦 572B 立绘节点表
+
+| 改动 | 落点 |
+|---|---|
+| 统一入口 `clearL2dNodes(s, pred)`（只删 `Engine.l2dNodes` 里的节点，**不碰 10 个实例槽**） | `src/renderer/scene/ops.ts` |
+| `0x1F6` `scClearDrawContainer` → 整批清节点 | 同上（引擎 raw 130766） |
+| `0x1F7` `scDetachTexture` → 单条按 key / 区间按 `[handle,handle+count)` 擦 | 同上（引擎 raw 130825-130837 / 131044 / 131077） |
+| `0x21D` `scCopyItem` → 连节点一起深拷贝 | 同上（引擎 raw 131241-131248） |
+| 两宿主日志把 `l2dNodes=N` 打出来（可观测） | `pixiBackend.ts` / `headlessScene.ts` |
+| 装载点依据按体订正（正确依据 = `sub_410160` raw 19385-19388；旧引的 `sub_403EF0` 标为假依据） | `vm/handlers/save-slot.ts` / `live2d/runtime.ts` |
+
+**验证**：守卫 `test/l2d-clear-on-container-ops.test.ts`（5 例）；**E3** = `test/game-start-chain.test.ts` 在真语料链末尾断言 `scene.l2d.nodes === 0 && scene.l2d.slots >= 1`（撤销 D1 实测「实际 1」= 红）；**E4** = 重建产物后真跑新游戏路径，TITLE 退场那条 `i1f6` 报 `l2dNodes=1`，之后 present 全是 `{槽1 节点0 可画0}`（`tickets/T-0144/evidence/d1-e4-newgame-l2d-cleared.md`）。
+
+### D2（`T-0091` ⑤）：转场到期帧仍交付终值
+
+- `scTransitionTick` 现在返回 **`render` 快照**（`{id, rec, rt}`，`rt.t = 1` + 终值通道）—— 因为引擎在到期帧**仍渲一遍**（raw 135808-135811 锁终值后照走 36→`[4]`），而记录在**同帧帧尾**才清（raw 136840-136841），emulator 的合成却在 `advanceModel` 之后的 `present()` 里 ⇒ 只查表必然丢这一帧。
+- `scTransitionsPending` **仍只算在窗内**（对齐引擎「到期分支不置 `46516`」⇒ 门/`needsRender` 语义不变）；交付那一帧由 tick 置 `scene.dirty` 保证被合成一次。
+- pixi 宿主：`#pendingTransitionRender` 承接快照，`#compositeTransitions` 优先用快照、其次查表；`present()` 的留帧早退判据把"有交付"也算上。
+- 守卫：`test/sc-transition-window.test.ts`（到期交付 / 只多一帧 / `[13]<0` 立即收尾）+ `test/transition-render-wiring.test.ts`（三条同帧交付+清表）。
+
+### D3（`T-0091` ⑥）：区间项排除出屏幕 pass
+
+- 引擎给被画进 36/37 的项置 `|0x10000`，屏幕 pass 只画 `(flags & 0x10001) == 1`（raw 136905/136915/136926/136936 与 137210/137220/137252，画完清位）。
+- 落地：`scTransitionMarkedHandles(s, extra?)`（活动转场两条区间 ∪ tick 交付快照那几条）在 `presenter.present` 里过滤 **DrawItem / Mesh / 572B 节点**；`presenter.present` 新增第 5 参（交付快照），由 `pixiBackend` 传入。
+- 守卫：`test/transition-render-wiring.test.ts` 的 D3 例（无转场 4 项 → 转场中 1 项 → 到期帧仍 1 项 → 结束后 4 项）。
+- ★**仍未复刻**：引擎的 `bit16` **跨帧粘住**（填充趟要求 `bit16 == 0`）⇒ 36/37 是**首帧冻结快照**，emulator 每帧重渲 —— 已在 `render-merge-two-pass-reorder` 的 note 里如实登记。
+
+### D4（`T-0091` ①）：类别 3 的偏差**收口成一份口径**
+
+- 按该票验收给的替代路线：把引擎 CPU 回退核的体读事实（`sub_4A0120` raw 120773 起：`a2×a2` **旋转方格** + 亚像素双线性；`a1==0` ⇒ 平坦权重 + **中心 3**；`a1!=0` ⇒ 沿一行三角斜坡）与**不复刻的理由**（33×33 = 1089 采样/帧不可行；真机有 effect 时走的是二进制里读不到的 shader）写成 `TransitionBlurPlan` 的披露①②。
+- **源**的决策从"仍未确证"改成"**有意改正** + 待真机像素对照"：逐字读体是"模糊一张刚被清空的层 36"（`0x4B3187: cmp eax,3 / jnz` 跳过填充 + 本帧 135824-135825 刚清过 36），与真机可观测量矛盾 ⇒ 保留"取本帧屏幕合成"。
+- 守卫：`test/sc-transition-window.test.ts` 的 D4 例（钉住"两份口径不许并存含糊" + 内核常数）。
+
+### 轮 16 的其它收尾
+
+- 读档流程固化：`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs`（+ SKILL.md §3.2）。
+- 新票 `T-0146`：3 条**预先存在**的 verify 红（真槽 SAVE70/71 格式、scene-report 占位项下限、host-registry 的 idle 用例并行偶发超时）——用「把我的 src 改动 `git checkout --` 回 HEAD」做 A/B，失败输出**逐字相同** ⇒ 与本轮无关。
+- `T-0145` 的 ③（装载点依据）随 D1 一并落地（证据已 retarget）。
+- 本轮**未做**：`T-0091` 的 ②（`[4]` 指向非 `create-texture` 槽）、`T-0145` 的 ①（`3f90` 门极性的文档订正）与 ④（留帧注释）、`T-0103` 的帧级像素连拍（建议在 D1 之后再谈观感对照）。

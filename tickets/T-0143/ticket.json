@@ -23,13 +23,13 @@
       "file": "app/amayui-emulator/src/web/host.ts",
       "anchor": "web 产物缺失",
       "note": "本票新增的启动自检告警（含绝对产物目录与构建命令）——缺产物时**不再静默**",
-      "line": 846
+      "line": 847
     },
     {
       "file": "app/amayui-emulator/src/web/host.ts",
       "anchor": "path.join(opts.repoRoot, 'app', 'amayui-emulator', 'dist', 'web')",
       "note": "静态产物目录的落点（缺省 <repoRoot>/app/amayui-emulator/dist/web）——告警与 404 正文都要把它打出来",
-      "line": 256
+      "line": 276
     },
     {
       "file": "app/amayui-emulator/build-electron.mjs",
@@ -47,7 +47,7 @@
       "file": "app/amayui-emulator/test/host-dist-assets.test.ts",
       "anchor": "缺 web 产物",
       "note": "本票的守卫用例：空 distDir ⇒ 启动告警 + 404 三字段；真产物 ⇒ 不误报 + 200 text/html",
-      "line": 92
+      "line": 90
     }
   ],
   "links": {

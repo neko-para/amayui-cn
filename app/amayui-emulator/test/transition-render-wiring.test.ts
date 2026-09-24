@@ -29,6 +29,7 @@ import { im, instr } from './harness.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
 import { scSnapshot } from '../src/renderer/scene/snapshot.js';
 import {
+  scTransitionMarkedHandles,
   scTransitionRangeHandles,
   scTransitionTick,
   scTransitionsPending,
@@ -37,7 +38,7 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import { ScenePresenter } from '../src/renderer/pixi/presenter.js';
 import { TextureCache } from '../src/renderer/pixi/textureCache.js';
 import { newSceneState } from '../src/renderer/scene/state.js';
-import { scConfigureDrawItem, scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
+import { scConfigureDrawItem, scSetTransition, scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
 import { VIEW_H, VIEW_W } from '../src/renderer/viewport.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -80,7 +81,7 @@ test('★整合：四条写端 → 记录 → `scTransitionTick` → 快照（�
   assert.equal(native.scene.render4.transitions.get(9)![3], 600);
 });
 
-test('★整合：三条各自到点后整张表被清空（引擎 raw 136840-136841）', () => {
+test('★整合：三条各自到点后整张表被清空（引擎 raw 136840-136841；到期帧先交付终值再清 —— D2）', () => {
   const native = new HeadlessScene({});
   run(native, 0x223, [im(9), im(3), im(0x100), im(1), im(0x200), im(1), im(0), im(300)]);
   run(native, 0x24f, [im(0xa), im(4), im(3), im(1), im(5), im(6), im(0), im(8), im(0), im(300)]);
@@ -88,7 +89,9 @@ test('★整合：三条各自到点后整张表被清空（引擎 raw 136840-13
   scTransitionTick(native.scene, 0);
   assert.equal(native.scene.render4.transitions.size, 3, '起点锁存那一帧仍活动');
   const r = scTransitionTick(native.scene, 300);
-  assert.equal(r.cleared, true);
+  assert.equal(r.active.length, 0, '到期 ⇒ 三条都不算在途（引擎到期分支不置 46516）');
+  assert.equal(r.render.length, 3, '★但三条都要交付终值（引擎不跳过这一帧；T-0091 D2）');
+  assert.equal(r.cleared, true, '帧尾清表（池挂起为 0）');
   assert.equal(native.scene.render4.transitions.size, 0);
   assert.equal(scTransitionsPending(native.scene), false);
 });
@@ -228,6 +231,56 @@ test('★子集离屏合成：`renderItemSubset` 只画选中的项（引擎 36/
   // ★同一份画法：主合成里的项数 = 全部可绘制项（4 项，槽 1 已绑图 ⇒ 都画得出来）
   presenter.present(scene, 0, 0);
   assert.equal(root.children.length, 4, '主合成仍画全部 4 项 ⇒ 子集渲染没有改动主路径');
+});
+
+test('★D3：转场活动期间，被画进 36/37 的项**不许再进屏幕 pass**（引擎 `(flags & 0x10001) == 1`，raw 136905-136939）', () => {
+  // 症状面：没有这条排除，转场期间**原图与被模糊/淡化后的结果会同时在屏上**（叠加/时序错位）。
+  const root = new Container();
+  const cache = new TextureCache(() => {});
+  cache.slotTex.set(1, Texture.WHITE);
+  const presenter = new ScenePresenter(root, cache, Texture.WHITE, () => {}, VIEW_W, VIEW_H);
+  const scene = newSceneState();
+  const mk = (h: number): void => {
+    // ★语料口径：`layer === handle`（`handlers/gfx-texture.ts` 的「层序 = map key = op1」）⇒ 夹具照做，
+    //   否则"排除集按 handle、屏幕 pass 按 layer"会看起来对不上（引擎两处用的是同一个键）。
+    scConfigureDrawItem(scene, { handle: h, layer: h, tex: 1, srcX: 0, srcY: 0, srcW: 100, srcH: 100, dstX: 0, dstY: 0 });
+  };
+  mk(0x100); // 区间 A
+  mk(0x101); // 区间 A
+  mk(0x200); // 区间 B
+  mk(0x300); // 区间外（必须一直在屏上）
+
+  presenter.present(scene, 0, 0);
+  assert.equal(root.children.length, 4, '没有转场时四项都在屏上');
+
+  // 起一条活动转场（类别 0，区间 A=[0x100,0x103) / B=[0x200,0x201)）
+  scSetTransition(scene, 9, [
+    [0, 0],
+    [2, 0],
+    [3, 1000],
+    [5, 0x100],
+    [7, 3],
+    [6, 0x200],
+    [8, 1],
+  ]);
+  scTransitionTick(scene, 0); // 起窗帧（active）
+  assert.equal(scTransitionMarkedHandles(scene).size, 3, '排除集 = 两条区间并集（3 项）');
+
+  root.removeChildren();
+  presenter.present(scene, 0, 0);
+  assert.equal(root.children.length, 1, '★只剩区间外的 0x300 ⇒ 被转场占用的项已排除');
+
+  // 到期帧：仍要排除（引擎在到期帧仍走转场遍）—— 但这一帧记录表已被清，
+  // 所以**必须**把 tick 的 `render` 快照交给 presenter（宿主的 `#pendingTransitionRender` 就是这个用法）。
+  const rExpire = scTransitionTick(scene, 1000);
+  assert.equal(rExpire.cleared, true, '到期帧帧尾清表（D2：交付与清表同一帧）');
+  root.removeChildren();
+  presenter.present(scene, 1000, 0, [], rExpire.render);
+  assert.equal(root.children.length, 1, '★到期帧仍交付终值 ⇒ 仍然排除');
+  assert.equal(scTransitionMarkedHandles(scene).size, 0, '清表后光查表已经没有活动转场（这就是要传快照的原因）');
+  root.removeChildren();
+  presenter.present(scene, 1016, 0);
+  assert.equal(root.children.length, 4, '★转场结束后项必须回到屏上（引擎：屏幕 pass 画完就清 bit16）');
 });
 
 test('★★写端 → 记录格 → 区间选择：`i223` 的 op3/op4/op5/op6 正好喂给那两条区间', () => {

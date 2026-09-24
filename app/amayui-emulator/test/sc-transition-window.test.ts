@@ -15,6 +15,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { newSceneState } from '../src/renderer/scene/state.js';
 import { scClearTransitions, scSetTransition, scTransitionDefaultRecord } from '../src/renderer/scene/ops.js';
@@ -22,6 +25,7 @@ import { scPoolPending, scSetVertexColorAlpha } from '../src/renderer/scene/ops.
 import { scSnapshot } from '../src/renderer/scene/snapshot.js';
 import { sceneNeedsRender } from '../src/renderer/scene/ops.js';
 import {
+  TRANSITION_BLUR_KERNEL,
   scActiveTransitions,
   scTransitionBlurOffsets,
   scTransitionBlurPlan,
@@ -78,7 +82,12 @@ test('★窗口起点只在首帧锁存一次（之后 tick 不再改）', () =>
   assert.equal(s.render4.transitionRuntime.get(0)!.start, 500, '第二帧不许再锁存');
 });
 
-test('★到期即死记录：`clock >= [1]+[2]+[3]` ⇒ 不活动，且整张表被清空（raw 136840-136841）', () => {
+test('★到期帧仍交付终值（`render` 快照）且表当帧就清（`tickets/T-0091` D2；引擎 raw 135808-135811 渲 + raw 136840-136841 帧尾清）', () => {
+  // ★这条在 T-0091 的 D2 里改过语义（原断言是"到期即死记录、同帧清表"）：
+  //   引擎在到期帧**不跳过渲染**（四通道锁成终值后仍走 36→`[4]`），记录在**同帧帧尾**被 `sub_4A9BE0` 清，
+  //   而 `46516`（在途位）在到期分支**不置位**（raw 135806-135811 只有 else 分支写 46516）。
+  //   emulator 的合成在 `present()` 里、晚于本 tick ⇒ tick 必须把"这一帧要画的东西"做成**快照**
+  //   交给宿主（`render`），否则同帧清表会让 `[4]` 永远收不到 t=1（比引擎少渲一帧）。
   const s = newSceneState();
   s.render4.transitions.set(7, fadeRecord(100, 400));
   scTransitionTick(s, 1000); // start = 1000
@@ -86,10 +95,24 @@ test('★到期即死记录：`clock >= [1]+[2]+[3]` ⇒ 不活动，且整张�
   scTransitionTick(s, 1499); // 1000+100+400 = 1500 ⇒ 还差 1ms
   assert.equal(s.render4.transitionRuntime.get(7)!.active, true, 'deadline 前 1ms 仍活动');
   const r = scTransitionTick(s, 1500); // 到点
-  assert.equal(r.cleared, true, '没有在途转场 ⇒ 清空整张记录表');
-  assert.equal(s.render4.transitions.size, 0, '记录表被清空（引擎 sub_4A9BE0）');
+  assert.equal(r.active.length, 0, '★到期帧不算"在途"（与引擎"到期分支不置 46516"一致）');
+  assert.equal(r.render.length, 1, '★但必须交付终值（宿主据此合成进 [4]）');
+  assert.equal(r.render[0]!.rt.t, 1, 't = 1（终值）');
+  assert.equal(scTransitionsPending(s), false, '在途位为假 ⇒ 门/needsRender 按引擎恢复');
+  assert.equal(r.cleared, true, '帧尾清表（引擎 sub_4A9BE0；池挂起为 0）');
+  assert.equal(s.render4.transitions.size, 0, '记录表被清空');
   assert.equal(s.render4.transitionRuntime.size, 0, '运行期状态一起清');
-  assert.equal(scTransitionsPending(s), false);
+  const r2 = scTransitionTick(s, 1600);
+  assert.equal(r2.render.length, 0, '★只多交付这一帧（下一帧不许再画）');
+});
+
+test('★到期帧交付终值这条不许退化成"N 帧都交付"（只多一帧）', () => {
+  const s = newSceneState();
+  s.render4.transitions.set(7, fadeRecord(0, 100));
+  assert.equal(scTransitionTick(s, 0).render.length, 1, '起窗帧');
+  assert.equal(scTransitionTick(s, 100).render.length, 1, '到期帧（终值）');
+  assert.equal(scTransitionTick(s, 116).render.length, 0, '★第三帧不许再画');
+  assert.equal(s.render4.transitions.size, 0, '到期帧就清表');
 });
 
 test('★类别 0 的进度 t：延迟内为 0、之后线性、到期视作 1', () => {
@@ -109,15 +132,20 @@ test('★类别 0 的进度 t：延迟内为 0、之后线性、到期视作 1',
   assert.equal(s.render4.transitionRuntime.get(1)?.t ?? 1, 1);
 });
 
-test('★`[13] < 0` = 立即收尾：首帧就不活动、一个条带都不画、表被清空', () => {
+test('★`[13] < 0` = 立即收尾：当帧按终值交付一帧、下一帧清表', () => {
   const s = newSceneState();
   const rec = fadeRecord(0, 1000);
   rec[13] = -1; // 写端在"非法条宽"退化路径上写 -1（0x24F，raw 133730-133735）
   s.render4.transitions.set(2, rec);
-  scTransitionTick(s, 0);
-  assert.equal(s.render4.transitionRuntime.size, 0, '立即收尾 ⇒ 同帧清表');
-  assert.equal(scTransitionsPending(s), false);
-  assert.equal(scActiveTransitions(s).length, 0, '不产出任何绘制');
+  const r = scTransitionTick(s, 0);
+  assert.equal(r.render.length, 1, '★到期帧仍交付终值（引擎不跳过这一帧的渲染）');
+  assert.equal(r.render[0]!.rt.t, 1, '立即收尾 ⇒ t 用终值 1（raw 136184）');
+  assert.equal(r.active.length, 0, '到期 ⇒ 不算在途（引擎到期分支不置 46516）');
+  assert.equal(r.cleared, true, '同帧帧尾清表（池挂起为 0）');
+  const r2 = scTransitionTick(s, 16);
+  assert.equal(r2.render.length, 0, '清完之后不再产出');
+  assert.equal(s.render4.transitionRuntime.size, 0);
+  assert.equal(scActiveTransitions(s).length, 0, '清完之后不产出任何绘制');
 });
 
 test('★类别 3 的四通道按 t 线性插值（取整）、到期用终值', () => {
@@ -142,27 +170,31 @@ test('★★T-0091 G2：转场到期那帧**另有 mesh 窗在跑** ⇒ 表不�
   assert.equal(s.render4.transitions.size, 1, '起窗那一帧两者都在');
 
   const r = scTransitionTick(s, 100, false, () => scPoolPending(s, 100));
-  assert.equal(r.active.length, 0, '转场自己确实到期了（active 为空）');
+  assert.equal(r.active.length, 0, '到期 ⇒ 不算在途（引擎到期分支不置 46516）');
+  assert.equal(r.render.length, 1, '★到期帧仍交付终值（D2；`tickets/T-0091`）');
   assert.equal(scPoolPending(s, 100), true, 'mesh 窗还在跑 ⇒ 池挂起位为 1（raw 133528）');
   assert.equal(r.cleared, false, '★门错位就会在这里清表 —— engine 不清（46516 非 0）');
   assert.equal(s.render4.transitions.size, 1, '死记录保留到"全场景都不在途"为止');
   assert.equal(s.render4.transitionRuntime.get(7)!.start, 0, '运行期锁存仍在（没被清）');
 
-  // mesh 窗也走完 ⇒ 下一帧才清（同一个门，另一半）
+  // mesh 窗也走完 ⇒ 那一帧才清（同一个门，另一半）
   const r2 = scTransitionTick(s, 1100, false, () => scPoolPending(s, 1100));
   assert.equal(scPoolPending(s, 1100), false, '1000 ms mesh 窗已结束');
+  assert.equal(r2.render.length, 1, '清表前那一帧仍要交付终值（引擎每帧渲到期记录直到清表）');
   assert.equal(r2.cleared, true, '全场景池挂起为 0 ⇒ 清表（raw 136840）');
   assert.equal(s.render4.transitions.size, 0);
 
-  // ★判别力对照：同一形态、探针缺省（= 旧口径"只看转场自己"）⇒ 那一帧就把表清了
+  // ★判别力对照：同一形态、探针缺省（= 旧口径"只看转场自己"）⇒ 到期那一帧就把表清了
   const s0 = newSceneState();
   s0.render4.transitions.set(7, fadeRecord(0, 100));
   scSetVertexColorAlpha(s0, 0x3001, 0, 1000, 255, 0xffffff);
   scTransitionTick(s0, 0);
+  const r0 = scTransitionTick(s0, 100);
+  assert.equal(r0.render.length, 1, '到期帧先交付终值');
   assert.equal(
-    scTransitionTick(s0, 100).cleared,
+    r0.cleared,
     true,
-    '旧口径（不注入池挂起探针）在同一帧清表 ⇒ 上面那条断言不是"恰好为真"',
+    '旧口径（不注入池挂起探针）在同一帧就清表 ⇒ 上面那条"1100 ms 才清"不是恰好为真',
   );
 });
 
@@ -175,9 +207,10 @@ test('★T-0091 G1：`freeze`（`Scene+46512`）⇒ 转场窗当帧到期，而�
   scTransitionTick(s, 0);
   assert.equal(scTransitionsPending(s), true, '起窗那一帧在途');
   const r = scTransitionTick(s, 500, true); // 冻结
-  assert.equal(r.active.length, 0, '★freeze ⇒ 当帧到期');
+  assert.equal(r.active.length, 0, '★freeze ⇒ 当帧到期（不算在途，引擎到期分支不置 46516）');
+  assert.equal(r.render.length, 1, '★但仍交付一帧终值（D2）');
   assert.equal(r.finishedAny, true, '到期那一帧类别 3 仍算终值通道（raw 135806-135812）');
-  assert.equal(scTransitionsPending(s), false);
+  assert.equal(scTransitionsPending(s), false, 'freeze 当帧就不再算在途');
 
   // 对照：同一个 500 ms、**不**冻结 ⇒ 仍在途（证明上面不是"恰好到期"）
   const s2 = newSceneState();
@@ -199,8 +232,14 @@ test('★有活动转场窗 ⇒ `sceneNeedsRender` 恒真（引擎 `Scene+46508`
     '★少了这一项，转场期间 present:"needsRender" 档会停止合成（只画一帧）',
   );
   scTransitionTick(s, 1000);
-  assert.equal(scTransitionsPending(s), false);
-  assert.equal(sceneNeedsRender(s, 1000, false), false, '窗结束后判据回落');
+  assert.equal(scTransitionsPending(s), false, '★到期帧不算"在途"（引擎到期分支不置 46516）');
+  assert.equal(
+    sceneNeedsRender(s, 1000, s.dirty),
+    true,
+    '★但 tick 为"终值交付"置了脏 ⇒ 这一帧仍会被合成一次（D2；宿主传的就是 `scene.dirty`）',
+  );
+  s.dirty = false; // 消费掉交付那一帧的脏（present/snapshot 的等价物）
+  assert.equal(sceneNeedsRender(s, 1000, s.dirty), false, '交付完、没有别的窗 ⇒ 判据回落');
 });
 
 test('★★运行期绝不回写 `render4.transitions`：整条 deepEqual + `[1]` 仍为写入端写的 0', () => {
@@ -350,7 +389,7 @@ test('★类别 3 的画法参数逐条对应引擎的 SetTechnique/SetFloat（r
 
 test('★类别 3：`[13] != 1` 走 SlideBlur（Angle/Width/Height，无 CenterU/V）', () => {
   const rec = blurRecord(1000, 0);
-  const rt = { start: 0, active: true, finished: false, t: 0.5, channels: [40, 1, 2, 30] as [number, number, number, number] };
+  const rt = { start: 0, active: true, finished: false, t: 0.5, channels: [40, 1, 2, 30] as [number, number, number, number], renderedFinal: false };
   const plan = scTransitionBlurPlan(rec, rt, { w: 1280, h: 720 });
   assert.ok(plan);
   assert.equal(plan!.zoom, false);
@@ -370,7 +409,7 @@ test('★类别 3：`[13] != 1` 走 SlideBlur（Angle/Width/Height，无 CenterU
 
 test('★类别 3：ZoomBlur 的采样步长 = Length / (|center| * 16)（引擎 dbl_51D7E8 = 16.0）', () => {
   const rec = blurRecord(1000, 1);
-  const rt = { start: 0, active: true, finished: false, t: 1, channels: [64, 640, 0, 0] as [number, number, number, number] };
+  const rt = { start: 0, active: true, finished: false, t: 1, channels: [64, 640, 0, 0] as [number, number, number, number], renderedFinal: false };
   const plan = scTransitionBlurPlan(rec, rt, { w: 1280, h: 720 });
   const off = scTransitionBlurOffsets(plan!);
   assert.equal(off.kind, 'zoom');
@@ -380,13 +419,12 @@ test('★类别 3：ZoomBlur 的采样步长 = Length / (|center| * 16)（引擎
     assert.ok(Math.abs(off.step - 64 / 640 / 16) < 1e-12, 'step = Length / |center| / 16');
   }
   // 中心退化（|center| = 0）不许出 Infinity
-  const rt0 = { start: 0, active: true, finished: false, t: 1, channels: [64, 0, 0, 0] as [number, number, number, number] };
+  const rt0 = { start: 0, active: true, finished: false, t: 1, channels: [64, 0, 0, 0] as [number, number, number, number], renderedFinal: false };
   const off0 = scTransitionBlurOffsets(scTransitionBlurPlan(rec, rt0, { w: 1280, h: 720 })!);
   assert.ok(off0.kind === 'zoom' && Number.isFinite(off0.step) && off0.step > 0, '|center| = 0 要有兜底');
 });
 
-test('★非类别 3 ⇒ `scTransitionBlurPlan` 返回 null（类别 0/2 不许借用模糊字段）', () => {
-  const s = newSceneState();
+test('★非类别 3 ⇒ `scTransitionBlurPlan` 返回 null（类别 0/2 不许借用模糊字段）', () => {  const s = newSceneState();
   s.render4.transitions.set(0, fadeRecord(0, 1000));
   scTransitionTick(s, 0);
   const rt = s.render4.transitionRuntime.get(0)!;
@@ -421,11 +459,35 @@ test('★两条 item 区间：引擎 36/37 装的就是它们（raw 136014-13617
   const r2 = scTransitionRangeRects(s, { ...rec, 6: 0x900, 8: 4 });
   assert.equal(r2.b, null);
   assert.equal(r2.countB, 0);
-  // 快照里看得见（缺口可见：emulator 还没据它裁剪）
+  // 快照里看得见（`tickets/T-0091` 的 D3 起，屏幕 pass 也会据它排除区间项）
   const s2 = newSceneState();
   s2.render4.transitions.set(1, rec);
   scTransitionTick(s2, 0);
   const p = scSnapshot(s2, 0, null).render4.transitionProgress[0]!;
   assert.ok(p.ranges);
   assert.equal(p.ranges.countA, 0, '快照用的是它自己的场景（这里没有那两个项）');
+});
+
+test('★D4 收口：类别 3 的偏差披露必须成文（核降级 = 有据不复刻 / 源 = 有意改正），不许再摆"未确证"', () => {
+  // 引擎事实（本轮体读，`sub_4A0120` raw 120773 起）：采样 = `a2×a2` **旋转方格**（a2 = 33 ⇒ ±16 px，
+  // 旋转角 = `a3 * dbl_526C98 / dbl_5263F0`，点间做亚像素双线性）；权重两档：`a1 == 0` ⇒ 平坦 1 + 中心 3，
+  // `a1 != 0` ⇒ 沿一行的三角斜坡。emulator 是 1D 降级（33 采样/轴 + 中心权重 3）⇒ **核**是近似；
+  // 而 **源**（取本帧屏幕）不是近似、是有意改正（类别 3 跳过 36/37 填充 + 本帧刚清过层 36，
+  // 逐字读体与真机可观测量矛盾）—— 这条判据就是"两份口径不许并存含糊"的落点（`tickets/T-0091` ①/④）。
+  const HERE = path.dirname(fileURLToPath(import.meta.url));
+  const src = fs.readFileSync(path.join(HERE, '..', 'src', 'renderer', 'scene', 'transition.ts'), 'utf8');
+  assert.equal(TRANSITION_BLUR_KERNEL.grid, 33, '引擎 CPU 回退的方格边长 = 33');
+  assert.equal(TRANSITION_BLUR_KERNEL.centerWeight, 3, '`a1 == 0` 档的中心权重 = 3');
+  assert.ok(/不复刻的理由/.test(src), '核的"不复刻"理由必须成文（引擎依据 + 不可行的量化理由）');
+  assert.ok(/源的决策/.test(src), '源的决策必须成文（有意改正 + 待真机对照）');
+  assert.ok(!/仍未确证（见 `transition-render-spec/.test(src), '旧的"仍未确证 ⇒ 取本帧屏幕"措辞必须撤掉（不许两可）');
+  assert.ok(/sub_4A0120/.test(src), '披露里要点名 CPU 回退核的函数（可核对）');
+  assert.ok(/0x4B3187: cmp eax,3/.test(src), '披露里要点名"类别 3 跳过填充"的 asm 判据（可核对）');
+  // 计划对象仍须显式标 approximate（消费端/守卫都据此知道像素不可当判据）
+  const s = newSceneState();
+  s.render4.transitions.set(3, blurRecord(1000, 0));
+  scTransitionTick(s, 0);
+  const plan = scTransitionBlurPlan(s.render4.transitions.get(3)!, s.render4.transitionRuntime.get(3)!, { w: 1280, h: 720 });
+  assert.equal(plan!.approximate, true);
+  assert.equal(plan!.samples, TRANSITION_BLUR_KERNEL.grid, '采样数仍取引擎常数（不是随手拍的）');
 });

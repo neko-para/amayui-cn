@@ -1,0 +1,84 @@
+{
+  "title": "文档/注释与体不符三处：`global 3f90` 门极性读反（NOVEL.md/SYSTEM4.md）+ T-0090 的旁注依据 + 留帧注释自相矛盾",
+  "type": "docs",
+  "priority": "P2",
+  "area": "docs/05-scripts",
+  "why": "T-0103 轮 14 的只读分析（脚本 + 引擎体 + 运行期日志）撞出三处**文档/注释与体不符**，都会误导后续读脚本/改代码：\n\n1. ★**`global 3f90` 门极性读反**：`docs-new/05-scripts/NOVEL.md:25` 写「门是 `3f90 != 0`（⇒ 恒不执行）；3f90==0 时 `jcc label_0000088c` 整段跳过」，`SYSTEM4.md:31` 写「**3f90==0 时整块跳过**」。但 `jcc <cond> <trueLab> <falseLab>` 的体是 **cond != 0 跳 op2 / cond == 0 跳 op3 / `-1` = 落下句**（`app/amayui-emulator/src/vm/handlers/control.ts:81-105`，引擎 `sub_4209B0` 同口径），而这两处的写法是 `eq local0,(3f90),0` + `jcc local0 ffffffff <skipLab>` ⇒ **3f90 == 0 时 local0=1 ⇒ 落下句 ⇒ 整块执行**（`src/NOVEL.txt:35-117` / `src/SYSTEM4.txt:186-268`：`detach-texture 19258` / **`i1f6`** / `i23d` / 满屏黑幕 `create-mesh 19258` / `SETCHARM`），3f90 != 0 才跳到 skip。\n   **运行期反证（不依赖对反编译的解读）**：`src/NOVEL.txt:191` 的 `i1f6` 在真机/emulator 的 `SN0000 → SC0000` 边界**确实执行**了 —— 现场日志有 `clearDrawContainer: 释放 drawItems=… 文本窗=…`（`tickets/T-0100/evidence/sn0000-sc0000-boundary.md`，日志行 7953/15920 一带），而它正处在这道门之后。\n\n2. **T-0090 的旁注依据错（行为对、理由错）**：`src/vm/handlers/save-slot.ts` 与 `src/live2d/runtime.ts` 把装载段 raw 19913-19915 的两次 `sub_403EF0` 当「复位显示容器 ⇒ 上一屏立绘不再出画」的依据；但同一仓库的 `src/vm/native.ts:527-529` 已按体订正为「那两次复位的是**两张仮想ディスプレイ**（点击热点/路由表 + 游标），不碰显示容器」。正确依据 = `sub_410160`（读档装载内核）raw **19385-19388**：清 `Scene+1064` + **`Scene+1096`（572B 立绘节点表）** + 10 个 L2D 实例槽。\n\n3. **留帧注释自相矛盾**：`src/renderer/pixiBackend.ts:848` 写「或容器被整批清空（`clearDrawContainer`，此时画面本就该是空的/黑的）」暗示清容器会**解除**留帧，而 `clearDrawContainer` 的实现是**把留帧续期到 60 帧且不解除**。\n\n（三处都是本轮**只读**发现，未动手改。）",
+  "acceptance": [
+    "核对并订正 `docs-new/05-scripts/NOVEL.md:25` 与 `docs-new/05-scripts/SYSTEM4.md:31` 的 `global 3f90` 门极性：★判据以 **opcode 表**为准（`analysis/opcodes.json` 的 `0xA0` 行：「`op1≠0`→跳 `op2`；`op1==0`→跳 `op3`；`0xFFFFFFFF` = 落下句」）⇒ 这两处的写法 `eq local0,(3f90),0` + `jcc local0 ffffffff <skipLab>` 应读成「**3f90 == 0 ⇒ 落下句、整块执行**；3f90 != 0 ⇒ 跳过」。同页 invariants 里「恒不执行」的结论与 `NOVEL.md:27/39` 的连带表述一并改。★若核对结果与旧文一致，**写明判据**后关单，不许含糊",
+    "核 `app/amayui-emulator/test/t0102-chapter-chain.test.ts`（及其它提到 3f90 的测试）是否按旧极性钉着；若钉着：改测试 + 在 `changes.md` 写明「旧极性错在哪 / 凭什么改」",
+    "订正 `src/vm/handlers/save-slot.ts` 与 `src/live2d/runtime.ts` 中把 `sub_403EF0` 当「清显示容器」依据的注释：改为 `sub_410160` raw 19385-19388；并保留一句「`sub_403EF0` = 仮想ディスプレイ复位（native.ts:527-529 的订正）」",
+    "统一留帧口径：`src/renderer/pixiBackend.ts:848` 的注释改成与实现一致（清容器 → 续期 60 帧、不解除；只有「新内容可见/铺满一屏」或读档点 `releaseFrameHold` 才解除）",
+    "`npm run verify` 全绿；四份台账 `--validate` 绿"
+  ],
+  "evidence": [
+    {
+      "file": "analysis/opcodes.json",
+      "anchor": "两目标条件跳转",
+      "note": "★判据（第一顺位）：`jcc` 的表口径 —— `op1≠0`→跳 op2；`op1==0`→跳 op3；`0xFFFFFFFF` = 落下句。据此 `eq local0,(3f90),0` + `jcc local0 ffffffff <skip>` = 3f90==0 时落下句、整块执行",
+      "line": 985
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "anchor": "const cond = (plan.int(1) ?? 0);",
+      "note": "★极性判据的体：cond != 0 → 跳 op2；cond == 0 → 跳 op3；op2/op3 = `-1`（0xFFFFFFFF）= 落下句",
+      "line": 83
+    },
+    {
+      "file": "src/NOVEL.txt",
+      "anchor": "jcc (local-int 0) ffffffff label_0000088c",
+      "note": "被读反的那两条：`eq local0,(3f90),0` + 本行 ⇒ 3f90 == 0 时 local0=1 ⇒ **落下句**（35-117 整块执行）",
+      "line": 34
+    },
+    {
+      "file": "src/SYSTEM4.txt",
+      "anchor": "jcc (local-int 0) ffffffff label_000013e0",
+      "note": "同型的第二处（场景装配块 `label_00000d70`：186-268 含 i1f6 / i23d / 黑幕 / SETCHARM）",
+      "line": 185
+    },
+    {
+      "file": "docs-new/05-scripts/SYSTEM4.md",
+      "anchor": "3f90==0 时整块跳过",
+      "note": "要订正的旧结论（NOVEL.md:25 的「3f90==0 时 `jcc label_0000088c` 整段跳过」同型）",
+      "line": 31
+    },
+    {
+      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
+      "anchor": "clearDrawContainer: 释放 drawItems=0 meshes=0 文本窗=1→0（保留纹理槽）",
+      "note": "★运行期反证：这道门之后的 `i1f6`（NOVEL.txt:191）在 SN0000→SC0000 边界确实执行了（日志 7953）",
+      "line": 20
+    },
+    {
+      "file": "app/amayui-emulator/src/live2d/runtime.ts",
+      "anchor": "raw 19385-19388** 就是",
+      "note": "★T-0145 ③ **已落地**（2026-09-24）：`l2dResetHost` 的注释现在引正确依据 `sub_410160` raw 19385-19388，并把旧注释的 `sub_403EF0` 在同段标为**假依据**（原锚点「引擎在装载段复位显示容器（raw 19913-19915」已随订正删除 —— 按棘轮纪律 retarget 到同义新串）",
+      "line": 188
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "或容器被整批清空（`clearDrawContainer`",
+      "note": "与实现自相矛盾的注释（clearDrawContainer 实际是续期 60 帧、不解除留帧）",
+      "line": 861
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0103",
+      "T-0144",
+      "T-0090",
+      "T-0100"
+    ],
+    "docs": [
+      "docs-new/00-overview/authority.md"
+    ]
+  },
+  "id": "T-0145",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

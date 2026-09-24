@@ -38,3 +38,19 @@
   2. **把 `scPoolPending` 移到中立模块**（如 `scene/pending.ts`）再由 `ops.ts` re-export（保持既有 import 不破），`transition.ts` 从新模块 import。代价：动 `ops.ts` 一行。
 - ★**两条路的注意点**：清表判据必须在 `scAdvance` **之后**求值（与引擎「本帧绘制期置 46516、帧末读它」同序），否则会拿上一帧的状态判。
 - ★**与 T-0096 的冲突**：`T-0096` 要改 `renderer/scene/ops.ts`（`scL2dTick`），路线 2 会碰同一个文件 ⇒ **G2 必须等 T-0096 落地后再动**（本轮就因此没开工）。
+
+## 2026-09-23
+
+## 轮 15（T-0103 交接链审计的副产物）
+
+按 `tickets/T-0103/evidence/chain-audit-instructions-capabilities.md` 的 D2/D3/D4，本票新增两条验收（到期帧合成 / 区间项屏幕排除），并把 D4（类别 3 的源=本帧屏幕、核=累积近似）与 U3 的关系记在上面。★E4 通道本轮已可用：`node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --slot 78` （一条命令到读档完成的 `[slot-load]` 判据）+ `capture`；**但先修 `T-0144`**（0x1F6/0x1F7 未清 572B 表），否则残留立绘会污染转场像素对照。
+
+## 2026-09-23
+
+## 2026-09-24 · D2/D3/D4 落地（T-0103 轮 15 的审计结论）
+
+**⑤ 到期帧交付终值（D2）**：`scTransitionTick` 现在返回 `render` 快照（`{id, rec, rt}`，`rt.t = 1` + 终值通道），pixi 宿主存进 `#pendingTransitionRender` 并交给 `present()`（`#compositeTransitions` 优先用快照、其次查表）；`scTransitionsPending` 仍只算**在窗内**（对齐引擎「到期分支不置 `46516`」），交付那一帧靠 tick 置 `scene.dirty` 保证被合成一次；清表时序不变（帧尾、门 = 池挂起）。
+**⑥ 区间项从屏幕 pass 排除（D3）**：`scTransitionMarkedHandles`（活动转场的两条区间并集 + tick 交付快照那几条）在 `presenter.present` 里过滤 DrawItem/Mesh/572B 节点，对齐引擎 `(flags & 0x10001) == 1`（raw 136905/136915/136926/136936 与 137210/137220/137252）。★仍未复刻：引擎的 `bit16` 跨帧粘住 ⇒ 36/37 是**首帧冻结快照**，emulator 每帧重渲。
+**① 类别 3 的核（D4）**：按验收给的**替代路线**收口 —— 把引擎 CPU 回退核的体读事实（`sub_4A0120`：33×33 旋转方格 + 亚像素双线性；`a1==0` 平坦+中心 3 / `a1!=0` 三角斜坡）与**不复刻的理由**（1089 采样/帧不可行 + 真机有 effect 时走 shader）写成一份披露（`TransitionBlurPlan` 的偏差披露 ①②，含 asm 判据 `0x4B3187: cmp eax,3 / jnz`），守卫 `test/sc-transition-window.test.ts` 的 D4 例钉住"两份口径不许并存"。
+**④ E4 可达路径**：`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs --slot 78` 让"读档到 SN0000 末页 → 下一步就是切章"变成一条命令（判据 = 日志 `[slot-load]`）。
+**② `[4]` 指向非 `create-texture` 槽**：仍**未做**（本票剩余项）。

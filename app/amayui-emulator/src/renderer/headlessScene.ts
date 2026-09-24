@@ -374,7 +374,10 @@ export class HeadlessScene implements NativeBridge {
   }
 
   detachTexture(handle: number, count: number): void {
-    scDetachTexture(this.scene, handle, count);
+    const r = scDetachTexture(this.scene, handle, count);
+    if (r.nodes > 0) {
+      this.log(`detachTexture h=0x${handle.toString(16)} count=${count} 同时清 572B 立绘节点 l2dNodes=${r.nodes}`);
+    }
   }
 
   /** 释放「留帧」：headless 没有像素级留帧 ⇒ 显式 no-op（与 Pixi 同契约）。 */
@@ -405,7 +408,8 @@ export class HeadlessScene implements NativeBridge {
   }
 
   clearDrawContainer(): void {
-    scClearDrawContainer(this.scene);
+    const r = scClearDrawContainer(this.scene);
+    if (r.nodes > 0) this.log(`clearDrawContainer: 同时清 572B 立绘节点 l2dNodes=${r.nodes}`);
   }
 
   /** `0x32B`（sub_41A4A0）：清网格槽表（headless 只有模型 ⇒ 清 `scene.meshes`）。 */
@@ -599,7 +603,7 @@ export class HeadlessScene implements NativeBridge {
     const r = scCopyItem(this.scene, srcHandle, dstHandle);
     this.log(
       `[scene] CopyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}` +
-        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh}）` : '【源不存在】'),
+        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh} l2dNode=${r.node}）` : '【源不存在】'),
     );
     return r.copied;
   }
@@ -778,8 +782,7 @@ export class HeadlessScene implements NativeBridge {
    * `opts.freeze` = 引擎 `Scene+46512`（`tickets/T-0091` 的 G1）：本帧所有 A 层窗 + 转场窗当帧收尾
    * （raw 117449 / 133517 / 134941）。驱动每帧末传 `e.sceneFreeze`（`frame/loop.ts`）。
    */
-  advanceModel(nowMs: number, opts?: { freeze?: boolean }): void {
-    const freeze = opts?.freeze ?? false;
+  advanceModel(nowMs: number, opts?: { freeze?: boolean }): void {    const freeze = opts?.freeze ?? false;
     this.advance(nowMs, freeze);
     // ★转场窗（`tickets/T-0084`）：锁存起点（首帧 raw 134867-134871）/ 推进 t·off / 到点杀记录 /
     //   "一条都不活动"时清空整张记录表（raw 136840-136841）。与 pixi 宿主共用 `scene/transition.ts`。
@@ -787,6 +790,9 @@ export class HeadlessScene implements NativeBridge {
     //     `poolPending` 探针 = 引擎清表门的**全场景** `Scene+46516`（G2，raw 136840/137181）
     //     —— 探针在 `scAdvance`（上一行）之后求值，与引擎"绘制期置位、帧末读它"同序。
     // 旧形式（T-0084 的源码棘轮锚点）：scTransitionTick(this.scene, nowMs)
+    // ★`tickets/T-0091` D2：tick 的返回值里带"本帧要合成的那一批"（`render`，含到期帧的终值交付）。
+    //   headless **没有渲染** ⇒ 用不到它（只有 pixi 宿主的 `present()` 消费）；headless 关心的是
+    //   `active`（在途 → 门/`needsRender`）与"表有没有被清"，两者都在模型里，不依赖返回值。
     scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
     // ★Live2D：动作推进**只在"这一帧真要画的节点"上**发生（引擎 `sub_4783D0` → `sub_4BCB50`）——
     //   与上面 `advance` 同一个时钟域，两个宿主共用 `scL2dTick` 一份实现（T-0054）。

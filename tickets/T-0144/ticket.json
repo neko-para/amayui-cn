@@ -1,0 +1,140 @@
+{
+  "title": "0x1F6 clearDrawContainer / 0x1F7 detach-texture 未清 572B 立绘节点表（Scene+1080/+1096）⇒ TITLE 的 Live2D 在新游戏路径上残留",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "**症状（T-0103 本轮新线索，用户实测）**：从 TITLE 点 Game Start 走**新游戏链**一路推进到序章末（`SN0000` → `SC0000` 的章节切换）时，「本该是黑」的那一段画面上出现 **TITLE 的 Live2D 立绘残留**；同一条链在 SC0000 章头段也可见背景层次错位。**读档 78 的同一步没有这个症状**。\n\n**根因（引擎体 + 运行期双侧确证）**：\n- 引擎 `0x1F6`（`sub_4AB7A0`）清的是**四张表**：`Scene+1032`（DrawItem）、`Scene+1064`（MeshEntry）、**`Scene+1080`**、**`Scene+1096` = 572B 立绘 / Live2D 节点表**（raw 130699 / 130764 / **130765** / **130766**）。emulator 的 `0x1F6` 只清 `drawItems + meshes + msgwin`（`src/renderer/scene/ops.ts:263-273`）⇒ **TITLE 的节点（`src/TITLE.txt:590 i344 14 0`，key `0x14`）活过整条新游戏链**。\n- 同一族还有 `0x1F7 detach-texture`：单 key 路径（raw 130831-130835）与区间路径（raw **131077**）**也都擦 `Scene+1096`**，emulator 两条都没擦。\n- TITLE 的退场例程**确实调了** `i1f6`（`src/TITLE.txt:810`，由 `label_0000388c:822` 调、主循环按 `local 3fc == 1` 触发）—— 所以「新游戏少做了步骤」是误判：**脚本两边都做了，是 emulator 的实现漏了一半**。\n- 读档路径之所以没症状，是因为 emulator 在装载点单独补了一刀 `src/vm/handlers/save-slot.ts:321 l2dResetHost(e)`（只在读档点被调用，全仓无第二处）⇒ 这一刀遮住了 `0x1F6` 的缺口。\n- ★**运行期反证**：读档时那条日志本身就是证据 —— `[slot-load] 清掉上一个执行链的 L2D 运行态：实例槽 1 个 / 立绘节点 1 个`（说明读档**之前** TITLE 的节点/槽都还活着）。\n\n**为什么显形**：四路归并**按 key 升序**（引擎 raw 136814-136941；emulator `presenter.ts:331-365`），节点 key `0x14`=20 是最小的一档 ⇒ 它只会在「上面的东西全没了」时露出来；`SN0000` 尾段的拆场（`NOVEL.txt:191 i1f6` 清绘制项 + `SC0000:1309 detach-texture 19258 1` 撤黑幕）正好造出这个时刻。\n\n**影响面**：所有走 `0x1F6`/`0x1F7` 拆场的边界（TITLE→任何去处、`SYSTEM4:213`、`NOVEL:62/191`、每个 `SC*.txt` 的入口/收尾）在 emulator 里都可能留下上一屏的 572B 节点；只是 TITLE 是唯一常态建 L2D 节点的界面（另两处 INFOEN / BTL 也建）。",
+  "acceptance": [
+    "**① `0x1F6` 补齐四张表**：`scClearDrawContainer` 除 `drawItems`/`meshes`/消息窗外，**还清 572B 立绘节点表**（emulator = `Engine.l2dNodes`，`src/vm/live2d/runtime.ts` 的 `l2dResetHost` 之外的窄接口；依据 raw 130765-130766）。★先确认 `Scene+1080` 那张 572B-A 表在 emulator 里落在哪：若没有对应容器，在票面 `notes.md` 写清「哪张表无处安放 / 为什么可暂时不建模」，**不许沉默跳过**",
+    "**② `0x1F7` 两条路径同样擦 572B 节点表**：单 key（`count <= 1`，raw 130831-130835）与区间（`[handle, handle+count)`，raw 131077）—— 依据同上；`i1f7` 语料极多（TITLE/SYSTEM4/LOGO/NOVEL/各 SC 脚本）",
+    "**③ 不得顺手清实例槽**：`0x1F6`/`0x1F7` 的引擎体**只清两张 map**，不销毁 10 个实例槽（那是 `0x342`（`sub_4A1A60`）与读档装载段 `sub_410160` raw 19387-19388 的事）⇒ 守卫要断言「清完之后 `l2dSlots` 仍在、`l2dNodes` 为空」",
+    "**④ 守卫**：`test/l2d-clear-on-container-ops.test.ts`（新）至少 4 条 —— (a) 造 TITLE 型节点（key `0x14` + 槽 0 有模型）→ `0x1F6` ⇒ `l2dNodes` 为空、(b) 同前 → `0x1F7 <key> 1` ⇒ 该 key 没了、(c) 同前 → `0x1F7 <key> <count>` 区间 ⇒ 区间内没了、区间外还在、(d) 三者都**不动** `l2dSlots`；另加一条 `present` 级断言：清完之后不再出现「节点 1 / 可画 1」",
+    "**⑤ E4（两条路径对照）**：新游戏链推进到 `SN0000` 尾/`SC0000` 章头，该段不再出现 TITLE 立绘；判据 = 实例日志 `[present …] l2d=` 不再是 `{槽… 节点1 可画1 …}`（读档路径早已是 `无`）。复现配方见 `tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md`；读档用 `.agents/skills/amayui-remote-debug/scripts/load-slot.mjs`",
+    "**⑥ 订正 T-0090 的旁注依据**（行为保留、依据改正）：`save-slot.ts:314-315` / `live2d/runtime.ts:187-188` 引的 `sub_403EF0` 已被 `src/vm/native.ts:527-529` 按体订正为「仮想ディスプレイ（点击热点/路由表）复位，不碰显示容器」；正确依据 = `sub_410160` raw 19385-19388（清 `Scene+1064` + `Scene+1096` + 10 个实例槽）",
+    "`npm run verify` 全绿；四份台账 `--validate` 绿",
+    "**⑦ 定义层（轮 15 已订正，实现按订正后的定义走）**：`analysis/opcodes.json` 的 `0x1F6`/`0x1F7` 语义已**逐张点名四张表**（含 `Scene+1096` = 572B Live2D 立绘节点表，含 raw 锚点）；capability `scene-drawtable-flush-and-dirty` 的「已实现」口径已收窄为「只清了 2 张」。⇒ 实现时**以订正后的定义为判据**（不是\"照旧实现的推断\"），并把 `Scene+1080` 那张 572B-A 表在 emulator 里落在哪写清楚。",
+    "★**已落地（2026-09-24）**：`clearL2dNodes`（`renderer/scene/ops.ts`）成为统一入口 —— `scClearDrawContainer`（0x1F6）整批清、`scDetachTexture`（0x1F7 单条/区间）按 key 擦、`scCopyItem`（0x21D）连节点一起拷；**实例槽不动**；`Engine.l2dNodes` 就是 `Scene+1096` 的等价物（`Scene+1080` 那张 572B-A 在 emulator 里没有对应容器，已在 `notes.md` 写明）。守卫 `test/l2d-clear-on-container-ops.test.ts`（5 例）。E4 判据：新游戏路径进 SN0000 后 `[present …] l2d=` 不再是 `节点1`。"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "result = sub_4A9D10(v1 + 274);",
+      "note": "★根因的体依据：0x1F6（sub_4AB7A0）清 4 张表 —— 前两行 130699/130764 清 DrawItem/MeshEntry，130765 清 Scene+1080，**130766 清 Scene+1096（572B 立绘 / Live2D 节点表）**",
+      "line": 130766
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "result = sub_4AA3D0(v33 + 274, &a2, v27, v29);",
+      "note": "0x1F7 的**区间**路径也擦 Scene+1096（同函数单 key 路径见 130831-130835 的 sub_4A9D70 + sub_4A9270）",
+      "line": 131077
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "export function scClearDrawContainer",
+      "note": "emulator 现状：只清 drawItems + meshes + 消息窗（263-273）⇒ 少了两张 572B 表",
+      "line": 320
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "i1f6",
+      "note": "TITLE 退场例程 label_0000384c 的第一条（由 label_0000388c:822 调、主循环 3fc==1 触发）⇒ 脚本在新游戏链上**确实调了** 0x1F6",
+      "line": 560
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "清掉上一个执行链的 L2D 运行态",
+      "note": "★读档点的补丁 + 它的日志：全仓唯一的 l2dResetHost 调用点（遮住 0x1F6 的缺口）；这条日志同时也证明读档前 TITLE 的节点仍活着",
+      "line": 331
+    },
+    {
+      "file": "tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md",
+      "anchor": "l2d={槽1 节点1 可画1 纹理3 缓存60}",
+      "note": "★运行期双侧对照：新游戏路径进 SN0000 后 513 条 present 带 L2D 节点；读档路径装载点清掉后 0 条",
+      "line": 21
+    },
+    {
+      "file": "tickets/T-0103/ticket.json",
+      "anchor": "SN0000 → SC0000 的章节切换演出",
+      "note": "上游症状票（本票是它的根因之一，判据②要求「确实不属于已知三类才在本票内实现」⇒ 单列本票）",
+      "line": 2
+    },
+    {
+      "file": "analysis/opcodes.json",
+      "anchor": "Live2D 立绘节点表**（raw 130766",
+      "note": "★轮 15 的定义层订正：0x1F6 的语义逐张点名四表（1032/1064/1080/1096）；0x1F7 也补了单条/区间两条路径都擦 1096 的 raw 锚点（130831-130837 / 131077）",
+      "line": 2466
+    },
+    {
+      "file": "tickets/T-0103/evidence/chain-audit-instructions-capabilities.md",
+      "anchor": "D1 ·【已确证·本链可见】",
+      "note": "轮 15 的交接链审计全文（96 个助记符 × 台账 × 实现；23 条 capability 判定；D1-D7 分歧清单）",
+      "line": 74
+    },
+    {
+      "file": "app/amayui-emulator/test/l2d-clear-on-container-ops.test.ts",
+      "anchor": "拆场指令必须擦 572B 立绘节点表",
+      "note": "★守卫（5 例）：0x1F6 整批清 / 0x1F7 单条 / 0x1F7 区间（区间外保留）/ 0x21D 拷贝（深拷贝、独立）/ 空表不假装做事；每例都断言**实例槽不动**",
+      "line": 4
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/ops.ts",
+      "anchor": "export function clearL2dNodes",
+      "note": "统一入口：只删 572B **节点**（`Engine.l2dNodes`），不碰 10 个实例槽（引擎 0x1F6 也只清两张 map）",
+      "line": 170
+    },
+    {
+      "file": "app/amayui-emulator/src/live2d/runtime.ts",
+      "anchor": "raw 19385-19388** 就是",
+      "note": "T-0144 ⑥ 落地：装载点依据订正为 sub_410160 raw 19385-19388（旧注释引的 sub_403EF0 已标为假依据）",
+      "line": 188
+    },
+    {
+      "file": "app/amayui-emulator/test/game-start-chain.test.ts",
+      "anchor": "T-0144：走到 SN0000 时 TITLE 的立绘节点必须已被 i1f6 擦掉",
+      "note": "★E3（真语料、CI 可跑）：启动→Game Start→ゲーム開始→SN0000 首文案之后断言 `scene.l2d.nodes === 0 && scene.l2d.slots >= 1`；撤销 D1 即红（实测「实际 1」），还原即绿",
+      "line": 371
+    },
+    {
+      "file": "tickets/T-0144/evidence/d1-e4-newgame-l2d-cleared.md",
+      "anchor": "l2dNodes=1",
+      "note": "★E4（重建产物后真跑）：TITLE 退场例程那条 `i1f6` 报 `clearDrawContainer: 释放 drawItems=29 meshes=1 l2dNodes=1`（日志 9543），之后 present 全是 `{槽1 节点0 可画0}`（实例槽保留）",
+      "line": 16
+    },
+    {
+      "file": "app/amayui-emulator/src/tools/gameStartChain.ts",
+      "anchor": "l2d: { slots: number; nodes: number };",
+      "note": "链路结果里新增的 L2D 计数（E3 断言用的观测量；`slots` 保留 = 拆场不清槽的证据）",
+      "line": 138
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0090",
+      "T-0096",
+      "T-0103",
+      "T-0054"
+    ],
+    "docs": [
+      "docs-new/03-engine/live2d.md",
+      "docs-new/03-engine/rendering.md"
+    ]
+  },
+  "id": "T-0144",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-23",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-23",
+      "kind": "status",
+      "what": "open → done —— D1 落地：clearL2dNodes 统一入口（0x1F6 整批 / 0x1F7 单条+区间 / 0x21D 拷贝），实例槽不动；守卫 5 例；装载点依据按体订正（sub_410160 raw 19385-19388）；npm run verify 除 3 条预先存在的红外全绿（A/B 已证）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/l2d-clear-on-container-ops.test.ts",
+    "app/amayui-emulator/test/game-start-chain.test.ts"
+  ]
+}

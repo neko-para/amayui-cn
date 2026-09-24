@@ -29,6 +29,7 @@ import { applySceneXformToPlacement, sceneLayerAffected } from '../scene/ops.js'
 //   （emulator 的文本由 `textLayer` 画）⇒ 无纹理槽时不能当图元画成白块。见 `T-0102`。
 import { inMsgTextRange } from '../drawitem/msgTextRange.js';
 import { walkBlendSequence, type BlendEnv, type BlendState } from '../scene/blend.js';
+import { scTransitionMarkedHandles, type TransitionRenderItem } from '../scene/transition.js';
 import type { TextureCache } from './textureCache.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import { VIEW_H, VIEW_W } from '../viewport.js';
@@ -146,6 +147,13 @@ export class ScenePresenter {
     clock: number,
     waitFlags: number,
     textSprites: { win: number; layer: number; sprite: Sprite }[] = [],
+    /**
+     * ★本帧 tick 交给宿主的**转场交付快照**（`scTransitionTick().render`；`tickets/T-0091` 的 D2/D3）。
+     * 用途只有一个：让**排除集**（`scTransitionMarkedHandles`）也覆盖**到期帧**那几条 ——
+     * 引擎在到期帧仍走转场遍（同样给区间项置 `|0x10000`），而 emulator 的记录在那一帧已被清掉，
+     * 光查表会漏掉这一帧（表现 = 原图与终值合成结果同时可见，闪一帧）。
+     */
+    transitionRender: readonly TransitionRenderItem[] = [],
   ): number {
     this.drawRoot.removeChildren();
     this.#l2dLive.clear();
@@ -179,7 +187,16 @@ export class ScenePresenter {
     const items = [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
     const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
+    // ★D3（`tickets/T-0091`）：**本帧被转场占用（画进 scratch 36/37）的项不进屏幕 pass** ——
+    //   引擎给它们置 `|0x10000`，屏幕 pass 只画 `(flags & 0x10001) == 1` 的项
+    //   （`sub_4B4040` 的四处判据 raw 136905/136915/136926/136936；`0x222` 路径 137210/137220/137252）
+    //   ⇒ 转场期间玩家看到的是记录 `[4]` 那个槽的合成结果，**不是**原图与新图的叠加。
+    const marked = scTransitionMarkedHandles(scene, transitionRender);
+    // ★键口径：引擎的标记打在**表节点**上（`node+12` = 容器键 = 脚本给的 handle，raw 136853/136863/136873/136878）
+    //   ⇒ 这里按 `handle` 比（语料里 `layer === handle`，见 `handlers/gfx-texture.ts` 的「层序 = map key = op1」）。
+    const skipped = (key: number): boolean => marked.has(key);
     const drawItem = (it: Item, blendMode: BlendState): void => {
+      if (skipped(it.handle)) return;
       const spr = this.itemSprite(scene, it, clock, blendMode);
       if (!spr) return;
       this.drawRoot.addChild(spr);
@@ -199,6 +216,8 @@ export class ScenePresenter {
     //   RGB（永远黑），于是 SN0000 序章被"50% 黑幕"涂成整屏黑（背景与首文案一起消失）。
     const drawMesh = (m: typeof meshes[number], blendMode: BlendState): void => {
       if ((m.flags & 1) === 0 || m.verts.length < 3) return; // 无几何 ⇒ 引擎不画
+      // ★D3：mesh 表（`Scene+1064`）同样被打 `|0x10000`（raw 135772/135995/136301…）⇒ 也要排除
+      if (skipped(m.handle)) return;
       const state = calcDiffuse(m, clock);
       const color = meshColor(m, state);
       const alpha = (color >>> 24) & 0xff;
@@ -264,6 +283,8 @@ export class ScenePresenter {
     const l2dBatchList = scene.l2dHost ? l2dBatches(scene.l2dHost, this.viewW, this.viewH) : [];
     const drawL2d = (b: L2dMeshBatch, blendMode: BlendState): void => {
       if (b.vertexCount < 3 || b.triangleCount < 1) return;
+      // ★D3：立绘节点也在转场的排除集里（引擎 1096 表同样被打 `|0x10000`，raw 135798/135988/136003）
+      if (skipped(b.key)) return;
       const tex = b.textureFileId === null ? undefined : this.l2dTex?.get(b.textureFileId);
       if (!tex) {
         // ★缺纹理时**不画**（也不糊占位块）：引擎那条链在绑定时就失败了（`0x345` 取不到文件 ⇒

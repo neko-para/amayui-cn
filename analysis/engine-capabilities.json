@@ -17,12 +17,12 @@
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
     "total": 139,
-    "modeled-verified": 58,
-    "modeled-unverified": 7,
-    "partial": 32,
-    "absent": 19,
+    "modeled-verified": 62,
+    "modeled-unverified": 6,
+    "partial": 31,
+    "absent": 17,
     "n/a-known": 23,
-    "needsAttention": 58
+    "needsAttention": 54
   },
   "entries": [
     {
@@ -700,7 +700,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/transition-corpus-e3.test.ts",
-        "note": "★2026-09（`tickets/T-0076` 的 B3 + `T-0084` 轮 5/6）状态迁移：写入端 → 窗口模型 → 12 种条带几何 → 快照进度 → 渲染端（画进记录 `[4]` 指定的离屏槽）。①**记录表** `Scene+1048`（96 B / 24 dword）：写入端 `0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）逐格照抄引擎的 `sub_4AAE10`，`0x224` 清空；★运行期值另存 `render4.transitionRuntime` —— 引擎就地改 `[1]`/`[3]`，而记录表被写入端守卫**整条 deepEqual**，不能就地改。②**窗口模型** `src/renderer/scene/transition.ts`：首帧锁存 `[1]`、按 clock 算 `t`/`off`、到点杀记录、一遍绘完没有在途转场就清空整表（raw 134867-134871 / 136840-136841）；两个宿主的 `advanceModel` 共用 `scTransitionTick`。③**条带几何** `scTransitionBands`：12 个 case 全部按 raw 134947-135510；`span()` **不归一化**（引擎对 `left > right` 直接丢弃）。④**渲染端**：类别 0（交叉淡化）/类别 2（盲帘）/类别 3（插值模糊，**已披露近似**）都画进记录 `[4]` 的离屏槽（宿主 = `TextureCache.composeIntoSlot`；`[4]` 是**渲染目标层**，语料实证 `src/SC0000.txt:1337-1339`）；`needsRender` 接上第三项（`Scene+46508`，读者 `sub_40BE10` raw 16022）。⑤**类别 0/2 的源** = 记录那两条 item 区间的**离屏子集**（层 36/37 的真身：`for v60<2 { SetTarget(36+v60); Clear; 画该趟区间; }`，raw 136014-136176 / asm `0x4B379C` 起）：`presenter.itemSprite`（唯一一份画法）+ `renderItemSubset` + `pixiBackend.#renderRangeCanvas` + `scTransitionRangeHandles`；旧的「上一帧整屏快照」（`#transOld`）概念已删除。⑥**类别 3 是「参数确证 + 像素已披露近似」**：`scTransitionBlurPlan` 逐条对应 raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`（含 `CenterU/V` 归一化），采样数取引擎 CPU 回退常数 **33**、中心权重 **3**（raw 126180-126183）；**未复刻**引擎 `(2L+1)²` 核（`sub_4A0120`）的逐点权重与 SlideBlur 采样密度 ⇒ 类型/快照/注释三处都带 `approximate` 标记。★**仍未建模（有据缺口，不许沉默）**：(a) 类别 1 `0x24D` —— 语料 0 处 + 规格 §3.5 U2 未确证 ⇒ `analysis/opcode-gaps.json` 记 `deferred`，消费端 = 两趟 item 重绘 + `sub_4A2750([9..12])` 收尾 + `SetRandomFade` 族参数来源；(b) `[4]` 指向**非** `create-texture` 槽的情形（没有画布表面可写）；(c) `Scene+46508`/`46512`/`46516` 三个标志**本身**未建（只把 46508 等价折进 `sceneNeedsRender` 第三项、46512 的「立即收尾」折进窗口模型）；(d) 类别 3 的**源层** —— 引擎显式跳过类别 3 的两趟 item 重绘（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 它模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**（写在代码注释里，不是猜）。★**E4 缺口**：本机没有冷启动就能跑到 `i223`/`i24f` 的路径（试了 178 个含 `i223` 的脚本的前 12 个 × 3000 帧，全部停在等待、零转场；`--load 79` 只到 SN0000，它的 `i250` 在 line 3036 之后）⇒ 这条路的证据目前是 **E3**（真语料 SC0010.BIN 的窗口级断言 `test/transition-corpus-e3.test.ts`）+ E2（`test/sc-transition-window.test.ts`、`test/sc-transition-geometry.test.ts`、`test/transition-render-wiring.test.ts`），像素级真机对照待有可达路径再补。"
+        "note": "★2026-09（`tickets/T-0076` 的 B3 + `T-0084` 轮 5/6）状态迁移：写入端 → 窗口模型 → 12 种条带几何 → 快照进度 → 渲染端（画进记录 `[4]` 指定的离屏槽）。①**记录表** `Scene+1048`（96 B / 24 dword）：写入端 `0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）逐格照抄引擎的 `sub_4AAE10`，`0x224` 清空；★运行期值另存 `render4.transitionRuntime` —— 引擎就地改 `[1]`/`[3]`，而记录表被写入端守卫**整条 deepEqual**，不能就地改。②**窗口模型** `src/renderer/scene/transition.ts`：首帧锁存 `[1]`、按 clock 算 `t`/`off`、到点杀记录、一遍绘完没有在途转场就清空整表（raw 134867-134871 / 136840-136841）；两个宿主的 `advanceModel` 共用 `scTransitionTick`。③**条带几何** `scTransitionBands`：12 个 case 全部按 raw 134947-135510；`span()` **不归一化**（引擎对 `left > right` 直接丢弃）。④**渲染端**：类别 0（交叉淡化）/类别 2（盲帘）/类别 3（插值模糊，**已披露近似**）都画进记录 `[4]` 的离屏槽（宿主 = `TextureCache.composeIntoSlot`；`[4]` 是**渲染目标层**，语料实证 `src/SC0000.txt:1337-1339`）；`needsRender` 接上第三项（`Scene+46508`，读者 `sub_40BE10` raw 16022）。⑤**类别 0/2 的源** = 记录那两条 item 区间的**离屏子集**（层 36/37 的真身：`for v60<2 { SetTarget(36+v60); Clear; 画该趟区间; }`，raw 136014-136176 / asm `0x4B379C` 起）：`presenter.itemSprite`（唯一一份画法）+ `renderItemSubset` + `pixiBackend.#renderRangeCanvas` + `scTransitionRangeHandles`；旧的「上一帧整屏快照」（`#transOld`）概念已删除。⑥**类别 3 是「参数确证 + 像素已披露近似」**：`scTransitionBlurPlan` 逐条对应 raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`（含 `CenterU/V` 归一化），采样数取引擎 CPU 回退常数 **33**、中心权重 **3**（raw 126180-126183）；**未复刻**引擎 `(2L+1)²` 核（`sub_4A0120`）的逐点权重与 SlideBlur 采样密度 ⇒ 类型/快照/注释三处都带 `approximate` 标记。★**仍未建模（有据缺口，不许沉默）**：(a) 类别 1 `0x24D` —— 语料 0 处 + 规格 §3.5 U2 未确证 ⇒ `analysis/opcode-gaps.json` 记 `deferred`，消费端 = 两趟 item 重绘 + `sub_4A2750([9..12])` 收尾 + `SetRandomFade` 族参数来源；(b) `[4]` 指向**非** `create-texture` 槽的情形（没有画布表面可写）；(c) `Scene+46508`/`46512`/`46516` 三个标志**本身**未建（只把 46508 等价折进 `sceneNeedsRender` 第三项、46512 的「立即收尾」折进窗口模型）；(d) 类别 3 的**源层** —— 引擎显式跳过类别 3 的两趟 item 重绘（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 它模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**（写在代码注释里，不是猜）。★**E4 缺口**：本机没有冷启动就能跑到 `i223`/`i24f` 的路径（试了 178 个含 `i223` 的脚本的前 12 个 × 3000 帧，全部停在等待、零转场；`--load 79` 只到 SN0000，它的 `i250` 在 line 3036 之后）⇒ 这条路的证据目前是 **E3**（真语料 SC0010.BIN 的窗口级断言 `test/transition-corpus-e3.test.ts`）+ E2（`test/sc-transition-window.test.ts`、`test/sc-transition-geometry.test.ts`、`test/transition-render-wiring.test.ts`），像素级真机对照待有可达路径再补。 ★2026-09-24（T-0103 轮 14）新发现的**已知偏差（未登记过）**：**到期那一帧 emulator 不再合成** —— `scTransitionWindow` 在到期帧返回 `active:false`（`transition.ts:126-129`、`scTransitionTick` 585-589）⇒ `scTransitionsPending` 为假 ⇒ 宿主 `present()` 跳过 `#compositeTransitions`（`pixiBackend.ts:1470` + `:1494`）⇒ **记录 `[4]` 收不到 t=1 的终帧**（`rt.channels` 算了但没人用）。引擎在到期帧**仍然渲一遍**（raw 135808-135811 只把通道锁成终值，135824 之后无分支跳过），记录要到帧尾才被 `sub_4A9BE0` 清（raw 136840-136841）⇒ **emulator 比引擎少渲染转场末帧**（`tickets/T-0091` 的剩余项）。 ★2026-09-24 落地（`tickets/T-0091` 的 D2）：到期帧现在**交付终值** —— `scTransitionTick` 返回 `render` 快照（`{id, rec, rt}`，`rt.t = 1` + 终值通道），pixi 宿主把它存进 `#pendingTransitionRender` 交给 `present()` 合成（`#compositeTransitions` 优先用快照、其次查表）；`scTransitionsPending` 仍只算**在窗内**（与引擎\"到期分支不置 46516\"一致 ⇒ 门/`needsRender` 语义不变），交付那一帧靠 tick 置 `scene.dirty` 保证被合成一次。守卫 `test/sc-transition-window.test.ts`（3 例：到期交付 + 只多一帧 + `[13]<0` 立即收尾）与 `test/transition-render-wiring.test.ts`（三条同帧交付+清表）。"
       }
     },
     {
@@ -721,10 +721,10 @@
       "whySilent": "裁剪只是不给该项渲染，表项保留到下帧，无断言",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "按索引区间的绘制范围裁剪未建模"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/transition-render-wiring.test.ts#D3",
+        "note": "按索引区间的绘制范围裁剪未建模 ★2026-09-24（`tickets/T-0091` 的 D3）：本条的\"区间内项不进屏幕 pass\"部分**已实现**（见 `render-merge-two-pass-reorder` 的同日 note）；`Scene+1112/+1116` 那两个字段本身仍未单独建模（emulator 用\"活动转场的区间\"现算等价集合）。"
       }
     },
     {
@@ -752,10 +752,10 @@
       "whySilent": "回置标记只是让项保留，帧末 `Scene+46508` 归 0 时下一帧重来，无报错",
       "confidence": "confirmed",
       "emulator": {
-        "status": "partial",
+        "status": "modeled-verified",
         "evidence": "E2",
-        "guard": "test/draw-item-slot-coverage.test.ts",
-        "note": "四路归并里的 **Live2D 那一路（Scene+1096 的 572B 立绘节点）已接**：节点 key（= 0x344 的 op1）与 DrawItem 的 handle、MeshEntry 的 handle 同键比较、取小先画，等键次序 item→text→mesh→节点（raw 135586-135614）；TITLE 的静态立绘 draw-texture 14 与 L2D 支的 i344 14 占**同一个归并槽**。仍未建模：另一张 572B 节点表（特效/精灵层）与 |0x10000「绘制中」标志回置与两趟重排。"
+        "guard": "test/transition-render-wiring.test.ts#D3",
+        "note": "四路归并里的 **Live2D 那一路（Scene+1096 的 572B 立绘节点）已接**：节点 key（= 0x344 的 op1）与 DrawItem 的 handle、MeshEntry 的 handle 同键比较、取小先画，等键次序 item→text→mesh→节点（raw 135586-135614）；TITLE 的静态立绘 draw-texture 14 与 L2D 支的 i344 14 占**同一个归并槽**。仍未建模：另一张 572B 节点表（特效/精灵层）与 |0x10000「绘制中」标志回置与两趟重排。 ★2026-09-24（T-0103 轮 14）补**可见后果**：缺口（`|0x10000` 与两趟重排未建模）在转场链上的表现 = **区间内的项仍被屏幕 pass 画出** —— 引擎给被画进 36/37 的项置 `bit16`，屏幕 pass 只画 `(flags & 0x10001) == 1`（raw 135580/135595/135609），emulator 全仓**没有** `0x10000` 的处理（`scTransitionRangeHandles` 只在 `#compositeTransitions` 里用于取子集，`pixiBackend.ts:1300`；`renderItemSubset` 只用于离屏画布，`:1201`）⇒ 源项与转场结果**同时**在屏上。本链的记录里展示项恰好是「源项 handle + 2」（101120→101122 之类）且是全屏不透明项 ⇒ 源项被盖住、未必可见；换一条记录就可能露出来（另见 `render-range-clip-by-index`）。 ★2026-09-24 落地（`tickets/T-0091` 的 D3）：**屏幕 pass 的排除集**已实现 —— `scTransitionMarkedHandles`（活动转场的两条区间并集 + tick 交付快照那几条）在 `presenter.present` 里过滤 DrawItem/Mesh/572B 节点（引擎 `(flags & 0x10001) == 1` 的四处判据 raw 136905/136915/136926/136936 与 137210/137220/137252）；守卫 `test/transition-render-wiring.test.ts` 的 D3 例。★仍未复刻：引擎的 `bit16` 是**跨帧粘住**的（填充趟要求 `bit16 == 0`，raw 135580/135595/135609）⇒ 它的 36/37 是**首帧冻结快照**，而 emulator 的 `#renderRangeCanvas` 每帧重渲。"
       }
     },
     {
@@ -834,10 +834,10 @@
       "whySilent": "`46516` 恒非零时表永不清空，转场只是重复执行，无报错",
       "confidence": "confirmed",
       "emulator": {
-        "status": "absent",
-        "evidence": "E0",
-        "guard": "",
-        "note": "★转场表帧尾收尾（sub_4A9BE0）未建模；与 scene-pending-flag 共同决定\"转场是否清空\""
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/sc-transition-window.test.ts#T-0091 G2",
+        "note": "★转场表帧尾收尾（sub_4A9BE0）未建模；与 scene-pending-flag 共同决定\"转场是否清空\" ★2026-09-24 订正（T-0103 轮 14）：原 note 的「未建模」**已过期** —— `scTransitionTick` 实现了清表门 `active.length === 0 && !poolPending()`（`src/renderer/scene/transition.ts:597-607`，`poolPending` 探针由两宿主注入，避开 `ops.ts ↔ transition.ts` 模块环），守卫 `test/sc-transition-window.test.ts` 的「T-0091 G2：转场到期那帧另有 mesh 窗在跑 ⇒ 表不能清」。"
       }
     },
     {
@@ -960,10 +960,10 @@
       "whySilent": "map 为空时循环体不执行，仅置脏标志；无输出",
       "confidence": "confirmed",
       "emulator": {
-        "status": "modeled-unverified",
-        "evidence": "E1",
-        "guard": "test/scene-report.test.ts",
-        "note": "opcode 侧 0x1F6/0x1F7 的整批/区间删除已实现（scClearDrawContainer/scDetachTexture），但没有专门单测"
+        "status": "modeled-verified",
+        "evidence": "E2",
+        "guard": "test/l2d-clear-on-container-ops.test.ts",
+        "note": "opcode 侧 0x1F6/0x1F7 的整批/区间删除已实现（scClearDrawContainer/scDetachTexture），但没有专门单测 ★2026-09-24（T-0103 轮 14，`tickets/T-0144`）：本条的「整批/区间删除已实现」**口径要收窄** —— 引擎 `0x1F6`/`0x1F7` 各擦**四张**表（`Scene+1032`/`+1064`/`+1080`/`+1096`，后者 = **Live2D 572B 立绘节点表**；raw 130699/130764/130765/130766 与 130825-130837/131044/131077），而 emulator 的 `scClearDrawContainer`/`scDetachTexture` 只清 DrawItem + MeshEntry + 消息窗 ⇒ **上一屏的 572B 立绘节点活过拆场**（新游戏路径 TITLE 立绘残留 / 读档路径靠 `save-slot.ts:321` 的补丁遮住）。 ★2026-09-24 落地（`tickets/T-0144` 的 D1）：`scClearDrawContainer`/`scDetachTexture`/`scCopyItem` 现在都按引擎的**四张表**口径动 572B 立绘节点表（`Engine.l2dNodes`，`clearL2dNodes` 统一入口）——整批清 / 按 key 或 `[handle,handle+count)` 擦 / `0x21D` 拷贝；**实例槽不动**。守卫 `test/l2d-clear-on-container-ops.test.ts`（5 例：清/单条/区间/拷贝/空表不假装做事）。E4 判据：新游戏路径的 `[present …] l2d=` 不再是 `节点1`。"
       }
     },
     {
@@ -2911,7 +2911,7 @@
       "emulator": {
         "status": "absent",
         "evidence": "E1",
-        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义见 live 表格 `docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行（`opcode-table.md` 是生成物，真源在 `analysis/opcodes.json`）；实现它需要先在场景模型里加\"每槽粒子效果\"这一层。★`tickets/T-0105` 的订正：`narrative` 原指向 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`（`kind=record` 的历史区，已过期且按文档模型 I8 只增不改）⇒ 改指 live 生成表。"
+        "note": "emulator 完全没有 3D 粒子效果子系统：`0x324`/`0x325`/`0x326` 是 `ENGINE_INTERNAL_OPS` 的纯 no-op，`0x327`/`0x328` 根本没注册（命中即硬报错）。逐条语义见 live 表格 `docs-new/03-engine/opcode-table.md` 的 0x324-0x328 行（`opcode-table.md` 是生成物，真源在 `analysis/opcodes.json`）；实现它需要先在场景模型里加\"每槽粒子效果\"这一层。★`tickets/T-0105` 的订正：`narrative` 原指向 `docs-new/99-records/2026-09-audit/stub-reaudit-2026-09.md`（`kind=record` 的历史区，已过期且按文档模型 I8 只增不改）⇒ 改指 live 生成表。 ★2026-09-24 订正（T-0103 轮 15 的交接链审计）：原 note 的「`0x327`/`0x328` 根本没注册（命中即硬报错）」**已过期** —— `tickets/T-0093` 轮 6 之后它们与 `0x324`/`0x325`/`0x326`/`0x329`/`0x32C`/`0x32E` 一起**已注册为 `ENGINE_INTERNAL_OPS` 的有据 no-op**（`src/vm/handlers/stubs.ts`，`analysis/opcode-gaps.json` 记 `engine-internal`；守卫 `test/opcode-gaps.test.ts` 的「语料用到而未实现的每一条都有登记」）。⇒ 本条的**现状口径**：子系统仍未建模（天气/粒子不出现），但**不会**硬报错；`SETWEATHER` 在本链上只在 `global 4fdb != 0` 时才走到 `0x327`（`src/SETWEATHER.txt:14` 的门）。"
       },
       "narrative": "docs-new/03-engine/opcode-table.md"
     },

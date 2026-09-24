@@ -83,13 +83,26 @@ export interface TransitionBand {
 }
 
 /** `scTransitionTick` 的结果（宿主据此决定"要不要继续合成"）。 */
+/** 一帧要合成进记录 `[4]` 的一条（`rec`/`rt` 是**引用**：表清了它们也还在，宿主可以照它合成）。 */
+export interface TransitionRenderItem {
+  id: number;
+  rec: TransitionRecord;
+  rt: TransitionRuntime;
+}
+
 export interface TransitionTickResult {
-  /** 本帧活动的记录 id（升序）。 */
+  /** 本帧**在窗内**的记录 id（升序）—— 就是"在途"的口径（gate / `needsRender` 用这一份）。 */
   active: number[];
   /** 本帧是否**有记录收尾**（引擎把它的 `[3]` 清 0）。 */
   finishedAny: boolean;
   /** 是否因为"一条都不活动"而清空了整张记录表（引擎 raw 136840-136841）。 */
   cleared: boolean;
+  /**
+   * ★本帧要合成的那一批（含**到期帧的终值交付**；`tickets/T-0091` 的 D2）。
+   * 宿主 `present()` 必须用**这一份**（而不是重查表）：到期帧按引擎会**同帧清表**，
+   * 重查就再也拿不到 `t=1` 的那一帧。
+   */
+  render: TransitionRenderItem[];
 }
 
 const CAT_FADE = 0;
@@ -393,16 +406,30 @@ function blurChannels(rec: TransitionRecord, t: number, finished: boolean): [num
  * **类别 3（插值模糊）的画法参数** —— 引擎 raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`
  * 逐条对应；`ZoomBlur` 的 `CenterU/CenterV` 是**像素 / 目标层尺寸**的归一化值（raw 135846 / 135850）。
  *
- * ★**已披露偏差（不许静默）**：`approximate` 恒真 —— emulator 没有 D3DX effect，也没有引擎那条
- * 逐像素 CPU 卷积（`sub_4A62A0` + `sub_4A0120` 造 `(2L+1)²` 线核/径向核，要锁 D3D surface 逐点算）。
- * 我们按**同一组参数语义**做累积模糊：采样数取引擎 CPU 回退里的常数（`(int)(16+16+1) = 33`），
- * 径向的步长取引擎的 `Length / (|center| * 16)`（`dbl_51D7E8 = 16.0`）。
- * **未复刻**：SlideBlur 的核宽在引擎里是 `2L+1`（AIM 的 `L` 可达 100 ⇒ 201 采样），这里按**同样的总长度**
- * 用 33 个采样均分 ⇒ 采样密度是偏差。
- * **仍未确证**（见 `transition-render-spec-2026-09.md` §7 的 U3/U4）：引擎读的 `Tex0` 是**层 36**的纹理
- * （raw 135883；★`Scene+42600` 就是层 36 —— 层表基址 42456 + 4×36），而层 36 只在**类别 0/1 的
- * item 重绘**（raw 136014-136176，被 `Scene+46668 < 2` 门住）里被填、且那段在类别 3 之后 ⇒
- * emulator 取**本帧屏幕合成**当源。
+ * ★**偏差披露（2026-09-24 按 `tickets/T-0091` 的 D4 收口成一份口径，不再"两种说法并存"）**：
+ *
+ * **① 核的偏差（已知、有据、不打算在本轮复刻）**：emulator 没有 D3DX effect；引擎另外还有一条
+ * **CPU 回退**卷积，本轮的体读（`sub_4A0120` raw 120773 起）把它钉成：
+ * ```
+ * 采样格 = a2×a2 的**旋转方格**（a2 = 33 ⇒ 中心 ±16 px；旋转角由 `a3 * dbl_526C98 / dbl_5263F0` 定，
+ *          即"度 → 弧度"），每个采样点带**亚像素权重**（体里用 `v20 - (int)v20` / `v21 - (int)v21` 做双线性）
+ * 权重   = 两档：`a1 == 0` ⇒ 全 1，**只有中心那一格是 3**（`if (!a1) v53[v8*(a2+1)] = 3;`）
+ *                   `a1 != 0` ⇒ 沿一行的**三角斜坡**（`v13 = v11`，`v11 > v8+1` 之后取 0）
+ * ```
+ * ⇒ emulator 的模型是「33 个采样沿一条轴（slide 的 Angle / zoom 的径）累积 + 中心权重 3」，
+ * **把 2D 旋转方格降成了 1D 采样、且只实现了 `a1 == 0` 那一档权重**。★**不复刻的理由**：这条 CPU 回退
+ * 要 33×33 = **1089** 次全屏采样/帧（现实现 33 次）；而在**有 effect 的机器上**引擎走的是 D3DX 的
+ * `ZoomBlur`/`SlideBlur` 着色器（raw 135837-135860），其 shader 内容不在二进制里可读 ⇒ 即使把 CPU
+ * 回退逐点复刻，也**仍不是**真机（有 effect 时）的像素。⇒ 决策：保持参数语义 1:1、核按 1D 降级，
+ * 并把它作为**已披露偏差**（`approximate: true` + 本段文字 + 台账 `clock-read-transition-window`）。
+ *
+ * **② 源的决策（不再是"未确证"）**：引擎把 `Tex0` 设成**层 36 的纹理**（raw 135883-135884，
+ * `Scene+42600` = 层表 42456 + 4×36），而类别 3 的体**明确跳过**那两趟 item 重绘
+ * （asm `0x4B3187: cmp eax,3 / jnz loc_4B379C`，即 `[13] == 3` 时不走 `for v60<2` 的填充），
+ * 且它在本帧**刚把层 36 清过**（raw 135824-135825 的 `SetTarget(36)` + `Clear`）⇒ 逐字读体得到的
+ * 结论是"模糊一张空/陈旧的 scratch"，这与真机可观测量（用户口径：真机能看见云柱背景被横向模糊）
+ * **矛盾**。⇒ 决策：**保留"取本帧屏幕合成当源"**（`pixiBackend.ts` 的 `#compositeTransitions`），
+ * 并在台账里登记为**有意的改正 + 待真机像素对照**（`tickets/T-0091` 的 U3；`T-0103` 轮 15 的 D4）。
  */
 export interface TransitionBlurPlan {
   /** `[13]`：`1` = ZoomBlur（径向）/ 其余（含 0）= SlideBlur（角度）。 */
@@ -424,9 +451,27 @@ export interface TransitionBlurPlan {
   centerV: number;
   /** 采样数（= 引擎 CPU 回退的 33；见上）。 */
   samples: number;
-  /** ★恒 `true`：像素是**按参数语义的累积近似**（核权重未逐点复刻）。 */
+  /** ★恒 `true`：**核**是降级近似（引擎 CPU 回退的 33×33 旋转方格 + 双线性未复刻，
+   * 见 `TransitionBlurPlan` 的偏差披露 ①）；**源**不是近似（是有意改正，见披露 ②）。 */
   approximate: true;
 }
+
+/**
+ * 引擎 CPU 回退的模糊核事实（`sub_4A0120` raw 120773 起）—— 只作为**披露与判据**存在，
+ * 不复刻（理由见 `TransitionBlurPlan` 的披露 ①：1089 采样/帧不可行，且真机有 effect 时走的是 shader）。
+ * 常量口径：`a2 = 33`（= `(int)(16+16+1)`，raw 126180-126183 的 `dbl_51D7E8 = 16.0`）；
+ * `a1 == 0` 时中心权重 3、其余 1；`a1 != 0` 时沿一行为三角斜坡。
+ */
+export const TRANSITION_BLUR_KERNEL = {
+  /** 方格边长（33 ⇒ 中心 ±16 px）。 */
+  grid: 33,
+  /** `a1 == 0` 档：平坦权重的值。 */
+  flatWeight: 1,
+  /** `a1 == 0` 档：中心那一格的权重（`if (!a1) v53[v8*(a2+1)] = 3;`）。 */
+  centerWeight: 3,
+  /** 旋转角的单位换算（`dbl_526C98 / dbl_5263F0` = 弧度/度）。 */
+  radiansPerDegree: Math.PI / 180,
+} as const;
 
 /** 模糊采样数：引擎 CPU 回退 `HIDWORD(v68) = (int)(dbl_51D7E8 + dbl_51D7E8 + 1.0)` = 33（`16+16+1`）。 */
 export const TRANSITION_BLUR_SAMPLES = 33;
@@ -566,7 +611,10 @@ export function scTransitionTick(
   poolPending: () => boolean = () => false,
 ): TransitionTickResult {
   const r4 = s.render4;
+  /** 在窗内（= "在途"，gate/`needsRender` 的口径；到期帧**不算**，与引擎"到期分支不置 `46516`"一致）。 */
   const active: number[] = [];
+  /** 本帧要合成进记录 `[4]` 的那一批（含**到期帧的终值交付**；`tickets/T-0091` 的 D2）。 */
+  const render: TransitionRenderItem[] = [];
   let finishedAny = false;
   for (const [id, rec] of r4.transitions) {
     let rt = r4.transitionRuntime.get(id);
@@ -579,20 +627,29 @@ export function scTransitionTick(
     // 旧：scTransitionWindow(rec, clock, rt.start, false)（`T-0084` 的硬编码第 4 参 =
     //   `T-0091` evidence 锚点 `rt.start, false`；G1 起改传 `freeze`）。
     const w = scTransitionWindow(rec, clock, rt.start, freeze);
-    rt.active = w.active;
-    rt.finished = w.finished;
-    rt.t = w.t;
     if (!w.active) {
-      finishedAny = true;
-      // 到期那一帧类别 3 仍要算出四通道（raw 135806-135812 用终值）
+      // ★到期帧（`tickets/T-0091` 的 D2）：引擎**不跳过渲染** —— 四通道锁成终值（raw 135808-135811）后
+      //   仍走 36→`[4]`，而记录要到**帧尾**才被 `sub_4A9BE0` 清（raw 136840-136841）。
+      //   emulator 的合成在 `present()` 里、晚于本 tick ⇒ **不能只靠"表还在"来决定要不要合成**
+      //   （否则同帧清表会让 `[4]` 永远收不到 t=1）。⇒ 这里把这一帧要画的东西**做成快照交出去**
+      //   （`render`），宿主 `present()` 用它合成；表该清就照引擎清。
+      rt.active = false;
+      rt.finished = true;
+      rt.t = w.t;
       rt.channels = blurChannels(rec, 1, true);
+      finishedAny = true;
+      render.push({ id, rec, rt });
       continue;
     }
+    rt.active = true;
+    rt.finished = w.finished;
+    rt.t = w.t;
     const cat = at(rec, 0);
     if (cat === CAT_BLUR) {
       rt.channels = blurChannels(rec, w.t, false);
     }
     active.push(id);
+    render.push({ id, rec, rt });
   }
   let cleared = false;
   if (r4.transitions.size > 0 && active.length === 0 && !poolPending()) {
@@ -601,11 +658,15 @@ export function scTransitionTick(
     //   （绘制项 raw 117844 / mesh raw 133528 / 离屏槽 raw 136695·136701 都置它）
     //   ⇒ 转场到期那帧另有 mesh/绘制项窗在跑时**必须保留**死记录（`T-0091` G2 的守卫就是这样判别的）。
     //   不清的话下一次同 id 写入会带着上一轮的 `transitionRuntime`（起点还是老的）。
+    //   ★清表**不影响**本帧的 `render` 快照：宿主已经拿到 `{id, rec, rt}` 的引用（`rt` 只是从表里摘掉）。
     r4.transitions.clear();
     r4.transitionRuntime.clear();
     cleared = true;
   }
-  return { active, finishedAny, cleared };
+  // ★交付过终值的那一帧必须**再合成一次**：`scTransitionsPending` 在到期帧是假（与引擎一致），
+  //   所以靠"置脏"让 `needsRender`/驱动把这一帧画出去（画完由 present/snapshot 消费掉这次脏）。
+  if (finishedAny && render.length > 0) s.dirty = true;
+  return { active, finishedAny, cleared, render };
 }
 
 /** 本帧是否有活动转场（`sceneNeedsRender` 的第三项；引擎 `Scene+46508` / `sub_40BE10` raw 16022）。 */
@@ -615,8 +676,7 @@ export function scTransitionsPending(s: SceneState): boolean {
 }
 
 /** 本帧活动的转场（**按 id 升序** —— 引擎按 `std::map` 键升序遍历，raw 134856-134860 + 136710）。 */
-export function scActiveTransitions(
-  s: SceneState,
+export function scActiveTransitions(  s: SceneState,
 ): { id: number; rec: TransitionRecord; rt: TransitionRuntime }[] {
   const out: { id: number; rec: TransitionRecord; rt: TransitionRuntime }[] = [];
   for (const [id, rec] of s.render4.transitions) {
@@ -701,4 +761,40 @@ export function scTransitionRangeRects(s: SceneState, rec: TransitionRecord): Tr
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   };
   return { a: box(a), b: box(b), countA: a.size, countB: b.size };
+}
+
+/**
+ * ★**本帧要从屏幕 pass 里排除的项**（`tickets/T-0091` 的 D3）—— 引擎的 `|0x10000`「已画进 scratch」标记。
+ *
+ * 引擎依据（这一条是本轮逐点核出来的，直接决定"转场期间屏上到底有没有原图"）：
+ * - **打标记**：被画进 36/37 的那两组项，每画一个就 `*node |= 0x10000u`
+ *   （raw 135766/135772/135798、135988/135995/136003、136294-136309、136367、136430、136489、136649-136669）；
+ * - **屏幕 pass 读标记**：四路归并里每一项画之前都判 `(flags & 0x10001) == 1`（= **bit0 存在位 且 bit16 未置**）
+ *   —— raw 136905 / 136915 / 136926 / 136936（`sub_4B4040`，主帧提交）与 137210 / 137220 / 137252（`0x222` 路径）；
+ * - **画完就清**：同一批判断里紧跟 `*node &= ~0x10000u`（raw 136908/136918/136929/136939、137213/137224/137255）。
+ * ⇒ **被转场占用（画进 36/37）的项在屏上不出现**，玩家看到的是通过记录 `[4]` 那个槽呈现的合成结果。
+ *
+ * emulator 的等价物 = 把「本帧活动转场的两条区间」并起来当排除集（标记/清标记都不必落库：
+ * `present()` 每帧现算，转场一结束排除集自然为空 ⇒ 项立刻回到屏上；引擎那侧靠"画完清 bit"达到同一效果）。
+ *
+ * ★**已知未复刻的细节（如实登记，不许当已做）**：引擎的填充趟要求 `bit16 == 0`（raw 135580/135595/135609…），
+ * 所以第 2 帧起那两组项**不再被重画进 36/37** ⇒ 引擎的 36/37 是**首帧冻结快照**；emulator 的
+ * `#renderRangeCanvas` 是**每帧重渲**（`#rangeCache` 逐帧清）。⇒ 转场期间"被转场覆盖的内容会不会跟着动"
+ * 这一条两边可能不同；归 `tickets/T-0091`（与本条的排除集分开记）。
+ */
+export function scTransitionMarkedHandles(s: SceneState, extra?: readonly TransitionRenderItem[]): Set<number> {
+  const out = new Set<number>();
+  for (const { rec } of scActiveTransitions(s)) {
+    const { a, b } = scTransitionRangeHandles(s, rec);
+    for (const h of a) out.add(h);
+    for (const h of b) out.add(h);
+  }
+  // ★`extra` = tick 的 `render` 快照里那几条（含**到期帧**：引擎在到期帧仍走转场遍 ⇒ 同样要排除；
+  //   而 emulator 的表在那一帧就被清了，光查表就漏掉这一帧的排除）。
+  for (const { rec } of extra ?? []) {
+    const { a, b } = scTransitionRangeHandles(s, rec);
+    for (const h of a) out.add(h);
+    for (const h of b) out.add(h);
+  }
+  return out;
 }

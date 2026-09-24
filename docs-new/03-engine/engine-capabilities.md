@@ -20,12 +20,12 @@ generated_by: scripts/build-capabilities.mjs
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 58 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 7 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 32 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 19 | 引擎有、emulator 完全没有 |
+| `modeled-verified` | 62 | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 17 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 23 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **139** | 需要关注（非 n/a 且非已核验）= **58** |
+| **合计** | **139** | 需要关注（非 n/a 且非已核验）= **54** |
 
 ## 按子系统
 
@@ -37,9 +37,9 @@ generated_by: scripts/build-capabilities.mjs
 | 存档槽 | 2 | 0 |
 | 帧循环 | 17 | 8 |
 | 消息窗 | 30 | 18 |
-| 渲染 | 30 | 13 |
+| 渲染 | 30 | 11 |
 | 资源 | 18 | 4 |
-| 转场 | 4 | 2 |
+| 转场 | 4 | 1 |
 | 输入 | 7 | 0 |
 
 ## 全部条目
@@ -71,16 +71,16 @@ generated_by: scripts/build-capabilities.mjs
 | `clock-read-drawitem-5-windows` | 渲染 | DrawItem 5 窗动画驱动（透明度 / 旋转×2 / 轴角 / UV） | ✅ 已核验 | E3 · `test/draw-item-anim-window.test.ts` |
 | `clock-read-meshentry-color-window` | 渲染 | MeshEntry 颜色/α 动画窗 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
 | `clock-read-transition-window` | 转场 | 转场窗口进度与扫描带绘制 | ✅ 已核验 | E3 · `test/transition-corpus-e3.test.ts` |
-| `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ❌ 缺失 | E0 |
-| `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | 🟠 部分 | E2 · `test/draw-item-slot-coverage.test.ts` |
+| `render-range-clip-by-index` | 渲染 | 按索引区间的绘制范围裁剪 | ✅ 已核验 | E2 · `test/transition-render-wiring.test.ts#D3` |
+| `render-merge-two-pass-reorder` | 渲染 | 四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置 | ✅ 已核验 | E2 · `test/transition-render-wiring.test.ts#D3` |
 | `render-3d-layer-dual-commit` | 3D | 3D 层对偶逐帧提交 | ❌ 缺失 | E1 |
 | `render-endscene-and-2d-stack` | 渲染 | 2D 矩阵栈 Begin/End 配对与 EndScene | ➖ n/a | E1 |
-| `transition-table-flush` | 转场 | 转场表帧尾收尾（sub_4A9BE0） | ❌ 缺失 | E0 |
+| `transition-table-flush` | 转场 | 转场表帧尾收尾（sub_4A9BE0） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts#T-0091 G2` |
 | `lazy-effect-200-201-release` | 3D | 2D/3D effect 槽（46480 起 5 槽）的批量释放 | ➖ n/a | E1 |
 | `renderer-state-reset-each-frame` | 渲染 | 渲染态重置（sub_498B60） | ➖ n/a | E1 |
 | `audio-device-init` | 声音 | DirectSound 设备/对象重建 | 🟠 部分 | E2 · `test/audio-engine.test.ts` |
 | `movie-object-lifecycle` | 帧循环 | 电影对象帧内生命周期 | ❌ 缺失 | E0 |
-| `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | 🟡 已建模未核验 | E1 · `test/scene-report.test.ts` |
+| `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | ✅ 已核验 | E2 · `test/l2d-clear-on-container-ops.test.ts` |
 | `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ❌ 缺失 | E0 |
 | `script-frame-refresh-opcode-20c` | 帧循环 | opcode 0x20C 脚本帧刷新并提交 | ✅ 已核验 | E2 · `test/engine-config.test.ts` |
 | `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ✅ 已核验 | E3 · `test/l2d-render-pending.test.ts` |
@@ -111,16 +111,16 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-scene-effect-release-gap` | 3D | Scene+46492 / +46496 两张 effect 的释放缺口 | ➖ n/a | E1 |
 | `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | 🟠 部分 | E1 |
 | `chained-3d-layer-commit` | 3D | 572B「立绘 / 变换节点」层的归并与提交（原被误标为「3D 场景层」） | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
-| `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-text-object` | 消息窗 | 文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
-| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts` |
+| `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV` |
+| `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#ADV 每帧服务：未显示完判定成立时清掉 ADV` |
+| `adv-text-reveal-progress` | 消息窗 | 消息文本显示进度判定（ReadTextSkip 门 + 分段表查表） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x1CA SetConfig(message:ReadTextSkip)：运行期覆盖门控生效` |
+| `msgwin-text-object` | 消息窗 | 文本对象（Engine+85296，dword 写法 Engine[21324]）的槽模型与排版入队 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x6E show-text / 0x6F end-text-line / 0x196 display-furigana：文本内容按槽记录` |
+| `adv-input-pump-perframe` | 输入 | ADV 每帧输入泵与「跳读中」掩码位 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#0xFA poll-msg-advance 已注册且不抛错` |
+| `msgwin-object-table` | 消息窗 | 消息窗对象表与布局重算（Engine[21585+idx]） | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#消息窗对象表：0x212 / 0x213 / 0x25D 写同一对象的三个字段组` |
+| `msgwin-cancel-key-state` | 消息窗 | 「取消消息键」三态机（Engine+122370）与 ReadTextSkip 的运行期开关 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#set:CancelMesSkipOnClick 下按住 ⇒ 三态机进 stage2` |
+| `adv-advance-opcodes` | 消息窗 | ADV 推进指令族（0x6E / 0x72 / 0xFA / 0x1CA）—— 属**指令集**，非每帧行为 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#★0x72 wait-for-input：结束一页并置等待推进门` |
+| `msgwin-text-method-opcodes` | 消息窗 | 文本子系统方法转发指令族（约 25 条）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#★重跑 0x72（悬停 ret 回到门指令）不得重启已显完的逐字显现` |
+| `msgwin-attr-font-opcodes` | 消息窗 | 文本属性 / 描边 / 字体 / 注音指令族（0x75/0x76/0x77/0x78/0x81/0x8B/0x1A4/0x197/0x1A5/0x2BD/0x2BE/0x2DB/0x2FE/0x196 等）—— 属**指令集** | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x2DE = 字体名 → 字体表下标` |
 | `adv-advance-route-table` | 消息窗 | 点击热点 / 路由表（Engine+0x55D8）与「推进」的真实判据 | 🟠 部分 | E3 · `test/route-dispatch.test.ts` |
 | `msgwin-config-gates` | 消息窗 | 消息/ADV 路径上的配置门与「当前走不到的分支」 | 🟠 部分 | E3 · `test/config1-chain.test.ts` |
 | `msgwin-config-read-opcodes` | 消息窗 | 配置回读指令族（0xC5/0xC7/0x1B8/0x2CC/0x2E6/0x2EA/0x194/0x1CB）—— 属**指令集** | ✅ 已核验 | E2 · `test/config-read.test.ts` |
@@ -154,7 +154,7 @@ generated_by: scripts/build-capabilities.mjs
 | `gfx-prim-mesh-and-render-state` | 渲染 | A4：图元变换 / 槽→槽 blit / 呈现清屏 / 转场表 / 绘制模式 / DrawItem·MeshEntry 属性 / 3D 颜色（13 条） | 🟠 部分 | E3 · `test/op-a4-a6.test.ts` |
 | `single-field-timers-audio-device` | 帧循环 | A5：单行字段写 / 秒计时器 / 消息面 / 音频设备（9 条） | ✅ 已核验 | E2 · `test/op-a5.test.ts` |
 | `hover-ret-reruns-gate-op` | 输入 | 悬停/点击 label 的返回点 = 门指令（ret 回到门指令重跑） | ✅ 已核验 | E3 · `test/game-start-chain.test.ts` |
-| `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts` |
+| `text-reveal-pump-409400` | 帧循环 | 逐字显现泵：sub_409400 自旋 + sub_45BE20 一次一个字 + message:MessageSpeed 节拍（每字毫秒） | ✅ 已核验 | E3 · `test/adv-msgwin.test.ts#★逐字显现速度定律：MessageSpeed = **每字**毫秒` |
 | `save-slot-chain` | 资源 | 存档槽链路：SAVE%2.2d.DAT（0x19E 存 / 0x1A1 读 / 0x1A0 读头 / 0x19F 短读 / 0x1AB 删 / 0x1AC 复制）与 .STH 状态块（0x1AE/0x1AF） | ✅ 已核验 | E4 · `test/save-slot-chain.test.ts` |
 | `input-wheel-two-accumulators` | 输入 | 两个滚轮累加器：竖直（WM_MOUSEWHEEL）与水平（WM_MOUSEHWHEEL）各自独立、各自一次性消费 | ✅ 已核验 | E2 · `test/wheel.test.ts` |
 | `text-aa-config-gate` | 消息窗 | 文本抗锯齿是一把配置门：只有 set:EnableAntiFont 为真才读 message:UseAntiFont 写 Font+1352 | 🟠 部分 | E2 · `test/text-aa.test.ts` |
@@ -260,24 +260,6 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+369332, Engine+369336, Engine+107438
 - **emulator 现状**：时钟已是单一时间域 —— 驱动每帧读 host.now() 写进 Engine.nowMs，宿主（pixi）经 advanceModel(nowMs) 接收，不再自己算 performance.now()-wallStart（旧 note 里的『present 用墙钟』已过期）。守卫 test/frame-loop.test.ts（每帧时钟前进/冻结档）+ test/frame-digest.te…
 
-### `render-range-clip-by-index`（absent）
-
-- **能力**：按索引区间的绘制范围裁剪
-- **触发**：绘制项 key（`v384[5]`）落在 `[Scene+1112, Scene+1112+Scene+1116)` 之外
-- **缺失时为什么静默**：裁剪只是不给该项渲染，表项保留到下帧，无断言
-- **引擎**：sub_4B06D0 @ raw 134872-134882
-- **读的字段**：Scene+1112, Scene+1116
-- **emulator 现状**：按索引区间的绘制范围裁剪未建模
-
-### `render-merge-two-pass-reorder`（partial）
-
-- **能力**：四路归并（DrawItem/MeshEntry/两 572B 节点）与 |0x10000 回置
-- **触发**：每帧 `sub_4B06D0` 被调用；四张 map 内 key 落在时间/序窗外的项被打 `|0x10000` 留下
-- **缺失时为什么静默**：回置标记只是让项保留，帧末 `Scene+46508` 归 0 时下一帧重来，无报错
-- **引擎**：sub_4B06D0, sub_4B0360, sub_4AAD40, sub_40DC30, sub_4AAEC0 @ raw 136361-136718
-- **读的字段**：Scene+1032, Scene+1064, Scene+1080, Scene+1096, Scene+46500
-- **emulator 现状**：四路归并里的 Live2D 那一路（Scene+1096 的 572B 立绘节点）已接：节点 key（= 0x344 的 op1）与 DrawItem 的 handle、MeshEntry 的 handle 同键比较、取小先画，等键次序 item→text→mesh→节点（raw 135586-135614）；TITLE 的静态立绘 draw-texture 14 与 L2D 支的 i344 14…
-
 ### `render-3d-layer-dual-commit`（absent）
 
 - **能力**：3D 层对偶逐帧提交
@@ -286,15 +268,6 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_4B4460 @ raw 136969-137427
 - **读的字段**：Scene+46508, Scene+46516, Scene+46512, Scene+1860, Scene+46456
 - **emulator 现状**：该对象 sub_4B4460 就是 opcode 0x222（handler sub_423EC0，dispatch 表 678180）的体；emulator 三张表都没有 0x222 ⇒ 语料 i222 10 处（SETPOLYGON/INFOxx）命中即 NotImplementedOp。原先标 n/a-known 掩盖了缺口；待补实现（T-0076）。
-
-### `transition-table-flush`（absent）
-
-- **能力**：转场表帧尾收尾（sub_4A9BE0）
-- **触发**：`Scene+46516 == 0` 时每帧帧尾清空 `Scene+1048`
-- **缺失时为什么静默**：`46516` 恒非零时表永不清空，转场只是重复执行，无报错
-- **引擎**：sub_4A9BE0, sub_4AA180 @ raw 129283-129302
-- **读的字段**：Scene+1048, Scene+46516
-- **emulator 现状**：转场表帧尾收尾（sub_4A9BE0）未建模；与 scene-pending-flag 共同决定"转场是否清空"
 
 ### `audio-device-init`（partial）
 

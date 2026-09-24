@@ -107,6 +107,7 @@ import {
   scRelease3DSlot,
   scSet3DColor,
   type SceneState,
+  type TransitionRenderItem,
 } from './sceneModel.js';
 import type { L2dHost } from '../live2d/runtime.js';
 import { setupPixiStage } from './pixi/appSetup.js';
@@ -229,6 +230,16 @@ export class PixiBackend implements NativeBridge {
    * 一帧内同一组项只渲染一次（多个记录可能指同一组），`present` 开头清空。
    */
   #rangeCache = new Map<string, { canvas: HTMLCanvasElement | null; drawn: number }>();
+
+  /**
+   * **本帧要合成进记录 `[4]` 的那一批**（`advanceModel` 里 `scTransitionTick` 的 `render` 快照）。
+   *
+   * ★为什么不能用"查表"代替（`tickets/T-0091` 的 D2）：引擎在**到期帧**仍要渲一遍终值
+   * （raw 135808-135811 只把四通道锁成终值，之后仍走 36→`[4]`），而记录在**同帧帧尾**就被
+   * `sub_4A9BE0` 清掉（raw 136840-136841）⇒ 只查表就永远拿不到 `t=1` 那一帧。
+   * `present()` 消费后清空（每帧一份）。
+   */
+  #pendingTransitionRender: TransitionRenderItem[] = [];
 
   static async create(
     status: RenderStatus,
@@ -808,10 +819,12 @@ export class PixiBackend implements NativeBridge {
     if (droppedCurtain) this.#holdFrameAfterCurtainDrop(handle);
     // ★被删区间与某窗登记的 DrawItem 区间相交 ⇒ 该窗的字也消失（转场清 ADV 文字，见 scDetachTexture）
     const wins = r.clearedWins.length > 0 ? ` 文本窗清=${r.clearedWins.join(',')}` : '';
+    // ★572B 立绘节点表也在删除范围内（引擎 `0x1F7` 擦四张表；`tickets/T-0144`）
+    const nodes = r.nodes > 0 ? `, l2dNodes=${r.nodes}` : '';
     if (count <= 1) {
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes})${wins}`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} REMOVE (drawItems=${r.drawItems}, meshes=${r.meshes}${nodes})${wins}`);
     } else {
-      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes})${wins}`);
+      this.#pushLog(`detachTexture h=0x${handle.toString(16)} count=${count} RANGE-REMOVE [0x${handle.toString(16)},0x${(handle + count).toString(16)}) (drawItems=${r.drawItems}, meshes=${r.meshes}${nodes})${wins}`);
     }
   }
 
@@ -957,7 +970,7 @@ export class PixiBackend implements NativeBridge {
     if (r.copied) this.#releaseFrameHold('CopyScene');
     this.#pushLog(
       `CopyScene 0x${srcHandle.toString(16)} → 0x${dstHandle.toString(16)}` +
-        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh}）` : '【源不存在】'),
+        (r.copied ? `（drawItem=${r.drawItem} mesh=${r.mesh} l2dNode=${r.node}）` : '【源不存在】'),
     );
     return r.copied;
   }
@@ -1075,7 +1088,7 @@ export class PixiBackend implements NativeBridge {
     this.#holdFrames = Math.max(this.#holdFrames, HOLD_MAX_FRAMES);
     this.#pushLog(`[frame-hold] clearDrawContainer → 继续留帧（最多 ${HOLD_MAX_FRAMES} 帧，等新内容）`);
     this.#markDirty();
-    this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} 文本窗=${wins}→0（保留纹理槽）`);
+    this.#pushLog(`clearDrawContainer: 释放 drawItems=${r.drawItems} meshes=${r.meshes} l2dNodes=${r.nodes} 文本窗=${wins}→0（保留纹理槽）`);
   }
 
   /** `0x32B`（sub_41A4A0）：清网格槽表（引擎逐项 delete；emulator = 清 `scene.meshes`）。 */
@@ -1236,7 +1249,13 @@ export class PixiBackend implements NativeBridge {
    * （规格 §3.5 的 U2）⇒ 如实跳过，登记在缺口台账（`analysis/opcode-gaps.json`）+ 票据 `T-0084`。
    */
   #compositeTransitions(): void {
-    const act = scActiveTransitions(this.scene);
+    // ★D2（`tickets/T-0091`）：优先用 `advanceModel` 里 tick 交下来的 `render` 快照（含**到期帧**的终值；
+    //   那一帧记录表可能已被同帧清掉）。没有快照时（测试直接调 `present`、或宿主没跑 advanceModel）
+    //   退回"查表"这一条老路。
+    const act = this.#pendingTransitionRender.length > 0
+      ? this.#pendingTransitionRender
+      : scActiveTransitions(this.scene);
+    this.#pendingTransitionRender = [];
     if (act.length === 0) return;
     const sw = Math.max(1, this.app.screen.width);
     const sh = Math.max(1, this.app.screen.height);
@@ -1397,7 +1416,10 @@ export class PixiBackend implements NativeBridge {
     //   在 `#compositeTransitions` 里按需渲染（见 `#rangeCache`）。
     //   ★`freeze`（G1）+ `poolPending` 探针（G2，清表门 = 全场景 `Scene+46516`，raw 136840/137181）：
     //     两个都与 headless 宿主同一份形参（探针在 `scAdvance` 之后求值，与引擎同序）。
-    scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
+    //   ★D2（`tickets/T-0091`）：**把 tick 的 `render` 快照存下来**给本帧 `present()` 用 ——
+    //     到期帧按引擎会**同帧清表**（`active` 为空 ⇒ 清），重查表就再也拿不到 `t=1` 的终帧。
+    const tick = scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
+    this.#pendingTransitionRender = tick.render;
     // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
     const drawn = scL2dTick(this.scene, nowMs);
@@ -1467,7 +1489,9 @@ export class PixiBackend implements NativeBridge {
   present(nowMs?: number, waitFlags = 0): void {
     // ★转场窗内**不许被留帧早退**：留帧是"屏上保留上一帧"的近似，而转场正是"这一帧要画东西"
     //   （引擎的 `Scene+46508` 在转场期间恒为脏，raw 136718-136719）⇒ 早退会让条带/淡入淡出只画一帧。
-    const transPending = scTransitionsPending(this.scene);
+    //   ★D2（`tickets/T-0091`）：到期帧 `scTransitionsPending` 已为假（与引擎"到期分支不置 46516"一致），
+    //   但本帧**仍要把终值合成进 `[4]`** ⇒ 判据还要看 tick 交给我们的 `render` 快照。
+    const transPending = scTransitionsPending(this.scene) || this.#pendingTransitionRender.length > 0;
     // 撤幕留帧：见 `#holdFrameAfterCurtainDrop`（不动舞台 ⇒ 屏上保留上一帧）
     if (this.#holdFrames > 0 && !transPending) {
       this.#holdFrames--;
@@ -1487,7 +1511,7 @@ export class PixiBackend implements NativeBridge {
     // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），
     //   所以它画在最上层（层序给一个大值）。见 `MsgCellFrame`。
     const cellSprites = this.#cellSprites();
-    this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites]);
+    this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites], this.#pendingTransitionRender);
     // ★转场：把"旧帧 → 新帧"的合成结果画进记录 `[4]` 指定的那个**离屏槽**（引擎 `sub_4B06D0` 的
     //   `sub_4A50C0(_this, v384[4])` + `Clear` + 条带/淡入淡出，raw 136174 / 134937 / 135824）。
     //   放在 `presenter.present` 之后：此刻 stage 上就是本帧合成结果 = 引擎的"新"屏幕层。

@@ -360,7 +360,18 @@ test('E3：启动 → Game Start → ゲーム開始 → SN0000 首文案（SN00
   //   是**脚本结构**的事实，登记在脚本台账 `docs-new/05-scripts/SN0000.md`（`i304/i305` 文本块 + 3×show-text）。
   assert.ok(r.pageText.split('\n').length >= 1, `首句那一刻至少有 1 行文本；实际 ${JSON.stringify(r.pageText)}`);
   assert.ok(r.scene.drawable > 0, `场景应有可绘制项，实际 ${r.scene.drawable}/${r.scene.drawItems}`);
-  // ④ 路径上**零**未实现 opcode（throw 策略 ⇒ 有缺口会直接抛）
+  // ④ ★**T-0144 的 D1（真语料 E3）**：TITLE 退场例程里的 `i1f6`（`src/TITLE.txt:810`，由 `:822` 调）
+  //    必须把 **572B 立绘节点表**一起擦掉（引擎 `0x1F6` 清四张表，raw 130766 = `Scene+1096`）。
+  //    实测症状：不清的话 TITLE 的节点（key `0x14`，`TITLE.txt:590`）会活到 SN0000/SC0000，
+  //    并在"本该黑"的章节切换处露出来（用户口径：本该是黑却是 TITLE 的 Live2D）。
+  //    ★实例槽**不许**被拆场清掉（引擎的 0x1F6 只清两张 map；清槽是 0x342 / 读档装载段的事）。
+  assert.equal(
+    r.scene.l2d.nodes,
+    0,
+    `★T-0144：走到 SN0000 时 TITLE 的立绘节点必须已被 i1f6 擦掉；实际 ${r.scene.l2d.nodes}`,
+  );
+  assert.ok(r.scene.l2d.slots >= 1, `★实例槽保留（拆场不清槽）；实际 ${r.scene.l2d.slots}`);
+  // ⑤ 路径上**零**未实现 opcode（throw 策略 ⇒ 有缺口会直接抛）
   assert.deepEqual(r.unknown, [], '这条路径上不应有未实现 opcode');
   // ⑤ ★默认（不传外置选项）= 真游戏行为：cold boot **会**经过 LOGO/版权页。
   //    `boot.showLogo=false`（`emulator.config.json`）才能跳过它 —— 见 test/emulator-options.test.ts。

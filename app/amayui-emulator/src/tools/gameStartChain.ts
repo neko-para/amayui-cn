@@ -131,6 +131,12 @@ export interface GameStartResult {
     msgWins: { win: number; text: string; rect: { x: number; y: number; w: number; h: number }; vertical: boolean; mainSize: number }[];
     texSlots: number;
     /**
+     * ★`tickets/T-0144`（D1）：L2D 运行态计数。
+     * 拆场（`0x1F6`/`0x1F7`）只该清 **572B 立绘节点表**（`nodes`）⇒ 走到 SN0000 时 `nodes === 0`；
+     * **实例槽**（`slots`）归 `0x342`/读档装载段管，拆场不该清它。
+     */
+    l2d: { slots: number; nodes: number };
+    /**
      * 场景里的 mesh（顶点色四边形）：引擎里这是"淡入淡出的黑幕/暗幕"，**全屏几何 + 真实颜色**。
      * `color` = 逐顶点基础色 × CalcDiffuse 插值态色（`#AARRGGBB`）—— SN0000 序章是
      * `alpha=0x80 黑`（背景压暗 50%），**不是**不透明黑（2026-09 修：旧实现恒画全屏不透明黑 ⇒ 整屏黑）。
@@ -652,6 +658,7 @@ export async function runGameStartChain(opt: GameStartOptions = {}): Promise<Gam
         mainSize: w.style.main.size,
       })),
       texSlots: e.texSlots.size,
+      l2d: { slots: e.l2dSlots.size, nodes: e.l2dNodes.size },
       meshes: [...scene.scene.meshes.values()]
         .sort((a, b) => a.handle - b.handle)
         .map((m) => {

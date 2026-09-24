@@ -119,12 +119,18 @@ export function scEnsureItem(s: SceneState, handle: number): { item: Item; creat
  * emulator 的文本另有载体（`msgWins`，见 `scene/state.ts` 的说明）⇒ 只删 DrawItem 不会让字消失，
  * 于是文字会残留到下一次 `0x71`/`0x301`。这里与 `scClearDrawContainer` 的 `scMsgWinClearAll`
  * 走同一条思路：**删掉的区间与某窗登记的区间相交 ⇒ 该窗的字也没了**。
+ *
+ * ★2026-09-24（`tickets/T-0144` 的 D1）：**还要擦 572B 立绘节点表** —— 引擎 `0x1F7` 的两条路径
+ * 都按 key 从 `Scene+1032`/`+1064`/`+1080`/`+1096` **四张表**擦（单条 raw 130825-130837：`sub_4A9D70`
+ * 加 `sub_4A9270`；区间 raw 130909 / 131002 / 「131044」 / 「131077」：`sub_4AA1D0` / `sub_4AA330` /
+ * `sub_4AA3D0(+270)` / `sub_4AA3D0(+274)`）⇒ 命中区间内的立绘节点**必须一起没了**（出画门只遍历表里
+ * 已有的节点，见 `sub_4B0360` raw 134316-134320）。**实例槽不动**（那是 `0x342`/读档装载段的事）。
  */
 export function scDetachTexture(
   s: SceneState,
   handle: number,
   count: number,
-): { drawItems: number; meshes: number; clearedWins: number[] } {
+): { drawItems: number; meshes: number; nodes: number; clearedWins: number[] } {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const hi = count <= 1 ? handle + 1 : handle + count;
   let drawItems = 0;
@@ -136,6 +142,8 @@ export function scDetachTexture(
     for (const k of [...s.drawItems.keys()]) if (k >= handle && k < hi) { s.drawItems.delete(k); drawItems++; }
     for (const k of [...s.meshes.keys()]) if (k >= handle && k < hi) { s.meshes.delete(k); meshes++; }
   }
+  // ★0x1F7 的第三条/第四条：572B 立绘节点表（emulator = `Engine.l2dNodes`，键 = `0x344` 的 op1）
+  const nodes = clearL2dNodes(s, (k) => k >= handle && k < hi);
   // 窗的正文/注音图元区间被删光 ⇒ 该窗在画面上不该再有字
   const clearedWins: number[] = [];
   for (const [win, ranges] of s.msgRanges) {
@@ -144,7 +152,32 @@ export function scDetachTexture(
     scMsgWinClear(s, win);
     clearedWins.push(win);
   }
-  return { drawItems, meshes, clearedWins };
+  return { drawItems, meshes, nodes, clearedWins };
+}
+
+/**
+ * **擦 572B 立绘节点表**里的节点（引擎 `Scene+1096`；emulator = `Engine.l2dNodes`）。
+ *
+ * ★为什么放在这里：引擎 `0x1F6`/`0x1F7`/`0x21D` 都动**四张表**（DrawItem 1032 / MeshEntry 1064 /
+ * 572B-A 1080 / 572B-B **1096 = 立绘节点**），而 emulator 早先只做了前两张 ⇒ 上一屏的立绘节点活过拆场
+ * （症状：新游戏路径 TITLE 的 Live2D 立绘残留在章节切换处；读档路径靠 `save-slot.ts` 的补丁遮住）。
+ * 证据与验收：`tickets/T-0144`；引擎体 raw 130699 / 130764 / 「130765」 / 「130766」、
+ * 130825-130837 / 「131044」 / 「131077」、131241-131249（`0x21D` 也拷这张表）。
+ *
+ * ★只删**节点**，**不碰 10 个实例槽**（`l2dSlots`）—— 引擎侧清槽只发生在 `0x342` 与读档装载段
+ * （`sub_410160` raw 19387-19388），拆场不清槽是常态。
+ */
+export function clearL2dNodes(s: SceneState, pred: (key: number) => boolean): number {
+  const nodes = s.l2dHost?.l2dNodes;
+  if (!nodes) return 0;
+  let n = 0;
+  for (const key of [...nodes.keys()]) {
+    if (!pred(key)) continue;
+    nodes.delete(key);
+    n++;
+  }
+  if (n > 0) s.dirty = true;
+  return n;
 }
 
 /**
@@ -161,14 +194,29 @@ export function scDetachTexture(
  * `set-draw-color`/`set-draw-color-alpha` 只动那一份来做淡入淡出；ADV 里也用它把 CG 图元
  * 复制成缩放绘制用的临时项（`$1$SC0330.txt:17564` → `i21d 18a9c 30d40`）。
  */
-export function scCopyItem(s: SceneState, srcHandle: number, dstHandle: number): { copied: boolean; drawItem: boolean; mesh: boolean } {
+export function scCopyItem(
+  s: SceneState,
+  srcHandle: number,
+  dstHandle: number,
+): { copied: boolean; drawItem: boolean; mesh: boolean; node: boolean } {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const srcItem = s.drawItems.get(srcHandle);
   const srcMesh = s.meshes.get(srcHandle);
-  if (!srcItem && !srcMesh) return { copied: false, drawItem: false, mesh: false };
+  // ★2026-09-24（`tickets/T-0144` 的 D1）：引擎 `0x21D` 拷的是**三张表**（1032/1064/**1096**）——
+  //   raw 131241-131248 用 `sub_4AACA0` 保证目标节点存在后 `qmemcpy(dst, src, 0x23C)` 整块拷；
+  //   而"源不存在"的报错要求**三张表全空**（raw 131249）⇒ 只命中立绘节点也算命中。
+  const srcNode = s.l2dHost?.l2dNodes.get(srcHandle);
+  if (!srcItem && !srcMesh && !srcNode) return { copied: false, drawItem: false, mesh: false, node: false };
   if (srcItem) s.drawItems.set(dstHandle, cloneItem(srcItem, dstHandle));
   if (srcMesh) s.meshes.set(dstHandle, cloneMesh(srcMesh, dstHandle));
-  return { copied: true, drawItem: !!srcItem, mesh: !!srcMesh };
+  let node = false;
+  if (srcNode && s.l2dHost) {
+    const copy = structuredClone(srcNode);
+    copy.key = dstHandle;
+    s.l2dHost.l2dNodes.set(dstHandle, copy);
+    node = true;
+  }
+  return { copied: true, drawItem: !!srcItem, mesh: !!srcMesh, node };
 }
 
 /**
@@ -260,16 +308,28 @@ export function scRestoreDrawItems(s: SceneState, items: readonly Item[]): { cle
   return { cleared, installed: s.drawItems.size };
 }
 
-/** `0x1F6` clearDrawContainer：整批释放绘制项 + 网格（**保留纹理槽**）。 */export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number } {
+/**
+ * `0x1F6` clearDrawContainer：整批释放绘制项 + 网格 + **572B 立绘节点**（**保留纹理槽**）。
+ *
+ * ★2026-09-24（`tickets/T-0144` 的 D1）：引擎 `sub_4AB7A0` 清的是**四张表** ——
+ * `Scene+1032` DrawItem（raw 130699）/ `Scene+1064` MeshEntry（raw 130764）/
+ * **`Scene+1080` 572B-A**（raw 130765）/ **`Scene+1096` 572B-B = Live2D 立绘节点表**（raw 130766）。
+ * 早先只清前两张 ⇒ TITLE 的立绘节点（key `0x14`）活过 TITLE 退场（`src/TITLE.txt:810` 的 `i1f6`）
+ * 与之后每一次拆场。⇒ 这里补上立绘节点表；**10 个实例槽不动**（引擎的 `0x1F6` 也不动它们）。
+ */
+export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number; nodes: number } {
+  s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const drawItems = s.drawItems.size;
   const meshes = s.meshes.size;
   s.drawItems.clear();
   s.meshes.clear();
+  // ★572B 立绘节点表（`Scene+1096`）：整批清（`sub_4A9D10(v1 + 274)` raw 130766）
+  const nodes = clearL2dNodes(s, () => true);
   // ★文本窗也要清：引擎 D3D 路径下正文行**就是** Scene 的 DrawItem（id = 行号 + win+104），
   //   `sub_4AB7A0` 清整张 DrawItem 表时它们一起没；GDI 路径下会被重画的画面盖掉。
   //   漏掉这一步的症状：**回到标题/主界面后，上一页的消息文字又画在主界面之上**（2026 实测）。
   scMsgWinClearAll(s);
-  return { drawItems, meshes };
+  return { drawItems, meshes, nodes };
 }
 
 /**
@@ -1094,6 +1154,11 @@ export function scSetTransition(
     if (i >= 0 && i < rec.length) rec[i] = v | 0;
   }
   s.render4.transitions.set(id, rec);
+  // ★逐条的新鲜度（`tickets/T-0091` 的 D2 变更需要）：写入端每次都把 `[1]`（窗口起点）写 0，
+  //   引擎的起点是"第一次被消费的那一帧"才锁存 ⇒ 同 id 的**新**记录必须丢掉上一轮的运行期起点
+  //   （否则新窗会继承旧 `start`，`t` 立刻越界）。整表清仍然是 `0x224`/帧尾门的事。
+  //   注：D2 让"到期记录多活一帧"（为了把终值合成进 `[4]`），所以这里必须按 id 清，不能只靠整表清。
+  if (s.render4.transitionRuntime.has(id)) s.render4.transitionRuntime.delete(id);
 }
 
 /** `0x229` 绘制模式 5 元组（`sub_423FE0`：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。 */
