@@ -1,0 +1,90 @@
+{
+  "title": "0x205 数字直绘把 x 回写到脚本 op2（引擎只更新局部量）⇒ op2 是立即数时硬抛 writeIntOperand，是可写槽时静默污染脚本状态",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "现象（用户真机到达战斗界面时命中）：`AIM.BIN` 写 0x205 时抛 `writeIntOperand: unsupported type 0x0 for opcode 0x205`，战斗界面直接断在 `src/AIM.txt:423`。根因：引擎 `sub_4233E0`（raw .c 31470-31491）把 op2 读进**局部变量** `v8`（31478 声明为 `[ebp-28h] BYREF`、31482 `v8 = sub_41BF50(_this, 2)`），把 `&v8` 交给 `sub_4072F0` 更新（31486），再用更新后的 `v8` 画（31488 `v5 = v8` → 31490 `sub_456710`）——**从不回写 op2**。emulator 的 `op_draw_number_string` 多了一句 `plan.setInt(2, nx)`（msgwin.ts:1724，并配注释「op2 是 in/out」），把 x 前进量写回**脚本操作数** ⇒ 立即数（type 0x0）无处可写，`writeIntOperand` 抛错。影响面按语料量过：`src/*.txt` 共 313 个 `i205` 调用点，op2 **立即数 273 个**（现状必抛，只是要走到那个脚本才炸）、**可写 local-int 39 个**（现状静默把 x 写成 x+前进量），其中 **16 个在紧随 1~3 行内又读同一个槽**（如 `AIM.txt:453` 的 `i205 2a (local-int 11) …` 紧跟 `AIM.txt:454` 的 `add (local-int 48) (local-int 11) 9`）⇒ 这些站点的脚本可见状态与真机不一致（排版漂移），不只是「多抛一次错」。同一误标还写进了两处台账/声明：`analysis/opcodes.json` 0x205 semantics 的「op2=x（in/out，sub_4072F0 会更新）」与 `app/amayui-emulator/src/vm/operandPlan.ts:1191` 的操作数方向表 `['r','rw',…]`（含 1150 行的说明），所以这不是单点手误，而是「操作数方向」这条 ABI 被记反了。",
+  "acceptance": [
+    "`src/vm/handlers/msgwin.ts` 的 `op_draw_number_string` 不再对 op2 调用 `plan.setInt`（文件内不再出现 `plan.setInt(2, nx)`）；`nx` 仍保留并作为 `drawString` 的 x（前进量不能一起删掉）",
+    "操作数方向订正为只读：`src/vm/operandPlan.ts` 的 0x205 行方向数组由 `['r','rw','r','r','r','r']` 改为 `['r','r','r','r','r','r']`，并改掉 1150 行「0x205(**op2 是 rw**：读原值再写回)」的说明（改成引擎事实：op2 只读，前进量只在引擎局部）",
+    "`analysis/opcodes.json` 0x205 的 semantics 订正为「op2 只读；`sub_4072F0` 更新的是引擎局部 `v8`（raw 31478/31482/31486/31488），不回写脚本操作数」，并重跑 `node scripts/build-opcode-table.mjs` 使 `docs-new/03-engine/opcode-table.md` 同步；`opcode-json-sync` / `opcode-arity` / `opcode-gaps` 守卫绿",
+    "新守卫（建议 `app/amayui-emulator/test/op-205-op2-readonly.test.ts`）覆盖三条：① `src/AIM.txt:423` 形态（op2=立即数 `0x23f`）跑 `stepOnce` **不抛错**；② 可写槽形态（`i205 2a (local-int 11) …` 后紧跟 `add (local-int 12) (local-int 11) 0`）运行后该槽的脚本可见值 == 运行前值（不被回写），用 `local-int-write` 事件或槽值断言都行；③ 用实现了 `drawString` 的假 Native 断言实际画出的 x == 原 x + 前进量（防「顺手把前进量也删了」）",
+    "`npm run verify` 无本条引入的新红（既有 3 条 T-0146 预先存在的红不计入）；`tickets/T-0147` 的 evidence 锚点按棘轮 retarget（改了 opcodes.json 语义串后，不删证据）"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "int v8; // [esp+4h] [ebp-28h] BYREF",
+      "line": 31478,
+      "note": "★引擎侧铁证之一：x 是**局部变量**（BYREF 供 sub_4072F0 写出），不是脚本操作数"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4072F0(_this, v9, &v8, v2, v4, v6);",
+      "line": 31486,
+      "note": "★铁证之二：传 &v8（局部地址）；31482 从 op2 读入、31488 v5 = v8 供 31490 sub_456710 绘制 ⇒ 全程不回写 op2"
+    },
+    {
+      "file": "src/AIM.txt",
+      "anchor": "i205 2a 23f (local-int 12) (local-int 47) 7 10000",
+      "line": 423,
+      "note": "用户实际炸掉的站点：op2 = 立即数 0x23f ⇒ 现状 `plan.setInt(2, nx)` 抛 unsupported type 0x0"
+    },
+    {
+      "file": "src/AIM.txt",
+      "anchor": "i205 2a (local-int 11) 227 (local-ptr 2) 1 10000",
+      "line": 453,
+      "note": "op2 = 可写 (local-int 11) 的站点：现状不回抛错但被静默回写，下一行 454 又读它"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "plan.setInt(2, nx);",
+      "line": 1724,
+      "note": "★缺陷本体（要删的那一句）：把 x 前进量写回脚本操作数"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "op2 是 in/out：回写 x 前进量",
+      "line": 1799,
+      "note": "注册表处同一条误述（要一起改）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "['r', 'rw', 'r', 'r', 'r', 'r'], 'draw-number-string",
+      "line": 1191,
+      "note": "操作数方向表把 op2 标成 'rw' ⇒ `plan.setInt` 的方向门放行，错误得以静默传播到「可写槽」站点"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/operandPlan.ts",
+      "anchor": "**op2 是 rw**：读原值再写回",
+      "line": 1150,
+      "note": "同一判读的说明文字（要一起改）"
+    },
+    {
+      "file": "analysis/opcodes.json",
+      "anchor": "op2`=x（in/out，`sub_4072F0` 会更新）",
+      "line": 2587,
+      "note": "台账侧的误标；★订正后本锚点会消失 ⇒ 按棘轮 retarget 到新语义串，不许删本条证据"
+    }
+  ],
+  "links": {
+    "analysis": [
+      "analysis/opcodes.json"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-table.md"
+    ],
+    "tickets": [
+      "T-0085"
+    ]
+  },
+  "id": "T-0147",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}
