@@ -163,66 +163,173 @@ function floatToLf(v: number): string {
 }
 
 /**
- * 读第 n 个操作数为字符串（引擎「取字符串」原语：`sub_41B640` raw 26248-26359 / `sub_42A420` raw 36317-36544 /
- * `sub_41B9B0` raw 26365-26470 三条**同构**）。
+ * `sub_41A6C0`（raw 25539-25593）：**ASCII 数字串 → 全角**（引擎写的是 GBK `0xA3xx` / `0x8148`，
+ * 本机 exe = 中文版 ⇒ GBK；emulator 的串是 Unicode ⇒ 用 Unicode 全角区 `U+FF01..U+FF5E` 表达）。
  *
- * ★**引擎的这条原语带"数值 → 字符串"强制转换**，逐 case 对照（以 `sub_41B640` 为准，另两条同形）：
+ * 引擎逐字符（写 2 字节：`a1[2*i]` = 首字节、`a1[2*i+1]` = 次字节）：
+ *  - `0-9`/`A-Z`/`a-z` ⇒ `{0xA3, c+0x80}`（`0`→`A3B0`、`9`→`A3B9`、`A`→`A3C1`、`a`→`A3E1`）；
+ *  - `-` ⇒ `{0xA3, 0xAD}`、`+` ⇒ `{0xA3, 0xAB}`、`#` ⇒ `{0xA3, 0xA3}`；
+ *  - **其余任何字符** ⇒ `{0x81, 0x48}`（raw 25574-25576）。
+ * ★`%lf`/`_itoa_s` 的输出字母表 = 数字 / `-`（负数）/ `.` / `e`、`i`、`n`、`f`、`a`（`inf`/`nan` 的 C 形态）
+ * ⇒ **唯一会落进"其余"那一支的就是 `.`**（字母都在 `a-z` 内、`+`/`#` 只有 `0x205` 的格式化才会产生）。
+ * 而 `{0x81,0x48}` 在 GBK 里不是标点（落在 CJK 扩展区，不是全角句点 `A3AE`）⇒ 引擎在 `.` 上是输出怪码位的。
+ * 本实现按"未列入 ⇒ 留半角 `.`"处理，与既有 `handlers/msgwin.ts` 的 `toFullWidth`（`0x205` 用）同一口径
+ * （不另造一套无据的映射）；这一处差额已登记在 `tickets/T-0162/changes-c162.md`。
  *
- * | operand tag | 引擎行为 | 本实现 |
- * |---|---|---|
- * | `0` 立即 int | `_itoa_s(*v8, buf, 0x400, 10)` | `String(raw \| 0)` |
- * | `1` 立即 float | `sub_408050(…, "%lf", *(float*)v8)` | `floatBits(raw).toFixed(6)` |
- * | `2` 内嵌字面量（倒置存储：逐 dword 取反到 0xFF 结尾） | 解倒置后原样用 | 解析器已解出 `a.str` |
- * | `3`/`9` 全局/局部 int 值池 | `_itoa_s(DEC(池值), …, 10)` | `readIntOperand`（含 DEC）→ 十进制 |
- * | `4`/`10` 全局/局部 float 值池 | `%lf` | `readFloatOperand` → `%lf` |
- * | `5`/`11` 全局/局部 string 值池 | 取串（SSO：`+20 < 0x10` 内联） | 池取串 |
- * | `6`/`12` int 指针族 | `_itoa_s(DEC(*指针), …, 10)` | `readIntOperand`（解引用 + DEC）→ 十进制 |
- * | `7`/`13` float 指针族 | **`default:` ⇒ 抛 `Command_Type_Exception`**（引擎不支持） | 同样抛错 |
- * | `8`/`14` string 指针族 | 解引用取串 | `readStringRef` |
- * | `0x8003`/`0x8009` int 数组 | 首元素 `DEC` → `_itoa_s`；空容器 ⇒ 哨兵串 `asc_5205D4`(2 字节) | **未建模**（语料 0 处触发，见下） |
+ * ★**本函数是本工程唯一一份实现**（`tickets/T-0175` ⑫ 去重）：消息窗绘制侧
+ * （`handlers/msgwin.ts` 的逐字直绘）原来有一份**逐字节相同**的本地副本，现在改为 `import` 这一份
+ * —— 两份实现一旦漂移就会出现"同一个字符在 `0x205` 与 `0x192` 下宽度不同"这种极难察觉的分歧。
+ */
+export function toFullWidthAscii(s: string): string {
+  return s.replace(/[0-9A-Za-z+\-#]/g, (ch) => {
+    if (ch === '-') return '－';
+    if (ch === '+') return '＋';
+    if (ch === '#') return '＃';
+    return String.fromCharCode(ch.charCodeAt(0) + 0xfee0);
+  });
+}
+
+/**
+ * 引擎取串原语（`sub_41B640` / `sub_42A420` / `sub_41B9B0`）。**用哪一条由 opcode 决定**，
+ * 不由操作数 tag 决定 —— 差异只有两处（全角化、float 指针族 7/13），见 `readStringOperand` 的表。
+ */
+export type StringPrimitive = 'sub_41B640' | 'sub_42A420' | 'sub_41B9B0';
+
+/**
+ * `opcode → 取串原语`。真源 = 逐 handler 体里出现的 `sub_41B640/sub_42A420/sub_41B9B0(...)` 调用
+ * （机械扫描：全库 544 条 handler 里经这三条读串的共 **29** 条）。
  *
- * 修前本函数对**全部数值族**一律 `String(a.raw)` —— 那返回的是**槽号**而不是值，于是 `0x192 set-string`/
- * `0x193 concat`/`0x1B2 text-append` 在真实语料上产出错串。语料命中（本次审计 `T-0165`）：
- * `COMMITDR.txt:9`（`concat … (global-int a40e1)`）、`FIELD.txt:8595/8710/9416`（`local-ptr`）、
- * `FIELD.txt:9365`（`local-int`）、`ALCHEMY.txt:1063`（`local-ptr`）、`REACH.txt:2243/2264`（`local-ptr`）、
- * `SYSTEM4.txt:463-464`（`i1b2 (global-int 0)`）。
- * 引擎依据：`analysis/functions.json` 的 `sub_41B640`/`sub_42A420`/`sub_41B9B0`；守卫 `test/op-string-coercion.test.ts`。
+ * ★只有 `0x1B2` 走 `sub_41B9B0`；下面 6 条走 `sub_42A420`；**其余 22 条走 `sub_41B640`**（缺省值），
+ * 所以这张表只列"不是缺省"的 7 条 —— 缺省写成显式映射会让"新增一条经 `sub_41B9B0` 的指令"静默走错分支。
+ */
+const STRING_PRIMITIVE_BY_OP: ReadonlyMap<number, StringPrimitive> = new Map<number, StringPrimitive>([
+  [0x1b2, 'sub_41B9B0'], // sub_42A9B0 raw 36550-36558（文本缓冲追加）
+  [0x192, 'sub_42A420'], // sub_433660 raw 41936-41950（set-string）
+  [0x193, 'sub_42A420'], // sub_433710 raw 41952-41987（concat）
+  [0x194, 'sub_42A420'], // sub_42CF10 raw 37909-37938（字符串相等）
+  [0x195, 'sub_42A420'], // sub_42D010 raw 37942-37972（字符串不等）
+  [0x1a9, 'sub_42A420'], // sub_434FE0 raw 42935-...（save-string）
+  [0x2c2, 'sub_42A420'], // sub_433DE0 raw 42180-...（6 操作数族）
+]);
+
+/** 取该 opcode 用的引擎取串原语（缺省 `sub_41B640`）。 */
+export function stringPrimitiveForOp(op: number): StringPrimitive {
+  return STRING_PRIMITIVE_BY_OP.get(op) ?? 'sub_41B640';
+}
+
+/**
+ * 引擎的「取字符串操作数」原语 —— **三条**，tag 值相同但返回形态不同：
+ * `sub_41B640`（raw 26249-26360）、`sub_42A420`（raw 36318-36544）、`sub_41B9B0`（raw 26366-26548）。
+ *
+ * ★**用哪一条由调用它的 opcode 决定**（不是由 tag 决定）。全库 544 条 handler 里经这三条读串的共
+ * **29 条**，其中**只有 `0x1B2`（`sub_42A9B0` raw 36550-36558）走 `sub_41B9B0`**；`0x192`/`0x193`/
+ * `0x194`/`0x195`/`0x1A9`/`0x2C2` 走 `sub_42A420`；其余 22 条（`0x6E`/`0x204`/`0x2C5`/`0x2C7` …）走
+ * `sub_41B640`。（`0x7D` 另走 `sub_41A780` = 十六进制形态，本 emulator 未实现 ⇒ 命中即硬报错。）
+ *
+ * ## 三者的差异（逐 case 读体得出；tag 值从体里数出来）
+ *
+ * | tag | 形态 | `sub_41B640`（22 条） | `sub_42A420`（6 条） | `sub_41B9B0`（`0x1B2`） |
+ * |---|---|---|---|---|
+ * | `0` | 立即 int | `_itoa_s(payload,10)` + **全角** | 同左（raw 36419-36424） | `_itoa_s(payload,10)`，**不做全角**（raw 26400-26402） |
+ * | `1` | 立即 float | `%lf(*(float*)payload)` + 全角（26273-26275→26330） | 同（36425-36427→36492） | `%lf`，不全角（26403-26404→26478-26480） |
+ * | `2` | 内嵌字面量（**逐 dword 取反**存储） | 解倒置后原样返回（26276-26287） | 同（36428-36449） | 同（26405-26418） |
+ * | `3`/`9` | 全局/局部 int 值池 | `_itoa_s(DEC(池值),10)` + 全角 | 同（36450-36458 / 36481-36489） | 同数值，不全角（26419-26427 / 26450-26457） |
+ * | `4`/`10` | 全局/局部 float 值池 | `%lf(池值)` + 全角 | 同（36459-36461 / 36490-36494） | 同，不全角（26428-26430 / 26458-26461） |
+ * | `5`/`11` | 全局/局部 string 值池 | 取串（SSO：cap `+20` ≥ 0x10 ⇒ 解堆指针）（26297-26304） | 同（36462-36469 / 36495-36502） | 同（26431-26436 / 26462-26467） |
+ * | `6`/`12` | int 指针族 | `_itoa_s(DEC(*指针),10)` + 全角（26305-26310 / 26340-26343） | 同（36470-36475 / 36503-36509） | 同数值，不全角（26437-26440 / 26468-26474） |
+ * | `7`/`13` | float 指针族 | **`default:` ⇒ 抛 `Command_Type_Exception`** | **同左，无 case 7/13 ⇒ 抛** | **支持**：`%lf(*指针)` / `%lf(**指针)`（26441-26445 / 26475-26480） |
+ * | `8`/`14` | string 指针族 | 解引用取串（SSO）（26311-26315 / 26349-26354） | 同（36476-36480 / 36516-36519） | 同（26446-26449 / 26481-26485） |
+ * | `0x8003`/`0x8009` | int 数组 | **`default:` ⇒ 抛** | 池槽值 `DEC` 即"数组向量指针"：空/null ⇒ 哨兵串 `asc_5205D4` = **`０`**（全角！）；否则 `_itoa_s(DEC(向量[0]),10)` + 全角（36524-36541 / 36510-36524） | 空/null ⇒ 全局 `a0` = **`"0"`**（半角，raw 4399）；否则 `_itoa_s(DEC(向量[0]),10)`，不全角（26490-26498 / 26510-26524） |
+ * | `0x8005`/`0x800B` | 字符串数组 | **`default:` ⇒ 抛** | 取该串槽的串 → `atoi` 当**向量地址** → `[0]`；串空/向量空 ⇒ `byte_51EA3C` = **空串**（36363-36365 / 36386-36411 / 36408-36411） | 同（26502-26509 / 26525-26532） |
+ * | 其它 | — | `default:` ⇒ 抛 `Command_Type_Exception` | 同（36389-36392） | 同（26486-26487 / 26533-26537） |
+ *
+ * ## 「全角化」是什么（`0x2C5`/`0x2C6` 与所有经 `sub_41B640`/`sub_42A420` 的数值转串）
+ *
+ * `sub_41B640` 与 `sub_42A420` 的**每一条数值路径**在返回前都过了 `sub_41A6C0`
+ * （raw 26331/26347、36376/36421/36509/36530）＝ **ASCII 数字 → 双字节全角**：
+ * 逐字符写 `{0xA3, c+0x80}`（`0`→`0xA3B0`、`A`→`0xA3C1`、`a`→`0xA3E1`）、
+ * `-`→`0xA3AD`、`+`→`0xA3AB`、`#`→`0xA3A3`（raw 25539-25593）。
+ * ★本机这份 exe 是**中文版（心愿屋）**，内部字符集 = GBK（`analysis` 侧证据：存档串 `b3c7edce…`＝GBK），
+ * 所以 `0xA3xx` 正是 GBK 的全角 ASCII 区 —— 同一个 `sub_41A6C0` 在日文版里会是 SJIS 的 `0x82xx`。
+ * 它**只在这两条原语里**被调用；`sub_41B9B0`（→ `0x1B2`）与专用指令 `0x1C8`（`sub_433820` raw 41990-42010
+ * 的 `%d`，**不**调 `sub_41A6C0`）都是**半角**。⇒ 「0x192 拿 int 得到全角、0x1B2 / 0x1C8 得到半角」是引擎的真实分叉。
+ *
+ * ⚠**已知近似（如实登记）**：`sub_41A6C0` 对 `.`（0x2E）落的是 `0x81 0x48`（GBK 域外的怪码位，见 raw 25574-25576），
+ * 本实现**只转 `[0-9A-Za-z+-#]`、`.` 留半角** —— 与既有 `handlers/msgwin.ts` 的 `toFullWidth`
+ * （`0x205` 用）**同一口径**，不另造一套映射。受影响面只有 float 族转串（`%lf` 含 `.`）。
+ *
+ * ## 数组族在 emulator 里的可复现性
+ *  - `0x8003`/`0x8009`：引擎把池槽值当**指向 `vector<int>` 的指针**；emulator 的数组模型（`T-0082` 的
+ *    `0x2C9`/`refFromOperand`）是"元素就从基址槽起连续排"⇒ 这里取**首元素值**。
+ *    两种模型在"元素 0"上重合；且**数组不存在**时 emulator 的缺失槽读 0（`decIntSlot`）与引擎的
+ *    空容器哨兵（`０` / `0`）逐字相等 —— 见下面 `num(intToDecimal(...))` 的写法。
+ *  - `0x8005`/`0x800B`：引擎把"数组地址"以**十进制字符串**存在该串槽里再 `atoi` 解回指针
+ *    （`sub_42AEA0` raw 36858-36888 的自动建数组分支），emulator 的串池里没有"指针型字符串"这种值
+ *    ⇒ **结构上无法复现** ⇒ 显式抛错（登记为缺口，不再静默返回槽号）。
  */
 export function readStringOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): string {
   const a = operandArg(instr, n);
+  const prim = stringPrimitiveForOp(instr.opcode);
+  /** 数值 → 串之后的**全角化**（`sub_41A6C0`）：只有 `sub_41B9B0` 不做。 */
+  const num = (s: string): string => (prim === 'sub_41B9B0' ? s : toFullWidthAscii(s));
   switch (a.type) {
-    // ── 字符串族：原样取串（引擎 case 2/5/8/11/14）──
+    // ── tag 2：**内嵌字面量**（倒置存储，解析期已解出 `a.str`）。★它不是池槽，与 tag 0xB 是两套。
     case TYPE_LOCAL_STRING:
+      if (a.str === undefined) {
+        throw new Error(
+          `readStringOperand: tag 2（内嵌字面量）没有解出字面量（raw=${a.raw}）—— 引擎从操作数流里的**倒置存储**解出（sub_41B640 raw 26276-26287），它不是任何一个池的下标`,
+        );
+      }
+      return a.str;
+    // ── tag 0xB：**局部串变量**（帧内串池；引擎 `_this[30*cur+95791]` 的 vector<string>）。
     case TYPE_LOCAL_STRING2:
-      return a.str ?? String(frame.locals.str.get(a.raw) ?? '');
+      return frame.locals.str.get(a.raw) ?? '';
     case TYPE_GLOBAL_STRING:
       return e.globals.str.get(a.raw) ?? '';
     case TYPE_GLOBAL_STRING_PTR:
       return readStringRef(e, frame, readRefSlot(e.globals.strPtr, a.raw));
     case TYPE_LOCAL_STRING_PTR:
       return readStringRef(e, frame, readRefSlot(frame.locals.strPtr, a.raw));
-    // ── 数值族：按引擎**转成十进制/浮点串**（★本轮修复：此前返回槽号）──
+    // ── 数值族 ──
     case TYPE_IMMEDIATE_INT:
-      return intToDecimal(a.raw);
+      return num(intToDecimal(a.raw));
     case TYPE_IMMEDIATE_FLOAT:
-      return floatToLf(floatBits(a.raw));
+      return num(floatToLf(floatBits(a.raw)));
     case TYPE_GLOBAL_INT:
     case TYPE_LOCAL_INT:
     case TYPE_GLOBAL_PTR:
     case TYPE_LOCAL_PTR:
-      return intToDecimal(readIntOperand(e, frame, instr, n));
+      return num(intToDecimal(readIntOperand(e, frame, instr, n)));
     case TYPE_GLOBAL_FLOAT:
     case TYPE_LOCAL_FLOAT:
-      return floatToLf(readFloatOperand(e, frame, instr, n));
-    // 引擎对 float 指针族走 `default:` ⇒ 抛 `Command_Type_Exception`（不是静默给个值）。
+      return num(floatToLf(readFloatOperand(e, frame, instr, n)));
+    // float 指针族：`sub_41B640`/`sub_42A420` 都**没有** case 7/13 ⇒ `default:` 抛；只有 `sub_41B9B0` 支持。
     case TYPE_GLOBAL_FLOAT_PTR:
     case TYPE_LOCAL_FLOAT_PTR:
+      if (prim === 'sub_41B9B0') return floatToLf(readFloatOperand(e, frame, instr, n));
       throw new Error(
-        `readStringOperand: float 指针族 0x${a.type.toString(16)} 不能转字符串（引擎 sub_41B640/sub_42A420 的 default 分支抛 Command_Type_Exception）`,
+        `readStringOperand: float 指针族 0x${a.type.toString(16)} 不能转字符串 —— ${prim} 无 case 7/13，走 default 抛 Command_Type_Exception（raw 26355-26357 / 36389-36392）`,
       );
-    // 数组族和其它未建模 tag：保持旧口径（语料 0 处触发），不静默改变已有行为。
+    // ── 数组族 ──
+    case TYPE_GLOBAL_INT_ARRAY:
+    case TYPE_LOCAL_INT_ARRAY:
+      if (prim === 'sub_41B640') {
+        throw new Error(
+          `readStringOperand: 数组 tag 0x${a.type.toString(16)} 在 sub_41B640 里没有 case（switch 只到 0..14）⇒ default 抛 Command_Type_Exception（raw 26355-26357）`,
+        );
+      }
+      // 首元素值；数组不存在 ⇒ 缺失槽读 0 ⇒ 与引擎的空容器哨兵（`０` / `0`）逐字相等。
+      return num(intToDecimal(readIntOperand(e, frame, instr, n)));
+    case TYPE_GLOBAL_STRING_ARRAY:
+    case TYPE_LOCAL_STRING_ARRAY:
+      throw new Error(
+        `readStringOperand: 字符串数组 tag 0x${a.type.toString(16)} 在本 emulator **结构上无法复现** —— 引擎把数组地址以十进制字符串存在该串槽里再 atoi 解回指针（sub_42AEA0 raw 36858-36888）、随后取 vector<string>[0]（sub_42A420 raw 36394-36411 / sub_41B9B0 raw 26538-26547），emulator 的串池里没有"指针型字符串"这种值（缺口登记见 tickets/T-0162/changes-c162.md）`,
+      );
+    // 引擎对任何其它 tag 都走 `default:` ⇒ 抛（含 float 数组 0x8004/0x800A）。**不再**静默给槽号。
     default:
-      return String(a.raw);
+      throw new Error(
+        `readStringOperand: tag 0x${a.type.toString(16)} 无对应 case（引擎 ${prim} 的 default 分支抛 Command_Type_Exception，raw 26355-26357 / 36389-36392）`,
+      );
   }
 }
 
@@ -256,15 +363,54 @@ export function writeStringOperand(e: Engine, frame: Frame, instr: BinInstructio
   }
 }
 
-/** 读第 n 个操作数为 float（float 池存 JS 数；立即 float 走位模式）。 */
+/**
+ * 读一个 float 引用所指处的值（**保留小数**）。
+ *
+ * ★为什么不直接用 `ref.ts` 的 `readRef`：它对 `kind === 'float'` 做的是 `(raw) | 0`
+ * （`ref.ts` raw 112 —— 那是"把 float 当整数读"的口径，给 `readIntOperand` 用的）。
+ * 而引擎对 **float 指针族**（tag 7/13）读的是 `*(float*)指针` / `**(float**)指针`
+ * （`sub_41B9B0` raw 26441-26445 / 26475-26480），**不是**它的整数截断。
+ * ⇒ float 指针族必须走这里；这是「float 族读法」上的一处真实缺口（`tickets/T-0162` 读体时发现）。
+ */
+function readFloatRef(e: Engine, frame: Frame, ref: Ref): number {
+  if (ref.kind === 'ptr' || ref.kind === 'fptr') {
+    const pool = ref.scope === 'global' ? e.globals.floatPtr : frame.locals.floatPtr;
+    return readFloatRef(e, frame, readRefSlot(pool, ref.index));
+  }
+  if (ref.kind !== 'float') throw new Error(`float 指针族指向的不是 float 槽：${JSON.stringify(ref)}`);
+  const pool = ref.scope === 'global' ? e.globals.float : frame.locals.float;
+  return pool.get(ref.index) ?? 0;
+}
+
+/** 读第 n 个操作数为 float（float 池存 JS 数；立即 float 走位模式；float 指针族解引用且**不截断**）。 */
 export function readFloatOperand(e: Engine, frame: Frame, instr: BinInstruction, n: number): number {
   const a = operandArg(instr, n);
   switch (a.type) {
     case TYPE_IMMEDIATE_FLOAT: return floatBits(a.raw);
     case TYPE_GLOBAL_FLOAT: return (e.globals.float.get(a.raw) ?? 0);
     case TYPE_LOCAL_FLOAT: return (frame.locals.float.get(a.raw) ?? 0);
+    case TYPE_GLOBAL_FLOAT_PTR: return readFloatRef(e, frame, readRefSlot(e.globals.floatPtr, a.raw));
+    case TYPE_LOCAL_FLOAT_PTR: return readFloatRef(e, frame, readRefSlot(frame.locals.floatPtr, a.raw));
     default: return readIntOperand(e, frame, instr, n);
   }
+}
+
+/**
+ * 写一个 float 引用所指处（**保留小数**；`ref.ts` 的 `writeRef` 对 float 本来就是原值写，
+ * 截断发生在 `writeFloatOperand` 的 `default:` 那一格 `v | 0` —— 这里绕开它）。
+ *
+ * 引擎 `sub_42BA00`（float 写原语）case 7 raw 37222-37226 / case 13 raw 37245-37249：
+ * `*(float *)指针 = a3`（一次截断都没有）；case 3/9/6/12（**int** 槽/指针）才把 float 的**位模式**
+ * 旋转编码后写进 int 池 —— 那是 ADR-003「按类型分池」下的另一件事，不在这里。
+ */
+function writeFloatRef(e: Engine, frame: Frame, ref: Ref, v: number): void {
+  if (ref.kind === 'ptr' || ref.kind === 'fptr') {
+    const pool = ref.scope === 'global' ? e.globals.floatPtr : frame.locals.floatPtr;
+    writeFloatRef(e, frame, readRefSlot(pool, ref.index), v);
+    return;
+  }
+  if (ref.kind !== 'float') throw new Error(`float 指针族指向的不是 float 槽：${JSON.stringify(ref)}`);
+  (ref.scope === 'global' ? e.globals.float : frame.locals.float).set(ref.index, v);
 }
 
 /** 写第 n 个操作数为 float。 */
@@ -281,6 +427,9 @@ export function writeFloatOperand(e: Engine, frame: Frame, instr: BinInstruction
       e.emitDebugEvent('global-float-write', { idx: a.raw, val: I32B[0]! | 0 });
       return;
     case TYPE_LOCAL_FLOAT: frame.locals.float.set(a.raw, v); return;
+    // float 指针族：`*(float*)指针 = v`（**不截断**，见 `writeFloatRef`）
+    case TYPE_GLOBAL_FLOAT_PTR: writeFloatRef(e, frame, readRefSlot(e.globals.floatPtr, a.raw), v); return;
+    case TYPE_LOCAL_FLOAT_PTR: writeFloatRef(e, frame, readRefSlot(frame.locals.floatPtr, a.raw), v); return;
     default: writeIntOperand(e, frame, instr, n, v | 0);
   }
 }

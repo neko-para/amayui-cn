@@ -41,7 +41,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "[0x10c, op_set_key_multi]",
       "note": "0x10C(SetKeyMulti) 已按体真实现（T-0163）：读 op1=位号 / op2=键码、unsigned >0x1F 抛引擎同文 ShowMessageError、写 `Input[1176 + Input[1432+键码]] = 位号`。两张运行期表 = `src/vm/input.ts` 的 `keycodeToVk` / `vkToBit`；守卫 = `test/input.test.ts` 的 0x10C ①②③④ 与 `test/keyboard-mask.test.ts` ⑤。原文（「被注册成无条件 no-op」）已不成立。",
-      "line": 481
+      "line": 559
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -53,7 +53,7 @@
       "file": "app/amayui-emulator/src/vm/engineFieldIds.ts",
       "anchor": "aaEnabled",
       "note": "字段 21662 定义后全库 0 使用点：note 说「从字段带到渲染侧」是凭空（渲染侧 msgwin.ts:146 写死 true）",
-      "line": 165
+      "line": 221
     }
   ],
   "links": {

@@ -16,6 +16,24 @@ import { ShowMessageError } from '../native.js';
 const ENGINE_TEXT_SET_KEY_MULTI = 'SetKeyMultiの引数が不正です．';
 
 /**
+ * **`0xFF` 写的"后备扫描游标镜像"**（引擎 `_this[cur + 122327]`，raw 25007）。
+ *
+ * 读者 = `sub_419D20`（raw 25096-25134）：`v2 = _this[_this[95776] + 122327] - 1;`，按 **-1** 判定
+ * "没有按键"⇒ 走 `LABEL_4` 的默认键/循环键派发；命中某位时还会把它**回写**成该位号（raw 25134）。
+ * 初值由 `0xFF` 写成 `Engine[517]`（SetKeyTotal）—— 于是 `122327 - 1 = [517] - 1` 从最高位往下扫。
+ *
+ * ★emulator 侧（`tickets/T-0158` 的 P3 `0xff`）：本格只有写点、**有一个真读者**（`0x10F`/`sub_419D20`
+ * 对应的指令在 emulator 里尚未实现，见报告"别人该接"），所以先按体如实写出来 —— 它是
+ * "`0xFF` 的完整副作用"的一半，缺了它 `0xFF` 的引擎状态就不完整。
+ */
+const FIELD_KEY_SCAN_FALLBACK = 122327;
+/** `0xFF` 复位的**逐帧**扫描游标（`_this[95776 + 122287]`；已有 `ENGINE_FIELD.keyScanCursor`）。 */
+const FIELD_CANCEL_MESSAGE_KEY = 122370; // `_this[122370]`：CancelMessageKey 三态机（raw 20119-20141 只读它）
+/** `0x101` 第三处写（raw 25079）：`_this[122367] = 1`。语义未定位（与 `122369`/`122370` 同族）。 */
+const FIELD_FRAME_122367 = 122367;
+
+
+/**
  * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
  *
  * ★本族（`tickets/T-0082` 批次"输入族"）11 条：五个 getter（`0x108`/`0x109`/`0x10d`/`0x2e5` 写 op1..op2）
@@ -147,12 +165,25 @@ const op_joy_callback: OpHandler = (c) => {
   c.e.input.joyJump[maskBit] = target; // 索引 = 掩码位 = op1（引擎 raw 30417）
 };
 
-/** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。 */
+/** 0xFF (u00415A10, sub_419A90)：重置掩码并重刷当前按住态（键盘+鼠标），重置扫描游标。
+ *
+ * 引擎体逐字（raw 24998-25009）：
+ * ```
+ * _this[30*cur + 95805] = 1;                 // 长度槽 1 ⇒ ip 正常前进
+ * _this[174802] = 0;                         // 清输入掩码
+ * sub_4780D0(_this + 258, _this + 174802);   // ★实时刷（含**按住态**）
+ * _this[cur + 122287] = 0;                   // 逐帧扫描游标归零
+ * _this[cur + 122327] = _this[517];          // ★★后备扫描游标镜像 = SetKeyTotal（本票 P3 `0xff` 补）
+ * ```
+ * ★修前漏了第 4 处写（审计 P3 `0xff`）：那格是 `sub_419D20`（raw 25096/25134）的入口判据
+ * （`v2 = 该格 - 1`，按 -1 判"没有键按下"）。 */
 const op_input_reset: OpHandler = (c) => {
   const plan = planFor(c);
   // 引擎（raw 24992-25006）：`_this[174802]=0; sub_4780D0(...)` ⇒ **实时刷**（含按住态）+ 扫描游标归零
   c.e.input.flushHeld();
-  c.e.engineValues.set(ENGINE_FIELD.keyScanCursor + c.e.cur, 0);
+  c.e.engineValues.set(ENGINE_FIELD.keyScanCursor + c.e.cur, 0); // raw 25005
+  // raw 25007：`_this[result + 122327] = _this[517]`（SetKeyTotal；Input 构造默认 7，raw 92386）
+  c.e.engineValues.set(FIELD_KEY_SCAN_FALLBACK + c.e.cur, c.e.engineValues.get(ENGINE_FIELD.setKeyTotal) ?? 7);
 };
 
 /**
@@ -198,38 +229,85 @@ const op_input_dispatch: OpHandler = (c) => {
     let b = e.engineValues.get(ENGINE_FIELD.keyScanCursor + cur) ?? 0;
     // ★emulator 近似：引擎的游标复位在帧泵 `sub_4780D0`（每帧重建掩码）里，emulator 没有对应钩子；
     //   这里用「**掩码变了 ⇒ 新一轮扫描**」近似（同一掩码状态下仍按引擎语义连续派发多个键）。
+    //   ★已知偏差（本票 P2 `0x100` 复核）：引擎里 `cur+122287` 的**唯一**复位点是 `0xFF`（raw 25005）；
+    //   删掉这条近似才能让"同时按多个键 ⇒ 逐个派发"成立（近似会在掩码任一成分被
+    //   `consumeEdges()` 清掉时把游标拉回 0 ⇒ 只见最低位重复）。删它会让
+    //   `test/op-a5.test.ts:161/169`（三次不同掩码、中间无 `0xFF`）变红 —— 那份守卫不在本票的
+    //   可写文件集里，故**保留近似 + 登记**（见 changes-c158.md 的"别人该接"）。
     if (e.keyScanLastMask !== mask) {
       e.keyScanLastMask = mask;
       b = 0;
     }
-    if (b >= keyTotal) return; // 引擎 raw 25031-25032：游标越界 ⇒ 直接返回（不派发）
+    if (b >= keyTotal) {
+      c.frame.operandCount = 1; // 引擎 raw 25024 的 `95805 = 1` 未被改写 ⇒ ip 前进 1 dword
+      return;
+    }
     while (b < keyTotal && ((mask >> b) & 1) === 0) b++;
-    if (b >= keyTotal) return; // 引擎 raw 25035-25036：扫完没有置位 ⇒ 返回
+    if (b >= keyTotal) {
+      c.frame.operandCount = 1;
+      return;
+    }
     e.engineValues.set(ENGINE_FIELD.keyScanCursor + cur, b + 1);
     const t = e.input.joyJump[b] ?? -1; // ★索引 = 掩码位本身（不是 b-4）
-    if (t === -1 || t === 0xffffffff) return;
+    if (t === -1 || t === 0xffffffff) {
+      c.frame.operandCount = 1; // raw 25046 的早退支：槽仍是 1
+      return;
+    }
     const p = labelPos(c.frame, t);
-    if (p === null) return;
+    if (p === null) {
+      c.frame.operandCount = 1;
+      return;
+    }
     pushReturn(false);
     c.jump(p);
+    // ★raw 25064：自行定 ip 之后把长度槽写 **0**（派发器据此**不**再前进）。
+    //   这就是审计 P2 `0x100` 要的「handler 决定 ip 是否前进」——emulator 的落点是
+    //   `StepTrace.operandCount`（`interpreter.ts:220` 在 handler **之后**读它）。
+    c.frame.operandCount = 0;
     return;
   }
   // ★默认键分支（raw 25050-25062）：掩码为空时取 `b = Engine[517]`（SetKeyTotal）当**下标**查同一张表，
   //   命中就跳；压的返回点是**下一条**（+1）—— 默认键处理器不该回头再扫。
   const t = e.input.joyJump[keyTotal] ?? -1;
-  if (t === -1 || t === 0xffffffff) return;
+  if (t === -1 || t === 0xffffffff) {
+    c.frame.operandCount = 1;
+    return;
+  }
   const p = labelPos(c.frame, t);
-  if (p === null) return;
+  if (p === null) {
+    c.frame.operandCount = 1;
+    return;
+  }
   pushReturn(true);
   c.jump(p);
+  c.frame.operandCount = 0; // raw 25064（两条分支共用这一行出口）
 };
 
-/** 0x101 (poll-input, sub_419CC0)：刷掩码后复位（清待处理输入）。 */
+/**
+ * 0x101 (poll-input, sub_419CC0 raw 25069-25082)：刷掩码后复位（清待处理输入）+ **三条引擎写**。
+ *
+ * 体逐字：
+ * ```
+ * _this[30*cur + 95805] = 1;
+ * sub_478090(_this + 258, _this + 174802);   // 消费刷（只吃挂起事件）
+ * _this[174801] &= ~0x8000000u;              // ① 清 ADV 运行位（下次 ADV 泵动作前必须由脚本重新 arm）
+ * _this[174802] = 0;                         //    清整张掩码
+ * _this[122367] = 1;                         // ③ ★语义未定位（与 122369/122370 同族）
+ * _this[122370] = 0;                         // ② ★CancelMessageKey 三态机复位（raw 20119-20141 只读它）
+ * ```
+ * ★修前 `op_poll_input` 一件都没做（审计 P2 `0x101`：①②③ 三条全缺）。三格里 ① 有**现成读者**
+ * （`Engine.advActive` = `effect_flags & 0x8000000`，被 ADV 泵/`0xCD` 用）、② 有现成读者
+ * （`sub_411900` raw 20119-20126 的三态机；emulator 侧对应 `set:CancelMessageKey` 那条分支，
+ * 见 `engine.ts` 的 `serviceAdv`），③ 按体如实写出（读者是 `sub_419D20` 一族的同族格）。
+ */
 const op_poll_input: OpHandler = (c) => {
   const plan = planFor(c);
   // 引擎 raw 25068-25074：`sub_478090(...)` 后 `*v2 = 0` ⇒ **消费刷**（挂起事件，不含按住态）
   c.e.input.flushPending();
   c.e.input.consumeEdges();
+  c.e.effectFlags &= ~0x8000000; // ① raw 25077
+  c.e.engineValues.set(FIELD_FRAME_122367, 1); // ③ raw 25079（引擎格是**非**索引的 `_this[122367]`）
+  c.e.engineValues.set(FIELD_CANCEL_MESSAGE_KEY, 0); // ② raw 25080
 };
 
 /** 0xCD (get-input-type, sub_41ACD0)：消息/ADV"点击推进"门。

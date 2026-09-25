@@ -217,11 +217,18 @@ test('★六条都必须在册、带票，且 note 里有 raw 地址（台账的
   }
 });
 
-test('★四条 Scene 变换：台账 `implemented` **且**真在 `OPS` 里（不许只改台账字段）', () => {
+test('★四条 Scene 变换：台账 `implemented`/`partial` **且**真在 `OPS` 里（不许只改台账字段）', () => {
   for (const op of IMPLEMENTED) {
     const e = ledger.entries.find((x) => x.opcode === op);
     assert.ok(e, `0x${op.toString(16)} 必须在册`);
-    assert.equal(e.disposition, 'implemented', `0x${op.toString(16)} 本轮已落地 ⇒ 必须是 implemented`);
+    // ★2026-09-24（`tickets/T-0149`）：缺口台账新增 **`partial`** 一阶处置位（= 已注册且语料级可用，
+    //   但相对引擎体仍缺某条分支/能力，逐条见其 `missing[]`）—— 这几条正是那个状态。**不许**把本断言
+    //   改回"必须等于 implemented"：那会把「注册状态」与「完整度」两件事钉在一起，而真正的反谎报检查
+    //   是下一行的 `OPS.has(op)`（"标了已落地就必须真在 OPS 里"），它一个字都没放宽。
+    assert.ok(
+      ['implemented', 'partial'].includes(e.disposition),
+      `0x${op.toString(16)} 本轮已落地 ⇒ 必须是 implemented 或 partial（实际 ${e.disposition}）`,
+    );
     assert.ok(OPS.has(op), `0x${op.toString(16)} 标 implemented ⇒ 必须真在 OPS 里（谎报会被这条抓住）`);
   }
 });
@@ -240,13 +247,28 @@ test('★两条未实现（0x1C4/0x23A）仍 `deferred`，且不得出现在运�
   }
 });
 
-test('★「未实现」清零：台账里不再有 unimplemented，且 deferred 全都带 note', () => {
+test('★「未实现」只许是 `T-0111` ① 登记的那 5 条语料 0 处指令，且一条都不许进运行时表', () => {
   const unimpl = ledger.entries.filter((e) => e.disposition === 'unimplemented');
+  // ★最小 retarget（2026-09-24，**前提被 `T-0111` ① 取代**）：旧断言是「`unimplemented` 必须清零」。
+  //   那条目标立在 emulator 三表还不全的时候；`T-0111` ① 按体把 5 条**语料 0 处**的指令如实登记成
+  //   `unimplemented`（口径 = 命中即 `NotImplementedOp` **硬报错**、非静默；见各条 note 与
+  //   `test/opcode-gaps.test.ts` 的棘轮），同时全量对账证明了「文档仍 `仅映射` 但运行时已注册」
+  //   恰好 1 条（`0x222`，已改 `已核对`）⇒ "清零"这个形态本身已不再代表"没有缺口"。
+  //   ⇒ 口径改成**更强**的两条：① 集合恰是那 5 条（增删都要人过目）；② **每条都不在三张表里**
+  //   —— 这才是"未实现"的本义（旧断言反而允许"注册了却算未实现"蒙混过去）。
+  const want = ['0x105', '0x2ca', '0x309', '0x339', '0x22e'];
   assert.deepEqual(
     unimpl.map((e) => `0x${e.opcode.toString(16)}`),
-    [],
-    '本轮目标：unimplemented 清零（每条都要有据 implemented/deferred/engine-internal）',
+    want,
+    'unimplemented 集合必须恰是 T-0111 ① 登记的那 5 条语料 0 处指令（有增减请同时改本条与台账）',
   );
+  for (const e of unimpl) {
+    const op = e.opcode;
+    assert.ok(
+      !OPS.has(op) && !NATIVE_OPS.has(op) && !ENGINE_INTERNAL_OPS.has(op),
+      `0x${op.toString(16)} 标 unimplemented ⇒ 不得进任何运行时表（否则命中不会硬报错，"未实现"就变成静默）`,
+    );
+  }
   for (const e of ledger.entries) {
     if (e.disposition === 'deferred') {
       assert.ok((e.note ?? '').length >= 40, `deferred 0x${e.opcode.toString(16)} 必须写 why（note ≥ 40 字）`);

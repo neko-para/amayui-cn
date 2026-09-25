@@ -444,6 +444,12 @@ const op_set_object_transform: OpHandler = (c) => {
 };
 
 /**
+ * `dbl_51D7F8 = 0.5`（raw 4197）—— 引擎给顶点位置做的**半像素偏移**（见 `op_mesh_create` 的订正 1：
+ * `sub_4A1F00` raw 122235-122238）。单独取名是为了让"这个魔数是什么、从哪来"在调用点一眼可见。
+ */
+const HALF_PIXEL = 0.5;
+
+/**
  * **`0x320` create-mesh**（`sub_432150` raw 41012-41078，argc=10）：建顶点四边形 + 逐顶点色。
  *
  * 操作数布局（**全是"数组基址"**，引擎用取址读法 `sub_42BF60`/`sub_42AEA0` 而不是取值读法）：
@@ -455,6 +461,14 @@ const op_set_object_transform: OpHandler = (c) => {
  * `vcount <= 0` 时引擎打「頂点数%dは不正です．」并**不建几何**（⇒ 不画）。
  * 语料里所有站点都是同一个满屏四边形：x=(0,1280,0,1280)、y=(0,0,720,720)（十六进制 0x500/0x2d0），
  * 颜色数组来自 INIT2 的 `copy-local-array (global-int f8c48/f8c4c)` = 逐顶点 `0xFFFFFFFF`（不透明白）。
+ *
+ * ★**订正（`tickets/T-0155`）**：**顶点位置要减 0.5**。引擎这一段在**被调体里**
+ *   （raw 41069 → `sub_4ADFE0` raw 132786 → `sub_4A1F00` raw 122235-122238）逐顶点做
+ *   `pos.x -= dbl_51D7F8; pos.y -= dbl_51D7F8;`（`dbl_51D7F8 = 0.5`，raw 4197；同一句也出现在
+ *   DrawPrimitive 路径 `sub_4A3590` raw 123309-123316）⇒ 满屏四边形在真机上是
+ *   `(−0.5,−0.5)..(1279.5,719.5)`。修前直接取数组值 ⇒ 整块几何偏 (+0.5,+0.5)。
+ *   **z 不减**（体里只动 `a2+0`/`a2+4` 两格）。
+ *   守卫 `test/gfx-state-operand-io.test.ts`（合成指令 + 录制型宿主，逐顶点断言）。
  */
 const op_mesh_create: OpHandler = (c) => {
   const plan = planFor(c);
@@ -473,13 +487,14 @@ const op_mesh_create: OpHandler = (c) => {
   const baseColors = [];
   for (let i = 0; i < Math.max(0, vcount); i++) {
     verts.push({
-      x: floatArrayAt(e, frame, xRef, i),
-      y: floatArrayAt(e, frame, yRef, i),
+      // ★raw 122235-122238（`sub_4A1F00`）：x/y 各减 `dbl_51D7F8 = 0.5`（raw 4197），z 不动。
+      x: floatArrayAt(e, frame, xRef, i) - HALF_PIXEL,
+      y: floatArrayAt(e, frame, yRef, i) - HALF_PIXEL,
       z: floatArrayAt(e, frame, zRef, i),
       u: floatArrayAt(e, frame, uRef, i),
       v: floatArrayAt(e, frame, vRef, i),
     });
-    // 引擎：`(dec(alphaWord) << 24) | (dec(rgbWord) & 0xFFFFFF)`（raw 41054-41058）
+    // 引擎：`(unsigned)(dec(alphaWord)) << 24 | (dec(rgbWord) & 0xFFFFFF)`（raw 41054-41058）
     const a = readRef(e, frame, refAt(aRef, i)) >>> 0;
     const rgb = readRef(e, frame, refAt(cRef, i)) >>> 0;
     baseColors.push((((a << 24) >>> 0) | (rgb & 0xffffff)) >>> 0);
@@ -780,7 +795,7 @@ const op_clear_draw_item_anim_starts: OpHandler = (c) => {
  */
 export const GFX_ITEM_OPS: OpTable = [
   [0x219, op_set_draw_pos], // 描画位置 (x,y,z) → native（DrawItem+36/+40/+44）
-  [0x21e, op_set_scale_matrix], // 缩放动画窗（窗1；sx/sy/sz ÷256）→ native.setScaleAnim
+  [0x21e, op_set_scale_matrix], // 缩放动画窗（窗1；sx/sy/sz ÷100，`dbl_5201F0` raw 4430）→ native.setScaleAnim
   [0x21f, op_set_rotation_anim], // 旋转动画窗（窗2；轴+角度）→ native.setRotationAnim
   [0x220, op_set_translation_anim], // 平移动画窗（窗3）→ native.setTranslationAnim
   [0x239, op_set_flipbook], // flipbook 动画窗（窗4；帧数/列数/标志）→ native.setFlipbook

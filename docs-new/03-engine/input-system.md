@@ -474,3 +474,31 @@ E3 实测 `revealRestarts = 2` → 修后 0）。常态行为条目见 `engine-c
   `test/save-slot-chain.test.ts`（TITLE → Load Data → SAVE.BIN，零未实现 opcode）。
 - 竖直滚轮与消息泵的耦合（ADV 推进分支只认 `<0`，raw 13938）见本文档前面章节；水平滚轮在引擎里
   **没有**泵侧读者（只有 `0x2E5` 自己）。
+
+### 15.1 配置键的来源与位号出处（2026-09-24 只读查证；全文 `tickets/T-0168/notes.md`）
+
+- **默认值 `3` / `1` 是引擎写死的**：`Reg` 构造函数 `sub_491880`（raw 111736-111739）。**唯一**的覆盖写者是
+  `Reg` vtable+0x2C 的 ini 载入器 `sub_494220`（读 `WHEELKEYUP=` 行，raw 112705-112718，同时写
+  `message:WheelKeyUpOnTW`）；`aWheelkeyup` / `aWheelkeydown` 两个常量在整份反编译里**只被引用 4 处**（全在该
+  `_stricmp` 链上）。`.lst:432701` = `.data:00529808 dd offset sub_494220`（就是那个 vtable 槽）。
+- **游戏内设置界面改不了它**：`src/**` 里 `set:` 键名 0 命中；6 条 `SetConfig` opcode 的键名全是常量；键位类
+  opcode 只出现在 `SYSTEM4.txt`。随包数据、真机 `SYS4REG.INI`（959 B，连 `[set]` 段都没有）与注册表里都没有
+  这个键 ⇒ overlay 里那行 `WheelKeyUp=3` 是本工程 `renderIni` **全量输出**的产物，不是随包默认。
+- **读端零上界校验**：位号只做 `>= 0` 判定（`.lst:004B9CAB` 的 `js`），随后 `shl cl`（`.lst:004B9CBE`）**没有钳位**
+  ⇒ 负位号被整条跳过（什么都不做）；**`>= 32` 会按 x86 的移位量掩码取模成 `位 & 31`**（即落到某个低位掩码上，
+  而**不是**"什么都不做"）。emulator 侧 `addWheel` / `addHWheel` 现在的越界行为与修法见 `tickets/T-0171`
+  （关键结论：**模式开时一律不该进累加器** —— 引擎那个累加支 raw 141580-141583 与模式门
+  `Engine+699204 & 0x90100000` 的 `if` 是配对的，模式开时它不可达）。
+- **掩码位号来自脚本，且 `0xC9` 是扫描码不是 VK**：`SYSTEM4.txt:93` 的 `i10c 8 c9` 经 `sub_4220B0`（raw 30632）
+  写 `Input[1176 + 33] = 8`；引擎键码表 `sub_476AA0`（raw **91413**）把 `_this[1633]` 置成 `33`
+  ⇒ `Input[1432 + 0xC9] = 33 = VK_PRIOR`（PageUp）。消费者 = WM_KEYDOWN `sub_4B8DF0`（raw 140851-140862）与
+  轮询 `sub_4770A0`（raw 91551-91568）；emulator 的键码→VK 表（93 条）与该表逐条一致。
+- **ADV 泵里的翻页只由"上滚位"触发**：raw 20343-20348 读 `1 << Conf(set:WheelKeyUp)`，门 `effect_flags & 0x40000000`；
+  **下滚位没有单独判**（raw 20355 落进 `else` ⇒ 上滚没命中时试着前进一格）；翻页**本身不是 opcode**（直接
+  `sub_459770`）。`0x84` 与 `sub_41F790` **不读输入**（op1 就是方向），语料 0 处。
+- **`0x84` 的登记缺口**：它既不在运行时三张表、也没有 `analysis/opcode-gaps.json` 条目 ⇒ 语料为 0 时棘轮看不见它，
+  一旦被命中就是硬停（`opcode-gaps.json` 的 `unimplemented: 0` 掩盖了这件事）。HISTORY.BIN 自己的翻页链是
+  `0x10D` / `joy-callback` → `0x1D0`（带符号步数）→ `0x1D3` → `0x1D1`。
+- 受限态补充（供后续核对，别当普遍结论）：进 HISTORY 后 4000 帧、VM 45 步/帧的探针里，`0x1D1` 是**唯一**的
+  "未实现 opcode"；同链另有 7 条 `partial`、2 条 engine-internal 与 2 类宿主丢弃（`0x1F9` 的
+  `setTextureObjectParam`、`0x308` 的 unhandled）。

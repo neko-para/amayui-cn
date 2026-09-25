@@ -16,6 +16,16 @@ import type { DrawStringStyle } from '../../vm/native.js';
 import { drawStringGlyphs, TEXT_FILL_ALPHA } from '../../text/layout.js';
 import { drawAliasedLayer, drawGlyphPassesOnSurface, type GlyphPass } from '../text/raster.js';
 import { clampScaledBlit } from '../scene/ops.js';
+import {
+  DEFAULT_TILE_SIZE,
+  clampFillRect,
+  dividedTiles,
+  slotNodeSizeOf,
+  type DividedTile,
+  type SlotNode,
+  type SlotNodeKind,
+  type SurfaceClass,
+} from '../slotSurface.js';
 
 /**
  * **延迟销毁队列**：纹理不能"说销毁就销毁" —— 见 `TextureCache.collectGarbage` 的说明。
@@ -81,6 +91,50 @@ export const BARRIER_WARN_MS = 1_000;
 /** 屏障的轮询粒度（等 `Promise.allSettled` 与这个定时器赛跑，取先到者）。 */
 export const BARRIER_POLL_MS = 64;
 
+/**
+ * `createTexture(slot, w, h)` 对**已有表面**的三态决策。
+ *
+ * ★为什么把它抽成纯函数（`tickets/T-0175` ⑤，出处 `tickets/T-0166` §4-②）：这段语义原先只活在
+ * `create()` 的一个复合 `if` 里，而它**只能在有 DOM 的环境里跑**（下面要 `document.createElement`
+ * 与 `PIXI.Texture.from`）⇒ Node 测试里 `old` 永远是 undefined，**"同尺寸复用 / 换尺寸入队销毁"
+ * 这条接线一直没有任何断言**。抽出决策后，前两态的**语义**可以在 Node 里逐条钉住
+ * （`test/texture-lifecycle.test.ts`）；真正 `push` 进 `DestroyQueue` 的那一行仍只在真宿主里走到
+ * —— 这一点如实保留（见 `T-0175` 的 ⑤）。
+ *
+ * 三态：
+ *  - `reuse-clear`：同一槽、同 `w/h`（各自 `max(1, ·)`）、同 DPR，**且有 DOM、且 w/h > 0**
+ *    ⇒ 复用同一张画布并清空（= 引擎的"新空表面"，之前直绘的字随之消失）；
+ *  - `replace`：有旧表面但不满足复用 ⇒ **旧纹理推入 `DestroyQueue`**（延迟到 `present()` 之后再销毁，
+ *    舞台可能还挂着引用它的 Sprite）；
+ *  - `fresh`：本来就没有旧表面。
+ */
+export type CreateTextureDecision = 'reuse-clear' | 'replace' | 'fresh';
+
+export function decideCreateTexture(opts: {
+  /** 该槽现有画布表面的尺寸（没有则 `null`）。 */
+  had: { w: number; h: number; res: number } | null;
+  w: number;
+  h: number;
+  res: number;
+  /** `typeof document !== 'undefined'`。 */
+  hasDom: boolean;
+}): CreateTextureDecision {
+  const cw = Math.max(1, opts.w | 0);
+  const ch = Math.max(1, opts.h | 0);
+  if (
+    opts.had &&
+    opts.had.w === cw &&
+    opts.had.h === ch &&
+    opts.had.res === opts.res &&
+    opts.hasDom &&
+    opts.w > 0 &&
+    opts.h > 0
+  ) {
+    return 'reuse-clear';
+  }
+  return opts.had ? 'replace' : 'fresh';
+}
+
 export class TextureCache {
   /** `slot → Texture`（已绑定且已载入）。 */
   readonly slotTex = new Map<number, Texture>();
@@ -94,6 +148,31 @@ export class TextureCache {
   readonly #canvasSlots = new Map<number, CanvasSlot>();
   /** 待销毁的旧纹理（`present()` 之后由 `collectGarbage` 统一销毁）。 */
   readonly #pendingDestroy = new DestroyQueue();
+  /**
+   * `slot → CTexture 表面尺寸`（`0x1F8` 的 op2/op3 ⇒ 引擎的 `CTexture+1040/+1044`，raw 107024-107032）。
+   *
+   * 与 `#canvasSlots` 的区别：那个是**画布**（要 DOM ⇒ Node/E2E 里没有），这份是**引擎字段本身**。
+   * 它只作 `size()` 的**兜底**（画布/已载入图都拿不到时才用），但 `slotNodeSize()` 拿它当
+   * `0x23F` 的"对象尺寸"来源（见 `slotSurface.ts` 的 `slotNodeSizeOf`）。
+   */
+  readonly #surfaceSize = new Map<number, { w: number; h: number }>();
+  /**
+   * `slot → 表面类`（`0x1F8` 的 `mode == 3 ⇒ DividedTexture`，raw 122855-122871）。
+   * `create`/`release` 都会改写它（引擎每次重建对象、释放时析构）。
+   */
+  readonly #slotClass = new Map<number, SurfaceClass>();
+  /** `slot → DividedTexture 的子纹理表`（`sub_43A740` 建的那个 vector）。 */
+  readonly #slotTiles = new Map<number, DividedTile[]>();
+  /** `slot → 槽对象`（引擎 `Engine[slot + 94672]`，字节 `+378688`；`0x20F`/`0x236` 惰性建）。 */
+  readonly #slotNodes = new Map<number, SlotNode>();
+  /**
+   * **分块边长**：引擎的 `dword_55052C`（`int dword_55052C = 256;` raw 5663），由 `0x248`
+   * （`sub_4252E0` raw 32705）按 op1 改写 ⇒ **脚本可配**。`create` 时读它（`sub_43A740` raw 46675）。
+   *
+   * ★`0x248` 的宿主接线见 `tickets/T-0153/changes-renderer.md` 的跨域接线节：VM 侧现在只把它
+   * 写进 `engineValues`（`-248`），要让它真的影响分块，需要一个 `0x248 → 宿主` 的缝。
+   */
+  tileSize: number = DEFAULT_TILE_SIZE;
 
   /**
    * @param log 日志回调。
@@ -305,9 +384,23 @@ export class TextureCache {
    * ★**画布按 DPR 光栅化**（`canvasPixelSize` + `CanvasSource.resolution = res`）：文本直绘路径曾按 1× 建画布，
    * 于是整张纹理在 Pixi 舞台上被放大 DPR 倍显示 ⇒ 直绘文本发虚、笔画看着比消息窗文本粗
    * （用户实测："非 ADV 窗口的文字整体像是粗体"）。两条路径现在同口径。
+   *
+   * ★**两套类**（`T-0153` 的 `0x1F8` 条目，raw 122855-122871）：`mode == 3` ⇒ `operator new(0x460)`
+   * + `sub_43A5C0` = **DividedTexture**（多出 `+1104/+1108/+1112` 的**子纹理 vector**，按
+   * `dword_55052C` 分块，`sub_43A740` raw 46674-46790）；**其余任何 mode** ⇒ `operator new(0x450)`
+   * + `sub_48AB20` = NormalTexture。两者在宿主侧都是"一张画布"（像素结果同一条绘制路径），
+   * 但**类与子纹理表必须建出来**：否则 `0x23F` 一族按对象类型分派的查询口径无从来处，也无从分辨
+   * "这个槽是分块纹理"（引擎里它的析构/重建路径都不一样，`sub_43A630` raw 46573-46598）。
    */
-  create(slot: number, w: number, h: number, mode: number): void {
-    this.#bumpEpoch(slot); // ★该槽的表面换了 ⇒ 更早发起的异步载入不得再回写（见 #bumpEpoch）
+  create(slot: number, w: number, h: number, mode: number): void {    this.#bumpEpoch(slot); // ★该槽的表面换了 ⇒ 更早发起的异步载入不得再回写（见 #bumpEpoch）
+    // ★类/子纹理表/表面尺寸：先记（与 DOM 无关的部分）——引擎在 `sub_4A2C10` 里是"先写槽记录、
+    //   再建对象、最后建表面"（raw 122847-122893），与画布存在与否无关。
+    const cls: SurfaceClass = mode === 3 ? 'divided' : 'normal';
+    this.#slotClass.set(slot, cls);
+    if (cls === 'divided') this.#slotTiles.set(slot, dividedTiles(w, h, this.tileSize));
+    else this.#slotTiles.delete(slot);
+    if (w > 0 && h > 0) this.#surfaceSize.set(slot, { w: w | 0, h: h | 0 });
+    else this.#surfaceSize.delete(slot);
     const bound = this.#slotImgid.get(slot);
     if (bound !== undefined) {
       const tex = this.#imgCache.get(bound);
@@ -317,22 +410,31 @@ export class TextureCache {
     const ch = Math.max(1, h | 0);
     const res = TextureCache.#dpr();
     const old = this.#canvasSlots.get(slot);
-    if (old && old.w === cw && old.h === ch && old.res === res && typeof document !== 'undefined' && w > 0 && h > 0) {
+    const decision = decideCreateTexture({
+      had: old ? { w: old.w, h: old.h, res: old.res } : null,
+      w,
+      h,
+      res,
+      hasDom: typeof document !== 'undefined',
+    });
+    if (decision === 'reuse-clear') {
       // 同尺寸同 DPR ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）。清空要用物理尺寸。
-      const ctx = old.canvas.getContext('2d');
+      const ctx = old!.canvas.getContext('2d');
       if (ctx) {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, old.canvas.width, old.canvas.height);
+        ctx.clearRect(0, 0, old!.canvas.width, old!.canvas.height);
       }
-      old.tex.source.update();
-      this.slotTex.set(slot, old.tex);
-      this.log(`createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x (复用空白表面：清空)`);
+      old!.tex.source.update();
+      this.slotTex.set(slot, old!.tex);
+      this.log(`createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x class=${cls} (复用空白表面：清空)`);
       return;
     }
     // 尺寸/DPR 变了（或首次）⇒ 换一张画布；旧纹理**延迟到 present 之后**再销毁（见 collectGarbage）
-    if (old) {
+    // ★`decision` 由 `decideCreateTexture` 这个**纯函数**给出（`tickets/T-0175` ⑤）：它的三态语义
+    //   在 Node 里可测（`test/texture-lifecycle.test.ts`），而真正 push 的那一行仍只在真宿主走到。
+    if (decision === 'replace') {
       this.slotTex.delete(slot);
-      this.#pendingDestroy.push(old.tex);
+      this.#pendingDestroy.push(old!.tex);
       this.#canvasSlots.delete(slot);
     }
     if (typeof document !== 'undefined' && w > 0 && h > 0) {
@@ -346,9 +448,75 @@ export class TextureCache {
       this.slotTex.set(slot, tex);
     }
     this.log(
-      `createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x` +
+      `createTexture slot=${slot} ${w}x${h} mode=${mode} @${res}x class=${cls}` +
+        (cls === 'divided' ? ` tiles=${this.#slotTiles.get(slot)?.length ?? 0}@${this.tileSize}` : '') +
         (bound !== undefined ? ` (沿用已绑定 imgid=0x${bound.toString(16)})` : ' (新建空白表面)'),
     );
+  }
+
+  /** `0x1F8` 建的表面是哪一套类（`undefined` = 该槽没有表面）。 */
+  surfaceClassOf(slot: number): SurfaceClass | undefined {
+    return this.#slotClass.get(slot);
+  }
+
+  /** DividedTexture 的子纹理表（Normal/无表面 ⇒ `[]`）。 */
+  dividedTilesOf(slot: number): DividedTile[] {
+    return this.#slotTiles.get(slot) ?? [];
+  }
+
+  /** 该槽的**表面**尺寸（引擎 `CTexture+1040/+1044`）：画布 → 表面记录 → 已载入图；都没有 ⇒ `undefined`。 */
+  #surfaceSizeOf(slot: number): { w: number; h: number } | undefined {
+    const cs = this.#canvasSlots.get(slot);
+    if (cs) return { w: cs.w, h: cs.h };
+    const srf = this.#surfaceSize.get(slot);
+    if (srf) return srf;
+    const tex = this.#healSlot(slot);
+    return tex ? { w: tex.source.width, h: tex.source.height } : undefined;
+  }
+
+  /**
+   * **`0x20F` play-movie / `0x236`：登记该槽的对象**（引擎 `Engine[slot + 94672]`，字节 `+378688`）。
+   *
+   * 引擎体（raw 31627-31644 / 32245-32264）：
+   * ```c
+   * if ( !_this[4 * v2 + 378688] ) {                    // ★惰性：已有对象就复用、不再 new
+   *   v3 = operator new(0x480u);  obj = sub_489040(v3);  //  CMovieToTexture
+   *   _this[4 * v2 + 378688] = obj;
+   *   if ( !sub_488DC0(obj, hwnd, 视频表, id) ) throw;    //  装载失败 ⇒ 抛（可见）
+   * }
+   * ```
+   * @returns 是否**新建**（`true` = 走了 `if (!obj)` 分支；`false` = 复用已有对象）。
+   */
+  noteSlotNode(slot: number, kind: SlotNodeKind, id: number, mode: number): boolean {
+    if (this.#slotNodes.has(slot)) {
+      const n = this.#slotNodes.get(slot)!;
+      n.kind = kind;
+      n.id = id;
+      n.mode = mode;
+      return false;
+    }
+    this.#slotNodes.set(slot, { kind, id, mode });
+    return true;
+  }
+
+  /** 该槽的对象（没有 ⇒ `undefined`）。 */
+  slotNodeOf(slot: number): SlotNode | undefined {
+    return this.#slotNodes.get(slot);
+  }
+
+  /** 销毁该槽的对象（`0x1F8`/`0x1F9`/`0x1FA` 的"先把 `Engine[slot+94672]` 置 0"，raw 31211-31269）。 */
+  clearSlotNode(slot: number): boolean {
+    return this.#slotNodes.delete(slot);
+  }
+
+  /**
+   * **`0x23F` 的宿主侧答案**（`sub_4307B0` raw 40019-40030）：该槽**有没有对象**决定引擎写 `−1`
+   * 还是"尺寸 ×1000"（`sub_4080B0` raw 12960-12979 按 `obj[+1084]` 分派）。
+   *
+   * ★与 `size()`（`0x208`，读**表面**表 `Scene+4*slot+42456`）**不是同一个问题**：两张表不许混。
+   */
+  slotNodeSize(slot: number): { present: boolean; w: number; h: number } {
+    return slotNodeSizeOf(this.#slotNodes.get(slot), this.#surfaceSizeOf(slot));
   }
 
   /**
@@ -440,6 +608,19 @@ export class TextureCache {
    * 引擎语义（handler 逐字）：`op1=槽`、`op2/op3` = 左上角、`op4/op5` = **宽/高**（体里是 `x2 = x + op4`，
    * 不是"矩形右下角"）、`op6` = α（`>255` 夹到 255）、`op7` = RGB（体里组装成 `0xFFRRGGBB`，A 固定 FF，α 另走 a5）。
    * ★槽没有 `create-texture` 出来的表面时引擎打「FillTexture」错误串 ⇒ emulator 同样忽略并留痕（与 `drawString` 同口径）。
+   *
+   * ★**先夹取、夹空不画**（`T-0153` 的 `0x20B` 条目，`sub_4A4C70` raw 124608-124634）：
+   * ```c
+   * v8 = obj[263]; v18 = obj[264]; v9 = obj[265]; v10 = obj[266];   // 表面记录 = (0,0,w,h)
+   * if ( *a3 < v8 ) *a3 = v8;      // 左取 max
+   * if ( a3[1] < v18 ) a3[1] = v18;// 上取 max
+   * if ( a3[2] > v9 ) a3[2] = v9;  // 右取 min
+   * if ( a3[3] > v10 ) a3[3] = v10;// 下取 min
+   * if ( *v5 >= v5[2] ) return 1;  // ★空矩形 ⇒ 直接返回，**一笔都不画**
+   * if ( v5[1] >= v5[3] ) return 1;
+   * ```
+   * 旧实现把 `x/y/w/h` 原样交给 `ctx.fillRect` ⇒ 越界填色会画出引擎根本不会画的那一块（而且
+   * 引擎那条早退连"锁表面/下发 fill"都不做）。
    */
   fillSlotRect(slot: number, x: number, y: number, w: number, h: number, argb: number, alpha: number): void {
     const cs = this.#canvasSlots.get(slot);
@@ -447,17 +628,25 @@ export class TextureCache {
       this.log(`fillSlotRect slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径：FillTexture 错误）`);
       return;
     }
+    // ★夹到该表面的记录边界（Normal/Divided 的建面路径都写 (0,0,w,h)，raw 107029-107032 / 46686-46689）
+    const r = clampFillRect(cs.w, cs.h, x, y, w, h);
+    if (!r) {
+      this.log(`fillSlotRect slot=${slot} (${x},${y},${w}x${h}) 被夹空 ⇒ 不画（引擎 sub_4A4C70 的 *v5 >= v5[2] 早退）`);
+      return;
+    }
     const ctx = cs.canvas.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0); // 逻辑坐标（同 drawString）
     ctx.globalAlpha = Math.max(0, Math.min(255, alpha)) / 255;
     ctx.fillStyle = `rgb(${(argb >>> 16) & 0xff}, ${(argb >>> 8) & 0xff}, ${argb & 0xff})`;
-    ctx.fillRect(x, y, w, h);
+    ctx.fillRect(r.x, r.y, r.w, r.h);
     ctx.globalAlpha = 1;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     cs.tex.source.update();
+    const clipped = r.x !== x || r.y !== y || r.w !== w || r.h !== h;
     this.log(
-      `fillSlotRect slot=${slot} (${x},${y},${w}x${h}) color=#${(argb >>> 0).toString(16).padStart(8, '0')} alpha=${alpha}`,
+      `fillSlotRect slot=${slot} (${r.x},${r.y},${r.w}x${r.h}) color=#${(argb >>> 0).toString(16).padStart(8, '0')} alpha=${alpha}` +
+        (clipped ? '（被表面边界夹取）' : ''),
     );
   }
 
@@ -498,6 +687,10 @@ export class TextureCache {
     if (cs) return { w: cs.w, h: cs.h }; // 程序化表面：尺寸就是 create-texture 给的那对
     const tex = this.#healSlot(slot);
     if (tex) return { w: tex.source.width, h: tex.source.height };
+    // ★create-texture 建过面、但本宿主没有画布（Node/E2E 里的 `TextureCache`）⇒ 用引擎字段本身兜底
+    //   （`CTexture+1040/+1044`，`0x208` 读的就是它；raw 119786-119795）。
+    const srf = this.#surfaceSize.get(slot);
+    if (srf) return { w: srf.w, h: srf.h };
     const imgid = this.#slotImgid.get(slot);
     if (imgid !== undefined) void this.preloadImage(imgid); // 首次查询触发载入
     this.log(
@@ -714,10 +907,33 @@ export class TextureCache {
     return n;
   }
 
-  /** `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。 */
+  /**
+   * `0x1FA` release-texture：解除该槽的纹理（程序化表面一并释放）。
+   *
+   * ★引擎体分两段（`0x1FA` = `sub_422E00` raw 31245-31268）：
+   * ```c
+   * v3 = _this[op1 + 94672];                 // ① 该槽的 movie 对象（`0x20F`/`0x236` 建的那张表）
+   * if ( v3 ) { sub_488FB0(v3); (**v4)(v4, 1); _this[op1 + 94672] = 0; }
+   * sub_49E980(_this + 80708, op1);          // ② 表面/槽记录，体 raw 119586-119603：
+   * //   if ( !_this[a2 + 11676] ) {           //   ★外层门（VM 侧那条 finding）
+   * //     _this[5 * a2 + 466] = -1;           //   ★槽→imgid 记录写 −1（`0x216` 读的就是这一格）
+   * //     v4 = _this[a2 + 10614];             //   CTexture 表面
+   * //     if ( v4 ) { (**v4)(v4, 1); _this[a2 + 10614] = 0; }   // 析构
+   * //   }
+   * ```
+   * ⇒ 释放之后 `0x208` 必答 `0×0`（表项为 0，`sub_49ED60` raw 119786-119795）。
+   * 本实现的对应物：`slotTex` / 画布 / **`#slotImgid`（槽记录）** / 表面尺寸 / 类与子纹理 / 槽对象
+   * **全部**撤掉。★旧实现只删 `slotTex` 与画布而**保留 `#slotImgid`**，于是 `size()` 会走
+   * `#healSlot` 用旧 imgid 自愈出**旧尺寸**（`T-0153` 的 `0x1FA` 条目：与引擎相反）。
+   */
   release(slot: number): void {
     this.#bumpEpoch(slot); // ★表面被释放 ⇒ 更早发起的异步载入不得再回写（见 #bumpEpoch）
     this.slotTex.delete(slot);
+    this.#slotImgid.delete(slot); // ★`Scene[5*slot+466] = -1`（raw 119594）
+    this.#surfaceSize.delete(slot);
+    this.#slotClass.delete(slot);
+    this.#slotTiles.delete(slot);
+    this.#slotNodes.delete(slot); // 该槽 movie 对象一并析构（raw 31245-31269）
     const cs = this.#canvasSlots.get(slot);
     if (cs) {
       this.#pendingDestroy.push(cs.tex); // ★延迟销毁（舞台可能还挂着引用它的 Sprite）

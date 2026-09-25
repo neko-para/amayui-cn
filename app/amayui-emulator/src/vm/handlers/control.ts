@@ -27,9 +27,18 @@ function planFor(c: StepCtx): PlannedOperands {
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
+import { QUEUE_INT_SLOTS } from '../engine.js';
+import { ShowMessageError } from '../native.js';
 import { cfgInt } from '../../engineConfig.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
+
+/**
+ * 引擎的两条「层级过深」报错串（`sub_41C6A0` raw 26779 与 `sub_41C7C0` raw 26850 **逐字相同**，
+ * `sprintf` 的实参都是 40）—— 两者都走 `_CxxThrowException(&pExceptionObject, &_TI1_AVCommand_ShowMessage_Exception__)`，
+ * 异常码分别是 65537（`0x3`）/ 65537（`0x6`）。`tickets/T-0156`。
+ */
+const SCRIPT_DEPTH_TEXT = 'ファイルの階層が深すぎます．最大は40です．';
 
 const op_jmp: OpHandler = (c) => {
   const plan = planFor(c);
@@ -65,9 +74,25 @@ const op_call: OpHandler = (c) => {
 const op_call_frame: OpHandler = (c) => {
   const plan = planFor(c);
   const frameIdx = (plan.int(1) ?? 0);
-  if (frameIdx < 0 || frameIdx >= 40) throw new Error(`call-frame: frame index ${frameIdx} 越界`);
+  // ★`tickets/T-0156`（**读体订正**）：`sub_41C900`（= **0x8**）本体里**没有**任何 `op1` 值域/深度校验
+  //   （raw 26886-26892：`383108 = cur` → `v2 = op1` → `cur = v2` → 只查 `frames[v2].ipBase == 0`）。
+  //   那条 `if (v4 >= 40)` 的深度门属 **`0x6`**（`sub_41C7C0` raw 26847-26853，见 `op_load_into_frame`）——
+  //   工作清单把 `sub_41C7C0` 记成了 0x8。这里的 `frameIdx < 0 || >= 40` 是**重写侧的下标边界**（JS 数组
+  //   越界会落到 `undefined`），属**披露的加严**，不是引擎门。
+  if (frameIdx < 0 || frameIdx >= 40) {
+    throw new Error(`call-frame: frame index ${frameIdx} 越界（引擎无此校验，见 handler 注释）`);
+  }
   const target = c.e.frames[frameIdx]!;
-  if (!target.script) throw new Error(`call-frame: frame ${frameIdx} 未预装脚本（需先 load-frame 0x6）`);
+  // ★引擎 raw 26891-26904：目标帧**未预装**（`frames[v2][95781] == 0`，即无脚本）⇒ 组
+  //   `"この階層にはファイルが読み込まれていません．Depth=%d"`（实参 = 帧号）抛 ShowMessage（异常码 **65541**），
+  //   并先把 `cur` 还原成 `383108`（= 调用方）。旧实现是普通 `throw new Error`（宿主看不到引擎文本）。
+  if (!target.script) {
+    throw new ShowMessageError(
+      `この階層にはファイルが読み込まれていません．Depth=${frameIdx}`,
+      0x8,
+      `目标帧 ${frameIdx} 未预装脚本（raw 26891-26904，异常码 65541；需先 load-frame 0x6）`,
+    );
+  }
   const caller = c.e.cur;
   c.e.frames[caller]!.ip += 1;   // 调用方退回后从下一条继续（引擎以帧状态=3 使恢复时 ip+=4*3）
   c.e.callRet = caller;
@@ -109,14 +134,17 @@ const op_jcc: OpHandler = (c) => {
 const op_ret: OpHandler = (c) => {
   const plan = planFor(c);
   const top = c.frame.retStack.pop();
-  if (top !== undefined) {
+  if (top !== undefined && top !== -1) {
     // ★返回栈里存的是 **dword 偏移**（引擎 `sub_41A9B0` raw 25704-25727：`ip = ip_base + 4*v2`）
     //   ⇒ 必须经 `dwordToInstr` 换回指令数组下标。直接用会把偏移当 index 落错指令。
+    // ★`tickets/T-0156`：`-1` 是**空槽哨兵**（raw 25713-25714 `v2 = …; if ( v2 != -1 ) { ip = … }`）
+    //   ⇒ 不跳、落到下一句（引擎同时把步长槽置 1 = 前进一条）。旧实现只判 `undefined`，
+    //   `-1` 会走 `dwordToInstr[-1]`（取不到就抛，映像里恰好有 -1 键则落错指令）。
     const idx = c.frame.script?.dwordToInstr[top];
     if (idx === undefined) throw new Error(`ret: 返回点 dword 偏移 ${top} 不在脚本映像里（${c.frame.name}）`);
     c.jump(idx);
   }
-  // 栈空：同脚本函数调用栈为空 → 不跳，落到下一指令（引擎里 arity=1 前进 1 dword）
+  // 空槽 / 栈空：同脚本函数调用栈为空 → 不跳，落到下一指令（引擎里步长槽=1，前进 1 dword）
 };
 
 /** 0x1 abort (sub_418E60)：程序中止。引擎 `_CxxThrowException(&1, Command_Exit)`——立即退出整个程序。
@@ -285,7 +313,14 @@ const op_exit: OpHandler = async (c) => {
 const op_call_script: OpHandler = async (c) => {
   const plan = planFor(c);
   const target = (plan.int(1) ?? 0); // 目标索引（如 0x5264 或 0）
-  if (c.e.cur >= 39) throw new Error(`call-script: 脚本嵌套过深(>40)`);
+  // ★`tickets/T-0156`：两条异常在引擎里**分型**（`sub_41C6A0` raw 26776-26798）：
+  //   ① `cur >= 39` ⇒ `sub_408050(_this + 8, 1024, "ファイルの階層が深すぎます．最大は%dです．", 40)` +
+  //      `_CxxThrowException(…, &_TI1_AVCommand_ShowMessage_Exception__)`（异常码 65537）= **宿主可见的消息**；
+  //   ② 装载失败（`sub_40ED40` 返回 0）⇒ `_CxxThrowException(&2, &_TI1_AVCommand_Exit_Exception__)` = **程序退出**。
+  //   旧实现两处都是普通 `throw new Error`（既不是宿主消息、也不是程序退出）。
+  if (c.e.cur >= 39) {
+    throw new ShowMessageError(SCRIPT_DEPTH_TEXT, 0x3, `脚本嵌套过深：cur=${c.e.cur} ≥ 39（raw 26776-26783，异常码 65537）`);
+  }
   // 调用方 IP 前进到下一指令（返回后从此继续）
   c.frame.ip += 1;
   const caller = c.e.cur;
@@ -295,9 +330,14 @@ const op_call_script: OpHandler = async (c) => {
   newFrame.caller = caller;
   newFrame.frameArg = 0; // call-script argc=1，仅目标索引，无帧参数
   // 装载目标脚本
-  if (!c.e.fileSource) throw new Error('call-script: no FileSource');
+  if (!c.e.fileSource) throw new ExitScript(); // 引擎：装载路径取不到文件也走 Command_Exit（码 2）
   const src = await c.e.fileSource.readScript(target); // async 文件代理
-  if (!src) throw new Error(`call-script: cannot load script index 0x${target.toString(16)}`);
+  if (!src) {
+    // ★raw 26794-26798：装载失败抛 `Command_Exit`（码 2）= 程序退出（**抛出点在状态更新之后**：
+    //   raw 26787-26792 已写调用点 `[95804]`、`383108 = cur`、`cur = cur + 1` ⇒ 这里同样先改状态再抛）。
+    c.log(`0x3(call-script): 目标脚本 0x${target.toString(16)} 读不到 ⇒ 引擎 Command_Exit（码 2）= 程序退出`);
+    throw new ExitScript();
+  }
   // ★引擎装载脚本也走 `sub_4559C0`（按统一 id 打开文件）⇒ 记「已使用」（`sub_454960`）。
   //   见 handlers/resource-usage.ts 的 0x19D（回想/CG/BGM 鉴赏的解锁判定读的就是这张表）。
   c.e.markFileUsed(target);
@@ -435,12 +475,21 @@ const op_load_into_frame: OpHandler = async (c) => {
   const plan = planFor(c);
   const scriptIdx = (plan.int(1) ?? 0);
   const frameIdx = (plan.int(2) ?? 0);
-  if (frameIdx < 0 || frameIdx >= 40) throw new Error(`0x6: frame index ${frameIdx} 越界`);
+  // ★`tickets/T-0156`：引擎 `sub_41C7C0` 只有 `if (v4 >= 40)` 一条门（raw 26847-26853，**与 `0x3` 同一句
+  //   报错串**、异常码 65537）⇒ 走 ShowMessageError；负数帧号引擎不校验（披露的加严，同 `0x8`）。
+  if (frameIdx >= 40) {
+    throw new ShowMessageError(SCRIPT_DEPTH_TEXT, 0x6, `目标帧号 ${frameIdx} ≥ 40（raw 26847-26853，异常码 65537）`);
+  }
+  if (frameIdx < 0) throw new Error(`0x6: frame index ${frameIdx} 越界（引擎无此校验，见 handler 注释）`);
   if (!c.e.fileSource) throw new Error('0x6: no FileSource');
   const src = await c.e.fileSource.readScript(scriptIdx);
   if (!src) throw new Error(`0x6: cannot load script 0x${scriptIdx.toString(16)}`);
   const script = parseScriptBytes(src.data);
+  // ★`tickets/T-0156`：引擎 `sub_40ED40` raw 18637 `frames[目标][95795] = _this[383108]`，而 `0x6` 的体
+  //   （raw 26845）把 `383108` 设成**装载前的 cur** ⇒ 目标帧的 `caller` = 发起装载的那一帧（不是 -1）。
+  const caller = c.e.cur;
   loadScriptIntoFrame(c.e.frames[frameIdx]!, script, src.name, scriptIdx);
+  c.e.frames[frameIdx]!.caller = caller;
 };
 
 // ★`loadScriptIntoFrame` 已搬到叶子模块 `../scriptFrame.js`（`tickets/T-0089` 消环）：
@@ -510,6 +559,10 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.effectFlags = 0;
   // 引擎 exit-script 是整体复位（sub_428A60：释放 40 帧 + 清全局内存池 + 引擎复位）⇒ 派发队列与现场一并作废。
   c.e.scriptRequests.length = 0;
+  // ★`tickets/T-0156`：整体复位 `sub_40DF10`（raw 18080-18109）把 `_this + 388252` 起的 **10** 个
+  //   `Queue_int` 槽逐个「析构旧 + `new(0x1C)` + `sub_407C50`（空队）」重建 ⇒ 脚本经 `0x132`/`0x133`
+  //   建过、压过值的队**全部回到空队**（旧实现只清 `scriptRequests`，`dispatchQueues` 原样留着）。
+  for (let i = 0; i < QUEUE_INT_SLOTS; i++) c.e.dispatchQueues[i] = [];
   setDispatching(c.e, false); // 引擎整体复位 ⇒ 497400 回初值 0（构造点 raw 18149）
   c.e.dispatchSavedCur = -1;
   c.e.advFields.clear();
@@ -546,12 +599,23 @@ const op_exit_script: OpHandler = async (c) => {
 
 // ---------------------------------------------------------------------------
 // 通用 `Queue_int` 队族：0x132 重建 / 0x133 压入 / 0x134 弹出
-// 容器 = 引擎 `_this + 388252`(字节) 起的 11 个队列指针（`Engine[4*i+388252]`，i=0..10）⇒
-// emulator 的 `Engine.dispatchQueues`（见 `engine.ts` 该字段的注释：规模 11 的引擎证据、
-// `sub_407C50` 构造、`sub_409E10` push 的 FIFO 语义）。
+// 容器 = 引擎 `_this + 388252`(字节) 起的 **10** 个队列指针（`Engine[4*i+388252]`，i=0..9）⇒
+// emulator 的 `Engine.dispatchQueues`（见 `engine.ts` 该字段的注释：`QUEUE_INT_SLOTS = 10` 的引擎证据
+// raw 18080-18109 / 18110-18137 / 22655-22674、`sub_407C50` 构造、`sub_409E10` push 的 FIFO 语义）。
+// ★`tickets/T-0156` 订正：**不是 11 个槽** —— 引擎三处都是"从 10 数到 1"的 `do/while`
+//   （`v15 = 10; … v8 = v15-- == 1;`，先比较后自减 ⇒ 恰好 10 次）。旧注释把 `--` 数成第 11 次。
 // 三条 handler 体都以此开头（arity 槽 = `2*argc+1`，引擎自带 argc 真源）：
 //   0x132 → `= 3`（argc 1）、0x133 → `= 5`（argc 2）、0x134 → `= 7`（argc 3）。
 // ★该槽（`_this + 120*cur + 383220`）是引擎派发器的内部计数器，emulator 不建模（与其它 handler 同）。
+// ★★**下标 0xA 越族**：三条 handler 的地址算式都是 `_this + 4*op1 + 388252` ⇒ `op1 = 0xA` 落在
+//   **byte 388292**，那正是 `Stack_int` 族的**第一格**（raw 18110 `v18 = (_DWORD *)(_this + 388292)`，
+//   `Stack_int` 布局 = `[1]=256(cap)/[2]=256/[3]=buf/[4]=-1`，没有 `Queue_int` 的 `[2]=rd/[3]=wr`）。
+//   也就是说 `0xA` 是一次**类型混淆**访问（`0x132` 会把一个 `Queue_int` 对象塞进 `Stack_int` 槽；
+//   `0x133`/`0x134` 会按 Queue_int 的字段布局去读 Stack_int 对象 ⇒ 野指针写/读），**不是**本族第 11 个队。
+//   本仓**不建模** `Stack_int` 族（`0x137`/`0x138`/`0x139` 见 `stubs.ts`/其它票）⇒ 这里对 `0xA` 显式
+//   **拒绝执行并记日志**（与 `> 0xA` 走错误串分支同样是"不动本族任何队列"），把这层语义**写死**而不是
+//   让它悄悄落到一个不存在的第 11 格上。残余口径差（引擎真机上是 UB/崩溃）在 `tickets/T-0156` 披露。
+const QUEUE_INT_ALIAS_0A = '（0xA 越到 Stack_int 族第一格 byte 388292，raw 18110 ⇒ 类型混淆，emulator 不执行）';
 // ---------------------------------------------------------------------------
 
 /**
@@ -589,6 +653,10 @@ const op_queue_reset: OpHandler = (c) => {
     c.log(`0x132(RESETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不改任何队列`);
     return;
   }
+  if (op1 === 0xa) {
+    c.log(`0x132(RESETQ): 队列下标 0xA ${QUEUE_INT_ALIAS_0A}，不改任何队列`);
+    return;
+  }
   c.e.dispatchQueues[op1] = []; // 析构旧队 + new(0x1C) + sub_407C50 ⇒ 空队（旧内容丢弃）
 };
 
@@ -614,6 +682,10 @@ const op_queue_push: OpHandler = (c) => {
   const op1 = (plan.int(1) ?? 0);
   if ((op1 >>> 0) > 0xa) {
     c.log(`0x133(ADDQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，不压入`);
+    return;
+  }
+  if (op1 === 0xa) {
+    c.log(`0x133(ADDQ): 队列下标 0xA ${QUEUE_INT_ALIAS_0A}，不压入`);
     return;
   }
   c.e.dispatchQueues[op1]!.push((plan.int(2) ?? 0));
@@ -655,6 +727,12 @@ const op_queue_pop: OpHandler = (c) => {
   const op1 = (plan.int(1) ?? 0);
   if ((op1 >>> 0) > 0xa) {
     c.log(`0x134(GETQ): 队列下标 ${op1} > 0xA ⇒ 按引擎走错误串分支，op2/op3 都不写`);
+    return;
+  }
+  if (op1 === 0xa) {
+    // 引擎在 0xA 上按 Queue_int 布局读 Stack_int 对象（`v3[2]` = 256 当 rd、`v3[1]` = cap 当 buf 指针）
+    // ⇒ 野指针读/UB。emulator 不建 `Stack_int` 族 ⇒ 拒绝并把两个出参都不写（与越界支同形），如实披露。
+    c.log(`0x134(GETQ): 队列下标 0xA ${QUEUE_INT_ALIAS_0A}，op2/op3 都不写`);
     return;
   }
   const q = c.e.dispatchQueues[op1]!;

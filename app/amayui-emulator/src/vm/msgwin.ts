@@ -83,7 +83,11 @@ export interface WinGeom {
   originY: number;
   wrapRight: number;
   wrapBottom: number;
-  align: 0 | 1 | 2;
+  /**
+   * `+288`：对齐模式 —— ★**原样存**（引擎 `0x303` 的 `sub_456600` raw 68415 直接把 op2 写进去，
+   * 不做 1/2 之外的归一）。排版层只把 `1`/`2` 当有效值，其它值等于不指定。
+   */
+  align: number;
   alignWidth: number;
   /**
    * 窗底色（`#rrggbb`）。★**恒 `null`：全 `src/` 没有写入点**。
@@ -325,9 +329,14 @@ export function defaultFontStyle(): FontStyle {
 }
 
 /**
- * 消息窗对象（引擎 `Engine[21585 + idx]`，字节基址 0x15144）。
+ * 消息窗对象（引擎 `Engine[21585 + idx]`，字节基址 0x15144 —— 也就是 `Font[261 + idx]`）。
+ *
+ * ★**表大小 = 10**：`0x197` 的落点 `sub_418680`（raw 24114-24152）逐个解引用 `Font[261]..[270]`
+ * 且**不查空**；`sub_456430`（raw 68298）同样。⇒ 构造期就有 10 格，脚本访问的是 0..9。
+ *
  * 字段名用引擎字节偏移，语义尚未逐个定性（见 analysis/fields.json 的 `msgwin_objects`）。
  */
+export const WINDOW_OBJECT_SLOTS = 10;
 export interface MsgObject {
   /** `+100`：0x212 写（op2）。 */
   f100: number;
@@ -339,6 +348,9 @@ export interface MsgObject {
   f280: number;
   /** `+132`：布局重算时清零（sub_404F80）。 */
   f132: number;
+  /** `+200` / `+204`：`0x197`（`sub_418680` raw 24115-24152）逐个写进 **10 个窗对象**的字号格。 */
+  f200: number;
+  f204: number;
   /** `+224` 起 13 个 dword：`0x25C` 写的**文本块参数**（`sub_456510`）。 */
   block224: number[];
   /** `+256` / `+260` / `+272`：`0x25E` 写的颜色三件（最后一个已按 ARGB 组装）。 */
@@ -366,6 +378,10 @@ export interface MsgObject {
  * 字段名后的 `[K]` 是引擎 DWORD 下标（`_this[K]`），便于与 `analysis/fields.json` 对照。
  */
 export class MsgWindow {
+  constructor() {
+    this.#buildObjectTable();
+  }
+
   // ---- ADV 状态字段（引擎 reset `sub_40DF10` 会整块清 0，见 docs-new/03-engine/engine-reset-mainloop.md）----
 
   /** `[122455]`（0x7795C）：本页文本**正在显示中**。仅「逐字显示」路径会置 1。 */
@@ -730,6 +746,31 @@ export class MsgWindow {
     this.reveal.delete(win);
   }
 
+  /**
+   * **用一批整行文本整体替换该窗内容**（`tickets/T-0170`，`0x1D1`/`0x82` 那条"重画某窗记录"的落点）。
+   *
+   * 引擎侧：`sub_4675A0` 把记录表 `Font+3364` 里从 `op2` 起的那一段**画进该窗的离屏表面**
+   * （`sub_45E870` 建文本框 raw 81197-81216 → 逐字 GDI 出字 raw 81275-81417；`win+20` 就是该表面，
+   * 见 `sub_4ACE50` 在该函数里每次都传 `win+20` 当纹理）。重写侧直接把"该窗要显示的文本"
+   * 换成这一页，再由既有的 `emitWin` 通路光栅化 —— 与 `0x82`（`op_gdi_repaint_window`）的
+   * **同一条登记近似**："整窗从模型重排"，没有引擎那种"在该窗表面**追加**若干行"的粒度。
+   *
+   * ★`lineEnded = true`：每一行就是引擎记录里的一整行（连续 `flags&4` 记录已在
+   *   `TextItemTable.repaintRange` 里按 `memcpy` 规则拼好）⇒ 不能再被 `show-text` 的
+   *   "同段续写"逻辑并回上一行。
+   */
+  setPageText(win: number, lines: readonly string[]): void {
+    const s = this.slot(win);
+    s.segments.length = 0;
+    // 引擎重画时字形连颜色一起进表面（`applyOverride` → `captureFontStyle` 会在调用方补上）；
+    // 这里先清掉旧快照，避免上一页的颜色残留到本页。
+    s.fontStyle = null;
+    for (const t of lines) s.segments.push({ text: t, ruby: [], lineEnded: true });
+    this.#bumpContent(win);
+    // 引擎这一页是"已经画好的"⇒ 没有逐字显现过程（`sub_4675A0` 里没有显现游标推进）。
+    this.reveal.delete(win);
+  }
+
   /** `show-text`：向槽尾追加一段文本。`i` = op1（0 ⇒ 默认窗）。 */
   appendText(i: number, text: string): void {
     const s = this.slot(this.resolveWin(i));
@@ -781,6 +822,8 @@ export class MsgWindow {
         f276: 0,
         f280: 0,
         f132: 0,
+        f200: 0,
+        f204: 0,
         block224: new Array<number>(13).fill(0),
         f256: 0,
         f260: 0,
@@ -794,6 +837,32 @@ export class MsgWindow {
       this.objects.set(idx, o);
     }
     return o;
+  }
+
+  /**
+   * **只取不建**的消息窗对象（引擎 `_this[op1 + 21585]` 的读取形态）。
+   *
+   * 引擎的窗对象表 = `Font[261..270]`，**恰好 10 格**（`0x197` 的 `sub_418680` raw 24114-24152
+   * 逐个**无条件**解引用 ⇒ 构造之后这 10 格恒非空；`sub_456430` raw 68298 同样不查空）。
+   * 而**按脚本下标的访问**（`0x212`/`0x213`/`0x25D` 的 `_this[result + 21585]`、`0x198` 的
+   * `sub_456400` raw 68272、`0x301` 的 `sub_404F80` raw 10750）都带 `if (v)` 空判 ⇒
+   * 表外下标时引擎读的是**表外内存**（未定义）。emulator 的诚实选择 = **不发明对象、跳过写入**
+   * （旧实现走 `object()` 会凭空建对象并把值写进去 —— 审计 `0x212`/`0x213`/`0x25d` 的那条缺陷）。
+   */
+  objectAt(idx: number): MsgObject | undefined {
+    return this.objects.get(idx);
+  }
+
+  /**
+   * 窗对象表（引擎 `Font[261..270]`，10 格）—— **构造期建好**，与引擎同生命周期。
+   *
+   * 为什么要预建：`0x197`（raw 24114-24152）与 `sub_456430`（raw 68298）都**不查空**地解引用
+   * 这 10 格 ⇒ 它们在这 10 个下标上恒存在；把"存在性"交给惰性创建会让"表外下标"与"表内下标"
+   * 无法区分（前者引擎读表外内存、后者恒非空）。`reset()` 会重建整张表。
+   */
+  #buildObjectTable(): void {
+    this.objects.clear();
+    for (let i = 0; i < WINDOW_OBJECT_SLOTS; i++) this.object(i);
   }
 
   /** 当前页的纯文本（诊断/测试用）。 */
@@ -835,6 +904,7 @@ export class MsgWindow {
     // （`textSlotArg` 已于 `T-0101` 的 D6 删除；真源是 `engineValues[97055]`）
     this.slots.clear();
     this.objects.clear();
+    this.#buildObjectTable();
     this.wins.clear();
     this.font = defaultFontStyle();
     this.reveal.clear();

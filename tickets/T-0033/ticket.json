@@ -35,7 +35,7 @@
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "} else if (e.textRevealing) {",
       "note": "驱动分支：逐字分支在推进分支之前（修前这里不消费输入）",
-      "line": 356
+      "line": 448
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
@@ -47,7 +47,7 @@
       "file": "app/amayui-emulator/src/vm/engine.ts",
       "anchor": "if ((mask & 0x10) !== 0 && panel.cursorValid()) {",
       "note": "★对照：等待泵在派发前会 finishCharReveal（清 bit30）**并继续推进** ⇒ 不能直接用它实现逐字期间的点击",
-      "line": 1189
+      "line": 1239
     }
   ],
   "links": {

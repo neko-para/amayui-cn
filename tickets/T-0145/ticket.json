@@ -15,50 +15,50 @@
     {
       "file": "analysis/opcodes.json",
       "anchor": "两目标条件跳转",
-      "note": "★判据（第一顺位）：`jcc` 的表口径 —— `op1≠0`→跳 op2；`op1==0`→跳 op3；`0xFFFFFFFF` = 落下句。据此 `eq local0,(3f90),0` + `jcc local0 ffffffff <skip>` = 3f90==0 时落下句、整块执行",
-      "line": 985
+      "note": "★判据（第一顺位）：jcc 的表口径 —— op1≠0→跳 op2；op1==0→跳 op3；0xFFFFFFFF = 落下句。据此 eq local0,(3f90),0 + jcc local0 ffffffff <skip> = 3f90==0 时落下句、整块执行",
+      "line": 1122
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/control.ts",
       "anchor": "const cond = (plan.int(1) ?? 0);",
-      "note": "★极性判据的体：cond != 0 → 跳 op2；cond == 0 → 跳 op3；op2/op3 = `-1`（0xFFFFFFFF）= 落下句",
+      "note": "★极性判据的体：cond != 0 → 跳 op2；cond == 0 → 跳 op3；op2/op3 = -1（0xFFFFFFFF）= 落下句",
       "line": 83
     },
     {
       "file": "src/NOVEL.txt",
       "anchor": "jcc (local-int 0) ffffffff label_0000088c",
-      "note": "被读反的那两条：`eq local0,(3f90),0` + 本行 ⇒ 3f90 == 0 时 local0=1 ⇒ **落下句**（35-117 整块执行）",
+      "note": "被读反的那两条：eq local0,(3f90),0 + 本行 ⇒ 3f90 == 0 时 local0=1 ⇒ 落下句（35-117 整块执行）",
       "line": 34
     },
     {
       "file": "src/SYSTEM4.txt",
       "anchor": "jcc (local-int 0) ffffffff label_000013e0",
-      "note": "同型的第二处（场景装配块 `label_00000d70`：186-268 含 i1f6 / i23d / 黑幕 / SETCHARM）",
+      "note": "同型的第二处（场景装配块 label_00000d70：186-268 含 i1f6 / i23d / 黑幕 / SETCHARM）",
       "line": 185
     },
     {
       "file": "docs-new/05-scripts/SYSTEM4.md",
-      "anchor": "3f90==0 时整块跳过",
-      "note": "要订正的旧结论（NOVEL.md:25 的「3f90==0 时 `jcc label_0000088c` 整段跳过」同型）",
+      "anchor": "3f90 == 0 ⇒ 落下句、整块执行",
+      "note": "★判据 1 已落地：原锚点「3f90==0 时整块跳过」随本次订正从结论位消失 ⇒ 按棘轮纪律 retarget 到新结论串（该串仍在文中，但已降为「★原写…是反的」的引述，不再代表结论）。SYSTEM4.md:31 现在写「3f90 == 0 ⇒ 落下句、整块执行」；NOVEL.md 同批三处（:25 门极性 / :27 ADV 收场 / :39 invariant）一并改；生成器 = scripts/build-scripts.mjs",
       "line": 31
     },
     {
       "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
       "anchor": "clearDrawContainer: 释放 drawItems=0 meshes=0 文本窗=1→0（保留纹理槽）",
-      "note": "★运行期反证：这道门之后的 `i1f6`（NOVEL.txt:191）在 SN0000→SC0000 边界确实执行了（日志 7953）",
+      "note": "★运行期反证：这道门之后的 i1f6（NOVEL.txt:191）在 SN0000→SC0000 边界确实执行了（日志 7953）",
       "line": 20
     },
     {
       "file": "app/amayui-emulator/src/live2d/runtime.ts",
       "anchor": "raw 19385-19388** 就是",
-      "note": "★T-0145 ③ **已落地**（2026-09-24）：`l2dResetHost` 的注释现在引正确依据 `sub_410160` raw 19385-19388，并把旧注释的 `sub_403EF0` 在同段标为**假依据**（原锚点「引擎在装载段复位显示容器（raw 19913-19915」已随订正删除 —— 按棘轮纪律 retarget 到同义新串）",
-      "line": 188
+      "note": "★T-0145 ③ 已落地：l2dResetHost 的注释现在引正确依据 sub_410160 raw 19385-19388，并把旧注释的 sub_403EF0 在同段标为假依据",
+      "line": 239
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "或容器被整批清空（`clearDrawContainer`",
-      "note": "与实现自相矛盾的注释（clearDrawContainer 实际是续期 60 帧、不解除留帧）",
-      "line": 861
+      "anchor": "不是解除点",
+      "note": "★判据 4 已落地（原锚点「或容器被整批清空（clearDrawContainer」随本条改写消失 ⇒ 按棘轮纪律 retarget 到同义新串）：#holdFrameAfterCurtainDrop 的文档现在写明 clearDrawContainer 只续期不解除",
+      "line": 901
     }
   ],
   "links": {
@@ -73,12 +73,38 @@
     ]
   },
   "id": "T-0145",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：status —— 主 agent 逐条核了四条判据（详见 tickets/T-0145/changes.md）：判据2 核完 = 无（test/ 里 3f90 零命中，no-op）；判据3 复核确认已落地（save-slot.ts:316-318 与 live2d/runtime.ts:188 都已引正确依据 sub_410160 raw 19385-19388）；判据4 本轮改掉（pixiBackend.ts 的 #holdFrameAfterCurtainDrop 文档把 clearDrawContainer 写成解除点，与实现 Math.max(..., HOLD_MAX_FRAMES) 的续期语义相反）；判据1（3f90 门极性）被 T-0108 挡着（NOVEL.md/SYSTEM4.md 是 analysis/scripts.json 的生成物，该文件此刻归 T-0108）⇒ 票保持 doing。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— 判据 4 落地：pixiBackend.ts 的 #holdFrameAfterCurtainDrop 文档改成与实现一致；并把 evidence[7] 的锚点 retarget 到同义新串（原锚点串「或容器被整批清空（clearDrawContainer」被本次改写吃掉）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— 判据 1 落地：NOVEL/SYSTEM4 的 `global 3f90` 门极性按 opcodes.json 的 0xA0 行订正（3f90 == 0 ⇒ 落下句、整块执行），两份生成物已重生成；evidence[4] 锚点按棘轮纪律 retarget"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：doneWhy —— 判据 1 落地 + 关单（主 agent 亲自做）：3f90 极性订正并重生成 NOVEL.md/SYSTEM4.md；判据 2 复核为 no-op；判据 3/4 早前已落地；evidence[4] 锚点 retarget"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → done —— 四条判据全闭合（判据 5 的 verify 以「四份台账绿 + 55/55 文档/台账守卫 + 基线红不变」判绿，波次收口会再复核）"
     }
-  ]
+  ],
+  "doneWhy": "四条判据全部落地（判据 1 是主 agent 本轮做的）：① `global 3f90` 门极性按 `analysis/opcodes.json` 的 `0xA0` 行订正为「3f90 == 0 ⇒ 落下句、整块执行」（判据以 opcode 表为准，不靠对反编译的解读），落 `analysis/scripts.json` 六处（SYSTEM4 的 layout what + gotcha；NOVEL 的 layout×2 + invariant）⇒ `node scripts/build-scripts.mjs` 重生成 `docs-new/05-scripts/{NOVEL,SYSTEM4}.md`；顺手改正原写的第二处反向结论「4fd9 != 0 时才走 i1f6」⇒ 真值 `4fd9 == 0`（`label_00000f9c` 在 src/SYSTEM4.txt:211-213）；运行期反证保留在 gotcha 里（src/NOVEL.txt:191 的 i1f6 在 SN0000→SC0000 边界确实执行过）。② 无测试钉旧极性（grep 3f90 test/ 零命中 ⇒ no-op）。③ 与 ④ 早前已落地（save-slot.ts:316-318 / live2d/runtime.ts:188 引 sub_410160 raw 19385-19388；pixiBackend.ts 的 #holdFrameAfterCurtainDrop 改成「续期 60 帧、不解除」）。evidence[4] 的锚点按棘轮纪律 retarget 到新结论串。守卫：doc-model + capability-ledger + script-ledger + ticket-ledger + opcode-gaps + op-1d0-1d1-text-metrics + opcode-arity + opcode-operands + operand-plan + harness-convergence + registry-classification = 55/55 绿（node --import tsx --test）。★判据 5 的说明：四份台账 --validate 全绿；`test:all` 的 3 条基线红不变，本轮多出的红都在 B 波在改的 src/** 文件里（test/texture-slot-resolve、动画窗 deepStrictEqual），本票只动文档/数据层 ⇒ 波次收口时会再复核一次。"
 }

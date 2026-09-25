@@ -31,6 +31,7 @@ interface GapEntry {
   disposition: string;
   note: string;
   ticket: string;
+  missing?: { what?: unknown; ticket?: unknown; raw?: unknown }[];
 }
 interface GapReport {
   entries: GapEntry[];
@@ -97,7 +98,7 @@ test('★缺口台账给出的量级与审计结论一致（防"修着修着清�
   }
   // 4 条"体里有真实效果的 no-op"（审计 T-0077）★不许从台账里消失、也不许变成"没理由的处置"。
   // 2026-09 首次处置：`0x10c`=deferred（等 T-0052 的键盘→掩码链路）、`0x324`/`0x325`=engine-internal
-  // （emulator 无 Effect3D 子系统 ⇒ 有据跳过）、`0x244` 另一路在办 ⇒ 这里不再钉死 disposition，
+  // （Scene 模型侧自 T-0167 起已有 Effect3D 半边，缺的是 opcode→模型那一半 ⇒ 有据跳过）、`0x244` 另一路在办 ⇒ 这里不再钉死 disposition，
   // 改钉"必须在册 + note 必须把体内真实效果与为什么不实现写清楚 + 仍标 unjustified 就必须带票"。
   const byOp = new Map(report.entries.map((e) => [e.opcode, e]));
   for (const op of [0x244, 0x325, 0x10c, 0x324]) {
@@ -133,4 +134,88 @@ test('★生成物只渲染 note 的一句话（全文留在 JSON）', () => {
   assert.ok(big.length >= 20, `样本太少（${big.length} 条 >400 字），守卫失去辨别力`);
   const leaked = big.filter((e) => md.includes(norm(e.note).slice(0, 240))).map((e) => `0x${e.opcode.toString(16)}`);
   assert.deepEqual(leaked, [], `这些条目的 note 全文漏进 md 了（应由 summarize() 裁剪）：${leaked.join(' ')}`);
+});
+
+/**
+ * ★**`partial` 处置位的棘轮**（`tickets/T-0149`）。
+ *
+ * 为什么需要它：disposition 此前只回答「**注册了没有**」（`unimplemented` / `engine-internal` / `implemented` / `deferred`），
+ * 而本次审计（`docs-new/99-records/2026-09-impl-audit/`，436 条）里绝大多数缺口落在「**已注册、但缺分支 / 缺消费端 / 只是近似**」——
+ * 一旦写成 `implemented` 就再没人回来核对。`partial` 就是给这一类的一等处置位：**必须**逐条带 `missing[]`
+ * （`{what, ticket, raw}`：缺哪条分支/能力、承接它的票、引擎行号或单一段行区间）。
+ *
+ * 本测试**直接读真源 JSON**（不依赖生成器的 `problems`），所以哪怕有人绕过生成器手改也拦得住：
+ *  ① 处置值必须在允许集合内（复查 `unimplemented`/`engine-internal(-unjustified)`/`implemented`/`deferred`/`partial`）；
+ *  ② `partial` 的 `missing[]` 不许空/缺字段；
+ *  ③ `missing[].ticket` 必须形如 `T-\d{4}` 且在 `tickets/<id>/ticket.json` 真实存在（票被删 ⇒ 红）；
+ *  ④ `missing[].raw` 必须匹配 `^\d+(-\d+)?$`（只允许单一行号或单一段行区间）；
+ *  ⑤ `missing[]` 只能挂在 `partial` 上（"还缺东西"不许藏在 `implemented` 里）。
+ *
+ * ★这是**棘轮**：它只要求"标了 partial 就得说清缺什么"，不要求条数增长；反过来也不许用
+ * "删 missing 条目 / 改 disposition=implemented" 消红（那要先真的把缺口修掉）。
+ */
+test('★缺口台账 `partial` 棘轮：missing[] 必须齐备、票号真实存在、raw 合法', () => {
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'analysis/opcode-gaps.json'), 'utf8')) as {
+    entries: GapEntry[];
+    dispositions?: Record<string, string>;
+  };
+  const ALLOWED = new Set(['unimplemented', 'engine-internal', 'engine-internal-unjustified', 'implemented', 'deferred', 'partial']);
+
+  const ticketOk = (id: string) => fs.existsSync(path.join(ROOT, 'tickets', id, 'ticket.json'));
+  const problems: string[] = [];
+  let partialOps = 0;
+  let missingItems = 0;
+
+  for (const e of reg.entries) {
+    const hex = `0x${e.opcode.toString(16)}`;
+    if (!ALLOWED.has(e.disposition)) problems.push(`${hex}：disposition 不在允许集合内（${e.disposition}）`);
+    const miss = e.missing;
+    if (e.disposition !== 'partial') {
+      if (Array.isArray(miss) && miss.length) {
+        problems.push(`${hex}：disposition=${e.disposition} 却带 ${miss.length} 条 missing[] ⇒ 要么改 partial，要么删掉`);
+      }
+      continue;
+    }
+    partialOps++;
+    if (!Array.isArray(miss) || miss.length === 0) {
+      problems.push(`${hex}：标为 partial 但 missing[] 为空/缺失`);
+      continue;
+    }
+    miss.forEach((m, i) => {
+      missingItems++;
+      if (typeof m?.what !== 'string' || m.what.trim().length < 8) problems.push(`${hex}：missing[${i}].what 缺/太短`);
+      if (typeof m?.ticket !== 'string' || !/^T-\d{4}$/.test(m.ticket)) {
+        problems.push(`${hex}：missing[${i}].ticket 格式错（${JSON.stringify(m?.ticket)}）`);
+      } else if (!ticketOk(m.ticket)) {
+        problems.push(`${hex}：missing[${i}].ticket=${m.ticket} 在 tickets/ 下不存在`);
+      }
+      if (typeof m?.raw !== 'string' || !/^\d+(-\d+)?$/.test(m.raw)) {
+        problems.push(`${hex}：missing[${i}].raw 不匹配 ^\\d+(-\\d+)?$（${JSON.stringify(m?.raw)}）`);
+      }
+    });
+  }
+
+  assert.deepEqual(problems, [], `partial 棘轮失败：\n  - ${problems.join('\n  - ')}`);
+
+  // 台账必须**真的**用上这个处置位（否则棘轮失去辨别力 —— 与"md 只渲染一句话"那条哨兵同一思路）
+  assert.ok(partialOps >= 20, `partial 条目太少（${partialOps} 条），棘轮失去辨别力（T-0149 首批应 ≥20）`);
+  assert.ok(missingItems >= partialOps, `missing 条目数（${missingItems}）应 ≥ partial opcode 数（${partialOps}）`);
+  // 处置枚举的**文档侧**也要有：真源 `dispositions` 里必须解释 partial
+  assert.ok(reg.dispositions?.partial, 'analysis/opcode-gaps.json 的 dispositions 必须解释 partial（口径写在真源里）');
+});
+
+test('★缺口台账 `partial`：md §7 的每条 missing 都进了生成物（谁都不许只活在心里）', () => {
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'analysis/opcode-gaps.json'), 'utf8')) as { entries: GapEntry[] };
+  const md = fs.readFileSync(path.join(ROOT, 'docs-new/03-engine/opcode-gaps.md'), 'utf8').replace(/\\\|/g, '|');
+  assert.ok(md.includes('## 7. 部分实现'), 'md 必须有「部分实现」段（否则 partial 在生成物里不可见）');
+  const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
+  const missed: string[] = [];
+  for (const e of reg.entries) {
+    if (e.disposition !== 'partial') continue;
+    for (const m of e.missing ?? []) {
+      const what = norm(String(m.what)).slice(0, 60);
+      if (!md.includes(what)) missed.push(`0x${e.opcode.toString(16)} → ${what}`);
+    }
+  }
+  assert.deepEqual(missed, [], `这些 partial 缺口没进生成物：\n  - ${missed.join('\n  - ')}`);
 });

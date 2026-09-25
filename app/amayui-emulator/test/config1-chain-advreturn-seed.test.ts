@@ -38,7 +38,18 @@ test('★T-0102 判决实验：记录表非空 ⇒ i082 用重派生后的实时
     advReturnProbe: { g1397: 1, msg: -1, seedRecords: 3 },
   });
   const s = seeded.advReturn!;
-  assert.equal(s.recordsAtI082, 3, '种子必须落进记录表（门读的就是它）');
+  // ★`T-0151` retarget（**前提被取代**，不是放宽断言；承接 `T-0170` 的同一条判据）：
+  //   `T-0170` 把旧断言 `=== 3` 改成 `=== 6`（"3 种子 + 3 行正文"），但漏了一道门 ——
+  //   `CONFIG.txt:41 i1bb 0` … `:355 i1bb 1`，ADV 样例正文在 `:177-179`（夹在中间）⇒
+  //   `Engine[97055] = 0x80000000` 期间引擎**不记任何记录**（`sub_46BE30` raw 83941-83942 /
+  //   `sub_4691D0` raw 81549 / `sub_46B100` raw 82726 / `sub_461A10` raw 76380-76381）。
+  //   ⇒ 本链路真值 = **只有种子**（3）。判据实验与守卫见 `config1-chain-advreturn-real.test.ts` 的同名注释。
+  assert.ok(s.recordsAtI082 >= 3, '种子必须落进记录表且**非空**（门读的就是它；下界 = 种子数）');
+  assert.equal(
+    s.recordsAtI082,
+    3,
+    '★真值 = **只有 3 个种子**（本链路的正文入队落在 `i1bb 0` 区间 ⇒ 引擎不记；raw 83941-83942 / 81549）',
+  );
   assert.equal(s.republishByI082, 1, '★记录表非空 ⇒ i082 必须重发布该窗**恰好一次**');
   assert.ok(s.restyleByI082, 'i082 那一笔的发布载荷必须被探针捕获（窗口号 + 颜色 + 是否有快照）');
   assert.equal(s.restyleByI082!.win, 9, '重画的窗必须是那个 ADV 窗口');
@@ -56,7 +67,26 @@ test('★T-0102 判决实验：记录表非空 ⇒ i082 用重派生后的实时
   const x = six.advReturn!;
   assert.equal(x.sawI082, true, '`g0 = 6` 同样满足 `:220-225` 的重派生门 ⇒ 必须跑到 i082');
   assert.equal(x.after.fill, '#ffffff', '`g0 = 6` + 旁白 ⇒ 仍必须重派生为白');
-  assert.equal(x.republishByI082, 0, '跳过重新入队 ⇒ 记录表仍空 ⇒ 引擎那道门也不过（与引擎同）');
+  // ★`T-0151` retarget（**前提被取代**，与 `config1-chain-advreturn-real.test.ts` 同一条）：
+  //   `T-0170` 这里写的是"跳过重新入队 ⇒ 记录表仍空"是**修前缺陷**、并断言 `recordsAtI082 === 3`、
+  //   `republishByI082 === 1`。缺的那道门是 `i1bb`：CONFIG.txt 整段正文（含 `:177-179` 的 ADV 样例）
+  //   跑在 `:41 i1bb 0` … `:355 i1bb 1` 之间 ⇒ `Engine[97055] = 0x80000000` ⇒ 引擎的**每一处**
+  //   记录 push 都被 `if (a5 >= 0)` / `if (a3 >= 0)` 挡掉（raw 83941-83942 / 81549 / 82726 /
+  //   76380-76381）⇒ 本组（**没塞种子**）表就是**空**的，`i082` 那道越界门（raw 79502 的 `v8 > op2`）
+  //   在引擎里**也**过不去 ⇒ 不重画。旧断言 `=== 3` / `=== 1` 才是把"表恒空"这个**缺陷**当成了引擎行为。
+  //   ★正面判据（证明这道门不是"实现没做"）：`test/op-0104-gdi-repaint.test.ts` 用合成指令直接
+  //   写记录表后 `i082` 必重画；`test/t0151-msgwin-vm.test.ts` 的
+  //   `★0x6E/0x196 的第 5 实参 = Engine[97055]：i1bb 0 期间**不记已画行**` 是这道门的红→绿守卫。
+  assert.equal(
+    x.recordsAtI082,
+    0,
+    '★本组**没塞种子** + 本链路的正文入队落在 `i1bb 0` 区间 ⇒ 记录表为空（raw 83941-83942 / 81549）',
+  );
+  assert.equal(
+    x.republishByI082,
+    0,
+    '★记录表为空 ⇒ `i082` 的越界门（raw 79502 的 `v8 > op2`）在**引擎里也**过不去 ⇒ 什么都不做',
+  );
   assert.ok(
     !x.opsSyncedAfterI076.includes(0x6e),
     '★`g0 = 6` 不得出现 `show-text`（0x6E）：`:262` 假分支跳过了 `:265/:266` 的重新入队',
@@ -68,9 +98,19 @@ test('★T-0102 判决实验：记录表非空 ⇒ i082 用重派生后的实时
   assert.equal(y.after.fill, '#ffffff', '剧情路线（g0=1、有当前消息号）也必须重派生为白');
   assert.ok(y.opsSyncedAfterI076.includes(0x71), '★该分支必须先 `i071 2` 清窗（`:265`）');
   assert.ok(y.opsSyncedAfterI076.includes(0x6e), '★然后 `:437 show-text 2` 把当前消息文本重新入队（脚本自己填内容）');
+  // ★`T-0151` retarget（与上面 `x` 同一条前提）：
+  //   `T-0170` 这里断言 `recordsAtI082 === 3` / `republishByI082 === 1`（"重入队也会 push 已画行记录"）。
+  //   但 `:437` 的 `show-text 2` 同样跑在 `i1bb 0` 区间内（`CONFIG.txt:41`…`:355`）⇒ 引擎不记
+  //   （raw 83941-83942）⇒ 本组表也为空 ⇒ `i082` 的门过不去 ⇒ 不重画。
+  //   分支区分仍由上面两条 `opsSyncedAfterI076` 断言保证（那两条不受影响）。
+  assert.equal(
+    y.recordsAtI082,
+    0,
+    '★本组**没塞种子**；`:437` 的重入队也在 `i1bb 0` 区间 ⇒ 记录表为空（raw 83941-83942）',
+  );
   assert.equal(
     y.republishByI082,
     0,
-    '★`show-text` **不** push 文本项记录（记录表只由 0x1D2/0xC4 族填）⇒ 该链路上 i082 仍不画',
+    '★记录表为空 ⇒ `i082` 的越界门（raw 79502）在引擎里也过不去 ⇒ 不重画（与 `x` 组同）',
   );
 });

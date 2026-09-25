@@ -90,12 +90,18 @@ test('★SETWEATHER 族 5 条：带非平凡实参跑一步不抛错，且 ip �
   }
 });
 
-test('★缺口台账：这五条是 engine-internal 且带票（不许静默退回硬停）', () => {
+test('★缺口台账：这五条是 engine-internal/partial 且带票（不许静默退回硬停）', () => {
   const g = JSON.parse(fs.readFileSync(path.join(ROOT, 'analysis/opcode-gaps.json'), 'utf8'));
   for (const { op } of FAMILY) {
     const e = g.entries.find((x: { opcode: number }) => x.opcode === op);
     assert.ok(e, `0x${op.toString(16)} 必须在 analysis/opcode-gaps.json 里`);
-    assert.equal(e.disposition, 'engine-internal', `0x${op.toString(16)} 的处置必须是 engine-internal`);
+    // ★2026-09-24（`tickets/T-0149`）：台账新增 `partial`（= 有据 no-op 这一半仍成立，但相对引擎体仍缺
+    //   某条能力，逐条见其 `missing[]`）。本族的处置允许是这两者之一；**下面两条（带票 + note 写清
+    //   "为什么不建模"）一个字都没放宽**，那才是这张测试要守的东西。
+    assert.ok(
+      ['engine-internal', 'partial'].includes(e.disposition),
+      `0x${op.toString(16)} 的处置必须是 engine-internal 或 partial（实际 ${e.disposition}）`,
+    );
     assert.ok(e.ticket, `0x${op.toString(16)} 必须带票（改 disposition 前先看票）`);
     assert.ok(/no-op/.test(e.note) || /为什么/.test(e.note), `0x${op.toString(16)} 的 note 必须写清"为什么不建模"`);
   }

@@ -1,12 +1,57 @@
 {
-  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但当前没有任何渲染消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。★2026-09：`Item.blend`/`MeshObj.blend` 已在 tickets/T-0017 接上消费者（场景混合状态机），基线清空。",
-  "known": [],
-  "reason": {},
+  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但生产路径上没有任何消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。★每条基线项都必须在 reason 里写清『谁是它唯一的读者、为什么那不算消费者』，并在 tickets 里回链承接票（没有对应票就写 \"none\"，并在 reason 里说明）。★2026-09：`Item.blend`/`MeshObj.blend` 已在 tickets/T-0017 接上消费者（场景混合状态机），基线清空。★2026-09-25（T-0150 扩面）：扫描面从 `drawitem/model.ts` 的 `Item`/`MeshObj` 扩到 `Engine`/`SceneState`（含嵌套 `SceneState.render4`）/`SceneXform`/`TextFrame`，于是冒出一批存量死写 —— 逐条登记在下方 `known`，`tickets` 回链到 2026-09 审计的对应修复批。",
+  "known": [
+    "Engine.callFlag",
+    "Engine.callLink",
+    "Engine.dispatching",
+    "Engine.texSlotFlags",
+    "SceneState.render4.commits",
+    "SceneState.render4.entryParams",
+    "SceneState.render4.primReset",
+    "SceneState.render4.primTransform",
+    "SceneState.render4.released3D",
+    "SceneState.render4.slotParams",
+    "SceneState.render4.transitionClears",
+    "SceneXform.maskA",
+    "SceneXform.maskB"
+  ],
+  "reason": {
+    "Engine.callFlag": "`0x3`/`0x2`（call-script / exit）族在 control.ts 里维护的『调用语义标志』：全仓**只有写点**（`engine.ts:264` 声明初始化 `= 0`、`control.ts:509` 在执行 `exit-script` 时复位），没有任何生产读者 —— 生产路径读的是 `Engine.callRet`（`control.ts` 多处）与 `ENGINE_FIELD.callRet`，这两格才是活的。★这不是扫描器认不出消费者：引擎侧调用链确实没有对应的第三格，属**真死写**（多余状态）。修法 = 在 `src/vm/**` 里删掉该字段与 `control.ts:509` 的复位（range 外，见 T-0150 报告）。",
+    "Engine.callLink": "同 `Engine.callFlag`：只有声明初始化（`engine.ts:263`）与 `exit-script` 复位（`control.ts:508`），**0 个生产读者**；测试仅把它放进 `vmState()` 快照做『一格都没动』的断言（`test/op-6-05-step-slot.test.ts:35`），那不是消费者。属**真死写**，修法 = 删字段（`src/vm/**`，range 外）。",
+    "Engine.dispatching": "★**JS 侧镜像没有读者**：真值走 `ENGINE_FIELD.dispatchInProgress`（`_this[124350]`，raw 19024/24946/31556 三处读、25176/25187 两处写），emulator 侧的读点是 `engineValues.get(ENGINE_FIELD.dispatchInProgress)`（`handlers/frame.ts:110`、`handlers/engine-fields.ts:437`）—— `Engine.dispatching` 只被 `setDispatching()` 同步写（`control.ts:341`），生产路径**从不读它**。它唯一的读者是 `test/op-1f5-dequeue.test.ts`（断言 + 『赋值点只允许一个』的棘轮），属验证面而非消费面。★`control.ts:338` 的注释声称两个表示『不会各自漂移』，但漂移检测靠的是那条棘轮测试，不是消费者。属**真死写**，修法 = 删镜像字段、让棘轮测试改钉 `ENGINE_FIELD.dispatchInProgress`（`src/vm/**`，range 外）。",
+    "Engine.texSlotFlags": "★审计 §5.2 `0x259` 的那一条（P3）：`0x258` 按 `bit0|bit1<<1` 写这张按槽标志表、`0x259` 整表复位（`handlers/gfx-state.ts:110` 的 `.set()`、`handlers/gfx-misc.ts:87` 的 `.clear()`）—— 全仓**没有任何生产读者**（渲染、装配、快照、读档都不含它；仅两处代码注释提到它）。引擎侧这对标志位却会随场景快照持久化（raw 17474）并在装载路径按 `flag_a == 1` 决定重建槽（raw 19877）⇒ emulator 里这次复位是空转、标志也活不过读档。属**真死写**（不是扫描器认不出：消费者确实不存在），修法 = 在装载/渲染路径接上（`0x259` 的复位语义要落到可读对象上），见 T-0102（已 done，现场已复核无可见症状）与该条审计 finding。",
+    "SceneState.render4.entryParams": "审计 §4.2 `0x242`（A4 族）的记录项：`scene/ops.ts:1420` 把 `DrawItem+720` 的值记进这张台账，**只有记录没有消费者** —— 同族 finding 的原文就是『A4 记录型的几条写进 render4 后没有任何渲染消费者』。所有者 `0x242` 已在本条注释里自认『相邻对象 +504 的台账（宿主侧无该对象类型 ⇒ 只记）』⇒ 它是**有意保留的记录位**，等 572B 绘制项容器建起来才会有消费者（T-0154 的扩展点）。",
+    "SceneState.render4.commits": "审计 §4.2 `0x20E`（A4 族）：`scene/ops.ts:1344` 的 `s.render4.commits++`（图形提交次数）**只有计数没有消费者** —— 唯一读者是诊断函数 `scSnapshot`（`scene/snapshot.ts`）与测试（`test/op-24f-250-251-transitions.test.ts:208` 那一族的断言）。修前它连『写』都统计不到（`++` 不在赋值口径里）⇒ 闸门漏看；本轮把 `++/--` 与容器变更方法一并算写（见 `src/tools/deadWrites.ts` 的 `countAccess`）。承接票 T-0154。",
+    "SceneState.render4.transitionClears": "同 `SceneState.render4.commits`：`scene/ops.ts:1355` 的 `transitionClears++`（`0x224` 清转场表次数）只有计数没有生产读者（唯一读者为诊断 `scSnapshot` 与测试）。承接票 T-0154。",
+    "SceneState.render4.primReset": "审计 §4.2 `0x1FC`：`scene/ops.ts:1304` 记『最近一次复位过变换的图元 handle』，`ops.ts:1300` 的注释自认『台账字段保留（报告/快照要能看到脚本下发的这一次复位）』⇒ 唯一读者是被剔除的诊断函数 `scSnapshot`（`scene/snapshot.ts:437`）与测试（`test/gfx-prim-mesh-consumers.test.ts:113`）。语料 0 处（全库零使用 `i1fc`）⇒ 当前不可见，但闸门对『真接上 `0x1FC` 的复位语义』之前的状态是对的。承接票 T-0154（gfx-scene 批次）。",
+    "SceneState.render4.primTransform": "审计 §4.2 `0x1FE`：`scene/ops.ts:1318` 记图元变换 4 浮点，**没有任何渲染代码读它**（presenter 的 drawItem 几何不看它）⇒ 真机由 `D3DXMatrixRotationAxis` 写进该绘制项变换块并置 `+104 = 1` 的效果在 emulator 完全不生效（语料 7 处/5 文件，如 `src/SC0000.txt:16409` 的 185° 旋转）。唯一读者 = 诊断函数 `scSnapshot` 与测试。承接票 T-0154。",
+    "SceneState.render4.released3D": "审计 §4.2 `0x32A`：`scene/ops.ts:1486` 把已释放的 3D 模型槽压进这个数组，唯一读者是 `scSnapshot`（诊断）/测试 ⇒ 『释放』这一步在 emulator 只留了账、没有对应的槽对象可释放（3D 模型槽表未建模）。承接票 T-0154。",
+    "SceneState.render4.slotParams": "审计 §4.2 `0x256`（A4 族，同 `entryParams` 形状）：`scene/ops.ts:1454` 记账『按 id 的绘制项参数』，`ops.ts:1453` 自认『A4 族的记录仍然保留（报告/digest 的 `render4.slotParams` 要能看到脚本下发的原值）』⇒ 有意保留的记录位，唯一生产读者缺席（读者是诊断/快照）。承接票 T-0154。",
+    "SceneXform.maskA": "`0x22D` 的 op1（引擎 `Scene[295]`）与 `0x22F` 的 op1（`Scene[297]`）：`scene/ops.ts:1904/1933` 写入，**没有任何渲染/合成路径读它**（合成只看 `scale`/`translate`/`axisScale`/`axis`/`axisTranslate`）⇒ 唯一读者是诊断 `scSnapshot`（`scene/snapshot.ts:511`）与测试（`test/op-22a-22f-scene-world.test.ts:117/127`）。引擎里这两个 int 与 op3/4/5 的浮点轴分量**配对使用**（语料 `i22d 0 258 …` / `i22f 0 7d0 …`）⇒ 真机语义面未接上。承接票 T-0154（批次 `gfx-scene` 含 `0x22d`/`0x22f`）。",
+    "SceneXform.maskB": "同 `SceneXform.maskA`：`0x22D` 的 op2（引擎 `Scene[300]`）与 `0x22F` 的 op2（`Scene[302]`），`scene/ops.ts:1905/1934` 写入、无生产读者（唯一读者为 `scSnapshot` 与测试）。承接票 T-0154。"
+  },
+  "tickets": {
+    "Engine.callFlag": "none",
+    "Engine.callLink": "none",
+    "Engine.dispatching": "T-0157",
+    "Engine.texSlotFlags": "T-0154",
+    "SceneState.render4.commits": "T-0154",
+    "SceneState.render4.entryParams": "T-0154",
+    "SceneState.render4.primReset": "T-0154",
+    "SceneState.render4.primTransform": "T-0154",
+    "SceneState.render4.released3D": "T-0154",
+    "SceneState.render4.slotParams": "T-0154",
+    "SceneState.render4.transitionClears": "T-0154",
+    "SceneXform.maskA": "T-0154",
+    "SceneXform.maskB": "T-0154"
+  },
   "_removed": {
+    "Engine.l2dMotionCache": "★`T-0160`（live2d 批）**选『给它一个真读者』而不是删字段**（字段声明在 `src/vm/engine.ts`，属另一票的 range）：读者 = `src/live2d/assetLoader.ts` 的 `startMotionOnSlot` —— 装载 `.MTN` 时先 `host.l2dMotionCache.get(fileId)` 命中则复用已解析的动作对象（miss 才解析），写点仍是 `runtime.ts` 的 `l2dStartMotion`。★读文件本身**仍然每次无条件做**（引擎 `sub_428200`→`sub_4A19F0` raw 121732 的 `ReadFile`）⇒ 缓存只短路『解析』，不短路『读』（与 `0x341` 的 `mocCache` 同一纪律，见该票审计 row 280）。守卫：`test/live2d-t0160.test.ts` 的『同一 id 重装必须真读文件』与『0x352 预置』两条。",
     "Item.pivotZ": "pivot 的 z 分量：`itemPivotLocal` 现在会连同 z 一起换算（presenter 只消费 x/y），不再是『写了没人读』。",
     "Item.posZ": "描画位置的 z：同上，已由 `itemPivotLocal` 消费。",
     "Item.useWorld": "★DrawItem+0x68『用世界矩阵』标志：2026 接入世界矩阵门（引擎 raw 123055 `if (Scene+46532) …`，而 `Scene+46532 ← DrawItem+0x68`）后，presenter 用它决定 pivot/缩放/旋转/平移是否参与合成 ⇒ 不再是冗余字段。",
     "Item.blend": "引擎 `DrawItem+0x30` = 混合模式（`0x203` 的 op2）。★2026-09 已消费：`tickets/T-0017` —— `scene/blend.ts` 的 `walkBlendSequence` 逐项复刻引擎的 blend 状态机（选择子 0/1/2/3 → normal/add/none/subtract，值 2 受「当前渲染目标槽的纹理创建模式 == 1」门控），`pixi/presenter.ts` 把它写到 `spr.blendMode`。引擎依据：`sub_4A2D50` raw 123089-123121（送达 `sub_4AEEA0` raw 133443）。守卫：`test/blend-mode.test.ts`。",
-    "MeshObj.blend": "引擎 `MeshEntry[9]` = 网格绘制的 alpha 混合选择子（`0x322` 的 op2；`sub_4AE2C0` raw 132815 `v5[9]=a3`），消费者 `sub_49E390`（raw 133617 送达 → raw 119369-119399）。★2026-09 已消费：`tickets/T-0017` —— 同 `Item.blend` 的一套枚举（mesh 的 `0` 档是**显式** normal，且画完把状态留在 `(ONE,ZERO)`，raw 119474-119476）。★同时订正：此前这里写「语料实测恒为 0，故画面无差异」是错的 —— 实测 `0x322` op2 = `0`×2373 / `1`×28 / 变量 `(global-int 4fd1)`×1518（`4fd1` 有 28 处被 `mov … 1`）⇒ 加算真的会出现。守卫：`test/blend-mode.test.ts`。"
+    "MeshObj.blend": "引擎 `MeshEntry[9]` = 网格绘制的 alpha 混合选择子（`0x322` 的 op2；`sub_4AE2C0` raw 132815 `v5[9]=a3`），消费者 `sub_49E390`（raw 133617 送达 → raw 119369-119399）。★2026-09 已消费：`tickets/T-0017` —— 同 `Item.blend` 的一套枚举（mesh 的 `0` 档是**显式** normal，且画完把状态留在 `(ONE,ZERO)`，raw 119474-119476）。★同时订正：此前这里写「语料实测恒为 0，故画面无差异」是错的 —— 实测 `0x322` op2 = `0`×2373 / `1`×28 / 变量 `(global-int 4fd1)`×1518（`4fd1` 有 28 处被 `mov … 1`）⇒ 加算真的会出现。守卫：`test/blend-mode.test.ts`。",
+    "_note_2026_09_25": "★T-0150 扩面后**未**进基线的两个字段（留档，说明闸门当场认出了消费者）：`Engine.recallRepaint`（`src/vm/engine.ts:532` + `handlers/msgwin.ts:1139/1161`）与 `TextFrame.blankExtentFallback`（`src/text/layout.ts:303`）—— 前者属本文件被另一个 agent 正在改的 `src/vm/**`（改完可能立刻有消费者，故不登记、也不属本票范围）；后者是**刻意的缺口可见标志**（`layout.ts:296-302` 自述『必须能被观测，不然就是静默缺口』，生产渲染器按 mode 0 网格回退、标志供报告/测试断言，守卫 `test/op-205-blank-extent.test.ts`）⇒ 已按 `SCOPES[].ignore` 处理，见 `src/tools/deadWrites.ts`。"
   }
 }

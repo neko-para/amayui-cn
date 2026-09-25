@@ -6,7 +6,10 @@
  * 不依赖 raw-parts（那只是预解压产物）。
  *
  * **玩家数据**（`SYS4REG.INI` 与 `SAVE\SAVE.DAT`）不走资源根，而走 `system`（系统存档目录 + overlay，
- * 见 `systemPaths.ts` / `overlay.ts`）：读优先 overlay、写只写 overlay ⇒ 能继承真游戏设置且不会写坏它。
+ * 见 `systemPaths.ts` / `overlay.ts`）：读优先 overlay、**写只写 overlay** ⇒ 能继承真游戏设置且不会写坏它。
+ * ★**唯一的例外是"删存档槽"**（`0x1AB`）：引擎的 `DeleteFileA` 打的就是真实存档目录，而本工程的读会回落
+ * base ⇒ 要让被删的槽真的消失就得连 base 那一份一起删（删前先隔离到 `<overlay>/SAVE/.deleted/`，见
+ * `deleteSaveSlot` 与 `T-0153` 的 `0x1AB` 条目）。
  * 将来 Electron renderer 侧可换 IpcFileSource：通过 IPC 把"读原始字节/读 ALF 切片"发给主进程，接口一致。
  */
 import * as fs from 'node:fs/promises';
@@ -47,6 +50,16 @@ export const APPEND_COUNT = 5;
 
 /** 包号合法范围：槽 0 与扩展包 id 空间无关（高字节 0 = 本体），槽 ≥256 引擎会越界写。 */
 const MAX_APPEND_PACK = 255;
+
+/**
+ * **删槽的隔离目录**（相对 `<overlay>/SAVE/`；本工程自己的目录）。
+ *
+ * 为什么存在（`T-0153` 的 `0x1AB` 条目）：引擎的 `DeleteFileA` 打的是**真实存档目录**（raw 38473-38481），
+ * 而本工程的读会回落到 base ⇒ 要让被删的槽真的消失就必须也删 base 那一份。可那正是玩家的真存档，
+ * 删掉不可逆 ⇒ 先复制到这里再 unlink（人工把文件挪回 `<overlay>/SAVE/` 即复原）。
+ * 目录名以 `.` 开头且不是 `SAVE\d\d.DAT|STH`，不会被任何槽枚举（`test/realSlots.ts` 的正则）看见。
+ */
+const DELETED_DIR = '.deleted';
 
 export class NodeFileSource implements FileSource {
   #root: string;
@@ -174,7 +187,10 @@ export class NodeFileSource implements FileSource {
 
   // ---------------------------------------------------------------------------
   // 存档槽（`SAVE%2.2d.DAT` / `.STH`；`tickets/T-0018`）—— 与 SAVE.DAT 同纪律：
-  //   读 overlay → base，写/删**只碰 overlay**（真存档槽在 base，永不覆盖）。
+  //   读 overlay → base，**写只碰 overlay**（真存档槽在 base，永不覆盖）。
+  //   ★**删是唯一例外**（`T-0153` 的 `0x1AB` 条目）：引擎的 `DeleteFileA` 打在真实存档目录
+  //   （raw 38473-38481），而本工程的读会回落 base ⇒ 只删 overlay 的话"只存在于 base 的槽删不掉"、
+  //   且删掉自己那份会让基座的旧槽复活。⇒ 两侧都删，base 那份先隔离到 `SAVE/.deleted/`（字节不丢）。
   // ---------------------------------------------------------------------------
 
   /** 读一个槽的整份字节（overlay → base；都没有 ⇒ null）。 */
@@ -185,14 +201,45 @@ export class NodeFileSource implements FileSource {
 
   /** 写一个槽（只写 overlay）。 */
   async writeSaveSlot(slot: number, data: Uint8Array): Promise<void> {
-    if (!this.#overlay) return;
-    const p = await this.#overlay.write(slotRelPath(slot), data);
+    const overlay = this.#overlay;
+    if (!overlay) {
+      // ★**不许静默**（`T-0153` 的 `0x19E` 条目）：旧实现 `if (!this.#overlay) return;` 什么都没写、
+      //   也不报，于是 `saveSlotFromEngine` 走到末尾仍返回 0（"已保存"）而槽文件**一个字节都没落盘**。
+      //   引擎在同一格是**可见失败**：`CreateFileA(..., GENERIC_WRITE, ...)` 拿不到句柄 ⇒ 弹
+      //   「セーブデータの保存に失敗しました。」+ `op1 = 1`（`sub_42D980` raw 38317-38321）。
+      //   本工程没有 system 目录（测试/链路工具刻意不碰玩家数据）时无处可写 ⇒ 抛，由调用方
+      //   （`saveSlotFromEngine` 的 `catch`）落成非 0 结果码。
+      throw new Error(
+        `writeSaveSlot(slot=${slot})：宿主没有配置系统存档目录（NodeFileSourceOptions.system 缺失）⇒ 无处可写；` +
+          '拒绝静默 no-op（引擎此时会弹「セーブデータの保存に失敗しました。」并返回 op1 = 1）',
+      );
+    }
+    const p = await overlay.write(slotRelPath(slot), data);
     this.#log(`[slot] 写入槽 ${slot} → ${p}（${data.length} 字节）`);
   }
 
-  /** 删一个槽（两个文件都试；返回各自是否删掉了）。 */
+  /**
+   * 删一个槽（`.DAT` + `.STH`；**两侧都删**）。返回各自是否删掉了。
+   *
+   * ★`T-0153` 的 `0x1AB` 条目（引擎 `sub_42DFC0` raw 38462-38483）：
+   * ```c
+   * sub_408A40(_this, ArgList, 0x100u);                                  // 真实存档目录
+   * sub_408050(FileName, 256, "%s\\SAVE%2.2d.DAT", ArgList, op2);
+   * v4 = !DeleteFileA(FileName);                                         // 删成功 ⇒ 0
+   * sub_408050(FileName, 256, "%s\\SAVE%2.2d.STH", ArgList, op2);
+   * if ( !DeleteFileA(FileName) ) v4 = 2;                                // `.STH` 失败盖成 2
+   * ```
+   * 引擎只有一个真实存档目录；本工程的"槽是否存在" = **overlay ∪ base**（`readSaveSlot` 会回落 base）
+   * ⇒ 只删 overlay 时，**只存在于 base 的槽根本删不掉**（旧行为：两个 `false` ⇒ `op1 = 1`，
+   * 而引擎删的是 base 里那一份、返回 0），而且"删掉自己那份"会让基座的旧槽**复活**。
+   * ⇒ 两侧都删，`true` = 至少删掉了一份（= 引擎 `DeleteFileA` 的"存在且删成功"口径）。
+   *
+   * ★**与写路径的安全规则不冲突**（`T-0018` 的"真存档一个字节都不动"只约束**写**：`writeSaveSlot`
+   * /`writeSlotThumb`/`writeSaveData`/`saveConfig`）：删槽是玩家显式动作，引擎删的就是真实目录里那一份；
+   * 但本工程仍然先把它**隔离**到 `<overlay>/SAVE/.deleted/`，字节不丢（可人工复原）。
+   */
   async deleteSaveSlot(slot: number): Promise<{ dat: boolean; sth: boolean }> {
-    return { dat: await this.#removeOverlayFile(slotRelPath(slot)), sth: await this.#removeOverlayFile(slotThumbRelPath(slot)) };
+    return { dat: await this.#removeSlotFile(slotRelPath(slot)), sth: await this.#removeSlotFile(slotThumbRelPath(slot)) };
   }
 
   /** 复制一个槽（`op2` → `op3`）：先取源（overlay → base），再写到目标槽的 overlay。 */
@@ -216,15 +263,48 @@ export class NodeFileSource implements FileSource {
     await this.#overlay.write(slotThumbRelPath(slot), data);
   }
 
-  /** 删 overlay 里的一份文件（不存在也算成功 —— 引擎的 `DeleteFileA` 语义由调用方判）。 */
-  async #removeOverlayFile(rel: string): Promise<boolean> {
-    if (!this.#overlay) return false;
-    try {
-      await fs.unlink(this.#overlay.overlayFile(rel));
-      return true;
-    } catch {
-      return false;
+  /**
+   * **删一份槽文件**：overlay 与 base **两侧都试**（见 `deleteSaveSlot` 的说明）。
+   *
+   * base 那一份**先隔离**到 `<overlay>/SAVE/.deleted/<原名>`（同一相对目录下）：本工程从不在 base 上
+   * 写/改，删是唯一的例外，而删真存档是不可逆的 ⇒ 先留一份副本再 unlink。隔离写失败 ⇒ **不删**
+   * base（宁可让这次删除报失败，也不静默丢字节）。
+   *
+   * @returns 是否至少删掉了一份（= 引擎 `DeleteFileA` 的"该文件存在且删成功"）
+   */
+  async #removeSlotFile(rel: string): Promise<boolean> {
+    const overlay = this.#overlay;
+    if (!overlay) return false;
+    let removed = false;
+    for (const side of ['overlay', 'base'] as const) {
+      const target = side === 'overlay' ? overlay.overlayFile(rel) : overlay.baseFile(rel);
+      let exists = false;
+      try {
+        exists = (await fs.stat(target)).isFile();
+      } catch {
+        continue; // 该侧没有
+      }
+      if (!exists) continue;
+      if (side === 'base') {
+        const backup = overlay.overlayFile(path.join(path.dirname(rel), DELETED_DIR, path.basename(rel)));
+        try {
+          await fs.mkdir(path.dirname(backup), { recursive: true });
+          await fs.copyFile(target, backup);
+        } catch (err) {
+          this.#log(`[slot] ${target} 的隔离副本写入失败（${(err as Error).message}）⇒ 不删 base 那一份`);
+          continue;
+        }
+        this.#log(`[slot] base 那一份先隔离 → ${backup}`);
+      }
+      try {
+        await fs.unlink(target);
+        removed = true;
+        this.#log(`[slot] 删除槽文件 ${target}`);
+      } catch (err) {
+        this.#log(`[slot] 删除 ${target} 失败：${(err as Error).message}`);
+      }
     }
+    return removed;
   }
 
   async readFile(p: string): Promise<Uint8Array> {

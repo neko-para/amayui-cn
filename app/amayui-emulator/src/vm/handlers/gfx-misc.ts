@@ -7,6 +7,8 @@
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
+import { cfgInt } from '../../engineConfig.js';
+import { CFG } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -18,13 +20,84 @@ function planFor(c: StepCtx): PlannedOperands {
   return p;
 }
 
+// ---------------------------------------------------------------------------
+// 本族用到的引擎字段（`_this[K]`，一律 dword 下标）
+// ---------------------------------------------------------------------------
 
 /**
- * `0x32F`（sub_4272B0, raw 34117）：**D3D 灯光开关**（原判为"网格项清除"是错的）。
- * 引擎：读 op1 = **灯光索引 0..9** → `sub_49A150(Scene, idx)`：
- * `light_enabled[idx] = 0`（Scene+54708+4·idx）+ 设备 vtable+212 = `LightEnable(idx, FALSE)`。
- * 同族 `sub_49A080` = `SetLight`（vtable+204，填 0x68 字节 D3DLIGHT9）。
- * emulator 无灯光模型 → 记录式转发（不影响 2D 图元绘制）。
+ * **`_this[675972] = 168993`**：引擎的「**有影片在放**」标志（raw 31668 的写点）。
+ *
+ * 读者是**主循环第 20660 行**那一整块影片泵：`if (_this[675972]) { …1000 槽逐槽
+ * sub_488550/推进/到期析构… }`（raw 20660-20738），末尾把每一位活着的槽重新聚合成该标志
+ * （raw 20687-20694），并在 `effect_flags` 上维护 `0x2000`（raw 20810 清 / 20941 置）。
+ * emulator **没有影片泵**（无影片解码器）⇒ 本票只把「引擎写过的这一格」如实落到字段面，
+ * 泵本身的缺失写在 `tickets/T-0164/changes-c164.md`。
+ */
+const ENGINE_FIELD_MOVIE_PLAYING = 168993;
+
+/**
+ * `sub_4054D0(_this, a2)`（raw 11107-11118）：**把 op3 解码成「模式 0..3」**。
+ *
+ * 先按位（0x10000→0 / 0x20000→1 / 0x40000→2 / 0x80000→3，**按从低到高第一个命中的位**），
+ * 四位都不置时取配置 `set:DependMovieSound` 的**原值**（⇒ 该配置是 0..3 的枚举，不是开关）。
+ */
+function decodeMovieMode(c: StepCtx, op3: number): number {
+  if ((op3 & 0x10000) !== 0) return 0;
+  if ((op3 & 0x20000) !== 0) return 1;
+  if ((op3 & 0x40000) !== 0) return 2;
+  if ((op3 & 0x80000) !== 0) return 3;
+  return c.e.config ? cfgInt(c.e.config, CFG.setDependMovie, 0) : 0;
+}
+
+/**
+ * `sub_405460(_this, 模式)`（raw 11081-11104）：**模式 → 「该音源配置可用」的 BOOL**。
+ *
+ * | 模式 | 体 | 判据 |
+ * |---|---|---|
+ * | 1 | raw 11090 | `GetConfig(sound:Music) >= 0`（★是 `>= 0`，**不是** `!= 0`） |
+ * | 2 | raw 11092/11103 | `GetConfig(sound:SE) != 0` |
+ * | 3 | raw 11095/11103 | `GetConfig(sound:Voice) != 0` |
+ * | 4 | raw 11098/11103 | `GetConfig(sound:Movie) != 0` |
+ * | 0/其它 | raw 11100 | 恒 **0**（`result = 0` 初始化后直接 `return result`） |
+ *
+ * ⇒ 这个 BOOL 进 `CMovieToTexture+1144`（raw 31658）并决定 `sub_4879E0` 挂哪个音轨
+ * （raw 31659-31662）。emulator 没有影片音轨 ⇒ 它只作为宿主缝的**第 3 实参**可见。
+ */
+function movieAudioGate(c: StepCtx, mode: number): number {
+  const cfg = c.e.config;
+  const get = (key: string): number => (cfg ? cfgInt(cfg, key, 0) : 0);
+  switch (mode) {
+    case 1:
+      return get(CFG.soundMusic) >= 0 ? 1 : 0;
+    case 2:
+      return get(CFG.soundSE) !== 0 ? 1 : 0;
+    case 3:
+      return get(CFG.soundVoice) !== 0 ? 1 : 0;
+    case 4:
+      return get(CFG.soundMovie) !== 0 ? 1 : 0;
+    default:
+      return 0;
+  }
+}
+
+
+/**
+ * **`0x32F`（sub_4272B0, raw 34117 → `sub_49A150` raw 116741-116748）：D3D 灯光开关**。
+ *
+ * `sub_49A150` 全文只有两行：
+ * ```c
+ * _this[a2 + 13677] = 0;                                  // ★enabled 位（Scene[54708+idx]，连续 word 下标）
+ * (**(_DWORD **)(_this[465] + 1040) + 212)(…, a2, 0);     //  设备 vtable+212 = LightEnable(idx, FALSE)
+ * ```
+ * 两张表分工（★`T-0164` 读体订正旧注释的"数组形状"）：
+ *  - **enabled 位** = `Scene[13677+idx]`（word 下标，`54708 = 13677*4`）—— 重放循环 raw 122110-122122
+ *    读的**就是这一张**（`v10 = v1 + 13677`，逐 `++v10`）；
+ *  - **灯光记录** = `sub_49A080` 填的 0x68 字节 `D3DLIGHT9`，在重放里是 `v9 = v1 + 13687` 且
+ *    每轮 `v9 += 26`（26 dword = 104 = 0x68）⇒ 与 enabled 位**不是同一张表**。
+ *
+ * 消费者 = **设备重建重放**（raw 122112-122118）——emulator 没有 D3D 设备/灯光模型。
+ * ⇒ 本票**不**把这两格写进 `engineValues`：那只会造出"写了但没人读"的假象，把它洗成"已实现"
+ * （同族先例 `0x248` 的 `-248` 是**有据**的专用全局槽，不是这一形状）。宿主缝保留。
  */
 const op_light_enable: OpHandler = (c) => {
   const plan = planFor(c);
@@ -33,10 +106,22 @@ const op_light_enable: OpHandler = (c) => {
 };
 
 /**
- * `0x23D`（sub_41A300, raw 25320）：**销毁 movie/纹理槽 42..999**（958 次循环）。
- * 对 `Engine+4*(94714+k)`（CMovieToTexture 族）调 `sub_488FB0` + vtable[0](obj,1) 析构，
- * 并对 Scene 调 `sub_49E980(Scene, i)` 卸对应网格/纹理槽。
- * ⇒ **会让引用这些槽的图元不再绘制**（是"合法的整批释放"，不是停靠标志）。
+ * `0x23D`（sub_41A300, raw 25320-25347）：**销毁 movie/纹理槽 42..999**（958 次循环）。
+ *
+ * 体逐字（raw 25327-25346）：
+ * ```c
+ * v1 = 42;  v2 = _this + 80708;  v3 = _this + 94714;   // ← 94714 = 378688/4
+ * do {
+ *   if ( *v3 ) { sub_488FB0(*v3); (**v3)(*v3, 1); *v3 = 0; }   // ① 影片对象析构 + 表项置 0
+ *   result = sub_49E980(v2, v1++);                             // ② Scene 侧卸槽（槽→imgid = −1
+ * } while ( v1 < 1000 );                                       //    + CTexture 表面析构，raw 119586）
+ * ```
+ * ★**起点是 42、上界是 `< 1000`**：槽 0..41（含 ADV 窗用的那批）与槽 1000 都不在区间内。
+ * ★与 `0x259`（只清记录表、不 delete）**不是同一件事**：这一条真的析构对象并解绑槽→imgid
+ * ⇒ 引用这些槽的图元此后取不到纹理（`tickets/T-0102` 的 H3 正是"清错了这条"造成的白块）。
+ *
+ * ★`T-0164`：宿主缝 `releaseMovieSlots` 此前**两个宿主都没实现**（只落进 DropRecorder 的
+ * 「意图被丢弃」）⇒ 958 个槽的绑定与对象全部留存。现已在 `HeadlessScene`/`PixiBackend` 落地。
  */
 const op_release_movie_slots: OpHandler = (c) => {
   const plan = planFor(c);
@@ -90,7 +175,19 @@ const op_clear_slot_records: OpHandler = (c) => {
 
 /**
  * **`0x340`（sub_427B60 → `sub_49A2D0`, raw 34457）：渲染状态下发**。
- * 引擎：写渲染状态槽 `Scene+13948`（默认 3）并向设备 vtable+228 发 `(22, op1)`（渲染状态 #22）。
+ *
+ * 体（raw 116869-116876）：
+ * ```c
+ * v2 = _this[465];
+ * _this[13948] = a2;                              // ★状态槽 —— 设备重建时被重放
+ * (**(_DWORD **)(v2 + 1040) + 228)(…, 22, a2);    //   设备 vtable+228：状态 #22
+ * ```
+ * ★消费者 = **设备重建重放**（raw 122124 的 `(vtable+228)(v3, 22, v1[13948])`）—— 那一段是
+ * D3D 设备重建函数，emulator **没有 D3D 设备**（2D 重写）⇒ `Scene[13948]` 这一格在重写侧
+ * **写下去不会有活消费者**。而它又是 `Scene` 的字段（`sub_49A2D0` 收的是 `_this + 80708`），
+ * 与 `engineValues`（`Engine._this[K]` 的字段面）**不是同一张表**。
+ * ⇒ `T-0164` **不**发明一个写了没人读的槽（那正是"把缺口洗成已实现"），只保留唯一能到达
+ * 设备侧的宿主缝；「状态槽 + 重放」这条能力缺口如实登记（见 `tickets/T-0164/changes-c164.md`）。
  */
 const op_set_render_state: OpHandler = (c) => {
   const plan = planFor(c);
@@ -98,14 +195,54 @@ const op_set_render_state: OpHandler = (c) => {
   c.native.setRenderState?.(22, v);
 };
 
+/**
+ * **`0x20F` play-movie**（`sub_4237B0` raw 31605-31670，arity 槽 = 7 ⇒ argc 3）：
+ * `op1` = 影片资源 id、`op2` = 影片槽、`op3` = **音量/模式选择子**（位解码，见下）。
+ *
+ * 体逐字：
+ * ```c
+ * v2 = op2;
+ * if ( !_this[4*v2 + 378688] ) {                 // ① 惰性建槽对象（CMovieToTexture，0x480 字节）
+ *   obj = sub_489040(operator new(0x480));
+ *   _this[4*v2 + 378688] = obj;
+ *   if ( !sub_488DC0(obj, hwnd, 视频表, sub_454FA0(op1)) )
+ *     _CxxThrowException(asc_51F560);            //    ★装载失败 ⇒ 抛（"ムービーの初期化に失敗…"）
+ * }
+ * if ( !_this[4*v2 + 365288] )
+ *   _CxxThrowException(asc_520248);              // ② ★该槽没有 CTexture ⇒ 抛（"テクスチャが…"）
+ * sub_489230(obj, …);                            // ③ 起播
+ * v9 = op3; v10 = sub_4054D0(_this, v9);         // ④ ★op3 先按位解码成模式 0..3
+ * *(_DWORD *)(obj + 1144) = sub_405460(_this, v10);   // ⑤ 模式 → 音源 BOOL
+ * sub_4885A0(obj, Engine[5008] * sub_408350(op3) / 10000);   // ⑥ 音量
+ * sub_4883A0(obj, op3);                          // ⑦
+ * _this[699204] |= 0x2000u;                      // ⑧ ★影片位
+ * _this[675972] = 1;                             // ⑨ ★"有影片在放"（主循环 20660 的门）
+ * ```
+ * ★`T-0164` 修的三处缺口：⑧⑨ 两格**此前一格都不写**（⇒ 帧循环的电影门恒 0、
+ * `0x1BA` 系的 `applyDependentMovie` 外层门恒不成立）；④⑤ 的 `op3` 此前原值直传宿主
+ * （引擎给它的是 **BOOL**，不是选择子原值）；② 的"槽纹理为空"错误路径此前不存在。
+ */
 const op_play_movie: OpHandler = (c) => {
-  // `0x20F`（`sub_4237B0` raw 31604-31670；arity 槽 = 7 ⇒ argc=3）：
-  //   op1 = 影片资源 id、op2 = **影片槽**（`[4*slot+378688]` 的对象表）、op3 = **音量/模式选择子**。
-  // ★此前只读 op1（op2/op3 被丢弃）—— 审计 P3 的「凭空/错读」条目（守卫 `test/opcode-operands.test.ts` 也据此报红）。
-  //   现在三个都照读并上报宿主缝；真正的播放/音量仍是缺口（emulator 无影片子系统）。
   const p = operandsFor(c);
   if (!p) return;
-  c.native.playMovie?.(p.int(1) ?? 0, p.int(2) ?? 0, p.int(3) ?? 0);
+  const id = p.int(1) ?? 0;
+  const slot = p.int(2) ?? 0;
+  const op3 = p.int(3) ?? 0;
+  // ★raw 31645-31650：该槽没有 CTexture 对象 ⇒ `_CxxThrowException(asc_520248)`，
+  //   直接离开本条指令（⇒ 下面的置位一个都不发生 —— 守卫 `t0164-misc-batch.test.ts` 钉了这一点）。
+  //   ★宿主**可能不建模这张表**（`hasSlotTexture` 返回 `undefined`）⇒ 那时**不**抛：与修前同行为，
+  //     缺口由闸门 A 的"意图被丢弃"留痕，而不是让一条真实语料指令硬停。
+  const hasTex = c.native.hasSlotTexture?.(slot);
+  if (hasTex === false) {
+    throw new Error(
+      'ムービーの初期化に失敗しました．\r\nテクスチャが確保されていません．（0x20F：该槽没有 0x1F8 create-texture 建出来的 CTexture 对象，引擎在 raw 31645-31650 抛 asc_520248）',
+    );
+  }
+  const mode = decodeMovieMode(c, op3); // ★raw 31655：`sub_4054D0(_this, op3)`
+  const gate = movieAudioGate(c, mode); // ★raw 31656：`sub_405460(_this, 模式)` ⇒ BOOL
+  c.native.playMovie?.(id, slot, gate);
+  c.e.effectFlags |= 0x2000; // ★raw 31667：`_this[699204] |= 0x2000u`（`|=` 不是赋值）
+  c.e.engineValues.set(ENGINE_FIELD_MOVIE_PLAYING, 1); // ★raw 31668：`_this[675972] = 1`
 };
 
 /** 图形子系统的槽表/渲染配置（真实现）。 */

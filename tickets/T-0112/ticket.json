@@ -22,8 +22,25 @@
     {
       "file": "docs-new/03-engine/adv-text-rendering.md",
       "anchor": "运行期等价于没有禁则处理",
-      "note": "本轮实证的\"审计只对一半\"样本（禁则表存在但恒空）",
+      "note": "本轮实证的「审计只对一半」样本（禁则表存在但恒空）",
       "line": 213
+    },
+    {
+      "file": "app/amayui-emulator/test/doc-model.test.ts",
+      "anchor": "B7-B 棘轮",
+      "note": "本轮新增的两向 raw 行号棘轮（24 锚点：文档仍写着该行号 + 该行号处真含该代码串）",
+      "line": 315
+    },
+    {
+      "file": "tickets/T-0112/evidence/b7b-red-check.mjs",
+      "anchor": "小计：",
+      "note": "改前 26 条旧行号逐条对照真源 = 26/26 不符（红）"
+    },
+    {
+      "file": "analysis/fields.json",
+      "anchor": "auto_line_feed",
+      "note": "新增 Font/0x152AC = Engine+86700 = Font+1404（set:AutoLineFeed）",
+      "line": 404
     }
   ],
   "links": {
@@ -31,15 +48,32 @@
       "T-0110",
       "T-0080",
       "T-0105"
+    ],
+    "analysis": [
+      "analysis/fields.json#Font/0x152AC"
+    ],
+    "docs": [
+      "docs-new/03-engine/adv-text-rendering.md",
+      "docs-new/03-engine/copyright-effect.md",
+      "docs-new/03-engine/engine-reset-mainloop.md"
     ]
   },
   "id": "T-0112",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建：T-0110 收尾时把\"逐格/逐条核 raw\"的 5 项残余拆出（不许照抄审计）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 5 项逐条核 raw 后处置完毕（4 项订正 + 1 项实测计数）；守卫 = test/doc-model.test.ts 的 B7-B raw 行号棘轮；过程见 changes.md 与 evidence/b7b-red-check.mjs"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/doc-model.test.ts#B7-B 棘轮"
+  ],
+  "doneWhy": "5 项逐条核 raw 后处置：① adv-text-rendering 的 FontVWindow 4 处行号 4/4 改（90446/90447/90463-90464/78861，另修同行 3 处指偏）；② 0x204 的「GDI 一次性整串」证伪——handler sub_423390 → sub_456710 整串一次调用、内部逐字 GetGlyphOutline 合成进纹理槽，不经 TextOutA 也与 set:DrawMode 无关；③ set:AutoLineFeed 键存在且写 Font+1404（Engine+86700），已补 §6 配置键表 + Font 字段表 + analysis/fields.json；④ copyright-effect §6 索引表 11 行 + 正文同批 20 处行号全部核改（含函数名 sub_49A300→sub_49AA30）；⑤ sub_40DF10 队列/栈实测构造点各 1 处、各跑 10 次 ⇒ 对象各 10 个。守卫 = test/doc-model.test.ts 新增 B7-B raw 行号棘轮（24 锚点、两向断言）。"
 }

@@ -44,7 +44,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "清掉上一个执行链的 L2D 运行态",
       "note": "★读档点的补丁 + 它的日志：全仓唯一的 l2dResetHost 调用点（遮住 0x1F6 的缺口）；这条日志同时也证明读档前 TITLE 的节点仍活着",
-      "line": 331
+      "line": 397
     },
     {
       "file": "tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md",
@@ -62,7 +62,7 @@
       "file": "analysis/opcodes.json",
       "anchor": "Live2D 立绘节点表**（raw 130766",
       "note": "★轮 15 的定义层订正：0x1F6 的语义逐张点名四表（1032/1064/1080/1096）；0x1F7 也补了单条/区间两条路径都擦 1096 的 raw 锚点（130831-130837 / 131077）",
-      "line": 2466
+      "line": 2823
     },
     {
       "file": "tickets/T-0103/evidence/chain-audit-instructions-capabilities.md",
@@ -86,7 +86,7 @@
       "file": "app/amayui-emulator/src/live2d/runtime.ts",
       "anchor": "raw 19385-19388** 就是",
       "note": "T-0144 ⑥ 落地：装载点依据订正为 sub_410160 raw 19385-19388（旧注释引的 sub_403EF0 已标为假依据）",
-      "line": 188
+      "line": 239
     },
     {
       "file": "app/amayui-emulator/test/game-start-chain.test.ts",

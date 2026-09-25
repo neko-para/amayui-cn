@@ -70,7 +70,9 @@ test('★0x347：key(int) + 三分量 float ÷100 ⇒ node.scale（不是标量�
   const { e, run } = mk();
   run(0x347, [loc(1), fm(150), fm(50), fm(25)]);
   assert.deepEqual(node(e).scale, [1.5, 0.5, 0.25], '150/50/25 百分数 ⇒ 1.5/0.5/0.25');
-  assert.deepEqual(node(e).rotation, { axis: [0, 0, 1], deg: 0 }, '缩放不得碰旋转');
+  // ★`T-0160` 最小 retarget：缺省轴从 `[0,0,1]` 改为 `[0,0,0]`（引擎 `sub_49CA10` raw 118487-118490
+  //   写 `+464/+468/+472 = 0.0`）—— 断言强度不变（仍是"缩放不得碰旋转"），只是缺省值按体订正。
+  assert.deepEqual(node(e).rotation, { axis: [0, 0, 0], deg: 0 }, '缩放不得碰旋转（缺省轴角 = (0,0,0)/0）');
 });
 
 test('★0x347：int 型操作数按 int→float 转换（引擎 sub_41C300 case 9；旧 optInt 在 float 型上读位模式）', () => {
@@ -131,7 +133,8 @@ test('★0x34B/0x34C/0x34D：`record[0] & 1` 门 —— 没有 0x344 建过的�
   assert.deepEqual(node(e).wins.rotation, {
     delay: 10,
     dur: 20,
-    from: { axis: [0, 0, 1], deg: 0 },
+    // ★`T-0160` 最小 retarget：窗的 `from` = 那一刻的立即轴角，而缺省轴已按体订正为 `(0,0,0)`
+    from: { axis: [0, 0, 0], deg: 0 },
     to: { axis: [0, 0, 1], deg: 45 },
   });
   assert.deepEqual(node(e).wins.translation, { delay: 30, dur: 40, from: [0, 0, 0], to: [7, 8, 9] });
@@ -155,7 +158,7 @@ test('★0x34C：key(int) + delay/dur(int) + 轴 xyz + 角（float）⇒ wins.ro
   assert.deepEqual(node(e).wins.rotation, {
     delay: 10,
     dur: 20,
-    from: { axis: [0, 0, 1], deg: 0 }, // 窗的 from = 那一刻的立即轴角（`+464..472`/`+488`）
+    from: { axis: [0, 0, 0], deg: 0 }, // ★T-0160：窗的 from = 那一刻的立即轴角（缺省已按体订正为 (0,0,0)）
     to: { axis: [1, 0, 0], deg: 90 }, // `0x34C` 写 `+476..484`/`+492`
   });
   assert.equal(node(e).rotation.axis[0], 0, '窗写入**不碰**立即旋转（`0x348` 的那一份）');

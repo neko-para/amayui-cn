@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0165",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -33,6 +33,23 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → doing —— 根因已修：operand.ts 数字型实参按引擎 sub_41B640/sub_42A420/sub_41B9B0 规则强转十进制/%lf，0x193 两处字符串缺口闭合；守卫 test/op-string-coercion.test.ts"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests, doneWhy —— 三条判据全闭合：根因修复 + 全角分叉 + 三族命名守卫（含 COMMITDR.txt:9 / SYSTEM4.txt:464 两个语料锚点）；T-0162 另补 float 指针族截断修复与 9 例守卫"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → done —— doing → done —— 判据 1/2 落地（判据 3 verify 按 CONTEXT §6 替代口径）"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/op-string-coercion.test.ts",
+    "app/amayui-emulator/test/op-1b2-text-buffer.test.ts",
+    "app/amayui-emulator/test/operand-string-primitive.test.ts",
+    "app/amayui-emulator/test/operand-float-ptr-io.test.ts"
+  ],
+  "doneWhy": "判据 1（`readStringOperand` 按引擎 tag 分派）**已落地**：int/指针族走 `_itoa_s` 十进制、float 走 `%lf`（默认精度 6）、local-string 走解析期解出的 `a.str`；并补上**三条取串原语的分叉**（`T-0162` 读体发现）：`sub_41B640`/`sub_42A420` 的**每条数值路径**都过 `sub_41A6C0`（ASCII → **全角**，本机 exe 是中文版 ⇒ GBK 0xA3xx），而 `0x1B2` 走的 `sub_41B9B0` **不**过它 ⇒ `0x1B2` 必须**半角**（已有专门对照用例）。判据 2 **已落地**：`test/op-string-coercion.test.ts` 三条命名用例分别覆盖 `0x192`（int/指针/立即数都转十进制、不再回槽号）、`0x193`（复刻 `src/COMMITDR.txt:9` 的 `concat (local-string 0) @\"菲亚的女神等级提升为\" (global-int a40e1)`）、`0x1B2`（复刻 `src/SYSTEM4.txt:464` 的 `(global-int 0)`，断言**半角**），另加浮点族与「字符串族原样取串」对照；`test/op-1b2-text-buffer.test.ts` 覆盖缓冲累加/取出复位；`T-0162` 另补 `test/operand-string-primitive.test.ts`（9 例，先 9/9 红）与 `test/operand-float-ptr-io.test.ts`（float 指针族读/写此前都在截断，语料真命中 src/SETPOLYGON.txt:40/43）。判据 3 的替代口径：`tsc -p tsconfig.json` 与 `-p tsconfig.test.json` 均 exit 0、上述守卫全绿、四份台账 --validate + 七份生成物 --check 全绿、check:dead-writes 无新增（基线 13）。"
 }

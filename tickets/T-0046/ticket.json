@@ -40,13 +40,13 @@
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "e.input.joyJump[keyTotal]",
       "note": "修复点：掩码为空时用 `Engine[517]` 当下标派发；扫描上界也收到 `[517]`；两分支都 push 返回点（2026-09 重写 0x100 后锚点更新：默认键分支现在写作 `joyJump[keyTotal]`）",
-      "line": 215
+      "line": 271
     },
     {
       "file": "app/amayui-emulator/test/input.test.ts",
       "anchor": "★CHARMEDIT：右键关闭",
       "note": "守卫：SetKeyTotal=12 ⇒ 右键关闭；=7 ⇒ 被 `jcc (local b)` 挡回（证明依赖默认键槽本身，不是硬编码）",
-      "line": 520
+      "line": 571
     }
   ],
   "tests": [

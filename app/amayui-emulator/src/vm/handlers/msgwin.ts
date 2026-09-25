@@ -39,8 +39,9 @@ import {
   type MsgCellFrame,
   type MsgWinStyle,
 } from '../../text/layout.js';
-import { ENGINE_FONT_LIST, fontListIndex, resolveFace } from '../../text/fontSet.js';
-import { REVEAL_FRAME_MS } from '../msgwin.js';
+import { ENGINE_FONT_LIST, AGE_EXTEND_FACES, fontListIndex, resolveFace } from '../../text/fontSet.js';
+import { REVEAL_FRAME_MS, WINDOW_OBJECT_SLOTS } from '../msgwin.js';
+import { REPAINT_KEEP_SURFACE, REPAINT_RUBY_RANGE, REPAINT_SET_COLORS } from '../textItems.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
@@ -61,6 +62,54 @@ import type { OpTable } from './shared.js';
 
 const setAdv = (e: Engine): void => void (e.effectFlags |= ADV_ACTIVE);
 const clearAdv = (e: Engine): void => void (e.effectFlags &= ~ADV_ACTIVE);
+
+/**
+ * **已画文本行的记录颜色**（引擎 `sub_45F090` raw 74386-74393 的 `+20/+24`）。
+ *
+ * 引擎写入端逐字：`v12[5] = _this[340]`（`Font+1360` = 填充色）、`v12[6] = _this[341]`
+ * （`Font+1364` = 描边色）—— 与 `globalTextStyle` 读的是**同一对字段**，所以这里取同一份
+ * `ENGINE_FIELD.colorFill/colorOutline`（存的是 **COLORREF**，读时才 `bgrToRgb`）。
+ * 初值与 `globalTextStyle` 的缺省一致（填充 `0xffffff`、描边 `0x000000`）。
+ *
+ * ★为什么要照抄这两个值：`0x1D3` 是按 `+24 == key` 匹配的，记录里这两格**必须**是真值，
+ * 否则脚本按颜色当键的那类查询会静默错配（`src/HISTORY.txt:33` 正是拿 `key = -1` 问
+ * "这一页有没有已画行"）。
+ */
+function rowColors(e: Engine): { fill: number; outline: number } {
+  return {
+    fill: e.engineValues.get(ENGINE_FIELD.colorFill) ?? 0xffffff,
+    outline: e.engineValues.get(ENGINE_FIELD.colorOutline) ?? 0x000000,
+  };
+}
+
+/**
+ * **已画文本行的记账门**（引擎 `0x6E`/`0x196` 的第 5 实参 = `Engine[97055]`）。
+ *
+ * 引擎两个文本入队指令都把 `_this[97055]` 当 `sub_46BE30` 的 **第 5 实参 `a5`** 传下去
+ * （raw 28330/28375 与 29088/29104），而被调体在**写记录**那一步才查它：
+ * `if ( a5 >= 0 ) sub_4691A0(_this, win, a5, &v100, Font+201684, Source);`（raw **83941-83942**）
+ * ⇒ `i1bb 0`（`0x1BB` 把 `Engine[97055]` 写成 `0x80000000`）期间**不记已画行**（但仍然排版/绘制）。
+ * `0x6F` 的换行记录同理：`sub_4691D0` raw **81549** 的 `if ( a3 >= 0 ) { … sub_4691A0(…, a3 | 8, …) }`
+ * （`a3` 也是 `Engine[97055]`，见 `sub_41ECE0` raw 28394-28397）。
+ *
+ * ★这是审计 `0x196`/missing-operand-io 点名的"第 4 实参不是操作数、而是 `Engine[97055]`"那条的
+ * **真实后果**：修前 emulator 的 `recordRenderedRow`/`pushLineFeed` 无条件记账 ⇒ `i1bb 0` 片段
+ * 也会进回看页记录表（`src/SC0000.txt:1554-1560` 的语音重播片段就是靠它不被记账）。
+ */
+function recordGateOpen(e: Engine): boolean {
+  // ★`| 0` 把 `0x80000000` 归成 32 位有符号（引擎那一格是 `int`，`0x80000000` 就是负数）——
+  //   `0x1BB`（`handlers/text-items.ts`）已经写成 `0x80000000 | 0`，这里再兜一次，
+  //   免得"某处存成无符号正数"时门静默常开。
+  return ((e.engineValues.get(ENGINE_FIELD.textBaseGate) ?? 0) | 0) >= 0;
+}
+
+/** 把刚入队的这一段正文记进 `Font+3364` 记录表（引擎 `sub_46BE30` → `sub_45F090`，门见上）。 */
+function recordRenderedRow(e: Engine, slot: number, text: string): void {
+  if (text === '') return; // 引擎对空串不产生可见行；记账也无意义（`sub_4691D0` 那条另有 `flags|8`）
+  if (!recordGateOpen(e)) return; // raw 83941-83942：`Engine[97055] < 0` ⇒ 不记
+  const { fill, outline } = rowColors(e);
+  e.textItems.pushRenderedRow(e.msgwin.resolveWin(slot), text, fill, outline);
+}
 
 /**
  * **文本色的 BGR→RGB 交换**（丢弃 alpha 字节）—— 引擎文本色写入端的**唯一口径**。
@@ -193,7 +242,7 @@ export function globalTextStyle(e: Engine): {
 }
 
 /** 由「该窗入队时钉住的字体样式 + 该窗几何 + 该窗文本」组装排版输入（引擎 `FontVWindow` + `Font` 的快照）。 */
-export function styleOfWin(e: Engine, win: number): MsgWinStyle {
+export function styleOfWin(e: Engine, win: number, itemId?: number): MsgWinStyle {
   const m = e.msgwin;
   const g = m.geom(win);
   // ★字体/颜色取**入队时的快照**（`MsgSlot.fontStyle`），几何取**实时**的窗字段。
@@ -219,7 +268,13 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     vertical: core.vertical,
     // 竖排 blit 内边距（Font+235112..+235124，0x260）—— 同为 Font 级，随快照发布（渲染侧有意忽略，见字段说明）
     vPad: core.vPad,
-    align: g.align,
+    // ★`+288` 的**存储值 = 原样**（`0x303` 的 op2 直写，见 `op_align`），但发布给排版层的
+    //   `MsgWinStyle.align` 只有 0/1/2 三态（`src/text/layout.ts` 的类型，属另一 owner 的文件）⇒
+    //   在这条边界上做一次与引擎消费者**同口径**的映射：引擎 raw 69210-69225 是
+    //   `if (+288) { if (== 1) 居中; else if (== 2) 右对齐; else 偏移 = 0 }` ——
+    //   其它非 0 值的**偏移量也是 0**（= 左对齐），与映射到 0 的排版结果逐像素相同；
+    //   丢掉的只有"进没进对齐块"这个返回值（重写侧无该粒度，登记在 `0x303` 的说明里）。
+    align: g.align === 1 ? 1 : g.align === 2 ? 2 : 0,
     alignWidth: g.alignWidth,
     outlineMode: core.outlineMode,
     outlineDx: core.outlineDx,
@@ -229,8 +284,10 @@ export function styleOfWin(e: Engine, win: number): MsgWinStyle {
     // 注音与本文共用填充/描边色（引擎只有一套 +1360/+1364）
     ruby: core.ruby,
     background: g.background,
-    // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）—— 几何类，实时
-    itemId: m.object(win).f104,
+    // 层序 = 引擎正文行 DrawItem id 起点（op 0x213 写的 win+104）—— 几何类，实时。
+    // ★`itemId` 实参 = `0x82`/`0x1D1` 的 `op3 & 0x40` 偏移（引擎 raw 79687-79688 / 80658-80662：
+    //   `v155 = win+104 + win+132`，只用在那两条指令本次绘制项上，**不写回窗对象**）。
+    itemId: itemId ?? m.object(win).f104,
   };
 }
 
@@ -272,10 +329,10 @@ function captureFontStyle(e: Engine, i: number): void {
 }
 
 /** 发布一个窗（文本或样式变化后调用；排版在共享层做，宿主只光栅化）。 */
-export function emitWin(e: Engine, win: number): void {
+export function emitWin(e: Engine, win: number, itemId?: number): void {
   const w = e.msgwin.resolveWin(win);
   e.native.msgWinSync?.(w, {
-    style: styleOfWin(e, w),
+    style: styleOfWin(e, w, itemId),
     segments: e.msgwin.slot(w).segments,
     revealed: e.msgwin.revealedOf(w), // -1 = 全部显示
     // ★两个 DrawItem 区间（`0x213` 写 `+104/+108`、`0x25D` 写 `+276/+280`）：渲染侧的
@@ -430,21 +487,92 @@ export function messageSpeedOf(e: Engine): number {
  * **ADV 位判定（三处 handler 共用）** —— 对应引擎里重复出现的那段
  * `if (GetConfig("message:ReadTextSkip")) { …sub_48E870/sub_48F000… } else { … }`。
  *
- * emulator 无文本渲染 ⇒ `sub_48F000`（"这段文本还有没有后续内容"）恒为 0 ⇒ **逐字显示立即完成**：
- *  - 清 `122455`（不再"显示中"）；`97050`（跳读/自动模式）非 0 时保留显示态（引擎 LABEL_10）。
- *  - 返回值 = 是否仍在显示中；本实现只在自动模式下为 `true`。
+ * ## 引擎的三条出口（`sub_41EB20` raw 28339-28359，`0x6E`/`0x71`/`0x72` 逐字同形）
+ * ```c
+ * 28339  if ( !GetConfig("message:ReadTextSkip") ) {        // ★门**关闭**
+ * 28341      if ( !_this[122455] ) goto LABEL_11;           //   已清 ⇒ 什么都不做
+ * 28343      goto LABEL_10;                                //   已置 ⇒ 清 0
+ *        }
+ * 28345  v4 = sub_48E870(队列, 句 id, …);                    //   门**打开**：查"该句第 a3 段"
+ * 28350  if ( !sub_48F000(队列, 句 id, v4) ) {                //   查不到 ⇒ 没有后续内容
+ * 28352      if ( _this[97050] ) goto LABEL_11;              //     ★跳读/自动位 ⇒ **保持** 122455
+ * LABEL_10:  _this[122455] = 0;                             //     否则清 0
+ *        } else { 174801 |= 0x8000000; 122455 = 1; }        //   有内容 ⇒ 置 ADV + 显示中
+ * ```
+ * ★**两条必须分开**（审计 `0x6e`/`wrong-condition`）：`97050`（跳读/自动位）**只**出现在
+ * 门打开那一支（raw 28352）。修前 emulator 把它写成了"门关时也置 `showing = 1`"
+ * —— 与体相反（门关那一支的判据里根本没有 `97050`）。
  *
- * ★这是引擎里 `0x8000000` 的**唯一**置位条件，因此 emulator 不再无条件置位。
+ * ## `sub_48F000` 是什么、emulator 用什么代替（★有据缺口，不是等价）
+ * `sub_48F000`（raw 109810-109825）逐字是：`sprintf_s(Buffer, ".%8.8x", 句 id)` →
+ * 在**消息队列对象** `_this+258` 里按名查表（`sub_48EE60`）→ 命中且 `entry[1] > a3` 时返回
+ * `entry[2][a3]`，否则返回 **0**。也就是说它问的是「**脚本分段表里该句还有没有第 `a3` 段**」——
+ * 那张表由 `sub_48FFB0` 从队列刷进去，而 emulator **不装载脚本分段资源**（登记在
+ * `ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED`）⇒ 用**本页文本的显示态**当等价物：
+ *  - 该窗正有未走完的逐字显现（`RevealState.active`）⇒ 有内容；
+ *  - 或本页有字形、且这一页还没被 `0x72` 武装过（刚 `show-text`/刚 `0x71` 开新消息）⇒ 有内容；
+ *  - 空页（`glyphCount == 0`）⇒ 没有内容（对应 `sub_48F000` 返回 0）。
+ *
+ * @param incoming 调用点是不是"**新消息开始**"（`0x71`）。引擎在那里问的是**即将入队的**那一句
+ *   在分段表里有没有段 —— emulator 连表都没有，更没有"还没入队的那一句"，故按"本指令本身就是要
+ *   显示一段新消息"记为**有内容**（= 修前行为，用户实测过的 ADV 节奏不回退）。
+ *   这一格是**登记的有意近似**，不是双份真源。
+ * @returns 是否仍在显示中（`122455 != 0`）；调用方据此 `setAdv`/`clearAdv`。
  */
-function advanceReveal(e: Engine): boolean {
+function advanceReveal(e: Engine, incoming = false): boolean {
   const m = e.msgwin;
-  // 门关闭（随包 INI 默认）：引擎直接清显示态，**不置 ADV** —— 这是修掉"位卡死"的那条路径。
-  // 门打开：引擎要求 `sub_48F000` 非 0（"还有内容要显示"）。emulator 无逐字渲染，用
-  // 「文本刚写入 ⇒ 本帧仍在显示中（showing=1）」，由 `Engine.serviceAdv()` 在下一帧收尾。
-  m.showing = readTextSkipOf(e) !== 0 ? 1 : 0;
-  if (m.skipMode !== 0) m.showing = 1; // 引擎 LABEL_10：自动/跳读模式保留显示态
-  return m.showing !== 0;
+  const win = m.resolveWin(m.lastArg);
+  if (readTextSkipOf(e) === 0) {
+    // 门关闭（随包 INI 默认）：引擎只做「清 122455」，**不置 ADV** —— 修掉"位卡死"的那条路径。
+    if (m.showing !== 0) m.showing = 0;
+    return false;
+  }
+  if (incoming || pageHasPendingText(e, win)) {
+    m.showing = 1; // raw 28359
+    return true; // 调用方 setAdv（raw 28358）
+  }
+  if (m.skipMode !== 0) return m.showing !== 0; // raw 28352-28353：跳读/自动 ⇒ 保持（不清也不置）
+  m.showing = 0; // LABEL_10（raw 28354-28355）
+  return false;
 }
+
+/**
+ * `sub_48F000` 的 emulator 等价物（**本页还有没有要显示的内容**）—— 见 `advanceReveal` 的说明。
+ *
+ * 判据只读 `MsgWindow` 自己的两个状态（逐字显现游标 + 内容版本号），**不看** `ReadTextSkip` 门
+ * （门是调用方的事），也不看任何"全局模式位"。
+ */
+function pageHasPendingText(e: Engine, win: number): boolean {
+  const m = e.msgwin;
+  const st = m.reveal.get(win);
+  if (st && st.active) return true; // 逐字还没走完 ⇒ 还有内容
+  const laid = layoutWindow(win, { style: styleOfWin(e, win), segments: m.slot(win).segments });
+  if (laid.glyphCount === 0) return false; // 空页 ⇒ 没有内容
+  return !m.revealArmed(win); // 有字形但还没被 `0x72` 武装过（刚入队 / 刚开新消息）
+}
+
+/**
+ * **`sub_48F000` 的脚本分段表在 emulator 里没有对应物**（有据缺口，登记在此以免被当成"已等价"）。
+ *
+ * 引擎那张表 = 消息队列对象 `Engine+80107` 里按 `.8.8x`（句 id 的十六进制）为名的条目
+ * （`sub_48F000` raw 109810-109825 查、`sub_48FBB0` raw 110300- 建、`sub_48FFB0` raw 110456-110482
+ * 从队列刷入）。emulator 既不装载该资源、也没有"一次表演的分段表"这一层概念 ⇒
+ * `advanceReveal` 只能用**本页显示态**（见 `pageHasPendingText`）近似"还有没有内容"。
+ *
+ * 重新评估条件：① 真机 E4 抓到"门开（`ReadTextSkip=1`）时某页应当分多段显示、而 emulator 一段就完"；
+ * 或 ② 需要复刻 `0x6E`/`0x72` 在门开时的逐段 ADV 位翻转。届时先从 `Engine+80107` 的队列名表
+ * （`sub_48EE60` 的容器）反推脚本侧资源从哪来（`sub_41A780` 一族？），再决定要不要建这张表。
+ */
+export const ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED: readonly { raw: string; what: string }[] = [
+  {
+    raw: '109810-109825',
+    what: '`sub_48F000`：按 `".%8.8x"`（句 id）查 `Engine+80107+258` 的分段表，返回该句第 a3 段的项（未命中/越界返回 0）。emulator 用 `pageHasPendingText`（本页是否还有未显示的字形）代替。',
+  },
+  {
+    raw: '110456-110482',
+    what: '`sub_48FFB0`：把消息队列 `_this[279..281]` 逐条刷进表（`0x71` raw 28431 是调用点）—— emulator 无队列可刷 ⇒ `0x71` 的这一步是 no-op（不是"忘了接"）。',
+  },
+];
 
 /**
  * `0x6E show-text`（sub_41EB20 raw 28307-28385）：向文本槽追加一段文本。
@@ -462,10 +590,15 @@ const op_show_text: OpHandler = (c) => {
   if ((m.flags & 1) !== 0) {
     m.addRuby(slot, text, '');
     m.flags |= 0x10000;
+    recordRenderedRow(e, slot, text); // ★`tickets/T-0170`：正文段落也要进 `Font+3364`
     return;
   }
   m.appendText(slot, text);
   m.flags &= ~0x10000;
+  // ★`tickets/T-0170`：引擎这条路的收尾是 `sub_46CBF0` → `sub_46BE30` → `sub_45F090`
+  //   （raw 28368 / 83999-84009 / 74360-74400），**把这一段正文连同 `+44` 串写进记录表** ——
+  //   那正是 `0x1D1`（回想页重绘）要重画的数据源。漏了它 ⇒ 回想页只有框、没有正文。
+  recordRenderedRow(e, slot, text);
   // 新内容入队 ⇒ 该窗的显现游标作废（引擎 `0x71` 会 idx=0 重头显示）
   const w = e.msgwin.resolveWin(slot);
   e.msgwin.reveal.delete(w);
@@ -503,6 +636,13 @@ const op_end_text_line: OpHandler = (c) => {
   const e = c.e;
   const slot = (plan.int(1) ?? 0);
   e.msgwin.endLine(slot);
+  // ★`tickets/T-0170`：换行在记录表里也留一条**空串 + `flags|8`** 的记录
+  //   （`sub_4691D0` raw 81530-81553；排版层的调用点 raw 82667 / 83094）。`sub_4675A0` 靠它推进 y
+  //   （raw 80718-80724），也是"一行到哪儿结束"的唯一标记（`flags&4` 的连续段是**一行**，raw 80731-80752）。
+  //   ★2026-09（`T-0151`）：体里那条 push **有门** —— `sub_4691D0` raw 81549 的 `if ( a3 >= 0 )`
+  //   （`a3` = `Engine[97055]`，由 `sub_41ECE0` raw 28395 传入）⇒ `i1bb 0` 期间不记换行记录。
+  //   另一半（raw 82665 的 `if (v5[28] == 1)` = 窗对象 `+112` 专用路径）未建模，登记在缺口表里。
+  if (recordGateOpen(e)) e.textItems.pushLineFeed(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
 };
 
@@ -553,7 +693,10 @@ const op_message_show: OpHandler = (c) => {
     e.textItems.pushPage(w); // raw 74269-74271
     e.textItems.markGroupStart(w); // raw 74275
   }
-  if (advanceReveal(e)) setAdv(e);
+  // ★`incoming = true`：本指令就是"新消息开始"，引擎这一支问的是**即将入队的**那一句在分段表里
+  //   有没有段（raw 28439 的 `sub_48F000`）—— emulator 不装载那张表（见
+  //   `ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED`）⇒ 按"有内容"处理，保持 ADV 节奏（修前行为）。
+  if (advanceReveal(e, true)) setAdv(e);
   else clearAdv(e);
   // 引擎 `sub_41ED80` raw 28361-28382：非跳读路径下入队 + `sub_453A60(Engine+430572, MessageSpeed)`
   // ⇒ **从这里开始逐字显现**（跳读/自动模式下走同步排空，即一次显示完）。
@@ -629,17 +772,24 @@ const op_wait_for_input: OpHandler = (c) => {
     e.awaitingAdvance = true; // 门已置，但显现未完 ⇒ 由帧循环的 text-reveal 分支继续推进
     return;
   }
-  if (advanceReveal(e)) return; // 仍在显示中（= 引擎 `122455` 非 0）⇒ 不走 LABEL_11 的语音交付；LABEL_17 仍会走（见上）
-  clearAdv(e);
-  // 引擎：`if (!122496 && !(mask & 0x40))` —— 0x40 = 「跳读中」（Engine[1415] 合成）
-  if (m.alt === 0 && m.skipMirror === 0) m.finishPage(w);
-  if ((e.effectFlags & ADV_ACTIVE) === 0) {
-    e.input.consumeEdges(); // 引擎 sub_478090(Engine+258, …)
+  if (advanceReveal(e)) return; // 仍在显示中（= 引擎 `122455` 非 0）⇒ 跳 LABEL_17（不动等待门）
+  // ---- raw 28518-28537：LABEL_11 的交付块，**整块**被 `!122496 && !(mask & 0x40)` 门控 ----
+  //   `mask` 的 bit6 = `Engine[1415]`（raw 28487-28488 在开头合成）⇒ 跳读中**不进这一块**：
+  //   于是 `174801 &= ~0x8000000`（raw 28520）**也不会发生** ⇒ 随后的 LABEL_17 里 `ADV != 0`，
+  //   等待推进门不置（脚本继续跳读）。修前 emulator 无条件 `clearAdv` ⇒ 跳读时反而挂起等玩家。
+  const skipping = m.skipMirror !== 0; // `Engine[1415]`（= memo 的跳读镜像）
+  if (m.alt === 0 && !skipping) {
+    clearAdv(e); // raw 28520（块内）
+    m.finishPage(w); // 交付/记账的等价物（3 槽语音交付见 `op_poll_msg_advance` 的说明）
+    e.input.consumeEdges(); // 引擎 sub_478090(Engine+258, …)（raw 28542）
     // raw 28543 `Engine[174802] = 0`：消费刷把掩码写进那一格后**当帧清零**
     // （emulator 的对应格 = `InputManager.inputMask`，唯二写者是两把刷子）。
     e.input.inputMask = 0;
-    e.awaitingAdvance = true; // ★ effect_flags |= 0x80000000
   }
+  // ---- LABEL_17（raw 28539-28547）：`ADV == 0` 才置等待推进门 ----
+  //   emulator 的 `awaitingAdvance` = `effect_flags |= 0x80000000` + `sub_45A940(..., -1, 107705)` 查询
+  //   的那两半（字格模数查询在其上、`0x300` 闸门各半，见本 handler 开头）。
+  if ((e.effectFlags & ADV_ACTIVE) === 0) e.awaitingAdvance = true;
 };
 
 /**
@@ -834,7 +984,11 @@ const op_display_furigana: OpHandler = (c) => {
   //   （口径：**一页的样式 = 最后一次入队那一刻的样式**；引擎严格来说是"每段各自用当时的样式"，
   //    但全库 87324 处文本入队里，页内"文本→改样式→再文本"的出现次数是 **0** ⇒ 两者等价）
   captureFontStyle(e, slot);
-  e.msgwin.addRuby(slot, (plan.str(2) ?? ''), (plan.str(3) ?? ''));
+  const base = (plan.str(2) ?? '');
+  e.msgwin.addRuby(slot, base, (plan.str(3) ?? ''));
+  // ★同一条 `sub_46BE30` 调用 ⇒ 也留一行记录（`tickets/T-0170`）；漏了它，回想页里
+  //   **被注音的那个词会缺字**（正文的其它段由 `0x6E` 记账，这一段只有 `0x196` 走）。
+  recordRenderedRow(e, slot, base);
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
   // raw 29071 的外层门：bit0 置位（`0x304` 已开文本块）⇒ 走引擎第③路（raw 29104-29109）。
@@ -1008,8 +1162,15 @@ const op_window_relayout: OpHandler = (c) => {
  *
  * ★**登记的近似（不是等价，别当等价用）**：① `op2` 只用于引擎那道越界门（emulator 的排版是
  * 「整窗从模型重排」，没有"从第 i 条记录起重画"的粒度）⇒ 门通过后重画的是整窗；
- * ② `op3` 的其它位（bit0 含组首、bit2/bit3 的记录过滤、bit4/5；bit6 走 `sub_462040`）未建模；
- * ③ 引擎只在 `v8 > op2` 时**才**动颜色 ⇒ emulator 同样把设色放在这道门之后（乱序修复会变成"越界也改色"）。
+ * ② `op3` 的 bit0/bit2/bit3 参与**记录级过滤**（raw 79699 的 `(flags & 2) != 0 && (op3 & 1) == 0`
+ * ⇒ 跳过该条记录、raw 80773 的 `op3 & 4` ⇒ 不贴这一行）—— 重写侧没有记录级粒度 ⇒ 未建模；
+ * bit6（`0x40`）与 bit4/5（`0x30`）**已建模**（见下）；
+ * ③ 引擎只在 `v8 > op2` 时**才**动颜色 ⇒ emulator 同样把设色放在这道门之后（乱序修复会变成"越界也改色"）；
+ * ④ 窗对象 `+112 == 1` ⇒ 引擎改走专用路径 `sub_462040` 并**直接 return**（raw 79504-79508）——
+ *    emulator 的窗对象没有 `+112` ⇒ 该支未建模（与 `0x1D1` 的 `dedicatedPath` 同一条登记）。
+ * ⑤ bit6 的语义订正：**不是**"起始记录下标后移"，而是 **DrawItem id 起点**后移
+ *    （raw 79685-79688：`v45 = obj+104; v155 = v45; if (op3 & 0x40) v155 = obj+132 + v45;`）——
+ *    影响的是本次绘制项的层序 id，`a3`（起始记录下标）不动。
  */
 const op_gdi_repaint_window: OpHandler = (c) => {
   const e = c.e;
@@ -1025,11 +1186,130 @@ const op_gdi_repaint_window: OpHandler = (c) => {
   // ★引擎的越界门（raw 79502）：记录表中没有第 `start` 条 ⇒ **整条指令什么都不做**（连颜色都不改）。
   //   记录表 = `Engine.textItems`（引擎 `Font[841..842]` 的 72B 向量，同一张表）。
   if (!(start >= 0 && start < e.textItems.records.length)) return;
-  if ((mode & 2) !== 0) {
+  const o = e.msgwin.objectAt(win);
+  if (!o) return; // raw 79504 无条件解引用 `Font[a2+261]`（表内恒存在）；表外 ⇒ 不发明对象
+  // ---- raw 79634-79653：`op3 & 0x40` 为 0 ⇒ 移除 `win+104/+108`；`op3 & 0x30` ⇒ 移除 `win+276/+280` ----
+  //   ★这两段在引擎里只在 **DrawMode == 1**（raw 79629 `v39 = Engine[667856]`）那一支里；重写侧
+  //     没有 D3D/GDI 两套表面，取"照做"（与 `0x1D1` 的同一段保持一致，见 `op_recall_page_repaint`）。
+  if ((mode & REPAINT_KEEP_SURFACE) === 0) {
+    o.f104 = 0;
+    o.f108 = 0;
+  }
+  if ((mode & REPAINT_RUBY_RANGE) !== 0) {
+    o.f276 = 0;
+    o.f280 = 0;
+  }
+  if ((mode & REPAINT_SET_COLORS) !== 0) {
     e.engineValues.set(ENGINE_FIELD.colorFill, bgrToRgb(fill));
     e.engineValues.set(ENGINE_FIELD.colorOutline, bgrToRgb(outline));
   }
-  emitWin(e, win);
+  // raw 79684-79688：`v155 = win+104; if (op3 & 0x40) v155 = win+132 + win+104;` —— 本次绘制项的
+  //   **id 起点**（不动窗对象）⇒ 只影响这一次发布的层序。
+  emitWin(e, win, (mode & REPAINT_KEEP_SURFACE) !== 0 ? o.f104 + o.f132 : o.f104);
+};
+
+/**
+ * `0x1D1`（`sub_420310` raw 29353-29371 → `sub_4675A0` raw 80313-81522）：**回看页重绘**
+ * —— 上一条 `0x82`（`op_gdi_repaint_window`）的**孪生兄弟**（`tickets/T-0170`）。
+ *
+ * ## 与 `0x82` 同形的部分（逐条 raw 对照）
+ * | 件 | `0x82`：`sub_41F720` raw 28808-28826 → `sub_466000` raw 79319-80311 | `0x1D1`：`sub_420310` raw 29353-29371 → `sub_4675A0` raw 80313-81522 |
+ * |---|---|---|
+ * | handler 骨架 | `_this[30*cur+95805] = 11`；`op5..op1` 五次 `sub_41BF50`；第 7 参 = `Engine+84128` | **逐字相同**（raw 29364-29370 / 28819-28825） |
+ * | 越界门 | `(Font+3368 − Font+3364)/72 > op2 && op2 >= 0`（raw 79499-79505） | **同一道**（raw 80529）⇒ 越界则整条指令什么都不做 |
+ * | 专用窗路径 | 窗对象 `+112 == 1` ⇒ `sub_462040`（raw 79506） | 同条件 ⇒ `sub_4634B0`（raw 80531-80532；体 raw 77500-78716） |
+ * | 颜色覆写 | `op3 & 2` ⇒ `Font+1360 ← BGR(op4)`、`Font+1364 ← BGR(op5)` | 同（raw 80629-80634） |
+ * | 旧表面/区间 | `sub_4A3890` / `sub_4ABB60`（raw 79636-79652） | 同（raw 80593-80611：`op3 & 0x40` 才跳过、`op3 & 0x30` 另移除 `win+276/+280`） |
+ * | 记录循环 | 从 `op2` 起逐条重画 | 从 `op2` 起逐条重画（raw 80664-81014） |
+ *
+ * ## 与 `0x82` **分叉**的部分（每一条都有 raw）
+ * 1. ★**颜色是临时的**：`sub_4675A0` 收尾把 `Font+1360/+1364` **恢复**（raw 81470-81473，门 = `op3 & 2`）；
+ *    `sub_466000` 里没有这对恢复 ⇒ 本 handler 必须恢复、`0x82` **不**恢复。
+ * 2. **记录分流**：`sub_4675A0` 分四类 —— 语音项（`op3 & 8` 才贴图标 ⇒ `sub_4BB840`，raw 80678-80699）、
+ *    换行记录（记录 `flags & 8`，raw 80718-80724）、正文行（记录 `flags & 4`，把**连续**若干条的 `+44`
+ *    串 `memcpy` 拼成一整行再逐字画，raw 80725-81014）、切页哨兵（记录 `flags & 2` 且 `!(op3&1)`，raw 80676）。
+ * 3. **专用体**：`sub_4634B0`（raw 77500-78716，GDI-only 变体，字体句柄 `+101852/+101856`）vs `sub_462040`。
+ * 4. **正文来源**：`sub_4675A0` 从记录 `+44` 的 `std::string` 取（raw 80736-80745）——
+ *    即"ADV 已经画过的正文行"；这就是它被 `src/HISTORY.txt` 用来重画回想页正文的原因。
+ * 5. 尾部还有 `win+136`（已画字数）/`win+132`（高水位）两个**窗口记账**写（raw 81220/81224）
+ *    与 `op3 & 0x20` 的栏带四边形循环（raw 81498-81509）—— 后者驱动数据是**窗对象自己的栏表**
+ *    （`win[56]`/`win[70]`），emulator 未建模该表 ⇒ 登记在 `missing[]`。
+ *
+ * ## ★它不是"页面/滚动/高亮"模型（这条是给后来者的护栏）
+ * 引擎体 **raw 81140-81522 全域搜索**：无 `FillRect`/`Rectangle`/`PatBlt`、无区域填充、无行底填色、
+ * 无选中页高亮、无滚动位置；唯一的"光标"是 raw 81145 `sub_4AC750` 的矩阵平移项。
+ * 滚动/选中/翻页全部由脚本自己做：`src/HISTORY.txt` 的 `i1d0`（取页）+ `i1d3`（取记录字段）
+ * + `draw-texture`/`i217`/`i1fd`（画框、条纹、页码），`i1d1` 全语料**只在 `HISTORY.txt:1314` 一处**。
+ *
+ * ## emulator 的登记近似（不是等价，别当等价用）
+ *  - 引擎把记录画进该窗的**离屏表面** `win+20`（`sub_45E870` raw 81197 + 逐字 GDI raw 81275-81417；
+ *    `sub_4ACE50` 在本函数每次都传 `win+20` 当纹理）⇒ 重写侧没有"在该窗表面追加若干行"的粒度，
+ *    改用 `setPageText(窗, 切片正文行)` + `emitWin(窗)`＝"整窗从模型重排"（与 `0x82` 同一条近似）。
+ *  - 覆写色发布时用 `captureFontStyle` 钉进该窗（= "字形连颜色一起进表面"），随后恢复全局字段。
+ *  - 专用路径（`win+112 == 1`）不建第二套渲染器 ⇒ 只把 `dedicatedPath` 记进结果，呈现通路相同。
+ *  - `sub_404CB0(语音)` 没有宿主缝 ⇒ 恒 `false`（登记在 `missing[]`）。
+ *  - 窗对象 `+112`（专用路径判定）与 `win[56]/[70]` 栏表未建模 ⇒ `dedicatedPath` 恒 `false`、
+ *    栏带四边形循环不实现（同 `missing[]`）。
+ *
+ * 语料 **1 处**：`src/HISTORY.txt:1314` 的 `i1d1 (local-int 4a9) (local-int 94) 40 0 0`
+ * （op1 = `3 + 行号`、op2 = 上一段 `i1d0` 收出来的记录下标、op3 = 0x40 = "不清旧表面"）。
+ */
+const op_recall_page_repaint: OpHandler = (c) => {
+  const e = c.e;
+  const p = operandsFor(c);
+  if (!p) return;
+  // ★**先读完五格再进门**（与引擎同序，`sub_420310` raw 29365-29369 无条件五次 `sub_41BF50`，
+  //   越界门在**被调体** `sub_4675A0` raw 80529 里）—— 与 `0x82` 同一条纪律。
+  const winArg = p.int(1) ?? 0;
+  const start = p.int(2) ?? -1;
+  const mode = p.int(3) ?? 0;
+  const fill = p.int(4) ?? 0;
+  const outline = p.int(5) ?? 0;
+  const win = e.msgwin.resolveWin(winArg);
+  const o = e.msgwin.object(win);
+  // 窗对象 `+112` 未建模 ⇒ 专用路径恒 false（见上文登记）。
+  const dedicatedPath = false;
+  // ★raw 80529 的越界门：不满足 ⇒ 被调体**直接 return**（连颜色都不改、也不发布该窗；
+  //   「什么都没做」在宿主侧可观测 = 一次 `msgWinSync` 都没有）。
+  if (!(start >= 0 && start < e.textItems.records.length)) return;
+  // ---- raw 80589-80611：`op3 & 0x40` 为 0 ⇒ 清旧表面 + 移除 `win+104/+108`；`op3 & 0x30` ⇒ 移除 `win+276/+280` ----
+  if ((mode & REPAINT_KEEP_SURFACE) === 0) {
+    o.f104 = 0;
+    o.f108 = 0;
+  }
+  if ((mode & REPAINT_RUBY_RANGE) !== 0) {
+    o.f276 = 0;
+    o.f280 = 0;
+  }
+  // ---- raw 80629-80634：`op3 & 2` ⇒ 覆写全局填充/描边色（与 0x76/0x77、0x82 同一对字段）----
+  const override = (mode & REPAINT_SET_COLORS) !== 0;
+  const savedFill = e.engineValues.get(ENGINE_FIELD.colorFill);
+  const savedOutline = e.engineValues.get(ENGINE_FIELD.colorOutline);
+  if (override) {
+    e.engineValues.set(ENGINE_FIELD.colorFill, bgrToRgb(fill));
+    e.engineValues.set(ENGINE_FIELD.colorOutline, bgrToRgb(outline));
+  }
+  // ---- raw 80664-81014：从 op2 起的那一圈记录循环（纯切片，无副作用）----
+  //   ★它就是"这一窗要重画哪些记录"的唯一真源；结果**只**经 `setPageText` + `emitWin`
+  //     流到渲染侧（不另设诊断字段 —— 那会是一条没有生产读者的死写）。
+  const page = e.textItems.repaintRange(start, { win, mode, dedicatedPath, voiceBusy: false });
+  // ---- raw 81197-81417：把这一页画进该窗（登记近似：整窗从模型重排）----
+  //   引擎在"记录全被过滤掉 + 不清表面"时只清注音区间、不产生可见变化 ⇒ 这里也不动槽内容。
+  if (page.lines.length > 0 || (mode & REPAINT_KEEP_SURFACE) === 0) {
+    e.msgwin.setPageText(win, page.lines);
+    captureFontStyle(e, win); // 字形连颜色一起钉住（引擎把字画进离屏表面）
+  }
+  // ★raw 80656-80662（`0x82` 的同一段在 raw 79684-79688）：`v192 = obj+104; v190 = 0;
+  //   if (op3 & 0x40) { v192 += obj+132; v190 = obj+132; }` —— 本次绘制项的 **id 起点**后移，
+  //   并另有一格 `v190` = 行偏移（引擎用它给逐行 id 编号；重写侧没有逐行 id ⇒ 只发布前者）。
+  emitWin(e, win, (mode & REPAINT_KEEP_SURFACE) !== 0 ? o.f104 + o.f132 : o.f104);
+  // ---- raw 81470-81473：颜色**恢复**（★与 `0x82` 的分叉点；`sub_466000` 没有这一对写）----
+  if (override) {
+    if (savedFill === undefined) e.engineValues.delete(ENGINE_FIELD.colorFill);
+    else e.engineValues.set(ENGINE_FIELD.colorFill, savedFill);
+    if (savedOutline === undefined) e.engineValues.delete(ENGINE_FIELD.colorOutline);
+    else e.engineValues.set(ENGINE_FIELD.colorOutline, savedOutline);
+  }
 };
 
 /**
@@ -1316,7 +1596,9 @@ const op_msgwin_obj_f100: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const idx = (plan.int(1) ?? 0);
-  e.msgwin.object(idx).f100 = (plan.int(2) ?? 0);
+  const o = e.msgwin.objectAt(idx); // raw 31751-31753：`if (v4) *(_DWORD *)(v4 + 100) = v2;`
+  if (!o) return;
+  o.f100 = (plan.int(2) ?? 0);
 };
 
 /** `0x213`（sub_423A80 raw 31758-31775）：消息窗对象 `+104 = op2`、`+108 = op3`。 */
@@ -1325,7 +1607,8 @@ const op_msgwin_obj_range: OpHandler = (c) => {
   const e = c.e;
   const idx = (plan.int(1) ?? 0);
   const a = (plan.int(2) ?? 0);
-  const o = e.msgwin.object(idx);
+  const o = e.msgwin.objectAt(idx); // raw 31769-31774：空表项 ⇒ 两个写都跳过
+  if (!o) return;
   o.f104 = a;
   o.f108 = (plan.int(3) ?? 0);
 };
@@ -1336,7 +1619,8 @@ const op_msgwin_obj_range2: OpHandler = (c) => {
   const e = c.e;
   const idx = (plan.int(1) ?? 0);
   const a = (plan.int(2) ?? 0);
-  const o = e.msgwin.object(idx);
+  const o = e.msgwin.objectAt(idx); // raw 33259-33264：空表项 ⇒ 两个写都跳过
+  if (!o) return;
   o.f276 = a;
   o.f280 = (plan.int(3) ?? 0);
 };
@@ -1456,6 +1740,12 @@ const op_window_geometry: OpHandler = (c) => {
   // 引擎同函数把 w/h 也写进换行边界 win+36/+40（raw 73162-73163）；底色随表面重建设置
   g.wrapRight = w;
   g.wrapBottom = h;
+  // ★**一共三对格**（工作清单 `0x70`/missing-operand-io 只点了两对，这里按体补第三对）：
+  //   `+20/+24`（`v10[5]/v10[6]`，raw 73157-73158）、`+124/+128`（`v10[31]/v10[32]`，raw 73159-73160）、
+  //   `+36/+40`（raw 73162-73163）。后两者在下游分叉：`+36/+40` 是**换行边界**（`0x1C1` 只改它，
+  //   见 `op_window_wrap`），而 `+124/+128` 是**缩放后的表面尺寸** —— 只在 `set:DrawMode == 1` 时
+  //   被 `sub_4A7170` 重建的 D3D 表面尺寸覆写（raw 73164-73171）、否则留在 `w/h`。
+  //   emulator 没有"离屏表面"这一层 ⇒ `+124/+128` 无消费者（登记在下方缺口注释里，不假装有）。
   // ★同一落点函数 `sub_45D660` 的末尾还有**回看页 push**（raw 73181-73191），而且**不过门**：
   // `sub_41ED20` raw 28415 的末参 `a7` 恒传字面量 `0` ⇒ `if (a7 >= 0)`（raw 73181）恒真
   // （对照 `0x71` 的 `a3 = Engine[97055]` 那道门）。落点里 `a2 == 0` ⇒ 默认窗（raw 73147-73152）。
@@ -1468,11 +1758,24 @@ const op_window_geometry: OpHandler = (c) => {
   emitWin(e, win);
 };
 
-/** `0x198 <win> <x> <y>`（sub_41FE10 → sub_456400 raw 68263-68279）：窗口屏幕位置。 */
+/**
+ * `0x198 <win> <x> <y>`（sub_41FE10 → sub_456400 raw 68263-68279）：窗口屏幕位置。
+ *
+ * ★2026-09（`T-0151`）两处照体订正：
+ *  1. `sub_456400` 的 `if (result)`（raw 68273）—— **窗对象不存在 ⇒ 一格都不写**。修前
+ *     `MsgWindow.geom()` 是惰性建窗 ⇒ 凭空建一个窗几何再把 `+12/+16` 写进去（审计 `0x198`）。
+ *     现在先过对象表门（表内 0..9 恒存在，只有表外下标会被挡下）。
+ *  2. **引擎这里不重画、也不置任何脏位**（只写 `+12/+16`）—— 而 emulator 必须 `emitWin` 才能
+ *     把新位置送到宿主（宿主只在收到 `msgWinSync` 时更新该窗的排版落点）。这是**有意的宿主
+ *     接口差**（审计 `0x198`/host-invented 已点名），保留但在此写明：引擎的"位置生效"发生在
+ *     下一次**绘制/贴出**（`sub_45A940` 现读 `win+12/+16`），emulator 的等价"下一次绘制"就是
+ *     这一次发布 —— 不发布则位置永远不生效。登记在 `MSGWIN_HOST_INTERFACE_DEVIATIONS`。
+ */
 const op_window_pos: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
+  if (!e.msgwin.objectAt(win)) return; // raw 68273
   const g = e.msgwin.geom(win);
   g.x = (plan.int(2) ?? 0);
   g.y = (plan.int(3) ?? 0);
@@ -1501,14 +1804,21 @@ const op_text_origin: OpHandler = (c) => {
   emitWin(e, win);
 };
 
-/** `0x303 <win> <mode> <width>`（sub_426A90 → sub_456600 raw 68405-68418）：对齐模式 + 行宽。 */
+/**
+ * `0x303 <win> <mode> <width>`（sub_426A90 → sub_456600 raw 68405-68418）：对齐模式 + 行宽。
+ *
+ * 引擎逐字：`v4 = a2 ? a2 : Font[307]`（**默认窗重定向**）→ `obj = Font[v4+261]`（不查空）→
+ * `*(obj+288) = a3`（**原值**）、`*(obj+292) = a4`。
+ * ★修前 emulator 把 `mode` 归一成 `1/2/0` 再存 ⇒ `op2` 取 1/2 之外的非 0 值时引擎留下原值、
+ * emulator 存 0（审计 `0x303`/approximation）。现在照体存原值，语义解释留给排版层
+ * （`layoutWindow` 只认 `align === 1` / `=== 2`，其它值等同于不指定 —— 与引擎消费者一致口径）。
+ */
 const op_align: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const win = e.msgwin.resolveWin((plan.int(1) ?? 0));
   const g = e.msgwin.geom(win);
-  const mode = (plan.int(2) ?? 0);
-  g.align = (mode === 1 ? 1 : mode === 2 ? 2 : 0) as 0 | 1 | 2;
+  g.align = (plan.int(2) ?? 0); // raw 68415：原样
   g.alignWidth = (plan.int(3) ?? 0);
   emitWin(e, win);
 };
@@ -1669,30 +1979,78 @@ const op_set_advance_mes_on_wheel: OpHandler = (c) => {
  * 一点都不动）。因此这里**不再** `emitAllWins` —— 那会把晚到的全局样式糊到先前排好的窗上
  * （用户实测：`CONFIG2` 逐行设的角色名颜色溢到设置界面下方的 ADV 样例窗）。
  * 脚本想换样式重画时会**重新入队**（`i071` + `show-text`，如 `CONFIG.txt:171-179`）。
+ *
+ * ★2026-09（`T-0151`）：**5 格一起写**（raw 24062-24070）—— 除字号本体（`Font+201684`）外还有
+ * 两套 LOGFONTA 模板的 `lfHeight`（横排 `Font+1232`、竖排 `Font+101972` = `-字号`）与它们的
+ * 半格派生态（`Font+1236`/`Font+101976` = `字号 / -2`，**C 整数除法向零截断**）。
+ * 修前只写字号本体 ⇒ 模板格留在旧值（审计 `0x75`/approximation 点名的"三到五格"）。
  */
 const op_set_main_size: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const size = (plan.int(1) ?? 0);
-  e.engineValues.set(ENGINE_FIELD.fontSize, size); // Font+201684 / 4
+  e.engineValues.set(ENGINE_FIELD.fontSize, size); // Font+201684 / 4（raw 24063）
+  e.engineValues.set(ENGINE_FIELD.logfontMain, -size); // Font+1232（raw 24064）
+  e.engineValues.set(ENGINE_FIELD.mainLfHeightVertical, -size); // Font+101972（raw 24065）
+  // `sub_4185F0` 的这两个格在 `Font+201680 == 0` 时无条件写（raw 24066-24070）；
+  // 非 0 时改走 `sub_459A20`/`sub_459C50` 重算（= 建模板，emulator 无句柄层 ⇒ 登记为缺口）。
+  e.engineValues.set(ENGINE_FIELD.mainGlyphHalf, Math.trunc(size / -2)); // raw 24068
+  e.engineValues.set(ENGINE_FIELD.mainGlyphHalfVertical, Math.trunc(size / -2)); // raw 24069
   e.msgwin.font.mainSize = size;
 };
 
-/** `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。同上，不重绘。 */
+/**
+ * `0x197 <size>`（sub_41FDD0 → sub_418680 raw 24084-24154）：注音字号（全局）。同上，不重绘。
+ *
+ * ★**4 格派生态 + 10 个窗对象**（raw 24109-24152）：
+ *  - `Font[54646]`（= `Font+218584`）字号本体；
+ *  - `Font[324] = Font[25509] = 字号 / -2`（`Font+1296` / `Font+102036`，**整数向零截断**）；
+ *  - `Font[323] = Font[25508] = -字号`（`Font+1292` / `Font+102032`）；
+ *  - 逐个 `Font[261..270]`（**10 个窗对象**）：`*(obj+200) = 字号`、`*(obj+204) = Font[327]`
+ *    （`Font+1308` = 注音 LOGFONTA 模板的 lfWeight）。
+ */
 const op_set_ruby_size: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const size = (plan.int(1) ?? 0);
-  e.engineValues.set(ENGINE_FIELD.rubySize, size); // Font+218584 / 4
+  e.engineValues.set(ENGINE_FIELD.rubySize, size); // Font+218584 / 4 = 75970（raw 24108）
+  e.engineValues.set(ENGINE_FIELD.rubyGlyphHalf, Math.trunc(size / -2)); // raw 24109（向零截断）
+  e.engineValues.set(ENGINE_FIELD.rubyGlyphHalfVertical, Math.trunc(size / -2)); // raw 24110
+  e.engineValues.set(ENGINE_FIELD.rubyLfHeight, -size); // raw 24111
+  e.engineValues.set(ENGINE_FIELD.rubyLfHeightVertical, -size); // raw 24112
+  applyWindowFontSize(e, size, e.engineValues.get(ENGINE_FIELD.logfontRubyWeight) ?? 0);
   e.msgwin.font.rubySize = size;
 };
+
+/**
+ * `sub_418680` raw 24114-24152 的那 10 次写：`Font[261..270]` 的 `+200 = 字号`、`+204 = Font[327]`。
+ *
+ * 表大小 = 10（见 `WINDOW_OBJECT_SLOTS`）；这 10 格由构造建立 ⇒ 这里**不建新对象**。
+ * `Font[327]` = `Font+1308` = `Engine[21651]`（`logfontRubyWeight`，由 `0x2BE` 写 700/0）。
+ */
+function applyWindowFontSize(e: Engine, size: number, aux: number): void {
+  for (let i = 0; i < WINDOW_OBJECT_SLOTS; i++) {
+    const o = e.msgwin.objectAt(i);
+    if (!o) continue; // 构造后恒存在；防御表被清空的情况（不发明对象）
+    o.f200 = size;
+    o.f204 = aux;
+  }
+}
 
 /** `0x1A5 <name>`（sub_433290 → sub_4328F0 raw 41344-41565）：主字体面名（全局）。同上，不重绘。 */
 const op_set_main_face: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const face = (plan.str(1) ?? '');
+  warnUnknownFace(c, '0x1A5', face); // raw 41385-41392
   e.msgwin.font.mainFace = face;
+  // raw 41394-41399：`Font+1236/101976 = Font+201684 / -2`、`Font+1232/101972 = -Font+201684`
+  // —— 面名 setter 会**按当前字号重算**这两对模板格（与 `0x75` 写的是同一批格）。
+  const size = e.engineValues.get(ENGINE_FIELD.fontSize) ?? 0;
+  e.engineValues.set(ENGINE_FIELD.logfontMain, -size);
+  e.engineValues.set(ENGINE_FIELD.mainLfHeightVertical, -size);
+  e.engineValues.set(ENGINE_FIELD.mainGlyphHalf, Math.trunc(size / -2));
+  e.engineValues.set(ENGINE_FIELD.mainGlyphHalfVertical, Math.trunc(size / -2));
 };
 
 /** `0x2FE <name>`（sub_4332D0 → sub_432DD0 raw 41568-41798）：注音字体面名（全局）。同上，不重绘。 */
@@ -1700,15 +2058,47 @@ const op_set_ruby_face: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const face = (plan.str(1) ?? '');
+  warnUnknownFace(c, '0x2FE', face); // raw 41613-41620
   e.msgwin.font.rubyFace = face;
+  // raw 41622-41627：与 `0x197` 同一批 4 格（用**当前**注音字号重算）
+  const size = e.engineValues.get(ENGINE_FIELD.rubySize) ?? 0;
+  e.engineValues.set(ENGINE_FIELD.rubyGlyphHalf, Math.trunc(size / -2)); // Font+1296（raw 41623）
+  e.engineValues.set(ENGINE_FIELD.rubyGlyphHalfVertical, Math.trunc(size / -2)); // Font+102036（41624）
+  e.engineValues.set(ENGINE_FIELD.rubyLfHeight, -size); // Font+1292（raw 41626）
+  e.engineValues.set(ENGINE_FIELD.rubyLfHeightVertical, -size); // Font+102032（raw 41627）
 };
+
+/**
+ * **可选字体表白名单警告**（`0x1A5` raw 41385-41392 与 `0x2FE` raw 41613-41620 **逐字相同**）。
+ *
+ * ```c
+ * if ( sub_428990(Font, Source) < 0 && strcmp(Source, "AGE Extend") )
+ *   sprintf_s(Font + 8, 0x400, "警告：[%s]は選択可能フォントの一覧に含まれていません。\r\n", Source);
+ *   sub_4034D0(Font, Font + 8);        // → 日志/消息汇（sub_4976A0 → … → WriteFile）
+ * ```
+ * `sub_428990`（raw 35125-35168）= 在**可选字体一览** `Font+201664`（32 B/条，`EnumFontFamiliesExA`
+ * 填充）里按名线性查（**查前剥 `'@'`**，raw 35149），查不到返回 **-1**。
+ *
+ * ★审计 `0x1A5`/`0x2FE` 的 `missing-branch`：修前 emulator **无条件接受任何面名**（既不警告也不
+ * 回退）⇒「装不到的字体名」与「装得到的」表现完全相同。现在接上警告面（面名照旧写进去 ——
+ * 引擎在警告之后**没有 return**，raw 41394 起照样建面）。
+ * `"AGE Extend"`（`aAgeExtend` raw 4455）是**豁免项**（引擎内部派生面，见 `AGE_EXTEND_FACES`）。
+ */
+function warnUnknownFace(c: StepCtx, op: string, face: string): void {
+  if (face === '') return; // `sub_428990` 对空串也返回 -1，但空面名不是"装不到"（`0x1A5` 从不传空）
+  if (fontListIndex(face) >= 0) return; // raw 41385 前半：表内 ⇒ 不警告
+  if (AGE_EXTEND_FACES.some((f) => f === face)) return; // raw 41385 后半的 `strcmp(Source, aAgeExtend)`
+  c.log(`警告：[${face}]は選択可能フォントの一覧に含まれていません。（${op}；raw 41390/41618）`);
+}
 
 /** `0x2BD <flag>`（sub_426200 raw 33384-33402）：主字体加粗（`lfWeight` 700/0，全局）。同上，不重绘。 */
 const op_set_main_bold: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const on = (plan.int(1) ?? 0) !== 0;
-  e.engineValues.set(ENGINE_FIELD.fontWeight, on ? 700 : 0); // Font+218516 / 4
+  e.engineValues.set(ENGINE_FIELD.fontWeight, on ? 700 : 0); // Font+218516 / 4（raw 33393/33398）
+  // ★第二个格：`Font+1248` = 主 LOGFONTA 模板的 `lfWeight`（raw 33394/33399，与上一个同写）
+  e.engineValues.set(ENGINE_FIELD.logfontMainWeight, on ? 700 : 0);
   e.msgwin.font.mainBold = on;
 };
 
@@ -1717,7 +2107,9 @@ const op_set_ruby_bold: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const on = (plan.int(1) ?? 0) !== 0;
-  e.engineValues.set(ENGINE_FIELD.rubyWeight, on ? 700 : 0); // Font+218588 / 4
+  e.engineValues.set(ENGINE_FIELD.rubyWeight, on ? 700 : 0); // Font+218588 / 4（raw 33413/33418）
+  // ★第二个格：`Font+1308` = 注音 LOGFONTA 模板的 `lfWeight`（raw 33414/33419）
+  e.engineValues.set(ENGINE_FIELD.logfontRubyWeight, on ? 700 : 0);
   e.msgwin.font.rubyBold = on;
 };
 
@@ -1786,27 +2178,38 @@ const op_msgwin_slot_flags: OpHandler = (c) => {
 };
 
 /**
- * `0x301`（sub_4269F0 → sub_404F80 raw 10741-10763）：清 `win+132`（显现游标）+ 删两段绘制项。
+ * `0x301`（sub_4269F0 raw 33757-33765 → `sub_404F80` raw 10741-10763）：清 `win+132`（显现游标）+ 删两段绘制项。
  *
  * ★`sub_404F80` **不清文本记录**，只把游标归零 ⇒ 闸门（`0x300`）开着时，下一次泵调用会
  * 从第一行重新贴出（这正是 CONFIG 预览"消失后重来"的那一步）。故这里在清视图的同时把
  * 显现状态重新武装到 0。
+ *
+ * ★2026-09（`T-0151`）两处照体订正：
+ *  1. **默认窗重定向**（raw 10748-10749）：`if (!a2) v2 = *(Font+1228)` ⇒ `op1 == 0` 指的是
+ *     **默认窗**（修前 emulator 把 0 当窗号 0，于是清了窗 0、默认窗的游标一个都没动）；
+ *  2. **对象表存在性门**（raw 10750）：`if (*(Font + 4*v2 + 1044))` —— 表项为空 ⇒ 连 `+132`
+ *     都不清、也不删绘制项。修前走 `object(v)` 会**凭空建对象**（审计 `0x301`/missing-branch）。
+ *  注意 `sub_4269F0` raw 33763 写的是 `_this[v2 + 122486] = 0`（用**未重定向**的原始 op1 ⇒
+ *  引擎这格表在 `op1 = 0` 时写的是下标 122486 那一格而不是默认窗那一格）—— 这一处照 raw 保留。
  */
 const op_msgwin_slot_clear: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   const v = (plan.int(1) ?? 0);
-  e.engineValues.set(v + 122486, 0);
-  e.msgwin.object(v).f132 = 0; // sub_404F80 的清 `+132` 那一步
-  // 引擎 sub_404F80 同时 sub_4ABB60 删该窗两段绘制项 ⇒ 重写侧清掉该窗文本
-  e.native.msgWinClear?.(v);
-  const g = e.msgwin.gateOf(v);
+  e.engineValues.set(ENGINE_FIELD.winRevealDoneBase + v, 0); // raw 33763（未重定向）
+  const w = e.msgwin.resolveWin(v); // raw 10748-10749
+  const o = e.msgwin.objectAt(w); // raw 10750
+  if (!o) return;
+  o.f132 = 0; // sub_404F80 的清 `+132` 那一步（raw 10752）
+  // 引擎 sub_404F80 同时 sub_4ABB60 删该窗两段绘制项（raw 10753-10760）⇒ 重写侧清掉该窗文本
+  e.native.msgWinClear?.(w);
+  const g = e.msgwin.gateOf(w);
   g.doneAt = null;
   if (g.enabled) {
-    const laid = layoutWindow(v, { style: styleOfWin(e, v), segments: e.msgwin.slot(v).segments });
+    const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: e.msgwin.slot(w).segments });
     if (laid.glyphCount > 0) {
-      e.msgwin.beginReveal(v, laid.glyphCount, e.nowMs, messageSpeedOf(e));
-      emitWin(e, v);
+      e.msgwin.beginReveal(w, laid.glyphCount, e.nowMs, messageSpeedOf(e));
+      emitWin(e, w);
     }
   }
 };
@@ -1979,15 +2382,64 @@ export function formatNumberCell(value: number, width: number, flags: number): {
   return { ascii, start: v19 };
 }
 
-/** `sub_41A6C0`（raw 25539-25593）：ASCII 数字 → 全角（`'0'`→`'０'`、`'-'`→`'－'`、`'+'`→`'＋'`、`'#'`→`'＃'`）。 */
-function toFullWidth(s: string): string {
-  return s.replace(/[0-9A-Za-z+\-#]/g, (ch) => {
-    if (ch === '-') return '－';
-    if (ch === '+') return '＋';
-    if (ch === '#') return '＃';
-    return String.fromCharCode(ch.charCodeAt(0) + 0xfee0);
-  });
-}
+/** `sub_41A6C0`（raw 25539-25593）：ASCII 数字 → 全角（`'0'`→`'０'`、`'-'`→`'－'`、`'+'`→`'＋'`、`'#'`→`'＃'`）。
+ *
+ * ★**实现已去重**（`tickets/T-0175` ⑫）：本条原本在这里有一份逐字节相同的本地副本，现改为从
+ * `../operand.js` 引入唯一那一份（`toFullWidthAscii`，原名 `toFullWidthNumber`）。两份实现一旦漂移，
+ * 症状是"同一个字符在 `0x205` 的逐字直绘与 `0x192` 的取串下宽度不同"——极难察觉，故合并。
+ * 本地别名保留 `toFullWidth` 以免动调用点。 */
+import { toFullWidthAscii as toFullWidth } from '../operand.js';
+
+/**
+ * **本族已知未实现的 opcode**（有据登记；工作清单 `msgwin-text-object`/missing-behavior 点名的
+ * `0x7D`）。
+ *
+ * ★为什么要有这张表：`0x7D`（十六进制串入队，`sub_41F580` raw 28736-28765）与 `0x6E`
+ * （`sub_41EB20` raw 28307-28386）**逐句同形** —— 同样的 `argc 2`（op1 = 窗、op2 = 串）、
+ * 同样的 MessageSpeed/ADV 二分（`!Engine[21668] || (effect_flags & 0x8000000)` ⇒ `sub_46CBF0`
+ * 同步排空；否则 `sub_46BE30` + `0x20000000` + `sub_453A60(Engine+430572, MessageSpeed)`）；
+ * **唯一差别**是读串用 `sub_41A780(_this, 2)`（十六进制/转义形态）而不是 `sub_41B640`。
+ * 此前它既不在派发表、也不在"仍未建模"清单里 ⇒ 命中即抛 `NotImplementedOp` 而无人知道
+ * （语料 `src/*.txt` 941 个脚本里 `^\s*i07d\b` 命中 **0** 处 ⇒ 这一支在本树下不可达）。
+ *
+ * 处置 = **登记 + 保持硬报错**（不猜实现）：只要语料出现 `i07d`，或 E4 真机抓到"十六进制串
+ * 文本"没有入队，就按 `sub_41F580` 落地（届时把它加进 `MSGWIN_OPS` 并从本表移除）。
+ */
+export const MSGWIN_TEXT_GAPS: readonly {
+  opcode: number;
+  mnemonic: string;
+  handler: string;
+  /** raw 行区间（台账口径 `^\d+(-\d+)?$`）。 */
+  raw: string;
+  what: string;
+}[] = [
+  {
+    opcode: 0x7d,
+    mnemonic: 'i07d',
+    handler: 'sub_41F580',
+    raw: '28736-28765',
+    what: '十六进制串入队：与 0x6E 同形（argc 2；op1 = 窗、op2 = 串，读串用 sub_41A780 而非 sub_41B640），未注册 ⇒ 命中即 NotImplementedOp。语料 0 处。',
+  },
+];
+
+/**
+ * **宿主接口差**（引擎不重画、而重写侧必须发布才能让变化生效的那几处）—— 「有意为之」的登记。
+ *
+ * 这一张表**不是缺口清单**（缺口见 `MSGWIN_TEXT_GAPS` / `ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED`），
+ * 而是给下一轮审计的护栏：这几处的 `emitWin` 是**有意的**，不要按"引擎没重画"去删它。
+ */
+export const MSGWIN_HOST_INTERFACE_DEVIATIONS: readonly { op: string; raw: string; what: string }[] = [
+  {
+    op: '0x198',
+    raw: '68263-68279',
+    what: '`sub_456400` 只写 `win+12/+16`（不置脏位、不重画）；emulator 必须 `emitWin` 才能把新位置送到宿主 —— 引擎的"位置生效"在下一次绘制（`sub_45A940` 现读 `win+12/+16`），重写侧的等价物就是这一次发布。删掉它 ⇒ 窗口位置永远不生效。',
+  },
+  {
+    op: '0x204/0x205',
+    raw: '31454/31470',
+    what: '直绘进纹理槽：引擎直接写槽表面，重写侧经 `native.drawString` 交给宿主光栅化（同一分工，见 `op_draw_string` 的说明）。',
+  },
+];
 
 /** 消息窗 / ADV 指令族（全部为 `OPS`＝真实现）。 */
 export const MSGWIN_OPS: OpTable = [
@@ -2017,6 +2469,7 @@ export const MSGWIN_OPS: OpTable = [
   [0x1ce, op_char_reveal_switch], // 逐字开关（v≠0 置 bit30+游标归零；v=0 收尾）
   [0x20a, op_window_relayout], // ★按当前状态重排并重画该窗（过去未注册 ⇒ 命中即硬报错）
   [0x82, op_gdi_repaint_window], // ★带色重画某窗的文本记录（GDI 文本族；T-0104，过去是 STUB）
+  [0x1d1, op_recall_page_repaint], // ★回看页重绘（`0x82` 的孪生兄弟；语料唯一调用点 src/HISTORY.txt:1314；T-0170）
   [0x304, op_text_block_begin], // ★文本块开始（Engine[122497]=1 + 保存行游标）
   [0x305, op_text_block_end], // ★文本块结束（取回游标 + 把余下的行一次性贴出）
   // ---- 点击热点 / 路由表（决定「等待输入」如何结束）----

@@ -187,12 +187,35 @@ test('★0x71 不再无条件置 ADV：默认（ReadTextSkip=0）不置位', () 
   assert.equal(e.msgwin.lastArg, 1);
 });
 
-test('0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV', () => {
+/**
+ * ★2026-09 订正（`T-0151` / 工作清单 `0x6e`·`wrong-condition`）：本用例原名
+ * `0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV`，它编码的是**修前缺陷** ——
+ * 把引擎"跳读位非 0 ⇒ `122455` **保持**"那一条（raw 28352-28353）接到了 **`ReadTextSkip` 门关闭**
+ * 的路上。体里两条支是分开的（`sub_41ED80` raw 28432-28460，与 `sub_41EB20`/`sub_41EEF0` 同形）：
+ * ```c
+ * 门**关闭**： if (!122455) goto LABEL_11; else goto LABEL_10;   // LABEL_10: 122455 = 0（raw 28457-28459）
+ * 门**打开**： if (!sub_48F000(...)) { if (97050) goto LABEL_11; else 122455 = 0; }  // ★97050 只在这一支
+ *             else { 174801 |= 0x8000000; 122455 = 1; }
+ * ```
+ * ⇒ 门关时 `97050` **一个字都不参与**；"保持"只发生在门开且查不到内容时。
+ */
+test('0x71 在跳读/自动模式（97050≠0）下：**门关闭时不置 ADV**（raw 28456-28460；旧名断言"保留显示态并置 ADV"= 修前缺陷）', () => {
   const { e, step } = mk();
   step(0x88, [im(1)]); // message-mode：1415 = 97050 = 1
   assert.equal(e.advActive, false, '0x88 本身只设 122368');
   step(0x71, [im(1)]);
-  assert.equal(e.advActive, true, '跳读模式下 0x71 保留显示态（引擎 LABEL_10）');
+  assert.equal(
+    e.advActive,
+    false,
+    '★门关（ReadTextSkip=0）⇒ `122455 = 0` 且不置 `0x8000000`（raw 28456-28460）—— 体里 97050 只出现在门开那一支',
+  );
+  // 门**开**时的"保持"分支（唯一真实落点：raw 28450-28453 的 `if (97050) goto LABEL_11`）
+  const g = mk();
+  g.step(0x1ca, [im(1)]); // 打开逐字门
+  g.step(0x88, [im(1)]); // 跳读/自动模式
+  g.e.msgwin.showing = 1; // 上游留下的显示态
+  g.step(0x6e, [im(1), str('')]); // 空页 ⇒ `sub_48F000` 等价物返回"没有内容"
+  assert.equal(g.e.msgwin.showing, 1, '★门开 + 97050≠0 + 没有内容 ⇒ **保持** `122455`（不清也不置）');
   step(0x88, [im(0)]);
   assert.equal(e.advActive, false, '0x88 置 0 清 ADV');
 });
@@ -300,7 +323,7 @@ test('★逐字期间点击：立刻整页贴完、不推进、消费该次点�
   assert.equal(e.serviceAdvanceWait(), true, '第二次点击才被等待泵处理');
 });
 
-test('★逐字期间右键不生效、滚轮上滚不生效（引擎只认 mask&0x10 + 滚轮键位 + 下滚）', () => {
+test('★逐字期间只认引擎那三种输入：右键/上滚/（位未映射时的）下滚都不生效，左键按下沿才贴完整页', () => {
   const { e, step } = mk();
   e.engineValues.set(21668, 50);
   step(0x6e, [im(0), str('こんにちは世界')]);
@@ -315,8 +338,23 @@ test('★逐字期间右键不生效、滚轮上滚不生效（引擎只认 mask
   assert.equal(e.serviceRevealAdvanceInput(), false, '上滚不贴完');
   assert.equal(e.textRevealing, true, '仍在逐字');
 
-  e.input.addWheel(-120); // 下滚
-  assert.equal(e.serviceRevealAdvanceInput(), true, '下滚应贴完整页');
+  // ★下滚：`serviceRevealAdvanceInput` 只认三条路（`src/vm/engine.ts:849-859`）—— mask&0x10、
+  //   `set:WheelKeyDown` 的**掩码位**（还要 `message:AdvanceMesOnWheel & 1`）、以及**累加器 < 0**。
+  //   而模式开（`effect_flags & 0x90100000`）时 WndProc **不累加**滚轮（累加支是模式门的 `else`，
+  //   引擎 raw 141580-141583 / 141608-141611），`set:WheelKeyDown` 未映射（-1）时 `LABEL_147` 的
+  //   `if ( v19 >= 0 )` 又跳过置位（raw 141604-141606）⇒ **引擎什么都不做**（`tickets/T-0171`）。
+  //   旧断言「下滚 ⇒ 贴完整页」靠的是"模式开也落回累加器"这个**修前缺陷**（已推翻）。
+  e.input.addWheel(-120);
+  assert.equal(
+    e.serviceRevealAdvanceInput(),
+    false,
+    '下滚位未映射 + 模式开 ⇒ 引擎什么都不做（既不置位也不累加）⇒ 不贴完',
+  );
+  assert.equal(e.textRevealing, true, '仍在逐字');
+
+  // 引擎真正的那条"贴完整页"的路：左键按下沿 ⇒ mask&0x10（与等待泵同一判据）
+  moveAndClick(e, 10, 10, 0);
+  assert.equal(e.serviceRevealAdvanceInput(), true, '左键按下沿（mask&0x10）⇒ 贴完整页');
   assert.equal(e.textRevealing, false);
 });
 
@@ -395,9 +433,12 @@ test('★ADV 分支仍吃「实时按住态」（sub_4780D0）：set:CancelMesSk
 
 test('ADV 每帧服务：未显示完判定成立时清掉 ADV（位不会永久卡住）', () => {
   const { e, step } = mk();
-  step(0x88, [im(1)]);
+  // ★2026-09 订正（`T-0151`）：修前这里靠"0x71 在跳读模式下置 ADV"把位架起来 —— 那条前提是错的
+  //   （门关时 97050 不参与，见上一个用例）。改成**照引擎的置位路径**架：打开逐字门 ⇒ `0x71`
+  //   走"有内容"支置 `0x8000000`（raw 28442-28443）。
+  step(0x1ca, [im(1)]); // message:ReadTextSkip = 1（门开）
   step(0x71, [im(1)]);
-  assert.equal(e.advActive, true);
+  assert.equal(e.advActive, true, '门开 + 本指令就是新消息 ⇒ 置 ADV（raw 28442-28443）');
   // 跳读模式关掉 ⇒ 显示态不再保留 ⇒ 每帧服务应清 ADV
   step(0x88, [im(0)]);
   e.msgwin.showing = 0;

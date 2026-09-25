@@ -20,14 +20,14 @@ generated_by: scripts/build-scripts.mjs
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 34** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 36** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 10 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 23 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
-| `stub` | 1 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **34** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| `partial` | 24 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `stub` | 2 | 只登记『它是谁 / 谁调它』，正文未读 |
+| **合计** | **36** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -48,6 +48,7 @@ generated_by: scripts/build-scripts.mjs
 | [`CONFIG2`](./CONFIG2.md) | `CONFIG2.BIN` | 设置界面的**「角色设定」页**（左侧第 5 个分类）：9 个角色位（CV 名牌 + 説明文字）+ 詳細変更/on/OFF/▶ 控件 + 左侧分类 + 滚动… | 7 | 7 | 🟠 部分 | `test/text-style-snapshot.test.ts` |
 | [`CVINIT`](./CVINIT.md) | `CVINIT.BIN` | 逐角色「配音/配色/名字」表的初始化：把游戏内建的默认值写进 `14a8f1 + n` 等一组并行全局表，并写角色名串。 | 2 | 4 | 🟠 部分 | — |
 | [`GAMESTART`](./GAMESTART.md) | `GAMESTART.BIN` | 「Game Start」之后的新游戏配置界面（基本设定/引继设定/周回プレイ设定）+ 三个按钮：**ゲーム開始 / 戻る / 初期化**。 | 11 | 6 | 🟠 部分 | `test/game-start-chain.test.ts` |
+| [`HISTORY`](./HISTORY.md) | `HISTORY.BIN` | 回想（历史）画面：把 ADV 已经压进引擎记录表 `Font+3364` 的页按 5 行一屏列出来，逐行取字段画页码/图标/说话人名，**正文由 `i1d1… | 9 | 12 | 🟠 部分 | `test/recall-page-0x1d1.test.ts` `test/op-1d0-page-index.test.ts` |
 | [`INIT2`](./INIT2.md) | `INIT2.BIN` | **本体数据表总装载**：依次 call-script 40 张本体 INIT 表（SCINIT/CTINIT/…/BTANINIT2），再把一大批脚本 i… | 4 | 3 | 🟠 部分 | — |
 | [`INITCONFIG`](./INITCONFIG.md) | `INITCONFIG.BIN` | 「配置默认值」的分发脚本：按顺序调用 INITCONFIG0..5（系统/游戏/ADV/声音/角色色/操作 六页各一份）。 | 1 | 1 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`INITCONFIG0`](./INITCONFIG0.md) | `INITCONFIG0.BIN` | 「系统设定」页的**默认值 + 登记**：把 a9cb..a9d5（窗口显示/自动保存/光标自动移动/覆盖存档备注/Live2D 等）与字体名串 bbb..… | 2 | 2 | ✅ 已分析 | `test/save-data.test.ts` |
@@ -65,6 +66,7 @@ generated_by: scripts/build-scripts.mjs
 | [`SELFONT`](./SELFONT.md) | `SELFONT.BIN` | **字体选择器**：列出引擎可选字体表（`0x2DC` 取条数 + `0x2DD` 逐项取名），每页 9 项、按当前字体分页定位；选中后写回 `global… | 5 | 3 | ✅ 已分析 | — |
 | [`SETADVFLAG`](./SETADVFLAG.md) | `SETADVFLAG.BIN` | 把 `global f8080` 抬成 INT_MAX（`7fffffff`）的短脚本，并顺带重建两张 1000 长的数组（按 `3f3d` 选 `a1ea… | 3 | 3 | 🟠 部分 | — |
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |
+| [`SETL2DMOC`](./SETL2DMOC.md) | `SETL2DMOC.BIN` | **Live2D 模型装载分发表**（统一文件 id `0x522d`）：按 `global f8c46`（模型文件 id）逐支比较，命中即 `i341 <… | 3 | 2 | ⚪ 仅登记 | `test/live2d-enabled-flag.test.ts` `test/input.test.ts` |
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
 | [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 16 | 10 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
 | [`SP2563`](./SP2563.md) | `SP2563.BIN` | 剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。 | 2 | 2 | 🟠 部分 | — |

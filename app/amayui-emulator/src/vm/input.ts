@@ -502,10 +502,16 @@ export class InputManager {
     const policy = this.wheelKeyPolicy?.();
     if (policy?.asKey) {
       const bit = d > 0 ? policy.up : d < 0 ? policy.down : -1;
-      if (bit >= 0 && bit < 32) {
-        this.wheelKeyBits = (this.wheelKeyBits | (1 << bit)) >>> 0;
-        return; // 引擎：模式开 ⇒ **不**累加增量
+      if (bit >= 0) {
+        // ★照抄引擎 WndProc（raw 141604-141606）：`if ( v19 >= 0 ) Engine[699208] |= 1 << v19;`
+        //   —— 只判 `>= 0`，没有上界钳位；x86 的 `shl cl` 把移位量**掩到 5 位** ⇒ 位号 ≥ 32
+        //   等价于 `bit & 31`（照抄**二进制实际行为**，不照抄 C 里 `1 << 31+` 的 UB）。
+        this.wheelKeyBits |= 1 << (bit & 31);
       }
+      // ★位号 < 0（配置值是负数，引擎那条 `js` 会跳过）或增量为 0：**什么都不做** ——
+      //   **绝不回流到累加器**：累加支是模式门的 `else` 那一侧（raw 141580-141583），模式开时不可达。
+      //   （`tickets/T-0171`：修前这里会掉进下面的 `wheelDelta +=`，守卫只能靠 +120/−120 抵消才过。）
+      return;
     }
     // |0 截断为 32 位（引擎累加器是 int32；正常滚一格 120，不会溢出）
     this.wheelDelta = (this.wheelDelta + d) | 0;
@@ -521,10 +527,13 @@ export class InputManager {
     const policy = this.wheelKeyPolicy?.();
     if (policy?.asKey) {
       const bit = d > 0 ? policy.hUp : d < 0 ? policy.hDown : -1;
-      if (bit >= 0 && bit < 32) {
-        this.wheelKeyBits = (this.wheelKeyBits | (1 << bit)) >>> 0;
-        return;
+      if (bit >= 0) {
+        // 同竖直滚轮（raw 141604-141606 的同一段 LABEL_147）：只判 `>= 0`，≥32 按 `shl cl` 取模。
+        // ★两轴共用**同一张**掩码（引擎 `Engine[699208]` 只有一张；`set:HWheelKey*` 的位也 OR 进它）。
+        this.wheelKeyBits |= 1 << (bit & 31);
       }
+      // 模式开 ⇒ 无论位号如何都**不**进 `hwheelDelta`（累加支是模式门的 `else`，raw 141608-141611）
+      return;
     }
     this.hwheelDelta = (this.hwheelDelta + d) | 0;
   }
@@ -609,7 +618,11 @@ export class InputManager {
     //     旧实现 `& 0x7f` 会把 ≥7 的重映射位静默吃掉。
     m |= this.keyEdge;
     // ★"滚轮当按键"攒下的位（引擎里那一位是 WndProc 直接 `|=` 进同一张掩码的，raw 141606）
-    m = (m | this.wheelKeyBits) >>> 0;
+    // ★**不要在这里 `>>> 0`**：引擎的掩码是 **int32**（位号 31 ⇒ `1 << 31` = `0x80000000` = 负值），
+    //   脚本侧的读回（`0x100`/`0x101` 的 int 操作数）也是 int32 口径；`>>> 0` 会把整张掩码变成
+    //   无符号（`-2147483648` → `2147483648`）⇒ 位 31 的键位就读不到了
+    //   （`test/input.test.ts` 的 `★0x10C ③` 钉着这条；2026-09-24 修）。
+    m = m | this.wheelKeyBits;
     this.inputMask = m;
     return m;
   }
@@ -636,7 +649,8 @@ export class InputManager {
     //   引擎的实时刷用 `GetAsyncKeyState` 轮询真值 ⇒ 按住期间每帧都为真。
     //   ★不限 0..6（`tickets/T-0163`）：位号是 `0x10C` 可改写的 0..0x1F。
     m |= this.keysHeld | this.keyEdge;
-    m = (m | this.wheelKeyBits) >>> 0; // 同上：滚轮当按键那一位并进实时刷
+    // 同上：滚轮当按键那一位并进实时刷。★**同样不许 `>>> 0`**（掩码是 int32；位 31 = 负值）。
+    m = m | this.wheelKeyBits;
     this.inputMask = m;
     return m;
   }

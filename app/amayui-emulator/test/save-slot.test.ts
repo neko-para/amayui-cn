@@ -8,7 +8,9 @@
  *  - **E4**：本机真存档槽（`…\SAVE\SAVE00.DAT`）的头 —— 文件时间与头里那 6 个 u16 必须一致，
  *    游玩秒数 > 0（这就是"`0x1A0` 的字段布局"的实证，见 `saveSlot.ts` 文件头）；
  *  - **E2**：合成引擎上的存档→读档往返（`load-int`/`load-string` 取回登记值 = 本票验收 ②）；
- *  - **E2**：`NodeFileSource` 的槽读写**只碰 overlay**（真存档槽一个字节都不动）。
+ *  - **E2**：`NodeFileSource` 的槽**写**只碰 overlay（真存档槽一个字节都不动）。
+ *    ★`T-0153` 订正：**删**是例外（引擎 `DeleteFileA` 打在真实目录，raw 38473-38481）⇒ 两侧都删、
+ *    base 那一份先隔离到 `<overlay>/SAVE/.deleted/`；本文件下面那条槽用例的断言已随之 retarget。
  */
 import { test } from 'node:test';
 import { findRealFiles, firstRealFile, readReal, realSlotDirs } from './realSlots.js';
@@ -37,6 +39,7 @@ import {
   slotThumbRelPath,
 } from '../src/save/saveSlot.js';
 import { encodeSaveData } from '../src/save/saveData.js';
+import { isBmp } from '../src/vm/bmp.js';
 import { loadScriptIntoFrame } from '../src/vm/ops.js';
 import type { BinArg, BinInstruction, ScriptBinary } from '../src/script/bin.js';
 import { buildScriptBin } from './engineSlotFixtures.js';
@@ -268,15 +271,23 @@ test('0x1AB 删槽 / 0x1AC 复制槽 / 0x1AE·0x1AF 的 .STH 往返', async () =
   assert.ok(store.slots.has(4), '槽 4 的 .DAT 已写出（第一份成功后才轮到第二份）');
 
   // `0x1AE` 给槽 4 补一份 `.STH`，再复制一次 ⇒ 两份都成功 ⇒ op1 = 0
+  // ★`T-0159` 订正（**旧前提不成立**）：旧写法依赖"宿主拿不到该槽像素 ⇒ 写一个 `AMYTH1\n{…}` 自造空块并报 0"，
+  //   而引擎在那一格是**失败**——`op3` 槽没创建 ⇒ `sub_43BF20`/`sub_4A5260` 返回 0 ⇒ `op1 = 2`、
+  //   `.STH` 停在 **0 字节**（`sub_42E1F0` raw 38532-38546）；自造块格式已按体废弃（写侧删除，读侧只留历史容忍）。
+  //   ⇒ 这里给宿主一份该槽的像素（真机 = 脚本 `create-texture` 出来的画布槽），走的仍是"写 BMP"那条真实路径；
+  //   "没有像素 ⇒ 2 + 0 字节"那一格由 `test/save-slot-engine-codes.test.ts` 钉死。
+  (e.native as unknown as { getSlotPixels: (s: number) => unknown }).getSlotPixels = (slot: number) =>
+    slot === 14 ? { w: 2, h: 2, rgba: new Uint8Array(2 * 2 * 4) } : null;
   const tw0Read = await runOp(e, 0x1ae, [gInt(0x10), im(4), im(14)]);
-  assert.equal(tw0Read(1), 0, '写 .STH 应成功');
+  assert.equal(tw0Read(1), 0, '写 .STH 应成功（该槽有像素 ⇒ `encodeBmp` 那条真实路径）');
+  assert.ok(isBmp(store.thumbs.get(4)!), '写出的 `.STH` 必须是 BMP（引擎 raw 47838 的 `"BM"` + DIB）');
   const cp2Read = await runOp(e, 0x1ac, [gInt(0x10), im(4), im(5)]);
   assert.equal(cp2Read(1), 0, '两份都复制成功 ⇒ op1 = 0');
   assert.ok(store.thumbs.has(5), '槽 5 的 .STH 也应被复制');
 
   // .STH 往返：`0x1AE` 写、`0x1AF` 读（`tickets/T-0036`：op3 是**纹理槽**，内容是 BMP）
   const trRead = await runOp(e, 0x1af, [gInt(0x10), im(4), im(0)]);
-  assert.equal(trRead(1), 0, '读本工程写的 .STH（自描述空块）应成功');
+  assert.equal(trRead(1), 0, '读刚写的 BMP `.STH` 应成功（`decodeBmp` 认得它）');
 
   // 删槽：两个文件都在 ⇒ op1 = 0
   const delRead = await runOp(e, 0x1ab, [gInt(0x10), im(4)]);
@@ -334,10 +345,14 @@ test('NodeFileSource：槽写盘只写 overlay\\SAVE\\SAVE01.DAT，真存档槽�
     assert.ok(fs.existsSync(path.join(overlayDir, slotThumbRelPath(1))), '.STH 应写到 overlay');
     assert.equal(await src.readSlotThumb(1).then((b) => b?.length), 4);
 
-    // 删槽只删 overlay（base 那份仍在 ⇒ 引擎语义下"删了又继承回来"是正常的）
+    // ★`T-0153` 订正（前提被取代）：删槽**两侧都删**。引擎的 `DeleteFileA` 打在真实存档目录
+    //   （`sub_42DFC0` raw 38473-38481：`"%s\\SAVE%2.2d.DAT"` + `sub_408A40` 给的目录），而本工程的读
+    //   会回落 base ⇒ 只删 overlay 时"只存在于 base 的槽删不掉"（返回码 1 对引擎的 0），而且删掉自己
+    //   那份会让基座的旧槽复活。base 那一份删前会先隔离到 `<overlay>/SAVE/.deleted/`（字节不丢）。
+    //   ★写路径的安全规则（本文件上面那条"只写 overlay"）**不变**。
     await src.deleteSaveSlot(1);
     assert.ok(!fs.existsSync(overlayTarget), 'overlay 那份应被删');
-    assert.ok(fs.existsSync(baseTarget), 'base 那份不动');
+    assert.ok(!fs.existsSync(baseTarget), '★base 那份同样被删（引擎语义：删的就是真实目录里那一份）');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

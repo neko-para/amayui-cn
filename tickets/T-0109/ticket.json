@@ -3,7 +3,8 @@
   "type": "req",
   "priority": "P2",
   "area": "emulator/adv",
-  "why": "`T-0080` 的 B7 分类（证据 `tickets/T-0080/evidence/b7-coverage.md`）把 218 条审计残留压到 14 条真缺口，其中**唯一两条影响可见行为**的都在阅读链路上、且都还是 `absent`/E0/无守卫：\n\n① `analysis/engine-capabilities.json#msgwin-backlog-cursor`（raw 70575-70627）：页表不建 ⇒ **回看滚轮完全无反应、`0x84`「翻到底」永不置位** ⇒ 脚本停在自旋里（不是报错，最难查）。\n② `analysis/engine-capabilities.json#text-layout-wrap-ruby`（raw 83363-83997）：逐字量宽/右边界硬断/注音配对与引擎不一致 ⇒ 行数/每行字数与 `0x83`/`0x1C5`/`0x2C2`/`0x2F3` 的读回全部对不上 —— 静默错误从像素层渗到 VM 层。\n\n两条同属「引擎有、emulator 没有 ⇒ 缺了不报错只表现不对」的常态能力（第一层 opcode 表看不出来），合一张票做「阅读链路清尾」。",
+  "why": "★处置（2026-09-24 复核）：**本票的两个前提都已被取代 ⇒ 整票作废（dropped）**。① 原判「页表不建 ⇒ 回看滚轮无反应、`0x84` 永不置位」：页表/游标已由 `T-0095` 建模、滚轮消费者已由 `T-0167` 接上（`#textRewindWheel` + `Engine[489816]` = `ENGINE_FIELD.textRewind`）、滚轮**输入**已于本轮接上（`set:WheelKeyUp/Down` ⇒ 掩码位，守卫 `test/wheel-as-key.test.ts`），整链转 `T-0168` 承接并已实测（`set:wheelkeyup=8` ⇒ 派发 `call-script 31` 进 `HISTORY.BIN`），而 `0x84`「翻到底」**全语料 0 处** ⇒ 判据①失去对象。② 原判「`text-layout-wrap-ruby`（raw 83363-83997）与引擎不一致、仍 `absent`/E0/无守卫」：已由 `T-0166` 同步为 `modeled-verified` + 7 条守卫 ⇒ 判据②失效。下面是原始立项文本，保留作沿革。\n\n`T-0080` 的 B7 分类（证据 `tickets/T-0080/evidence/b7-coverage.md`）把 218 条审计残留压到 14 条真缺口，其中**唯一两条影响可见行为**的都在阅读链路上、且都还是 `absent`/E0/无守卫：\n\n① `analysis/engine-capabilities.json#msgwin-backlog-cursor`（raw 70575-70627）：页表不建 ⇒ **回看滚轮完全无反应、`0x84`「翻到底」永不置位** ⇒ 脚本停在自旋里（不是报错，最难查）。\n② `analysis/engine-capabilities.json#text-layout-wrap-ruby`（raw 83363-83997）：逐字量宽/右边界硬断/注音配对与引擎不一致 ⇒ 行数/每行字数与 `0x83`/`0x1C5`/`0x2C2`/`0x2F3` 的读回全部对不上 —— 静默错误从像素层渗到 VM 层。\n\n两条同属「引擎有、emulator 没有 ⇒ 缺了不报错只表现不对」的常态能力（第一层 opcode 表看不出来），合一张票做「阅读链路清尾」。",
+  "droppedWhy": "两个前提都在 2026-09-24 复核时被取代：① 回看页表/游标/滚轮消费者已分别由 T-0095、T-0167 与本轮滚轮输入接线落地，滚轮上滚整链转由 T-0168 承接（含 E3 守卫），`0x84` 全语料 0 处；② `text-layout-wrap-ruby` 已由 T-0166 同步为 `modeled-verified` + 7 条守卫。⇒ 本票无剩余对象，作废以免重复立项。承接口：T-0168（滚轮链）、T-0166（排版能力台账）。",
   "acceptance": [
     "① 先做**可达性/影响取证**（不许直接开写）：在 emulator 里定位 `#msgwin-backlog-cursor` 的页表（raw 70575-70627）在真实链路（序章 ADV / HISTORY 界面 / CONFIG 回看）上是否被触发；给出「哪条脚本、哪一页、读回到什么」的实测，或给出「当前链路走不到」的证明（两者都必须有 raw/脚本锚点）",
     "② `#text-layout-wrap-ruby`：拿一条**真实长文本**做 A/B —— 引擎侧口径（逐字量宽 + 右边界硬断 + 注音配对）vs emulator 当前实现，逐行比「行数 / 每行字数 / 注音位置」；结论写清差在哪、影响哪几条读回指令（0x83/0x1C5/0x2C2/0x2F3）",
@@ -22,29 +23,36 @@
       "file": "analysis/engine-capabilities.json",
       "anchor": "\"id\": \"msgwin-backlog-cursor\"",
       "note": "能力①（absent/E0/无 guard；raw 70575-70627）",
-      "line": 2267
+      "line": 2652
     },
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "\"id\": \"text-layout-wrap-ruby\"",
       "note": "能力②（absent/E0/无 guard；raw 83363-83997）",
-      "line": 2166
+      "line": 2528
     }
   ],
   "links": {
     "tickets": [
       "T-0080",
       "T-0075",
-      "T-0102"
+      "T-0102",
+      "T-0168",
+      "T-0166"
     ]
   },
   "id": "T-0109",
-  "status": "open",
+  "status": "dropped",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建：T-0080 的 B7 分类产出（218 条 → 14 条真缺口）中「影响可见行为」的两条"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → dropped：两个前提均被取代（① 回看页表/游标/滚轮消费者已由 T-0095/T-0167/本轮滚轮输入接线落地、整链转 T-0168；② text-layout-wrap-ruby 已由 T-0166 同步为 modeled-verified + 7 守卫；`0x84` 语料 0 处）。理由见 why 开头与 droppedWhy。"
     }
   ]
 }

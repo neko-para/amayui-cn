@@ -302,6 +302,14 @@ test(
       assert.equal(r.repoRoot, repo);
       assert.ok(r.heartbeatAt >= r.startedAt);
       assert.equal(isAlive(r.pid), true, '刚刚登记 ⇒ pid 必须活着');
+      // ★横幅要**单独等**（`T-0177`）：`src/web/host.ts` 的顺序是 `publishRecord()`（raw 941，
+      //   先把记录写盘）→ 一大段启动工作 → `log('[web] 就绪 http://…')`（raw 990）。
+      //   注册表文件是**同步**落盘的，而 stdout 是**管道**（父进程的 `data` 回调要等事件循环）⇒
+      //   「记录已出现」并不蕴含「横幅已进 `out`」。全量并行跑时这里实测偶发红
+      //   （`out` 里只有 `[web] 实例 …` 那一行）。判据本身不变（仍要求横幅 + 真实端口），
+      //   只是不再假设"记录一出现横幅就已刷出"。
+      const banner = await waitFor(() => (/就绪 http:\/\/127\.0\.0\.1:/.test(out) ? out : null), 30_000);
+      assert.ok(banner, `30s 内没等到启动横幅（子进程输出：\n${out}）`);
       assert.match(out, /就绪 http:\/\/127\.0\.0\.1:/, '必须有启动横幅（含真实端口）');
 
       // ② 等它自己收工：检查周期被阈值压到 1s ⇒ 秒级（阈值 1s + 一次检查）

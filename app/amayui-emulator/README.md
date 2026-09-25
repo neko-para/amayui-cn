@@ -562,8 +562,32 @@ DrawItem = `Scene+1032` 的 map 值，**740 字节**；元素内偏移 = f32 下
 `test/no-dead-writes.test.ts` 做 **ratchet**：**新增**死写直接失败。
 实测抓到的第一条就是真缺口：`Item.blend`（引擎 `DrawItem+0x30` = `0x203` 的 op2 混合模式）**没有消费者**。
 
-> 注意：静态版刻意**排除诊断读取**（`scSnapshot`/`snapshotToText`/`debug*`），否则"报告里读了一下"
-> 会让字段看起来是活的。局限也写明在文件头：它只用于**防新增**，不构成"一定没人用"的证明。
+**扫描面**（`tickets/T-0150` 起）＝ `src/tools/deadWrites.ts` 的 `SCOPES` 表：`Item`/`MeshObj`
+（`drawitem/model.ts`）、`Engine`（`vm/engine.ts` 的 class，含构造函数参数属性）、`SceneState`
+（含嵌套的 `SceneState.render4`）、`SceneXform`、`TextFrame`；统计面 = 全部 `src/**`（**排除**
+`src/tools/`、`src/report.ts` 这些只做报告的目录）。加一个模型面 = 往 `SCOPES` 加一条。
+
+> 注意：静态版刻意**排除诊断读取**（`scSnapshot`/`snapshotToText`/`debug*`）与**测试文件**，
+> 否则"报告里读了一下 / 测试断言了一下"会让字段看起来是活的。局限也写明在文件头：
+> 它只用于**防新增**，不构成"一定没人用"的证明；Map/Set 型字段的**数字键**（含 `engineValues`
+> 的负键）与"只被测试读"两种形状仍在盲区，见 `tickets/T-0150/notes.md` 的缺口清单。
+
+#### ★怎么加基线（必须写 why + 票号）
+
+`dead-writes.baseline.json` 的 `known[]` 是**棘轮的豁免名单** —— 一句"已知"就等于永久静音，
+所以每条都必须把依据写下来（`test/no-dead-writes.test.ts` 会强制，`npm run check:dead-writes` 也 exit 1）：
+
+```jsonc
+{
+  "known": ["Engine.texSlotFlags"],
+  "reason":  { "Engine.texSlotFlags": "谁是它唯一的读者、为什么那不算消费者（≥20 字）" },
+  "tickets": { "Engine.texSlotFlags": "T-0154" }   // 没有对应票就写 "none"，并在 reason 里说明
+}
+```
+
+判据 = `auditBaseline()`：缺 `reason` / `reason` 少于 20 字 / 缺 `tickets` 各报一条。
+**优先改扫描器、不要塞基线**：如果消费者只是"扫描器认不出"（经由常量、动态下标、宿主回调、
+快照/读档序列化读写），那是**假阳性** —— 修 `deadWrites.ts` 的识别口径，别污染棘轮。
 
 ### 场景执行报告（`npm run report`）
 

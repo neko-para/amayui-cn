@@ -18,6 +18,11 @@
  *      偏差已在 `handlers/control.ts` 的 `op_queue_pop` 注释、`opcode-table.md` 与 `opcode-gaps.json` 披露。
  *
  * 本守卫断言的是**体里的真实行为**（队列内容 / 出队顺序 / 成功位 / 越界不改队列），不是"不报错"。
+ *
+ * ★`tickets/T-0156` 的**最小 retarget**（只改被体证推翻的那条前提，其余断言一字未动）：
+ *   「容器 = **11** 个槽」被 raw 18081/18111/22658 推翻（`v15 = 10; do{…}while(v15-- == 1)` = 恰好 10 次；
+ *   第 11 格 byte 388292 属 `Stack_int` 族）⇒ 三处 `dispatchQueues.length` 断言 11 → **10**，
+ *   循环上界同步收窄；被推翻的原因写进 `tickets/T-0156/changes-c156.md`。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -89,12 +94,15 @@ async function run(calls: { op: number; args: Arg[] }[], prep?: (e: Engine) => v
   return e;
 }
 
-test('★0x132/0x133/0x134：默认 = 11 个空队（注册表棘轮已并入 test/registry-classification.test.ts）', () => {
+test('★0x132/0x133/0x134：默认 = 10 个空队（注册表棘轮已并入 test/registry-classification.test.ts）', () => {
   // ★2026-09-23：三条的「已注册」棘轮已并入 `test/registry-classification.test.ts`（`tickets/T-0129`）。
-  // 默认 = 引擎构造后的状态：**11 个空队**（引擎 init raw 18080-18096 建 11 个：`v27 = 10; do … while(--v27)`）。
+  // 默认 = 引擎构造后的状态；**槽数 = 10**（`tickets/T-0156` 的 wrong-constant 订正）：
+  // 引擎三处都是 `v15 = 10; do { … } while (v8 = v15-- == 1)` —— `v15-- == 1` 是**先比较后自减**
+  // ⇒ 恰好 10 次迭代（`sub_40DF10` 复位 raw 18081/18111、构造函数 raw 22658）。
+  // 旧口径 11 的来源是把 `--` 数成了第 11 次；且第 11 格（byte 388292）其实是 `Stack_int` 族的第一格。
   const e = new Engine(new StubNative(() => {}), new InputManager());
-  assert.equal(e.dispatchQueues.length, 11, '队列族规模 = 11（引擎 init/teardown 都按 11 个槽遍历）');
-  for (let i = 0; i < 11; i++) assert.deepEqual(e.dispatchQueues[i], [], `默认第 ${i} 个队应为空`);
+  assert.equal(e.dispatchQueues.length, 10, '队列族规模 = 10（引擎 init/teardown/构造都按 10 个槽遍历）');
+  for (let i = 0; i < 10; i++) assert.deepEqual(e.dispatchQueues[i], [], `默认第 ${i} 个队应为空`);
 });
 
 test('★0x132：重建 ⇒ 队列清空、旧内容整份丢弃（不是追加）', async () => {
@@ -168,8 +176,8 @@ test('★0x133 传 0xB（> 0xA）⇒ 不压入；0x134 传 0xB ⇒ op2/op3 **都
       putSlot(eng, 0x51, 0x5678);
     },
   );
-  assert.equal(e.dispatchQueues.length, 11, '越界下标不得把队列数组撑大');
-  for (let i = 0; i < 11; i++) assert.deepEqual(e.dispatchQueues[i], [], 'op1 = 0xB ⇒ 没有任何压入，且没有崩');
+  assert.equal(e.dispatchQueues.length, 10, '越界下标不得把队列数组撑大');
+  for (let i = 0; i < 10; i++) assert.deepEqual(e.dispatchQueues[i], [], 'op1 = 0xB ⇒ 没有任何压入，且没有崩');
   assert.equal(readSlot(e, 0x50), 0x1234, '越界时 op2 保持旧值（引擎把 `sub_42B4B0(2,…)` 放在 else 里）');
   assert.equal(readSlot(e, 0x51), 0x5678, '越界时 op3 保持旧值');
 });
@@ -189,7 +197,7 @@ test('★unsigned 口径：op1 = −1（0xFFFFFFFF）也 > 0xA ⇒ 同走错误�
     },
   );
   assert.deepEqual(e.dispatchQueues[0], [5], 'op1 = −1 的重建/压入都不生效，原队保留');
-  assert.equal(e.dispatchQueues.length, 11, '越界下标不得把数组撑大');
+  assert.equal(e.dispatchQueues.length, 10, '越界下标不得把数组撑大');
   assert.equal(readSlot(e, 0x50), 0xabc, 'op1 = −1 的弹出也不写 op2（错误串分支）');
   assert.equal(readSlot(e, 0x51), 0xdef, 'op1 = −1 的弹出也不写 op3');
 });

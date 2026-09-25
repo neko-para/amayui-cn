@@ -14,6 +14,41 @@
       "file": "docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md",
       "anchor": "引擎 `sound:Music` 支写的是 `(v2 >= 0)`（只有负值算关），SE/Voice/Movie 才是 ",
       "note": "批次 engine-fields-config 的代表 finding（报告 §4.1）"
+    },
+    {
+      "file": "app/amayui-emulator/test/config-t0161.test.ts",
+      "anchor": "★0x2EB：INI 里 `GameVersion=`（空值）⇒ 回落到 DEFAULT_GAME_VERSION（不是空串）",
+      "note": "P2 0x2eb missing-branch：空串口径（引擎侧不可达 ⇒ 当未指定）",
+      "line": 88
+    },
+    {
+      "file": "app/amayui-emulator/test/config-t0161.test.ts",
+      "anchor": "★0xC5：selector ∉ 0..4 ⇒ 不写 op2，且留下引擎那句 `GetVolumeの引数が不正です．` 诊断",
+      "note": "P3 0xc5：越界诊断（引擎 sub_4034D0 链 = WriteFile，只是诊断）",
+      "line": 124
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-fields-t0161.test.ts",
+      "anchor": "★0x201：`set:DrawMode=1` 经配置绑定进 `_this[166964]` 后，getter 读回 1（修前恒 0）",
+      "note": "P2 0x201 missing-behavior：配置→字段的生产端",
+      "line": 77
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-fields-t0161.test.ts",
+      "anchor": "★0xD9：派发中（124350 = 1）⇒ 清 `Engine.dispatchSavedFlags` 的 0x1000 位（修前只清了死槽）",
+      "note": "P2 0xd9：_this[95779] 的活槽",
+      "line": 115
+    },
+    {
+      "file": "app/amayui-emulator/test/engine-fields-t0161.test.ts",
+      "anchor": "★0x25B：同时写 `_this[92379] = 2`（模式=图像）与 `_this[92381] = op1`",
+      "note": "P3 0x25b missing-operand-io：第二个字段写",
+      "line": 98
+    },
+    {
+      "file": "tickets/T-0161/changes-c161.md",
+      "anchor": "## 3. 台账片段（主 agent 可照抄）",
+      "note": "六份真源的照抄片段（本票不写真源）+ 被推翻前提的 raw 依据"
     }
   ],
   "links": {
@@ -22,7 +57,7 @@
     ]
   },
   "id": "T-0161",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -33,6 +68,27 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → doing —— P1 0xc7 已修：sound:Music 判据改为 >=0（见 changes.md）；其余 P2/P3 待做"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence, tests, doneWhy —— 读体批：10 修 / 3 复核后已修 / 3 前提被推翻 / 2 如实登记；守卫 test/config-t0161.test.ts + test/engine-fields-t0161.test.ts；台账片段见 changes-c161.md（留 doing：判据③本机跑不了 + 3 条跨文件）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests —— 补收口：① configRegistry 的 set:DependMovieSound 重复键（静默双真源）已修 + test/config-keys.test.ts 新增\"键表不得重复\"守卫（红 fail1/pass3 → 绿 fail0/pass4）；② 两个新测试文件从 T1 改 T0 并改用 harness.mkEngine/stepOnce（消除自造 mk 变体）⇒ organization + harness-convergence 合并 29/29 绿；③ operandPlan.ts:1421 的 0x308 注释改指 ENGINE_INTERNAL_OPS 有据 no-op；④ 复核确认 0xDD 非本作指令（派发槽 676880 全篇零赋值 → 默认 sub_418E30 抛\"このコマンドはサポートされていません．\"）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/config-t0161.test.ts",
+    "app/amayui-emulator/test/engine-fields-t0161.test.ts",
+    "app/amayui-emulator/test/config-keys.test.ts"
+  ],
+  "doneWhy": "留 doing（判据③ npm run verify 在本机跑不了＝无 node_modules/.bin；且 3 条要落在别的可写路径内、台账片段已进 changes-c161.md）。18 行逐条读体处置完毕：修 10 / 复核后已修 3 / 前提被推翻 3 / 如实登记做不到 2。修：0xC5+0xC7+0x1B8+0x2E6 的越界诊断（引擎 aGetvolume/aGetsoundmode/aGetautomessp/aGetautomespi 经 sub_4034D0→sub_4976A0→sub_497620→sub_438CC0=WriteFile：只是诊断，不是消息窗）、0x2EB 空串⇒DEFAULT_GAME_VERSION、0x2EB 两层口径钉死（守卫用与缺省不同的值）、0xD9 清活槽 Engine.dispatchSavedFlags、0x131 缺键回退 registryDefault(message:MesWinAlpha)=8、0x141 诊断串带 aGetmeswina、0x201 新增 set:DrawMode⇒166964 绑定、0x25B 新增 FieldStoreSpec.constWrites 补 92379=2、engineFieldIds 5 处注释订正（0x2E9 键名与两个消费点 / 0xD9 两份表示 / 0x142 初值 1 / 0x201 写者 / 0x25A-25B 模式）。复核后已修：0x2E9 的消费端（T-0151 已落地 armCoexistAutoMessage + #autoMessageInterval，本票补读者棘轮）、0x2E9 公式键名（旧注释里的 AutoMessageSpeed/MinTime 两个键不存在）。前提被推翻（引 raw）：0xD9 返回值 -4097（raw 20161-20165 派发器强转返回 void ⇒ 死值）、0x2EB 第 2 层不是 INI [set] 节（INI 装载器 sub_492CB0 raw 111846-112310 逐条读 60 余键但无 set:GameVersion；raw 112426-112433 属 sub_494220 的注册表数据块路径，vtable 项 .data:00529808）、0x141 的越界串非玩家可见。如实登记做不到（需别的文件）：0x142 初值/复位 1（engine.ts，raw 22591/17961）、0x142 的导出查询 sub_4765C0 无 opcode 读者（raw 91057-91061）、0x148 的槽读者是 WndProc sub_4B9240（raw 141038-141043）、0x25A/0x25B 的媒体下发与图像加载分支（宿主媒体缝 + 抛 Command_ShowMessage_Exception）。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }

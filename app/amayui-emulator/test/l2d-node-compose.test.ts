@@ -196,7 +196,16 @@ test('`0x346` 复位后：4 块矩阵回单位、窗保留（引擎只写 `+76` 
   const n = nodeOf(e);
   assert.deepEqual([...n.translate], [0, 0, 0], '`+84..99` 回单位');
   assert.deepEqual([...n.scale], [1, 1, 1], '`+20..35` 回单位');
-  assert.deepEqual(n.rotation, { axis: [0, 0, 1], deg: 0 }, '`+52..67` 回单位');
+  // ★`T-0160` 最小 retarget：旧前提把 emulator 的 `node.rotation` 当成引擎的 `+52..67`（"旋转 from"），
+  //   于是这里比 `[0,0,1]`。按体订正（`sub_4AFC40` raw 133952-134032）：那 4 个块是
+  //   `+20..35` / `+52..67` / `+84..99` / `+127..142` 的**矩阵**（字节 `+80`/`+208`/`+336`/`+508`），
+  //   而轴角在 `+464..492`（`0x348` 写）—— **`0x346` 不碰它**。
+  //   本条没设过立即旋转 ⇒ 读到的是 `sub_49CA10` 的缺省 `(0,0,0)/0`（raw 118487-118490）。
+  assert.deepEqual(n.rotation, { axis: [0, 0, 0], deg: 0 }, '轴角不在复位的清点里（缺省 = (0,0,0)/0）');
+  // ★加强（不是放松）：设过轴角之后再复位一次，必须**原样保留**
+  run(0x348, [loc(1), fm(1), fm(0), fm(0), fm(45)]);
+  run(0x346, [loc(1)]);
+  assert.deepEqual(n.rotation, { axis: [1, 0, 0], deg: 45 }, '★`0x346` 不得把设过的轴角写回缺省');
   assert.equal(n.matrixDirty, false, '`+76 = 0`');
   assert.deepEqual([...n.matrixBase], [...AFFINE_IDENTITY], '`+127..142`（M_base）回单位');
   // ★保留项（旧实现用 makeNode 重建 ⇒ 把 wins 也清了，那是偏差）
@@ -208,7 +217,7 @@ test('`0x346` 复位后：4 块矩阵回单位、窗保留（引擎只写 `+76` 
   assert.deepEqual(n.wins.scale.to, [2, 2, 1], '★`+144` to 保留');
   assert.equal(n.wins.color.delay, 7, '★颜色窗 `+28`/`+48`/`+68`/`+72` 保留');
   assert.equal(n.wins.color.from, 0x11223344);
-  assert.equal(n.resets, 1);
+  assert.equal(n.resets, 2); // ★`T-0160`：上面为"轴角保留"多跑了一次 `0x346`（原为 1）
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

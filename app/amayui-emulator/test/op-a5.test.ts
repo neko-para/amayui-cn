@@ -210,7 +210,7 @@ test('A5 0x1AD / 0x1B1：字段写（166963=cur、21672=op1）', () => {
   assert.equal(e.engineValues.get(21672), 0x1234);
 });
 
-test('A5 0x1BC：清语音通道状态位/寄存槽 + 对 3 个通道发 voice-reset', () => {
+test('A5 0x1BC：清语音通道状态位/寄存槽（**不**发 voice-reset，见 T-0152 读体订正）', () => {
   const intents: AudioIntent[] = [];
   const native = new StubNative(() => {});
   (native as unknown as { audio?: (i: AudioIntent) => void }).audio = (i) => intents.push(i);
@@ -222,11 +222,13 @@ test('A5 0x1BC：清语音通道状态位/寄存槽 + 对 3 个通道发 voice-r
   run(0x1bc);
   assert.deepEqual([e.engineValues.get(21315), e.engineValues.get(21317)], [0, 0]);
   assert.deepEqual([e.engineValues.get(122505), e.engineValues.get(122510)], [0, 0]);
-  assert.deepEqual(intents, [
-    { kind: 'voice-reset', ch: 0 },
-    { kind: 'voice-reset', ch: 1 },
-    { kind: 'voice-reset', ch: 2 },
-  ]);
+  // ★T-0152 最小 retarget（旧断言 = 三条 `voice-reset`）：旧前提不成立 —— 引擎 `sub_4197A0`
+  //   raw 24851-24855 的释放循环被 `if (*(_DWORD*)(_this + 85160))` 门住，而 `_this + 85160`
+  //   在整个反编译里**只有读、没有写者**（`Engine[21293]` = `+85172` 才是被写的那格）
+  //   ⇒ 该指针恒 0、门恒不成立 ⇒ **引擎在这条指令上一个通道都不释放**。
+  //   锚点保留（同一 handler、同一批字段断言），只把"多发的一次停播"去掉；语义更严：
+  //   现在断言**恰好为空**（修前那种"无条件释放"再回来会立刻红）。
+  assert.deepEqual(intents, [], '★0x1BC 不发任何「释放通道」意图（引擎那半被恒假门挡住，见 T-0152）');
 });
 
 test('A5 0x1C9：音频设备初始化写 18656/18660（装载=已登记缺口，不抛）', () => {

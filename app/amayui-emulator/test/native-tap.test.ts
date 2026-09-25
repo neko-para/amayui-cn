@@ -117,7 +117,6 @@ const DECLARED_HOST_DIVERGENCE = [
   'audio',
   'getInputType',
   'playBgm',
-  'playMovie',
   'playSound',
   'playVoice',
   'preloadImage',
@@ -178,6 +177,11 @@ const NON_BRIDGE = {
     //   必须由测试注入一个非 0 角。没有一条 opcode 调它（`0x22F` 只写"轴"）。
     //   ★清单必须按**字典序**写（守卫拿排序后的集合比对）：它排在 `setAudioSilent` 之后。
     'setSceneRotationRad',
+    // ★`slotNodeSize`（`tickets/T-0153` 的 `0x23F` 条目）**已入桥** ⇒ 不在本表（见 `BRIDGE_METHODS`
+    //   的说明）：`op_get_slot_size` 现在真的调它。它仍然是**引擎字段查询缝**，与 `getTextureSize`
+    //   （`0x208`）**不是同一个问题** —— `0x208` 读表面表（`Scene+4*slot+42456`）、`0x23F` 读对象表
+    //   （`Engine+4*slot+378688`，`sub_4307B0` raw 40019-40030）。两宿主实现同一份判据
+    //   （`renderer/slotSurface.ts` 的 `slotNodeSizeOf`）。
   ],
   'headlessScene.ts': [
     'advance',
@@ -191,7 +195,7 @@ const NON_BRIDGE = {
     'setSceneFrozen', // 同上
     'setSceneRotationRad', // 同 pixiBackend.ts（T-0154：`Scene+1856` 的注入缝）
     'setTextureSizeAnswers',
-    'slotTable',
+    'slotTable', // 同 pixiBackend.ts（T-0153：`0x23F` 的对象表查询缝已入桥 ⇒ 不在此表）；`playMovie` 同样已入桥
     'snapshot',
     'snapshotText',
   ],

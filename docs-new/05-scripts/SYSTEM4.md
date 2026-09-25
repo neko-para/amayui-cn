@@ -28,7 +28,7 @@ generated_by: scripts/build-scripts.mjs
 | `141-150` | `label_00000b00` | ★读档续跑的**落点入口**（label_00000b00）：i0ae（0xAE）在读档流程里把本帧 ip 重算到存档位置并切到存档帧 —— 若没有它，下面两行会把玩家送回 LOGO/TITLE（call-script 5262 LOGO / 5263 INIT / 5264 TITLE）。load-show-logo 读 Engine[96983]（exit-script 置 0 ⇒ 回标题后跳过 LOGO） |
 | `476-480` | `label_00001ec8` | 子程序「把三路语音的 pan 复位到中央」：`i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0` + ret（0x2F8 的 op2 全库恒为 0 = 中央）；由 `:11` 与 `:320` 调用（启动早期与某状态切换时把语音声道摆正） |
 | `444-448` | `call-script 5268  // NOVEL` | mode 分发器（`label_00001cb0`）：`global 0 == 6` ⇒ NOVEL。★真槽 79 的**帧 0 记录 callIdx=15** 正指这条 `call-script`（`0xAE` 按它走栈，见 capabilities 的 save-slot-chain） |
-| `182-229` | `draw-texture 186a0 48 0 0 500 2d0 0 0` | ★场景装配块（`label_00000d70`）：先 `eq (global 3f90) 0` + `jcc label_000013e0` ⇒ **3f90==0 时整块跳过**（detach 19258、槽 0x48 背景、`draw-texture 186a0`、`i1f6`、`i23d`、`create-mesh 19258`）；`4fd9 != 0` 时才走 `i1f6` 那一支 |
+| `182-229` | `draw-texture 186a0 48 0 0 500 2d0 0 0` | ★场景装配块（`label_00000d70`）：先 `eq (local-int 0) (global-int 3f90) 0` + `jcc (local-int 0) ffffffff label_000013e0`：**3f90 == 0 ⇒ 落下句、整块执行**（detach 19258、槽 0x48 背景、`draw-texture 186a0`、`i1f6`、`i23d`、`create-mesh 19258`）；3f90 != 0 ⇒ 跳 `label_000013e0` 跳过（★原写「3f90==0 时整块跳过」是**反的** —— `jcc` 口径见 `analysis/opcodes.json` 的 `0xA0` 行 / `tickets/T-0145`）；`4fd9 == 0` 时才走 `i1f6` 那一支（`4fd9 != 0` ⇒ 画 `draw-texture 186a0` 背景，不跑 `i1f6`；`label_00000f9c` 在 src/SYSTEM4.txt:211-213） |
 
 ## 关键槽 / 局部量
 
@@ -48,7 +48,7 @@ generated_by: scripts/build-scripts.mjs
 - 全库只有 27 处 `i073`（SYSTEM4.txt:41、NOVEL.txt:11/265、SN0000 各页）⇒ 只有序章/NOVEL/SYSTEM4 走引擎的『字格逐字』路径
 - ★顺序是「先 LOADCONFIG 再 INITCONFIG 分支」而不是都跑：INITCONFIG 会把选项**写回默认值**，跑错分支的后果是「玩家设置每次启动都被重置」且不报错
 - SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG
-- ★`i1f6` 与 `draw-texture 186a0` 都在 `3f90`/`4fd9` 两个门之后，而 `3f90` 全语料恒 0、本机真槽 `4fd9` 也是 0 ⇒ **读档时不能指望 SYSTEM4 清画面或画背景**（清画面是 `sub_410160` 行内做的：`capabilities` 的 `save-load-drawitem-clear-and-restore`）
+- ★`i1f6` 与 `draw-texture 186a0` 都在 `3f90`/`4fd9` 两个门之后：`3f90` 全语料恒 0 ⇒ **第一道门恒放行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`；运行期反证 = `src/NOVEL.txt:191` 的 `i1f6` 在 SN0000→SC0000 边界确实执行过）；真正分叉的是 `4fd9`（本机真槽 = 0 ⇒ 走 `i1f6` 支、不画 `draw-texture 186a0`）⇒ **读档时不能指望 SYSTEM4 清画面或画背景**（清画面是 `sub_410160` 行内做的：`capabilities` 的 `save-load-drawitem-clear-and-restore`）
 
 ## 缺口
 

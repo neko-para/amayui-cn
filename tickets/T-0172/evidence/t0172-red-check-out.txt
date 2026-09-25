@@ -1,0 +1,123 @@
+❌ rendering:26 fade 家族 `sub_441410` 首调用点
+     旧文档写 raw 49942 含「sub_441410」 → 实际：char *v18; // eax
+❌ rendering:26 命令级计时器 `sub_453A60`
+     旧文档写 raw 26981 含「sub_453A60」 → 实际：int v2; // edi
+❌ rendering:30 `0x2000` movie 分支
+     旧文档写 raw 20619 含「& 0x2000」 → 实际：++*(_DWORD *)(_this + 699212);
+❌ rendering:30 `0x2000` movie 分支（第二处）
+     旧文档写 raw 20723 含「& 0x2000」 → 实际：v62 = v15;
+❌ rendering:31 BGM 淡入计时器 `_this+430012`
+     旧文档写 raw 20651 含「430012」 → 实际：if ( (*(_DWORD *)(_this + 490016) & 0x10000) != 0 )
+❌ rendering:33 `sub_426CF0`(0x323)
+     旧文档写 raw 33358 含「sub_426CF0」 → 实际：int v16; // [esp-4h] [ebp-8h]
+❌ rendering:33/60 `sub_4AF1C0` RenderPolygon
+     旧文档写 raw 131435 含「4AF1C0」 → 实际：bool v9; // zf
+❌ rendering:33/60 mesh 颜色窗 133505-133541
+     旧文档写 raw 131491 含「v40[0] & 2」 → 实际：v10[30] = 0.0;
+❌ rendering:35 主循环 0x400 卫门
+     旧文档写 raw 20934 含「sub_407E20」 → 实际：}
+❌ rendering:44 create-mesh `sub_432150`
+     旧文档写 raw 40262 含「sub_432150」 → 实际：(空行)
+❌ rendering:44/81 `sub_4ADFE0`
+     旧文档写 raw 130665 含「sub_4ADFE0」 → 实际：v24[0] = _this + 1048;
+❌ rendering:44/81 `sub_4A2280`
+     旧文档写 raw 120518 含「sub_4A2280」 → 实际：else
+❌ rendering:58 CalcDiffuse 通道插值 122289-122293
+     旧文档写 raw 120475 含「a2 + 59」 → 实际：(空行)
+❌ rendering:58 CalcDiffuse 快路径 122294-122306
+     旧文档写 raw 120482 含「== -1」 → 实际：if ( a5 == 3 )
+❌ rendering:58 CalcDiffuse 写 VB+16 122316-122317
+     旧文档写 raw 120502 含「+ 16)」 → 实际：v8 = 0;
+❌ rendering:69 主循环时钟 `v3=timeGetTime`
+     旧文档写 raw 20445 含「timeGetTime」 → 实际：{
+❌ rendering:69 `v94=v5=timeGetTime()`
+     旧文档写 raw 20465 含「v94 = v5」 → 实际：void __thiscall __noreturn sub_412290(int _this)
+❌ rendering:69 帧同步分支
+     旧文档写 raw 20571 含「667860」 → 实际：_set_new_handler(sub_453A00);
+❌ rendering:69 present `sub_4B4040`
+     旧文档写 raw 20583 含「sub_4B4040」 → 实际：while ( PeekMessageA(&Msg, 0, 0, 0, 0) )
+❌ rendering:69 `sub_41A090`(0x1F4)
+     旧文档写 raw 24953 含「sub_41A090」 → 实际：{
+❌ rendering:69 `sub_41A1A0`(0x20C)
+     旧文档写 raw 25014 含「sub_41A1A0」 → 实际：_DWORD *result; // eax
+❌ rendering:69 `sub_41A2C0`(0x23C)
+     旧文档写 raw 25059 含「sub_41A2C0」 → 实际：result += v5 + 97153;
+❌ rendering:69 present `sub_4B4040`(逐帧链)
+     旧文档写 raw 134702 含「4B4040」 → 实际：float v284; // [esp+1464h] [ebp-26Ch]
+❌ rendering:69 `sub_4B06D0`(逐帧链)
+     旧文档写 raw 134755 含「4B06D0」 → 实际：float v337; // [esp+153Ch] [ebp-194h]
+❌ rendering:79 `sub_422E70`
+     旧文档写 raw 30846 含「422E70」 → 实际：v43 = 1;
+❌ rendering:79 `sub_4ACE50`
+     旧文档写 raw 129796 含「4ACE50」 → 实际：if ( v6 != *(_DWORD *)(i + 8) )
+❌ rendering:86 `sub_422E00` release-texture
+     旧文档写 raw 30822 含「422E00」 → 实际：int v43; // [esp+24h] [ebp-10h]
+❌ rendering:86 `sub_4237B0` play-movie
+     旧文档写 raw 31165 含「4237B0」 → 实际：void (__thiscall ***v4)(_DWORD, int); // ecx
+❌ rendering:100 `sub_4ACF60` set-draw-color-alpha
+     旧文档写 raw 129850 含「4ACF60」 → 实际：{
+❌ rendering:100 `sub_4AD0C0` set-draw-color
+     旧文档写 raw 129936 含「4AD0C0」 → 实际：//----- (004AA740) --------------------------------------------------------
+❌ rendering:102 `sub_4AEEA0`
+     旧文档写 raw 131306 含「4AEEA0」 → 实际：v4[60] = 0.0;
+❌ rendering:102 `sub_4A2D50`
+     旧文档写 raw 121065 含「4A2D50」 → 实际：(空行)
+❌ rendering:70 窗起点锁存（entry[10]==0）
+     旧文档写 raw 131486 含「_this + 46500」 → 实际：v10[36] = 0.0;
+❌ rendering:70 mesh 窗收尾分支
+     旧文档写 raw 131506 含「v40[11] = 0」 → 实际：v11[65] = 0.0;
+❌ rendering:70 present 帧始清脏位
+     旧文档写 raw 134751 含「46508) = 0」 → 实际：float v333; // [esp+152Ch] [ebp-1A4h]
+❌ rendering:78 `sub_4B06D0`(归并序)
+     旧文档写 raw 132387 含「4B06D0」 → 实际：(空行)
+❌ rendering:81 mesh 表插入 `v19=sub_40DC30`
+     旧文档写 raw 130708 含「v19 = sub_40DC30」 → 实际：if ( sub_40DC30(v4, &v15)[1] )
+❌ rendering:81 拷逐顶点色进 entry[2]/[3]/[4]
+     旧文档写 raw 130732 含「operator new[]」 → 实际：if ( !*((_BYTE *)v3 + 77) )
+❌ rendering:81 `sub_4AF1C0` 调用点（其一）
+     旧文档写 raw 133562 含「sub_4AF1C0」 → 实际："関数：RenderPolygon エラー：VertexBufferに対してのロックに失敗しました． %s\r\n",
+❌ rendering:84 `sub_407E20`
+     旧文档写 raw 12679 含「sub_407E20」 → 实际：v2 = (int *)*v2;
+❌ rendering:84 绘制项 setter 置脏（其一）
+     旧文档写 raw 129957 含「11627」 → 实际：sub_4AA330((_DWORD *)_this, v2, **(_DWORD ***)(_this + 4), *(_DWORD **)(_this + 4));
+❌ rendering:84 绘制项 setter 置脏（其二）
+     旧文档写 raw 130051 含「11627」 → 实际：(空行)
+❌ rendering:84 绘制项 setter 置脏（其三）
+     旧文档写 raw 130091 含「11627」 → 实际：if ( v10 == *(int **)(_this + 1068) )
+❌ rendering:84 `sub_4AF1C0` 置 46516
+     旧文档写 raw 131503 含「+ 46516」 → 实际：v11[68] = 0.0;
+❌ rendering:93 主循环起点
+     旧文档写 raw 20422 含「while ( 1 )」 → 实际：v22 = v21 + (*(int (__thiscall **)(int, char *))(*(_DWORD *)v5 + 4))(v5, aMessageAutomes_3);
+❌ rendering:93 帧同步外层门
+     旧文档写 raw 20468 含「429752」 → 实际：int (*v3)(void); // ebx
+❌ rendering:167 `MeshEntry[9]` 写点
+     旧文档写 raw 132815 含「[9] = a3」 → 实际：(空行)
+❌ rendering:193 每项收尾（sprite+44）
+     旧文档写 raw 123250 含「+ 44」 → 实际：// 4BC2D8: using guessed type int __stdcall j_D3DXMatrixScaling(_DWORD, _DWORD, _DWORD, _DWORD);
+❌ rendering:198 `sub_49E390` 默认支（`v19=6`）
+     旧文档写 raw 119397 含「v19 = 6」 → 实际：(*(void (__stdcall **)(int, int, int))(*(_DWORD *)v10 + 228))(v10, 19, 5);
+❌ rendering:198 `sub_49E700` 默认支（`a3 != 3`）
+     旧文档写 raw 119521 含「a3 != 3」 → 实际：{
+❌ 04-app:15 主循环 `LABEL_216`
+     旧文档写 raw 21041 含「LABEL_216」 → 实际：}
+❌ 04-app:55 `sub_4B4040`(present)
+     旧文档写 raw 134702 含「4B4040」 → 实际：float v284; // [esp+1464h] [ebp-26Ch]
+❌ 04-app:55 `sub_4B06D0`
+     旧文档写 raw 132387 含「4B06D0」 → 实际：(空行)
+❌ 04-app:58 mesh 颜色窗
+     旧文档写 raw 131491 含「v40[0] & 2」 → 实际：v10[30] = 0.0;
+❌ 04-app:59 逐帧颜色求值函数名 `sub_49A300`
+     旧文档写 raw 115116 含「sub_49A300」 → 实际：if ( v12 >= dbl_52A260 )
+❌ 04-app:59 逐帧颜色求值（`sub_49AA30`）
+     旧文档写 raw 115116 含「sub_49AA30」 → 实际：if ( v12 >= dbl_52A260 )
+❌ 04-app:63 effect_flags 位级联
+     旧文档写 raw 20594 含「699204」 → 实际：DispatchMessageA(&Msg);
+❌ 04-app:71 0x400 卫门
+     旧文档写 raw 20934 含「sub_407E20」 → 实际：}
+❌ 04-app:77 present 条件 `sub_40BE10`
+     旧文档写 raw 20581 含「sub_40BE10」 → 实际：*(_DWORD *)(_this + 387936) = 4;
+❌ 04-app:197 draw-item `&4` 分支
+     旧文档写 raw 131368 含「& 4」 → 实际：float v17; // [esp+Ch] [ebp-14h]
+
+小计：60 条里 ❌ 60 条（= 旧文档行号与体不符）
+[red] ❌ 60/60 条与体不符

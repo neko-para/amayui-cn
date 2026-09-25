@@ -4,22 +4,48 @@
   "type": "bug",
   "priority": "P2",
   "area": "emulator/frame-loop",
-  "why": "2026-09-24 追查滚轮链时发现：emulator 的 `runFrameLoop` 把「逐字显现中」做成**互斥分支**（`src/frame/loop.ts:448` 的 `else if (e.textRevealing)`），那一帧只跑 `serviceRevealAdvanceInput` + `serviceTextReveal`，**不跑等待泵**（`serviceAdvanceWait`，`:457-464`）；而引擎主循环在**同一轮**里 20887 的逐字泵与 21224 的等待泵都会跑到。后果：逐字期间的输入（键位路由 ①/悬停/④ 回看）在 emulator 里被推迟到「显现结束之后那一帧」，而那时 `endCharReveal()` 已清 bit30 ⇒ ④（`#textRewindWheel` 的 `effect_flags & 0x40000000` 门）在「位被路由绑定时」永不可达。",
+  "why": "2026-09-24 追查滚轮链时发现：emulator 的 `runFrameLoop` 把「逐字显现中」做成**互斥分支**（`src/frame/loop.ts:448` 的 `else if (e.textRevealing)`），那一帧只跑 `serviceRevealAdvanceInput` + `serviceTextReveal`，**不跑等待泵**（`serviceAdvanceWait`，`:457-464`）；而引擎主循环在**同一轮**里 20887 的逐字泵与 21224 的等待泵都会跑到。后果：逐字期间的输入（键位路由 ①/悬停/④ 回看）在 emulator 里被推迟到「显现结束之后那一帧」，而那时 `endCharReveal()` 已清 bit30 ⇒ ④（`#textRewindWheel` 的 `effect_flags & 0x40000000` 门）在「位被路由绑定时」永不可达。\n\n★★★ **2026-09-24 主 agent 读体实测（raw 20740-21230 主循环；结论比上面这段更精确，实施前必须先读这段）**：\n\n1. **主循环的形状**：`… 20840-20886 是一个内层循环（尾判 `if ((v25 & 0x100000) == 0) break;` ⇒ 「跳读中」位清了就跳出，循环里 `sub_411590` + `Sleep(5u)`）…` → 出内层循环后**无条件**跑逐字计时器泵 **raw 20887-20895**（门 `if ((v25 & 0x40000000) != 0)`：`v100 = sub_453AF0(Engine+430600)`（逐字计时器对象，dword 107650 = 0x1D0 一族那个）⇒ 到点则 `sub_45A940(Font, Engine[489484], Engine[430816] 递增取模 430820, 0)` = **推进一格**）→ 继续 20896-21157 → **raw 21158-21159 `if ((v35 & 0x8000000) == 0) break;`**（「文本显示中」位为 0 就跳出整个显示循环）→ **raw 21160 `sub_411900(_this)`** → 21161-21174（`sub_407EA0` 推进、`sub_4B51E0`/`sub_4BBA90`、1000 槽清理 `sub_488FD0`、`Sleep(0)`、`PeekMessageA` → `goto LABEL_4` 回环）→ **raw 21175 外循环结束** → **raw 21176 `if ((v35 & 0x20000000) != 0) { …21177-21222 派发链… } else { raw 21226 `sub_411BC0(_this)` + `Sleep(2u)` }`**。\n2. **所以「同一轮里两段都会跑到」这句要改口径**：逐字泵（20887）确实与**显示态主泵 `sub_411900`** 同轮；但 `sub_411BC0`（emulator 的 `serviceAdvanceWait` 对应物：路由键 ① raw 20242 / 右键 ③ / 滚轮 ④ raw 20341 / 自动翻页泵 raw 20376-20461）是在**显示循环之外**、`0x20000000`（逐字计时器「正在跑」位）为 0 时才跑的那一支。\n3. ★★**新发现（本票真正的核心，比原「等待泵」框架更硬）**：`sub_411900`（raw 20096-20170+）在显示态**每轮做四件事**：① 收/提交输入（`sub_4780D0(Engine+258, Engine+174802)` + `if (Engine[1415]) mask |= 0x40` + `sub_477280`）；② 按 `set:CancelMesSkipOnClick` 处理「点击取消跳读」（`122370` 状态机 → 清 `0x8000000`/`1415`/`97050` + 写 `message:ReadTexture=0` + 可能装 `CALLBACK_SETTING.BIN`）；③ **3 槽消息交付循环**（raw 20144-20160：门 `!122455 && !122496 && !(mask & 0x40)` ⇒ 清 `0x8000000` 并对 `122505+i`（3 槽）逐个 `sub_4BB840(Engine+21032, i, …)` 后清零）——**这与 T-0151 工作清单里 `0x72` 那条「3 槽交付」是同一件事的第二处落点**（第一处在 `0x72` handler 内，raw 28518 一族）；④ ★**执行恰好一条脚本指令**（raw 20161-20165：`v7 = *Engine[30*frame + 95782]`（当前 opcode）→ `if (v7 > 0x3FF) sub_418E30` → `handler_table[v7 + 168999](Engine)` → `ip += 4 * arity`）。\n4. ⇒ **对 emulator 的准确指控应当是**：`textRevealing` 分支**一条脚本指令都不执行**（只跑 `serviceRevealAdvanceInput` + `serviceTextReveal`），而引擎在显示态**每轮仍推进恰好一条**；至于「要不要在逐字帧里调 `serviceAdvanceWait`」这个原判据，**先别照做** —— 实施前必须先判清 emulator 的 `serviceRevealAdvanceInput`/`serviceAdvanceWait` 分别对应 `sub_411900` 的哪几件事（③④ 有没有对应物），否则会把「每轮一条指令」误做成「逐字帧整批派发」，那会直接打红 `test/adv-reveal-under-throttle.test.ts`（`loop.ts:440-446` 明确记着这个坑：门一到点就派发 ⇒ 逐字停在半句）。",
   "acceptance": [
-    "逐条给出引擎主循环的**真实次序**（raw 20887-20895 的逐字泵段 / 21158 的 ADV 段 / 21224 的等待泵段）与它们各自的**门**（`0x40000000` / `0x8000000` / 等待位）",
-    "判定 emulator 的 `textRevealing` 互斥分支是否需要拆开；若需要，给出改动 + 命名守卫（红→绿），并跑全量 `npm run test` 证明既有 ADV/逐字守卫不回归",
-    "若结论是「引擎其实也是互斥（两段门不会同时成立）」，则把结论写进 `src/frame/loop.ts` 的注释与台账 `frame-*` 条目，并把本票以 doneWhy 关闭（不许空口）"
+    "✅**已答（2026-09-24 主 agent 读体）**：真实次序 = 内层跳读循环（20840-20886，尾判 `0x100000`）→ **逐字计时器泵 raw 20887-20895**（门 `0x40000000`；`v100 = sub_453AF0(Engine+430600)`；到点 `sub_45A940(Font, 489484, Engine[430816]++ % 430820, 0)` = 推一格）→ `raw 21158-21159 if ((v35 & 0x8000000) == 0) break;` → **显示态主泵 `sub_411900` raw 21160**（输入提交 / 点击取消跳读 / **3 槽交付** / **执行恰好一条指令并 `ip += 4*arity`**）→ 21161-21174（`sub_407EA0` 推进 + 1000 槽清理 + `Sleep(0)` + `PeekMessageA` ⇒ `goto LABEL_4` 回环）；**等待泵 `sub_411BC0` 在外循环之外、`0x20000000` 为 0 的那一支（raw 21224-21228）**。门：`0x40000000` = 逐字计时器活跃、`0x8000000` = 文本显示中、`0x20000000` = 逐字计时器「正在跑」、`0x100000` = 跳读中",
+    "判定 `textRevealing` 互斥分支是否要拆：**要**，但**不是**「在逐字帧里调 `serviceAdvanceWait`」—— 先判清 emulator 的 `serviceRevealAdvanceInput` / `serviceTextReveal` / `serviceAdvanceWait` 各对应 `sub_411900` 的哪几件事（尤其 ③ 3 槽交付、④ 每轮一条指令有没有对应物），再按体补齐；改动带命名守卫（红→绿）+ 跑全量 `npm run test` 证明既有 ADV/逐字守卫不回归（**特别是不许打红 `test/adv-reveal-under-throttle.test.ts`**，见 `src/frame/loop.ts:440-446` 记的那个坑）",
+    "若后续判定「显示态每轮一条指令」在 emulator 里已由既有机制等价覆盖（外观等价），则把结论写进 `src/frame/loop.ts` 注释与台账 `frame-*` 条目，并以 `doneWhy` 关闭（**不许空口**）"
   ],
   "evidence": [
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "} else if (e.textRevealing) {",
-      "note": "emulator 的逐字分支（互斥于等待泵分支）"
+      "note": "emulator 的逐字分支（互斥于等待泵分支）",
+      "line": 448
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "if ( (v25 & 0x40000000) != 0 )",
-      "note": "主循环逐字泵段（raw 20887 起）；同一轮的 21224 才是等待泵"
+      "note": "逐字计时器泵（raw 20887-20895，门 = 逐字计时器活跃位）：`sub_453AF0(Engine+430600)` 到点 ⇒ `sub_45A940` 推一格"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( (v35 & 0x8000000) == 0 )",
+      "note": "★真正的分支点（raw 21158-21159）：「文本显示中」位为 0 就 `break` 跳出显示循环；不为 0 则跑到 raw 21160 的显示态主泵"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_411900((int *)_this);",
+      "note": "★显示态主泵（定义 raw 20096）：输入提交 `sub_4780D0`/`sub_477280` + 点击取消跳读 + 3 槽交付 + **执行一条指令**"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4BB840((int)(_this + 21032), v5, *v6, v6[3], *(v6 - 117452));",
+      "note": "3 槽消息交付循环（raw 20144-20160，门 `!122455 && !122496 && !(mask & 0x40)`）—— 与 T-0151 清单里 `0x72` 那条是同一件事的第二处落点"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "_this[30 * _this[95776] + 95782] += 4 * _this[30 * _this[95776] + 95805];",
+      "note": "★raw 20165：显示态每轮派发一条后按 arity 槽推进 ip —— 「显示态每轮仍执行恰好一条指令」的机械证据"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_411BC0(_this);",
+      "note": "等待泵（raw 21226）：在外循环之外、`0x20000000` 为 0 的那一支（raw 21224-21228）"
     }
   ],
   "links": {
@@ -35,12 +61,17 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ]
   },
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建：滚轮链追查中发现的帧循环口径差（逐字帧不跑等待泵）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "decision",
+      "what": "主 agent 读体实测主循环（raw 20840-21230），判据①已答、判据②重定：真实次序 = 跳读内层循环 → 逐字计时器泵 raw 20887（门 0x40000000）→ raw 21158 `if ((v35 & 0x8000000) == 0) break;` → 显示态主泵 `sub_411900` raw 21160（输入提交 / 点击取消跳读 / 3 槽交付 / **执行恰好一条指令** raw 20161-20165）→ 回环；等待泵 `sub_411BC0` 在外循环之外（raw 21226）。⇒ 原「逐字帧要跑等待泵」的框架改为「显示态每轮仍执行一条脚本指令」，实施前必须先判清 emulator 三个 service* 与 `sub_411900` 四件事的对应关系，否则会把「每轮一条」误做成「整批派发」并打红 adv-reveal-under-throttle。顺带发现 3 槽交付有**两处**落点（`0x72` handler + 显示态主泵），归 T-0151。"
     }
   ]
 }

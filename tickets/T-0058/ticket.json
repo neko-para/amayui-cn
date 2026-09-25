@@ -47,13 +47,13 @@
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "setSystemCursor(x: number, y: number): void {",
       "note": "渲染侧那跳：虚拟→客户区，用与 attachMouseInput.toVirtual 同一套 getBoundingClientRect（互为逆运算）",
-      "line": 1442
+      "line": 1515
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "c.native.setSystemCursor?.(x, y);",
       "note": "0x10A 的两半件：先 input.setCursor（引擎侧真源）再交给宿主缝（同一对坐标）",
-      "line": 402
+      "line": 496
     },
     {
       "file": "app/amayui-emulator/test/native-host.test.ts",

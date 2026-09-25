@@ -136,7 +136,19 @@ test('★E3 回归：Game Start → ゲーム開始 → SN0000 首文案时的�
   const r = await runGameStartChain({});
   assert.ok(r.firstTextReached, '应到达 SN0000 首文案');
 
-  const full = r.scene.meshes.filter((m) => m.rect === '0,0..1280,720');
+  // ★2026-09（`tickets/T-0155`）订正：**满屏四边形的 `rect` 现在带半像素偏移**
+  //   `-0.5,-0.5..1279.5,719.5` —— 引擎给每个顶点位置做 `x/y -= dbl_51D7F8(0.5)`
+  //   （`sub_4A1F00` raw 122235-122238，create-mesh 走的那条路；raw 4197 是常量）。
+  //   旧断言拿 `'0,0..1280,720'` 精确匹配，钉的正是"没有这半像素偏移"这个**修前缺陷**
+  //   （= 几何相对真机偏 (+0.5,+0.5)，见 `handlers/gfx-item.ts` 的 `HALF_PIXEL`）。
+  //   现在按"顶点铺满视口"判：只要覆盖 [−0.5, 1279.5]×[−0.5, 719.5] 就算满屏。
+  const covers = (m: { rect: string }): boolean => {
+    const mm = /^(-?[\d.]+),(-?[\d.]+)\.\.(-?[\d.]+),(-?[\d.]+)$/.exec(m.rect);
+    if (!mm) return false;
+    const [x0, y0, x1, y1] = mm.slice(1).map(Number) as [number, number, number, number];
+    return x0 <= -0.5 && y0 <= -0.5 && x1 >= 1279.5 && y1 >= 719.5;
+  };
+  const full = r.scene.meshes.filter(covers);
   assert.ok(full.length > 0, `应有满屏 mesh（顶点色幕布）；实际 ${JSON.stringify(r.scene.meshes)}`);
   for (const m of r.scene.meshes) {
     assert.equal(m.verts, 4, `mesh 0x${m.handle.toString(16)} 应有 4 个顶点（引擎 create-mesh op9=4）`);

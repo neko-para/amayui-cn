@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0152",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -38,6 +38,15 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "doing → doing —— P1 全部处置：0xbc 早退（+订正旧错断言）、0x2c0/0x2f5 循环位=op2 bit0、0xc4/0x1bd 语音状态位翻转 + 0x2f6/0x2f7/0x2ff/0x302 字段写；两条 P1「op2=pan」经地址算式与 sub_4B7110=dsbSetPan 复核**推翻**（报告 §4.4 第 11 条）。详见 changes.md"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/t0152-audio-p2.test.ts"
+  ],
+  "doneWhy": "14 条 P2 全部有处置（已修 5 / 复核后已修 4 / 推翻 1 / 有据登记 2 / 近似登记 1 / 条目已消 1）+ P3 25 行全部处置；顺手修掉 `AudioEngine` 构造里 `opts.log ?? host.log` 丢 `this` 的真 bug（异步装载日志抛 TypeError 到 unhandledRejection）。守卫 test/t0152-audio-p2.test.ts 24/24，逐条红→绿对照见 .tmp/t0152-audio/redgreen-one.mjs（8/8 命中对应守卫）。详见 tickets/T-0152/changes-audio.md。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }

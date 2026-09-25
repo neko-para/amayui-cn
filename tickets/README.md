@@ -7,56 +7,40 @@
 
 ## 概览
 
-共 **167** 张：🔜 doing **12** · ⛔ blocked **0** · ⬜ open **23** · ✅ done **131** · 🚫 dropped **1**（P0 8 / P1 67）
+共 **175** 张：🔜 doing **7** · ⛔ blocked **0** · ⬜ open **12** · ✅ done **154** · 🚫 dropped **2**（P0 8 / P1 68）
 
-按域：`emulator/render` 25 · `emulator/hosts` 15 · `emulator/frame-loop` 13 · `emulator/vm` 13 · `emulator/test` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 7 · `docs/03-engine` 6 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `emulator/live2d` 1 · `docs/analysis/engine-capabilities` 1
+按域：`emulator/render` 26 · `emulator/vm` 17 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `emulator/live2d` 1 · `docs/analysis/engine-capabilities` 1
 
-## 🔜 doing（12）
+## 🔜 doing（7）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0148`](./T-0148/ticket.json) | P1 | analysis | `analysis/emulator/vm` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目 | 3 | — | — | — |
-| [`T-0151`](./T-0151/ticket.json) | P1 | bug | `emulator/msgwin` | 指令实现缺口修复批：消息窗 / 文本渲染（含字体与排版）（58 条：P1 6 / P2 16 / P3 36） | 3 | — | `changes.md` | — |
-| [`T-0152`](./T-0152/ticket.json) | P1 | bug | `emulator/audio` | 指令实现缺口修复批：音频子系统（42 条：P1 5 / P2 13 / P3 24） | 3 | — | `changes.md` | — |
-| [`T-0153`](./T-0153/ticket.json) | P1 | bug | `emulator/render` | 指令实现缺口修复批：纹理槽与表面（22 条：P1 0 / P2 11 / P3 11） | 3 | — | — | — |
 | [`T-0157`](./T-0157/ticket.json) | P1 | bug | `emulator/frame-loop` | 指令实现缺口修复批：帧循环 / 阶梯调度 / 队列派发（12 条：P1 1 / P2 4 / P3 7） | 3 | — | — | — |
-| [`T-0161`](./T-0161/ticket.json) | P1 | bug | `emulator/ops` | 指令实现缺口修复批：引擎字段 / 配置读写（16 条：P1 1 / P2 5 / P3 10） | 3 | — | — | — |
-| [`T-0165`](./T-0165/ticket.json) | P1 | bug | `emulator/vm` | 字符串族"int/ptr/float 操作数不转十进制"根因修复（0x192/0x193/0x1b2 共用 readStringOperand） | 3 | — | `changes.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
-| [`T-0154`](./T-0154/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：场景状态 / 转场 / 混合（25 条：P1 0 / P2 11 / P3 14） | 3 | — | — | — |
-| [`T-0158`](./T-0158/ticket.json) | P2 | bug | `emulator/input` | 指令实现缺口修复批：面板 / 菜单 / 输入（14 条：P1 1 / P2 4 / P3 9） | 3 | — | — | — |
+| [`T-0154`](./T-0154/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：场景状态 / 转场 / 混合（25 条：P1 0 / P2 11 / P3 14） | 3 | `app/amayui-emulator/test/scene-t0154-scene-state.test.ts` `app/amayui-emulator/test/scene-t0154-mesh-transition.test.ts` `app/amayui-emulator/test/op-22a-22f-scene-world.test.ts` | `changes-c154.md` | — |
+| [`T-0158`](./T-0158/ticket.json) | P2 | bug | `emulator/input` | 指令实现缺口修复批：面板 / 菜单 / 输入（14 条：P1 1 / P2 4 / P3 9） | 3 | `app/amayui-emulator/test/panel-display-state.test.ts#★P2 0x91：显示分支把长度槽写 0` `app/amayui-emulator/test/panel-display-state.test.ts#★P2 0x92 missing-consumer` `app/amayui-emulator/test/input-field-mirror.test.ts#★P2 0x101：三条引擎写` `app/amayui-emulator/test/input-field-mirror.test.ts#★P3 0xff：复位写` `app/amayui-emulator/test/menu-string-key.test.ts#★P3 0xa3 missing-branch` `app/amayui-emulator/test/region-hittest-n.test.ts#★P3 0x147：n = 1` | `changes-c158.md` | — |
+| [`T-0169`](./T-0169/ticket.json) | P2 | bug | `emulator/frame-loop` | 帧循环口径差：逐字显现帧不跑等待泵（引擎同一轮里 20887 与 21226 都会跑到） | 3 | — | — | — |
 | [`T-0091`](./T-0091/ticket.json) | P3 | req | `emulator/render` | 转场渲染剩余四项：类别 3 的精确核 / [4] 非 create-texture 槽 / Scene+46508·46512·46516 三标志本身 / E… | 10 | `app/amayui-emulator/test/wait-gate-timer.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` `design.md` | — |
-| [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | — | — | — |
 
-## ⬜ open（23）
+## ⬜ open（12）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0149`](./T-0149/ticket.json) | P1 | tooling | `analysis/opcode-gaps` | 缺口台账增设 `partial` 处置位：把"已注册但未完全实现"变成可棘轮的一等状态 | 3 | — | — | — |
-| [`T-0156`](./T-0156/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：控制流 / 帧管理 / 脚本装载（24 条：P1 0 / P2 5 / P3 19） | 3 | — | — | — |
-| [`T-0162`](./T-0162/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：操作数与内存原语（含字符串族转串根因）（6 条：P1 0 / P2 3 / P3 3） | 3 | — | — | — |
-| [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
 | [`T-0122`](./T-0122/ticket.json) | P2 | req | `emulator/tooling` | 调试器第 3 步：内存快照/恢复（引擎态 dump 与回灌） | 7 | — | — | — |
 | [`T-0142`](./T-0142/ticket.json) | P2 | refactor | `emulator/tooling` | 把 Electron 侧的 agent 调试通道也收敛到 VM 外层桥（debugsrv 的 sendInputEvent → ScenarioEvent、s… | 5 | — | — | — |
-| [`T-0145`](./T-0145/ticket.json) | P2 | docs | `docs/05-scripts` | 文档/注释与体不符三处：`global 3f90` 门极性读反（NOVEL.md/SYSTEM4.md）+ T-0090 的旁注依据 + 留帧注释自相矛盾 | 5 | — | `notes.md` | — |
-| [`T-0150`](./T-0150/ticket.json) | P2 | refactor | `emulator/test` | 死写闸门（闸门 C）覆盖面从 Item/MeshObj 扩到 Engine/SceneState 等模型 | 2 | — | — | — |
-| [`T-0155`](./T-0155/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：绘制项与动画窗（7 条：P1 0 / P2 4 / P3 3） | 3 | — | — | — |
-| [`T-0159`](./T-0159/ticket.json) | P2 | bug | `emulator/save-slot` | 指令实现缺口修复批：存档槽链路（12 条：P1 0 / P2 6 / P3 6） | 3 | — | — | — |
-| [`T-0160`](./T-0160/ticket.json) | P2 | bug | `emulator/live2d` | 指令实现缺口修复批：Live2D（16 条：P1 0 / P2 12 / P3 4） | 3 | — | — | — |
-| [`T-0164`](./T-0164/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：跨模块其余指令（agerc/arithmetic/text-items/gfx-misc 等）（30 条：P1 1 / P2 11 / P… | 3 | — | — | — |
-| [`T-0168`](./T-0168/ticket.json) | P2 | bug | `emulator/adv` | ADV 滚轮上滚链：位 3 与菜单标签冲突 / sub_411590 未建模 / CALLBACK_TEXT.BIN 缺失 | 4 | — | `changes.md` | — |
-| [`T-0169`](./T-0169/ticket.json) | P2 | bug | `emulator/frame-loop` | 帧循环口径差：逐字显现帧不跑等待泵（引擎同一轮里 20887 与 21226 都会跑到） | 3 | — | — | — |
+| [`T-0168`](./T-0168/ticket.json) | P2 | bug | `emulator/adv` | ADV 滚轮上滚链：位 3 与菜单标签冲突 / sub_411590 未建模 / CALLBACK_TEXT.BIN 缺失 | 4 | — | `notes.md` `changes.md` | — |
+| [`T-0175`](./T-0175/ticket.json) | P2 | refactor | `emulator/vm` | B/C 波收口后的跨文件与跨宿主交接清单（8 张票的"别人该接"项集中登记，防丢） | 14 | — | `notes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | — | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
 | [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 4 | — | `notes.md` evidence/(5) | — |
 | [`T-0107`](./T-0107/ticket.json) | P3 | analysis | `analysis/emulator/live2d` | INFOEN 的 L2D 资产 id 表（全局槽 527d8c / 528944）真源未定位：脚本 0 写点 ⇒ 需要找出引擎侧是谁填的 | 4 | — | — | — |
-| [`T-0108`](./T-0108/ticket.json) | P3 | docs | `analysis` | 数据层沿革话术：semantics/note 里的「订正/原记/旧写」146 处 → 结论留原文、沿革落 journal[] | 5 | — | — | — |
-| [`T-0112`](./T-0112/ticket.json) | P3 | docs | `docs/03-engine` | B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-eff… | 6 | — | — | — |
 | [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | `notes.md` | — |
 | [`T-0146`](./T-0146/ticket.json) | P3 | bug | `emulator/test` | 预先存在的 verify 红（3 条）：真槽 SAVE70/71 解析、scene-report 占位项下限 —— A/B 已证与 D1~D4 无关 | 4 | — | — | — |
+| [`T-0173`](./T-0173/ticket.json) | P3 | refactor | `emulator/vm` | 删掉两处零读者字段 Engine.callFlag / Engine.callLink（T-0150 扩面死写闸门的新发现） | 4 | — | — | — |
 
-## ✅ done（131）
+## ✅ done（154）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -123,8 +107,17 @@
 | [`T-0143`](./T-0143/ticket.json) | P1 | bug | `emulator/hosts` | emulator web 宿主：缺构建产物（dist/web 被删/没建）时只说 `not found: index.html`，指不出「你没构建」 | 6 | `app/amayui-emulator/test/host-dist-assets.test.ts` `app/amayui-emulator/test/host-dist-assets.test.ts#缺 web 产物` | `changes.md` | — |
 | [`T-0144`](./T-0144/ticket.json) | P1 | bug | `emulator/render` | 0x1F6 clearDrawContainer / 0x1F7 detach-texture 未清 572B 立绘节点表（Scene+1080/+1096）… | 9 | `app/amayui-emulator/test/l2d-clear-on-container-ops.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` | evidence/(1) | — |
 | [`T-0147`](./T-0147/ticket.json) | P1 | bug | `emulator/vm` | 0x205 数字直绘把 x 回写到脚本 op2（引擎只更新局部量）⇒ op2 是立即数时硬抛 writeIntOperand，是可写槽时静默污染脚本状态 | 5 | `app/amayui-emulator/test/op-205-no-writeback.test.ts` | `notes.md` `repro.md` | — |
-| [`T-0166`](./T-0166/ticket.json) | P1 | docs | `docs/analysis/engine-capabilities` | 能力台账同步：75 条"描述过期 / overreach / guard 名不副实"逐条订正 | 3 | — | `changes.md` | — |
+| [`T-0149`](./T-0149/ticket.json) | P1 | tooling | `analysis/opcode-gaps` | 缺口台账增设 `partial` 处置位：把"已注册但未完全实现"变成可棘轮的一等状态 | 3 | `app/amayui-emulator/test/opcode-gaps.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0151`](./T-0151/ticket.json) | P1 | bug | `emulator/msgwin` | 指令实现缺口修复批：消息窗 / 文本渲染（含字体与排版）（58 条：P1 6 / P2 16 / P3 36） | 3 | `app/amayui-emulator/test/t0151-msgwin-vm.test.ts` `app/amayui-emulator/test/adv-reveal-under-throttle.test.ts` `app/amayui-emulator/test/text-layout.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/config1-chain-advreturn-real.test.ts` `app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts` | `changes.md` `changes-msgwin.md` `changes-text.md` | — |
+| [`T-0152`](./T-0152/ticket.json) | P1 | bug | `emulator/audio` | 指令实现缺口修复批：音频子系统（42 条：P1 5 / P2 13 / P3 24） | 3 | `app/amayui-emulator/test/t0152-audio-p2.test.ts` | `changes.md` `changes-audio.md` | — |
+| [`T-0153`](./T-0153/ticket.json) | P1 | bug | `emulator/render` | 指令实现缺口修复批：纹理槽与表面（22 条：P1 0 / P2 11 / P3 11） | 3 | `app/amayui-emulator/test/op-15xx-gfx-texture-vm.test.ts` | `changes-renderer.md` `changes-texvm-ledgerplan.md` `changes-texvm.md` | — |
+| [`T-0156`](./T-0156/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：控制流 / 帧管理 / 脚本装载（24 条：P1 0 / P2 5 / P3 19） | 3 | `app/amayui-emulator/test/t0156-control-frame.test.ts` `app/amayui-emulator/test/op-132-134-queue.test.ts#默认 = 10 个空队` | `notes.md` `changes-c156.md` | — |
+| [`T-0161`](./T-0161/ticket.json) | P1 | bug | `emulator/ops` | 指令实现缺口修复批：引擎字段 / 配置读写（16 条：P1 1 / P2 5 / P3 10） | 3 | `app/amayui-emulator/test/config-t0161.test.ts` `app/amayui-emulator/test/engine-fields-t0161.test.ts` `app/amayui-emulator/test/config-keys.test.ts` | `changes-c161.md` | — |
+| [`T-0162`](./T-0162/ticket.json) | P1 | bug | `emulator/vm` | 指令实现缺口修复批：操作数与内存原语（含字符串族转串根因）（6 条：P1 0 / P2 3 / P3 3） | 3 | `app/amayui-emulator/test/operand-memcpy-direction.test.ts#0x1B0 memcpy` `app/amayui-emulator/test/operand-string-primitive.test.ts#原语分叉` `app/amayui-emulator/test/operand-float-ptr-io.test.ts#float 指针族` | `changes-c162-ledgerplan.md` `changes-c162.md` | — |
+| [`T-0165`](./T-0165/ticket.json) | P1 | bug | `emulator/vm` | 字符串族"int/ptr/float 操作数不转十进制"根因修复（0x192/0x193/0x1b2 共用 readStringOperand） | 3 | `app/amayui-emulator/test/op-string-coercion.test.ts` `app/amayui-emulator/test/op-1b2-text-buffer.test.ts` `app/amayui-emulator/test/operand-string-primitive.test.ts` `app/amayui-emulator/test/operand-float-ptr-io.test.ts` | `changes.md` | — |
+| [`T-0166`](./T-0166/ticket.json) | P1 | docs | `docs/analysis/engine-capabilities` | 能力台账同步：75 条"描述过期 / overreach / guard 名不副实"逐条订正 | 3 | — | `changes.md` `changes-c166-blink.md` `changes-c166.md` | — |
 | [`T-0167`](./T-0167/ticket.json) | P1 | req | `emulator/frame-loop` | 能力台账缺口：27 条"引擎有、emulator 缺的持续行为"逐条落地或登记 | 3 | `app/amayui-emulator/test/frame-render-gate.test.ts` `app/amayui-emulator/test/headless-needs-render.test.ts` `app/amayui-emulator/test/scene-freeze-46676-gate.test.ts` `app/amayui-emulator/test/op-222-scene-commit.test.ts` `app/amayui-emulator/test/scene-3d-effect-level.test.ts` `app/amayui-emulator/test/scene-3d-weather.test.ts` `app/amayui-emulator/test/gfx-prim-mesh-consumers.test.ts` `app/amayui-emulator/test/adv-right-click-cancel-route.test.ts` `app/amayui-emulator/test/msgwin-backlog-wheel.test.ts` `app/amayui-emulator/test/wheel-as-key.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/char-reveal.test.ts` `app/amayui-emulator/test/op-1f5-dequeue.test.ts` `app/amayui-emulator/test/capability-ledger.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0170`](./T-0170/ticket.json) | P1 | bug | `emulator/vm` | 实现 0x1D1（`0x82` 的孪生：GDI 重画窗 op1 的第 op2 条文本项记录，`sub_4675A0`）：让 HISTORY.BIN 不再硬停 | 6 | `app/amayui-emulator/test/recall-page-0x1d1.test.ts` `app/amayui-emulator/test/op-1d0-1d1-text-metrics.test.ts` | `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |
@@ -168,7 +161,15 @@
 | [`T-0133`](./T-0133/ticket.json) | P2 | analysis | `emulator/hosts` | 可行性评估：把 emulator 渲染面桥接进 DSH Web GUI，作为**调试观察宿主**（同源 iframe + HTTP/WS 宿主） | 14 | — | `notes.md` | — |
 | [`T-0137`](./T-0137/ticket.json) | P2 | req | `emulator/hosts` | 面板形态：常驻浮窗（PiP，默认收成小胶囊）+ 保留模态作放大 | 9 | `plugins/amayui-emulator/smoke-client.mjs#全部通过` `plugins/amayui-emulator/smoke.mjs#全部通过` | `notes.md` `changes.md` evidence/(4) | — |
 | [`T-0141`](./T-0141/ticket.json) | P2 | analysis | `analysis/emulator/verify` | 待核：web 宿主下点 CONFIG 左侧分类 (120,206) 没有切到 CONFIG2（反而整条重引导回 TITLE） | 5 | — | `notes.md` `changes.md` evidence/(2) | — |
-| [`T-0163`](./T-0163/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：有据 no-op 与宿主缝（native）（19 条：P1 1 / P2 3 / P3 15） | 3 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/keyboard-mask.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` `app/amayui-emulator/test/registry-classification.test.ts` | `changes.md` | — |
+| [`T-0145`](./T-0145/ticket.json) | P2 | docs | `docs/05-scripts` | 文档/注释与体不符三处：`global 3f90` 门极性读反（NOVEL.md/SYSTEM4.md）+ T-0090 的旁注依据 + 留帧注释自相矛盾 | 5 | — | `notes.md` `changes.md` | — |
+| [`T-0150`](./T-0150/ticket.json) | P2 | refactor | `emulator/test` | 死写闸门（闸门 C）覆盖面从 Item/MeshObj 扩到 Engine/SceneState 等模型 | 2 | `app/amayui-emulator/test/no-dead-writes.test.ts` | `notes.md` `changes.md` | — |
+| [`T-0155`](./T-0155/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：绘制项与动画窗（7 条：P1 0 / P2 4 / P3 3） | 3 | `app/amayui-emulator/test/gfx-state-operand-io.test.ts` | `changes-gfxstate-ledgerplan.md` `changes-gfxstate.md` | — |
+| [`T-0159`](./T-0159/ticket.json) | P2 | bug | `emulator/save-slot` | 指令实现缺口修复批：存档槽链路（12 条：P1 0 / P2 6 / P3 6） | 3 | `app/amayui-emulator/test/save-slot-engine-codes.test.ts` | `changes-slots.md` | — |
+| [`T-0160`](./T-0160/ticket.json) | P2 | bug | `emulator/live2d` | 指令实现缺口修复批：Live2D（16 条：P1 0 / P2 12 / P3 4） | 3 | `app/amayui-emulator/test/live2d-t0160.test.ts` `app/amayui-emulator/test/live2d-enabled-flag.test.ts` | `changes-live2d.md` | — |
+| [`T-0163`](./T-0163/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：有据 no-op 与宿主缝（native）（19 条：P1 1 / P2 3 / P3 15） | 3 | `app/amayui-emulator/test/stub-308-touch-register.test.ts` `app/amayui-emulator/test/stub-setweather-noop-comments.test.ts` `app/amayui-emulator/test/stub-engine-internal-gaps.test.ts` `app/amayui-emulator/test/agerc-module-error-paths.test.ts` `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/keyboard-mask.test.ts` `app/amayui-emulator/test/op-a4-a6.test.ts` `app/amayui-emulator/test/op-327-32e-setweather-noop.test.ts` `app/amayui-emulator/test/registry-classification.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` | `changes.md` `changes-c163.md` | — |
+| [`T-0164`](./T-0164/ticket.json) | P2 | bug | `emulator/ops` | 指令实现缺口修复批：跨模块其余指令（agerc/arithmetic/text-items/gfx-misc 等）（30 条：P1 1 / P2 11 / P… | 3 | `app/amayui-emulator/test/t0164-misc-batch.test.ts` `app/amayui-emulator/test/opcode-operands.test.ts` `app/amayui-emulator/test/op-23f-slot-size.test.ts` `app/amayui-emulator/test/gallery-bgm-list.test.ts` `app/amayui-emulator/test/native-tap.test.ts` | `changes-c164.md` | — |
+| [`T-0171`](./T-0171/ticket.json) | P2 | bug | `emulator/input` | 滚轮模式开位号越界时落到累加器：引擎从不累加（负位号跳过；≥32 按 x86 shl cl 取模） | 4 | `app/amayui-emulator/test/wheel-as-key.test.ts` `app/amayui-emulator/test/input.test.ts` | — | — |
+| [`T-0176`](./T-0176/ticket.json) | P2 | bug | `emulator/vm` | `input.test.ts` 的 TITLE 端到端例缺真链路前置：单脚本跑 TITLE 必须先补 `SETL2DMOC` 的「装 TITLE.MOC 进实… | 6 | `app/amayui-emulator/test/input.test.ts` `app/amayui-emulator/test/live2d-enabled-flag.test.ts` `app/amayui-emulator/test/script-ledger.test.ts` | — | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | `app/amayui-emulator/test/harness-convergence.test.ts` | `changes.md` | — |
@@ -190,12 +191,19 @@
 | [`T-0099`](./T-0099/ticket.json) | P3 | bug | `emulator/frame-loop` | sleep 门的帧粒度残差：0x196/0x6E 的 MessageSpeed 节流在 40ms 档每处多等约一帧（实测 66.7ms vs 引擎约 50ms） | 4 | `app/amayui-emulator/test/op-3-004-furigana-outer-gate.test.ts` `app/amayui-emulator/test/adv-reveal-under-throttle.test.ts` `app/amayui-emulator/test/op-10-002-adv-sleep-order.test.ts` `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0101`](./T-0101/ticket.json) | P3 | refactor | `emulator/msgwin` | 文本/消息窗的两处遗留口径：默认窗有两个真源（i080 之前不一致）+ MsgWindow.textSlotArg 是死字段 | 4 | `app/amayui-emulator/test/msgwin-default-window.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/op-1d0-page-index.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0105`](./T-0105/ticket.json) | P3 | docs | `docs/03-engine` | 文档模型收尾：机制叙述与台账的重复段清理 + copyright-effect 无台账落点 | 5 | `app/amayui-emulator/test/doc-model.test.ts` `app/amayui-emulator/test/capability-ledger.test.ts` | `notes.md` `changes.md` evidence/(1) | — |
+| [`T-0108`](./T-0108/ticket.json) | P3 | docs | `analysis` | 数据层沿革话术：semantics/note 里的「订正/原记/旧写」146 处 → 结论留原文、沿革落 journal[] | 5 | `app/amayui-emulator/test/doc-model.test.ts#沿革不进叙述文档` | `notes.md` `changes.md` | — |
 | [`T-0110`](./T-0110/ticket.json) | P3 | docs | `docs/03-engine` | B7-B：机制文档残留订正（scene-start-flow / rendering / engine-reset-mainloop / sound-syst… | 6 | — | — | — |
+| [`T-0111`](./T-0111/ticket.json) | P3 | docs | `emulator/ops` | B7-C：低影响登记与派发接线（opcode-table 行同步 / 0x308 触摸注册 / 0x1F5→sub_40FB60） | 5 | `app/amayui-emulator/test/doc-model.test.ts` `app/amayui-emulator/test/opcode-arity.test.ts` `app/amayui-emulator/test/opcode-gaps.test.ts` `app/amayui-emulator/test/stub-308-touch-register.test.ts` `app/amayui-emulator/test/opcode-json-sync.test.ts` | `changes-c111a.md` `changes-c163.md` | — |
+| [`T-0112`](./T-0112/ticket.json) | P3 | docs | `docs/03-engine` | B7-B 残余：逐格待核（adv-text-rendering 字段表行号 / 0x204 措辞 / AutoLineFeed / copyright-eff… | 6 | `app/amayui-emulator/test/doc-model.test.ts#B7-B 棘轮` | `changes.md` evidence/(2) | — |
+| [`T-0172`](./T-0172/ticket.json) | P3 | docs | `docs/03-engine` | docs-new/03-engine/rendering.md 行号整表逐行核（B7-B 同批结论未同步；含 8 处从未核过的行号） | 5 | `app/amayui-emulator/test/doc-model.test.ts` | `changes.md` evidence/(5) | — |
+| [`T-0174`](./T-0174/ticket.json) | P3 | analysis | `emulator/render` | 0x400 等待门的图形池旗标基址核对：[11629](=引擎+369348) 到底由谁置位；131881 族 setter 置的是 [11627](=+46… | 4 | — | `changes.md` | — |
+| [`T-0177`](./T-0177/ticket.json) | P3 | bug | `emulator/test` | `host-registry.test.ts` 的「真进程 `--idle-sec 1`」例是**读-刷次序竞态**（全量并行时偶发红，干扰基线判绿） | 5 | `app/amayui-emulator/test/host-registry.test.ts` | — | — |
 
-## 🚫 dropped（1）
+## 🚫 dropped（2）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
+| [`T-0109`](./T-0109/ticket.json) | P2 | req | `emulator/adv` | B7-A：ADV 阅读链路清尾 —— 消息回看页表/滚轮（0x84 前进）+ 文本断行·注音配对 | 5 | — | — | — |
 | [`T-0023`](./T-0023/ticket.json) | P3 | analysis | `engine/opcodes` | 把 88 条"md 已核对但数据层没有条目"的 opcode 语义回填 analysis/（按族推进） | 2 | — | — | — |
 
 ## 怎么用（30 秒）

@@ -1,0 +1,58 @@
+❌ ① +4 目标表面 id
+     doc 写 raw 90444 含「_this + 4) = 0」 → 实际：int v6[6]; // [esp+Ch] [ebp-1Ch] BYREF
+❌ ① +8 描边源表面 id
+     doc 写 raw 90445 含「_this + 8) = 2」 → 实际：(空行)
+❌ ① +116/+120 缩放初值 1.0
+     doc 写 raw 90469 含「_this + 116) = 1.0」 → 实际：*(_DWORD *)(_this + 112) = 0;
+❌ ① +1252 lfItalic/CharSet 打包值
+     doc 写 raw 78866 含「_this + 1252) = 0x1000000」 → 实际：v27[4] = 0;
+❌ ④ 时钟每帧写（主循环 tick 读）
+     doc 写 raw 20445 含「timeGetTime」 → 实际：{
+❌ ④ 时钟每帧写（v94 = tick）
+     doc 写 raw 20465 含「timeGetTime」 → 实际：void __thiscall __noreturn sub_412290(int _this)
+❌ ④ 时钟每帧写（时钟交换）
+     doc 写 raw 20575 含「369336」 → 实际：v2 = 1000 * (rand() % 120);
+❌ ④ 时钟每帧写（present 门）
+     doc 写 raw 20571 含「667860」 → 实际：_set_new_handler(sub_453A00);
+❌ ④ 时钟每帧写（present）
+     doc 写 raw 20583 含「sub_4B4040」 → 实际：while ( PeekMessageA(&Msg, 0, 0, 0, 0) )
+❌ ④ mesh 渲染 RenderPolygon
+     doc 写 raw 131435 含「4AF1C0」 → 实际：bool v9; // zf
+❌ ④ CalcDiffuse
+     doc 写 raw 120438 含「4A2050」 → 实际：v27 = *v23;
+❌ ④ draw-item 颜色动画求值（§3b/§5/§6）
+     doc 写 raw 115116 含「49A300」 → 实际：if ( v12 >= dbl_52A260 )
+❌ ④ draw-item 颜色动画求值（§3b 表 + §5 `&2` 门控）
+     doc 写 raw 115663 含「& 2」 → 实际：if ( v24 || *(_DWORD *)(_this + 1152) )
+❌ ④ set-vertex-color
+     doc 写 raw 130789 含「4AE2C0」 → 实际：if ( v8 != *(int **)(_this + 1036) )
+❌ ④ set-vertex-color-alpha
+     doc 写 raw 130806 含「4AE330」 → 实际：v4 = sub_40DC30((_DWORD *)(_this + 1064), &v9);
+❌ ④ set-draw-color-alpha
+     doc 写 raw 129850 含「4ACF60」 → 实际：{
+❌ ④ set-draw-color
+     doc 写 raw 129936 含「4AD0C0」 → 实际：//----- (004AA740) --------------------------------------------------------
+❌ ④ set-draw-color `|=2`（§3b 字段表）
+     doc 写 raw 129948 含「|= 2」 → 实际：(空行)
+❌ ④ set-draw-color-alpha `+48/+96`（§3b 字段表）
+     doc 写 raw 129857 含「+ 48」 → 实际：v3 = operator new(0x250u);
+❌ ④ draw-item 渲染
+     doc 写 raw 131306 含「4AEEA0」 → 实际：v4[60] = 0.0;
+❌ ④ draw-item 渲染 `&4` 分支（§5）
+     doc 写 raw 131368 含「& 4」 → 实际：float v17; // [esp+Ch] [ebp-14h]
+❌ ④ draw-texture 处理器
+     doc 写 raw 30846 含「422E70」 → 实际：v43 = 1;
+❌ ④ draw-texture → sub_4ACE50
+     doc 写 raw 129796 含「4ACE50」 → 实际：if ( v6 != *(_DWORD *)(i + 8) )
+❌ ④ image 绘制器
+     doc 写 raw 121065 含「4A2D50」 → 实际：(空行)
+❌ ④ 0x1FA release-texture
+     doc 写 raw 30822 含「422E00」 → 实际：int v43; // [esp+24h] [ebp-10h]
+❌ ④ 0x20F play-movie
+     doc 写 raw 31165 含「4237B0」 → 实际：void (__thiscall ***v4)(_DWORD, int); // ecx
+
+小计：26 条里 ❌ 26 条（= 文档行号与体不符）
+
+② 0x204 的体（raw 68470-68495 = sub_456710）：含 TextOutA = false（文档写「GDI 一次性整串」）；含软件字形光栅器 sub_46F2D0/sub_471180 = true（sub_46F2D0 在 raw 85933 起）
+   真正的 GDI「整串 TextOutA」在 sub_456820 的 raw 68616（那是消息窗排版那一路，不是 0x204）
+[red] ❌ 26 条与体不符

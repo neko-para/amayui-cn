@@ -230,3 +230,202 @@ export function fontListIndex(name: string): number {
   const k = normalizeFace(name);
   return ENGINE_FONT_LIST.findIndex((x) => normalizeFace(x) === k);
 }
+
+// ---------------------------------------------------------------------------
+// ★引擎 `sub_459F40` / `sub_45A6E0` 建的 GDI 句柄组与度量缓冲（`tickets/T-0151`）
+// ---------------------------------------------------------------------------
+// 审计（`lazy-gdi-font-set`/missing-behavior）：重写侧此前只做 `(family,weight,size)→文件` 的选择，
+// 引擎重建的**一整组**句柄（含字形度量面、Aspect 修正面、两张 1800 竖排面）与**字形度量/位图缓冲**
+// 整块没有对应物。这里把体里**实际建的每一格**落成数据（raw 锚点逐个标），再把"重写侧没有等价物"
+// 的那几格登记进 `GDI_FACE_REBUILD_NOT_MODELED` —— **不是为了模仿 GDI**，而是为了让"缺了什么"可核对：
+// 下一轮审计不必再从 700 行反汇编里重数一遍 `CreateFontIndirectA` 的次数与槽号。
+//
+// 为什么这条必须留痕（`whySilent`）：这些句柄为 0 时 GDI 的 `SelectObject` **静默退化**，
+// 面名为空（`Font+1260` 首字节 0，raw 70984）则整个重建直接 `return` ⇒ 文字用系统默认字体画出来，
+// 全程没有一行错误输出；Aspect/缩放修正漏掉则只是"字号差 1px / 比例不对"。
+
+/**
+ * 引擎重建出的**一支 GDI 句柄**（槽号 = `Font` 对象字节偏移；`raw` = 那次 `CreateFontIndirectA`）。
+ *
+ * 字段语义都以 `sub_459F40`/`sub_45A6E0` 的体为准：
+ *  - `template`：用的哪支 LOGFONTA 模板。`Font+1232`（面名 `Font+1260`）与 `Font+1292`（面名 `Font+1320`）
+ *    是主/注音本体模板；`Font+101972`（面名 `Font+102000` = `"@" + 主面名`）与 `Font+102032`
+ *    （面名 `Font+102060` = `"@" + 注音面名`）是它们的 `@` 竖排变体（`Initialize` raw 78882-78883 把
+ *    `Font+102040/+102044` 设成 2700）。
+ *  - `face`：建之前把面名改成了什么（`raw 71097` 写 `aAgeExtend[] = "AGE Extend"`、
+ *    `raw 71099` 写 `aAgeExtend_0[] = "@AGE Extend"`）；`main`/`@main`/`ruby`/`@ruby` = 沿用模板面名。
+ *  - `size`：`base` = 用模板自己的 `lfHeight`；`scaled` = 走过 `Font+1232 × Font+218596 + 0.5`
+ *    （raw 71055 / 71059 / 71240）那一步。
+ *  - `rotated1800`：**只有** raw 71178-71186 的两支把 `lfEscapement`/`lfOrientation` 设成 1800。
+ */
+export interface GdiFaceSlot {
+  /** 引擎里的句柄槽（`Font` 对象字节偏移）。 */
+  slot: string;
+  /** 那次 `CreateFontIndirectA` 的 raw 行号。 */
+  raw: string;
+  template: 'main' | '@main' | 'ruby' | '@ruby';
+  face: 'main' | '@main' | 'ruby' | '@ruby' | 'AGE Extend' | '@AGE Extend';
+  size: 'base' | 'scaled';
+  rotated1800: boolean;
+  role: string;
+}
+
+/**
+ * 引擎重建的句柄组：**主套 10 支 + 注音套 4 支**（`sub_459F40` raw 71170-71187 / `sub_45A6E0` raw 71263-71272）。
+ *
+ * ★"10" 是数出来的，不是抄来的：`DeleteObject` 清单（raw 71144-71169 的 9 支 + raw 71039 的
+ * `Font+101852`）与 `CreateFontIndirectA` 一一对应。旧台账把主套记成 ×8 并漏掉 `Font+101852`
+ * （字形度量面）与两张 1800 竖排面 —— 审计 `lazy-gdi-font-set`/overreach 已点名。
+ */
+export const GDI_FACE_REBUILD: { readonly main: readonly GdiFaceSlot[]; readonly ruby: readonly GdiFaceSlot[] } = {
+  main: [
+    {
+      slot: 'Font+101852',
+      raw: '71042',
+      template: '@main',
+      face: '@main',
+      size: 'base',
+      rotated1800: false,
+      role: '★字形度量面：紧接着 raw 71045 `GetTextMetricsA(HDC, Font+101860)`；`sub_404EE0` 量宽用的就是它',
+    },
+    { slot: 'Font+1084', raw: '71171', template: 'main', face: 'main', size: 'base', rotated1800: false, role: '主面（原样模板）；raw 71187 最后被 SelectObject 进度量 IC' },
+    { slot: 'Font+1100', raw: '71172', template: 'main', face: 'main', size: 'scaled', rotated1800: false, role: '主面（缩放修正 raw 71055-71090）' },
+    { slot: 'Font+218624', raw: '71173', template: '@main', face: '@main', size: 'scaled', rotated1800: false, role: '@主面（缩放修正 raw 71059-71060）' },
+    { slot: 'Font+235068', raw: '71174', template: 'main', face: 'AGE Extend', size: 'base', rotated1800: false, role: 'AGE Extend 主面（raw 71096-71097 换面名）' },
+    { slot: 'Font+235076', raw: '71175', template: '@main', face: '@AGE Extend', size: 'base', rotated1800: false, role: '@AGE Extend 主面（raw 71098-71099 换面名）' },
+    { slot: 'Font+235072', raw: '71176', template: 'main', face: 'AGE Extend', size: 'scaled', rotated1800: false, role: 'AGE Extend 主面（缩放 raw 71106-71131）' },
+    { slot: 'Font+235080', raw: '71177', template: '@main', face: '@AGE Extend', size: 'scaled', rotated1800: false, role: '@AGE Extend 主面（缩放 raw 71107-71131）' },
+    { slot: 'Font+235100', raw: '71182', template: '@main', face: '@AGE Extend', size: 'base', rotated1800: true, role: '★竖排面：raw 71178-71179 设 lfEscapement/lfOrientation = 1800' },
+    { slot: 'Font+235104', raw: '71183', template: '@main', face: '@AGE Extend', size: 'scaled', rotated1800: true, role: '★竖排面（缩放副本）：raw 71180-71181 设 1800' },
+  ],
+  ruby: [
+    { slot: 'Font+1096', raw: '71229', template: 'ruby', face: 'ruby', size: 'base', rotated1800: false, role: '注音面（原样模板）；raw 71232 `GetTextMetricsA(HDC, Font+1168)`' },
+    { slot: 'Font+218568', raw: '71265', template: 'ruby', face: 'ruby', size: 'scaled', rotated1800: false, role: '注音面（缩放修正 raw 71240-71254）' },
+    { slot: 'Font+218628', raw: '71266', template: '@ruby', face: '@ruby', size: 'scaled', rotated1800: false, role: '@注音面（缩放修正）' },
+    { slot: 'Font+101856', raw: '71269', template: '@ruby', face: '@ruby', size: 'base', rotated1800: false, role: '★@注音面：`sub_456B80` raw 68661-68662 在画注音前把它选进两个 DC' },
+  ],
+};
+
+/**
+ * 引擎的**内部派生面名**（`aAgeExtend[] = "AGE Extend"` raw 4455、`aAgeExtend_0[] = "@AGE Extend"` raw 4678）。
+ *
+ * ★这两支被 `0x1A5`/`0x2FE` 的 handler **显式豁免**白名单警告：
+ * `if (sub_428990(_this, Source) < 0 && strcmp(Source, aAgeExtend))`（raw 41385 / raw 41613）
+ * ⇒ "AGE Extend" 是引擎自己写进去的合法面名，不是"装不到的用户面名"。
+ * 重写侧目前**没有**为它做映射（`FACE_MAPS` 里没有 ⇒ `resolveFace` 回退 + `unknown: true`）——
+ * 这是**有据的缺口**（落哪支内置字族未证），登记见 `GDI_FACE_REBUILD_NOT_MODELED` 的 `71097` 条。
+ */
+export const AGE_EXTEND_FACES: readonly string[] = ['AGE Extend', '@AGE Extend'];
+
+/**
+ * 引擎的**字形位图缓冲**尺寸（纯算术；重写侧无等价物 ⇒ 只登记，供宿主按需分配、或明确不分配）。
+ *
+ * ```c
+ * // 注音两块（raw 71028-71035）：t = Font+101972 = −字号
+ * v11 = abs32(4 * (t / 4) + 4);                     // C 整数除法**向零截断**
+ * Font+102092 = operator new[](4 * v11 * v11);      // 位图
+ * Font+102096 = operator new[](4 * |q| * |q|);      // 另一块（同长）
+ * Font+102100 = 4 * |q| * |q|;                      // 字节数（GetGlyphOutline 的 cbBuffer，raw 85120）
+ * // 主套两块（raw 71138-71141）：h = Font+1232 = −字号
+ * Font+1408 = Font+1412 = operator new[](16 * (h/4 − 1)^2);
+ * Font+1416 = (h/4 − 1) * (16 * (h/4) − 16);        // = 16*(h/4−1)^2 ⇒ 与每块长度恒等
+ * ```
+ * @param stage `'main'` = `Font+1408/+1412/+1416`；`'ruby'` = `Font+102092/+102096/+102100`
+ * @param size  字号（`Font+201684`，正数）；引擎里的 `lfHeight` 是它的相反数
+ */
+export function glyphBitmapBufferBytes(stage: 'main' | 'ruby', size: number): { each: number; sizeWord: number } {
+  const h = -Math.abs(size); // Font+1232 / Font+101972 = −字号
+  const q = Math.trunc(h / 4); // C 的整数除法向零截断
+  if (stage === 'main') {
+    const n = q - 1;
+    return { each: 16 * n * n, sizeWord: n * (16 * q - 16) };
+  }
+  const m = 4 * (q + 1); // abs32(4*(t/4)+4)
+  return { each: 4 * m * m, sizeWord: 4 * m * m };
+}
+
+/**
+ * 引擎的 **lfHeight 缩放步**（`sub_459F40` raw 71055 / 71059、`sub_45A6E0` raw 71240）：
+ * `lfHeight = (int)(模板 lfHeight × Font+218596 + 0.5)`，`+0.5` 是 `dbl_51D7F8`（raw 4197 = `0.5`）。
+ *
+ * ★注意 C 的 `(int)` 是**向零截断**：默认 `Font+218596 = 1.0`（raw 78767）时
+ * `−30 × 1.0 + 0.5 = −29.5 ⇒ −29` —— 缩放修正**在缩放 1 时也不是恒等**（`base` 面用模板原值 −30、
+ * `scaled` 面用 −29，两者差 1px）。这条以前整块缺失，现在至少是显式的。
+ */
+export function aspectScaledLfHeight(lfHeight: number, scale: number): number {
+  return Math.trunc(lfHeight * scale + 0.5);
+}
+
+/**
+ * 引擎的 **lfWidth 纵横比修正**（raw 71088-71090 / 71130-71131 / 71252-71254）：
+ * `lfWidth = (int)(lfWidth ÷ Font+218596 × Font+218592)`。
+ *
+ * 门（三处同形）：`dword_55E1BC` 非 0 **且** `GetConfig("display:AspectMode") == 1`（raw 4257）
+ * **且** `Font+218596 != Font+218592`（两个缩放因子不等）—— 否则原样返回。
+ */
+export function aspectCorrectedLfWidth(lfWidth: number, scale: number, baseScale: number): number {
+  return Math.trunc((lfWidth / scale) * baseScale);
+}
+
+/**
+ * **量宽用哪支句柄**（审计点名的"关键格"）：`sub_404EE0`（raw 10716-10739）的
+ * `if (*(_DWORD *)(_this + 201680)) Font+1092 = SelectObject(Font+1108, Font+201784);`（raw 10733-10734）。
+ *
+ *  - `Font+201784`：`sub_456C90`（raw 68678-68722）单独建的一支**参考面**，面名写死
+ *    `asc_52686C = "ＭＳ ゴシック"`（raw 4671），`lfHeight = −Font+201684`、`lfWidth = Font+201684 / −2`
+ *    （raw 68697-68700），并用 `GetGlyphOutline(HDC, 0x8C83, …)` 取参考字度量（raw 68718）。
+ *  - `Font+101852`：`Font+201680 == 0` 时不重选 ⇒ 用度量 IC 上**当时已选中**的那支；重建流程把它留在
+ *    `Font+101852`（raw 71041-71046），`sub_456B80`（raw 68661-68662）画注音前也再选它一次。
+ *
+ * ★`Font+201680` 全库只有 raw 78769 / 78895 两处写、都是 `= 0` ⇒ 本 build 里恒 0 ⇒ 走后者。
+ */
+export function metricFaceSlot(fontMetricsFlag: number): string {
+  return fontMetricsFlag !== 0 ? 'Font+201784' : 'Font+101852';
+}
+
+/**
+ * 引擎重建里**重写侧没有等价物**的格（有据登记；`what`/`why`/`recheck` 三段都要写）。
+ *
+ * 判据：这些格是 GDI 的设备相关资源（TEXTMETRICA 快照、字形位图缓冲、缩放因子、内部参考面），
+ * 重写侧用浏览器/自建光栅器**结构上不同构**；同构的那部分（面名 + 字号/字重/竖排参数）已由
+ * `resolveFace`/`fontFaceFor`/`MsgWindow.font` 建模。缺口在"缺了会怎样"上是可解释的：
+ * 句柄为 0 时 GDI 静默退化（见本节的 `whySilent`），所以**不能靠报错发现**。
+ */
+export const GDI_FACE_REBUILD_NOT_MODELED: readonly { raw: string; what: string; why: string; recheck: string }[] = [
+  {
+    raw: '71045',
+    what: '主套的 `GetTextMetricsA(Font+1108, Font+101860)`：`Font+101852` 那支字形度量面的 `TEXTMETRICA` 快照（含 `tmAscent`，绘制落点 raw 68489/68628 要用）。',
+    why: '浏览器 canvas 没有 `TEXTMETRICA`；`measureText` 只给 advance width。重写侧的字形基线由 `raster.ts` 自己定 ⇒ 结构上不同构。',
+    recheck: '当真机文本**整体垂直偏移**（尤其 `Font+201680 == 1` 那条 `+Font+201712 − tmAscent`，raw 68488-68489）时，回来查该用 `TextMetrics.fontBoundingBoxAscent` 还是固定偏移。',
+  },
+  {
+    raw: '71232',
+    what: '注音套的 `GetTextMetricsA(Font+1108, Font+1168)`：注音面的 `TEXTMETRICA` 快照。',
+    why: '同上（浏览器无 TEXTMETRICA）。',
+    recheck: '当注音垂直位置与真机差一档时（`Font+1292`/`Font+102036` 那条 −字号 偏移之外还有 tmAscent 参与）。',
+  },
+  {
+    raw: '71029',
+    what: '注音字形位图缓冲 `Font+102092` / `Font+102096`（各 `4·N²` 字节，`N = |4·(Font+101972/4)+4|`）与字节数 `Font+102100`。',
+    why: '它们是 `GetGlyphOutline(GGO_GRAY4)` 的输出缓冲（消费点 raw 85120-85121）。重写侧直接拿 canvas 字形位图，没有"先申请缓冲再让 GDI 填"这一步。',
+    recheck: '当出现"字形被裁剪/在离屏槽里位置偏"且排除排版原因后，核对该缓冲的边长口径（`N` vs 实际字形外框）。',
+  },
+  {
+    raw: '71138',
+    what: '主套字形位图缓冲 `Font+1408` / `Font+1412`（各 `16·(h/4−1)²` 字节）与 `Font+1416`（= 同值字节数，raw 71141 展开后恒等）。',
+    why: '同上；另外受 `Font+1356 == 1` 时调用的 `sub_4745A0`（raw 89204 起：按填充色/表面位深 16/24/32bpp 建 `Font+1420` 起的 17 个 WORD 位移表）支配 —— 那是 GDI 位图掩码合成，重写侧用 canvas 的 alpha 合成。',
+    recheck: '当描边/抗锯齿的**像素级**观感与真机不一致、且已排除颜色与档位因素时。',
+  },
+  {
+    raw: '71028',
+    what: '缩放修正的**输入**：`Font+218592`（基准缩放，raw 78765 初值 1.0）与 `Font+218596`（当前缩放，raw 78767 初值 1.0），以及 `display:AspectMode`（raw 4257）这道门。',
+    why: '重写侧没有"逻辑分辨率 / 实际显示比例"这对字段（`MsgWindow.font` 只有 family/size/weight），无法判断该不该做纵横比修正。',
+    recheck: '当 `display:AspectMode=1` 且逻辑/物理分辨率不等（非 1280×720 或非整数 DPR）时，核对面/字形宽度是否该按 `218592/218596` 修正。',
+  },
+  {
+    raw: '71097',
+    what: '内部派生面名 `"AGE Extend"` / `"@AGE Extend"`（raw 71097/71099；引擎在 `0x1A5`/`0x2FE` 里对它豁免白名单警告，raw 41385/41613）在重写侧的落地字族。',
+    why: '未证：引擎只是把模板面名换成字面量 `"AGE Extend"` 再 `CreateFontIndirectA`；GDI 找不到该面时**静默替换默认字体**，所以"它到底渲染成哪个字族"从体里读不出来。',
+    recheck: '拿到真机 E4 截图（同一条文本分别经 `Font+235068..235104` 与 `Font+1084` 画）后比对字形，再决定映射；此前保持 `resolveFace` 回退 + `unknown` 日志（不许猜成 Amayui CN）。',
+  },
+];

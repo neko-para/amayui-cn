@@ -22,12 +22,23 @@
     ]
   },
   "id": "T-0162",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— T-0162 完成：0x1B0 方向修正 + 转串三原语分叉（sub_41A6C0 全角化）+ float 指针族读写不截断；3 个新守卫文件；台账片段见 tickets/T-0162/changes-c162.md"
     }
+  ],
+  "doneWhy": "6 条清单逐条有结论：0x1B0 memcpy 方向已修（源=op1、目标=op2，raw 37991-37995）；0x192/0x1B2/0x193 的转串按三条引擎原语（sub_41B640 / sub_42A420 / sub_41B9B0）逐 tag 对齐，根因是 sub_41A6C0 的 ASCII→全角分叉（raw 25539-25593）；tag 2 与 tag 0xB 两套池分离；数组族 0x8003/0x8009 取首元素、0x8005/0x800B 结构上不可复现改为显式抛；清单第 5 条的指针族 fallback 前提被体证推翻（LABEL_40 只属数组族，case 6/12 无 null 检查）。读体新发现并修复：float 指针族（tag 7/13）读写两侧都不许截断（语料 src/SETPOLYGON.txt:40/43 真命中）。守卫 = 3 个新测试文件 + retarget 了 op-string-coercion 的 5 条断言。红→绿：转串守卫 11/11 红 ⇒ 11/11 绿；memcpy 方向 2/2 红 ⇒ 绿；float 指针族 2/2 红 ⇒ 绿。受影响 11 个测试文件的 before/after 失败集合逐字相同（无新增红）；tsc tsconfig.json 与 tsconfig.control.json 0 错；npm run verify 本机跑不了（node_modules/.bin 缺失）且全量套件含其它 agent 的红，按主 agent 口径只保证本票不新增红。",
+  "tests": [
+    "app/amayui-emulator/test/operand-memcpy-direction.test.ts#0x1B0 memcpy",
+    "app/amayui-emulator/test/operand-string-primitive.test.ts#原语分叉",
+    "app/amayui-emulator/test/operand-float-ptr-io.test.ts#float 指针族"
   ]
 }

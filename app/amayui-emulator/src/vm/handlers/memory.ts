@@ -49,13 +49,38 @@ const op_lookup_array_2d: OpHandler = (c) => {
 };
 
 
+/**
+ * memcpy (0x1B0)：`memcpy(dest = **op2**, src = **op1**, n = 4*op3)`。
+ *
+ * 体 `sub_42D150`（raw 37985-37996）逐行：
+ * ```text
+ * _this[30*cur + 95805] = 7;                       // arity 槽 ⇒ argc 3
+ * v5 = 4 * sub_41BF50(_this, 3);                   // op3 = **个数**（×4 = 字节数）
+ * v4 = (const void *)sub_42AEA0(_this, 1);         // ★op1 取址 ⇒ **源**
+ * v2 = (void *)sub_42AEA0(_this, 2);               // ★op2 取址 ⇒ **目标**
+ * return memcpy(v2, v4, v5);                       // memcpy(目标=op2, 源=op1, 4*op3)
+ * ```
+ * ★**方向**：源是 `op1`、目标是 `op2`（`sub_42AEA0(this,1)` 是**第 2 实参** `memcpy` 的 src）。
+ *   修前的 emulator 把 `op1` 当目标、`op2` 当源 —— **反了**，于是每个脚本里的 `i1b0` 都在往错的
+ *   方向搬（把目标清成源的旧值）。语料里 `^i1b0` 命中 **0** 处（941 个 `src/*.txt`），所以这条修正
+ *   只能由合成守卫证伪/证实（`test/operand-memcpy-direction.test.ts`）。
+ *
+ * ★**异构但仍要抛（登记的限制，不是"照命名抛"）**：引擎是**裸 `memcpy`（4*n 字节）**，完全不看两边的
+ *   类型。emulator 的池是**带类型**的（int 池存 `ENC(值)`、float 池存 JS number、str 池存 JS 字符串、
+ *   步长 4/28 不同）⇒ "把 int 池的字节原样搬进 float 池"这种跨类型裸拷贝**在 emulator 里没有可表达的
+ *   值**（搬过去既不等于源值也不等于其在目标类型下的解释）。⇒ 只对**同类型同步长**做逐元素拷贝，
+ *   跨类型时显式抛错（缺口登记见 `tickets/T-0162/changes-c162.md`）。语料 0 处触发。
+ */
 const op_memcpy: OpHandler = (c) => {
   const plan = planFor(c);
-  const dest = plan.ptr(1)!;
-  const src = plan.ptr(2)!;
+  const src = plan.ptr(1)!; // ★op1 = 源（sub_42AEA0(this,1) → memcpy 的 src 实参）
+  const dest = plan.ptr(2)!; // ★op2 = 目标（sub_42AEA0(this,2) → memcpy 的 dst 实参）
   const n = (plan.int(3) ?? 0);
   if (dest.kind !== src.kind || dest.stride !== src.stride) {
-    throw new Error(`memcpy: 源/目标类型或步长不一致 src=${src.kind}/${src.stride} dest=${dest.kind}/${dest.stride}`);
+    throw new Error(
+      `memcpy: 跨类型裸拷贝不可复现（引擎 memcpy(op2, op1, 4*op3) 不看类型，emulator 的池是带类型的：` +
+        `src=${src.kind}/${src.stride} dest=${dest.kind}/${dest.stride}）`,
+    );
   }
   for (let i = 0; i < n; i++) writeRef(c.e, c.frame, refAt(dest, i), readRef(c.e, c.frame, refAt(src, i)));
 };

@@ -60,7 +60,7 @@ export function renderStatus(s) {
   L.push('');
   L.push('| 台账 | 口径 | 复核命令 |');
   L.push('|---|---|---|');
-  L.push(`| opcode 缺口 | 未实现 **${g.unimplemented ?? 0}**（语料 ${s.gap.corpusUnimplCalls} 次）· unjustified no-op **${g['engine-internal-unjustified'] ?? 0}** · 有据 no-op **${g['engine-internal'] ?? 0}** · 已实现 **${g.implemented ?? 0}** · deferred **${g.deferred ?? 0}** | \`node scripts/build-opcode-gaps.mjs --check\` |`);
+  L.push(`| opcode 缺口 | 未实现 **${g.unimplemented ?? 0}**（语料 ${s.gap.corpusUnimplCalls} 次）· unjustified no-op **${g['engine-internal-unjustified'] ?? 0}** · 有据 no-op **${g['engine-internal'] ?? 0}** · 已实现 **${g.implemented ?? 0}** · 部分实现 **${g.partial ?? 0}** · deferred **${g.deferred ?? 0}** | \`node scripts/build-opcode-gaps.mjs --check\` |`);
   L.push(`| 引擎常态能力 | **${s.caps.entries.length}** 条：已核验 **${c['modeled-verified'] ?? 0}** / 已建模未核验 ${c['modeled-unverified'] ?? 0} / 部分 ${c.partial ?? 0} / 缺失 ${c.absent ?? 0} / n/a ${c['n/a-known'] ?? 0} | \`capabilities.js --root . --validate\` |`);
   L.push(`| 脚本台账 | **${s.scripts.entries.length}** 条：已分析 ${sc.analyzed ?? 0} / 部分 ${sc.partial ?? 0} / 仅登记 ${sc.stub ?? 0} | \`scripts.js --root . --validate\` |`);
   L.push(`| 票据 | **${s.tickets.length}** 张 | \`tickets.js --root . --validate\` |`);

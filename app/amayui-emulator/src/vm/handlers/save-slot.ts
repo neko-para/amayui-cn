@@ -15,7 +15,14 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import type { OpTable } from './shared.js';
-import { parseSlotFile, parseSlotHeader, buildSlotFile, buildSlotThumb, type SlotFrameState, type SlotStateBlock } from '../../save/saveSlot.js';
+import {
+  parseSlotFile,
+  parseSlotHeader,
+  buildSlotFile,
+  isLegacySlotThumb,
+  type SlotFrameState,
+  type SlotStateBlock,
+} from '../../save/saveSlot.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
 import { decodeEngineDrawItem } from '../engineDrawItem.js';
 import { restoreAdvState, snapshotAdvState } from '../advState.js';
@@ -27,6 +34,8 @@ import { parseScriptBytes } from '../../script/bin.js';
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { l2dResetHost } from '../../live2d/runtime.js';
+import { cfgInt } from '../../engineConfig.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 
 /**
  * 取本族的**操作数计划视图**（`tickets/T-0082` 批次：存档槽族（save-slot；`0x1a1` 按策略排除：引擎不消费 op1），6 条）；缺计划 = 编程错误。
@@ -37,7 +46,57 @@ function planFor(c: StepCtx): PlannedOperands {
   return p;
 }
 
+/**
+ * **`0x19E`/`0x1AE` 的宿主缝**（`tickets/T-0159`）。
+ *
+ * ★为什么在这里声明而不是在 `src/vm/native.ts`：那个文件（连同 `nativeTap.ts` 的 `BRIDGE_METHODS`
+ * 与两个真宿主）属 `T-0153` 的所有权 ⇒ 本票只做**消费端 + 判据**，声明为结构化可选方法，
+ * 进桥那一步登记在 `tickets/T-0159/changes-slots.md`「耦合/待他人」。
+ * 两个方法都缺失时行为必须**如实退化**（不是静默）：见 `saveSlotFromEngine` 的两条日志。
+ */
+export interface SlotHostSeams {
+  /**
+   * 引擎 `sub_42D980` raw 38309-38313 的覆盖确认框（`MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2` = `0x34`）。
+   * 返回 `false` = 玩家选了「否」（`IDNO = 7`）⇒ 调用方 `op1 = 1` 且**原文件不动**。
+   * ★缺省（宿主不实现）= 恒按「玩家点了是」（引擎的默认按钮是「否」，但无宿主对话框时无从选择 ⇒ 登记缺口）。
+   */
+  confirmSlotOverwrite?(slot: number): boolean;
+  /**
+   * 引擎 `sub_40A4C0(_this, hwnd, aE, 5)`（raw 38320）的等价缝：写侧失败时的错误串提示/记录。
+   * `message` 带引擎那条文案的语义（`aE` = 「セーブデータの保存に失敗しました。…」raw 4331）。
+   */
+  slotWriteFailed?(slot: number, message: string): void;
+}
 
+/** 把宿主桥当 `SlotHostSeams` 看（两者都只是"可选方法的对象"）。 */
+function slotSeams(e: Engine): SlotHostSeams {
+  return e.native as unknown as SlotHostSeams;
+}
+
+/** 引擎 `Engine[166964]` = `set:DrawMode`（emulator 的取值口径与 `frame/loop.ts`/`handlers/msgwin.ts` 一致）。 */
+function drawModeOf(e: Engine): number {
+  return e.config ? cfgInt(e.config, CFG.setDrawMode, 0) : 0;
+}
+
+/**
+ * 引擎 `a4` = **`set:SaveVersion1`**（`sub_42DB10` raw 38353-38357：`GetInt(set:SaveVersion1)` 的返回值
+ * 直接当 `sub_410160` 的 `a4`；缺省值取注册表默认 = 1 ⇒ 不校验 292 B 头）。
+ */
+function saveVersion1Of(e: Engine): number {
+  return e.config ? cfgInt(e.config, CFG.setSaveVersion1, registryDefault(CFG.setSaveVersion1)) : registryDefault(CFG.setSaveVersion1);
+}
+
+/**
+ * **游戏名判据（引擎真判据）当前没有生产注入点**（`tickets/T-0159`）。
+ *
+ * 引擎读头时拿 `Engine+698912` 与文件头 +8 `strcmp`（raw 45123），而那一格由配置键 `set:` 段的
+ * GameName 灌入（raw 23745；键名符号 `aSetGamename` raw 4242）。emulator **不建模**那一格，而且那个键
+ * **不在** `configRegistry.ts` 的权威键表里 —— `test/config-keys.test.ts`（`T-0057` R1）会把 `src/**`
+ * 里手打的配置键字面量判红 ⇒ 这里**不能**直接读它。
+ * ⇒ 判据本身已实现（`SlotHeaderCriteria.gameName`，守卫 `test/save-slot-engine-codes.test.ts` 的
+ * 「头判据」两条），生产注入点登记在 `tickets/T-0159/changes-slots.md`「台账待应用」
+ * （两步：把键加进权威键表 + 在这两处调用点注入）。
+ */
 /**
  * **读档 = 一次控制转移，不是一次普通函数调用**（`tickets/T-0056`）。
  *
@@ -142,7 +201,14 @@ function replaySavedBgm(e: Engine): void {
 
 /** `loadSlotIntoEngine` 的结果：状态码 + 是否发生了控制转移（`transferredTo = null` = 没有转移）。 */
 export interface SlotLoadOutcome {
-  /** 0 成功 / 1 打不开 / 2 解析失败（与引擎 `sub_410160` 的返回同尺度）。 */
+  /**
+   * 与引擎 `sub_42DB10`（`0x19F`）写进 `op1` 的**同一码域**（`tickets/T-0159` 按体订正）：
+   *  - `1` = `CreateFileA` 失败（raw 38351-38352）；
+   *  - `-1` = **仅当** `a4 = set:SaveVersion1 ∈ {2,3}` 且 292 B 头读不出（`sub_410160` raw 19411-19412，
+   *    全函数**唯一**的 `return -1`）；
+   *  - `0` = 其余全部（**含容器读 `sub_437980` 失败与"一条帧都没装载"**，raw 19930-19932 的主出口）。
+   * ★`2` 不在引擎码域里（旧实现自造；`0x1A0` 才有 2）。
+   */
   code: number;
   /** 转移后应当落到的 ip（引擎 `cur = 0` ⇒ 根脚本的 ip）；`null` = 不转移，调用方继续跑。 */
   transferredTo: number | null;
@@ -425,7 +491,14 @@ export async function loadSlotIntoEngine(
   const bytes = await fs.readSaveSlot(slot);
   if (!bytes) return { code: 1, transferredTo: null };
   const parsed = parseSlotFile(bytes);
-  if (!parsed.ok) return { code: 2, transferredTo: null };
+  // ★码域按体（`tickets/T-0159` 的 P2 `0x19f`）：引擎 `sub_410160` 只有两个出口 —— `return -1`
+  //   （raw 19412：**a4 ∈ {2,3} 且 292 B 头读不出**）与 `LABEL_137: return 0`（raw 19930-19932，
+  //   连容器读 `sub_437980` 失败都只 `operator delete[]` 后继续走到它）⇒ 旧实现的 `code: 2` 是自造的、
+  //   已删除（`0x1A0` 那条**才有** `op1 = 2`）。
+  if (!parsed.ok) {
+    const sv1 = saveVersion1Of(e);
+    return { code: sv1 === 2 || sv1 === 3 ? -1 : 0, transferredTo: null };
+  }
   const { tables, usage, state, engineFormat } = parsed.data;
 
   // ① 两张表（`load-int`/`load-string` 的数据源）与「已使用文件」标志 —— 引擎 `sub_410160` 的还原内容之一。
@@ -576,10 +649,29 @@ export async function loadSlotIntoEngine(
   return { code: 0, transferredTo: null }; // `0x19F`（a6=0）：引擎此处**不**转移（语料 0 处）
 }
 
-/** 把当前状态写进一个槽（`0x19E`）。返回引擎的结果码（0 成功 / 1 写不了 / 2 失败）。 */
+/** 把当前状态写进一个槽（`0x19E`）。返回引擎的结果码（0 成功 / 1 写不了）。 */
 export async function saveSlotFromEngine(e: Engine, slot: number): Promise<number> {
   const fs = e.fileSource;
   if (!fs?.writeSaveSlot) return 1;
+  // ★**覆盖确认**（`sub_42D980` raw 38306-38316，`tickets/T-0159` 的 P2）：
+  //   引擎先 `CreateFileA(.DAT, GENERIC_READ, …, OPEN_EXISTING, 0x8000020)` —— 那个 `0x8000020` 里的
+  //   `0x8000000` 让"文件不存在"直接返回 `INVALID_HANDLE_VALUE` ⇒ **整段确认框被跳过**（不存在 ⇒ 不问）；
+  //   只有"文件在"且 `sub_438120(...) != 1`（292 B 头读不出）时才 `sub_406650(hwnd, …, 0x34)`，
+  //   `== 7`（`IDNO`）⇒ `CloseHandle` + `sub_42B4B0(_this, 1, 1)` ⇒ **op1 = 1 且原文件一个字节不动**。
+  //   ★宿主缝缺失 ⇒ 恒按"玩家点了是"（引擎默认按钮是"否"，但无对话框时无从选择 ⇒ `SLOT_GAPS` 已登记）。
+  if (fs.readSaveSlot) {
+    const existing = await fs.readSaveSlot(slot);
+    if (existing) {
+      const head = parseSlotHeader(existing);
+      if (!head.ok && slotSeams(e).confirmSlotOverwrite?.(slot) === false) {
+        e.native.log(
+          `[slot-save] 覆盖确认被拒绝（槽 ${slot} 存在但头不合法：${head.reason}）⇒ op1 = 1、原文件保持不动` +
+            `（引擎 sub_42D980 raw 38309-38313 的 IDNO 分支）`,
+        );
+        return 1;
+      }
+    }
+  }
   // ★**存档要退到哪一帧由脚本说了算**（`tickets/T-0061`）：引擎的写入内核 `sub_40CD10` 的
   //   case 3 是 `v10 = _this[166963]; if (v10 < 0) v10 = _this[95776];` —— 而 `_this[166963]`
   //   就是 `0x1AD`（`i1ad`，`sub_4196F0` raw 24806：`storedCur = cur`，语料 **1100 处 / 337 个脚本**）。
@@ -629,12 +721,24 @@ export async function saveSlotFromEngine(e: Engine, slot: number): Promise<numbe
     tables: e.saveDataTables(),
     usedFileIds: e.usedFileIds,
     state,
+    // ★头 +8 = **游戏名**（引擎从配置键写进去、读头时 `strcmp` 它，raw 23745/45123）：本工程**不写**它，
+    //   沿用容器默认标题 —— 与"读侧不启用该判据"是同一件事（缺的那一步见上面的
+    //   `SLOT_NO_GAME_NAME_SOURCE` 与 `SLOT_GAPS`）。
     now: new Date(),
   });
   try {
     await fs.writeSaveSlot(slot, bytes);
-  } catch {
-    return 2;
+  } catch (err) {
+    // ★引擎两种写失败**都是 op1 = 1**（`sub_42D980` raw 38318-38322：`sub_40A4C0(..., aE, 5)` 之后
+    //   `sub_42B4B0(_this, 1, 1)`）⇒ 旧实现 `catch { return 2 }` 的码值是自造的，已按体改成 1；
+    //   `2` 只在 `0x1A0`（头校验失败）里出现。错误提示走可选缝 + 日志（缝未进桥 ⇒ `SLOT_GAPS`）。
+    const detail = err instanceof Error ? err.message : String(err);
+    const message = `セーブデータの保存に失敗しました。（写打开/写失败：${detail}）`;
+    slotSeams(e).slotWriteFailed?.(slot, message);
+    e.native.log(
+      `[slot-save] 写失败 ⇒ op1 = 1（引擎 raw 38317-38322：sub_40A4C0 报 aE 后 sub_42B4B0(_this,1,1)）：${message}`,
+    );
+    return 1;
   }
   return 0;
 }
@@ -726,7 +830,10 @@ const op_slot_save: OpHandler = async (c) => {
   plan.setInt(1, await saveSlotFromEngine(e, slot));
 };
 
-/** `0x1AB`（`sub_42DFC0` raw 38462-38483）：删槽（`.DAT` + `.STH`）。`op1`：0 都成功 / 1 `.DAT` 失败 / 2 `.STH` 失败。 */
+/** `0x1AB`（`sub_42DFC0` raw 38462-38483）：删槽（`.DAT` + `.STH`）。
+ *  `op1`：**0 = 两份都成功；1 = `.DAT` 失败（且 `.STH` 成功）；2 = `.STH` 失败**。
+ *  ★注意引擎的**覆盖顺序**（raw 38477-38481）：`v4 = !DeleteFileA(.DAT)` ⇒ 1，随后
+ *  `if (!DeleteFileA(.STH)) v4 = 2;` —— **`.STH` 的失败码会覆盖 `.DAT` 的** ⇒ 两份都失败时返回 **2**（不是 1）。 */
 const op_slot_delete: OpHandler = async (c) => {
   const plan = planFor(c);
   const e = c.e;
@@ -737,10 +844,12 @@ const op_slot_delete: OpHandler = async (c) => {
     return;
   }
   const r = await fs.deleteSaveSlot(slot);
-  plan.setInt(1, r.dat ? (r.sth ? 0 : 2) : 1);
+  plan.setInt(1, r.sth ? (r.dat ? 0 : 1) : 2);
 };
 
-/** `0x1AC`（`sub_42E0A0` raw 38485-38513）：复制槽（`op2` → `op3`，两个文件都复制）。 */
+/** `0x1AC`（`sub_42E0A0` raw 38485-38513）：复制槽（`op2` → `op3`，两个文件都复制）。
+ *  `op1` 与 `0x1AB` **同一套覆盖顺序**（raw 38505-38511）：`v5 = !CopyFileA(.DAT)` ⇒ 1，
+ *  随后 `if (!CopyFileA(.STH)) v5 = 2;` ⇒ `.STH` 失败码覆盖 `.DAT` 的 ⇒ 两份都失败时返回 **2**。 */
 const op_slot_copy: OpHandler = async (c) => {
   const plan = planFor(c);
   const e = c.e;
@@ -752,7 +861,7 @@ const op_slot_copy: OpHandler = async (c) => {
     return;
   }
   const r = await fs.copySaveSlot(from, to);
-  plan.setInt(1, r.dat ? (r.sth ? 0 : 2) : 1);
+  plan.setInt(1, r.sth ? (r.dat ? 0 : 1) : 2);
 };
 
 /**
@@ -765,9 +874,12 @@ const op_slot_copy: OpHandler = async (c) => {
  * 真实调用面：`src/$1$SC0330.txt:17590-17595`（先 `create-texture e 140 b4 2` 造 320×180 离屏纹理，
  * 存完槽后 `i1ae (global-int 1396) (global-int f8019) e` 把它写进 `.STH`）。
  *
- * `op1`：0 成功 / 1 打不开（写不了）/ 2 失败（序列化失败）。
- * ★宿主没有画布（headless/无渲染器）时 `getSlotPixels` 拿不到像素 ⇒ 退回"自描述空块"（能往返、无图），
- * 行为与引擎的"该槽是空表面"等价。
+ * `op1`：0 成功 / 1 打不开（写不了）/ 2 失败（截图函数返回 0）。
+ * ★**`op3` 槽没有创建时按体返回 2、`.STH` 留 0 字节**（`tickets/T-0159` 的 P2）：`CreateFileA` 在
+ * 调用前已把 `.STH` 建好（raw 38532），两条写路（`sub_4A5260` / `sub_43BF20`）都返回 0 ⇒ `v7 = 2`
+ * （raw 38541/38546），而文件停在 0 字节。旧实现写一个 `AMYTH1\n{…}` 自造块并报 0（host-invented，已删）。
+ * ★`set:DrawMode == 1` 的 **D3D 截图分支未建模**（raw 38537-38541 的 `sub_4A5260(Scene, FileName, op3)`）
+ * —— 走的是下面这条 GDI 等价路，并**显式记一行日志**（不静默近似）。
  */
 const op_slot_thumb_write: OpHandler = async (c) => {
   const plan = planFor(c);
@@ -779,10 +891,30 @@ const op_slot_thumb_write: OpHandler = async (c) => {
     plan.setInt(1, 1);
     return;
   }
+  if (drawModeOf(e) === 1) {
+    e.native.log(
+      `[slot-thumb] set:DrawMode = 1 ⇒ 引擎走 D3D 截图分支 sub_4A5260(Scene, FileName, op3=${texSlot})（raw 38537-38541）；` +
+        `emulator 未建模该路径 ⇒ 按非 D3D 等价路（getSlotPixels → BMP）继续 —— 缺口见 SLOT_GAPS`,
+    );
+  }
   const px = c.native.getSlotPixels?.(texSlot) ?? null;
-  const payload = px
-    ? encodeBmp({ width: px.w, height: px.h, rgba: px.rgba })
-    : buildSlotThumb(new TextEncoder().encode(`AMYTH1\n{"slot":${slot},"tex":${texSlot}}`));
+  if (!px) {
+    // ★引擎那条体（raw 38532-38546）：CreateFileA 已建文件 ⇒ 截图函数返回 0 ⇒ `v7 = 2`，**没有**字节写进去。
+    //   这里同样：写一个 0 字节文件（= 只有"打开"那一步），然后 op1 = 2。写不进去（= CreateFileA 失败）⇒ 1。
+    try {
+      await fs.writeSlotThumb(slot, new Uint8Array(0));
+    } catch {
+      plan.setInt(1, 1); // raw 38534-38535：`FileA == -1` ⇒ 常量 1
+      return;
+    }
+    e.native.log(
+      `[slot-thumb] 纹理槽 ${texSlot} 没有像素（未 create-texture / headless）⇒ 引擎口径 op1 = 2 + .STH 留空文件` +
+        `（raw 38532-38546）；★已废弃的自造块 AMYTH1 不再写（旧槽仍能读回，见 0x1AF）`,
+    );
+    plan.setInt(1, 2);
+    return;
+  }
+  const payload = encodeBmp({ width: px.w, height: px.h, rgba: px.rgba });
   try {
     await fs.writeSlotThumb(slot, payload);
   } catch {
@@ -822,8 +954,16 @@ const op_slot_thumb_read: OpHandler = async (c) => {
     return;
   }
   const bytes = await fs.readSlotThumb(slot);
-  if (!bytes || bytes.length === 0) {
+  // ★**"打不开"与"读入失败"是两件事**（`tickets/T-0159` 的 P2 `0x1af`）：引擎 raw 38571-38572 只在
+  //   `CreateFileA` 失败（`INVALID_HANDLE_VALUE`，文件不存在）时给 1；文件**存在**（哪怕 0 字节）⇒ 打开成功，
+  //   随后 `sub_40BF20` → `sub_43E9F0` → `sub_4036B0` 的 `ReadFile(...,0xE)` 必然失败 ⇒ `v7 = 0` ⇒ **2**
+  //   （raw 38584-38592）。旧实现把 0 字节也报成 1（"打不开"），归因与真机不同。
+  if (!bytes) {
     plan.setInt(1, 1);
+    return;
+  }
+  if (bytes.length === 0) {
+    plan.setInt(1, 2);
     return;
   }
   const bmp = decodeBmp(bytes);
@@ -832,16 +972,12 @@ const op_slot_thumb_read: OpHandler = async (c) => {
     plan.setInt(1, 0);
     return;
   }
-  // 非 BMP：可能是本工程 T-0018 时期写的自描述空块（4 字节长度前缀 + 载荷）⇒ 认得出来就算"读到了"
-  // （引擎格式的槽不会走到这里：它们的 .STH 一定是 BMP）。解不出的其它内容 ⇒ 2（引擎同码）。
-  const ok = bytes.length >= 4 && 4 + readU32(bytes, 0) <= bytes.length;
+  // 非 BMP：引擎在 **D3D 路**（`sub_49E9D0` raw 119663-119676；非 D3D 的 `sub_43E9F0` raw 49987-50010
+  // 同一份判据）还能按"`BM` 不符 ⇒ `+8 ∈ {1,2} 且 +12 == 0` 的第二格式（AGF/dd 系表面）"解入 ——
+  // 本工程**未建模**该格式（`SLOT_GAPS`）⇒ 只额外认**本工程旧版自造块**（`AMYTH1\n`，T-0018 时期写的槽）。
+  const ok = isLegacySlotThumb(bytes);
   plan.setInt(1, ok ? 0 : 2);
 };
-
-/** 小端 u32（`saveSlot.ts` 里同类读取是私有的，这里就地一份，避免为 4 字节开接口）。 */
-function readU32(b: Uint8Array, at: number): number {
-  return (b[at]! | (b[at + 1]! << 8) | (b[at + 2]! << 16) | (b[at + 3]! << 24)) >>> 0;
-}
 
 /** 存档槽族（读档链路；`tickets/T-0018`）。 */
 export const SAVE_SLOT_OPS: OpTable = [

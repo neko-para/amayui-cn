@@ -120,7 +120,14 @@ export class RoutePanel {
   #hitDone = 0;
   /** `[960]` 步长（`0x94` 写 10000；`sub_403DD0` 用它做方向键/翻页键跳项）。 */
   #pageStep = 0;
-  /** `[7467]` 回退 label（**只有 `0x92` 写**，等待泵的 `sub_4098E0` 读；语料 0 处）。 */
+  /**
+   * `[7467]` 回退 label（**只有 `0x92` 写**，`sub_4098E0` 读；语料 0 处）。
+   *
+   * ★读者（`tickets/T-0158` 的 P2 `0x92` 修）：`handlers/panel.ts` 的 `servicePanelDisplayState()`
+   * —— 它就是引擎 `sub_4098E0` raw 14084-14092 的那一支（`v5 = _this[12961]; if (v5 != -1) { … }`，
+   * 即"面板显示态下既没有 enter/leave 也没有左键点击"时派发的 label）。
+   * 修前 `fallbackLabel` 只有写点（panel.ts）与清零点（本文件 `reset()`）⇒ 是**只写不读的死写**。
+   */
   fallbackLabel = -1;
 
   /** `[7463]`/`[7462]` 的本地回退（有 sink 时以 `engineValues` 为准，见 `#read`）。 */
@@ -293,6 +300,13 @@ export class RoutePanel {
    * 未绑定的项（`keyBit < 0`）按引擎一样跳过（`*i < 0 || ((1 << *i) & *a2) == 0` 继续下一项）。
    *
    * ★这是等待泵的**第一优先出口**（raw 20242）——ADV「键盘推进」走的就是它。
+   *
+   * ★**位号没有值域检查，移位是模 32 的**（`tickets/T-0158` 的 P3 `0x97` `missing-branch` 的**复核**）：
+   * 引擎 `sub_403D10`（**`0x97` 的落点**，raw 9827-9844）写 `_this[v4 + 7361] = a3` 时**没有**任何
+   * `> 0x1F` 判定；`sub_403D70` 这里也是 `1 << *i` 直用。x86 的 `shl` 把移位量掩到 5 位
+   * （`1 << 32` ⇒ 位 0），而 JS 的 `<<` **同样**把右操作数掩到 5 位 ⇒ 两者逐位一致。
+   * ⇒ **不得**在这里加 emulator 自造的 `0x1F` 上限（那是 `0x10C` 的规矩，见
+   * `handlers/input.ts` 的 `op_set_key_multi` 与 raw 30626-30631；`0x97` 体里没有）。
    */
   pickByKey(mask: number): number {
     for (const e of this.entries) {

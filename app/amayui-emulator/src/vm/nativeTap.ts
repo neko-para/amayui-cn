@@ -42,6 +42,8 @@ const WHY: Record<string, string> = {
   setSystemCursor:
     '真实系统光标移动（引擎 0x10A 的 SetCursorPos）：不实现 ⇒ 引擎侧坐标照旧生效，只有"玩家看见光标跳过去"缺失（一动鼠标就被 mousemove 覆盖），无报错',
   releaseMovieSlots: '销毁 movie/纹理槽 42..999：不实现 ⇒ 后续引用的图元仍画旧图，无报错',
+  hasSlotTexture:
+    '该纹理槽有没有 CTexture 对象（0x20F play-movie 的输入前提）：不实现 ⇒ 返回 undefined ⇒ 0x20F 不据此抛错（与修前同）——引擎在该格为空时抛 "テクスチャが確保されていません"',
   clearMeshSlots: '清 D3DX 网格层级槽：不实现 ⇒ 旧网格残留，无报错',
   clearSlotRecords: '清两张 1000×2 记录表：不实现 ⇒ 记录表残留，无报错',
   snapshotPresent: '取场景呈现态快照（读档要还原画面）：不实现 ⇒ 读档后画面停在上一屏（引擎靠存档里的绘制记录重放）',
@@ -192,6 +194,7 @@ export const BRIDGE_METHODS = [
   'playSound',
   'playVoice',
   'present',
+  'hasSlotTexture',
   'releaseMovieSlots',
   'releaseTexture',
   'setDrawColor',
@@ -222,6 +225,10 @@ export const BRIDGE_METHODS = [
   'setRenderTarget',
   'setTextureObjectFloat',
   'setTextureObjectParam',
+  // ★`slotNodeSize`（`tickets/T-0153` 的 `0x23F` VM 半边）：`op_get_slot_size` 现在真的调它
+  //   （从前它只是两个宿主的"自造方法"，见 `test/native-tap.test.ts` 的 `NON_BRIDGE` 变更记录）。
+  //   入桥之后：宿主没实现 ⇒ 闸门 A 记一条缺口，且 handler 按"没有对象"答 −1（不静默答 0）。
+  'slotNodeSize',
   'resetPrimTransform',
   'setPrimTransform4',
   'blitSlotToSlot',

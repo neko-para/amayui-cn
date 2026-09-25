@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0151",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -33,6 +33,25 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → doing —— P1 全部处置：0x205/0x1b6/0x1b7/0x305 已修（含 0x260、0xfa 两条 P1 经体证推翻）；清零点登记 registered-n/a（AGERC 层无触发点，扩展点=serviceCoexistMesLatch+control.ts 载入点）。详见 changes.md（红→绿 7 条对照实验，55/55 绿）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests —— 两个 owner（src/text 子集 + src/vm 主体）的守卫已登记；A/B 两节台账内容已由主 agent 落库（capabilities 8 条 + opcode-gaps 新增 0x7D + 0x196 的 missing 重写）；判据 3（verify 全绿）待波次收口"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/t0151-msgwin-vm.test.ts",
+    "app/amayui-emulator/test/adv-reveal-under-throttle.test.ts",
+    "app/amayui-emulator/test/text-layout.test.ts",
+    "app/amayui-emulator/test/adv-msgwin.test.ts",
+    "app/amayui-emulator/test/config1-chain-advreturn-real.test.ts",
+    "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts"
+  ],
+  "doneWhy": "两个 owner 的两半都交回并集成：`src/text/**` 子集 6 条 + `src/vm/**` 主体（P2 28 全部处置：修好 13 / 登记 4 / 推翻 8 / 交他人 3；P3 47：修好 7 / 登记 20 / 推翻 8 / 范围外 1）。守卫 test/t0151-msgwin-vm.test.ts 22/22（先红 15）。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }

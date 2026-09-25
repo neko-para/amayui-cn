@@ -3,19 +3,29 @@
 /**
  * **`0x1D0` / `0x1D1` 的判定棘轮**（2026-09 扩展路线 C：`tickets/T-0076`）。
  *
- * ## 2026-09 `T-0095` 之后的现状
+ * ## 2026-09 `T-0095` / `T-0170` 之后的现状
  * `0x1D0` **已实现**（真行为断言搬到新文件 `test/op-1d0-page-index.test.ts`：push 页 →
  * `op3 = 0/-1/-2` → 读回 `{窗号, 起始记录下标}`、越界 `-1/-1`、清表 …）。
- * 本文件**不再**守它的"未注册"，只守剩下的三件不会漂移的事：
- *  ① **`0x1D1` 仍不许静默上桩**：它必须继续"未注册"（命中即 `NotImplementedOp` 硬报错）——
- *     它是 GDI 文本页渲染器（`sub_4675A0` raw 80312-81522，1210 行），照抄只能得到语义不等价的近似；
+ * `0x1D1` **也已实现**（`T-0170`：它是 `0x82` 的孪生兄弟「重画窗 op1 的第 op2 条起的记录」，
+ * 逐分支按体实现，缺口写在 `analysis/opcode-gaps.json` 该条的 `note` 里）；
+ * 它的真行为断言在新文件 `test/recall-page-0x1d1.test.ts`（13 例，含 E3）。
+ * 本文件**不再**守 0x1D0 的"未注册"，改守三件不会漂移的事：
+ *  ① **`0x1D1` 必须落在 `OPS`（真实现），不得被 `NATIVE_OPS`/`ENGINE_INTERNAL_OPS` 掩盖** ——
+ *     它是回看画面的正文重画入口（`sub_4675A0` raw 80312-81522）；登记成 no-op 会让回想画面
+ *     **静默不刷新**（比硬报错更糟），宿主缝也接不住它（它不是渲染/音频/输入意图）。
+ *     ★**台账处置值的结算**（`analysis/opcode-gaps.json` 的 465 → `implemented`/`partial`）
+ *     刻意**不由本文件单独钉死**：它归 `T-0149`（缺口台账加 `partial` 处置位）的结算步 ——
+ *     这里只要求"别是 `deferred`"（与同文件对 `0x1D0` 的口径一致）。
  *  ② **两条的标签不许退回「GDI 文本度量族」**：`0x1D0` =「**回看页索引表·带步数读出**」（零 GDI：
  *     `sub_459860` raw 70629-70724）、`0x1D1` =「**回看页重绘**」；
  *  ③ **模型前提不许被删**：回看页表（`Font+3380`）与双游标（`Font+859/+860`）现在**已经建了**
  *     （`src/vm/textItems.ts` 的 `pages`/`cursor`/`baseCursor`）⇒ 这里反过来钉住"不许删回去"。
  *
- * ★**台账处置值的结算**（`analysis/opcode-gaps.json` 的 464 → `implemented`）**故意不由本文件钉**
- * —— 那是主 agent 的结算步，钉死会把"代码先落地、台账后结算"的顺序耦合进守卫。
+ * ★**`0x1D1` 的语义纠正留痕**（`T-0170`）：路线 C 当初写「照抄只能得到语义不等价的近似」——
+ * 那只对**逐字 GDI 光栅化**成立；**记录切片/越界门/颜色覆写与恢复/记录分流**是纯 VM 语义，
+ * 已按体实现（`TextItemTable.repaintRange` + `handlers/msgwin.ts` 的 `op_recall_page_repaint`）。
+ * 仍然做不到的（登记在 `missing[]`）：专用路径 `sub_4634B0` 的第二套渲染器、窗对象 `+112`、
+ * `win[56]/[70]` 栏带四边形循环、`sub_404CB0(语音)` 的占线查询、逐字 GDI 度量本身。
  *
  * 权威 = `engine/天結_unpacked.exe_utf8.c`；本节所有 raw 行号都用定义头 grep 定位过。
  */
@@ -59,15 +69,18 @@ function tableRow(hex: string): string {
   return line!;
 }
 
-test('★0x1D1 不许静默上桩：必须"未注册"（命中即 NotImplementedOp 硬报错）', () => {
+test('★0x1D1 必须落在 OPS（真实现），不得被桩/no-op 掩盖（`T-0170` 按体实现后）', () => {
   const op = 0x1d1;
-  assert.ok(!OPS.has(op), `0x${op.toString(16)} 被登记进 OPS 了 —— 引擎事实是"没有等价模型"，上桩就是造假`);
-  assert.ok(!NATIVE_OPS.has(op), `0x${op.toString(16)} 被登记进 NATIVE_OPS 了`);
+  assert.ok(OPS.has(op), `0x${op.toString(16)} 必须是真实现 —— 回看画面唯一的正文重画入口`);
+  assert.ok(!NATIVE_OPS.has(op), `0x${op.toString(16)} 被登记进 NATIVE_OPS 了（它不是宿主缝）`);
   assert.ok(
     !ENGINE_INTERNAL_OPS.has(op),
-    `0x${op.toString(16)} 被登记成 no-op —— 它是重绘端，no-op 会让回想画面静默不刷新`,
+    `0x${op.toString(16)} 被登记成 no-op —— no-op 会让回想画面静默不刷新`,
   );
-  assert.equal(gapEntry(op).disposition, 'deferred', `0x${op.toString(16)} 台账处置应为 deferred`);
+  assert.ok(
+    ['implemented', 'partial'].includes(gapEntry(op).disposition),
+    `0x${op.toString(16)} 台账处置必须已结算（implemented/partial），不得停在 deferred`,
+  );
 });
 
 test('★0x1D0 已实现：必须落在 OPS（真实现），且不得同时出现在另两张表', () => {
@@ -108,7 +121,9 @@ test('★opcode-table.md 两行同步（0x1D1 不许再是空白「仅映射」�
   assert.match(r1, /\| 5 \|/, '0x1D1 argc = 5');
   assert.match(r1, /sub_420310/);
   assert.match(r1, /回看页重绘/);
-  assert.match(r1, /deferred/);
+  // ★emulator 状态列（deferred → implemented/partial）由台账 owner 结算时改 ===> 这里**不钉死**它，
+  //   只要求它明确写着某个状态、而不是留空（与上面 `0x1D0` 行同口径）。
+  assert.match(r1, /deferred|implemented|partial/, 'emulator 状态要在行里写明');
   assert.ok(r1.length > 200, '0x1D1 行不许再是空白「仅映射」');
 });
 

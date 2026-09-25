@@ -90,9 +90,14 @@ test('BGM：0xB7 循环 / 0xB9 一次 / 0xBF 带策略 / 0xBC 模式 / 0xC2 淡�
   assert.deepEqual(native.intents.at(-2), { kind: 'bgm-stop' });
   assert.deepEqual(native.intents.at(-1), { kind: 'bgm-play', bgm: 18, loop: true });
   // `0xC2 0 <step>`：目标 0 ⇒ 先把当前曲 id 清掉（`sub_489D10` raw 106317-106318），再下发淡变。
+  // ★T-0152 订正：`bgm-fade` 的 `step` **不是 op2 原值**，而是引擎 `sub_489D10` 的第 3 实参
+  //   （`op2 < 1000 ? 10 : 1`），op2 本身只折成**节流毫秒** `op2<1000 ? op2/10 : op2/1000`
+  //   （raw 29831-29839）。⇒ 旧断言 `step: 100` 的前提（"op2 直传"）不成立，改成逐字段断言
+  //   （`step` 仍钉住"每次 CALL 的增量"、`throttleMs` 钉住 op2 的折算），锚点（`bgm-fade` + `value`）保留。
   step(0xc2, [im(0), im(100)]);
-  assert.deepEqual(native.last, { kind: 'bgm-fade', value: 0, step: 100 });
+  assert.deepEqual(native.last, { kind: 'bgm-fade', value: 0, step: 10, throttleMs: 10 });
   assert.equal(e.engineValues.get(174713), 0, '淡到 0 ⇒ 当前曲 id 已清（0xC0 从此读到 0）');
+  assert.equal(e.effectFlags & 0x200, 0x200, '★非 ADV 路恒置 bit0x200（引擎 raw 29831）');
 });
 
 test('★BGM 运行态（`Music[259]` = `_this[174713]`）：0xB7 0 = 重播当前曲、0xC3 = 登记曲号不播、0xB8 清 0', () => {
@@ -119,10 +124,11 @@ test('★BGM 运行态（`Music[259]` = `_this[174713]`）：0xB7 0 = 重播当�
   assert.equal(e.engineValues.get(174713), 6, '0xC3 写当前曲 id');
 
   // ⑤ `i0c2 <音量> <步长>`（目标非 0）⇒ **把刚登记的曲放起来**（`sub_489D10` 的起播分支）
+  // ★T-0152：意图形状按引擎收（`step` = `op2<1000?10:1`、`throttleMs` = `op2<1000?op2/10:op2/1000`）。
   step(0xc2, [im(10000), im(2500)]);
   assert.deepEqual(
     native.intents.slice(-2),
-    [{ kind: 'bgm-play', bgm: 6, loop: false }, { kind: 'bgm-fade', value: 10000, step: 2500 }],
+    [{ kind: 'bgm-play', bgm: 6, loop: false }, { kind: 'bgm-fade', value: 10000, step: 1, throttleMs: 2 }],
     '★"i0c3 登记 + i0c2 淡入"习语里真正起播的那一步',
   );
 

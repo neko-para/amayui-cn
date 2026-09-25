@@ -1,0 +1,51 @@
+{
+  "title": "滚轮模式开位号越界时落到累加器：引擎从不累加（负位号跳过；≥32 按 x86 shl cl 取模）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/input",
+  "why": "T-0168 的查证（tickets/T-0168/notes.md §二 Q4 附带）实测：app/amayui-emulator/src/vm/input.ts:500-512（addWheel）与 :519-530（addHWheel）在 wheelKeyPolicy.asKey 为真但位号越界（bit < 0 || bit >= 32）时**落到下面的累加器**分支（写 wheelDelta/hwheelDelta）；而引擎 WndProc 里那个累加支（raw 141580-141583 的 else { *(dword_55E1BC + 7796) += SHIWORD(wParam); }）配对的是**模式门**（699204 & 0x90100000，raw 141563/141588 那一族）⇒ ★模式开时累加支**不可达**（这一半我已亲自读体确认）。位号本体：值来自 Conf(set:WheelKeyUp/Down)，读端零上界校验（A3 读 .lst：004B9CAB js / 004B9CBE shl cl 无钳位）⇒ 负位号会被 js 跳过（什么都不做），而 >=32 会被 x86 的 shl 取模成 bit&31（**不是**什么都不做）—— 这一点与 A3 报告里写的\"什么都不做\"不同，实施前必须复核 .lst 那两处。现有守卫 test/wheel-as-key.test.ts 的第⑤条（无效位号）靠 +120/−120 相互抵消才通过 ⇒ 换成直接断言即红。",
+  "acceptance": [
+    "模式开（wheelKeyPolicy.asKey 为真）时 addWheel/addHWheel **一律不写累加器**（引擎 raw 141580-141583 的累加支在模式开时不可达）；给命名守卫（红→绿：先让模式开+越界位号的用例红）",
+    "位号语义按体，并**先复核** .lst:004B9CAB(js)/004B9CBE(shl cl)：bit < 0 ⇒ 什么都不做；bit >= 32 ⇒ 若照抄 x86 的\"移位量取模 32\"，必须在代码注释与守卫里写明\"这是二进制实际行为（shl cl 掩码），不是语义设计\"",
+    "test/wheel-as-key.test.ts 第⑤条改成直接断言（模式开 + 越界位号 ⇒ 累加器**逐字节不变**）；**不许删原断言**，只许新增/收紧",
+    "回归：test/wheel-as-key.test.ts 全绿 + npm run typecheck"
+  ],
+  "id": "T-0171",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：status, tests, evidence —— 主 agent 亲自实现：模式开一律不进累加器（引擎累加支是模式门 else）+ 负位号什么都不做 + 位号 >=32 按 x86 shl cl 取模；并去掉两处会把 int32 掩码变无符号的 >>> 0。红→绿：旧口径 => ②/⑤ 红、单独去掉横滚 return => ④ 红；恢复 => wheel-as-key + input.test.ts 23/23 绿、typecheck exit 0"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/wheel-as-key.test.ts",
+    "app/amayui-emulator/test/input.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "if ( v19 >= 0 )",
+      "line": 141605,
+      "note": "WndProc 的 LABEL_147：只判 >= 0 后 1 << v19（x86 shl cl 掩到 5 位）；累加支是模式门的 else（raw 141580-141583 / 141608-141611）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_434D00(v2, aSetHwheelkeyup, &v13);",
+      "line": 111741,
+      "note": "Reg 构造函数的内建缺省：HWheelKeyUp/Down = -1（前面 raw 111740 v13 = -1）"
+    },
+    {
+      "file": "app/amayui-emulator/test/wheel-as-key.test.ts",
+      "anchor": "位号 `<0` ⇒ 什么都不做",
+      "note": "T-0171 的守卫（④ 横滚缺省 + 模式关对照；⑤ 负位号 + 99⇒bit3 取模）",
+      "line": 102
+    }
+  ]
+}

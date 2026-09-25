@@ -116,22 +116,81 @@ export type SlotHeaderRead =
   | { ok: false; code: 1 | 2; reason: string };
 
 /**
- * 解析槽头（292 B）。**逐条对齐 `sub_438120`**（raw 45106-45149）：
- * 读满 292 字节 → 魔数（`S4SD`/`S3SD` 二选一，由 `Engine+698904` 的两个字节决定）→ 引擎版本串 `strcmp`。
- * 任一步失败 ⇒ 引擎打错误串并返回 0（调用方写 `op1 = 2`）。
+ * `parseSlotHeader` 的**判据来源**（每一项都可注入 —— 引擎里这三项各来自不同的地方）。
+ *
+ * ★哪一条是引擎的、哪一条是本工程的（2026-09 按体复核，`T-0159`）：
+ *  - `sub_438120`（raw 45106-45149）只做三件事：① `ReadFile(...,0x124)` 且 `NumberOfBytesRead == 292`；
+ *    ② `Buffer[0] == *(DWORD*)Destination`（魔数 = `S4SD` 或 `S3SD`，由 `strncmp(Str1, Engine+698904, 2)`
+ *    二选一 ⇒ **该 exe 只认一个**）；③ `strcmp((char*)&Buffer[2], a4)` —— `&Buffer[2]` 是**字节 +8**
+ *    （`Buffer` 是 `int[]`）、`a4` = `Engine+698912` = **游戏名**（raw 23745 用配置键
+ *    `aSetGamename`（raw 4242，键名字面量见下）灌进那一格）。
+ *  - ⇒ 引擎**没有**"头 +4 的版本串"这一项判据；本工程从 `T-0018` 起就在比它（真槽 E4 实测 = `460B`），
+ *    这是**本工程更严的额外判据**，保留但必须如实标注（换 exe 时在这里注入，别当引擎事实）。
+ *  - ⇒ `gameName` 这一项**当前没有生产注入点**：要注入就得先有 `Engine+698912` 的模型 —— 也就是把那个
+ *    配置键加进 `configRegistry.ts` 的权威键表（该文件不在 `T-0159` 的写范围内，已登记为待应用项，
+ *    见 `tickets/T-0159/changes-slots.md`）。★**不许**在 `src/**` 里手打这个键名：`test/config-keys.test.ts`
+ *    会把"不在权威键表里的配置键字面量"判红（`T-0057` R1）。
  */
-export function parseSlotHeader(bytes: Uint8Array, engineVersion = SAVE_ENGINE_VERSION): SlotHeaderRead {
+export interface SlotHeaderCriteria {
+  /** 本 exe 的魔数（默认 `S4SD`；引擎按 `Engine+698904` 的前 2 字符二选一）。 */
+  magic?: string;
+  /**
+   * 是否容忍旧魔数 `S3SD`（默认 **true** = 历史容忍）。
+   * 引擎在**本 exe** 上只会选中一个魔数（真槽 47 个全是 `S4SD`）⇒ 这是本工程放宽的一格，登记在 `SLOT_GAPS`。
+   */
+  acceptLegacyMagic?: boolean;
+  /** 头 +4 的 4 字节（**本工程的额外判据**，引擎不比它）。 */
+  engineVersion?: string;
+  /**
+   * 引擎真正的检查：头 +8 的 0xE8 字节**游戏名**（= `Engine+698912`，来自 `set:` 段的 GameName 键）。
+   * ★不给 ⇒ 跳过（生产调用点当前不注入：那个键还没进权威键表 ⇒ 见 `SLOT_GAPS`）；
+   * 给了就必须逐字一致，否则 code 2（引擎会打「このゲームのセーブデータではありません」）。
+   */
+  gameName?: string;
+}
+
+/**
+ * 解析槽头（292 B）。**逐条对齐 `sub_438120`**（raw 45106-45149）：
+ * 读满 292 字节（定长 `ReadFile` + `== 292`）→ 魔数（该 exe 选中的那一个）→ **+8 游戏名 `strcmp`**。
+ * 任一步失败 ⇒ 引擎打错误串并返回 0（调用方写 `op1 = 2`）。
+ * 另有本工程的额外判据 `+4` 版本串（可注入，见 `SlotHeaderCriteria`）。
+ */
+export function parseSlotHeader(bytes: Uint8Array, criteria: SlotHeaderCriteria = {}): SlotHeaderRead {
+  const engineVersion = criteria.engineVersion ?? SAVE_ENGINE_VERSION;
+  const magicWanted = criteria.magic ?? SAVE_MAGIC;
+  const acceptLegacy = criteria.acceptLegacyMagic ?? true;
   if (bytes.length < SAVE_HEADER_BYTES) {
     return { ok: false, code: 2, reason: `文件只有 ${bytes.length} 字节（头需要 ${SAVE_HEADER_BYTES}）` };
   }
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const magic = readAscii(bytes, 0, 4);
-  if (magic !== SAVE_MAGIC && magic !== 'S3SD') {
-    return { ok: false, code: 2, reason: `魔数既不是 ${SAVE_MAGIC} 也不是 S3SD（实际「${magic}」）` };
+  if (magic !== magicWanted && !(acceptLegacy && magic === 'S3SD')) {
+    return {
+      ok: false,
+      code: 2,
+      reason: acceptLegacy
+        ? `魔数既不是 ${magicWanted} 也不是 S3SD（实际「${magic}」）`
+        : `魔数不是 ${magicWanted}（实际「${magic}」；引擎在该 exe 上只认这一个）`,
+    };
   }
   const ver = readAscii(bytes, 4, 4);
   if (ver !== engineVersion) {
-    return { ok: false, code: 2, reason: `引擎版本串不符（文件「${ver}」≠ 本 exe「${engineVersion}」）` };
+    return {
+      ok: false,
+      code: 2,
+      reason: `引擎版本串不符（文件「${ver}」≠ 本 exe「${engineVersion}」；★本工程额外判据，引擎 raw 45117-45127 不比 +4）`,
+    };
+  }
+  // ★引擎的真判据（raw 45123）：+8 的 0xE8 字节游戏名 == `Engine+698912`（`set:GameName`）。
+  if (criteria.gameName !== undefined) {
+    const name = readAscii(bytes, 8, 0xe8);
+    if (name !== criteria.gameName) {
+      return {
+        ok: false,
+        code: 2,
+        reason: `游戏名不符（文件「${name}」≠ set:GameName「${criteria.gameName}」；引擎 raw 45123 的 strcmp）`,
+      };
+    }
   }
   return {
     ok: true,
@@ -285,8 +344,9 @@ export interface SlotReadResult {
  */
 export function parseSlotFile(
   bytes: Uint8Array,
+  criteria: SlotHeaderCriteria = {},
 ): { ok: true; data: SlotReadResult } | { ok: false; reason: string } {
-  const headerRead = parseSlotHeader(bytes);
+  const headerRead = parseSlotHeader(bytes, criteria);
   if (!headerRead.ok) return { ok: false, reason: headerRead.reason };
   const header = headerRead.header;
   if (header.format !== SAVE_FORMAT_PLAIN) {
@@ -315,12 +375,31 @@ export function parseSlotFile(
   };
 }
 
-/** 头 + 2 字节 UTF-16 长度前缀的原始块（`.STH` 用；本工程只做不透明往返）。 */
-export function buildSlotThumb(payload: Uint8Array): Uint8Array {
-  const out = new Uint8Array(4 + payload.length);
-  new DataView(out.buffer).setUint32(0, payload.length >>> 0, true);
-  out.set(payload, 4);
-  return out;
+/**
+ * 本工程 T-0018 时期写进 `.STH` 的自造块前缀（**引擎读不回来** ⇒ 写侧已按体废弃，见 `SLOT_GAPS`）。
+ *
+ * ★`buildSlotThumb()`（4 字节长度前缀 + 载荷的**写**侧构造器）随写侧一起删了（`tickets/T-0159`）：
+ * 引擎在同一格的产物是"**0 字节**文件 + `op1 = 2`"，没有第二种合法块 ⇒ 留着无人调用的构造器
+ * 只会让人以为还能写。这一半只保留**读**（`isLegacySlotThumb`）。
+ */
+export const SLOT_THUMB_LEGACY_MAGIC = 'AMYTH1\n';
+
+/**
+ * 认不认得出**旧版自造 `.STH` 块**（4 字节小端长度前缀 + `AMYTH1\n{...}` 载荷）。
+ *
+ * ★为什么只留"读"这一半（`tickets/T-0159`，P3 `0x1ae` host-invented）：引擎在**同一情形**下
+ * （`op3` 槽没有创建）返回 **2** 并把 `.STH` 停在 **0 字节**（`CreateFileA` 已建、两条写路都不写，
+ * raw 38532-38546）⇒ 写侧已改成"0 字节 + op1 = 2"，不再产出这种块。但**玩家机器上已有的**
+ * （本工程旧版本写的）`.STH` 仍然要能读回来 ⇒ 读侧保留这一格，并把口径收窄到"前缀 + 魔数都对"。
+ */
+export function isLegacySlotThumb(bytes: Uint8Array): boolean {
+  if (bytes.length < 4) return false;
+  const n = (bytes[0]! | (bytes[1]! << 8) | (bytes[2]! << 16) | (bytes[3]! << 24)) >>> 0;
+  if (n === 0 || 4 + n > bytes.length) return false;
+  const magic = SLOT_THUMB_LEGACY_MAGIC;
+  if (n < magic.length) return false;
+  for (let i = 0; i < magic.length; i++) if (bytes[4 + i] !== magic.charCodeAt(i)) return false;
+  return true;
 }
 
 /** 读 `0x1A0` 头的 292 字节是否够（`CopyFile` 之类的判据用）。 */
@@ -342,8 +421,34 @@ export const SLOT_GAPS: readonly string[] = [
     '② 存档里的 **100 个解码图槽（ImageDB）+ 1000 条记录 + 尾部的图像重载清单**已解码但**未应用**（emulator 的纹理由脚本的 ' +
     '`set-texture`/宿主按 id 惰性解码重建）；③ 镜像里那 40 B 消息窗/字体状态（`Engine+84088`）未还原（emulator 的 msgwin 有自己的状态）。',
   '本工程槽只存**当前帧 + 栈上未结束的帧**（scriptId/name/ip/retStack）与全局池；场景（纹理/绘制项）靠脚本重跑重建。',
-  '`0x19E` 的「覆盖确认框」未建模（无对话框宿主 ⇒ 直接覆盖；引擎在打不开或头不合法时会 `sub_406650(...)==7` 弹框）。',
-  '`.STH` = **320×180 24bpp BMP**（`tickets/T-0036` 已解：`0x1AE`/`0x1AF` 的 `op3` 是纹理槽，写/读该槽的位图，见 `src/vm/bmp.ts`）；仍未做的是 DrawMode==1 的截图分支（`sub_4A5260`/`sub_49E9D0`，本机 DrawMode=0）。',
+  '`0x19E` 的「覆盖确认框」：**已建模但宿主侧还没有对话框**（`tickets/T-0159`）。引擎在「`op3` 槽的 `.DAT` **只读打开成功**（= 文件存在）' +
+    '**且**头读不出合法 292 B」时才弹 `MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2`（`sub_406650(...) == 0x34`，raw 38309-38310），' +
+    '玩家选「否」（`IDNO = 7`）⇒ `CloseHandle` + `op1 = 1`、**原文件不动**（raw 38312-38313）。★文件**不存在**时那条 `if` 根本不进' +
+    '（只读 `CreateFileA` 带 `0x8000000` ⇒ 不存在即 `INVALID_HANDLE_VALUE`）⇒ 不存在也会弹框是**错的**读法。' +
+    'emulator：`saveSlotFromEngine` 已按此判据调用**可选宿主缝** `NativeBridge.confirmSlotOverwrite?(slot)`（返回 `false` = 玩家点了否）；' +
+    '★**宿主缝尚未进桥**（`src/vm/native.ts` + `nativeTap.ts` 的 `BRIDGE_METHODS` 由 `T-0153` 侧所有）⇒ 当前两个真宿主都不实现它，' +
+    '行为 = **恒按「玩家点了是」覆盖**（这条缺口仍在）。守卫：`test/save-slot-engine-codes.test.ts`。',
+  '`0x19E` 写失败时的**错误提示通道**未建模（`tickets/T-0159`）：引擎在写侧 `CreateFileA` 失败时先 `sub_40A4C0(_this, hwnd, aE, 5)`' +
+    '（`aE` = 「セーブデータの保存に失敗しました。…」raw 4331）**再** `op1 = 1`（raw 38318-38322）。emulator 的 `op1` 已对齐为 **1**' +
+    '（含宿主抛异常那条路），并调用可选缝 `NativeBridge.slotWriteFailed?(slot, message)`；该缝同样**尚未进桥** ⇒ 两个真宿主当前' +
+    '只在日志里留一行（玩家看不到弹框）。',
+  '`0x19F`/`0x1A1` 的 `op1` 码域按体对齐为 **{1, -1, 0}**（`tickets/T-0159`，P2）：`1` = `CreateFileA` 失败（raw 38351-38352）；' +
+    '`-1` = **仅当** `set:SaveVersion1 ∈ {2,3}` 且 292 B 头读不出（`sub_410160` raw 19411-19412，全函数**唯一**的 `return -1`）；' +
+    '其余（**含容器读 `sub_437980` 失败**）都是主出口 `return 0`（raw 19930-19932）⇒ 旧实现自造的 `2` 已删除。' +
+    '★「一条帧都没装载也照样 0」是引擎行为（a4∈{1,2,3} 之外时从 raw 19430 起是空循环）⇒ **不许**用 `op1` 判"装载完整性"。',
+  '`0x1AE`/`0x1AF` 的 `op3` 是**纹理槽**：`.STH` = **320×180 24bpp BMP**（`tickets/T-0036` 已解：`0x1AE`/`0x1AF` 的 `op3` 是纹理槽，写/读该槽的位图，见 `src/vm/bmp.ts`）；' +
+    '·**槽没有像素时** `0x1AE` 按体返回 **2** 且 `.STH` 留 **0 字节**（`T-0159`，旧的 `AMYTH1` 自造块已废弃）；' +
+    '·`0x1AF` 读到 **0 字节**的 `.STH` ⇒ **2**（打开成功、读入失败），文件不存在 ⇒ 1；' +
+    '·仍未做的：DrawMode==1 的截图分支（`sub_4A5260`/`sub_49E9D0`，本机 DrawMode=0）与 D3D 读侧的**第二格式**（`BM` 魔数不符时按 `+8 ∈ {1,2} && +12 == 0` 解入，raw 119663-119676）。',
+  '头 +4 的**版本串**是**本工程**的额外判据（`tickets/T-0159`，P3 `0x1a0`）：引擎 `sub_438120` 只比 `+0` 魔数与 **`+8` 游戏名**' +
+    '（raw 45117-45127；`&Buffer[2]` 是 `int[]` 的字节 +8，`a4` = `Engine+698912` ← `set:GameName` raw 23745）。' +
+    '⇒ ① emulator 比 `+4`（真槽 E4 = `460B`）比引擎**严**，换 exe 时用 `parseSlotHeader(bytes, { engineVersion })` 注入；' +
+    '② 引擎真正的游戏名判据已实现（`{ gameName }`），但 `set:GameName` 未进 `configRegistry` ⇒ 调用点**暂不注入**（不启用该项）；' +
+    '③ 魔数容忍 `S3SD`：引擎在该 exe 上只认一个（真槽 47 个全 `S4SD`）⇒ `{ acceptLegacyMagic: false }` 可关。',
+  '`0x1AC` 的两份是**两次独立**的 `CopyFileA`（`tickets/T-0159`，P2）：引擎 `.DAT` 失败不影响 `.STH` 那次（raw 38505/38510）⇒' +
+    '「源槽只有 `.STH`」时真机仍会复制 `.STH`、`op1 = 1`。emulator 的 handler 映射已与体一致（`sth ? (dat ? 0 : 1) : 2`），' +
+    '但宿主实现 `NodeFileSource.copySaveSlot` 目前**只在 `dat` 为真时才写 `.STH`** ⇒ 那一格会漏复制（该文件在 `T-0153` 的所有权里，' +
+    '已登记为待应用，见 `tickets/T-0159/changes-slots.md`）。',
   '按 FileDB 名字的 `0xAA/0xAB/0xAC/0x190` 未实现（语料 0 处；需要 FileDB 名→路径）。',
   '★**装载点"上一屏那一层 UI 消失"是近似**（`tickets/T-0083` 的 (B) 步）。引擎在装载段复位两个**仮想ディスプレイ**' +
     '对象（raw 19913-19915 `sub_403EF0`；体 raw 9958-9971 = `_this[258] = 0` 项数清零 + 游标/矩形复位）⇒ 那一层整体不再组成；' +

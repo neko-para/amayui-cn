@@ -349,6 +349,14 @@ declarePlan(0x203, {
   evidence: 'sub_4232C0 raw 31419-31451：op1=handle、op2=blend(DrawItem+0x30)、op3=α（clamp/回退）、op4=颜色（<0 回退）（审计 op-4-06）',
 });
 
+/** 回看页重绘（`0x82` 的孪生兄弟；`tickets/T-0170`）。 */
+declarePlan(0x1d1, {
+  argc: 5,
+  kinds: ['int', 'int', 'int', 'int', 'int'],
+  evidence:
+    'sub_420310 raw 29353-29371（arity 槽 11 ⇒ argc 5）：op1=窗号、op2=文本项记录表下标、op3=模式/标志位、op4=填充色、op5=描边色（五格全 `sub_41BF50` int 读，raw 29365-29369）；越界门在**被调体** `sub_4675A0` raw 80529 ⇒ 五格无条件读。与 `0x82`（sub_41F720 raw 28808-28826）逐字同形。语料 1 处：src/HISTORY.txt:1314',
+});
+
 /** GDI 文本重绘（`tickets/T-0104`）。 */
 declarePlan(0x82, {
   argc: 5,
@@ -1410,8 +1418,13 @@ for (const [op, argc, kinds, io, what] of SAVE_SLOT_PLANS) {
 //   - **`0x14D`**（call-agerc-export，argc 6）：引擎把 op5（数组）与 op6 一起传给 DLL 导出函数
 //     （`(*槽表[op1])(Engine[96981], buf, len, op5 数组, op6)`），而 emulator 的 AGERC 宿主缝
 //     **不转发这两个操作数** ⇒ 引擎消费、实现无消费端 ⇒ 不纳入（不是 `unused`）。
-//   - **`0x308`**（输入触摸注册）：引擎读 op1 调 `sub_407B20`，而 emulator 是 `op_stub_unhandled`
-//     桩（该条在白名单里写着"op1/Engine[1954] 未建模"）⇒ 同 C 类。
+//   - **`0x308`**（输入触摸注册）：引擎读 op1 后调 `sub_407B20(Engine, _this[96981], op1)`
+//     （handler `sub_426B20` raw 33808-33815：arity 槽 `3` ⇒ argc 1）—— 那是
+//     `LoadLibraryA` + `GetProcAddress("UnregisterTouch…"/ProcName)` 把触摸注册**转交给外部 DLL**
+//     的宿主层动作（raw 12579-12618，体内只额外写 `_this[1954]`），emulator **没有该 DLL/宿主触点**
+//     ⇒ `0x308` 已按「有据 no-op」移入 `ENGINE_INTERNAL_OPS`（`handlers/stubs.ts` 的
+//     `[0x308, op_engine_internal]`，`tickets/T-0111` + `T-0163`）⇒ 仍属本 C 类
+//     （**引擎读了、实现无消费端**；与 `0x1A7` 那种"引擎自己就是 nop"的 `unused` 不同）。
 // ★`0x1A7`（comment）本轮**改判为可声明**：体是 nop ⇒ 用 `unused` 如实声明 op1
 //   （handler 零参数、不读任何位 —— 与 `want` 排除 `unused` 后的判据一致）。
 // ★`live2d.ts` 的 8 条共用 `optInt(c, n)` 助手 ⇒ **一处中心改动**即可（剩下的 4 条走直读）。

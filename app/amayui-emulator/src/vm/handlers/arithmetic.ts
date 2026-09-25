@@ -149,13 +149,74 @@ const op_check_bit: OpHandler = (c) => {
   p.setInt(1, ((1 << bit) & v) !== 0 ? 1 : 0);
 };
 
+/**
+ * **CRT `rand()` 的进程级 LCG 流**（`T-0164` 的 P2 条目）。
+ *
+ * 引擎 `0x60`（`sub_42CA50` raw 37715-37740）用的是 **MSVCRT 的 `rand()`**：
+ *
+ * ```c
+ * dword_55D54C = rand();               // 37724：★在任何分支之前先推进一次
+ * v2 = op2;  dword_55D548 = v2;
+ * if ( !v2 ) {                         // 37727：★唯一的门 —— 只有**恰好 0** 才抛
+ *   sub_42B4B0(_this, 1, 0);           // 37729：★先写一次 op1 = 0 再抛
+ *   … _CxxThrowException(Command_ShowMessage);
+ * }
+ * return sub_42B4B0(_this, 1, dword_55D54C % v2);   // 37739：**C 的有符号取模**
+ * ```
+ *
+ * `rand()` 是**进程级**状态（`dword_55D54C` 只是它最近一次的返回值），状态在 C 运行时里：
+ * `seed = seed * 214013 + 2531011; return (seed >> 16) & 0x7FFF;`（MSVCRT 的标准实现，
+ * 初值 1）。因此：
+ *  - 同一存档、同一段脚本跑两次 ⇒ **逐值相同**（`T-0005` 的 G3 回放判据要求 engine 段逐帧相等，
+ *    旧实现用 `Math.random()` 是一条与真机无关的宿主熵源）；
+ *  - **抛错那一次也消耗了一个随机数**（`if (!v2)` 在 `rand()` **之后**）⇒ 异常路径会改变后续流；
+ *  - 返回值域是 `[0, 0x7FFF]`（**不是** `[0, 2^31)`）。
+ *
+ * ★状态放在模块级（引擎侧它也在 CRT 的静态区，不随存档走）：读档**不回卷**随机流 —— 与引擎一致。
+ */
+let crtRandSeed = 1;
+
+/** 复位 CRT 随机流（**仅测试用**：真引擎不重启进程就只有一个流）。 */
+export function reseedCrtRand(seed = 1): void {
+  crtRandSeed = seed >>> 0;
+}
+
+/** MSVCRT `rand()`：`(seed * 214013 + 2531011) >> 16 & 0x7FFF`。 */
+function crtRand(): number {
+  crtRandSeed = (Math.imul(crtRandSeed, 214013) + 2531011) >>> 0;
+  return (crtRandSeed >>> 16) & 0x7fff;
+}
+
+/**
+ * **`0x60` random**（`sub_42CA50` raw 37715-37740）：`op1 = rand() % op2`。
+ *
+ * 三条**（此前都写错/缺了）**的体口径：
+ *  ① `dword_55D54C = rand()` 在 **37724**，是**任何分支之前** ⇒ 连"模 0 抛异常"的那一次
+ *     也已经推进了 LCG 流（守卫：`dword_55D54C = rand()` 那一节）；
+ *  ② 唯一的门是 `if ( !v2 )`（raw 37727）—— **只有恰好 0 才抛**；负模数照走 C 的
+ *     `dword_55D54C % v2`（有符号取模，被除数非负 ⇒ 结果非负）。旧实现写 `mod === 0` 抛、
+ *     其余照算 —— 这一点其实**已经对**，但注释与计划表把它写成"除数为非 0 才算安全"，
+ *     于是"恰好 0"这条判据没有守卫（本票补上）；
+ *  ③ 抛之前**先写一次 `op1 = 0`**（raw 37729 的 `sub_42B4B0(_this, 1, 0)`）再
+ *     `_CxxThrowException` ⇒ 旧实现直接 `throw`，少一次可观测写。
+ *
+ * ★返回值域：`rand()` 是 `[0, 0x7FFF]`（MSVCRT 的 `& 0x7FFF`），**不是** `[0, 2^31)`。
+ * ★`dword_55D548 = v2`（raw 37726）是引擎自己的调试残留，**没有读者** ⇒ 不建模。
+ */
 const op_random: OpHandler = (c) => {
   const p = planOfArith(c);
+  // ★raw 37724：无条件先推进进程级 LCG（抛错路径也不例外）
+  const r = crtRand();
   const mod = p.int(2) ?? 0;
-  if (mod === 0) throw new Error('random: 模数为 0（引擎会抛除零异常）');
-  // 近似引擎 rand()%mod：rand() 返回 [0,2^31)，与 Math.random() 近似（M0 非确定性，后续可换 LCG）。
-  p.setInt(1, ((Math.random() * 0x80000000) | 0) % mod);
+  if (mod === 0) {
+    // ★raw 37729：先落一次 `op1 = 0`
+    p.setInt(1, 0);
+    throw new Error('random: 模数为 0（引擎 raw 37729 先写 op1=0 再抛 Command_ShowMessage）');
+  }
+  // ★raw 37739：C 的有符号取模（`dword_55D54C % v2`）
+  p.setInt(1, (r % mod) | 0);
 };
+
 
 /** int→float（0x2D6）：`op1 = (float)op2`。 */
 const op_int_to_float: OpHandler = (c) => {
@@ -198,7 +259,7 @@ export const ARITHMETIC_OPS: OpTable = [
   [0x2d1, floatBinOp((l, r) => l - r)], // fsub
   [0x2d2, floatBinOp((l, r) => l * r)], // fmul
   [0x2d3, floatBinOp((l, r) => l / r)], // fdiv
-  [0x2d4, floatBinOp((l, r) => (r === 0 ? 0 : l % r))], // fmod
+  [0x2d4, floatBinOp((l, r) => l % r)], // fmod（C 语义：`fmod(x, 0)` = **NaN**，无分支无错误串）
   [0x2d5, op_fmov], // 浮点 mov（op1 = op2）
   [0x2d6, op_int_to_float], // int→float（op1 = (float)op2）
   [0x191, op_fabs], // ★fabs：op1 = |op2|（浮点；语料 13 处，此前零注册 ⇒ 命中即硬停；T-0076 的 B3）

@@ -585,6 +585,20 @@ export function scTransitionOffset(
 }
 
 /**
+ * ★**转场记录条数**（引擎 `Scene+1056`，`cap:scene-draw-total-gate-1056` 的 approximation 那一半）。
+ *
+ * 引擎里这是一个**独立的计数格**：写点六处（`tickets/T-0154` 的审计行给出的 raw 78785 是整段字段复位、
+ * 115310 是置 1），而 `sub_4B06D0` 的**最外层门**就是它 —— 条数 0 ⇒ 整趟转场遍直接返回
+ * （对照 raw 134856-134874：先从 `Scene+1052` 取链头，`v9 == v8` ⇒ `goto LABEL_482`）。
+ *
+ * emulator 的等价物 = **容器长度**（`render4.transitions.size`）。这里把它显式化成命名函数，
+ * 让"条数 = 0 ⇒ 整遍不执行"这条门有名字、可断言（`scTransitionTick` 的第一句就是它）。
+ */
+export function scTransitionRecordCount(s: SceneState): number {
+  return s.render4.transitions.size;
+}
+
+/**
  * **逐帧推进所有转场窗**（引擎 `sub_4B06D0` 的窗口部分：锁存起点、算 t/off、到点杀记录、
  * 一遍绘完清空整张表）。两个宿主的 `advanceModel` 各调一次，**共用这一份**。
  *
@@ -611,6 +625,10 @@ export function scTransitionTick(
   poolPending: () => boolean = () => false,
 ): TransitionTickResult {
   const r4 = s.render4;
+  // ★最外层门 = 记录条数（引擎 `Scene+1056`）：0 ⇒ 整趟不执行（见 `scTransitionRecordCount`）。
+  if (scTransitionRecordCount(s) === 0) {
+    return { active: [], finishedAny: false, cleared: false, render: [] };
+  }
   /** 在窗内（= "在途"，gate/`needsRender` 的口径；到期帧**不算**，与引擎"到期分支不置 `46516`"一致）。 */
   const active: number[] = [];
   /** 本帧要合成进记录 `[4]` 的那一批（含**到期帧的终值交付**；`tickets/T-0091` 的 D2）。 */
@@ -771,6 +789,13 @@ export function scTransitionRangeRects(s: SceneState, rec: TransitionRecord): Tr
  *   （raw 135766/135772/135798、135988/135995/136003、136294-136309、136367、136430、136489、136649-136669）；
  * - **屏幕 pass 读标记**：四路归并里每一项画之前都判 `(flags & 0x10001) == 1`（= **bit0 存在位 且 bit16 未置**）
  *   —— raw 136905 / 136915 / 136926 / 136936（`sub_4B4040`，主帧提交）与 137210 / 137220 / 137252（`0x222` 路径）；
+ *   ★2026-09-25（`tickets/T-0154` 的 P2 `render-3d-layer-dual-commit`）：`sub_4B4460`（= `0x222` 的**唯一**
+ *     调用点，raw 31933 的 handler `sub_423EC0`）在 emulator 里**没有注册**（`0x222` 不在 `OPS`/`NATIVE_OPS`
+ *     里）⇒ 这两行引的 137210/137220/137252 只是"同一段门控在另一条提交路径上的第二份证据"，
+ *     **不是**已实现的路径。台账 `cap:render-3d-layer-dual-commit` 的 name（『对偶逐帧提交』）与
+ *     trigger（『本文件未见主循环调用点』）两处表述失真 —— 订正片段见
+ *     `tickets/T-0154/changes-c154.md`；逐帧提交那个函数是 **`sub_4B4040`**，
+ *     而 `sub_4B4460` 是**脚本 `i222` 驱动**的一次区间提交；
  * - **画完就清**：同一批判断里紧跟 `*node &= ~0x10000u`（raw 136908/136918/136929/136939、137213/137224/137255）。
  * ⇒ **被转场占用（画进 36/37）的项在屏上不出现**，玩家看到的是通过记录 `[4]` 那个槽呈现的合成结果。
  *

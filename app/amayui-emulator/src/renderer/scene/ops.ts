@@ -328,8 +328,26 @@ export function scRestoreDrawItems(s: SceneState, items: readonly Item[]): { cle
  * **`Scene+1080` 572B-A**（raw 130765）/ **`Scene+1096` 572B-B = Live2D 立绘节点表**（raw 130766）。
  * 早先只清前两张 ⇒ TITLE 的立绘节点（key `0x14`）活过 TITLE 退场（`src/TITLE.txt:810` 的 `i1f6`）
  * 与之后每一次拆场。⇒ 这里补上立绘节点表；**10 个实例槽不动**（引擎的 `0x1F6` 也不动它们）。
+ *
+ * ★2026-09-25（`tickets/T-0154` 的 P2 `0x1f6`）：**`Scene+1080`（572B-A）在 emulator 无容器**
+ * （`0x242` 只把该表项的 `+504` 记成 `render4.entryParams` 这一格台账，见 `scSetDrawEntryParam`）。
+ * 两件事按体补上：
+ *  ① **那张表被整表释放 ⇒ 它的 `+504` 镜像也必须跟着没**：清 `render4.entryParams`
+ *     （修前不清 ⇒ `i1f6` 之后账里留着已经不存在对象的陈旧值，"表里有节点却仍出画"的
+ *     同类症状会伪装成"台账还在"）；
+ *  ② 返回里的 **`nodesA`** 把"第三张表"这件事**显式化**（恒 0，因为 emulator 侧根本没有容器）——
+ *     这是**如实登记**而不是造一个没有写入端的空表：按引擎语义该表的内容在 emulator 里恒为空，
+ *     所以"清了 0 项"就是当前口径下唯一正确的值；哪天真有指令往 572B-A 建节点（写入端现在不存在），
+ *     这一格会立刻变成非 0 并把这个缺口顶出来。
+ *
+ * @returns `nodesA` = 被清掉的 572B-A（`Scene+1080`）项数 —— emulator 恒 0（无容器，见上）。
  */
-export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes: number; nodes: number } {
+export function scClearDrawContainer(s: SceneState): {
+  drawItems: number;
+  meshes: number;
+  nodes: number;
+  nodesA: number;
+} {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   const drawItems = s.drawItems.size;
   const meshes = s.meshes.size;
@@ -337,11 +355,15 @@ export function scClearDrawContainer(s: SceneState): { drawItems: number; meshes
   s.meshes.clear();
   // ★572B 立绘节点表（`Scene+1096`）：整批清（`sub_4A9D10(v1 + 274)` raw 130766）
   const nodes = clearL2dNodes(s, () => true);
+  // ★572B-A（`Scene+1080`，`sub_4A9D10(v1 + 270)` raw 130765）：emulator 无容器 ⇒ 只有 `+504`
+  //   那一格台账要跟着表一起释放（raw 130765 是**整表 delete**，不是逐项清字段）。
+  s.render4.entryParams.clear();
+  const nodesA = 0;
   // ★文本窗也要清：引擎 D3D 路径下正文行**就是** Scene 的 DrawItem（id = 行号 + win+104），
   //   `sub_4AB7A0` 清整张 DrawItem 表时它们一起没；GDI 路径下会被重画的画面盖掉。
   //   漏掉这一步的症状：**回到标题/主界面后，上一页的消息文字又画在主界面之上**（2026 实测）。
   scMsgWinClearAll(s);
-  return { drawItems, meshes, nodes };
+  return { drawItems, meshes, nodes, nodesA };
 }
 
 /**
@@ -385,22 +407,43 @@ export interface MeshSpec {
 }
 
 /**
- * `0x320` create-mesh（引擎 `sub_432150` → `sub_4ADFE0`）。
+ * `0x320` create-mesh（引擎 `sub_432150` raw 41020-41078 → `sub_4ADFE0` raw 132686-132796）。
  *
- * 引擎只重建**顶点缓冲 + 逐顶点色数组**（旧的先析构），`entry[5]=vcount`、`entry[6]=layer`，
- * 并置 bit0；**state0/state1/动画窗保持不变**。`vcount <= 0` 走「頂点数%dは不正です．」错误分支，
- * 不建几何（bit0 不置 ⇒ 不画）。
+ * 引擎逐字（本轮的**门槛/建项**订正 = `tickets/T-0154` 的三条 P3）：
+ * ```c
+ * v2 = sub_41BF50(_this, 9);        // op9 = vcount（int 池）
+ * if ( v2 > 0 ) { … sub_4ADFE0(Scene, handle, …, vcount, layer); }   // 41037-41069
+ * else { sprintf_s("頂点数%dは不正です．"); sub_4034D0(…); }          // 41073-41077
+ * // sub_4ADFE0：sub_4AAB80(缺失即建项) → 析构旧几何（VB + 三个数组各置 0，132727-132752）
+ * //             → sub_4A2280(…) 成功才 `*v21 |= 1u`（bit0 = 有几何，132755-132758）
+ * ```
+ * ⇒ ①**顶点数下限是 1**（判据是 `vcount > 0`，不是"≥3"——`sub_4A2280` 里 `if (a11 >= 4)`
+ *    只是"按 4 个一批填"的循环门，raw 122412）；②`vcount <= 0` 时**连项都不建**
+ *    （`sub_4ADFE0` 一次都不调 ⇒ 已存在的项**也不动**，析构在它体内、根本走不到）；
+ *    ③`vcount > 0` 时先析构旧几何再重建（净效果 = 覆盖）。
+ *
+ * ★修前：判据写成 `vcount > 0 && verts.length >= 3`（宿主自造的"≥3 才算建成几何"），
+ *   且 `vcount <= 0` 也照建一个 `flags = 0` 的幽灵记录（可被 `scEnsureMesh` 的 `created`、
+ *   快照的网格清单看见）——两条都与体不符，见 `test/scene-320-mesh-entry.test.ts`。
+ * ★**未建模的残余**（如实登记）：`sub_4A2280` 失败时引擎**几何已被析构但 bit0 不置**，
+ *   而它上面的 flags 位保持不变（没有 else 分支）⇒ 真机上可能出现"bit0 还在、几何是空的"项。
+ *   emulator 的 `sub_4A2280` 等价物不会失败（顶点数组已由 handler 解好）⇒ 这一支无从复现。
+ *
+ * @returns 该 handle 的网格项；`vcount <= 0` 时 = 已存在的项（**未被动过**），若本来没有就是
+ *   一个**未入表**的占位对象（`flags = 0`、无几何）—— 这是为了不让宿主缝
+ *   （`createMesh?(spec): void` → 各宿主读返回值做日志/可见性判断）拿到 `undefined`。
  */
 export function scCreateMesh(s: SceneState, spec: MeshSpec): MeshObj {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
-  const m = s.meshes.get(spec.handle) ?? makeMesh(spec.handle, spec.layer);
+  const existing = s.meshes.get(spec.handle);
+  if (spec.vcount <= 0) return existing ?? makeMesh(spec.handle, spec.layer); // raw 41073-41077：不建项、不碰已有项
+  const m = existing ?? makeMesh(spec.handle, spec.layer);
   m.layer = spec.layer;
-  if (spec.vcount > 0 && spec.verts.length >= 3) {
-    m.verts = spec.verts.map((v) => ({ ...v }));
-    m.baseColors = [...spec.baseColors];
-    m.flags |= 1;
-    assertFlags('mesh', m.handle, m.flags); // 严格 flag 校验放共享层（见 scConfigureDrawItem 处说明）
-  }
+  // ★析构旧几何再重建（raw 132727-132752）⇒ 顶点/色数组整体替换（不是追加），bit0 成功才置。
+  m.verts = spec.verts.map((v) => ({ ...v }));
+  m.baseColors = [...spec.baseColors];
+  m.flags |= 1;
+  assertFlags('mesh', m.handle, m.flags); // 严格 flag 校验放共享层（见 scConfigureDrawItem 处说明）
   s.meshes.set(spec.handle, m);
   return m;
 }
@@ -644,24 +687,42 @@ export function scSetTranslationLoop(s: SceneState, handle: number, period: numb
  *  - `Scene+1084` / `Scene+1100`（两张 572B 表；`sub_4AAEC0` 取元素）⇒ `*(node + 24) = 0`
  *    （raw 132438-132440 / 132476-132478）。后者 = `Engine.l2dNodes`（Live2D 立绘/变换节点）。
  *
- * emulator：**只实现绘制项那一支**（`animStart = 0` ⇒ 下一帧 `winPhase` 重新锁存 now，窗从头跑）。
- * ★两张 572B 表**未实现**：`L2dNode`（`src/live2d/runtime.ts`）的窗口只有 `delay/dur`、
- *   **没有"起点"字段**（引擎的 `+24` 在 emulator 侧不存在）⇒ 如实记缺口，不伪造一个没人读的格子。
+ * emulator：**两支都实现**（2026-09-25，`tickets/T-0154` 的 P2 `0x244`）：
+ *  - 绘制项支 = `animStart = 0`（⇒ 下一帧 `winPhase` 重新锁存 now，窗从头跑）；
+ *  - 立绘节点支 = `L2dNode.wins.startedAtMs = 0` + `latched = false`（raw 132440 / 132478 的
+ *    `*(node + 24) = 0`；`latched` 是本仓把 `+24 == 0` 的"未锁存"语义写死的专有位，
+ *    见 `live2d/nodeMatrix.ts` 的 `L2dNodeWindows`）——消费端 = 节点矩阵合成器
+ *    （`l2dComposeNodeAt`，每帧每节点一次）。
+ *  ★**第三张表（`Scene+1084` = 572B-A）仍未建模**：emulator 没有它的容器（只有 `0x242` 的
+ *    `+504` 单格台账 `render4.entryParams`）⇒ 这一支**如实记为不做**，不伪造一个没有写入端的表。
+ *  ★**引擎这一段不置脏**（`sub_4AD9F0` 体内没有 `_this[11627] = 1`）；emulator 置脏是**有意的**
+ *    偏差：清掉窗起点会让动画相位跳回 0，不重画就永远看不到那一帧（同 `scResetDrawItemLoop`）。
  *
  * @param mask 引擎固定传 2（`sub_41A370` 的立即数）；保留参数是为了照抄体的形状。
- * @returns 命中并清掉起点的绘制项数（= 引擎遍历里命中 `a2 & flags` 的项数）。
+ * @returns 命中的项数（**绘制项 + 572B-B 节点**；修前只有绘制项那一支）。两半分开数没有意义 ——
+ *   宿主缝 `clearDrawItemAnimStarts?: (mask) => number` 的形状由 `src/vm/native.ts` 定（非本票可动），
+ *   守卫要分辨时直接查 `scene.l2dHost.l2dNodes` 的 `wins.startedAtMs`/`latched`。
  */
 export function scClearDrawItemAnimStarts(s: SceneState, mask: number): number {
   let n = 0;
+  let nodes = 0;
   for (const it of s.drawItems.values()) {
     if ((it.flags & mask) === 0) continue;
     it.animStart = 0; // raw 132403：`*(elem + 52) = 0`
     n++;
   }
-  if (n > 0) s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（引擎另有 46508 脏位语义）
+  // ★第二/三趟（raw 132428-132501）：两张 572B 表，命中 `flags & mask` 的节点把 `+24` 清 0。
+  //   572B-B（`Scene+1100` = `Engine.l2dNodes`）有容器 ⇒ 真做；572B-A 无容器 ⇒ 见上。
+  for (const node of s.l2dHost?.l2dNodes.values() ?? []) {
+    if ((node.flags & mask) === 0) continue;
+    node.wins.startedAtMs = 0; // raw 132478：`*(node + 24) = 0`
+    node.wins.latched = false; // `+24 == 0` ⇒ 未锁存（emulator 专有位）
+    node.sceneDirty = true; // 引擎同一段没有置脏；本仓的节点变更走这条锁存（见 `scL2dTick`）
+    nodes++;
+  }
+  if (n > 0 || nodes > 0) s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（见上"有意偏差"）
   return n;
 }
-
 // ---------------------------------------------------------------------------
 // DrawItem 的**查询**族（getter；两个宿主共用一份语义 ⇒ 见 `headlessScene`/`pixiBackend` 的转发）
 //
@@ -834,7 +895,13 @@ export function scAdvance(s: SceneState, clock: number, freeze = false): void {
   if (s.frozen) return;
   if (freeze) {
     // ★冻结路径与引擎同：每遍绘制**无条件**置 `46508`（raw 117839 / 133540 的 LABEL 不论在途与否都落这里）
-    //   ⇒ 有窗可收尾就置脏，把终态画出来。
+    //   ⇒ 只要 `46512` 非零就把本遍标脏。
+    //   ★★**无条件**这三个字是 2026-09-25 按体订正的（`tickets/T-0154` 的 P2
+    //   `bullet-dirty-from-freeze-or-pending`）：引擎收尾那一句是
+    //   `sub_4B4040` raw 136718-136719 的 `if ( *(_QWORD *)(_this + 46512) ) *(_DWORD *)(_this + 46508) = 1;`
+    //   —— 8 字节窗口 `46512|46516` 一起判、**没有任何 per-item 条件**。修前这里只在"真的收尾了
+    //   某个项/mesh"时置脏 ⇒ 「freeze 置位但当场没有可冻结窗」的那一帧不重画（画面停在上一帧）。
+    s.dirty = true;
     for (const it of s.drawItems.values()) {
       if ((it.flags & 2) === 0) continue;
       // ★**`+720` bit0 = 豁免强制冻结**（`sub_49AA30` raw 117439-117442）：
@@ -1372,11 +1439,56 @@ export function scTransitionDefaultRecord(): number[] {
 }
 
 /**
- * **转场记录逐格写入**（`0x24F`/`0x250`/`0x251` → `handlers/gfx-state.ts`）：
+ * ★**`0x223`/`0x24F`/`0x250`/`0x251` 写记录前的前置：按需建/重建 `[4]` 那个渲染层**
+ * （`tickets/T-0154` 的 P2 `0x223`）。
+ *
+ * 引擎四个写入端**都**在写记录之前做同一件事（逐字，`sub_4ADDB0` raw 132603-132615；
+ * `sub_4AF6A0` raw 133743-133749、`sub_4AF880` raw 133817-133828、`sub_4AFA30` raw 133892-133903 同型）：
+ * ```c
+ * v11 = (int *)_this[a3 + 10614];              // Scene+42456+4*a3 = 该槽的 CTexture 对象
+ * if ( !v11 ) { v11 = _this[10650];            // ★Scene+42600 = **槽 36** 的 CTexture 对象
+ *               v12 = v11[262];                //   （= 转场 scratch 层）的创建模式
+ *               sub_4A2C10(_this, a3, v11[260], v11[261], v12); }   // 用 36 的 w/h/mode 现建该槽
+ * else { v12 = *(_DWORD *)(_this[10650] + 1048);
+ *        if ( v11[262] != v12 ) goto LABEL_4; }                    // 模式不同 ⇒ **重建**（重绑）
+ * ```
+ * ⇒ 语义 = "**转场要用的那一层不存在就用槽 36 的规格建出来；模式与槽 36 不一致就重建**"。
+ * emulator 的等价物 = 把该槽登记进 `render4.slotModes`（= 引擎"CTexture 对象存在"的同一张表，
+ * 也是 `0x1F8` 与 `0x20D` 共用的那张）并把 mode 写成 `slotModes[36]`。
+ * **真消费者** = `scene/blend.ts` 的 `blendGateOpen`（`0x203`/`0x322` 选择子 2 的门控读
+ * 当前渲染目标槽的 mode）与 `0x20D` 的"槽必须已创建"前置。
+ *
+ * @returns `'created'`（现建）/ `'recreated'`（模式不同 ⇒ 重建）/ `'noop'`（已存在且模式一致，
+ *   或 `slot` 落在引擎那张 0..999 表之外 ⇒ `sub_4A50C0` 的后台缓冲路径，见 `scSetRenderTarget`）。
+ */
+export function scEnsureTransitionLayer(s: SceneState, slot: number): 'created' | 'recreated' | 'noop' {
+  if (slot < 0 || slot > 999) return 'noop'; // 引擎 `_this[a3 + 10614]` 只覆盖 0..999（对照 raw 124839）
+  const mode = s.render4.slotModes.get(SCENE_SCRATCH_SLOT_A) ?? 0; // raw 132607/132613：`_this[10650]` = 槽 36
+  const cur = s.render4.slotModes.get(slot);
+  if (cur === undefined) {
+    s.render4.slotModes.set(slot, mode);
+    s.dirty = true;
+    return 'created';
+  }
+  if (cur !== mode) {
+    s.render4.slotModes.set(slot, mode);
+    s.dirty = true;
+    return 'recreated';
+  }
+  return 'noop';
+}
+
+/**
+ * **转场记录逐格写入**（`0x223`/`0x24F`/`0x250`/`0x251` → `handlers/gfx-item.ts`/`handlers/gfx-state.ts`）：
  * `writes` = `[[格下标, 值]…]`，与引擎的 `sub_4AAE10(Scene+1048, &id)[i] = v` 一一对应。
  *
  * 引擎语义（`sub_4AAAF0` + `sub_4AAE10`，raw 130052-130075 / 130197-130240）是"**确保记录存在再写格**"
  * ⇒ 已存在的记录**只改被写的格**（其余保持上次的值），所以这里是合并而不是整条覆盖。
+ *
+ * ★写完之后还有一条**前置副作用**（本层 2026-09-25 补，`tickets/T-0154` 的 P2 `0x223`）：
+ * 四个写入端都在写记录**之前**按需建/重建记录 `[4]` 那个渲染层（见 `scEnsureTransitionLayer`）
+ * ⇒ 这里按同一个次序做（记录写好后取 `[4]`；`scTransitionDefaultRecord()` 的 `[4] = -1` 会让
+ * "没写 [4] 的记录"落到 `noop`）。
  */
 export function scSetTransition(
   s: SceneState,
@@ -1389,6 +1501,8 @@ export function scSetTransition(
     if (i >= 0 && i < rec.length) rec[i] = v | 0;
   }
   s.render4.transitions.set(id, rec);
+  // ★`[4]` = 该记录的工作纹理槽（= 写入端的 op2；`sub_4ADDB0` 的 a3）⇒ 写记录前先把它建/重绑出来。
+  scEnsureTransitionLayer(s, rec[4] ?? -1);
   // ★逐条的新鲜度（`tickets/T-0091` 的 D2 变更需要）：写入端每次都把 `[1]`（窗口起点）写 0，
   //   引擎的起点是"第一次被消费的那一帧"才锁存 ⇒ 同 id 的**新**记录必须丢掉上一轮的运行期起点
   //   （否则新窗会继承旧 `start`，`t` 立刻越界）。整表清仍然是 `0x224`/帧尾门的事。
@@ -1396,10 +1510,45 @@ export function scSetTransition(
   if (s.render4.transitionRuntime.has(id)) s.render4.transitionRuntime.delete(id);
 }
 
-/** `0x229` 绘制模式 5 元组（`sub_423FE0`：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。 */
+/**
+ * `0x229` 绘制模式 5 元组（`sub_423FE0` raw 31984-32001：`sub_49A690` 复位 + `49A6C0`(2 int) + `49A6F0`(3 float)）。
+ *
+ * ★**2026-09-25（`tickets/T-0154` 的 P2 `0x229`）三段全部落地**（修前只把 5 元组记进 `render4.drawMode`）：
+ * ```c
+ * sub_49A690(_this);                                   // ① 复位模板（raw 117080-117090）
+ *   → sub_49A300(_this, (int)(_this + 280));           //    Scene+1120 起 **740 B 整块重置**
+ *   → _this[278] = 0; _this[279] = 0;                  //    区间门先清 (0,0)
+ * sub_49A6C0(_this, op1, op2);                         // ② 区间门 `Scene+1112/+1116` = (op1, op2)
+ * sub_49A6F0(_this, f3, f4, f5);                       // ③ 模板 +24/28/32 = 变换的 pivot
+ * ```
+ *  - ① **复位**：`sub_49A300` 把六块矩阵（当前/目标 缩放·旋转·work）清成单位/零、pivot 清 0
+ *    （raw 116899-117054）⇒ emulator 侧的对应物 = 丢掉 `SceneXform` 锚与轴角（四条 `0x22A`/
+ *    `0x22C`/`0x22D`/`0x22F` 写的四组分量）。**这一条有观测后果**：`i229 0 0 0 0 0`
+ *    （语料 716 处）之后，上一轮 `i22a` 设的缩放**不该再留着**；
+ *  - ② **区间门**：写进 `SceneState.sceneLayerStart/sceneLayerCount`，消费端 =
+ *    `sceneLayerInGate`（RenderScene raw 133397-133401 那道 `a2 >= v11 && a2 < v11 + v1116`）；
+ *  - ③ **pivot**：写进 `SceneState.scenePivot`，消费端 = `sceneAffine2DOf` 的
+ *    `T(−p)·…·T(+p)` 共轭（`sub_49AA30` raw 117425-117429 + 117932）。语料里它不是常数，
+ *    如 `REIGN.txt:3241 i229 64 9b78 280 2d0 0` ⇒ pivot (640,720)。
+ *
+ * ★**未建模的残余（如实登记）**：`sub_49A300` 还写 `+720 = 0`（= `Item.entryParam` 那一格）、
+ * `+576 = -1`（B 层目标色）、`+724/728/732 ← +492/496/500`（轴 ← 另一组格）等 —— 那些格的
+ * emulator 对应物挂在**绘制项**上，而这个模板对象在 emulator 里没有独立载体 ⇒ 不复刻。
+ * 顺带订正 `state.ts` 的一句旧注：`Scene+1844`（= 模板 +724）**不是无写点** ——
+ * `sub_49A300` raw 117051-117054 就在写它（复位的净结果仍是 0，故默认值口径不变）。
+ */
 export function scSetDrawModeBlock(s: SceneState, a: number, b: number, x: number, y: number, z: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.drawMode = [a, b, x, y, z];
+  // ① 复位模板（raw 117084-117087）⇒ 丢掉四组矩阵 + 轴角（`SceneXform` 锚）与 pivot。
+  s.sceneXform = null;
+  s.sceneRotRad = 0;
+  s.scenePivot = { x: 0, y: 0, z: 0 };
+  // ② 区间门（raw 117098-117099）。
+  s.sceneLayerStart = a | 0;
+  s.sceneLayerCount = b | 0;
+  // ③ pivot（raw 117109-117112）。
+  s.scenePivot = { x, y, z };
 }
 
 /**
@@ -1463,15 +1612,26 @@ export function scSetSlotParams(
   return applied > 0 ? 'applied' : 'created-gated';
 }
 
-/** `0x321` MeshEntry 属性（`sub_4AE280`：`entry[op2 + 7] = op3`）。
+/** `0x321` MeshEntry 属性（`sub_426BD0` raw 33839-33850 → `sub_4AE280` raw 132798-132807）。
+ *
+ * 引擎体逐字（三句）：
+ * ```c
+ * sub_4AAB80((int)_this, a2);              // ★缺失即建**空网格项**（同一容器 `_this + 266` = Scene+1064）
+ * result = sub_40DC30(_this + 266, &a2);   // 取（刚建/已存在的）项
+ * result[a3 + 7] = a4;                     // entry[op2 + 7] = op3
+ * ```
+ * ⇒ ★`0x321` **会凭空建出网格项**（与 `0x320` 同一个 find-or-create），修前只把它当成
+ * `render4.meshAttrs` 的一个 Map 键 ⇒ 快照/`scEnsureMesh` 的 `created`/0x32A 释放等
+ * **按"项是否存在"分支的路径**与引擎分叉（P3 `0x321` missing-behavior）。
  *
  * ★**2026-09（审计 §4.2 #8）消费者已接**：`presenter.drawMesh` 把这个 map 交给
  * `meshColor`/`meshVertexColor`（`drawitem/eval.ts` 的 `meshAttrsTint`）⇒ 改属性真的改画面。
- * ★`scSetDrawEntryParam` 那类"台账 + 模型双写"的口径这里不需要：`render4.meshAttrs` **就是**
- * 消费者读的那一份（唯一真源）。
+ * ★这里**不需要** `scSetDrawEntryParam` 那种"台账 + 模型双写"：`render4.meshAttrs` **就是**
+ * 消费者读的那一份（唯一真源），而建项走 `scEnsureMesh`（同一份容器语义）。
  */
 export function scSetMeshEntryAttr(s: SceneState, mesh: number, index: number, value: number): void {
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
+  scEnsureMesh(s, mesh); // raw 132802：`sub_4AAB80`（缺失即建零值网格项，flags = 0 ⇒ 不画）
   let m = s.render4.meshAttrs.get(mesh);
   if (!m) {
     m = new Map<number, number>();
@@ -1529,10 +1689,42 @@ export function scResetSceneWorldMatrix(s: SceneState): 'applied' | 'noop' {
  *
  * ★**不是普通记录**：它决定 `0x203`/`0x322` 混合选择子**值 2 的门控**（见 `scene/blend.ts`）
  * —— 只有"当前渲染目标槽的纹理是 mode-1 离屏表面"时才用 `(ONE,ZERO)` 覆盖。
+ *
+ * ★★**2026-09-25（`tickets/T-0154` 的两条 P3）按体补两条前置**（修前无条件写槽号）：
+ * ```c
+ * if ( a2 > 0x3E7 ) { … 取后台缓冲 … if (!SetRenderTarget(…)) { Scene+46456 = -1; return 1; } }  // 124839-124861
+ * else if ( !*(_DWORD *)(_this + 4 * a2 + 42456) ) {                     // 124872-124883
+ *   sprintf_s("関数：SetTargetTexture エラー：テクスチャが作成されていません． TEXTURE=%d");
+ *   sub_4034C0(…); return 0;                                             // ★Scene+46456 保持原值
+ * }
+ * ```
+ *  - **`slot > 999` 或负值**（`-1` 作为无符号 = `0xFFFFFFFF > 0x3E7`）⇒ 走**回后台缓冲**那条，
+ *    成功即 `Scene+46456 = -1`；emulator 的槽表就是 `render4.slotModes`；
+ *  - **槽 0..999 但没有纹理对象** ⇒ 打串 + `return 0`，**当前渲染目标不变**
+ *    （判据用 `render4.slotModes.has(slot)`：那是 `0x1F8 create-texture` 与 `0x223` 的惰性建层
+ *     共同的落点，= 引擎 `Scene[42456 + 4*slot] != 0`）。
+ *
+ * ★**未建模的另一半（如实登记）**：`Scene+46456` 还被**绘制项的 2D/GDI 变换支路**读
+ * （`sub_49AA30` raw 117375-117423：`v6 = Scene+46456; if (v6 < 0 || v6 == 38)` ⇒ 项的位置
+ * 加上窗口原点 `sub_498350` 给的偏移）⇒ 走 2D 支路的场景里项的落点会差一个窗口原点。
+ * emulator 没有"窗口原点"这个概念（headless 无窗口、Pixi 用的是画布尺寸）⇒ 不做，记在
+ * `tickets/T-0154/changes-c154.md` 的台账片段里。
+ *
+ * @returns `'applied'`（切槽成功）/ `'backbuffer'`（回到后台缓冲）/ `'missing-texture'`
+ *   （槽没建 ⇒ **状态未变**，与引擎的 `return 0` 同观测）。
  */
-export function scSetRenderTarget(s: SceneState, slot: number): void {
+export function scSetRenderTarget(s: SceneState, slot: number): 'applied' | 'backbuffer' | 'missing-texture' {
+  if (slot < 0 || slot > 999) {
+    // raw 124839-124860：`a2 > 0x3E7`（含 -1）⇒ 后台缓冲，成功写 -1。
+    s.dirty = true;
+    s.render4.renderTargetSlot = -1;
+    return 'backbuffer';
+  }
+  // raw 124872-124883：纹理对象不存在 ⇒ 报错串 + `return 0`，`Scene+46456` 保持原值。
+  if (!s.render4.slotModes.has(slot)) return 'missing-texture';
   s.dirty = true; // ★模型变更 ⇒ 该重新合成一次（`tickets/T-0003`；判据在共享层 sceneNeedsRender）
   s.render4.renderTargetSlot = slot;
+  return 'applied';
 }
 
 /**
@@ -1632,15 +1824,43 @@ export function scSetSceneBlend(s: SceneState, blend: number): void {
 
 /**
  * **Scene 变换作用的层号区间**（引擎 RenderScene raw 133405 的判据 `(层号 − 20) > 9` 取反）：
- * `层号 ∈ [SCENE_LAYER_LO, SCENE_LAYER_HI)` 的项走"被压成 2D"的支路，也就是**只有它们**
- * 才真正受 `0x22A`/`0x22C`/`0x22D`/`0x22F` 影响（见 `scene/state.ts` 的 `sceneXform` 说明）。
+ * `层号 ∈ [SCENE_LAYER_LO, SCENE_LAYER_HI)` 的项走"被压成 2D"的支路。
+ *
+ * ★★**这不是"谁吃 Scene 世界矩阵"那道门**（2026-09-25，`tickets/T-0154`）—— 外层门是
+ * `i229` 写的**区间门** `[Scene+1112, +1112+Scene+1116)`（raw 133397-133401），
+ * 见 `sceneLayerInGate`。本函数只是区间**之内**的内层分支：
+ * ```c
+ * j_D3DXMatrixMultiply(_this + 46536, _this + 46536, _this + 46600);   // 133407：完整 3D 世界矩阵
+ * //  vs
+ * D3DXMatrixDecompose(…) → S(scale2D) · RotationAxis(Scene+1844/1856) · T(pos·k)   // 133411-133438
+ * ```
+ * 区间外的层**两支都不走**（连乘都不乘）。
  */
 export const SCENE_LAYER_LO = 20;
 export const SCENE_LAYER_HI = 30;
 
-/** 该层号是否落在「Scene 变换只作用于我」的区间里（`[20,30)`）。 */
+/** 该层号是否落在「[20,30) = 走 decompose 压 2D 重建那一支」的区间里。 */
 export function sceneLayerAffected(layer: number): boolean {
   return layer >= SCENE_LAYER_LO && layer < SCENE_LAYER_HI;
+}
+
+/**
+ * ★★**`i229` 的区间门**（引擎 `Scene+1112`/`Scene+1116`，写端 `sub_49A6C0` raw 117098-117099，
+ * 读端 RenderScene raw 133397-133401 / 帧提交 raw 134872-134874）：
+ * 层号 ∈ `[start, start+count)` 的项**才**吃 Scene 世界矩阵，区间外连乘都不乘。
+ *
+ * `count = 0`（exe 初值，raw 115834-115835）⇒ 恒假 ⇒ 谁都不吃 —— 这正是引擎里
+ * `i229 <start> <count> …` 开区间、`i229 0 0 0 0 0` 关区间的机理（语料 20 处 Scene 变换
+ * 全部紧跟一条开区间的 `i229`，如 `ALLMAP.txt:1378 i229 1 7cf 0 0 0` → `i22c …`）。
+ *
+ * ★**emulator 的口径（有意近似，已在票据里登记）**：2D 合成把区间内的两支（完整矩阵 /
+ * decompose 压 2D）折成**同一个** 2D 仿射（Z 分量两级投影都丢）⇒ 判据取**并集**
+ * （`sceneLayerAffected(layer) || sceneLayerInGate(s, layer)`）：区间打开时与体一致；
+ * 区间关着时保留修前的 `[20,30)` 行为（= 残留偏差；因为 `i229` 会同时**复位**模板，
+ * 关区间之后 `SceneXform` 锚已为 null，该分支实际不再产生可见变换）。
+ */
+export function sceneLayerInGate(s: SceneState, layer: number): boolean {
+  return layer >= s.sceneLayerStart && layer < s.sceneLayerStart + s.sceneLayerCount;
 }
 
 /** 一份"还没算 world·scene 的 work 矩阵"的 2D 结果（`itemRenderPlacement` 的形状）。 */
@@ -1759,16 +1979,23 @@ function mat4Identity(): Mat4 {
  * 组合序（**行向量约定，从左到右作用**；依据 = `sub_49AA30` 的 117425-117431 + 收尾 117927-117933）：
  * ```
  * 点 ← 点 ·T(−pivot)·S(axisScale_x, axisScale_y, 1)·R(axis, angle)·T(axisTranslate)
- *          ·S(scale_x, scale_y, 1)·T(translate_x, translate_y, 0)
+ *          ·S(scale_x, scale_y, 1)·T(translate_x, translate_y, 0)·T(+pivot)
  * ```
  * 即"先按 `0x22D` 的轴缩放 → 绕 `0x22F` 的轴旋转 → 加 `0x22F` 的分量 → 乘 `0x22A` 的缩放
- * → 加 `0x22C` 的平移"，四块**互相独立、可叠加**（修前是一个 `kind` 互斥三选一）。
+ * → 加 `0x22C` 的平移"，四块**互相独立、可叠加**（修前是一个 `kind` 互斥三选一）；
+ * 整条链被 `T(−pivot)…T(+pivot)` **共轭**（pivot = `i229` 的 op3/4/5 → 模板 `+24/28/32`，
+ * 见 `scSetDrawModeBlock` ③ 与 `sub_49AA30` raw 117425-117429 / 117932）。
+ *
+ * ★**谁吃这一级**（`i229` 的区间门，`sceneLayerInGate`）：区间外的层**原对象返回**；
+ * 区间内且 ∉[20,30) 的层引擎走"完整 3D 世界矩阵"那一支 —— 2D 投影后与本函数的仿射同形，
+ * 故这里对区间内的**所有**层都给同一个仿射（= P3 `world-matrix-identity-refresh` 的收口）。
  */
 export function sceneAffine2DOf(
   s: SceneState,
   layer: number,
 ): { a: number; b: number; c: number; d: number; tx: number; ty: number } | null {
-  if (!sceneLayerAffected(layer)) return null;
+  // ★外层门 = `i229` 的区间门；内层 `[20,30)` 是"压 2D 重建"那一支（两支在 2D 合成里同形）。
+  if (!sceneLayerAffected(layer) && !sceneLayerInGate(s, layer)) return null;
   const x = s.sceneXform;
   if (!x && s.sceneRotRad === 0) return null;
   const asx = x ? x.axisScale.x : 1;
@@ -1782,12 +2009,22 @@ export function sceneAffine2DOf(
   const ty = x ? x.translate.y : 0;
   // ★修前：op3/4/5 被当屏幕空间 2D 平移（直接当 `tx/ty`）；修后：它们是**旋转轴**。
   const axis = x ? x.axis : { x: 0, y: 0, z: 0 };
+  // ★`i229` 的 pivot（模板 +24/28/32）：`T(−p)·…·T(+p)`（raw 117425-117429 + 117932）。
+  const px = s.scenePivot.x;
+  const py = s.scenePivot.y;
+  const pz = s.scenePivot.z;
   const m = mat4Mul(
     mat4Mul(
-      mat4Mul(mat4Mul(mat4Scaling(asx, asy, 1), mat4RotationAxis(axis.x, axis.y, axis.z, s.sceneRotRad)), mat4Translation(ax, ay, az)),
+      mat4Mul(
+        mat4Mul(
+          mat4Mul(mat4Translation(-px, -py, -pz), mat4Scaling(asx, asy, 1)),
+          mat4RotationAxis(axis.x, axis.y, axis.z, s.sceneRotRad),
+        ),
+        mat4Translation(ax, ay, az),
+      ),
       mat4Scaling(sx, sy, 1),
     ),
-    mat4Translation(tx, ty, 0),
+    mat4Mul(mat4Translation(tx, ty, 0), mat4Translation(px, py, pz)),
   );
   return { a: m[0]!, b: m[1]!, c: m[4]!, d: m[5]!, tx: m[12]!, ty: m[13]! };
 }
@@ -1980,6 +2217,22 @@ export function scSetSceneRotationRad(s: SceneState, rad: number): void {
 export function scL2dTick(s: SceneState, nowMs: number): number[] {
   const host = s.l2dHost;
   if (!host) return [];
+  // ★★**消费 `Scene+46508` 的 L2D 置脏锁存**（`tickets/T-0160`，审计 row 89）：
+  //   引擎里 572B 节点的**每个写者**都置这一格（`0x344` raw 133948、`0x346` raw 134030、
+  //   `0x347` raw 134052、`0x348` raw 134098、`0x349` raw 134123、**`0x34A` raw 134138**、
+  //   `0x34B` raw 134173、`0x34C` raw 134230、`0x34D` raw 134270 的 `_this[11627] = 1`），
+  //   而"这一帧要不要重画"的唯一读者就是主循环（`sub_40BE10` raw 16022）。
+  //   VM 侧只拿得到 `Engine`（`L2dHost`）、够不到 `SceneState` ⇒ 那些写者把"置过"锁在节点上
+  //   （`L2dNode.sceneDirty`），在这里**取并集**转成共享模型的 `dirty`。
+  //   ★为什么不能省：`0x34A` 在引擎里**只**置这一格（不写 `record+76`），旧实现两条都缺。
+  let latched = false;
+  for (const n of host.l2dNodes.values()) {
+    if (n.sceneDirty) {
+      n.sceneDirty = false;
+      latched = true;
+    }
+  }
+  if (latched) s.dirty = true;
   const delta = s.l2dLastMs < 0 ? 0 : Math.max(0, nowMs - s.l2dLastMs);
   s.l2dLastMs = nowMs;
   // 只有"这一帧真的会画"的节点才推进（引擎同一条门控：槽里得有模型）

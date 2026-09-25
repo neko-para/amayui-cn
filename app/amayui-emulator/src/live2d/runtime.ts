@@ -18,14 +18,32 @@ import type { MocModel } from './moc.js';
 import {
   advanceMotion,
   attachModel,
+  motionQueueFinished,
   newL2dInstance,
   resetMotionQueue,
   startMotion,
   type L2dInstance,
   type Mtn,
 } from './mtn.js';
+// ★眨眼那一半（实例 `+16` `EyeBlinkMotion` 与 `+23` 门控）：`sub_4783D0` raw 92605-92606 那一支，
+//   与动作队列**同级独立**（没有动作装载也每帧跑）⇒ 单独一个模块，这里是它的唯一消费端。
+import { BLINK_PARAM_L, BLINK_PARAM_R, blinkStep, type BlinkRng } from './blink.js';
 
 export type { L2dInstance, Mtn, L2dNodeWindows };
+// ★眨眼面从 `runtime.js` 单一出口再导（场景侧/守卫只依赖 `runtime.js`，与 `l2dNodeWindowsPending` 同规矩）：
+//   `blink.ts` 的常量与推进函数，`L2dInstance.blink` 的字段语义见 `blink.ts` 文件头。
+export {
+  BLINK_DEFAULTS,
+  BLINK_FIELDS,
+  BLINK_MODE_VALUE,
+  BLINK_PARAM_L,
+  BLINK_PARAM_R,
+  BLINK_RAND_SCALE,
+  blinkJitter,
+  blinkStep,
+  newBlinkMotion,
+} from './blink.js';
+export type { BlinkMode, BlinkMotion, BlinkRng } from './blink.js';
 
 /**
  * **`Scene+1096` 的 572 字节「立绘 / 变换节点」**（`0x344` 建、`0x346`–`0x34D` 写）。
@@ -69,8 +87,20 @@ export interface L2dNode {
   /**
    * `+76`：「本帧节点矩阵有效」位（`0x347`-`0x34D` 置 1、`0x346` 置 0）。★与 `flags` 是**两个不同的位**；
    * 引擎在 `sub_4B0360` raw 134385 用它决定是否把节点矩阵右乘进世界矩阵。
+   * ★`0x34A` **不写它**（`sub_4AFFF0` raw 134129-134140 只写 `record[2..4]` + `Scene[11627]`）。
    */
   matrixDirty: boolean;
+  /**
+   * **`Scene+46508`（= `Scene[11627]`）的置脏锁存** —— 引擎里 572B 节点的每一个写者都置这一格：
+   * `0x344` raw 133948、`0x346` raw 134030、`0x347` raw 134052、`0x348` raw 134098、
+   * `0x349` raw 134123、**`0x34A` raw 134138**、`0x34B` raw 134173、`0x34C` raw 134230、`0x34D` raw 134270。
+   *
+   * 为什么锁在**节点**上（而不是直接写宿主）：`Scene+46508` 的真源在 `SceneState`（两个宿主各持一份），
+   * 而 VM 侧只拿得到 `Engine`（`L2dHost`）⇒ 这里记"这一格被置过"，由
+   * `renderer/scene/ops.ts` 的 `scL2dTick` **消费并清**（转成 `SceneState.dirty`）——
+   * 与 `0x344`–`0x34D` 在引擎里"写一格、帧函数读它决定要不要重画"同语义（多节点取并集）。
+   */
+  sceneDirty: boolean;
   /** `+508..571`：**基础矩阵**（`0x346` 复位成单位阵；`M_base`，raw 121649）。 */
   matrixBase: Affine;
   /**
@@ -124,11 +154,14 @@ function makeNode(key: number, slot: number, flags: number): L2dNode {
     baseOffset: [0, 0, 0],
     scale: [1, 1, 1],
     translate: [0, 0, 0],
-    rotation: { axis: [0, 0, 1], deg: 0 },
+    // ★缺省旋转是**轴 (0,0,0) / 角 0**（`sub_49CA10` raw 118487-118490 写 `+464/+468/+472 = 0.0`、
+    //   118490 写 `+488 = 0`）；旧实现写 `axis=[0,0,1]` 是自造（审计 row 88）。
+    rotation: { axis: [0, 0, 0], deg: 0 },
     // `+24` 起点 / `+28..60` delay·dur / `+68..115` 目标值 / `+464..492` 轴角 —— 全部走 `sub_49CA10`
     wins: makeNodeWindows(),
     gate504: 0, // `+504`（`sub_49CA10` 置 0）
     matrixDirty: false, // `+76`
+    sceneDirty: false, // `Scene+46508` 的锁存（见字段说明）
     matrixBase: AFFINE_IDENTITY, // `+508..571`
     matrix: AFFINE_IDENTITY, // 合成结果（= 引擎 `Scene+46536` 的初值：调用方每次预置单位阵）
     resets: 0,
@@ -165,16 +198,34 @@ function winGate(host: L2dHost, key: number): L2dNode | null {
   node.wins.startedAtMs = 0; // raw 134161（`*(rec+24) = 0`）
   node.wins.latched = false; // ★emulator 专有：把 `+24 = 0` 的"未锁存"语义写死（见 `L2dNodeWindows`）
   node.matrixDirty = true; // raw 134168 等（`*(rec+76) = 1`）
+  node.sceneDirty = true; // raw 134173 等（`_this[11627] = 1`）
   return node;
+}
+
+/**
+ * `Scene+46508`（`Scene[11627]`）= **"本帧要重画"**格：572B 节点的每个写者都置它
+ * （`0x344`/`0x346`–`0x34D`，逐条 raw 见 `L2dNode.sceneDirty`）。锁在节点上由 `scL2dTick` 消费。
+ */
+function markSceneDirty(node: L2dNode): void {
+  node.sceneDirty = true;
 }
 
 /**
  * **`0x341` 装 `.MOC`**（`sub_427BA0` → `sub_4A1860` raw 121664-121700）：`op1` = 统一文件 id、`op2` = 实例槽。
  *
- * 引擎里"槽非空 ⇒ 先析构旧实例 + delete"再重建（**惰性重建**）⇒ `attachModel` 把参数与部件显隐重置回缺省。
+ * 引擎里"槽非空 ⇒ 先析构旧实例 + delete"再重建（**惰性重建**）—— `sub_4A1860` raw 121674-121681
+ * 逐字：`if (旧) { sub_4785E0(旧); operator delete(旧); _this[槽] = 0; }`，随后才 `new(0x4C)` + 解析。
+ * `sub_4785E0`（raw 92745-92762）又会 `sub_478500`（= `0x350` 那一跳：清 `+20/+21/+22`）并销毁动作队列
+ * ⇒ **重装同一槽 = 参数/部件显隐/动作队列/预置值/乘色全部回到新实例的缺省**（审计 row 280/281）。
+ *
+ * emulator 的等价做法：**整份换成一个新的 `L2dInstance` 对象**（旧对象被丢弃 = 引擎的 delete）。
+ * ★不要改回"往旧实例里塞字段"：那样 `records`/`current`/`loaded` 会跨换装存活。
  */
-export function l2dLoadModel(host: L2dHost, slot: number, modelId: number, model: MocModel): void {
-  attachModel(ensureSlot(host, slot), modelId, model);
+export function l2dLoadModel(host: L2dHost, slot: number, modelId: number, model: MocModel): L2dInstance {
+  const inst = newL2dInstance(slot);
+  attachModel(inst, modelId, model);
+  host.l2dSlots.set(slot, inst);
+  return inst;
 }
 
 /**
@@ -218,14 +269,35 @@ export function l2dBindTexture(host: L2dHost, slot: number, texFileId: number, t
   ensureSlot(host, slot).textures.set(textureNo, texFileId);
 }
 
-/** **`0x352` 预置值**（`sub_4283B0` → `sub_4A1AC0`）：`which == 0` ⇒ 纹理号、否则 ⇒ 动作号。 */
-export function l2dSetPending(host: L2dHost, slot: number, which: number, value: number): void {
-  const inst = ensureSlot(host, slot);
+/**
+ * **`0x352` 预置值**（`sub_4283B0` → `sub_4A1AC0` raw 121766-121775 → `sub_478540`/`sub_478560`）：
+ * `which == 0` ⇒ 纹理号、否则 ⇒ 动作号。
+ *
+ * ★**引擎不建槽**（审计 row 98）：`sub_4A1AC0` 是 `v4 = _this[a2 + 13953];`（直接取表项）
+ * 再交给 `sub_478540/sub_478560`，而后两者的第一句都是 `if (*(_DWORD*)_this)` —— `*_this` 是实例
+ * `+0` 的模型指针 ⇒ **槽不存在或槽里没模型时整条是 no-op**，引擎不会因此产生任何表项。
+ * emulator 旧实现走 `ensureSlot` ⇒ 凭空多出一个空槽（下游 `l2dNodeDrawable` 的判据也会因此不同源）。
+ *
+ * @returns 是否落库（`false` = 被门挡掉）。
+ */
+export function l2dSetPending(host: L2dHost, slot: number, which: number, value: number): boolean {
+  const inst = host.l2dSlots.get(slot);
+  if (!inst?.model) return false;
   if (which === 0) inst.pendingTextureNo = value;
   else inst.pendingMotionNo = value;
+  return true;
 }
 
-/** **`0x34E` 装 `.MTN`**（`sub_428200` → `sub_478640`）：`op2` = 动作槽(0/1)、`op3` = 实例槽、`op4` = 循环位。 */
+/**
+ * **`0x34E` 装 `.MTN`**（`sub_428200` → `sub_4A19F0` raw 121723-121743 → `sub_478640`）：
+ * `op2` = 动作槽(0/1)、`op3` = 实例槽、`op4` = 循环位。
+ *
+ * ★`host.l2dMotionCache.set` **是唯一写点，读者在 `assetLoader.startMotionOnSlot`**
+ * （按动作 id 复用已解析的动作对象；此前它只有 `.set()`/`.clear()` ⇒ 基线里的存量死写）。
+ *
+ * @param opts.parseError `sub_4BCE90()` 的等价物（见 `L2dMotionRecord.parseError`）。
+ * @returns 是否真的装载（门挡掉/解析错 ⇒ `false`，handler 据此走失败支）。
+ */
 export function l2dStartMotion(
   host: L2dHost,
   slot: number,
@@ -233,25 +305,106 @@ export function l2dStartMotion(
   motion: Mtn,
   motionSlot: number,
   loop: boolean,
-): void {
+  opts?: { parseError?: boolean },
+): boolean {
   host.l2dMotionCache.set(motionId, motion);
-  startMotion(ensureSlot(host, slot), motion, motionSlot, loop);
-}
-
-/** **`0x350` 复位动作队列**（`sub_4282E0`）。 */
-export function l2dResetMotion(host: L2dHost, slot: number): void {
   const inst = host.l2dSlots.get(slot);
-  if (inst) resetMotionQueue(inst);
+  if (!inst) return false;
+  return startMotion(inst, motion, motionSlot, loop, opts?.parseError === true);
 }
 
-/** **`0x351` 命名参数**（`sub_428320`）：`op2` = 参数名、`op3` = 0..255 ⇒ 值 = op3/255。 */
-export function l2dSetNamedParam(host: L2dHost, slot: number, paramId: string, raw: number): void {
-  ensureSlot(host, slot).params.set(paramId, raw / 255);
+/**
+ * **`0x350` 复位动作队列**（`sub_4282E0` → `sub_4A1AA0` → `sub_478500`）。
+ *
+ * @returns 是否落库（`false` = 槽不存在/槽里没模型 ⇒ 引擎 `if (*(_DWORD*)_this)` 挡掉）。
+ */
+export function l2dResetMotion(host: L2dHost, slot: number): boolean {
+  const inst = host.l2dSlots.get(slot);
+  if (!inst) return false;
+  return resetMotionQueue(inst);
 }
 
-/** **`0x34F` 纹理乘色**（`sub_428400`）：`op1` = 槽、`op2 < 0` ⇒ 取纹理色记录。 */
-export function l2dTextureMulColor(host: L2dHost, slot: number, color: number): void {
-  ensureSlot(host, slot).textures.set(-1, color); // -1 号 = 乘色记录（诊断/后续渲染用）
+/**
+ * **`0x351` 命名参数**（`sub_428320` raw 34747-34776）：`op2` = 参数名、`op3` 钳到 `[0,255]` ⇒ 值 = op3/255。
+ *
+ * 逐字（raw 34756-34775）：
+ * ```c
+ * v2 = readInt(3);  v6 = v2;
+ * if (v2 <= 255) { if (v2 >= 0) goto LABEL_6; v2 = 0; } else v2 = 255;
+ * v6 = v2;                     // ★钳位值覆盖除法用的局部量
+ * LABEL_6: v5 = 0.0; if (v2 > 0) v5 = (double)v6 / 255.0;   // dbl_520448 = 255.0
+ * sub_4A07C0(slots, op1, name, v5);   // → sub_478520：`if (v3) sub_4BD4D0(...)` ⇒ 模型非空才是门
+ * ```
+ * ⇒ ① **先钳位再除**（旧实现直接 `raw / 255` ⇒ 越界得到范围外的参数值，审计 row 97）；
+ *    ② 槽不存在/槽里没模型 ⇒ 静默 no-op，**不建槽**（审计 row 283）。
+ *
+ * @returns 是否落库。
+ */
+export function l2dSetNamedParam(host: L2dHost, slot: number, paramId: string, raw: number): boolean {
+  const inst = host.l2dSlots.get(slot);
+  if (!inst?.model) return false;
+  const v = clampByte(raw);
+  inst.params.set(paramId, v > 0 ? v / 255 : 0);
+  return true;
+}
+
+/** 引擎 `sub_428320` raw 34758-34768 的钳位（`<= 255` 且 `>= 0`，否则取端点）。 */
+export function clampByte(v: number): number {
+  const n = Math.trunc(v);
+  if (n <= 255) return n >= 0 ? n : 0;
+  return 255;
+}
+
+/**
+ * **`0x34F` 纹理乘色**（`sub_428400` raw 34794-34821）：
+ * `op2` = 打包颜色、`op1` = 实例槽（`op2 < 0` 时**同一个 op1 又当绘制项 handle** 去查工作色）。
+ *
+ * 逐字（raw 34804-34820）：
+ * ```c
+ * v2 = readInt(2);
+ * if ( v2 < 0 ) { v3 = readInt(1); v2 = sub_4ADD60(Scene, v3); }   // 查不到 ⇒ -1
+ * v6 = BYTE2(v2)/255;  v7 = BYTE1(v2)/255;  v8 = (BYTE)v2/255;      // ★解码成三个 0..1 分量
+ * sub_4A0790(slots, readInt(1), v6, v7, v8);   // → sub_478590：**对 10 个纹理槽里每一个非空的**调 sub_4BD150
+ * ```
+ * ★三分量按引擎实参序（`sub_4BD150(tex, a3, a4, a5, 1.0)` raw 143670-143672）= `[BYTE2, BYTE1, BYTE0]`。
+ *
+ * @param workColor `sub_4ADD60`（raw 132579-132588：按 handle 查 `Scene+1032` 绘制项表的 `+96` 工作色，
+ *                  查不到返回 **-1**）。宿主不实现 ⇒ 按"查不到"取 `-1`（= 三分量全 1 ⇒ 无着色）。
+ */
+export function l2dTextureMulColor(
+  host: L2dHost,
+  slot: number,
+  color: number,
+  workColorOf?: (handle: number) => number | null,
+): boolean {
+  const inst = host.l2dSlots.get(slot);
+  // `sub_478590` 的门（raw 92729 `if (*_this)`）：模型非空
+  if (!inst?.model) return false;
+  let packed = color | 0;
+  if (packed < 0) {
+    const found = workColorOf?.(slot);
+    packed = found == null ? -1 : found | 0;
+  }
+  const rgb = decodeL2dMulColor(packed);
+  inst.mulColorRaw = packed;
+  inst.mulColor = rgb;
+  // ★逐纹理下发（raw 92729-92740）：**只对已有纹理槽**（`if (*v6)`）
+  inst.mulColors.clear();
+  for (const texNo of inst.textures.keys()) {
+    if (texNo >= 0) inst.mulColors.set(texNo, rgb);
+  }
+  return true;
+}
+
+/**
+ * 把 `0x34F` 的打包字节解码成三个 0..1 分量。
+ *
+ * 字节序按引擎（`[BYTE2/255, BYTE1/255, BYTE0/255]`，raw 34813-34818）—— **不是** RGBA 顺序的猜测，
+ * 是 `sub_4BD150(tex, a3, a4, a5, 1.0)` 的**实参序**。
+ */
+export function decodeL2dMulColor(packed: number): [number, number, number] {
+  const v = packed | 0;
+  return [((v >>> 16) & 0xff) / 255, ((v >>> 8) & 0xff) / 255, (v & 0xff) / 255];
 }
 
 /**
@@ -265,6 +418,7 @@ export function l2dCreateNode(host: L2dHost, key: number, slot: number): L2dNode
   node.flags |= 1;
   node.slot = slot;
   host.l2dNodes.set(key, node);
+  markSceneDirty(node); // raw 133948（`_this[11627] = 1`）
   return node;
 }
 
@@ -279,15 +433,22 @@ export function l2dCreateNode(host: L2dHost, key: number, slot: number): L2dNode
  * ★2026-09 订正（`tickets/T-0096`）：旧实现用 `makeNode()` **重建整个节点** ⇒ 把 `wins`
  * （delay/dur/目标值/起点）也清掉了 —— 那是**偏差**（引擎语义 = 保留）。这里改成**只**改该改的字段，
  * 并保留对象身份（节点不会被换掉，跨帧持有它的引用不会失效）。
+ *
+ * ★2026-09 再订正（`tickets/T-0160`，审计 row 88）：**旋转也不在清点里**。旧实现写
+ * `node.rotation = { axis: [0,0,1], deg: 0 }` 是自造 —— `+52..67` 是**旋转 from 的矩阵**（`v4[52..67]`
+ * 落在字节 `+208..271`），而 `0x348` 写的轴角在 `+464..492`，两者不是同一块。`0x346` 之后
+ * 「`0x348` 之前刚设过的轴角」必须保持原值。
+ * 另：raw 134030 的 `_this[11627] = 1` 要一起复现（见 `L2dNode.sceneDirty`）。
  */
 export function l2dNodeReset(host: L2dHost, key: number): L2dNode {
   const node = ensureNode(host, key);
   node.scale = [1, 1, 1]; // `+20..35` ← 单位阵（对角三元组）
-  node.rotation = { axis: [0, 0, 1], deg: 0 }; // `+52..67`
+  // ★不碰 node.rotation：`+464..492` 不在 `sub_4AFC40` 的写点里
   node.translate = [0, 0, 0]; // `+84..99`
   node.matrixBase = AFFINE_IDENTITY; // `+127..142`
   node.matrixDirty = false; // `+76 = 0`（raw 133961）
   node.matrix = AFFINE_IDENTITY;
+  markSceneDirty(node); // raw 134030（`_this[11627] = 1`）
   node.resets += 1;
   return node;
 }
@@ -302,6 +463,7 @@ export function l2dNodeScale(host: L2dHost, key: number, sx: number, sy: number,
   const node = ensureNode(host, key);
   node.scale = [sx, sy, sz];
   node.matrixDirty = true; // `+76 = 1`（`0x347` raw 134048）
+  markSceneDirty(node); // raw 134052（`_this[11627] = 1`）
   return node;
 }
 
@@ -321,6 +483,7 @@ export function l2dNodeRotation(
   const node = ensureNode(host, key);
   node.rotation = { axis, deg };
   node.matrixDirty = true; // `+76 = 1`（`0x348` raw 134119）
+  markSceneDirty(node); // raw 134098（`_this[11627] = 1`）
   return node;
 }
 
@@ -329,13 +492,22 @@ export function l2dNodeTranslate(host: L2dHost, key: number, x: number, y: numbe
   const node = ensureNode(host, key);
   node.translate = [x, y, z];
   node.matrixDirty = true; // `+76 = 1`（`0x349` raw 134119 同族；见 `sub_4AFF80`）
+  markSceneDirty(node); // raw 134123（`_this[11627] = 1`）
   return node;
 }
 
-/** **`0x34A` 基础平移偏移**（`sub_427FB0` → `sub_4AFFF0` raw 134129-134140 写 `record[2..4]`）；`op2..op4` = float。 */
+/**
+ * **`0x34A` 基础平移偏移**（`sub_427FB0` → `sub_4AFFF0` raw 134129-134140 写 `record[2..4]`）；`op2..op4` = float。
+ *
+ * ★审计 row 89（`tickets/T-0160`）：`sub_4AFFF0` 的**唯一**副作用除三格外就是 `_this[11627] = 1`
+ * （raw 134138）—— 它**不写** `record+76`。旧实现既不置 `matrixDirty` 也不通知宿主置脏
+ * ⇒ 这一条单独发生时（没有别的窗/写者在跑）引擎会强制重画、emulator 不会。
+ * 修法按体：`record[2..4]` + `Scene+46508` 的锁存（`matrixDirty` **不置**，与引擎同）。
+ */
 export function l2dNodeBaseOffset(host: L2dHost, key: number, x: number, y: number, z: number): L2dNode {
   const node = ensureNode(host, key);
   node.baseOffset = [x, y, z];
+  markSceneDirty(node); // raw 134138（`_this[11627] = 1`）★注意：**不置** `+76`
   return node;
 }
 
@@ -472,9 +644,52 @@ export function l2dComposeNodeAt(
  * ★必须**在绘制节点时**调用（能力条目 `live2d-node-draw-advance`）：引擎**没有**独立逐帧 tick，
  * 只画不推进 ⇒ 动作永不动（同样不报错）。
  *
+ * ★★**装载标志 `+21`/`+22` 的门与结算**（`tickets/T-0160`，审计 row 96/19 的后半）：
+ * 引擎唯一的动作推进入口 `sub_4783D0`（raw 92578-92615）逐字是
+ * ```c
+ * if ( *_this ) {
+ *   if ( +21 == 1 || +22 == 1 ) {                 // ★只有"有动作刚装载"时才进这一块
+ *     if ( sub_4BCCA0(_this[3]) ) {               // 队列那一跳（见 motionQueueFinished 的说明）
+ *       if ( +22 ) +22 = 0;                       // 槽 1：播完就结算，**不重入队**
+ *       else if ( +20 ) sub_4BCA20(_this[3], _this[1], 1);   // 槽 0 且循环位在 ⇒ 重入队
+ *       else +21 = 0;
+ *     }
+ *     sub_4BCB50(_this[3], *_this);               // 推进（用当前时间更新参数）
+ *   }
+ *   …
+ * ```
+ * ⇒ 旧实现"对每个可画节点的槽无条件 `advanceMotion`"少了这层门与结算。
+ * 本作语料 4 处 `i34e` 的 `op2` **全是 0** ⇒ 都走槽 0、都消费 `op4=1`（循环）⇒ 语料行为不变
+ * （★审计 row 92 把语料数写成"op2 = 0/0/0/2、只有 1 处走不消费支线"是**读错了一格**：
+ * 那组值其实是各条的 `op3`（实例槽），四条 `op2` 都是 0 —— 见 changes 的订正表）。
+ *
+ * ★★**眨眼那一支**（`tickets/T-0166`，raw 92605-92606）：引擎在**同一个 `if (*_this)` 块里**、
+ * **动作那个 `if (+21/+22)` 块之外**还有一句
+ * ```c
+ * if ( *((_BYTE *)_this + 23) )
+ *   sub_4BC550(_this[4], (_DWORD **)*_this);   // _this[4] = +16 的 EyeBlinkMotion
+ * ```
+ * ⇒ 它 ① 不要求 `+21/+22`（没有动作装载也跑）、② 只要**这一帧真的画了**这个节点就跑一次
+ * （调用点正是 `sub_4B0360` raw 134389 的逐节点绘制）。本函数按同一次遍历把两者串起来：
+ * 先动作（`sub_4BCB50`）、再眨眼（`sub_4BC550`），后者的写回**并进同一份 overrides**
+ * （同一帧里对同一参数的后写覆盖先写，与引擎"用同一条 `sub_4BD490` 往模型参数表上写"同序）。
+ *
+ * ★门控 `+23` **缺省关**（= 随包二进制的真实行为：全库没有任何写者，见 `blink.ts` 文件头）。
+ * 打开它只对"将来有数据能置这一格"的情形有意义 —— 详情与重新评估条件见
+ * `tickets/T-0166/changes-c166-blink.md` §5。
+ *
  * @param nodeKeys 本帧要绘制的节点 key；缺省 = 全部节点。
+ * @param opts.clockMs 引擎时钟（`sub_4BF8D0()` = `clock()` 毫秒）。眨眼的时间轴是**真实时间**，
+ *                     与 `$fps`（动作曲线采样间隔）无关；缺省 = 内部按 `deltaMs` 累计（与宿主
+ *                     每帧给 delta 的现状一致）。
+ * @param opts.rng 随机源（引擎 `rand() * (1/32767)`；只用于排下一次眨眼）。缺省 `Math.random`。
  */
-export function l2dAdvance(host: L2dHost, deltaMs: number, nodeKeys?: number[]): Map<number, Map<string, number>> {
+export function l2dAdvance(
+  host: L2dHost,
+  deltaMs: number,
+  nodeKeys?: number[],
+  opts?: { clockMs?: number; rng?: BlinkRng },
+): Map<number, Map<string, number>> {
   const out = new Map<number, Map<string, number>>();
   const slots = new Set<number>();
   for (const k of nodeKeys ?? [...host.l2dNodes.keys()]) {
@@ -484,11 +699,113 @@ export function l2dAdvance(host: L2dHost, deltaMs: number, nodeKeys?: number[]):
   for (const slot of slots) {
     const inst = host.l2dSlots.get(slot);
     if (!inst) continue;
-    const overrides = advanceMotion(inst, deltaMs);
-    if (overrides.size > 0) {
-      for (const [k, v] of overrides) inst.params.set(k, v);
-      out.set(slot, overrides);
+    // ★门：`+21`/`+22` 都没置 ⇒ 队列不在被跟踪（`0x34E` 没装载过，或已结算）⇒ 不推进。
+    if (inst.loaded[0] || inst.loaded[1]) {
+      // ★结算（`if (sub_4BCCA0(队列))` 那一跳）：槽 1 先结算；否则槽 0 的循环位在 ⇒ 重入队，否则清标志。
+      if (motionQueueFinished(inst)) {
+        if (inst.loaded[1]) {
+          inst.loaded[1] = false;
+        } else if (inst.loop) {
+          const rec = inst.records.get(0);
+          if (rec) inst.current = { motion: rec.motion, elapsedMs: 0, loop: true };
+        } else {
+          inst.loaded[0] = false;
+        }
+      }
+      const overrides = advanceMotion(inst, deltaMs);
+      if (overrides.size > 0) {
+        for (const [k, v] of overrides) inst.params.set(k, v);
+        out.set(slot, overrides);
+      }
+    }
+    // ★眨眼（raw 92605-92606）：**在动作门之外**，门是 `+23`（缺省关）。
+    // ★模型非空也是门：引擎这一支的**唯一**调用点在 `sub_4B0360` 的逐节点绘制里，而那个块的门
+    //   就是 `if (v28[v29[1] + 13953])`（槽里有实例，raw 134320）—— 实例的 `sub_4783D0` 第一句又是
+    //   `if (*_this)`（`+0` = 模型，raw 92584）⇒ 没有模型时连 `sub_4BC550` 都不会被调到。
+    const blink = l2dBlinkTick(inst, deltaMs, opts);
+    if (blink) {
+      const m = out.get(slot) ?? new Map<string, number>();
+      for (const [paramId, v] of blink) m.set(paramId, v);
+      out.set(slot, m);
     }
   }
   return out;
+}
+
+/**
+ * **眨眼那一支的唯一入口**（引擎 `sub_4783D0` raw 92605-92606：
+ * `if (*((_BYTE*)_this + 23)) sub_4BC550(_this[4], *_this);`）—— 门、时钟与写回都在这一处。
+ *
+ * 引擎逐字（`sub_4783D0` 的两层门）：
+ * ```c
+ * if ( *_this ) {                       // ① 实例 +0 的模型指针非空（raw 92584）
+ *   …动作那一块（+21/+22）…
+ *   if ( *((_BYTE *)_this + 23) )       // ② 眨眼门控（非 0 即真，raw 92605）
+ *     sub_4BC550(_this[4], *_this);     // ③ +16 的 EyeBlinkMotion 推进一步
+ * }
+ * ```
+ * 而调用点那层还有"槽里有实例"（`sub_4B0360` raw 134320）⇒ 无模型时连 ③ 都到不了。
+ *
+ * @param deltaMs 本拍时长（引擎没有这个参数 —— 它的时钟是全局 `clock()`；emulator 按实例累计）。
+ * @param opts.clockMs 直接给绝对时钟（给了就不再用内部累计；守卫/诊断用）。
+ * @returns 本拍要写的 `参数名 → 值`（左眼 `w`、右眼 `+32` 决定取负）；**门关 ⇒ `null`**
+ *          （一拍都不推进，连 `+16`/`+8` 都不动）。
+ */
+export function l2dBlinkTick(
+  inst: L2dInstance,
+  deltaMs: number,
+  opts?: { clockMs?: number; rng?: BlinkRng },
+): Map<string, number> | null {
+  if (!inst.blinkEnabled || !inst.model) return null;
+  const now = opts?.clockMs ?? blinkClockOf(inst, deltaMs);
+  const w = blinkStep(inst.blink, now, opts?.rng);
+  // `w === undefined` = 引擎那一拍把两边都置成 1.0（"无覆盖"）⇒ 不产生写回。
+  if (w === undefined) return null;
+  const out = new Map<string, number>();
+  // `sub_4BD490(model, PARAM_EYE_L_OPEN, w, 1.0)` + `(…, R, ±w, 1.0)`（raw 143123-143131）；
+  // `+32`（`negateRight`）决定右眼那一份是否取负（raw 143125-143126 的 `v6 = -v6`）。
+  for (const [paramId, v] of [
+    [BLINK_PARAM_L, w],
+    [BLINK_PARAM_R, inst.blink.negateRight ? -w : w],
+  ] as const) {
+    // ★只有模型**真的声明了**该参数才写（`sub_4BD3E0` raw 143791-143801 那条路对
+    //   "参数不存在"的后果是 `_CxxThrowException(aOutOfRangeMode)` —— 引擎会**抛**）。
+    //   emulator 用 Map ⇒ 退化为"写进去也没人读"，但那样会让"没有眨眼数据的模型"凭空多出
+    //   两个参数（幽灵写）⇒ 这里按引擎的"参数表里得有这一格"口径跳过（见 changes §5）。
+    if (declaresParam(inst, paramId)) {
+      out.set(paramId, v);
+      inst.params.set(paramId, v);
+    }
+  }
+  return out.size > 0 ? out : null;
+}
+
+/**
+ * **每个实例各自累计的眨眼时钟**（毫秒）。
+ *
+ * 引擎用的是**全局** `clock()`（`sub_4BF8D0`），一次调用一个值 ⇒ 同一帧里所有实例看到同一个数。
+ * 宿主（`scL2dTick`，属别的单元，本单元只读）只给 `deltaMs` ⇒ 这里按实例累计；
+ * 差值只在该帧内"多个槽是否共用同一读法"上可见（同一帧所有实例累加的 delta 相同 ⇒ 结果一致）。
+ * ★`scL2dTick` 只在 `delta > 0` 时调 `l2dAdvance` ⇒ **delta = 0 的那一拍眨眼不推进**（引擎会推）。
+ * 这一格登记为近似（见 changes §4），不在这里补（会改到调用点语义）。
+ */
+const blinkClocks = new WeakMap<L2dInstance, number>();
+function blinkClockOf(inst: L2dInstance, deltaMs: number): number {
+  const next = (blinkClocks.get(inst) ?? 0) + deltaMs;
+  blinkClocks.set(inst, next);
+  return next;
+}
+
+/**
+ * 模型是否**声明**了这个参数名（= 引擎"参数表里有没有这一格"的等价物，`sub_4C4FD0`）。
+ *
+ * ★为什么眨眼这条要问、而 `0x351` / 动作曲线那条不问：引擎那两条路的落点不同 ——
+ * `sub_478520`（`0x351`）与 `sub_4BCB50`（动作）走 `sub_4BD4D0`，其失败支只是 `if (v5 >= 0)`
+ * **静默跳过**（raw 143838-143839）；而眨眼走的 `sub_4BD490` → `sub_4BD3E0` 对缺格是
+ * **抛异常**（raw 143795-143799 `_CxxThrowException(aOutOfRangeMode)`）。
+ * emulator 不复现"抛"（那会把整个场景打断），退化为"跳过这一格"，并把差别登记在
+ * `tickets/T-0166/changes-c166-blink.md` §5。模型为 `null` 时按"没有参数表"处理。
+ */
+function declaresParam(inst: L2dInstance, paramId: string): boolean {
+  return inst.model?.params.some((p) => p.id?.name === paramId) === true;
 }

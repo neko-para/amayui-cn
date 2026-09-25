@@ -16,19 +16,19 @@
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "needsRender",
       "note": "判据里曾读宿主自己的 waitFlags（已删；判据在共享层 sceneNeedsRender）",
-      "line": 943
+      "line": 984
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "setWaitFlag",
       "note": "只置不清的那份镜像（已删）",
-      "line": 946
+      "line": 987
     },
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "e.waitFlags &= ~0x400",
       "note": "清位现在在共享驱动里（唯一一处；B4 后 session 不再自己清）",
-      "line": 290
+      "line": 382
     }
   ],
   "history": [

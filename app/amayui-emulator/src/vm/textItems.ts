@@ -64,6 +64,45 @@ export const ITEM_GROUP_START = 1;
  */
 export const ITEM_REFLOW = 0x2;
 
+/**
+ * 记录 flags **bit2**：**带正文串的「已画文本行」记录**（`tickets/T-0170`）。
+ *
+ * 写者是**渲染层的** `sub_45F090`（raw 74360-74400；调用点 raw 76446 / 79248 与 `sub_4691A0`
+ * raw 81526 → 其调用者 `sub_46BE30` raw 83364 一族）：它把 `+44` 的 `std::string` **一起**写进记录
+ * （`sub_40C210((int)v13, Src, strlen(Src))` raw 74395）——这与 `0x1D2` 的 `sub_45EFA0`
+ * （raw 74352 传空串 `byte_51EA3C`）**结构相同、内容不同**，所以「有正文的行」必须用一个独立的位
+ * 才能与 `0x1D2` 的标记记录区分开。
+ *
+ * `0x1D1` 的落点 `sub_4675A0` 读它两处：`(v39[40] & 4)` 决定走**逐字绘制**那条分支
+ * （raw 80725-80752：把**连续**若干条 `flags&4` 记录的串 `memcpy` 拼成一整行再逐字画），
+ * 而 `a4 & 4`（= op3 的 bit2）是"不要贴这一行"的抑制位（raw 80773 `v196`）。
+ */
+export const ITEM_ROW_TEXT = 0x4;
+
+/**
+ * 记录 flags **bit3**：**换行记录**（字符串为空）。
+ *
+ * 写者 `sub_4691D0`（raw 81530-81553）：`sub_4691A0(_this, win, a3 | 8, v6, 0, &unk_51F030)`
+ * ——**空串**（`unk_51F030`）+ 位 `|8`；调用点 raw 82667 / 83094（排版/换行的收尾）。
+ * `sub_4675A0` 读它做**行推进**：raw 80718-80724 `v208 = win+28; v209 += Font[1380] + sub_404EC0(Font)`。
+ */
+export const ITEM_ROW_LINE = 0x8;
+
+/**
+ * `0x1D1`/`0x82` 的 **op3（引擎形参 `a4`）位**。
+ *
+ * ★**别把 op3 的位与记录 `flags` 的位混起来**：引擎两边用的是同一批数值但语义完全不同 ——
+ * `a4 & 1` = 允许穿过重排哨兵 / 记录 `flags & 1` = 组首；`a4 & 2` = 覆写颜色 / `flags & 2` = 重排哨兵；
+ * `a4 & 4` = 抑制这一行的贴图 / `flags & 4` = 带正文串的行；`a4 & 8` = 允许贴语音图标 / `flags & 8` = 换行记录。
+ * 四对纯属巧合，所以这里给 op3 单独命名。
+ */
+export const REPAINT_ALLOW_REFLOW = 0x1; // raw 80676
+export const REPAINT_SET_COLORS = 0x2; // raw 80629-80634 / 81470-81473
+export const REPAINT_SUPPRESS_ROW = 0x4; // raw 80773 `v196`
+export const REPAINT_VOICE_ICONS = 0x8; // raw 80680
+export const REPAINT_RUBY_RANGE = 0x30; // raw 80607（移除 `win+276/+280` 区间）
+export const REPAINT_KEEP_SURFACE = 0x40; // raw 80591（不清旧表面 / 不移除 `win+104/+108`）
+
 /** 一条 72 字节记录（只建模被读写的字段）。 */
 export interface TextItemRecord {
   /** `+0`：所属窗。 */
@@ -78,6 +117,14 @@ export interface TextItemRecord {
   sel32: number;
   /** `+40`：见 `ITEM_*`。 */
   flags: number;
+  /**
+   * `+44`：**`std::string`（MSVC x86，24 B：buf@+44 / size@+60 / capacity@+64）**。
+   *
+   * ★`tickets/T-0170` 新增（旧模型只建了 `+20/+24/+28/+32/+40`）：引擎里**只有**
+   * `sub_45F090` 那条路会写非空串（`ITEM_ROW_TEXT` 记录），`0x1D2`/`0xC4` 一族的记录恒空串。
+   * `0x1D1` 的落点读它的三处：raw 80736-80739 / 80741-80745 / 81022-81036。
+   */
+  text?: string;
 }
 
 /** `0x1D3` 的查询结果（`sub_457960`）。 */
@@ -120,6 +167,87 @@ export interface BacklogPageAt {
    * 调用方 `sub_42D440` 忽略它（raw 38107 不检查返回值），所以它只对 `sub_459770` 那类消费者有意义。
    */
   ret: number;
+}
+
+/** 记录在本轮切片里的分类（引擎 `sub_4675A0` 的 `if` 链 raw 80676-80725 的逐条落点）。 */
+export type RecallRecordKind =
+  /** `flags & 0x20000000`（`0x1D2` 标记）：**不画**，只跳过（raw 80711-80717）。 */
+  | 'text-marker'
+  /** `flags & 0x40000000`（语音项）：`op3 & 8` 时才贴图标（raw 80678-80699）。 */
+  | 'voice'
+  /** `flags & 4`：带正文串的行（raw 80725-81014）。 */
+  | 'row-text'
+  /** `flags & 8`：换行记录（raw 80718-80724）。 */
+  | 'row-line'
+  /** 其余（`flags & 4` 为 0、但有串）：走 raw 81016-81014 的"整串"分支。 */
+  | 'row-other';
+
+/** 切片里的第三条记录（诊断/守卫用；**不含**任何页/滚动/高亮概念）。 */
+export interface RecallRecord {
+  /** 在 `records` 里的下标。 */
+  index: number;
+  /** `+40`。 */
+  flags: number;
+  kind: RecallRecordKind;
+  /** `+44`（`row-text`/`row-other` 才有意义）。 */
+  text?: string;
+}
+
+/** 语音图标项（引擎 `sub_4BB840((int)v167, 通道, 记录+20, +24, +28)` raw 80693）。 */
+export interface RecallVoiceIcon {
+  /** 记录 `+20`（引擎当通道号用；`v40 = *((_DWORD *)v39 + 8)` raw 80682 —— **+32**）。 */
+  channel: number;
+  x: number;
+  y: number;
+  z: number;
+  /** 引擎 raw 80683 的 `sub_404CB0(语音) && v212[channel] > 0` ⇒ 走 `sub_409E10` 分支（不贴图标）。 */
+  suppressed: boolean;
+}
+
+/**
+ * `0x1D1`（`sub_420310` → `sub_4675A0` raw 80313-81522）那一圈记录循环的结果。
+ *
+ * ★**它不是"页面模型"**：引擎体里**没有**滚动位置、没有选中页高亮、没有页索引
+ * （那三件事由 `src/HISTORY.txt` 自己做：`i1d0`/`i1d3` 取页与记录、`draw-texture` 画框与高亮，
+ * 见 `HISTORY.txt:1128-1314`；`0x1D1` 只被它调 **1 次**）。本结构就是 raw 80664-81014
+ * 那一圈 `for (i = op2; …)` 的**忠实切片结果**。
+ */
+export interface RecallRepaint {
+  /** 重画目标窗（引擎 `a2`；op1 经 `resolveWin` 解析后）。 */
+  win: number;
+  /** `0x1D1` 的 op2（起始记录下标）。 */
+  start: number;
+  /** 半开区间右端：引擎 `v197` 停下的位置。 */
+  end: number;
+  /** 停止原因（raw 80708 / 80705 / 81011 三条出口；`range` = 越界门 raw 80529 拦下，一条都没切）。 */
+  stop: 'eof' | 'reflow' | 'group-start' | 'range';
+  /** 逐条分类结果（含被跳过的标记记录）。 */
+  records: RecallRecord[];
+  /** 按引擎 `memcpy` 规则拼好的**正文行**（连续 `flags&4` 记录拼成一行，raw 80731-80752）。 */
+  lines: string[];
+  /** 语音图标项（`op3 & 8` 为 0 时这里恒空 —— 引擎那一段整个被跳过）。 */
+  voiceIcons: RecallVoiceIcon[];
+  /** 每通道已贴计数（引擎 `v212[10]`，raw 80655/80696）。 */
+  channelSeen: number[];
+  /** 该窗走专用路径（窗对象 `+112 == 1` ⇒ `sub_4634B0`，raw 80531-80532）。 */
+  dedicatedPath: boolean;
+}
+
+/** `repaintRange` 的输入（= `0x1D1` 的实参与两处窗对象判定）。 */
+export interface RecallRepaintOpts {
+  /** 解析后的窗号（引擎 `a2`；也是 `win+112` 专用路径判定与重画目标）。 */
+  win: number;
+  /** `op3`（引擎 `a4`，char）。 */
+  mode: number;
+  /** 该窗 `+112 == 1` ⇒ 引擎改走 `sub_4634B0`（专用 GDI 变体，raw 77500-78716）。 */
+  dedicatedPath: boolean;
+  /**
+   * `sub_404CB0(语音对象)`：**有语音通道占线**（raw 80683）。
+   *
+   * emulator **恒传 `false`** —— 语音对象的 3 通道占用没有对外查询缝（登记在 `missing[]`）。
+   * 传 `true` 时引擎会走"该通道已贴过就不贴"的另一支（raw 80685 `sub_409E10`）。
+   */
+  voiceBusy: boolean;
 }
 
 export class TextItemTable {
@@ -194,6 +322,162 @@ export class TextItemTable {
       sel32,
       flags: ITEM_VOICE | (this.takeGroupStart(win) ? ITEM_GROUP_START : 0),
     });
+  }
+
+  /**
+   * `sub_45F090`（raw 74360-74400）：**已画文本行** push（`tickets/T-0170`）。
+   *
+   * 引擎调用形态 `sub_45F090(_this, win, flags, rect4, a5, a6, Src)`：
+   * `v12[0] = win`（+0）、`v12[1..4] = a4[0..3]`（+4..+16）、`v12[5] = Font[340]`（+20 填充色）、
+   * `v12[6] = Font[341]`（+24 描边色）、`v12[7] = Font[342]`（+28）、`v12[8] = a6`（+32）、
+   * `v12[9] = a5`（+36）、`v12[10] = a3`（+40 flags，`_this[win+849]` 时 `|= 1` 组首）、
+   * 以及 `sub_40C210(&v13, Src, strlen(Src))` 建出的 `+44` 串。
+   *
+   * ★**记账门在调用方、不在本函数**（`T-0151` 订正）：`sub_45F090` 体里确实没有 `Engine[97055]`
+   * 的引用，但它的**唯一**文本入队调用点 `sub_46BE30` 有 —— `if ( a5 >= 0 ) sub_4691A0(…)`
+   * （raw **83941-83942**，`a5` = `0x6E`/`0x196` 传进去的 `Engine[97055]`）⇒ `i1bb 0` 期间
+   * **不 push 本记录**。换行记录的那条路同理（`sub_4691D0` raw **81549** 的 `if ( a3 >= 0 )`）。
+   * emulator 的对应门 = `handlers/msgwin.ts` 的 `recordGateOpen()`。
+   *
+   * ★emulator 只在"文本入队"那一刻 push（`0x6E`/`0x196`），粒度 = **一次 `sub_46BE30` 调用**
+   *   （= 一段文本），与引擎的逐段绘制一致；整行由 `repaintRange` 按引擎的 `memcpy` 规则拼回。
+   */
+  pushRenderedRow(win: number, text: string, fill: number, outline: number): void {
+    this.records.push({
+      win,
+      v20: fill, // +20 ← Font[340]
+      v24: outline, // +24 ← Font[341]
+      v28: 0,
+      sel32: 0,
+      flags: ITEM_ROW_TEXT | (this.takeGroupStart(win) ? ITEM_GROUP_START : 0),
+      text,
+    });
+  }
+
+  /**
+   * `sub_4691D0`（raw 81530-81553）：**换行记录** push —— `sub_4691A0(_this, win, a3 | 8, v6, 0, &unk_51F030)`，
+   * 即 `flags |= 8` 且串为**空**（`unk_51F030`）。`sub_4675A0` 用它推进行（raw 80718-80724）。
+   */
+  pushLineFeed(win: number): void {
+    this.records.push({
+      win,
+      v20: 0,
+      v24: 0,
+      v28: 0,
+      sel32: 0,
+      flags: ITEM_ROW_LINE | (this.takeGroupStart(win) ? ITEM_GROUP_START : 0),
+      text: '',
+    });
+  }
+
+  /**
+   * **`0x1D1` 的记录循环**（`sub_4675A0` raw 80664-81014 的忠实切片）。
+   *
+   * 循环骨架（逐句对着 raw 抄）：
+   * ```c
+   * v34 = (Font+3368 − Font+3364) / 72;          // 记录条数
+   * for ( i = a3; ; i = v197 ) {
+   *   v38 = 记录[i].flags;                        // raw 80672
+   *   if ( (v38 & 2) != 0 && (a4 & 1) == 0 ) goto LABEL_204;      // raw 80676：停止
+   *   if ( (v38 & 0x40000000) == 0 ) break;       // raw 80678：非语音 ⇒ 出循环走文本路径
+   *   if ( (a4 & 8) != 0 ) { …贴图标…; ++v212[通道]; }             // raw 80680-80699
+   *   if ( i >= v34 - 1 ) goto LABEL_203;         // raw 80701
+   *   if ( (记录[i+1].flags & 1) != 0 ) goto LABEL_204;           // raw 80703/LABEL_202：停止
+   * LABEL_203: if ( ++v197 >= v34 ) goto LABEL_204;
+   * }
+   * // 文本路径（raw 80711 起）：
+   *   if ( (v38 & 0x20000000) != 0 ) { …若下一条是组首则停，否则 ++i 继续… }
+   *   else { if ((v39[40] & 8) != 0) 行推进; if ((v39[40] & 4) != 0) 逐字画; else 整串画;
+   *          …若下一条是组首则停，否则 ++i 继续… }
+   * ```
+   *
+   * 三条**出口**（`stop`）：`eof`（`++i >= 条数`）、`reflow`（`flags&2` 且 `!(mode&1)`）、
+   * `group-start`（下一条记录带组首位）。
+   *
+   * `lines` = 引擎 raw 80731-80752 那段 `memcpy(&v214[j-1], 串, strlen(串))` 的等价物：把
+   * **连续**的 `flags&4` 记录的串接成一行；`flags&8` 记录是**行推进**（它自己不带正文，
+   * 见 `ITEM_ROW_LINE`），照引擎在 `row-line` 处**结束当前行**。
+   */
+  repaintRange(start: number, opts: RecallRepaintOpts): RecallRepaint {
+    const mode = opts.mode;
+    const out: RecallRepaint = {
+      win: opts.win,
+      start,
+      end: start,
+      stop: 'eof',
+      records: [],
+      lines: [],
+      voiceIcons: [],
+      channelSeen: new Array<number>(10).fill(0),
+      dedicatedPath: opts.dedicatedPath,
+    };
+    const n = this.records.length;
+    /** 引擎的越界门是**调用方**的（raw 80529）—— 这里再兜一次，切片本身恒安全。 */
+    if (start < 0 || start >= n) {
+      out.stop = 'range';
+      return out;
+    }
+    /** 当前正在拼的正文行（引擎的 `v214` 缓冲）。 */
+    let line = '';
+    let lineOpen = false;
+    const flushLine = (): void => {
+      if (lineOpen) out.lines.push(line);
+      line = '';
+      lineOpen = false;
+    };
+    for (let i = start; i < n; i++) {
+      const r = this.records[i]!;
+      const flags = r.flags;
+      // raw 80676：重排记录是**切页哨兵**；只有 op3 bit0 才允许穿过它。★这一条**不消费**记录
+      // （引擎是 `goto LABEL_204`，在 `for` 的 `i = v197` 自增**之前**）⇒ `end` 仍指向它。
+      if ((flags & ITEM_REFLOW) !== 0 && (mode & REPAINT_ALLOW_REFLOW) === 0) {
+        out.end = i;
+        out.stop = 'reflow';
+        return out;
+      }
+      out.end = i + 1;
+      // raw 80711：`0x1D2` 的标记记录不画（它没有正文）。
+      if ((flags & ITEM_TEXT) !== 0) {
+        out.records.push({ index: i, flags, kind: 'text-marker' });
+      } else if ((flags & ITEM_VOICE) !== 0) {
+        const channel = r.sel32; // 引擎 `*((_DWORD *)v39 + 8)` = 记录 +32 = 本模型的 `sel32`
+        out.records.push({ index: i, flags, kind: 'voice' });
+        if ((mode & REPAINT_VOICE_ICONS) !== 0) {
+          // raw 80680：整个图标分支只在 `a4 & 8` 下执行。
+          const seen = out.channelSeen[channel] ?? 0;
+          const suppressed = opts.voiceBusy && seen > 0; // raw 80683-80686
+          out.voiceIcons.push({ channel, x: r.v20, y: r.v24, z: r.v28, suppressed });
+          if (!suppressed) out.channelSeen[channel] = seen + 1; // raw 80696 `++v212[v40]`
+        }
+      } else if ((flags & ITEM_ROW_LINE) !== 0) {
+        // raw 80718-80724：行推进（`v209 += Font[1380] + sub_404EC0(Font)`）—— 位置由排版承担，
+        // 这里只承担"这一行到此为止"。引擎在这一支之后仍会走"整串"分支画一个**空串**（无可见效果）
+        // ⇒ 照抄其后果 = 不产生任何行。
+        out.records.push({ index: i, flags, kind: 'row-line' });
+        flushLine();
+      } else if ((flags & ITEM_ROW_TEXT) !== 0) {
+        out.records.push({ index: i, flags, kind: 'row-text', text: r.text ?? '' });
+        line += r.text ?? ''; // raw 80745 的 memcpy（连续若干条拼成一整行）
+        lineOpen = true;
+      } else {
+        // raw 81016 起：`flags&4` 为 0 的"整串"分支 —— 它自己就是一整行。
+        out.records.push({ index: i, flags, kind: 'row-other', text: r.text ?? '' });
+        flushLine();
+        out.lines.push(r.text ?? '');
+      }
+      // raw 80703 / 80715 / 81011-81013：**下一条**是组首 ⇒ 停（看的是下一条，不是当前这条）。
+      const next = this.records[i + 1];
+      if (next === undefined) {
+        out.stop = 'eof'; // raw 80708 `if (++v197 >= v34) goto LABEL_204`
+        break;
+      }
+      if ((next.flags & ITEM_GROUP_START) !== 0) {
+        out.stop = 'group-start';
+        break;
+      }
+    }
+    flushLine();
+    return out;
   }
 
   /**

@@ -237,7 +237,16 @@ export const CONFIG_FIELD_BINDINGS: ConfigFieldBinding[] = [
   //   既是逐字显现的 Sleep 节拍（raw 13954），又是淡入定时器间隔（raw 28382/28763）。
   { key: CFG.messageMessageSpeed, field: 21668, note: '消息速度 ms（raw 23736-23738 写字节 86672 ⇒ 下标 21668 = Font+1376）；op 0x74 写 / 0x7F 读' },
   // ★文本路径：80106×4 = 320424 = Font+235128。op 0x2EE 写（raw 33600 `_this[80106] = op1`）。
-  { key: CFG.messageMessageFade, field: 80106, note: '消息淡入 ms（raw 23739-23741 写字节 320424 ⇒ 下标 80106 = Font+235128）；op 0x2EE 写、行 alpha 动画窗时长因子（MessageSpeed×MessageFade/100）' },
+  // ★**消费者缺口（审计 `msgwin-line-fade-window`，`tickets/T-0161`）**：引擎在**排版落点**里把本字段
+  //   当成"消息窗每行的淡入色窗时长"用 —— `sub_45BE20` 为每行建 DrawItem 之后（raw 72336-72348）：
+  //   `if (*(int*)(_this+1376) > 0 && *(int*)(_this+235128) > 0) { sub_4ACF60(drawContainer, item, 0,
+  //   0xFFFFFF); sub_4AD0C0(drawContainer, item, 0, MessageSpeed * MessageFade / 100, -1); }`
+  //   （两个字段都 > 0 才建窗；时长是**整数除法**）。emulator 侧 `DrawItem` 的颜色动画窗机制已建模
+  //   （`renderer/drawitem/animWindow.ts` + `test/draw-item-anim-window.test.ts`），但**没有任何代码
+  //   把消息窗的行接上去** ⇒ 正文仍是"瞬现"（`MessageFade = 0` 的随包默认下与引擎一致，故回归集看不见）。
+  //   ⇒ 这条绑定只是"值进字段"；接线要改 `handlers/msgwin.ts`/`renderer/**`（不在本票可写路径内），
+  //   已登记在 `tickets/T-0161/changes-c161.md`。
+  { key: CFG.messageMessageFade, field: 80106, note: '消息淡入 ms（raw 23739-23741 写字节 320424 ⇒ 下标 80106 = Font+235128）；op 0x2EE 写、0x2ED 读。★行淡入色窗（时长 = MessageSpeed×MessageFade/100，raw 72336-72348）**尚未接线** ⇒ 见 tickets/T-0161' },
   // ★这条**不是**简单布尔化，而是一段**带门的映射**（raw 23722-23735，字节 5536 ⇒ 下标 1384）：
   //   `if (v >= 0) { if (v <= 1) 写 v+1; else if (v == 2) 写 31; }` ⇒ 其它取值**根本不写**（字段保持原值）。
   //   此前无 map ⇒ 原样写 3/9/-1（引擎要么写 v+1/31、要么不动），右键行为静默错。
@@ -254,6 +263,16 @@ export const CONFIG_FIELD_BINDINGS: ConfigFieldBinding[] = [
   //   而 `sound:Voice` 的消费者做 `== 1` 判断 ⇒ 静默把"开"读成"关"。
   { key: CFG.soundSE, field: 20980, map: (v) => (v !== 0 ? 1 : 0), note: 'SE 开关（raw 23689-23691 `= v != 0` 写字节 83920 ⇒ 下标 20980）' },
   { key: CFG.soundVoice, field: 21293, map: (v) => (v !== 0 ? 1 : 0), note: '语音开关（raw 23693-23695 `= v != 0` 写字节 85172 ⇒ 下标 21293）' },
+  // ★`set:DrawMode`（`tickets/T-0161`，审计 `0x201 missing-behavior`）：**原样写**，不布尔化。
+  //   引擎侧的四（+1）个写点：构造 raw 23572-23574 `*(_DWORD *)(a1 + 667856) = GetConfig(aSetDrawmode);`
+  //   （字节 667856 ⇒ 下标 166964，紧跟一条 `DrawMode=%d CreateObject=0x%x` 诊断串）、
+  //   主循环/复位后 raw 35271-35273（同形、无条件）、清零点 raw 17979（`*(_DWORD *)(_this + 667856) = 0`）、
+  //   脚本端 `0x200`/`sub_423170` raw 31372（带门：`1<<op1` 必须在 `set:CreateObject` 位图里，否则报
+  //   `aComsetdrawmode` 且不写）。修前只绑了 `display:ScreenMode` 等 6 条 ⇒ `0x201` 的 getter
+  //   （raw 39862 `sub_42B4B0(_this, 1, _this[166964])`）**恒回 0**，而 `set:DrawMode` 在重写侧
+  //   只有 `engine.ts` 的 wait-gate 一处直接读配置（口径不统一）。
+  //   参照物：`frame/loop.ts` 的帧提交门也按 `DrawMode == 1` 分岔（审计 `frame-render-gate-mainloop`）。
+  { key: CFG.setDrawMode, field: 166964, note: 'DrawMode（raw 23572-23574 构造期 `= GetConfig(set:DrawMode)` 写字节 667856 ⇒ 下标 166964）；0x201 读回' },
 ];
 
 /** 把配置写入 `Engine.engineValues`（幂等：同键重复调用覆盖）。返回实际写入的 `[字段, 值]` 列表。 */

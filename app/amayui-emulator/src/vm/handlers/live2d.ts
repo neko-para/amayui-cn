@@ -63,8 +63,9 @@ import {
   l2dSetPending,
   l2dTextureMulColor,
 } from '../../live2d/runtime.js';
-import { bindTextureToSlot, loadModelIntoSlot, startMotionOnSlot, type Live2dAssetSource } from '../../live2d/assetLoader.js';
+import { bindTextureToSlot, loadModelIntoSlot, startMotionOnSlot, type Live2dAssetSource, type L2dLoadFailure } from '../../live2d/assetLoader.js';
 import type { FileSource } from '../../arch/fileSource.js';
+import { ShowMessageError } from '../native.js';
 
 /**
  * 取本族的**操作数计划视图**（`tickets/T-0082` 收尾批：Live2D 族（live2d），10 条）；缺计划 = 编程错误。
@@ -221,7 +222,10 @@ const op_l2d_node_rotation_win: OpHandler = (c) => {
     key,
     p.int(2) ?? 0,
     p.int(3) ?? 0,
-    [p.float(4) ?? 0, p.float(5) ?? 0, p.float(6) ?? 1],
+    // ★缺 op6 时轴 z 取 **0**（引擎 `sub_4280D0` raw 34668 对 op6 是**无条件** `sub_41C300(_this, 6)`，
+    //   没有任何默认值；旧实现写 `?? 1` 是宿主自造——审计 row 282）。缺操作数只可能来自测试构造
+    //   （见 `optInt` 的说明），此时引擎读到的是"没写过"的位模式 ⇒ 0 比 1 更接近"未给"。
+    [p.float(4) ?? 0, p.float(5) ?? 0, p.float(6) ?? 0],
     p.float(7) ?? 0,
   );
 };
@@ -235,20 +239,30 @@ const op_l2d_node_translation_win: OpHandler = (c) => {
   l2dNodeTranslationWin(c.e, key, p.int(2) ?? 0, p.int(3) ?? 0, p.float(4) ?? 0, p.float(5) ?? 0, p.float(6) ?? 0);
 };
 
-/** `0x34F` 纹理乘色。 */
+/** `0x34F` 纹理乘色（`sub_428400` raw 34794-34821）：`op2 < 0` 时用同一个 op1 当绘制项 handle 查工作色。 */
 const op_l2d_texture_mul_color: OpHandler = (c) => {
   const slot = optInt(c, 1);
   if (slot === undefined) return;
-  l2dTextureMulColor(c.e, slotOf(slot), optInt(c, 2) ?? 0);
+  // ★`op2 < 0` 的查询回退 = 引擎的 `sub_4ADD60(Scene, op1)`（raw 34808：**同一个操作数**既当 handle
+  //   又当实例槽）。本工程已经有它的宿主缝（`NativeBridge.getDrawItemColor`，`0x203` 也在用）
+  //   ⇒ 查不到时缝返回 `-1`，与引擎 `sub_4ADD60` 的缺项返回值一致（raw 132585）。
+  l2dTextureMulColor(c.e, slotOf(slot), optInt(c, 2) ?? 0, (h) => c.native.getDrawItemColor?.(h) ?? null);
 };
 
-/** `0x350` 复位动作队列。 */
+/**
+ * `0x350` 复位动作队列。
+ *
+ * ★引擎门 = `sub_478500` 的 `if (*(_DWORD*)_this)`（模型非空）⇒ 槽不存在/没模型时是 no-op
+ * （审计 row 96）。
+ */
 const op_l2d_reset_motion: OpHandler = (c) => {
   const slot = optInt(c, 1);
   if (slot !== undefined) l2dResetMotion(c.e, slotOf(slot));
 };
 
-/** `0x351` 命名参数（op3 : 0..255 ⇒ 值 = op3/255）。 */
+/**
+ * `0x351` 命名参数（op3 钳到 [0,255] ⇒ 值 = op3/255；槽/模型不存在时静默 no-op，**不建槽**）。
+ */
 const op_l2d_named_param: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = optInt(c, 1);
@@ -257,7 +271,12 @@ const op_l2d_named_param: OpHandler = (c) => {
   l2dSetNamedParam(c.e, slotOf(slot), name, optInt(c, 3) ?? 0);
 };
 
-/** `0x352` 预置值：`op2 == 0` ⇒ 纹理号、否则 ⇒ 动作号。 */
+/**
+ * `0x352` 预置值：`op2 == 0` ⇒ 纹理号、否则 ⇒ 动作号。
+ *
+ * ★**不建槽**（审计 row 98）：`sub_478540`/`sub_478560` 的第一句都是 `if (*(_DWORD*)_this)`
+ * ⇒ 槽不存在时这条指令在引擎里不产生任何表项。
+ */
 const op_l2d_set_pending: OpHandler = (c) => {
   const slot = optInt(c, 1);
   if (slot === undefined) return;
@@ -293,13 +312,25 @@ export const LIVE2D_OPS: OpTable = [
  *
  * ★**没有宿主缝**（曾有过 `native.l2dLoadModel?.()`）：那条缝没有宿主实现，只会在**闸门 A**
  * 报一条假的「意图被丢弃」（实测控制窗显示 `l2dLoadModel` 未实现，而模型其实已装好）⇒ 已删。
+ *
+ * ★★**失败 = 抛 `ShowMessageError`**（`tickets/T-0160`，审计 row 87）：引擎在 handler 里
+ * （`sub_427BA0` raw 34482-34491）组「L2Dモデルファイル %s の読み込みに失敗しました」并
+ * `_CxxThrowException(Command_ShowMessage_Exception)` ⇒ **可观测后果是一条错误串 + 脚本停下**；
+ * 旧实现只写一条 log、槽留空、脚本继续跑（沉默跳过）。
+ * 引擎那条异常由本 handler 自抛，**事件循环是否中断、脚本是否继续不在体里可见**（引擎侧不可观测）
+ * ⇒ emulator 走既有通路（`ShowMessageError` → `session.#onError`：粘文本 + 横幅 + 停止），
+ * 与 `0xFE`/`0x10B` 一族同一条纪律，不新造机制。
  */
 const op_l2d_load_model: OpHandler = async (c) => {
   const plan = planFor(c);
   const id = (plan.int(1) ?? 0);
   const slot = slotOf((plan.int(2) ?? 0));
   const src = assetSource(c);
-  if (src) await loadModelIntoSlot(src, c.e, id, slot, (m) => c.native.log(m));
+  if (src) {
+    await loadModelIntoSlot(src, c.e, id, slot, (m) => c.native.log(m), (f: L2dLoadFailure) => {
+      throw new ShowMessageError(f.engineText, c.instr.opcode, f.detail);
+    });
+  }
 };
 
 /** `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。同上：无宿主缝。 */
@@ -314,7 +345,14 @@ const op_l2d_bind_texture: OpHandler = async (c) => {
   if (src) await bindTextureToSlot(src, c.e, id, slot, texNo, (m) => c.native.log(m));
 };
 
-/** `0x34E` 装 `.MTN`（`op1` = 文件 id、`op2` = 动作槽、`op3` = 实例槽、`op4` = 循环位）。同上：无宿主缝。 */
+/**
+ * `0x34E` 装 `.MTN`（`op1` = 文件 id、`op2` = 动作槽、`op3` = 实例槽、`op4` = 循环位）。同上：无宿主缝。
+ *
+ * ★**失败 = 抛 `ShowMessageError`**（`tickets/T-0160`，审计 row 90）：引擎 `sub_428200`
+ * raw 34722-34731 组「L2Dモーションファイル %s の読み込みに失敗しました」并
+ * `_CxxThrowException(Command_ShowMessage_Exception)`；旧实现只记一条 log 后 `return null`。
+ * 两条失败路（取不到文件 / `sub_478640` 返回 0）在引擎里**都**落到这条抛点 ⇒ 这里统一走 `onFail`。
+ */
 const op_l2d_start_motion: OpHandler = async (c) => {
   const plan = planFor(c);
   const id = (plan.int(1) ?? 0);
@@ -322,7 +360,11 @@ const op_l2d_start_motion: OpHandler = async (c) => {
   const slot = slotOf((plan.int(3) ?? 0));
   const loop = (plan.int(4) ?? 0) !== 0;
   const src = assetSource(c);
-  if (src) await startMotionOnSlot(src, c.e, id, slot, motionSlot, loop, (m) => c.native.log(m));
+  if (src) {
+    await startMotionOnSlot(src, c.e, id, slot, motionSlot, loop, (m) => c.native.log(m), (f: L2dLoadFailure) => {
+      throw new ShowMessageError(f.engineText, c.instr.opcode, f.detail);
+    });
+  }
 };
 
 /**

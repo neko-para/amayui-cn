@@ -57,7 +57,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "回写丢弃",
       "note": "本批修复点：bind 的异步回写判据（槽表面世代 + 绑定未变）。守卫 `test/texture-bind-race.test.ts`（5 条，判别力已机械证明）。★用户复验：白底仍在 ⇒ 这条不是那次白底的原因（保留）。★**轮 9 追加**：同一文件新增**到货通知 `onReady`**（纹理确实落进该槽时调用；被丢弃的回写不调用），`pixiBackend.ts` 传入 `() => #markDirty()` ⇒ **迟到的图像会让下一帧重新合成 ⇒ 白占位块最多存活一帧**；守卫 +2 条（迟到到货必须通知 / 丢弃不得通知，撤销 `onReady` ⇒ 1 fail，还原 sha256 一致 ⇒ 7/7）。机制取证全文见 `tickets/T-0102/white-report.md`。",
-      "line": 281
+      "line": 360
     },
     {
       "file": "src/CONFIG.txt",
@@ -81,13 +81,13 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "spr.tint = color & 0xffffff;",
       "note": "★2026-09-22 订正：这一行**无条件覆盖**占位块自己的调试色 ⇒ 白占位块的颜色 = 该项 diffuse；与 `0x203` 给的 alpha(≈0xa0) 相乘即 `#E3E3E3`（与归档帧采样逐点吻合）⇒ **白底 = #placeholder** 这条成立。但**触发原因**不是「槽 11 未绑定」（该结论已判死，见 evidence/texture-slot-identity.md），而是宿主侧 `TextureCache.resolve` 在 `texSlots[17]=0x5260` 已就位时仍返回空纹理。",
-      "line": 521
+      "line": 568
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "getTextureSize slot=",
       "note": "★唯一判决点的另一半（探针实测真 `TextureCache`，`.tmp/t0102w/probe-slot-size.mts`）：**第一遍** `bind` 异步 ⇒ `size()` = 0×0 / `resolve` 无纹理；载入落地后才真值；**第二遍**同一 `bind` 命中 `#imgCache` ⇒ **同步**命中 ⇒ `size` 与 `draw-texture` 当帧正确。⇒ 「开合侧边栏才对」= 它把同一条 `set-texture` 又发了一次（引擎 `set-texture` 同步，所以引擎第一次就对）。",
-      "line": 504
+      "line": 697
     },
     {
       "file": "src/CONFIG.txt",
@@ -98,7 +98,7 @@
     {
       "file": "src/CONFIG.txt",
       "anchor": "show-text 2 (global-string d5d)",
-      "note": "上述重新入队的本体（`label_00001d38:437`）：文本取 `global-string f612[3f37]`（`a9e2&1 && 3f3a==0`）或 `f9fa[3f37][3f3a]`（`3f3a ∈ [0,6)`），否则 `\"？？？？\"`。★它只 push **页**（`pushPage` += `markGroupStart`），**不** push 72B 文本项记录 ⇒ `0x82` 的越界门（`records.length > op2`）在这条链上仍然不过 —— 记录表只由 0x1D2/0xC4 族填。",
+      "note": "上述重新入队的本体（`label_00001d38:437`）：文本取 `global-string f612[3f37]`（`a9e2&1 && 3f3a==0`）或 `f9fa[3f37][3f3a]`（`3f3a ∈ [0,6)`），否则 `\"？？？？\"`。★它只 push **页**（`pushPage` += `markGroupStart`）。★2026-09-24（`T-0170`）：**原句「不 push 72B 文本项记录 ⇒ `0x82` 的越界门在这条链上仍然不过」已被取代** —— `show-text`(0x6E) 的调用链会在**画正文行**时经 `sub_45F090`（raw 74360-74400）push 带串记录（记录 `flags & 4`）⇒ 记录表**非空**、`0x82` 的门过得去（实测 `recordsAtI082` = 3，带种子 6；见 `tickets/T-0170/changes.md`）。",
       "line": 437
     },
     {
@@ -116,20 +116,20 @@
     {
       "file": "app/amayui-emulator/test/config1-chain-advreturn-seed.test.ts",
       "anchor": "★T-0102 判决实验",
-      "note": "判决实验的守卫（3 组，含 `seedRecords` 正向组）：记录表非空 ⇒ `i082` 必须**恰好重画一次**且用**重派生后的实时色**（`restyleByI082.fill == after.fill`、`snapshot === false`、`snapFill === null`）；`g0=6` ⇒ 走 `:262` 假分支、**不**重新入队（无 0x6E）；`g0=1 && 3f37>=0`（剧情里按「戻る」）⇒ **有** `0x71`+`0x6E` 重新入队。辨别力已机械证明：摘掉 `op_gdi_repaint_window` 那道越界门 ⇒ 本用例 1 fail（`g0=6` 组 actual 1 / expected 0）。 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
+      "note": "判决实验的守卫（3 组，含 `seedRecords` 正向组）：记录表非空 ⇒ `i082` 必须**恰好重画一次**且用**重派生后的实时色**（`restyleByI082.fill == after.fill`、`snapshot === false`、`snapFill === null`）；`g0=6` ⇒ 走 `:262` 假分支、**不**重新入队（无 0x6E）；`g0=1 && 3f37>=0`（剧情里按「戻る」）⇒ **有** `0x71`+`0x6E` 重新入队。辨别力已机械证明：摘掉 `op_gdi_repaint_window` 那道越界门 ⇒ 本用例 1 fail（`g0=6` 组：旧期望是 0、`T-0170` 起改为 1（见本 note 末尾的 ★））。 ｜★2026-09-23：该用例随 T1 拆分为多进程（config1-chain 单文件 59.2s → 5 文件并行 15.2s）而迁到本文件，evidence 随之 retarget（断言未改）",
       "line": 34
     },
     {
       "file": "app/amayui-emulator/src/vm/textItems.ts",
       "anchor": "pushText(win: number, key: number, value: number): void {",
-      "note": "★「记录表只有谁能填」的**实现级答案**：`records` 仅由 `pushText`（`0x1D2`）与 `pushVoice`（`0xC4`/`0x1BD`/`0x2F4`）push；`show-text`(0x6E) 只 append 到槽、`i071` 只 push **页**。⇒ 探针链路上（从未有过 ADV 文本项）`records.length = 0` 是**正确**状态，`0x82` 不画与引擎同 —— 别把它读成\"实现没做\"（正向用例在 test/op-0104-gdi-repaint.test.ts）。",
-      "line": 173
+      "note": "★「记录表只有谁能填」的答案：`records` 由 `pushText`（`0x1D2`）与 `pushVoice`（`0xC4`/`0x1BD`/`0x2F4`）push；`i071` 只 push **页**。★引擎在**画正文行**时经 `sub_45F090`（raw 74360-74400）push **带正文串的已画行记录**（记录 `flags & 4`），而 `0x6E`/`0x196`/`0x6F` 正是它的调用链 ⇒ `show-text`(0x6E) 那条链会 push 记录 —— **但每一处 push 都先过 `Engine[97055]` 这道记账门**（`sub_46BE30` raw 83941-83942 / `sub_4691D0` raw 81549 / `sub_46B100` raw 82726 / `sub_461A10` raw 76380-76381 / raw 83026/83307/83634），而 `0x1BB`（raw 29223-29242）就是它的写者（`i1bb 0` ⇒ `97055 = 0x80000000`、`i1bb 1` ⇒ `0`）。本单位探针链路（CONFIG）被 `CONFIG.txt:41 i1bb 0` … `:355 i1bb 1` 罩住 ⇒ **正文一条都不记**：`seedRecords: 0` 时 `records.length === 0`、`seedRecords: 3` 时 `=== 3`；`i082` 的越界门（raw 79502 的 `v8 > op2`）在引擎里也过不去 ⇒ `republishByI082 === 0`。真实路径「ADV（`i1bb` 正常）→ CONFIG」不受影响（那些行在 ADV 阶段已记下）。守卫：`test/t0151-msgwin-vm.test.ts#★0x6E/0x196 的第 5 实参 = Engine[97055]`、`test/config1-chain-advreturn-{real,seed}.test.ts`（2026-09-24 retarget）。取证见 `tickets/T-0170/changes.md` 与 `tickets/T-0151/changes-msgwin.md`。",
+      "line": 301
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "BYTE2(a5)",
       "note": "★判据 4 的**引擎依据**（`bgrToRgb` 的注释引了同一行，raw 79666）：引擎写入端 `Font+1360 = BYTE2(a5) + ((BYTE1(a5) + ((u8)a5 << 8)) << 8)` —— 输入按 **COLORREF（0x00BBGGRR）** 读、写成 `0xRRGGBB`。emulator 的 `bgrToRgb` 与它**逐位等价** ⇒ 「橘↔青」这类 R/B 互换**不可能**来自通道顺序（同一次交换作用全表；白/暖白那几条近似中性、交换前后几乎无差 ⇒ 正文看着正常而角色名一眼偏，与用户描述一致）。",
-      "line": 69
+      "line": 118
     },
     {
       "file": "app/amayui-emulator/test/text-style-snapshot.test.ts",
@@ -213,7 +213,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "fill: hex6(bgrToRgb(v(21664, 0xffffff))),",
       "note": "修复点：取用侧把 COLORREF 字段翻回 RGB（唯一文本样式来源，消息窗与 0x204 都走它）",
-      "line": 179
+      "line": 228
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -231,7 +231,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "inMsgTextRange(scene.msgRanges.values(), it.handle)",
       "note": "修复点：itemSprite 的取值侧跳过（此前走 #placeholder 白块）",
-      "line": 440
+      "line": 488
     },
     {
       "file": "app/amayui-emulator/test/msg-text-range.test.ts",
@@ -471,6 +471,11 @@
       "at": "2026-09-22",
       "kind": "status",
       "what": "doing → done —— 根因定位并修复：0x202 set-draw-color 缺 操作数为负则取当前色 回退；守卫 op-0202-negative-fallback.test.ts 4 例；用户 E4 确认 ADV 白底消失"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence[17] note 按 T-0151 的 i1bb 记账门体证改写（3/6 → 0/3；republish 1→0）；anchor 串（pushText 签名）一字未动"
     }
   ],
   "tests": [

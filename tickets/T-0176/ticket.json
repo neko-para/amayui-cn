@@ -1,0 +1,73 @@
+{
+  "title": "`input.test.ts` 的 TITLE 端到端例缺真链路前置：单脚本跑 TITLE 必须先补 `SETL2DMOC` 的「装 TITLE.MOC 进实例槽 0」",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "why": "`T-0160` 把 `0x341`/`0x34E` 的失败从「记一条日志后继续跑」改成**抛 `ShowMessageError`**（引擎 `sub_427BA0` raw 34482-34491 / `sub_428200` raw 34722-34731 的 `_CxxThrowException`），于是 `test/input.test.ts` 的 TITLE 端到端例开始红：\n\n```\nError [ShowMessageError]: L2Dモーションファイル TITLE.MTN の読み込みに失敗しました\n  （opcode 0x34e：槽 0 不存在或槽里没有模型（引擎 sub_478640 raw 92817 的 if (!*_this) return 0））\n```\n\n**这不是 emulator 的错、也不是 `T-0160` 的错，是那条测试的前提不完整**：它**单脚本**从 `src/TITLE.txt` 的第 0 条开始步进（`readScript(0x5264)` → `loadScriptData`），而 TITLE 的 L2D 段要求实例槽 0 里**先有模型**——真链路里这件事由 boot 链完成：\n\n1. `src/INIT2.txt:115` 把 `global 708ab6` 写成脚本 id `0x522d`（`SETL2DMOC.BIN`）；\n2. TITLE 在进 L2D 段前预设 `global f8c46 = 0x4f9e`（`TITLE.MOC` 的文件 id）、`global f8c47 = 0`（实例槽），再逐个 `call-script` 那张表（`src/TITLE.txt:533-547`）；\n3. `SETL2DMOC` 的 `f8c46 == 0x4f9e` 支正是 `i341 4f9e <槽>` + 三条 `i345`（`src/SETL2DMOC.txt:22-28`）⇒ 槽 0 里有了模型；\n4. 之后 `src/TITLE.txt:554` 的 `i34e 5274 0 0 1` 才能成立。\n\n单脚本环境里第 1/2/3 步都不发生（`708ab6` 无写者 ⇒ `lookup-array` 取不到值 ⇒ 那一轮 20 次 `call-script` 全被 `jcc` 跳过；实测把 `708ab6` 手工铺成 `0x522d` 会改成「`call-script` 读扩展包时报『拡張ファイル情報ファイル 72 は読み込まれていません．』」——因为 `SETL2DMOC` 本体在 append pack 里）。`T-0160` 之前 emulator 把这条失败静默吞掉，所以「缺模型」这个真实前提被测试掩盖了。\n\n**同一支路在真链路上早有守卫**：`test/live2d-enabled-flag.test.ts`（`T-0054`）跑 `bootHeadless` 到 TITLE，断言 `a9d0 = 0` ⇒ `l2dSlots` 恰为 `[[0, 0x4f9e]]`、节点恰为 `[0x14]`；`a9d0 != 0` ⇒ 静态贴图回落（槽 5 = 0x5273）且 `l2dSlots` 为空。故本票只修**测试前提**，不动任何 `src/`。",
+  "acceptance": [
+    "`test/input.test.ts` 的 TITLE 例在步进 TITLE 之前补足真链路前置（用真指令 `i341 4f9e 0` + 三条 `i345`，即 `SETL2DMOC.txt:22-28` 对 TITLE 做的事），并**用断言钉住前置本身**（`l2dSlots.get(0).modelId === 0x4f9e`）——不得用「吞掉抛错」「放宽 stepSafe」之类掩盖。",
+    "红→绿有据：用 `git show HEAD:app/amayui-emulator/test/input.test.ts` 的版本在当前源码上跑 = `pass 13 / fail 1`（报错逐字同上）；补前置后 `node --import tsx --test test/input.test.ts` = `pass 14 / fail 0`。",
+    "前提事实落台账：`analysis/scripts.json` 新增 `SETL2DMOC`（`status: stub`，含「TITLE 那一支」的 `i341/i345` 形状、`f8c46`/`f8c47` 输入槽、扩展包位置这条坑）；`node scripts/build-scripts.mjs` 生成 `docs-new/05-scripts/SETL2DMOC.md`；`scripts.js --validate` 与 `test/script-ledger.test.ts` 绿。",
+    "全量套件只剩 3 条**已知基线红**（`engine-slot` SAVE70/71 `storedDwords`、`save-slot` 真槽 `format`、`scene-report` 可绘制项 24 ≤ 缺纹理项 26）——`node --import tsx test/run.ts all` 的 `fail` 集合与基线一致。",
+    "tsc ×4（`tsconfig{,.test,.control,.electron}.json --noEmit`）exit 0；`test/orgRules` + 收敛/gap 棘轮不因本票新增例外。",
+    "收尾三连：`scripts/build-tickets.mjs` 重生成看板、`tickets.js --validate` ✅、`test/ticket-ledger.test.ts` 绿。"
+  ],
+  "links": {
+    "tickets": [
+      "T-0160",
+      "T-0156",
+      "T-0054"
+    ],
+    "docs": [
+      "docs-new/03-engine/live2d.md",
+      "docs-new/05-scripts/TITLE.md",
+      "CONTEXT.md"
+    ]
+  },
+  "id": "T-0176",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 2026-09-24 收口（主 agent）：① 定位 = `T-0160` 把 0x341/0x34E 的失败改成按引擎抛 ShowMessageError 之后，`test/input.test.ts` 的 TITLE 端到端例暴露「单脚本跑 TITLE 缺 SETL2DMOC 前置」；A/B 证据 = HEAD 版测试在当前源码上 pass 13 / fail 1（逐字同一条 0x34e 抛错），改后 14/14。② 修法 = 测试内补真链路那一步（`i341 4f9e 0` + 三条 `i345`），并断言 `l2dSlots.get(0).modelId === 0x4f9e`；`src/` 一字未动。③ 台账 = `analysis/scripts.json` 新增 `SETL2DMOC`（stub；含 TITLE 支形状 / `f8c46`/`f8c47` 输入槽 / 「本体在 append pack ⇒ 单脚本 call 它会报『拡張ファイル情報ファイル 72…』」这条坑）→ `docs-new/05-scripts/SETL2DMOC.md`，`scripts.js --validate` ✅ 36 条、`test/script-ledger.test.ts` 6/6。④ 顺带纠正一条早前判读：TITLE 的 `jcc (global-int a9d0) ffffffff label_00002058` 是 `jcc cond 真支(=-1 落下句) 假支` ⇒ **a9d0 == 0（默认）走 Live2D**、`!= 0` 走静态贴图回落（与 `test/live2d-enabled-flag.test.ts` 的断言一致；此前误读为「a9d0 != 0 走 Live2D」）。"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/input.test.ts",
+    "app/amayui-emulator/test/live2d-enabled-flag.test.ts",
+    "app/amayui-emulator/test/script-ledger.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "src/SETL2DMOC.txt",
+      "anchor": "eq (local-int 0) (global-int f8c46) 4f9e",
+      "line": 22,
+      "note": "TITLE 那一支：f8c46 = 0x4f9e ⇒ 24 行 `i341 4f9e (global-int f8c47)` + 25-27 行三条 `i345 4f9f/4fa0/4fa1` ⇒ 「装 TITLE.MOC 进实例槽 0 + 绑三张模型内纹理」是一个整体"
+    },
+    {
+      "file": "src/TITLE.txt",
+      "anchor": "i34e 5274 0 0 1",
+      "line": 554,
+      "note": "缺前置时抛错的那条指令：op2 = 动作槽 0、op3 = 实例槽 0（引擎 sub_478640 raw 92817 的 `if (!*_this) return 0` ⇒ sub_428200 raw 34722-34731 抛）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "L2Dモーションファイル %s の読み込みに失敗しました",
+      "line": 34728,
+      "note": "0x34E 的失败支原文（组串 + `_CxxThrowException(Command_ShowMessage_Exception)`）——`T-0160` 起 emulator 按它抛 ShowMessageError"
+    },
+    {
+      "file": "app/amayui-emulator/test/input.test.ts",
+      "anchor": "`SETL2DMOC` 在真链路里为 TITLE 装的那一步",
+      "note": "本票的修复点 + 钉住前置自身的断言（`l2dSlots.get(0)?.modelId === 0x4f9e`）",
+      "line": 128
+    }
+  ],
+  "doneWhy": "测试前提补全（不动 src/）：`test/input.test.ts` 的 TITLE 例在步进 TITLE 前先跑一段合成脚本 `i341 4f9e 0` + `i345 4f9f/4fa0/4fa1`（= `src/SETL2DMOC.txt:22-28` 对 `f8c46 = 0x4f9e` / `f8c47 = 0` 做的事，也就是真链路 `INIT2.txt:115` → `TITLE.txt:533-547` 那一步的净效果），并用 `assert.equal(e.l2dSlots.get(0)?.modelId, 0x4f9e)` 钉住前置自身。红→绿：`git show HEAD:app/amayui-emulator/test/input.test.ts` 的版本在当前源码上 = `tests 14 / pass 13 / fail 1`（逐字 `L2Dモーションファイル TITLE.MTN の読み込みに失敗しました（opcode 0x34e…）`）；补前置后 = `pass 14 / fail 0`。前提事实落第三层台账：`analysis/scripts.json` 新增 `SETL2DMOC`（stub，36 条）＋ `docs-new/05-scripts/SETL2DMOC.md` 生成，`scripts.js --validate` ✅（36 条）、`test/script-ledger.test.ts` 6/6。★读体副产物（写进本票 why）：单脚本环境里 `TITLE.txt:544-547` 那轮 20 次 `call-script` 全被 `jcc` 跳过（`global 708ab6` 无写者）；手工铺成 `0x522d` 也不够——`SETL2DMOC` 本体在 append pack 里，会报「拡張ファイル情報ファイル 72 は読み込まれていません．」。"
+}

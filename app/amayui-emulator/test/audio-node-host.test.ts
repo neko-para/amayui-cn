@@ -240,9 +240,16 @@ test('★帧泵：驱动每帧 tick ⇒ 延迟 SE 到点才响（headless 也能
   assert.equal(host.plays[0]!.id, 46, '播的是装载的那个 id');
 });
 
-test('★帧泵：BGM 淡变按帧步进（`0xC2` 的目标靠 tick 走到）', async () => {
+test('★帧泵：BGM 淡变按帧步进（`0xC2` 的进度由 tick 推、**每帧一步**）', async () => {
   const host = new FakeAudioHost({ durationOf: () => 30 });
-  const scene = mkScene([instr(0xbf, [im(31)]), instr(0xc2, [im(0), im(50)]), ...polls(200)], host);
+  // ★T-0152 最小 retarget（旧锚点保留：`0xC2` + `im(0)` 目标 + `tick` 推进 + `gainHistory`）：
+  //   旧前提「`im(50)` = 每帧 +50、两帧走到 0」**不成立** —— 引擎 `sub_420E00` raw 29831-29839 里
+  //   op2 **不是每帧步长**，而是节流毫秒 `op2<1000 ? op2/10 : op2/1000`；进度增量另给
+  //   (`op2<1000 ? 10 : 1`)，每次 CALL 由 `sub_489E50(Music, 100)` 把 `Music[262]` 推一步
+  //   （raw 106328）。⇒ 这条用例真正钉的两件事改为：**① 逐帧推进（历史条数 > 2）；
+  //   ② 每帧恰好一步（增量 1/100 且相邻两帧间隔 100ms > 节流 2ms ⇒ 不跳步）**。
+  //   用 `im(2000)`（≥1000 那一档：增量 1、节流 2ms）：6 帧 × 100ms ⇒ 历史 7 条、末值 0.94。
+  const scene = mkScene([instr(0xbf, [im(31)]), instr(0xc2, [im(0), im(2000)]), ...polls(200)], host);
   const e = (scene as unknown as { __e: Engine }).__e;
   const box = { clock: 0 };
   const fh: FrameHost = { now: () => box.clock, audio: (i) => scene.audio?.(i), yield: () => scene.audioEngine!.idle() };
@@ -257,12 +264,12 @@ test('★帧泵：BGM 淡变按帧步进（`0xC2` 的目标靠 tick 走到）', 
   const bgm = host.streams.at(-1) ?? host.plays.at(-1);
   assert.ok(bgm, 'BGM 起播了');
   const hist = 'gainHistory' in bgm ? bgm.gainHistory : [];
-  assert.ok(hist.length > 2, `淡变被逐帧推进（历史 ${JSON.stringify(hist)}）`);
-  assert.equal(
-    hist[hist.length - 1],
-    0,
-    `走到目标 0：${JSON.stringify(hist)}（每帧一步、不是一次到位，也不是原地不动）`,
+  assert.equal(hist.length, 7, `淡变被**逐帧**推进（首值 + 6 帧各一次 CALL）：${JSON.stringify(hist)}`);
+  assert.ok(
+    hist.every((g, i) => i === 0 || Math.abs(hist[i - 1]! - g - 0.01) < 1e-9),
+    `★每帧恰好一步（增量 1/100，不跳步、不是原地不动）：${JSON.stringify(hist)}`,
   );
+  assert.ok(hist[hist.length - 1]! < 1 && hist[hist.length - 1]! > 0, `朝目标 0 单调下降：${hist.at(-1)}`);
 });
 
 test('★条件能力：没给 audioHost ⇒ `audio` 不存在 ⇒ 闸门 A 记缺口（不是静默空实现）', () => {

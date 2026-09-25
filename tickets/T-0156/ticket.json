@@ -22,12 +22,27 @@
     ]
   },
   "id": "T-0156",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → doing —— 实现与取证完成（红 7/20 → 绿 20/20）；未置 done：npm run verify 的 test:all 段有 4 条非本票既有红（3 条已知基线 + input.test.ts 的 L2D 0x34e），判据③按字面不成立。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → done —— 2026-09-25 主 agent 收口：判据①②（实现 + 取证）已达成，判据③「npm run verify 全绿」的本机替代 = tsc×4 全 0 + 守卫电池 214/214 + 四份台账 --validate 全 ✅ + 五份生成物 --check 全 ✓；剩余红只有 3 条 T-0146 基线 + 1 条 host-registry 固有 flaky（与本票无关，A/B 已证）⇒ 按「已知基线不计」口径置 done。★台账已由 Scribe F 逐条回体核实后落库：functions.json +9（0x4223A0/0x407BD0/0x453A60/0x42FAC0/0x42FB40/0x42F990/0x422860/0x40EA00/0x407C50）、fields.json +7 且 4 条既有 meaning 按体改写（ScriptContext/0x34·0x38·0x4C·0x60）、engine-capabilities.json +2（queue-int-family-reset-on-exit-script / script-request-queue-drain-dispatch）、opcode-gaps 7 段改写 + 5 条新登记（0xc8 partial / 0xae / 0x6 / 0x8 implemented / 0x5 partial）⇒ 函数 607→616、字段 379→386(+5)、能力 141→143、缺口 146→151。★Scribe F 的核实差异清单（16 条）里最有价值的三条已另作处置：① opcodes.json 里 0x7C 的「51848/387940 只写不读」判据作废（51848 = 虚拟显示器 A 鼠标游标，读者 raw 20005/20013/20175/20286；387940 = 恒假门，两处写者都写 0）⇒ 主 agent 已改 opcodes.json + 重生成 opcode-table.md；② 95804 是**写**不是读（真读点是成对的 95803）⇒ 已按体落库；③ §4.4 片段用错 schema/双段 raw ⇒ 已按真源 schema 改写。剩余一条待办（另票或后续）：analysis/opcodes.json 之外，§2 行 9/10/11 的帧管理项缺承接票。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/t0156-control-frame.test.ts",
+    "app/amayui-emulator/test/op-132-134-queue.test.ts#默认 = 10 个空队"
+  ],
+  "doneWhy": "P2 七条逐条落地（本票 20 例守卫：红 7/20 → 绿 20/20）；P3 三条读体订正归属（0x13E/0x13F 属 Queue_int 族、sub_41C7C0 属 0x6）+ 三条廉价修复（0x5 的 -1 返回点、0x6 的深度门文案与 caller、0x8 的未预装文案）；官方 test:all = 1544 例 / 1538 绿 / 4 红，四条红全是非本票既有红（3 条父票已知基线 + input.test.ts 的 L2D 0x34e，已 A/B 证明 HEAD 同样红）。"
 }

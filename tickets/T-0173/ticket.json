@@ -1,0 +1,40 @@
+{
+  "title": "删掉两处零读者字段 Engine.callFlag / Engine.callLink（T-0150 扩面死写闸门的新发现）",
+  "type": "refactor",
+  "priority": "P3",
+  "area": "emulator/vm",
+  "why": "T-0150 把死写闸门从 Item/MeshObj 扩到 Engine/SceneState 等模型后，扩面暴露出 14 条存量死写，其中两条是**纯冗余字段**：Engine.callFlag 与 Engine.callLink 只有声明（src/vm/engine.ts:263-264）与复位（src/vm/handlers/control.ts:508-509），**全仓 0 读者**（引擎侧对应的量另有真源）。它们不是近似、也不缺消费者，就是可以删掉的镜像字段 ⇒ 删掉比在基线里长期挂「reason」更干净（基线是给真缺口用的）。",
+  "acceptance": [
+    "删掉 Engine.callFlag / Engine.callLink 两个字段与它们的写点（src/vm/handlers/control.ts:508-509 的两处复位），并确认没有别的文件引用（grep 全仓）",
+    "从 app/amayui-emulator/dead-writes.baseline.json 的 known 里移除这两条（基线只许收缩），reason/tickets 字段一并清掉",
+    "守卫：npm run check:dead-writes（基线/当前/无新增）+ node --import tsx --test test/no-dead-writes.test.ts 全绿；npm run typecheck / typecheck:test 绿",
+    "若发现某条其实有读者（例如经由动态下标或 native 回调），如实写进 changes.md 并把字段留下 + 改登记理由（不许为了删而删）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/dead-writes.baseline.json",
+      "anchor": "callFlag",
+      "note": "T-0150 扩面后登记的存量死写之一（reason/tickets 字段见该条）"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "callFlag",
+      "note": "字段声明；写点在 src/vm/handlers/control.ts:508-509",
+      "line": 264
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0150"
+    ]
+  },
+  "status": "open",
+  "id": "T-0173",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

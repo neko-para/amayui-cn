@@ -33,6 +33,17 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → doing —— P1 0x22f 已修：层 20..29 上 op3/4/5 = D3DXMatrixRotationAxis 的轴（raw 117627-117632 + 117930 乘进 work）；四块矩阵改为可叠加（不再 kind 三选一）。守卫 test/op-22a-22f-scene-world.test.ts +3 例（红 3/28 → 绿 28/28）。扩展点：Scene+1844/+1856 无写点 ⇒ SceneState.sceneRotRad 由 setSceneRotationRad 注入"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests, doneWhy —— 修 13 处 + 复核 5 条 + 台账/登记 8 条（逐条见 changes-c154.md §1/§2）；红 13/24 → 绿 24/24；未碰 src/vm/**、src/frame/**、src/live2d/**、src/text/**、textureCache.ts 与六份真源；状态留 doing（主 agent 结算台账片段后才收口）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/scene-t0154-scene-state.test.ts",
+    "app/amayui-emulator/test/scene-t0154-mesh-transition.test.ts",
+    "app/amayui-emulator/test/op-22a-22f-scene-world.test.ts"
+  ],
+  "doneWhy": "26 条逐条处置完毕（表见 tickets/T-0154/changes-c154.md §1/§2）。P2 十条：真修 6（0x1f6 清 572B-A 的 +504 镜像并暴露 nodesA／0x223 写记录前按需建·重建 [4] 层 scEnsureTransitionLayer／0x229 三段体＝模板复位＋区间门 sceneLayerInGate＋pivot 共轭／0x244 572B-B 节点 +24／bullet-dirty 的 freeze 无条件置脏）、复核后确认上一轮已修 3（0x22d/0x22f/0x1fe）、台账字段失真 1（scene-flag-46528-bits 的 trigger 极性）。P3 十六条：真修 8 行（4 处代码改动：0x320 判据改 vcount>0 且 vcount<=0 不建项／0x321 缺失即建零值网格项／0x20d 两条前置含 -1 与越界回后台缓冲／scene-draw-total-gate-1056 的条数门 scTransitionRecordCount）、票外或上一轮已修 3（0x33f 落点在 gfx-state.ts 的 handler（T-0155）、0x1fc、lazy-mesh-map-node 的 note（T-0166））、台账字段失真 3（lazy-transition-map-node 的 engine.fns／1056 的 reads／scene-slot-release-1000 的 status+evidence）、前提被推翻 1（0x320「重建先析构」：析构在 sub_4ADFE0 体内、进门是 raw 41037 的 vcount>0，vcount<=0 走 41073 分支、既不清几何也不清 bit0）、缺对应子系统而如实登记 1（0x20d 的 2D/GDI 窗口原点支）。红→绿：node --import tsx --test test/scene-t0154-scene-state.test.ts test/scene-t0154-mesh-transition.test.ts ⇒ 13 fail/24（把三个源文件的 13 处行为行临时还原成修前形态，13 条配对全部命中）→ 24 pass/0 fail；相关既有守卫 12 个文件全绿；check:dead-writes ＝ 13（基线，无新增）；改前 --anchors-in 已跑、改后 --validate ✅ 173 张（5 条警告全部是白名单外文件的行号漂移，本票触碰的 ops.ts/transition.ts 的 14 条锚点一条未失）。★留 doing 的理由：acceptance ① 的 analysis/opcode-gaps.json 与 engine-capabilities.json 落库归主 agent 串行结算（片段按字段写好，见 changes-c154.md §4，可直接照抄）；acceptance ③ 的 npm run verify 本机跑不了（无 node_modules/.bin），替代口径下有两处**外部红**（非本票）：src/vm/handlers/control.ts 的 Duplicate identifier Engine（T-0156 在改）、test/op-22a-22f-scene-xform.test.ts 的「unimplemented 清零」与 test/mesh-vertex-quad.test.ts 的 E3（analysis/opcode-gaps.json 与 src/vm/handlers/gfx-misc.ts 正被并发改动）。"
 }

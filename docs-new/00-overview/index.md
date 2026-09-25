@@ -15,7 +15,7 @@ generated_by: scripts/build-doc-index.mjs
 > ★**读文档前先看 `state`**：`live` 才是现行结论；`record` 是**一次性取证的历史快照**（结论已落台账，
 > 只作票据证据锚点用）；`generated` 一律勿手改，改真源后重跑生成器。
 
-共 **108** 份：📋 流程 18 · ⚙️ 生成物 40 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 16；按 state：live 92 · consumed 16
+共 **110** 份：📋 流程 18 · ⚙️ 生成物 42 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 16；按 state：live 94 · consumed 16
 
 ## `00-overview/`（7）
 
@@ -98,7 +98,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`04-app/test-organization.md`](./../04-app/test-organization.md) | 📖 叙述 | ✅ | — | 04-app · 测试分类与组织（测试法） |
 | [`04-app/toolkit.md`](./../04-app/toolkit.md) | 📖 叙述 | ✅ | — | 04-app · amayui-toolkit |
 
-## `05-scripts/`（35）
+## `05-scripts/`（37）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
@@ -114,6 +114,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/CONFIG2.md`](./../05-scripts/CONFIG2.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · CONFIG2 |
 | [`05-scripts/CVINIT.md`](./../05-scripts/CVINIT.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · CVINIT |
 | [`05-scripts/GAMESTART.md`](./../05-scripts/GAMESTART.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · GAMESTART |
+| [`05-scripts/HISTORY.md`](./../05-scripts/HISTORY.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · HISTORY |
 | [`05-scripts/INIT2.md`](./../05-scripts/INIT2.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · INIT2 |
 | [`05-scripts/INITCONFIG.md`](./../05-scripts/INITCONFIG.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · INITCONFIG |
 | [`05-scripts/INITCONFIG0.md`](./../05-scripts/INITCONFIG0.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · INITCONFIG0 |
@@ -132,6 +133,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/SELFONT.md`](./../05-scripts/SELFONT.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SELFONT |
 | [`05-scripts/SETADVFLAG.md`](./../05-scripts/SETADVFLAG.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETADVFLAG |
 | [`05-scripts/SETFATE.md`](./../05-scripts/SETFATE.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETFATE |
+| [`05-scripts/SETL2DMOC.md`](./../05-scripts/SETL2DMOC.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETL2DMOC |
 | [`05-scripts/SETMEMOIR.md`](./../05-scripts/SETMEMOIR.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SETMEMOIR |
 | [`05-scripts/SN0000.md`](./../05-scripts/SN0000.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SN0000 |
 | [`05-scripts/SP2563.md`](./../05-scripts/SP2563.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · SP2563 |

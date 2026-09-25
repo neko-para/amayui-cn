@@ -1,0 +1,43 @@
+{
+  "title": "docs-new/03-engine/rendering.md 行号整表逐行核（B7-B 同批结论未同步；含 8 处从未核过的行号）",
+  "type": "docs",
+  "priority": "P3",
+  "area": "docs/03-engine",
+  "why": "T-0112 已把 adv-text-rendering / copyright-effect / engine-reset-mainloop 三份手写文档的 raw 行号逐格核改（并有改前 26 条旧行号 26/26 ❌ 的机械取证），但**同一批结论在 rendering.md 仍未同步**：已知错 8 处（line 33 的 `sub_4AF1C0` 131435/131491-131501；line 58/60 的 `sub_4A2050` 120438 + 131491-131501；line 69 主循环 20445/20465-20467/20571-20576/20583；line 79 `sub_422E70` 30846→`sub_4ACE50` 129796；line 86 的 30822/31165；line 100 的 129850/129936；line 102 `sub_4AEEA0` 131306→`sub_4A2D50` 121065），逐条 old→new 已写在 tickets/T-0112/changes.md 的「待应用」节。另有**从未核过**的 8 处（line 26 的 49942/26981、line 30 的 20619-20638/20723-20742、line 31 的 20651、line 35 的 20934-20977、line 44 的 40262/130665/120518、line 51 的 119370-119399、line 54 的 33865-33884）⇒ 必须**整表逐行核，不许半修**（T-0112 的教训就是：半修会把同批错误留在原地）。",
+  "acceptance": [
+    "按 tickets/T-0112/changes.md「待应用」节的 old→new 逐条修 rendering.md 的 8 处已知错行号",
+    "line 26/30/31/35/44/51/54 的未核行号逐条对反编译真源核一遍：对则保留并纳入棘轮，错则改指，核不动就写清卡在哪（不许猜）",
+    "把 rendering.md 的行号锚点纳入 test/doc-model.test.ts 的 B7-B 棘轮（照 T-0112 新增那条的形状：文档该行必须写着该行号 且 该行号处真含该代码串）",
+    "docs-new/04-app/emulator-copyright-effect.md 剩余三项一并核：line 59 的函数名错（sub_49A300 → sub_49AA30，后者 = raw 117239；顺带核 115116/116878 两个数哪个是 sub_49A300 的真身）、line 55 的 134702/132387、line 58 的 131491-131501",
+    "收尾：doc-model 全绿 + tickets --validate 绿；★换反编译版本时用 tickets/T-0112/evidence/b7b-red-check.mjs 的旧表当重核起点"
+  ],
+  "links": {
+    "tickets": [
+      "T-0112"
+    ]
+  },
+  "evidence": [
+    {
+      "file": "tickets/T-0112/changes.md",
+      "anchor": "待应用",
+      "note": "逐条 old→new 的出处"
+    }
+  ],
+  "status": "done",
+  "id": "T-0172",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— rendering.md 行号整表逐行核完（8 处已知错 + 8 处未核 + 同批 40 处同源错）与 04-app 三项全部落体；新增 anchors.json + doc-model B7-B 棘轮（T-0172），改前 60/60 ❌ → 改后 46 锚点 0 问题；卡点=line 84 字节基址歧义未收敛（见 changes.md §6）"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/doc-model.test.ts"
+  ]
+}

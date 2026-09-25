@@ -17,20 +17,22 @@ import type { OpHandler } from '../step.js';
 import type { OpTable } from './shared.js';
 
 /**
- * **唯一还留在「宿主无对应子系统」表里的指令**：记录后放行、不阻塞 VM。
+ * ★**2026-09-24（`T-0111` 判据② + `T-0163`）：本表已空 —— 最后一条 unhandled 桩也移出了**。
  *
- * ★T-0057 R5：这里原有一个 `switch (opcode)` 覆盖 0xB4/0xBF/0xC4/0x1FB/0x1F9/0xCD/0xC8 —— 那 7 条
- * **早已各自转真实现**（音频 → `AUDIO_OPS`、图形 → `GFX_*_NATIVE_OPS`、输入 → `INPUT_OPS`、
- * sleep → `FRAME_NATIVE_OPS`），所以每个 `case` 都是死码；唯一活的 0x308 恰好落到 `default`。
- * 现在只剩这一条路径。
+ * 历史（`T-0057` R5）：这里原有一个 `switch (opcode)` 覆盖 0xB4/0xBF/0xC4/0x1FB/0x1F9/0xCD/0xC8 ——
+ * 那 7 条**早已各自转真实现**（音频 → `AUDIO_OPS`、图形 → `GFX_*_NATIVE_OPS`、输入 → `INPUT_OPS`、
+ * sleep → `FRAME_NATIVE_OPS`），所以每个 `case` 都是死码；此后只剩 `0x308` 一条
+ * **`op_stub_unhandled`**（只 `c.native.unhandled?.(...)` 记一行就放行）。
  *
- * ⚠已知缺口（不在本轮）：`0x308` 的引擎体是「读 op1 → `sub_407B20` → 写 `_this[1954]`」
- * （opcode-table.md:518），emulator 只发一句 `unhandled`，**没有读 op1、也没有写 1954**。
- * 要补它得先读 raw `sub_407B20` 的语义（见 T-0057 notes 的 C2）。
+ * 本轮把最后这条也移出本表：`0x308` 的引擎副作用已**逐行读体**确证（`sub_426B20` raw 33808-33815 →
+ * `sub_407B20` raw 12579-12618 = `LoadLibraryA("USER32.DLL")` + `RegisterTouchWindow`/
+ * `UnregisterTouchWindow` + 写 `_this[1954]`（3 写 0 读）），而 emulator 既没有 HWND 概念、也没有
+ * 窗口级触摸注册面 ⇒ 按 **「有据 no-op 登记」**改登记进 `ENGINE_INTERNAL_OPS`
+ * （**不再打 `unhandled` 日志**），完整依据见本文件 `[0x308, op_engine_internal]` 处。
+ * 因此 `op_stub_unhandled` 这个 handler 与它那一行日志点**已删除**；
+ * 本数组保留（仍被 `handlers/index.ts` 展开进 `NATIVE_OPS`），但**不许**再往里塞"记录后放行"的桩：
+ * 没有依据的跳过走 `ENGINE_INTERNAL_OPS`（要 raw 证据），有真实宿主副作用的走真实现/宿主缝。
  */
-const op_stub_unhandled: OpHandler = (c) => {
-  c.native.unhandled?.(c.instr.opcode, c.instr.name);
-};
 
 /**
  * 引擎内部/子系统操作：不读/写 VM 可见态（全局数组、脚本帧、IP、cur）、不影响控制流 —— emulator 插桩跳过。
@@ -68,8 +70,20 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    *   "删掉一个空栈再建一个空栈"与"什么都不做"观测等价。
    * ★但它**非有不可**：不登记 ⇒ 命中即 `NotImplementedOp` ⇒ 产品在 CALLBACK_LOAD 里停下报
    *   "停在未知指令 0x137 (i137)"（2026-09 用户实测），读档收尾那一跳走不完（`tickets/T-0072`）。
+   *
+   * ★**越界分支（审计 `T-0163` 的 P3 `missing-branch`，本轮读体确证、未实现）**：`op1 > 0xA`
+   *   （unsigned，负值编码后同样落进该支）时引擎**不碰栈槽**，而是 `sub_408050(_this+8, 1024,
+   *   aResetstack)` 写错误缓冲（字面量 raw 4423 = `"ResetStackの引数が不正です．\r\n"`）+
+   *   `sub_4034D0(_this, _this+8)` **上报给宿主**，随后直接返回（raw **30714-30718**）。
+   *   与 `0x10C`/`0x30A` 不同形：**不是** `_CxxThrowException(ShowMessage)`，引擎**继续执行**。
+   *   语料 1 处（`src/CALLBACK_LOAD.txt:108 i137 0`，合法区间）⇒ 当前不可见（只有改/坏脚本才命中）。
+   *   ★**本轮未实现**，理由（不是范围外的一句话，是三条实测约束）：① 忠实实现要读 op1 ⇒ 需在
+   *   `src/vm/operandPlan.ts` 为 0x137 声明操作数计划并把条目从本表迁进 `OPS`（该文件属他人范围）；
+   *   ② 「写错误缓冲 + 上报」需要一个**非致命**的宿主错误上报缝，`NativeBridge` 现无此面
+   *   （`src/vm/native.ts`/`nativeTap.ts` 属他人范围）；③ 体内那张 int 栈表 emulator 根本没建模
+   *   （本表当 no-op 的前提），所以"不碰栈槽"这一半在 emulator 自动成立。
    */
-  [0x137, op_engine_internal], // ResetStack(n)：删+建空栈（本作无人压栈）→ sub_4222B0
+  [0x137, op_engine_internal], // ResetStack(n)：删+建空栈（本作无人压栈）→ sub_4222B0；op1>0xA 的错误上报见上（本轮未实现）
   /**
    * `0x244`（`sub_41A370` raw 25349-25355，**argc 0**）：`sub_4AD9F0(Engine+322832, 2)` ——
    * 遍历 Scene 的三张绘制项链表（`+1036`/`+1084`/`+1100`），对 **`flags & 2`** 的项把
@@ -102,9 +116,26 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   后来真有模型时（M1 之后）也没有任何节点可画 —— 正是"脚本在跑、画面什么都没有"的第二个成因。
   //   同一批还包含 `0x341`/`0x345`/`0x34E`（原先在 `STUB_NATIVE_OPS`）。
   // ★0x326/0x325 属 **3D 天气/粒子效果管理器**（见本文件 0x324 处的说明）：
-  //   `0x326` = Set3DEffect**Snow**（错误串 raw 23942）：惰性建共享 `ID3DXEffect`(资源 202) 后
+  //   `0x326` = Set3DEffect**Snow**：惰性建共享 `ID3DXEffect`(资源 202) 后
   //   经 `sub_453330` **重建 Snow 对象**；`0x325` 写的是该管理器的 `[+0x4D8]`/`[+0x4DC]` 两个 int。
-  [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + `Scene+46668>=1` 门槛 → sub_426E10/sub_418340
+  //   ★审计 `T-0163`（P3 `approximation` + P3 `missing-branch`）复核补全两处，读体确证：
+  //   ① **外层门 `Scene+46668 >= 1`**（「3D/文字渲染冻结总闸」，raw 23917-23929）——不满足时**整条
+  //      handler（含错误支）全不执行** ⇒ 豁免文本只写"建 effect + 重建 Snow"会漏掉这层门；
+  //   ② `op4`（纹理槽对象）为 0 时**不是静默失败**：`sprintf_s` 组
+  //      「関数：Set3DEffectSnow エラー：テクスチャが作成されていません．TEXTURE=%d」+ `sub_4034C0`
+  //      上报（raw 33940-33955）。语料 0 处触发（`SETWEATHER.txt:30-35` 先建槽 3e 再 `i326 … 3e 1 1`）
+  //      ⇒ 真实脚本里不可见，但如实登记（与 0x329 的 メッシュファイル 错误串同一口径）。
+  //   ★**接线状态订正（2026-09-24 复核，避免本注释自己变成 stale-ledger）**：`Scene` 模型侧自
+  //   `tickets/T-0167` 的 P1 轮起**已有** Effect3D 半边（`SceneState.effect3DLevel`/`effect3DSlots`、
+  //   `renderer/scene/effectLevel.ts`、`weather.ts` 的 `ensureSharedEffect3D`、`ops.ts` 的
+  //   `scSet3DEffectSnow`/`scEnsureEffect3DSlots`；后者每帧经 `scene/commit.ts` 调用），守卫
+  //   `test/scene-3d-effect-level.test.ts` / `test/scene-3d-weather.test.ts`。**仍缺的是
+  //   "opcode → 模型"这一半**：`scSet3DEffectSnow` 目前**只有测试调用者**（全 `src/` grep 无产品调用点），
+  //   本条（以及 0x324/0x325/0x327/0x328/0x329/0x32C/0x32E）仍是本表的 no-op —— 这一条已由
+  //   `analysis/engine-capabilities.json` 的 `scene-3d-weather-effects-rain-snow-leaf` 明示披露
+  //   （"② opcode→模型那一半…重开条件 = 决定把 0x327 改成 `OPS` 真实现并同步那两处期望，模型侧已就绪"）。
+  //   ⇒ 接线需要新的宿主缝（`src/vm/native.ts`/`nativeTap.ts`，**不属本票文件范围**）。
+  [0x326, op_engine_internal], // 3D 效果·Snow：ID3DXEffect(资源 202) + `Scene+46668>=1` 门槛（op4=0 ⇒ TEXTURE=%d 错误支）→ sub_426E10/sub_418340
   // ★`0x222`（3D 层区间提交）**已移出本表**（2026-09-24，`tickets/T-0167` 的 §4.2 #19）：
   //   它现在是 `OPS` 的真实现（`handlers/scene-commit.ts` 的 `SCENE_COMMIT_OPS`）——
   //   宿主缝 `NativeBridge.sceneCommitRange(start, count)` 已加，落到
@@ -122,48 +153,90 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    *   `[260]` Leaf）并置旗标 `+0x4E0` 的 bit0/bit1。★旧台账注「raw 34000-34012」是邻居函数，已订正。
    *
    * ★**为什么不建模**（`analysis/opcode-gaps.json` 的 0x325 = `engine-internal`，有据 no-op）：
-   *   emulator **没有 Effect3D 子系统** —— 无管理器对象、无 Rain/Snow/Leaf（同族 0x326 同一口径），
-   *   也没有 `sub_4535F0` 帧推进 ⇒ 写这两个阈值在 emulator 里没有任何消费者（对 VM 也不可观测：
-   *   不写操作数、不改 ip/cur）。**不**为了"看起来对"造一个假的效果管理器。
+   *   这两格是 Effect3D 的**销毁阈值**。`Scene` 模型侧自 `tickets/T-0167` 的 P1 轮起已有
+   *   `scWeatherSetDestroyThresholds`（`renderer/scene/ops.ts`）+ `weather.ts` 里的阈值消费；但
+   *   **"opcode → 模型"未接线**（`0x325` 仍是本表 no-op；`scWeatherSetDestroyThresholds` 在 `src/` 下
+   *   除定义外**没有产品调用点**，只有 `test/scene-3d-weather.test.ts`）⇒ 写这两个阈值对 VM 仍不可观测
+   *   （不写操作数、不改 ip/cur），且**接线需要新的宿主缝**（`src/vm/native.ts`/`nativeTap.ts`，
+   *   不属本票文件范围）。**不**为了"看起来对"造一个假的效果管理器。
    *   扩展点 = 先建管理器（`sub_4530B0`，`operator new(0x4F4)`；在 Scene 初始化 `sub_4A6EE0`
    *   raw 126541-126545 创建）+ 三个效果槽 + `sub_4535F0` 帧推进，再建模 `+0x4D8`/`+0x4DC`/`+0x4E0`。
    */
   [0x325, op_engine_internal], // Effect3D 管理器 [+0x4D8]/[0x4DC] = op1/op2（帧推进 sub_4535F0 读作销毁判据）→ sub_426DC0
   /**
-   * ★**SETWEATHER 族 5 条**（`tickets/T-0093`，2026-09 轮 6）：`0x327` / `0x328` / `0x329` / `0x32C` / `0x32E`。
+   * ★**SETWEATHER 族 5 条**（`tickets/T-0093`，2026-09 轮 6；`T-0163` 复核补全）：`0x327` / `0x328` / `0x329` / `0x32C` / `0x32E`。
    *
    * **为什么必须登记（而不是留在 `deferred` / 硬停）**：`SETWEATHER` 是**被剧情脚本调用**的
    * （`call-script 47 // SETWEATHER`：`src/SC0500.txt:26212`、`SC0070:29136`、`SC2060:28374,30048`、
    * `SC4000:4359`、`SC4160:5752`、`SC5450:3573`、`SC5530:4181`、`src/$1$SC4330.txt:4993` …），
    * 而这 5 条此前**不在任何表里** ⇒ 每次走到 SETWEATHER 就 `NotImplementedOp` 硬停（整段剧情走不完）。
+   * ⇒ **撤表即整段剧情重新硬停**（这也是下面 0x327 那条陈旧注释必须删掉的理由）。
    *
    * **凭据（逐条读体 + 机械扫描，不是"看起来安全"）**：
    *   - `0x327`（`sub_426E70` raw 33956-33964，argc 1）：读 op1 → `sub_453280(Engine[93384], op1)` =
    *     **释放 Effect3D 管理器旧对象并重建**（同 0x324/0x325/0x326 那个管理器）。
    *   - `0x328`（`sub_432300` raw 41080-41113，argc 3）：读 op1=handle、op2=网格 id **数组基址**、op3=数量
    *     → 逐个 `DEC` 到临时数组 → `sub_4183F0(Scene, op1, 数组, op3)`（3D 网格）。
+   *     ★`Scene+50708+4*id == 0` 时**逐 id** 打「関数：Set3DEffectLeaf エラー：メッシュが作成されて
+   *     いません．MESH=%d」并 `sub_4034C0` 上报（引擎侧 = "leaf 挂上部分网格 + 报错"；no-op 让这条
+   *     错误支永不发生）。语料 0 处触发：`SETWEATHER.txt:81` 的 id 数组由第 56-58 行的 `i329` 装载循环写入。
    *   - `0x329`（`sub_426EB0` raw 33966-34000，argc 2）：读 op1=统一资源 id、op2=槽 → FileDB 解析 +
    *     `sub_455560` 取字节 → `sub_4A0640(Engine+322832, …)` **装载 mesh**；失败抛
    *     「メッシュファイル %s の読み込みに失敗しました」（与 `0x326` 同款错误串处理）。
+   *     ★它是**唯一往网格槽表装对象的路径** ⇒ 当 no-op 时 `scene.meshes` **表恒空**：真机上 `i329`
+   *     之后 `0x32A`/`0x32B` 有对象可删（`clearMeshSlots: 释放 meshes=N` 且 N>0），emulator 里 N 恒 0、
+   *     `0x328` 也永远无网格可挂。★与 `0x328` 是**装载端/挂接端一对**，必须**同表同处置** ——
+   *     只实现一端就是静默半实现（守卫见 `test/stub-setweather-noop-comments.test.ts` 第 ⑤ 条）。
    *   - `0x32C`（`sub_426FC0` raw 34012-34030，argc 6）：读 **6 个 float** → `sub_499CE0(Scene, …)` =
    *     3D 相机/天气参数面（`Scene+41960..41984` + `D3DXMatrixLookAtLH` + 设备 `SetTransform`）。
-   *   - `0x32E`（`sub_427110` raw 34057-34113，argc 11）：op9=α（夹 255）、op10=RGB（逐通道 × `dbl_51FA60`
-   *     归一化）、op1/op2 + op3..op8 六个 float + op11 → `sub_49A080(Scene, …)`（3D 图元/效果）。
+   *     ★体是**二段式**：视图矩阵初始化 + `D3DXMatrixLookAtLH` + 设备 vtable+176(SetTransform)
+   *     **无条件**执行；只有"把视图/投影/世界三矩阵转发给 Effect3D 管理器"那一段被 `if (管理器 != 0)`
+   *     门住（Rain/Snow 还可分别缺 ⇒ 第二层门）⇒ 将来实现时容易漏掉"管理器为 0 时相机仍生效"这一半。
+   *     ★且它与同族 5 条不同：参数不是"先存着等将来用"，而是**每次调用先整块复位** `Scene+41928..41988`
+   *     （4 个 1.0 + 12 个 0.0 的单位阵/零向量，raw 116456-116478）再按 op1..op6 重算并下发 ⇒ 只为某条
+   *     3D 指令补一个局部矩阵会漏掉这条"复位抹掉上一次残留"的语义。
+   *   - `0x32E`（`sub_427110` raw 34057-34113，argc 11）：★**定性订正**（审计 P2 `overreach`）：
+   *     被调体 `sub_49A080` 是 D3D **`SetLight`**，**不是**"3D 图元/效果" —— 它用 op1..op11 组一个
+   *     104B(0x68) 的灯光结构 `qmemcpy` 到 **`Scene[26*op2+13687]`**（位置=op3..op5、
+   *     方向=`D3DXVec3Normalize(op6,op7,op8)`、Range=op11(float)、Diffuse=A(op9 钳 255)/R/G/B(op10)），
+   *     随后置 **`Scene[op2+13677] = 1`** 并经设备 vtable+204(SetLight)/+212(LightEnable) 下发 ——
+   *     与 `0x32F`（`sub_49A150`，同 vtable+212 的 LightEnable，见 `handlers/gfx-misc.ts`）同族。
+   *     ★**灯光索引 = op1**（= vtable+204/212 的第二实参），进 `Scene` 偏移的是 **op2**
+   *     （`Scene[26*op2+13687]` / `Scene[op2+13677]`）。语料 1 处：
+   *     `src/SETWEATHER.txt:78 i32e 0 3 0 0 0 1 (local-float 0) 1 0 cc9966 3e8`（灯光 0、方向 (1,0,1)、#cc9966、Range 1000）。
+   *     ★op9（α）是**钳位饱和**（`if ( v2 > 255 ) v2 = 255;` raw 34088-34089）而非报错（与 `0x32D` 的
+   *     α<0 回退、>255 钳位是同族三态）⇒ 将来实现不带钳位会让 A 通道溢出进 RGB 位。
+   *     ★真正缺的是**灯光表**（`Scene[26*i+13687]` 的 104B 结构 + `Scene[i+13677]` 的启用位）与把
+   *     `native.setLight` 从"只在 0x32F 关灯"升级为**可开灯**，不是"3D 图元/效果层"。
    *
-   * **为什么不建模**：这 5 条**全部落在 emulator 没有的 3D 子系统**（Effect3D 管理器 / 3D 网格 /
-   * 3D 相机与天气参数）⇒ 实现它们就要先造假的管理器/设备（纪律禁止）。**且它们对 VM 不可观测**：
+   * **为什么不建模（2026-09-24 订正 + 披露）**：这 5 条落在 3D 子系统上。`Scene` 模型侧自 `T-0167`
+   * 的 P1 轮起已有 Effect3D 半边（见上方 `0x326` 处的"接线状态订正"），但 **"opcode → 模型"这一半
+   * 尚未接线**（`0x324`/`0x325`/`0x326`/`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 都还是本表 no-op），
+   * 该缺口已由 `analysis/engine-capabilities.json` 的 `scene-3d-weather-effects-rain-snow-leaf`
+   * 明示披露（重开条件 = 改成 `OPS` 真实现 + 同步 `test/registry-classification.test.ts` 与
+   * `test/op-327-32e-setweather-noop.test.ts` 的类别期望，模型侧已就绪）。**且它们对 VM 不可观测**：
    * 逐条机械扫描确认体内**没有** `sub_42B4B0`/`sub_42BA00`/`sub_418B90`/`sub_418CC0`（不回写操作数）、
    * 不改 ip/cur（只写长度槽）⇒ 跳过与"读了再丢"对脚本可观测行为一致；后者还会引入**死读**
    * （与 `0x1D3`/`0x1D4`/`0x2F3` 同一条纪律）。
-   * ★扩展点 = 先建 3D 子系统（Effect3D 管理器 `sub_4530B0` + 三效果槽 + `sub_4535F0` 帧推进；
-   * 3D 层/网格表 `Scene+80708` 的 `sub_4AAA50`/`sub_4AAEC0`），再逐条接线。
+   * ★扩展点 = 先建 3D 子系统（Effect3D 管理器 `sub_4530B0` + 三效果槽 + `sub_4535F0` 帧推进 +
+   * **`sub_4531B0`**（= 审计 P3 `overreach` 点名的漏项：它是 `Manager[262..309]` 三组 16-dword
+   * 参数块的**唯一写入端** —— `qmemcpy(_this + 262, &a2, 0x40u); qmemcpy(_this + 278, &a18, 0x40u);
+   * qmemcpy(_this + 294, &a34, 0x40u);`，调用点 raw 122049-122056 与 116499 的接收者都是
+   * `Scene+50704`；漏了它三个效果对象会以**全 0 参数**构造 —— "参数全错"而不是"没实现"）；
+   * 3D 层/网格表 `Scene+80708` 的 `sub_4AAA50`/`sub_4AAEC0`；灯光表 `Scene[26*i+13687]`/`Scene[i+13677]`），
+   * 再逐条接线。
    * 台账：`analysis/opcode-gaps.json` 的 5 条由 `deferred` 改为 `engine-internal`。
+   *
+   * ★`0x328` 的豁免理由**再次订正**（审计 P3 `approximation`）：emulator **已经有网格槽表** —— 它被建模为
+   *   `scene.meshes`（`0x32A` `scRelease3DSlot` 逐槽删、`0x32B` `scClearMeshSlots` 清表都由它承接）；
+   *   缺的是 Effect3D 的 **Leaf 对象**与"把槽对象挂到 Leaf"这一步，**不是**"没有网格表"（照旧描述会
+   *   让人以为表本身不存在而重复造表）。
    */
-  [0x327, op_engine_internal], // Effect3D：释放+重建管理器（sub_453280）→ sub_426E70
-  [0x328, op_engine_internal], // 3D 网格：DEC 数组 → sub_4183F0(Scene, handle, ids, n) → sub_432300
-  [0x329, op_engine_internal], // mesh 装载（FileDB + sub_4A0640；失败抛 メッシュファイル 错误串）→ sub_426EB0
-  [0x32c, op_engine_internal], // 3D 相机/天气：6 个 float → sub_499CE0(Scene, …) → sub_426FC0
-  [0x32e, op_engine_internal], // 3D 图元/效果：α/RGB 归一化 + 6 float → sub_49A080(Scene, …) → sub_427110
+  [0x327, op_engine_internal], // Effect3D Rain：释放+重建管理器（sub_453280(Engine[93384], op1)）→ sub_426E70
+  [0x328, op_engine_internal], // 3D 网格 Leaf 挂接：DEC 数组 → sub_4183F0(Scene, handle, ids, n)（逐 id 缺网格 ⇒ MESH=%d 错误串）→ sub_432300
+  [0x329, op_engine_internal], // mesh 装载（FileDB + sub_4A0640；失败抛 メッシュファイル 错误串）—— scene.meshes 的唯一装载端，no-op ⇒ 表恒空 → sub_426EB0
+  [0x32c, op_engine_internal], // 3D 相机（二段式：设备 SetTransform 无条件、管理器非 0 才转发；写入前先复位 Scene+41928..41988）→ sub_426FC0
+  [0x32e, op_engine_internal], // D3D SetLight（op1=灯光索引、op2 → Scene[26*op2+13687] / Scene[op2+13677]；α 钳 255）→ sub_427110
   // ============ 消息窗 / 消息渲染 / 文本 / 字体 子系统 ============
   // 这里的每条都**确认过 handler 体不写 VM 可见态**（不回写操作数、不改 ip/cur）。
   // 「字段/状态可建模」的都在 `msgwin.ts` 的 `MSGWIN_OPS`（OPS 表，engine-first）：
@@ -216,9 +289,13 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   "释放三个效果 + 清旗标"对 VM（不写操作数、不改 ip/cur）与画面都不可观测。
   //   扩展点 = 若将来做 Effect3D，先建 `Scene+50704` 管理器与三效果槽，再把本指令接到 `sub_453150`。
   [0x324, op_engine_internal], // 销毁 Effect3D 的全部效果（Rain/Snow/Leaf）+ 清 [+0x4E0] → sub_41A470 →(thunk sub_453530)→ sub_453150
+  // ★`[262]/[278]/[294]` 三组 16-dword 参数块也有**唯一写入端 `sub_4531B0`**（调用点 raw 122049-122056
+  //   与 116499 的接收者都是 `Scene+50704`）—— 扩展点清单里必须带上它（审计 T-0163 的 P3 `overreach`），
+  //   否则三个效果对象会以全 0 参数构造。详见本文件 SETWEATHER 族块注释的"扩展点"。
   // ★同族的 `0x327`（Set3DEffect**Rain**：`sub_426E70` → `sub_453280`）与 `0x328`（Set3DEffect**Leaf**：
-  //   `sub_432300` → `sub_4183F0`，错误串 raw 23969）**目前根本没注册** ⇒ 命中即 `NotImplementedOp`。
-  //   **故意不上桩**：它们是"该实现"的缺口，登记成 no-op 反而会把缺口藏起来（见 stub-reaudit §1.1 A4）。
+  //   `sub_432300` → `sub_4183F0`）**已登记在 `ENGINE_INTERNAL_OPS` 里**（见 SETWEATHER 族块注释）。
+  //   ★`T-0163` 订正：此处原有一句与登记**直接矛盾**的旧注（声称这两条尚未登记、命中即硬停、
+  //   故意不上桩）—— 它没有机械消费者，已删；照它撤表会让整段 SETWEATHER 剧情重新硬停（`call-script 47`）。
   // ============ 图元 / 网格 / 纹理 / 渲染状态（A4，13 条）★已转真实现（2026-09）============
   //   见 `handlers/gfx-state.ts`（`GFX_STATE_OPS`，进 `OPS`）：`0x1FC` `0x1FE` `0x207` `0x20E` `0x224`
   //   `0x229` `0x238` `0x242` `0x256` `0x258` `0x321` `0x32A` `0x32D`。
@@ -238,7 +315,7 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   // 与之相对，同一路径上**会回写操作数**的 9 条已转真实现（0x195 → handlers/config-read.ts；
   // 0x19A/0x1B6/0x1B7/0x1C7/0x1CC → handlers/msgwin.ts；0x215/0x216/0x218/0x21A → handlers/gfx-item.ts）。
   // 采集与逐条评估见 docs-new/03-engine/scene-start-flow.md。
-  // ============ 输入 子系统（按键绑定；emulator 无按键表） ============
+  // ============ 输入 子系统（按键绑定 / 触摸注册） ============
   /**
    * ★**`0x10C`（SetKeyMulti）已从本表移出 ⇒ 真实现**（2026-09，`tickets/T-0163`，审计 §4.1 的 P1
    * `stale-ledger` + P2 `missing-consumer` + P3 `missing-branch`）。
@@ -258,7 +335,55 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
    * `i10c 4 2c`（键码 `0x2c` → VK 90 = 'Z'）之后按 Z 才触发确认位 —— 修前**只有 Enter**
    * （键码 `0x1c` → VK 13，本就在默认表里）有效，Z 键与键位设置界面的选择一律无效。
    */
-  [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7
+  /**
+   * ★★**`0x308`（输入触摸注册）—— 从 `STUB_NATIVE_OPS` 移入本表**（2026-09-24；`tickets/T-0111`
+   * 判据② + `T-0163` 的三条：P2 `missing-behavior` / P3 `missing-operand-io` / P3 `stale-ledger`）。
+   *
+   * **处置 = 有据 no-op 登记**（票面写死的路线）。语料 **31279 处 / 345 个文件**（`^i308 ` 实测计数：
+   * 几乎所有脚本头部与场景切换都会调）—— 所以它**非登记不可**（不登记就命中即 `NotImplementedOp`）；
+   * 但它的真实副作用在 emulator 里**没有可复现的宿主触点**（逐行读体确证如下）⇒ 不做假实现。
+   *
+   * **引擎体（读体确证）**：
+   *  - `0x308` handler = `sub_426B20`（raw **33808-33815**）：写 arity 槽（`3` ⇒ argc 1）→
+   *    `v2 = sub_41BF50(_this, 1)`（**读 op1**）→ `sub_407B20(dword_55E1BC, _this[96981], v2)`
+   *    （第 2 实参 `_this[96981]` = **HWND 格**；同一格被 `GetWindowPlacement`/`SetCursorPos` 当 hwnd 用）。
+   *  - 被调体 `sub_407B20`（raw **12579-12618**）：
+   *    `LoadLibraryA("USER32.DLL")`（字面量 raw 4292）→ 门 **`a3 || (GetConfig("system:LimitTouch") & 1)`**
+   *    （raw 12590；`a3` = op1，`system:LimitTouch` 字面量 raw 4291，只取 **bit0**）⇒
+   *    真（op1≠0 **或** 配置 bit0=1）取 `GetProcAddress(h, "UnregisterTouchWindow")`（raw 4289）
+   *    调 `(hwnd)`；假（op1=0 且 配置 bit0=0）取 `GetProcAddress(h, "RegisterTouchWindow")`（raw 4290）
+   *    调 `(hwnd, 2)`；随后 `FreeLibrary`。
+   *  - `_this[1954] = op1`：**三条出边都写**（注册支 raw 12605 / 注销·失败支 raw 12610 /
+   *    `LoadLibraryA` 失败支 raw 12615）。该字段在**整份反编译里 3 写 0 读**
+   *    （`grep '1954]'` 仅这 3 命中）⇒ 对 VM 不可观测（不写脚本操作数、不改 ip/cur），也**不建模**
+   *    （建模就是一条 `check:dead-writes` 拦的死写；`T-0163` 的 P3 `missing-operand-io` 即此，
+   *    与 `0x2FA` 的 `Engine[1951]` 同类）。
+   *
+   * **为什么登记成 no-op，而不是"补宿主缝"**：引擎侧唯一的真实副作用是 **USER32 的窗口级触摸注册**
+   * （`RegisterTouchWindow(hwnd, 2)`）；emulator 没有 HWND 概念（`_this[96981]` 无对应物），也没有
+   * 窗口级触摸注册面（触屏/指针输入由 Electron/DOM 层持有，不经 opcode）。造一个
+   * `native.registerTouchWindow?.(...)` 的空实现只是把"无宿主触点"换个地方写，还会给 `_this[1954]`
+   * 造一个**假消费者** —— 纪律与 `T-0111` 的票面都要求**如实登记**。
+   * ★扩展点（若将来要做）= 宿主缝 `registerTouchWindow(hwnd, unregister: boolean)` + 配置读
+   * `system:LimitTouch` bit0；两者都在 `src/vm/native.ts`/`nativeTap.ts`（**不属本票文件范围**）。
+   * ★守卫：`test/stub-308-touch-register.test.ts`（登记位置 / 不发 `unhandled` / 不写 `Engine[1954]` /
+   * ip 前进 / 源文棘轮）；台账条目见 `analysis/opcode-gaps.json` 的 `0x308`。
+   */
+  [0x308, op_engine_internal], // 触摸注册（USER32 RegisterTouchWindow/UnregisterTouchWindow + `_this[1954]` 3 写 0 读；无宿主触点 ⇒ 有据 no-op）→ sub_426B20/sub_407B20
+  /**
+   * `0x30A`（SetGesKey）：`sub_426B60`（raw **33818-33836**）写 arity 槽（`5` ⇒ argc 2）→
+   * 读 op2、op1（顺序：先 op2 后 op1）→ `op1 > 0x1F || op2 > 7`（unsigned，raw **33828**）时
+   * `_CxxThrowException(ShowMessage「SetGesKeyの引数が不正です．」)`（raw 33830-33833；字面量 raw 4436）
+   * —— 抛点在 `_this[op2 + 1969] = op1`（raw 33834）**之前** ⇒ 越界即不写表。
+   * ★字段豁免理由**订正**（审计 `T-0163` 的 P3 `missing-branch`）：不是"emulator 无按键表" ——
+   * `_this[1969..1976]` 这张 8 格表在**整份反编译里只写不读**（`grep '1969]'` 仅 raw 33834 一处）
+   * ⇒ 写了也没有读者，故不建模（同 `0x2FA`/`0x308` 的字段口径）。
+   * ★语料 1 处（`src/SYSTEM4.txt:110 i30a 6 5`，两值都合法）⇒ 越界分支当前不可见。
+   * ★**越界抛错本轮未实现**：忠实实现要读 op1/op2 ⇒ 需在 `src/vm/operandPlan.ts` 声明操作数计划
+   * 并把本条从本表迁进 `OPS`（该文件属他人范围）⇒ 与 `0x137`/`0x10C` 同一条交接（见
+   * `tickets/T-0163/changes-c163.md`）。修好后本条应离开 `ENGINE_INTERNAL_OPS`。
+   */
+  [0x30a, op_engine_internal], // 键位注册：op1≤0x1F 且 op2≤7；表 `_this[1969+op2]` 全反编译 0 读者 ⇒ 不建模（越界抛 SetGesKey 未实现，见上）
   // ============ 字符串 / 查表 / 配置 ============
   // 0x2C7（SBSubstr）与 0x2EB（GetConfig("set:GameVersion") → 字符串）**已转真实现**：
   //   见 handlers/strings.ts（0x2C7）与 handlers/config-read.ts（0x2EB）——它们会回写操作数，
@@ -305,11 +430,20 @@ export const ENGINE_INTERNAL_OPS: Map<number, OpHandler> = new Map<number, OpHan
   //   读完要么转真实现、要么在此写明"体内只做 X，对 emulator 不可观测"。
 ]);
 
-/** 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。 */
+/**
+ * 子系统 opcode → NativeBridge 桩（记录后放行，不阻塞 VM）。语义见 opcode-table.md；此处只记 emulator 路由。
+ *
+ * ★**2026-09-24 起本表为空**（`tickets/T-0111` 判据② + `T-0163`）：最后一条 `[0x308,
+ * op_stub_unhandled]` 已按「有据 no-op 登记」移入 `ENGINE_INTERNAL_OPS`（不再打 `unhandled` 日志），
+ * 那个 handler 也已删除。数组保留（`handlers/index.ts` 仍在展开它），但**不许**再往里塞
+ * "记录后放行"的桩：有 raw 依据的跳过进 `ENGINE_INTERNAL_OPS`，有真实宿主副作用的走真实现/宿主缝。
+ */
 export const STUB_NATIVE_OPS: OpTable = [
   // ★`0xB4`（SE 装载）/ `0xBF`（play-bgm）/ `0xC4`（play-voice）已从本表移出：
   //   它们是音频族的真实现（`handlers/audio.ts`），经 `NativeBridge.audio` 落到宿主音频引擎。
-  [0x308, op_stub_unhandled], // 输入触摸注册（⚠op1/`_this[1954]` 未建模，见 handler 注释）
+  // ★`0x308`（输入触摸注册）**已从本表移出（2026-09-24，`T-0111`/`T-0163`）**：
+  //   登记进 `ENGINE_INTERNAL_OPS` 的有据 no-op（体 = USER32 触摸注册 + `_this[1954]` 3 写 0 读，
+  //   语料 31279 处；emulator 无 HWND/无窗口级触摸面 ⇒ 无宿主触点可复现）。见本文件同 opcode 的块注释。
   // ★`0x82`（`sub_41F720` → `sub_466000`，argc 5）**已从本表移出（2026-09，`tickets/T-0104`）**：
   //   体已读完（raw 79319-80311）⇒ 语义 = **用给定颜色把某窗的文本记录重画一遍**
   //   （`op1` = 窗索引、`op2` = 起始记录下标（越界 ⇒ 什么都不做）、`op3 & 2` ⇒ 用 `op4`/`op5`

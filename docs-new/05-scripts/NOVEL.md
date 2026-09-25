@@ -22,9 +22,9 @@ generated_by: scripts/build-scripts.mjs
 |---|---|---|
 | `6-11` | `set-texture 5190 c (local-int 0)` | 入口：登记消息窗图到槽 0xC + `i1b1 1` + `i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64`（消息窗九宫格） |
 | `28-34` | `label_00000208` | ★帧续跑门：命中 0x3 call 表 ⇒ 落到「调用点的下一条」；命中 0x71 消息表 ⇒ 重放该消息。`i0ae` 在 line 29，**背景块在它之后** |
-| `32-58` | `draw-texture 186a0 48 0 0 500 2d0 0 0` | 「恢复上一屏背景」块（画在 handle 0x186A0、槽 0x48）：门是 `(global-int 3f90) != 0`（见 invariants ⇒ 恒不执行）；3f90==0 时 `jcc label_0000088c` 整段跳过 |
+| `32-58` | `draw-texture 186a0 48 0 0 500 2d0 0 0` | 「恢复上一屏背景」块（画在 handle 0x186A0、槽 0x48）：门 = `eq local0,(global 3f90),0` + `jcc local0 ffffffff label_0000088c` ⇒ **`3f90 == 0` ⇒ 落下句、整块执行**；`3f90 != 0` ⇒ 跳 `label_0000088c` 跳过（★原写「门是 3f90 != 0」「3f90==0 时整段跳过」两处都反了 —— `jcc` 口径见 `analysis/opcodes.json` 的 `0xA0` 行 / `tickets/T-0145`） |
 | `119-147` | `call-script (global-int 1394)` | `label_0000088c`：场景装配路径（字体/`i1f5`/`loadmesskip advset`）→ `call-script SN0000`（`global 1394` = 0x74） |
-| `174-191` | `detach-texture 109a0 1` | ADV 收场：3f90 != 0 时 `i259`（清两张槽记录镜像）+ 区间 detach + `i1f6` |
+| `174-191` | `detach-texture 109a0 1` | ADV 收场：`3f90 == 0` 时 `i259`（清两张槽记录镜像）+ `call label_000013fc/000016a0/00001db4` + 后续按 `4fd9` 分叉（`4fd9 == 0` ⇒ 跳 `label_00000c18` 走 `i1f6`）—— ★原写「3f90 != 0 时」是**反的**（见 `tickets/T-0145`） |
 
 ## 关键槽 / 局部量
 
@@ -36,7 +36,7 @@ generated_by: scripts/build-scripts.mjs
 
 ## 不变量（拿它做回归断言）
 
-- `global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ line 32-58 那条「恢复背景」路径在正式脚本里恒不执行（handle 0x186A0 从未被真正画出）
+- `global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ **line 32-58 那条「恢复背景」路径恒执行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`）；但决定画不画 `186A0` 的是下一道 `4fd9` 门：`4fd9 == 0`（本机真槽）⇒ 跳 `label_00000448` 走 `i1f6`/`i23d` 支，**handle 0x186A0 在本机从未被画出**
 
 ## 坑（踩过一次，别再踩）
 

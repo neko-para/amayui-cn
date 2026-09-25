@@ -11,7 +11,7 @@ updated: 2026-09-21
 > 会话级前置（沙箱、技能加载、环境构造）在 `docs-new/03-engine/handoff.md` §1.0。
 
 1. **只按引擎证据改**：改动注释必须给 raw 行号 + 体内真实分支；没有依据的"看起来能跑"的补丁不做。
-2. **不静默跳过**：任何不实现/近似都要在 `analysis/opcode-gaps.json` 有一条（`unimplemented`/`deferred`/`engine-internal`/`implemented`）并写理由。**宁可有据 `deferred`，也不要造假实现。**
+2. **不静默跳过**：任何不实现/近似都要在 `analysis/opcode-gaps.json` 有一条（`unimplemented`/`deferred`/`engine-internal`/`engine-internal-unjustified`/`implemented`/**`partial`**）并写理由。**`partial`**（2026-09 `tickets/T-0149` 新增）= "已注册且语料级可用，但相对引擎体仍缺某条分支/消费端/写者，或某处是披露的近似"，**必须**带 `missing[{what,ticket,raw}]`（由 `test/opcode-gaps.test.ts` 棘轮守住）。**宁可有据 `deferred`，也不要造假实现。**
 3. **★筛体/规格文档里的推断只是线索，不是结论**：本轮 13 处推断被逐行读体推翻，其中 **2 处是"归口对象整条错"**（`0x1c4` 被当成"场景层是否已挂项"，实为**语音总线占线查询**；`0x1d0`/`0x1d1` 被当成"GDI 文本度量族"）。**凡采纳前必须读体**。订正要写回文档（本轮落在 `b3-screening-2026-09.md` §6）。
 4. **区分"死读"与"漏读"**：`0x1d3`/`0x1d4`/`0x2f3` 的操作数在引擎里**也是**死读（形参在全函数体不出现）⇒ 这不是 bug，写进白名单的"有据豁免"而不是硬补。
 5. **不静默跳过 → 也不许用工具悄悄放过**：`--set emulator.note=a, b` 会把值按 ASCII 逗号拆成**数组**；`capabilities.js --validate` 与守卫测试口径现已对齐（都报"必须是字符串"）。**JSON note 里引用短语用「」，不要用裸 ASCII 引号**（会截断字符串）。

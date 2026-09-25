@@ -406,6 +406,8 @@ export class PixiBackend implements NativeBridge {
 
   bindTexture(imgid: number, slot: number): void {
     this.#markDirty();
+    // ★`0x1F9`（`sub_422CB0` raw 31211-31221）同样先销毁该槽的旧对象
+    this.textures.clearSlotNode(slot);
     this.textures.bind(imgid, slot);
   }
 
@@ -457,6 +459,9 @@ export class PixiBackend implements NativeBridge {
 
   createTexture(slot: number, w: number, h: number, mode: number): void {
     this.#markDirty();
+    // ★`0x1F8`（`sub_422C20` raw 31171-31183）在建设定表面之前先销毁 `Engine[slot + 94672]`
+    //   的旧对象（与 `0x20F`/`0x236` 建的是同一张 1000 槽表）⇒ 宿主侧也要清
+    this.textures.clearSlotNode(slot);
     this.textures.create(slot, w, h, mode);
     scSetSlotMode(this.scene, slot, mode); // ★纹理创建模式（`CTexture+1048`）：混合门控只认 mode 1
     scCreateTextureReset(this.scene, slot);
@@ -892,9 +897,10 @@ export class PixiBackend implements NativeBridge {
    * 脚本级 teardown 中间 ⇒ 画出一帧**没有覆盖幕的旧场景**（实测：`.tmp` 日志里
    * `[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）。
    *
-   * 处理：撤掉满屏幕布后**先留帧**，直到有新内容建立（`createMesh`/`draw-texture`/`copyScene`）
-   * 或容器被整批清空（`clearDrawContainer`，此时画面本就该是空的/黑的）；最多留 `HOLD_MAX` 帧，
-   * 防止"幕撤了但确实什么都不画"的场景被永久冻住。
+   * 处理：撤掉满屏幕布后**先留帧**，直到有新内容建立（`createMesh`/`draw-texture`/`copyScene`）；
+   * ★**`clearDrawContainer` 不是解除点** —— 它只把留帧**续期**到 `HOLD_MAX` 帧并继续留上一帧
+   * （清空后画面本就该是空的/黑的，见它的实现：`#holdFrames = Math.max(..., HOLD_MAX_FRAMES)`）；
+   * 最多留 `HOLD_MAX` 帧，防止"幕撤了但确实什么都不画"的场景被永久冻住。
    */
   #holdFrameAfterCurtainDrop(handle: number): void {
     this.#holdFrames = HOLD_MAX_FRAMES;
@@ -1012,6 +1018,8 @@ export class PixiBackend implements NativeBridge {
 
   releaseTexture(layer: number): void {
     this.#markDirty();
+    // ★`0x1FA`（`sub_422E00` raw 31255-31265）先析构该槽的 movie 对象；`release()` 自己也会清槽对象
+    this.textures.clearSlotNode(layer);
     this.textures.release(layer);
     this.#pushLog(`releaseTexture layer=${layer}`);
   }
@@ -1022,9 +1030,28 @@ export class PixiBackend implements NativeBridge {
     this.textures.fillSlotRect(slot, x, y, w, h, argb, alpha);
   }
 
+  /**
+   * **`0x20F` play-movie**（`sub_4237B0` raw 31605-31670）：建/复用该槽的影片对象并把 id 交给它。
+   *
+   * ★旧实现只有一行 `#pushLog`，**没有 per-slot 对象状态** ⇒ `0x23F`（读 `Engine[slot+94672]`）
+   * 这些槽恒 −1，而引擎会给出对象尺寸 ×1000（`T-0153` 的 `0x23F` 条目）。
+   * 本工程没有影片解码器 ⇒ 不画像素，但**对象本身必须存在**（`slotNodeSize` 才对得上引擎的两条分支）。
+   */
   playMovie(id: number, slot: number, mode: number): void {
     this.#markDirty();
-    this.#pushLog(`playMovie id=0x${id.toString(16)} slot=${slot} mode=${mode}`);
+    const created = this.textures.noteSlotNode(slot, 'movie', id, mode);
+    this.#pushLog(`playMovie id=0x${id.toString(16)} slot=${slot} mode=${mode}（对象${created ? '新建' : '复用'}）`);
+  }
+
+  /**
+   * **`0x23F` 的宿主侧答案**（`sub_4307B0` raw 40019-40030）：`present: false` ⇒ 引擎写 `op1 = -1`。
+   *
+   * ★与 `getTextureSize`（`0x208`）**不是同一个问题**：`0x208` 读表面表（`Scene+4*slot+42456`）、
+   * `0x23F` 读对象表（`Engine+4*slot+378688`）。VM 侧要接的是这条缝（见
+   * `tickets/T-0153/changes-renderer.md` 的跨域接线节：`op_get_slot_size` 目前只信 `Engine.texSizes`）。
+   */
+  slotNodeSize(slot: number): { present: boolean; w: number; h: number } {
+    return this.textures.slotNodeSize(slot);
   }
 
   /**
@@ -1131,6 +1158,43 @@ export class PixiBackend implements NativeBridge {
     const n = scClearMeshSlots(this.scene);
     if (n > 0) this.#pushLog(`clearMeshSlots: 释放 meshes=${n}`);
     this.#markDirty();
+  }
+
+  /**
+   * **`0x20F` play-movie 的输入前提**：该槽有没有 CTexture 对象（引擎 `_this[4*slot + 365288]`）。
+   *
+   * 引擎体 raw 31645-31650 在该格为空时抛 `asc_520248`（"テクスチャが確保されていません"）。
+   * 本宿主的对应物 = `TextureCache` 里该槽有程序化表面（`0x1F8`）或有绑定的 imgid（`0x1F9`）；
+   * ★**不是** `slotNodeOf`（那是影片对象表 `+378688`，两张表不许混，见 `T-0153` 的 `0x23F` 条目）。
+   */
+  hasSlotTexture(slot: number): boolean {
+    return this.textures.surfaceClassOf(slot) !== undefined || this.textures.imgidOf(slot) !== undefined;
+  }
+
+  /**
+   * **`0x23D` play-movie 槽整批释放**（`sub_41A300` raw 25320-25347）：槽 **42..999**。
+   *
+   * 体每轮两段：① `Engine[94714+k]`（= `+378688`）的影片对象析构 + 表项置 0；
+   * ② `sub_49E980(Scene, slot)`（raw 119586-119603）：槽→imgid 记录写 **−1**、CTexture 表面析构。
+   * ⇒ 引用这些槽的图元此后取不到纹理（与 `0x259` 的"只清标志位"**不是**同一件事）。
+   *
+   * ★`T-0164`：本方法（宿主缝实现）此前**不存在** ⇒ 958 个槽的对象与绑定全部留存。
+   * 释放后 `0x23F`（对象尺寸）/`0x208`（表面尺寸）对这些槽必须回落（`release()` 已撤两张表）。
+   */
+  releaseMovieSlots(): void {
+    let nodes = 0;
+    let bindings = 0;
+    for (let slot = 42; slot < 1000; slot++) {
+      // ① `Engine[94714+k]` 的影片/纹理槽对象（`sub_488FB0` + vtable 析构 + 表项置 0）
+      if (this.textures.clearSlotNode(slot)) nodes++;
+      // ② `Scene[5*slot+466] = -1` 与 CTexture 表面析构（`sub_49E980` raw 119586-119603）
+      if (this.textures.imgidOf(slot) !== undefined) bindings++;
+      this.textures.release(slot);
+    }
+    this.#markDirty();
+    this.#pushLog(
+      `releaseMovieSlots 42..999：析构影片对象 ${nodes} 个、解绑槽→imgid 记录 ${bindings} 条（引擎 raw 25331-25343）`,
+    );
   }
 
   /**

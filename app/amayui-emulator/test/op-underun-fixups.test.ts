@@ -194,11 +194,19 @@ test('★0x1D3/0x1D4/0x2F3/0x33F 的豁免条目必须留在白名单里，且 e
   for (const k of ['0x1d3', '0x1d4', '0x2f3', '0x33f']) {
     assert.ok(wl.has(k), `${k} 属于「引擎也不消费该格 / 缺消费端」的有据豁免 ⇒ 必须留在 ALLOW_UNDERRUN`);
   }
-  // 逐条与体一致：0x1D3 op3 死读；0x1D4 op3 死读；0x2F3 op4 死读；0x33F op2/op3 无消费端
+  // 逐条与体一致：0x1D3 op3 死读；0x1D4 op3 死读；0x2F3 op4 死读；
+  // ★0x33F **不再**是"只碰 op1"（`tickets/T-0155` 订正）：引擎 `sub_427A90` raw 34423-34446 三格全读，
+  //   而 op2/op3 的**回退源**（`sub_4ADD60(Scene, op1)` = 该项当前 α / 当前色）已接到既有宿主缝
+  //   `getDrawItemColor`（与 `0x202`/`0x203` 同一个缝）⇒ 三格现在都读、且读出的值真的进语义。
+  //   旧断言 `[1]`（"只承载混合选择子"）钉的正是修前"两格整体没读"这个缺陷。
   assert.deepEqual(touched(0x1d3, [loc(1), loc(2), im(0), im(0), im(7)], new StubNative(() => {})), [1, 2, 4, 5]);
   assert.deepEqual(touched(0x1d4, [loc(1), loc(2), im(0), im(0)], new StubNative(() => {})), [1, 2, 4]);
   assert.deepEqual(touched(0x2f3, [loc(1), loc(2), loc(3), im(0), im(0), im(2)], new StubNative(() => {})), [1, 2, 3, 5, 6]);
-  assert.deepEqual(touched(0x33f, [im(1), im(0xff), im(0xffffff)], new StubNative(() => {})), [1], '0x33F 目前只承载混合选择子');
+  assert.deepEqual(
+    touched(0x33f, [im(1), im(0xff), im(0xffffff)], new StubNative(() => {})),
+    [1, 2, 3],
+    '★0x33F 三格全读（op1 = 混合选择子、op2 = α、op3 = 颜色；后两格带回退，见 tickets/T-0155）',
+  );
 });
 
 test('★0x1D3/0x1D4/0x2F3：死读那格取任意值都不改变输出，且**它确实一次也没被碰**（补个裸 read 只会变成死读）', () => {

@@ -78,12 +78,16 @@ test('resolve：槽号与 handle 相同也不混淆（都走 tex 语义）', () 
   assert.equal(r.imgid, 0x99);
 });
 
-test('release：解除槽的纹理（保留 imgid 绑定，与引擎 release-texture 同口径）', () => {
+test('release：解除槽的纹理**并把槽记录写 −1**（`sub_49E980` raw 119594：`Scene[5*slot+466] = -1`）', () => {
   const { cache, loaded } = bareCache();
   cache.bind(0x88, 5);
   loaded.set(5, { __tex: 's5' });
   assert.equal(cache.slotCount, 1);
   cache.release(5);
   assert.equal(cache.slotCount, 0);
-  assert.equal(cache.imgidOf(5), 0x88, 'release 只解纹理，不改写绑定记录');
+  // ★`T-0153` 订正（前提被取代）：旧断言写的是"保留 imgid 绑定，与引擎 release-texture 同口径" ——
+  //   体里恰恰相反：`0x1FA`（`sub_422E00` raw 31245-31268）先析构该槽对象，再走
+  //   `sub_49E980`（raw 119586-119603）：`Scene[5*slot+466] = -1` + 析构 CTexture。留着的绑定会让
+  //   `size()` 靠 `#healSlot` 自愈出**旧尺寸**（引擎此时必答 0×0，`sub_49ED60` raw 119786-119795）。
+  assert.equal(cache.imgidOf(5), undefined, '★释放必须撤掉槽→imgid 记录（与引擎的 −1 同口径）');
 });

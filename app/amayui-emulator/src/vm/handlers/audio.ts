@@ -119,7 +119,7 @@ const op_bgm_stop: OpHandlerLike = (c) => {
   setMusicPaused(c.e, false); // 引擎同一函数第二行：`Music[260] = 0`（raw 106186）⇒ 停播一律回到"非暂停"
   if ((c.e.effectFlags & 0x200) !== 0) {
     c.e.effectFlags &= ~0x200; // 引擎：清 bit0x200
-    emit(c, { kind: 'bgm-fade', value: 0, step: 100 }); // 引擎：sub_489E50(Music, 100) 推进淡出
+    emit(c, { kind: 'bgm-fade', value: 0, step: 100 }); // 引擎：sub_489E50(Music, 100) 推进淡出（步长恒 100）
   }
   emit(c, { kind: 'bgm-stop' });
 };
@@ -127,12 +127,21 @@ const op_bgm_stop: OpHandlerLike = (c) => {
 /** `0x2BF`：延迟播 SE —— op1 = 通道、op2 = 循环标志、op3 = 延迟毫秒（引擎武装 + 每帧 `sub_4B5230`）。 */
 const op_se_delay: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, {
-    kind: 'se-delay',
-    ch: (p.int(1) ?? 0),
-    loop: (p.int(2) ?? 0) !== 0,
-    delayMs: (p.int(3) ?? 0),
-  });
+  const ch = (p.int(1) ?? 0);
+  const loop = (p.int(2) ?? 0) !== 0;
+  const delayMs = (p.int(3) ?? 0);
+  if (ch < 0 || ch >= 10) {
+    // ★引擎 `sub_4B5170` 的值域门是 `if ( a2 < 10 )`（raw 137725），越界走
+    //   `sprintf_s(_this + 8, 0x400u, aSetdelaySound); sub_4034C0(...)`（raw 137736-137737）
+    //   ⇒ 「越界 = 不武装」**加**「引擎会报错」。审计 P3 `0x2bf missing-branch`（票 `T-0152`）
+    //   说的就是后者那条可观测串在 emulator 侧丢失 ⇒ 这里补日志（不改"不武装"这一半）。
+    c.log(
+      `0x2BF SetDelaySound：SE 通道越界（op1=${ch}，引擎 raw 137725 的门是 a2 < 10）` +
+        `—— 引擎显示「関数：SetDelay エラー：不正なSound番号です」（raw 5197 的串常量 / raw 137736-137737 的调用），不武装`,
+    );
+    return;
+  }
+  emit(c, { kind: 'se-delay', ch, loop, delayMs });
 };
 
 /**
@@ -292,6 +301,46 @@ const op_play_bgm: OpHandlerLike = (c) => {
 // ---------------------------------------------------------------------------
 
 /**
+ * **`sub_406DF0(Engine, 类别, a3)` 的门与值域**（raw 12041-12110）—— 四个开关分支的共同收尾。
+ *
+ * 审计 P2 `0x1ba missing-consumer`（票 `T-0152`）要的是"四段体末尾各调一次 `sub_406DF0`，
+ * 而 emulator 一次都不调"。读体后这条**只成立一半**，这里把两半分开写清：
+ *
+ * ```c
+ * v4 = a3 != 0;                                   // ← a3 被**归一成 0/1**（不是原值直写）
+ * if ( (_this[174801] & 0x2000) != 0 && _this[94671]
+ *      && GetConfig(set:DependMovie) == a2 )      // ← **外层门**
+ *   { *(_DWORD *)(_this[94671] + 1120) = v4; sub_4863C0(…, v4 ? _this[94671][1116] : 0); }
+ * for ( v6 = _this + 94672; v10 = 1000; v10; ++v6, --v10 )   // ← 1000 格影片播放器表
+ *   if ( *v6 && <该播放器的依赖类别> == a2 ) { *(_DWORD *)(*v6 + 1144) = v4; sub_4879E0(…); }
+ * ```
+ *
+ * ① **可建模的那半 = 外层门**：`set:DependMovieSound` 等于本类别、且当前有影片在放
+ *    （`effect_flags & 0x2000`，即"movie"位）时，**字幕/音轨跟随开关**。本工程把这一步落成
+ *    一条宿主意图 `{kind:'movie-dependent-audio', category, on}`（宿主未接 ⇒ 由闸门 A 留痕）
+ *    **加**一行诊断：这是"不假装实现播放器、但也不再一次都不调"的最小落点。
+ * ② **未建模的那半 = 1000 格播放器表本体**：影片播放器对象在重写侧根本没有（0x20F play-movie /
+ *    `sub_4246B0` 那条线归 `T-0153` 的对象表），所以 `+1144`/`+1120` 两格**没有承载对象**。
+ *    ⇒ 这一半**有据登记**（不是缺口遗漏），重开条件 = 影片播放器对象表进 emulator 时一起接。
+ *
+ * ★**`on` 是"归一成 0/1"而不是 op2 原值**：raw 12052 的 `v4 = a3 != 0` ⇒ 传入 7 与传入 1
+ * 对影片音轨的效果相同（`+1144` 只会是 1）。这与 `switchSeEnable` 的 `on ? 1 : 0` 同口径。
+ */
+function applyDependentMovie(c: StepCtx, category: number, a3: number): void {
+  const e = c.e;
+  const on = a3 !== 0 ? 1 : 0; // ★raw 12052：v4 = a3 != 0
+  const moviePlaying = (e.effectFlags & 0x2000) !== 0;
+  const want = e.config ? cfgInt(e.config, CFG.setDependMovie, -1) : -1;
+  const gate = moviePlaying && want === category;
+  if (gate) emit(c, { kind: 'movie-dependent-audio', category, on });
+  c.log(
+    `sub_406DF0 收尾（类别 ${category}，值 ${on}）：外层门 set:DependMovieSound=${want} §` +
+      `movie=${moviePlaying} ⇒ ${gate ? '满足（已下发 movie-dependent-audio）' : '不满足（无动作）'}；` +
+      '1000 格影片播放器表未建模（有据登记，重开条件 = 影片对象表进 emulator）',
+  );
+}
+
+/**
  * **引擎 `sub_408D90(Engine, a2)`（raw 13545-13571）= SE 总开关**。`0xBB`（a2 = op1）与
  * `0x1BA op1=2`（a2 = op2，**原样**传进来）走同一段体：
  * ```c
@@ -304,6 +353,11 @@ const op_play_bgm: OpHandlerLike = (c) => {
  * ⇒ `Engine[20980]` 与配置 `sound:SE` 是同一判据的两个副本（raw 23689-23691 / 14940-14942），
  * 本工程只留配置这一份，故以 `cfgInt(sound:SE) != 0` 当"现状"。
  *
+ * ★**关方向硬编码写 0、开方向硬编码写 1**（审计 P3 `0xbb approximation`，票 `T-0152` 复核）：
+ * 体里是 `SetConfig("sound:SE", 0/1)`（raw 13551-13568），`a2` 只原样转交影片层 ⇒
+ * **不存在**"非 0 原样 ±3"这条路径（±3 是音乐开关 `sub_408CF0` 的 `sound:Music`，raw 13525-13540）。
+ * ⇒ 本函数的 `on ? 1 : 0` 与引擎一致（手工把 INI 置成 `sound:SE=2` 时，引擎写回 1、本工程也写 1）。
+ *
  * ★关闭时引擎逐个 `sub_4B60C0(SE, i)`（i = 0..9）**释放音效通道对象**；宿主等价物是
  * `{kind:'enable', target:'se', on:false}` —— `AudioEngine.setEnabled` 会把 10 条 SE 通道全停掉。
  * ★`sub_406DF0`（raw 12041-12110）遍历最多 1000 个影片播放器、把"依赖该类声音"的那些音轨一起开关 ——
@@ -315,6 +369,7 @@ function switchSeEnable(c: StepCtx, a2: number): void {
   if (on === cur) return; // 引擎：(a2 != 0) == v3 ⇒ return 0
   setConfigValue(c.e, CFG.soundSE, on ? 1 : 0);
   emit(c, { kind: 'enable', target: 'se', on });
+  applyDependentMovie(c, 2, a2);
 }
 
 /**
@@ -333,6 +388,7 @@ function switchVoiceEnable(c: StepCtx, a2: number): void {
   //   `0xC4`/`0x1BD` 末尾读它（`if (Engine[21293]) Engine[122501] = 1`）⇒ 必须落盘（审计 P1 `0xc4` 的一半）。
   c.e.engineValues.set(ENGINE_FIELD.voiceEnabledField, on ? 1 : 0);
   emit(c, { kind: 'enable', target: 'voice', on });
+  applyDependentMovie(c, 3, a2);
 }
 
 /**
@@ -347,7 +403,7 @@ function switchMovieEnable(c: StepCtx, a2: number): void {
   const cur = c.e.config ? cfgInt(c.e.config, CFG.soundMovie, -1) : -1;
   if (a2 === cur) return;
   setConfigValue(c.e, CFG.soundMovie, a2);
-  c.log('0x1BA op1=4：写 sound:Movie（影片音轨）—— 引擎还会经 sub_406DF0(raw 12041-12110) 逐影片播放器下发，该层未建模');
+  applyDependentMovie(c, 4, a2);
 }
 
 /**
@@ -386,6 +442,7 @@ function switchMusicEnable(c: StepCtx, a2: number): void {
   emit(c, { kind: 'bgm-stop' });
   setMusicPaused(c.e, false); // 引擎 sub_489B50 清 Music[260]（raw 106186）
   if (id !== 0) emit(c, bgmPlayIntent(c.e, id, loop)); // 引擎 sub_489F80 起播分支再清一次（raw 106365）
+  applyDependentMovie(c, 1, a2);
 }
 
 /** `0xBB`：SE 总开关（`sub_420D90` raw 29782-29789：`sub_408D90(this, op1)`）。 */
@@ -493,19 +550,59 @@ const op_bgm_pause_toggle: OpHandlerLike = (c) => {
  *  - **目标非 0 且曲 id 非 0 ⇒ 起播当前曲**（raw 106291-106316：音量为 0 或槽没在播时 `setPosition(0)`
  *    + `play(Music[259], Music[261])`）—— 这是"`i0c3 <曲号>` 登记 + `i0c2 <音量> <步长>` 淡入"习语里
  *    **真正把曲放起来**的那一步（宿主的 `bgmPlay` 自带同曲同循环不重启 ⇒ 正在播时不会被打断）。
+ *
+ * ★**op2 不是每帧步长，是节流毫秒**（审计 P2 `0xc2 approximation`，票 `T-0152`；体：`sub_420E00`
+ * raw 29831-29839）：
+ * ```c
+ * _this[174801] |= 0x200u;
+ * v4 = op2 < 1000 ? op2 / 10 : op2 / 1000;      // ← 节流毫秒（sub_453A60(_this+107503, v4)）
+ * sub_453A60(_this + 107503, v4);
+ * v9 = op2 < 1000 ? 10 : 1;                     // ← sub_489D10 的第 3 实参 = **进度增量**
+ * sub_489D10(_this + 174454, op1, v9);
+ * ```
+ * `sub_489E50(Music, 100)`（raw 106328）才是"每次 CALL 把 `Music[262]` **+100**" ⇒ 推进次数 =
+ * `100 / v9`，两次之间至少隔 `v4` 毫秒。修前把 op2 原值当每帧步长 ⇒ `op2 = 500` 时淡变快 2 倍、
+ * `op2 = 1200` 时慢约 1.2 倍（语料 943 处 `i0c2` 里 `< 1000` 的约 121 处）。
+ *
+ * ★**ADV 激活位分叉**（审计 P3 `0xc2 missing-behavior`，票 `T-0152`；体 raw 29815-29823）：
+ * `effect_flags & 0x8000000` 置位时走的是**另一条路** —— 只 `sub_489D10(Music, op1, op2)` +
+ * `sub_489E50(Music, 100)`，**既不清也不置 bit0x200、不写节流槽、不动 `Music[259]`** ⇒ 这里
+ * 只出 `bgm-fade`，不做"目标 0 清曲 id"与"起播当前曲"那两步。
  */
 const op_bgm_fade: OpHandlerLike = (c) => {
   const p = planFor(c);
   const value = (p.int(1) ?? 0);
   const step = (p.int(2) ?? 0);
+  if (advActive(c)) {
+    // ★ADV 路的 `sub_489D10(Music, op1, op2)` 是**原值**（不折算），随后的 `sub_489E50(Music, 100)`
+    //   每帧把 `Music[262]` +100 ⇒ 每次 CALL 的增量 = op2（下限 1）、无节流（引擎那一支不写节流槽）。
+    emit(c, { kind: 'bgm-fade', value, step: step > 0 ? step : 1 });
+    return;
+  }
   const id = musicId(c.e);
+  if ((c.e.effectFlags & 0x200) !== 0) {
+    // 引擎 raw 29826-29830：bit0x200 已置 ⇒ 调 `sub_418580(Music, TransferMusicVolume)`
+    // （1 = 按 `Music[262]` 进度把 `Music[264]` 插值到 `Music[265]`；2 = 直接跳到目标）。
+    const transfer = c.e.config ? cfgInt(c.e.config, CFG.setTransferMusicVolume, 0) : 0;
+    emit(c, { kind: 'bgm-transfer-volume', mode: transfer });
+  }
+  c.e.effectFlags |= 0x200; // 引擎 raw 29831：`_this[174801] |= 0x200u`
   if (value <= 0) setMusicId(c.e, 0);
   else if (id !== 0) emit(c, bgmPlayIntent(c.e, id, musicLoop(c.e)));
-  emit(c, { kind: 'bgm-fade', value, step });
+  emit(c, {
+    kind: 'bgm-fade',
+    value,
+    step: step < 1000 ? 10 : 1,
+    throttleMs: step < 1000 ? Math.trunc(step / 10) : Math.trunc(step / 1000),
+  });
 };
 
 /**
- * `0xC3`（`sub_420F10` raw 29844-29859）：**写运行期音乐字段** —— `Music[259] = op1`（**不播**）。
+ * `0xC3`（`sub_420F10` raw 29844-29859）：**写运行期音乐字段** —— `_this[174713] = op1`（**不播**）。
+ *
+ * ★口径订正（审计 P3 `0xc3 stale-ledger`，票 `T-0152`）：体里**只有一条写** `_this[174713] = result`，
+ * 而 `_this[174713]` 就是 `Music[259]`（Music 模块内联在 `Engine + 174454`）—— **不是两个动作**。
+ * 旧注释把 `Music[259]` 与 `174713` 并列成两条写，会被后人读成"引擎还写了别的格"。
  *
  * ```c
  * if ((_this[174801] & 0x200) != 0) { _this[174801] &= ~0x200; sub_489E50(Music, 100); } // 同 0xB7 的序
@@ -562,12 +659,51 @@ const op_play_voice: OpHandlerLike = (c) => {
   }
 };
 
-/** `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录。 */
+/**
+ * `0x2F4`：播语音（op1 = id、op2 = 附带/循环位、op3 = 语音通道，0..2）+ 登记文本项记录。
+ *
+ * 引擎 `sub_426260`（raw 33616-33656）逐段：
+ * ```c
+ * _this[frame*30 + 95805] = 7;
+ * v2 = op1; v8 = op2; v3 = op3;
+ * <v3 的状态位 21315 与因子位 21318 各做一次二态翻转>     // ← 与 0xC4/0x1BD 同一协议
+ * sub_407120((int)_this);                                  // ← 帧内收尾（本工程无对应物，见下）
+ * if ((_this[174801] & 0x8000000) != 0) {                  // ← ADV 激活位
+ *   _this[v3 + 122505] = v2;  _this[v3 + 122508] = v8;      //   寄存
+ * } else {
+ *   _this[v3 + 122505] = 0;   _this[v3 + 122508] = 0;       //   清寄存槽
+ *   sub_4BB840(Engine + 21032, v3, v2, v8, _this[v3 + 5053]);  // 立即起播（第 4 实参 = op2 原值）
+ * }
+ * if (!_this[97055]) sub_45EEA0(Font, 0, v2, 0, v3, _this[v3 + 5053]);
+ * ```
+ *
+ * ★本轮补的三处（审计 P3 `0x2f4 missing-behavior` + `approximation`，票 `T-0152`）：
+ *  1. **两个槽的二态翻转**（用通道号 op3 而不是固定 0）—— 修前 `engineValues` 这几格完全不动；
+ *  2. **ADV 寄存分支**：位在时写 `[122505+ch] = id` / `[122508+ch] = op2`，位不在时**清 0**
+ *     （修前只发宿主意图，字段面永远看不到这条指令的效果）；
+ *  3. **循环位 = `op2 & 1`**（不是 `op2 != 0`）：`sub_4BB840` 只取低 1 位 ⇒ op2 = 2 是"不循环"、
+ *     op2 = -1 是"循环"，而 `!= 0` 会把 2 判成循环。
+ *
+ * ★`sub_407120`（raw 33638）未建模：它是引擎的**帧内文本收尾**（与 `0x1F5`/队列派发同族），
+ * 重写侧由帧循环统一收尾 ⇒ 不在这里复制（登记在 `changes-audio.md`）。
+ */
 const op_voice_play_slot: OpHandlerLike = (c) => {
   const p = planFor(c);
   const id = (p.int(1) ?? 0);
-  const loop = (p.int(2) ?? 0) !== 0;
+  const raw2 = (p.int(2) ?? 0);
+  const loop = (raw2 & 1) !== 0; // ★raw 142663：sub_4BB840 的第 4 实参 = `(unsigned)v3[12] & 1`
   const ch = (p.int(3) ?? 0);
+  // ★两个槽各做一次二态翻转（raw 33620-33637；与 0xC4/0x1BD 的 sub_420F70 逐句同形）。
+  toggleVoiceSlot(c.e, ENGINE_FIELD.voiceChannelStateBase + ch);
+  toggleVoiceSlot(c.e, ENGINE_FIELD.voiceChannelFactorBase + ch);
+  // ★ADV 寄存 / 清寄存（raw 33639-33648）。
+  if (advActive(c)) {
+    c.e.engineValues.set(ENGINE_FIELD.voiceRegBase + ch, id);
+    c.e.engineValues.set(ENGINE_FIELD.voiceRegFlagBase + ch, raw2);
+  } else {
+    c.e.engineValues.set(ENGINE_FIELD.voiceRegBase + ch, 0);
+    c.e.engineValues.set(ENGINE_FIELD.voiceRegFlagBase + ch, 0);
+  }
   voicePlayOrDefer(c, ch, id, loop);
   // 引擎 raw 33650-33654：`if (!Engine[97055]) sub_45EEA0(Font, 0, op1, 0, op3, Engine[op3+5053])`
   // ⇒ 选择器 = **通道号**（`0x2F3` 就是按它查回语音 id 的）。
@@ -594,14 +730,30 @@ const op_voice_queue: OpHandlerLike = (c) => {
  *
  * 引擎 `sub_426820`（raw 33677-33692）：`sub_4BB9F0(Voice, op1)` 释放设备通道并清
  * `Voice[op1+280/262/265/277]`，随后**清四个 Engine 槽**：`[21315+op1]`（状态位）、`[21318+op1]`（因子位）、
- * `[122505+op1]`/`[122508+op1]`（寄存语音），最后 `Engine[122501] = sub_404CB0(Voice)`
- * （"3 路里是否有正忙"—— 宿主状态查询，emulator 侧无同步回读口 ⇒ 该格留作已知缺口，见报告 §4.2）。
+ * `[122505+op1]`/`[122508+op1]`（寄存语音），最后**两条收尾**：
+ * ```c
+ * result = sub_404CB0(_this + 21032);   // = "3 路语音里是否还有正忙的"
+ * _this[122501] = (int *)result;        // ★刷那一格（raw 33691-33692）
+ * return result;
+ * ```
+ *
+ * ★**`122501` 不是缺口**（审计 P2 `0x2f6 missing-operand-io` 的收尾条，票 `T-0152` 订正原 finding）：
+ * 该格**已有模型** —— 它是 `0x1BC` 清 0 的三格之一、也是 `0xC4`/`0x1BD` 在
+ * `if (Engine[21293]) Engine[122501] = 1`（raw 29910-29911）里写的同一个槽
+ * （`ENGINE_FIELD.voiceRegSingle = 122501`）。这里按 `sub_404CB0` 的口径刷：
+ * **复位完之后三路语音里还有没有武装/在播的** —— 用引擎自己的那两组字段判
+ * （`[21315..21317]` 状态位、`[122505..122507]` 寄存 id），不新增宿主回读口
+ * （`NativeBridge` 是别的 owner 的面）。
+ *
+ * ★**通道号不校验**（审计 P3 `0x2f6 overreach`）：引擎对 `ch` 是**无门直接下标**
+ * （`_this[v2 + 21315]`），3..14 时会写坏相邻字段；本工程只建模 0..2，但**字段照写**
+ * （与引擎"照写"一致，只是不越界写坏）—— 见 `test/t0152-audio-p2.test.ts` 的 ch=3 用例。
  */
 const op_voice_reset: OpHandlerLike = (c) => {
   const p = planFor(c);
   const ch = p.int(1) ?? 0;
   emit(c, { kind: 'voice-reset', ch });
-  // ★四个 Engine 槽的清零（raw 33685-33690）。
+  // ★四个 Engine 槽的清零（raw 33685-33690）。★这些写**不受 ch 值域限制**（引擎同形）。
   for (const base of [
     ENGINE_FIELD.voiceChannelStateBase,
     ENGINE_FIELD.voiceChannelFactorBase,
@@ -610,6 +762,13 @@ const op_voice_reset: OpHandlerLike = (c) => {
   ]) {
     c.e.engineValues.set(base + ch, 0);
   }
+  // ★收尾：`Engine[122501] = "3 路里是否还有正忙的"`（raw 33691-33692）。
+  const busy = [0, 1, 2].some(
+    (i) =>
+      (c.e.engineValues.get(ENGINE_FIELD.voiceChannelStateBase + i) ?? 0) !== 0 ||
+      (c.e.engineValues.get(ENGINE_FIELD.voiceRegBase + i) ?? 0) !== 0,
+  );
+  c.e.engineValues.set(ENGINE_FIELD.voiceRegSingle, busy ? 1 : 0);
 };
 
 /**
@@ -624,25 +783,44 @@ const op_voice_flag: OpHandlerLike = (c) => {
   emit(c, { kind: 'voice-flag', ch });
 };
 
-/** `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。 */
+/**
+ * `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。
+ *
+ * 引擎 `sub_4268D0`（raw 33606 起）：把 op2 交给 `sub_4B6940(设备, ch, pan)` 时，
+ * 写的是**设备通道格** `_this[a2 + 375]`（byte 1548 + 4·ch；`sub_4B6940` 内部同一格，
+ * 见 raw 139063-139089 的 `a2 >= 15` 值域门）—— 审计 P3 `0x2f8 missing-operand-io`（票 `T-0152`）。
+ * 本工程把那一格的等价物落进 `engineValues` 的 `voicePanBase + ch`
+ * （前者 = 引擎字段面可复核，后者 = 宿主通道对象上的 `v.pan` 负责发声）。
+ *
+ * ★钳制是**对称 ±10000**（`sub_4B6940` 的两半），与 `audioEngine.clampPan` 同口径。
+ */
 const op_voice_pan: OpHandlerLike = (c) => {
   const p = planFor(c);
-  emit(c, {
-    kind: 'voice-pan',
-    ch: (p.int(1) ?? 0),
-    pan: (p.int(2) ?? 0),
-  });
+  const ch = (p.int(1) ?? 0);
+  const pan = (p.int(2) ?? 0);
+  c.e.engineValues.set(
+    ENGINE_FIELD.voicePanBase + ch,
+    pan < -10000 ? -10000 : pan > 10000 ? 10000 : Math.round(pan),
+  );
+  emit(c, { kind: 'voice-pan', ch, pan });
 };
 
 /**
  * `0x2FF`：语音通道音量因子**预备**（引擎 `sub_426940` raw 33728-33740）：
  * `Engine[21318+ch] = 1`（低位置 1）、`Engine[21321+ch] = op2`（因子值，`0x2710` = 100%）。
+ *
+ * ★**`Engine[21321+ch]` 是原值直写、不钳位**（审计 P3 `0x2ff approximation`，票 `T-0152`）。
+ * 依据：同一格在 `0x302` 里被写成 `0x10000`（65536，raw 33768-33769）——**远超 10000**
+ * ⇒ 那一格**不是 0..10000 域**；钳位会把"预备了多大因子"这条信息改掉，而 `0x302` 之后的
+ * `sub_4BBC30` 正是拿它决定设备因子（`设备[402+ch] = (Voice[286+ch] & 0x10000) ? Voice[289+ch] : -1`）。
+ * ⇒ 字段面写**原值**；钳位只留在宿主"把因子换算成增益"那一步（`audioEngine.#voiceGain`）。
  */
 const op_voice_factor_prepare: OpHandlerLike = (c) => {
   const p = planFor(c);
   const ch = p.int(1) ?? 0;
   const value = p.int(2) ?? 0;
   c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + ch, 1);
+  // ★原值（不 clampVolume）：见上面的 P3 依据 —— 同格可被写成 0x10000。
   c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorValueBase + ch, value);
   emit(c, { kind: 'voice-factor-prepare', ch, value });
 };
@@ -658,16 +836,24 @@ const op_voice_factor_prepare: OpHandlerLike = (c) => {
  * 1. 若 `Engine[21290]`（byte 85160）非空 ⇒ 对 i=0..2 调 `sub_4B60C0(voiceObj, i + 12)`
  *    （**释放 3 个语音通道对象**，通道号 12/13/14）；
  * 2. 清零 `Engine[21315..21320]`（byte 85260-85280）= **语音通道状态位**（`0x2F7` 写的那组）；
+ *    ★区间是**六格**（21315..21320）：状态位 21315..21317 + 因子位 21318..21320；
  * 3. 清零 `Engine[122501]`（byte 490004）与 `Engine[122505..122510]`（byte 490020-490040）
  *    = **寄存语音槽**（`0xC4` 的 ADV 分支写 `[122505]=id`/`[122508]=标志`）。
  */
 const op_clear_message_sound_fields: OpHandlerLike = (c) => {
   const p = planFor(c);
   const e = c.e;
+  // ★**不发 `voice-reset`**（审计 P3 `0x1bc missing-branch`，票 `T-0152`，读体订正）：
+  //   引擎那段释放 `for (i = 0; i < 3; ++i) sub_4B60C0(*(int**)(_this + 85160), i + 12);` 被
+  //   `if (*(_DWORD *)(_this + 85160))` 门住，而 **`_this + 85160` 在整个反编译里没有任何写者**
+  //   （逐字搜 `85160`：只有 raw 13584/13587 与 24851/24854 两处**读**；`Engine[21293]`/`+85172`
+  //   才是被写的那格）⇒ 该指针恒为 0、门恒不成立 ⇒ **引擎在这条指令上一个通道都不释放**。
+  //   ⇒ emulator 此前"无条件对 3 个通道发 voice-reset（宿主会停掉正在播的语音）"是**多发**的
+  //   一次停播，不是漏发；这里改成只做字段清零（引擎真正做的那半）。
+  //   重开条件 = 哪天在引擎里找到 `+85160` 的写者（或真机 dump 显示语音会被这条停掉）。
   for (let ch = 0; ch < 3; ch++) {
     e.engineValues.set(ENGINE_FIELD.voiceChannelStateBase + ch, 0);
     e.engineValues.set(ENGINE_FIELD.voiceRegBase + ch, 0);
-    emit(c, { kind: 'voice-reset', ch });
   }
   e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase, 0);
   e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + 1, 0);
@@ -694,6 +880,9 @@ const op_audio_device_init: OpHandlerLike = (c) => {
   // ★按引擎顺序读 op1（= **驱动 id**）。重写侧没有驱动层 ⇒ 不装载、只**报出来** ——
   //   这不是"读了再丢"：引擎确实读它，日志就是这条指令在本工程的观测面（见 `tickets/T-0082` 的批次说明）。
   const driverId = p.int(1) ?? 0;
+  // ★op1 是**装载键**（引擎 `sub_4B8490(Engine+7912, id, 数据, 大小)`，raw 29301-29305）——
+  //   重写侧没有驱动层，但字段面要留下它（审计 P3 `0x1c9 missing-consumer`，票 `T-0152`）。
+  e.engineValues.set(ENGINE_FIELD.audioDeviceDriverId, driverId);
   e.engineValues.set(ENGINE_FIELD.audioDeviceField0, (p.int(2) ?? 0));
   e.engineValues.set(ENGINE_FIELD.audioDeviceField1, (p.int(3) ?? 0));
   c.log(
@@ -712,7 +901,11 @@ const op_voice_factor_apply: OpHandlerLike = (c) => {
   const p = planFor(c);
   const ch = p.int(1) ?? 0;
   const value = p.int(2) ?? 0;
-  // ★两个 Engine 槽（raw 33768-33769）：0x10000 = "因子已生效"，值进 21321。
+  // ★两个 Engine 槽（raw 33768-33769）：0x10000 = "因子已生效"，值**原值**进 21321
+  //   （与 0x2FF 同口径：该格不是 0..10000 域，见 op_voice_factor_prepare 的 P3 依据）。
+  // ★引擎**不**"应用即清预备"（审计 P3 `0x302 host-invented`，票 `T-0152`）：体只**写**
+  //   `[21321+ch]` 再调 `sub_4BBC30`，没有把 `[21321+ch]` 清 0/置空的动作；宿主侧对应的
+  //   `preparedFactor`（= 预备但未生效的因子）因此也不清 —— 见 `voiceFactorApply`。
   c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorBase + ch, 0x10000);
   c.e.engineValues.set(ENGINE_FIELD.voiceChannelFactorValueBase + ch, value);
   emit(c, { kind: 'voice-factor-apply', ch, value });
@@ -726,7 +919,12 @@ const op_set_volume: OpHandlerLike = (c) => {
   const p = planFor(c);
   const category = (p.int(1) ?? 0);
   const value = (p.int(2) ?? 0);
-  if (category < 0 || category > 4) return; // 引擎：sprintf("setVolume") 报错，不写
+  if (category < 0 || category > 4) {
+    // 引擎 `sub_42E5C0` raw 29978-29981：`sprintf_s(_this + 8, 0x400u, aSetvolume); sub_4034D0(...)`
+    // ⇒ **实际串常量**是 `SetVolumeの引数が不正です．\r\n`（raw 4413），不是 "setVolume"。
+    c.log(`0xC6 SetVolume：类别越界（op1=${category}）—— 引擎显示「SetVolumeの引数が不正です．」（raw 4413/29978-29981），不写任何 sound:Volume 键`);
+    return;
+  }
   setConfigValue(c.e, cfgSoundVolumeKey(category), value);
   emit(c, { kind: 'volume', category, value });
 };

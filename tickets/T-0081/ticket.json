@@ -32,7 +32,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "[0x10c, op_set_key_multi]",
       "note": "原「可疑 no-op 的典型条」已消除：0x10C 现在注册在 `INPUT_OPS` → `OPS`（handlerKind=implemented），`ENGINE_INTERNAL_OPS` 不再含它；写的是 `Input[1176 + Input[1432+键码]]`（= 引擎每帧 `sub_4770A0` 扫描的那张 VK→掩码位表），消费者 = `InputManager.pressKey/releaseKey`。",
-      "line": 481
+      "line": 559
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",

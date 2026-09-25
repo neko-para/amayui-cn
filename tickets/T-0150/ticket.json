@@ -21,12 +21,20 @@
     ]
   },
   "id": "T-0150",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 死写闸门扩面到 Engine/SceneState(含嵌套 render4)/SceneXform/TextFrame: 存量 14 条逐条登记(10 真死写 + 4 记录型)带 why+票号; 修掉两处扫描器盲区(容器变更方法/嵌套对象类型); check:dead-writes 基线 14/当前 14/无新增; 守卫 7/7 绿"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/no-dead-writes.test.ts"
   ]
 }

@@ -51,7 +51,12 @@ const ID_TITLE_FALLBACK_TEX = 0x5273; // TITLE.txt:526-530 的回落支 `set-tex
  * 跑到"刚 `call-script` 进 TITLE"，把 `a9d0` 置成 `flag`，再跑一段，返回可观察状态。
  * @param flag 0 = L2D 支（脚本原样），!= 0 = 静态贴图回落支
  */
-async function runTitleBranch(flag: number): Promise<{ l2d: Array<[number, number]>; slot5: number | undefined; presetSurvived: boolean }> {
+async function runTitleBranch(flag: number): Promise<{
+  l2d: Array<[number, number]>;
+  nodes: number[];
+  slot5: number | undefined;
+  presetSurvived: boolean;
+}> {
   const boot = await bootHeadless({ script: 0, audio: false, log: () => {} });
   const e = boot.e;
   // 先确认"预设无效"这条事实（boot 链会把它写回 0）
@@ -77,9 +82,10 @@ async function runTitleBranch(flag: number): Promise<{ l2d: Array<[number, numbe
   e.globals.int.set(0xa9d0, enc(e.key, flag));
   await runFrameLoop(e, host, { ...opts, maxFrames: 400 });
   const l2d = [...e.l2dSlots.entries()].map(([k, v]) => [k, v.modelId] as [number, number]);
+  const nodes = [...e.l2dNodes.keys()].sort((a, b) => a - b);
   const slot5 = e.texSlots.get(5);
   await boot.src.dispose?.();
-  return { l2d, slot5, presetSurvived };
+  return { l2d, nodes, slot5, presetSurvived };
 }
 
 test('★T-0054：`global a9d0` 两条支路都跑通 —— 0 ⇒ 装 TITLE.MOC；!= 0 ⇒ 不装 L2D、走静态贴图回落', async (t) => {
@@ -94,10 +100,20 @@ test('★T-0054：`global a9d0` 两条支路都跑通 —— 0 ⇒ 装 TITLE.MOC
     'a9d0 = 0 ⇒ 必须走 L2D 支：槽 0 装 TITLE.MOC（0x4f9e）',
   );
   assert.notEqual(off.slot5, ID_TITLE_FALLBACK_TEX, 'a9d0 = 0 ⇒ 回落图 0x5273 不该被绑到槽 5');
+  // ★`T-0160`（审计 row 48：台账 `live2d-enabled-config-flag` 的 `evidence` 写 E1、`guard` 为空，
+  //   而本文件就是那条 E3 守卫）—— 把 L2D 支的**节点**一侧也钉住：`src/TITLE.txt:590` 的 `i344 14 0`。
+  assert.deepEqual(off.nodes, [0x14], 'a9d0 = 0 ⇒ L2D 支建出 TITLE 的节点 0x14（i344 14 0）');
 
   const on = await runTitleBranch(1);
   assert.deepEqual(on.l2d, [], 'a9d0 != 0 ⇒ 一条 L2D 装载都不执行（`l2dSlots` 必须空）');
+  assert.deepEqual(on.nodes, [], 'a9d0 != 0 ⇒ 一条 L2D 节点指令都不执行（`l2dNodes` 必须空）');
   assert.equal(on.slot5, ID_TITLE_FALLBACK_TEX, 'a9d0 != 0 ⇒ 回落支 `set-texture 5273 5` 必须生效（槽 5 = 0x5273）');
+  // ★为什么"开关关掉"这一支必须是**静默**的（`T-0160` 审计 row 85 对台账 whySilent 的订正）：
+  //   关掉之后走静态贴图、画面照样有 ⇒ 不报错是**对的**；但"装载指令执行了却失败"那条路
+  //   **不是**静默的（引擎 `sub_427BA0` raw 34488-34491 / `sub_428200` raw 34728-34731 组
+  //   「L2Dモデルファイル/モーションファイル %s の読み込みに失敗しました」+ `_CxxThrowException`）。
+  //   那半边由 `test/live2d-t0160.test.ts` 的 `0x341`/`0x34e` 抛错用例钉住 —— 本条只负责
+  //   "开关关掉 ⇒ 什么都不做且不抛"。台账的 whySilent 因此改成"关掉/不执行装载指令才是静默的"。
 
   // ★"预设无效"这条事实也钉住：它解释了为什么守卫必须在 call-script TITLE 那一步置位
   assert.equal(

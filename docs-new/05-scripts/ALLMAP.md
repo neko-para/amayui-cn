@@ -40,8 +40,8 @@ generated_by: scripts/build-scripts.mjs
 
 ## 坑（踩过一次，别再踩）
 
-- ★**`b22a` 门的极性**（2026-09-23 订正）：`eq local566, b22a, 0` + `jcc local566, ffffffff, label_000003f4` = **`b22a == 0` 才置 `3f3d = 1`**（cond 真 ⇒ 落下句）。旧条目写成"`b22a != 0` 时置 1"，是读反了
-- ★`label_000065cc` 就是 `call-script 512f (SETADVFLAG)`：它把 `global f8080` 写成 INT_MAX ⇒ `SCJUMP` 的 `gr f8080, 10` **必然放行**；真正决定"选中哪一节"的是 `13d7/13d8/…` 那组"已演"标志（`tickets/T-0102` 轮 19 订正）
+- ★**`b22a` 门的极性**：`eq local566, b22a, 0` + `jcc local566, ffffffff, label_000003f4` = **`b22a == 0` 才置 `3f3d = 1`**（cond 真 ⇒ 落下句；读成 `b22a != 0` 就把极性读反了）
+- ★`label_000065cc` 就是 `call-script 512f (SETADVFLAG)`：它把 `global f8080` 写成 INT_MAX ⇒ `SCJUMP` 的 `gr f8080, 10` **必然放行**；真正决定"选中哪一节"的是 `13d7/13d8/…` 那组"已演"标志（`tickets/T-0102` 轮 19）
 - 本文件是「大地图 + 章节跳转」共用的入口，读它时要区分 `3f3d=1`（第 1 章）与 `3f3d=b` 两支
 
 ## 缺口
@@ -56,4 +56,4 @@ generated_by: scripts/build-scripts.mjs
 ## 证据与备注
 
 - 证据：src/ALLMAP.txt:28-60（入口 + b22a 门 + 置 3f3d + SETADVFLAG + 跳转表循环）；:153/:198（另一支置 3f3d=b）；运行期取值（b22a=0 ⇒ 3f3d=1）见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md
-- 备注：2026-09-23 订正：`b22a` 门的极性（`== 0` 才置）与"`f8080` 必然放行"这条因果。未读：行 60 之后的全部分支与大地图绘制/选择逻辑。
+- 备注：`b22a` 门的极性 = `== 0` 才置；`f8080` 必然放行（因果见 gotchas）。未读：行 60 之后的全部分支与大地图绘制/选择逻辑。

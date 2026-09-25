@@ -1,0 +1,62 @@
+{
+  "title": "`host-registry.test.ts` 的「真进程 `--idle-sec 1`」例是**读-刷次序竞态**（全量并行时偶发红，干扰基线判绿）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "emulator/test",
+  "why": "全量 `test:all` 里长期挂着一条**非基线**红：\n\n```\ntest/host-registry.test.ts:305  AssertionError: 必须有启动横幅（含真实端口）\n  expected: /就绪 http:\\/\\/127\\.0\\.0\\.1:/   actual: 「[web] 实例 idle-probe → base=… overlay=…」\n```\n\n它偶发而不常发（单文件连跑 4 次 = 红/绿/绿/绿，失败那次 **223~430ms** 就返回 ⇒ 不是超时），因此被 `T-0156`/`T-0164` 各做过一次 A/B 后一致判为「固有 flaky」，但那只是**症状归类**，没人定位到根因 —— 结果是每一轮「只余 3 条基线红」的判绿口径都要额外解释这条，且它与真实回归无法区分。\n\n**根因**（读体即得）：`src/web/host.ts` 的顺序是 `publishRecord()`（raw 941，把 `InstanceRecord` **同步**落盘）→ 一大段启动工作 → `log('[web] 就绪 http://…')`（raw 990）。测试的写法是「等注册表文件出现」→ 立刻 `assert.match(out, /就绪 …/)`，而 `out` 是靠子进程 stdout **管道**累积的（父进程 `data` 回调要等事件循环）⇒ 「记录已出现」**不蕴含**「横幅已进 `out`」。负载高时二者之间的窗口正好被拉长，于是偶发红。",
+  "acceptance": [
+    "`test/host-registry.test.ts` 的该例改成**单独等横幅**（在断言前 `await waitFor(() => /就绪 http:\\/\\/127\\.0\\.0\\.1:/.test(out) ? out : null, 30_000)` + 自己的 `assert.ok(banner, …)`），**保留**原 `assert.match(out, …)` 与其余全部断言 ⇒ 判据强度不变（仍要求横幅含真实端口、pid 活着、记录字段逐项相等、秒级自停且 exit 0、日志含自停行），只去掉「记录一出现横幅就已刷出」这个**未被保证的时序假设**。",
+    "红→绿有据：修前单文件连跑 4 次 = 红/绿/绿/绿（失败样本的断言消息逐字如上）；修后连跑 3 次 = **14/14 ×3**。",
+    "全量复核：`node --import tsx test/run.ts all` 的 `fail` 集合**只剩 3 条 `T-0146` 基线**（engine-slot 真槽 / save-slot 真槽 format / scene-report 24 ≤ 26）—— 这条不再是其中一员。",
+    "不新增例外：`test/organization` + `test/harness-convergence` + `test/no-dead-writes` 三条仓库级棘轮保持绿；未改动任何 `src/`。",
+    "收尾三连：`scripts/build-tickets.mjs` 重生成看板、`tickets.js --validate` ✅、`test/ticket-ledger.test.ts` 绿。"
+  ],
+  "links": {
+    "tickets": [
+      "T-0136",
+      "T-0156",
+      "T-0164"
+    ],
+    "docs": [
+      "CONTEXT.md"
+    ]
+  },
+  "id": "T-0177",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 2026-09-25 主 agent 收口：读 `src/web/host.ts` 确认 `publishRecord()`（raw 941）先于启动横幅（raw 990），据此把测试改成「单独等横幅」；保留全部原断言。修后单文件 3 连跑 14/14、全量 `test:all` 复核通过（详见 CONTEXT.md §6/§9）。"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/host-registry.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "  publishRecord();",
+      "line": 941,
+      "note": "注册表记录 → **同步**落盘（竞态的前一半：文件出现 ≠ 横幅已刷出）"
+    },
+    {
+      "file": "app/amayui-emulator/src/web/host.ts",
+      "anchor": "[web] 就绪 http://127.0.0.1:${port}/（实例 ${argOf('--instance', 'default')}",
+      "line": 990,
+      "note": "启动横幅（竞态的后一半：走 stdout 管道，父进程 data 回调要等事件循环）"
+    },
+    {
+      "file": "app/amayui-emulator/test/host-registry.test.ts",
+      "anchor": "横幅要**单独等**（`T-0177`）",
+      "note": "修复点：等横幅 + 自己的 assert.ok，原 assert.match 与其余断言一字未动",
+      "line": 305
+    }
+  ],
+  "doneWhy": "**定位到根因并修掉**（不是「再观察一次」）：`src/web/host.ts` 先 `publishRecord()`（raw 941，同步落盘）再打启动横幅（raw 990），而测试等的是**注册表文件**、断言的是**管道累积的 `out`** ⇒ 「记录已出现」不蕴含「横幅已进 `out`」。修法 = 在 `assert.match` 前单独 `await waitFor(() => /就绪 http:\\/\\/127\\.0\\.0\\.1:/.test(out) ? out : null, 30_000)` + 自己的 `assert.ok(banner, …)`；**保留**原 `assert.match` 与其余全部断言 ⇒ 判据强度不变、只去掉未被保证的时序假设。红→绿：修前单文件 4 连跑 = 红/绿/绿/绿（失败样本 223~430ms 返回、断言消息 = 「必须有启动横幅（含真实端口）」，`out` 里只有 `[web] 实例 …`）；修后 3 连跑 = **14/14 ×3**。全量复核见 `CONTEXT.md` §6 的 D 波收口块（`fail` 集合里不再有它）。★它此前被两次独立地判成「固有 flaky」（`T-0156`/`T-0164` 各做过 A/B）——本条把那句症状归类替换成**有根的时序修复**，因为一条无法与真实回归区分的红会长期污染「只余 3 条基线红」的判绿口径。"
+}

@@ -144,18 +144,51 @@ const op_set_wait_flag: OpHandler = (c) => {
   c.e.waitFlags |= 0x400;
 };
 
+/**
+ * ★`0xC8`（`sub_4218D0` raw 30288-30314）的**两条语义不同的路径**（`tickets/T-0156`）：
+ * ```c
+ * if ( (_this[174801] & 0x8000000) == 0 ) {      // ADV 未激活
+ *   v3 = sub_41BF50(_this, 1);                   // n
+ *   if ( v3 >= 10 ) { _this[174801] |= 1u; sub_453A60(_this + 107440, v3); }  // 帧节流计时器
+ *   else            { Sleep(v3); }                                            // 进程级硬阻塞
+ * }
+ * ```
+ *  - `'block'`（`n < 10`，语料 51 处：`sleep 1` 38 / `sleep 0` 12 / 1 处其它）：**同一次脚本派发内**
+ *    `Sleep(n)` 毫秒 —— 引擎**不**置 `effect_flags |= 0x20000000`、**不**碰节流计时器、**不**重画；
+ *  - `'throttle'`（`n >= 10`，语料 334 处 `sleep 1f4`）：置 `effect_flags |= 1` 并把
+ *    `sub_453A60(Engine + 430... , n)` 的**帧间隔槽 `[6] = n`** 立起来，实际等待由主循环的
+ *    `sub_453AF0`（raw 66161-66179：`剩余 = n * 帧数 - 已过毫秒`，`剩余 >= 5` 就返回 -1 继续下一轮，
+ *    `0 < 剩余 < 5` 才 `Sleep(剩余)`）逐帧摊还 ⇒ **不是**一次性 `Sleep(n)`。
+ *  ⇒ 这是**判定函数**（导出给守卫；`test/t0156-control-frame.test.ts` 直接断言边界 9/10）。
+ */
+export function sleepPath(n: number): 'block' | 'throttle' {
+  return n >= 10 ? 'throttle' : 'block';
+}
+
 /** 0xC8 sleep (sub_4218D0)：睡眠/帧让步。op1=n。
- * 引擎（raw .c 30288）：非 ADV 激活（(effect_flags&0x8000000)==0）时，n<10 → `Sleep(n)` ms；n>=10 →
- *   `sub_453A60(_this+107440, n)` 设帧率节流（`_this[6]=n` 帧间隔= n ms，sub_453AF0 按 `interval*frame_count - elapsed`
- *   决定 Sleep(剩余)）——两者本质都是 **暂停 ≈ n ms**。ADV 激活则 sleep 跳过。
- * emulator：置 `sleepUntil = nowMs + max(1, n)`、置 `waitFlags |= SLEEP_GATE`；渲染帧循环每帧 present 直到
- *   nowMs >= sleepUntil 才放行（对齐引擎帧让步，避免脚本空转）。 */
+ * 引擎（raw 30288-30314）分两支，见上方 `sleepPath`：非 ADV 激活（`effect_flags & 0x8000000 == 0`）时，
+ *   `n < 10` → `Sleep(n)` 毫秒**同一次派发内的进程级阻塞**；`n >= 10` → `effect_flags |= 1`
+ *   + `sub_453A60(_this+107440, n)` 立帧间隔，等待由主循环 `sub_453AF0` 按帧摊还（片 ≤4ms）。
+ *
+ * ★emulator 的落点与**架构性近似**（`tickets/T-0156`；实测过反例，见下）：
+ *  两支都必须**让出本次派发**（= 装 `SLEEP_GATE` + `sleepUntil`），因为引擎的 `Sleep(n)` 阻塞的是
+ *  **游戏线程**，而本仓帧循环的 `maxStepsPerFrame` 默认是 `Number.POSITIVE_INFINITY`
+ *  （`frame/loop.ts:304`）⇒ 若 `n<10` 支"不装门"，TITLE 的 `sleep 1; jmp` 轮询循环（`src/TITLE.txt:63`）
+ *  在**同一帧内永不 yield**，模拟器直接空转冻结（实测：把 `n<10` 支改成不装门后，T1 批量跑挂死）。
+ *  旧实现在这里额外做错两件事，本轮修掉：
+ *   ① `sleepUntil = nowMs + Math.max(1, n)` 把 `Sleep(0)` 抬成 1ms ⇒ 改 `Math.max(0, n)`（`Sleep(0)` = 让出时间片）；
+ *   ② 两支都**没有**武装引擎的节流位 ⇒ 现在只在 `n >= 10` 支写 `effect_flags |= 1`（raw 30306）。
+ *  残余口径差（如实登记）：`n < 10` 的"毫秒级硬阻塞"在本仓不消耗真实时间（宿主 `native.sleep` 是 no-op，
+ *  `renderer/pixiBackend.ts:373`），只表现为"让出一帧"——扩展点见 `tickets/T-0156/changes-c156.md`。 */
 const op_sleep: OpHandler = (c) => {
   const plan = planFor(c);
-  if (c.e.advActive) return; // 引擎：消息/ADV 激活时 sleep 跳过
+  if (c.e.advActive) return; // 引擎 raw 30301：`(effect_flags & 0x8000000) != 0` ⇒ **整段不进**（连操作数都不读）
   const n = (plan.int(1) ?? 0);
-  c.e.sleepUntil = c.e.nowMs + Math.max(1, n);
+  // 让出本次派发（= 引擎 `Sleep(n)` 阻塞当前线程的架构等价物）；`Sleep(0)` 同样让出，但不抬成 1ms。
+  c.e.sleepUntil = c.e.nowMs + Math.max(0, n);
   c.e.waitFlags |= SLEEP_GATE;
+  // raw 30306：`_this[174801] |= 1u` 只在 `n >= 10` 支（帧节流计时器武装位）。
+  if (sleepPath(n) === 'throttle') c.e.effectFlags |= 1;
   c.native.sleep?.(n);
 };
 
@@ -255,9 +288,18 @@ const op_redisplay_text: OpHandler = (c) => {
  * `call label_X` → `i1ad` → `i199`（进入重显示、跳到回退游标）→ … → **`local-ret`**（回到 `i199` 之后那条）。
  * ⇒ 与 `0x199`（写端）严格成对：写端记 `redisplayReturn`/`redisplayScriptId`，本指令读回并清理。
  *
- * emulator：`jumpToDword(redisplayReturn)` + 还原 `effect_flags` + 清 `redisplayMode`；
- * 未建模的三个字段（`81776/81768`、`51848/51840`、`387940` 的列表收尾）按既有判据跳过 —— 它们在
- * 引擎里是「重显示期间的光标/选择暂存」，emulator 没有对应消费者（写进去会变成死写）。
+ * emulator：`jumpToDword(redisplayReturn)` + 还原 `effect_flags` + 清 `redisplayMode`。
+ *
+ * ★`tickets/T-0156` 的四格豁免**收窄**（原注释把这四格一律写成"没有对应消费者"，读体后只有三格成立）：
+ *  - **`81776 = -1` / `81768 = 0` / `51840 = 0`**：引擎侧只有「写」（`0x7C` raw 25812-25815 与
+ *    整块复位 raw 18066-18072 写同一组值），无读者 ⇒ 写进 emulator 会变成死写（`check:dead-writes`）⇒ **跳过**；
+ *  - **`51848 = -1`**：★**有真实读者** —— 主循环 raw 20005/20013（`if (_this[51828] && (v11 = _this[51848]) >= 0
+ *    && _this[23008] > v11)`）把它当**索引**用（越界门 = `< _this[23008]`），是「选择/列表框的当前项」。
+ *    emulator 的选择/列表框模型未建 ⇒ 这是一条**有读者但消费者缺席**的缺口（不是"只写不读"），
+ *    已登记在 `tickets/T-0156` 的处置表（P3 行 302）。
+ *  - **`387940`**（raw 25816-25822）：置位时清 0，并在**队列恰剩 1 项**（`497380 < 497384 && 497384 - 497380 == 1`）
+ *    时调 `sub_40FB60` 放行脚本队列。emulator 既不写 `387940`（无写者 ⇒ 门恒假）也没有该派发点 ⇒
+ *    实现它需要先有 `387940` 的写者（属选择/列表框子系统），已**如实登记**为缺口。
  */
 const op_redisplay_return: OpHandler = (c) => {
   const plan = planFor(c);
@@ -269,7 +311,9 @@ const op_redisplay_return: OpHandler = (c) => {
     );
   }
   const want = e.engineValues.get(ENGINE_FIELD.redisplayScriptId) ?? -1;
-  if (want !== -1 && c.frame.scriptId !== want) {
+  // ★`tickets/T-0156`：这条比较在引擎里是**无条件**的（raw 25798-25807），`430712` 的初值/整块复位值都是
+  //   **-1**（raw 18155）⇒ 不存在「-1 = 0x199 没记过 ⇒ 跳过校验」这条口径（旧实现的 `want !== -1` 就是它）。
+  if (c.frame.scriptId !== want) {
     throw new Error(
       `Depth が不正です ${c.frame.scriptId} != ${want}（0x7C raw 25799：当前帧脚本身份必须等于 0x199 记下的那个）`,
     );
@@ -345,12 +389,30 @@ const op_save_version_branch: OpHandler = async (c) => {
     c.log(`0xAE: 门开着但没有续跑记录（sv1=${sv1}/sv2=${sv2}）⇒ 清门（旧布局未解析，见 SLOT_GAPS）`);
     return;
   }
-  // ★本工程槽（`format = 0`）的记录是"**直接落点**"（`instr`，指令下标）⇒ 不需要存档版本分支选组
-  //   （那套 `sv1/sv2` 只管引擎帧记录的表下标槽位），所以版本不匹配也照样走；
-  //   引擎真槽仍按 `set:SaveVersion1/2` 严格选组（raw 24660-24703）。
-  const direct = resume.frames.every((f) => !f || f.instr !== undefined);
+  // ★**版本门（`tickets/T-0156` 订正后的精确口径）** —— 引擎 `sub_4192F0` 的入口分派是
+  //   raw 24663 `if (v3 != 1)` … raw 24738 `if (result == 20)`：`sv1 == 1` 时 **只有** `sv2 == 20` 才进这一支，
+  //   否则整个 body 直接 `return result`（什么都不做）。它管的是「用哪套**槽位组**」，与「记录里存表下标
+  //   还是直接落点（`instr`）」是两件事。旧实现用 `direct`（记录带 `instr`）把版本门整个短路掉 ⇒
+  //   「槽头声明 sv1=1 而 sv2≠20」这种槽仍会被直落（引擎整支不进）。
+  //   但**不能**把版本门无条件施加到本工程格式上：本工程槽的容器头 `format = 0`（`src/save/saveSlot.ts`
+  //   的"本工程槽"）⇒ `sv1 = 0 ∉ {1,2,3}`，而它恰恰是 emulator 自己的记录布局（引擎里没有这种槽，
+  //   自然也没有对应的版本号）⇒ 无条件施加会让**本工程槽的续跑整体失效**（实测：
+  //   `test/slot-save-resume.test.ts` 的 3 条读档续跑全红）。
+  //   ⇒ 三条精确规则（覆盖全部组合）：
+  //     ① 槽头**明确声明**了带 `sv2` 约束的引擎版本（`sv1 == 1`）⇒ 无论记录布局，`sv2` 必须匹配；
+  //     ② 槽头没声明引擎版本（`sv1 ∉ {1,2,3}`）+ 记录**不带 `instr`**（= 引擎格式的记录，但没有可用的
+  //        版本号）⇒ 无法选组 ⇒ 不进（= 旧行为）；
+  //     ③ 其余（本工程格式的直接落点记录、sv1=2/3 的引擎记录、sv1=1/sv2=20）⇒ 进。
   const spec = SAVE_VERSION_BRANCH[sv1];
-  if (!direct && (!spec || (spec.sv2 !== undefined && sv2 !== spec.sv2))) return;
+  const direct = resume.frames.every((f) => !f || f.instr !== undefined);
+  if (spec !== undefined && spec.sv2 !== undefined && sv2 !== spec.sv2) {
+    c.log(`0xAE: sv1=${sv1} 要求 sv2=${spec.sv2}，实际 ${sv2} ⇒ 按引擎整支不进（raw 24738）`);
+    return;
+  }
+  if (spec === undefined && !direct) {
+    c.log(`0xAE: sv1=${sv1} 不在分派表里且记录是引擎格式（无 instr 落点）⇒ 整支不进（raw 24663）`);
+    return;
+  }
   const cur = e.cur;
   const rec = resume.frames[cur];
   const frame = e.frames[cur];

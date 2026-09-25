@@ -105,7 +105,18 @@ export const ENGINE_FIELD = {
    * 构造清 0 / 18980 `sub_40FB60` 装载置 1 / 25176+25187 `0x143` 入队循环 / 25667 `exit` 的 -10 收尾。
    */
   dispatchInProgress: 124350,
-  /** 派发前保存的 `effect_flags`（`_this[95779]`，byte 0x5D88C；`0xD9` 清同位）。 */
+  /**
+   * 派发前保存的 `effect_flags`（`_this[95779]`，byte 0x5D88C；`0xD9` 清同位）。
+   *
+   * ★**这一格在 emulator 有两份表示**（`tickets/T-0161` 读体后登记）：
+   *  - **活槽** = `Engine.dispatchSavedFlags`（`vm/engine.ts`）：`control.ts:382` 存、`:373` 取回
+   *    （`exit` 的 -10 收尾把 `effect_flags` 还原成它）—— 唯一的真存取点；
+   *  - **本常量** = `engineValues[95779]`：只有 `0xD9`（`handlers/engine-fields.ts`）读写，
+   *    `test/op-a5.test.ts:176-189` 用**裸数字 95779** 手工种值把它钉住了。
+   *  ⇒ `0xD9` 现在**两份都清**（否则"派发中"那一支只清了没人读的那一份）。
+   *  理想形态（需改 `control.ts` + 重定向 `op-a5.test.ts`，不在本票可写路径内）：活槽改读
+   *  `engineValues[95779]`，本常量成为**唯一存储**，`Engine.dispatchSavedFlags` 撤掉。
+   */
   dispatchSavedFlags: 95779,
   /** `0x1AD` 存的"当前帧深度"（`_this[166963]`；存档序列化用，语料 1100 处）。 */
   storedCur: 166963,
@@ -138,13 +149,31 @@ export const ENGINE_FIELD = {
   musicPaused: 174714,
   /** 显示模式（`_this[167990]`）：`display:ScreenMode` 填充；`0x2CE` 布尔化读。 */
   screenMode: 167990,
-  /** 脚本可读写的引擎运行开关（`_this[174812]`）：`0x142` 写；构造/复位默认 1。 */
+  /**
+   * 脚本可读写的引擎运行开关（`_this[174812]` = 字节 699248）：`0x142`（`sub_422930` raw 31020-31027）写。
+   *
+   * ★构造/复位默认 **1**（审计 `0x142 missing-behavior`，`tickets/T-0161`）：引擎构造 `sub_415640`
+   * raw 22591 与整体复位 `sub_40DF10` raw 17961 都是 `*(_DWORD *)(_this + 699248) = 1;`。
+   * **emulator 未建模**（`Engine` 构造与复位在 `vm/engine.ts`，不在本票可写路径内）⇒ 在 `i142 1`
+   * （`src/CONFIG.txt:354`）之前读到的会是 0。
+   *
+   * ★该格全库只有 4 处引用：写（raw 31026）、构造/复位（raw 22591/17961）、以及**导出给脚本的
+   * 布尔查询** `sub_4765C0(){ return *(_DWORD *)(dword_55E1BC + 699248) != 0; }`（raw 91057-91061，
+   * 工程内零调用）⇒ 没有 opcode 形式的读者，emulator **不编消费者**（审计 `0x142 missing-consumer`）。
+   */
   scriptEngineFlag: 174812,
   /** 引擎通用布尔寄存器（`_this[166965]`）：`0x21B` 写 / `0x247` 读。 */
   engineBool: 166965,
   /**
    * **DrawMode**（`_this[166964]` = byte 667856）：`== 1` ⇒ D3D 路径（`0x32` 的 StretchTexture、
-   * `0x1AE`/`0x1AF` 的 `.STH` 截图分支都按它分岔）。`0x201` 读回；writer 未在反编译里显形（疑似配置绑定）。
+   * `0x1AE`/`0x1AF` 的 `.STH` 截图分支都按它分岔）。`0x201`（`sub_4302B0` raw 39859-39863）读回。
+   *
+   * ★写者订正（`tickets/T-0161`，审计 `0x201 missing-behavior`）：旧注释写"writer 未在反编译里显形"
+   * 是错的 —— 引擎有 4~5 个写点：构造 raw 23572-23574（`*(a1 + 667856) = GetConfig(aSetDrawmode)`）、
+   * 主循环/复位后 raw 35271-35273（同形、无条件）、清零点 raw 17979、脚本端 `0x200`/`sub_423170`
+   * raw 31372（带 `set:CreateObject` 位门，不满足时报 `aComsetdrawmode` 且不写）。
+   * emulator 侧的**生产者** = `engineConfig.ts` 的 `CONFIG_FIELD_BINDINGS` 里 `set:DrawMode` 那条
+   * （本票补上）；另有 `engine.ts` 的 wait-gate 直接读配置（口径不统一，见该处注释）。
    */
   drawMode: 166964,
   /**
@@ -200,7 +229,14 @@ export const ENGINE_FIELD = {
   msgField92340: 92340,
   /** `0x10F` 写的字段（`_this[122369]`）：语义未定位。 */
   frameField122369: 122369,
-  /** 消息态显示模式（`_this[92379]`）：1 = 影片（`0x25A`）、2 = 图像（`0x25B`）。 */
+  /**
+   * 消息态显示模式（`_this[92379]`）：1 = 影片（`0x25A`，raw 33193）、2 = 图像（`0x25B`，raw 33211）。
+   *
+   * ★`0x25B` 的 `= 2` 曾经**漏写**（审计 `0x25b missing-operand-io`，`tickets/T-0161`）⇒ 模式位停在 0；
+   * 现由 `handlers/engine-fields.ts` 的 `FieldStoreSpec.constWrites` 补齐（与 `0x25A` 对称）。
+   * ★这一格在 emulator 目前**没有消费者**：引擎的 `sub_4A5470(Scene, id)` 下发（raw 33198-33201 两条门）
+   * 属宿主媒体子系统（与 `0x25A` 同一缺口），登记在 `tickets/T-0161/changes-c161.md`。
+   */
   mediaMode: 92379,
   /** 消息态影片 id（`_this[92380]`；`0x25A` 写）。 */
   mediaId: 92380,
@@ -216,6 +252,42 @@ export const ENGINE_FIELD = {
   fontWeight: 75953,
   /** 注音字重镜像（`_this[75971]`；`0x2BE` 写）。 */
   rubyWeight: 75971,
+  /**
+   * **主字体 LOGFONTA 模板的 lfWeight**（`_this[21636]` = `Font+1248` = 模板基址 `Font+1232` + 16）。
+   *
+   * `0x2BD`（`sub_426200` raw 33393-33399）在真/假支里**与 `fontWeight` 同时**写 700 / 0；
+   * 模板基址 `Font+0x15200`（raw 24064 的 `Font+1232` 就是它的 `lfHeight`）⇒ 这一格是"下一次
+   * 建 HFONT 用的字重"。重写侧没有 GDI 句柄层（见 `text/fontSet.ts` 的 `GDI_FACE_REBUILD_NOT_MODELED`）
+   * ⇒ 值照写、按 `analysis` 口径可核对（审计 `0x2bd`/`0x2be` 点名的"第二个字重格"）。
+   */
+  logfontMainWeight: 21636,
+  /**
+   * **注音 LOGFONTA 模板的 lfWeight**（`_this[21651]` = `Font+1308` = 模板基址 `Font+1292` + 16）。
+   *
+   * ★审计工作清单把它写成 `_this[21327]`：那是**错的**（`21327 * 4 = 85308` 与 `Font+1308` 无关）；
+   * 体里写的是 `*(_DWORD *)(v1 + 1308)`（raw 33414/33419，`v1` = `_this + 21324` = Font 基址）
+   * ⇒ Engine 下标 = `(21324*4 + 1308) / 4 = 21651`。
+   */
+  logfontRubyWeight: 21651,
+  /**
+   * **主字号的竖排模板 `lfHeight`**（`_this[46817]` = `Font+101972`）：`0x75`（raw 24065）
+   * 与 `0x1A5`（raw 41399）都写 `-字号`，与横排的 `logfontMain`（`Font+1232`）成对。
+   */
+  mainLfHeightVertical: 46817,
+  /** 主字号派生态（`_this[21633]` = `Font+1236` = 模板基址 +4）：`0x75` 写 `字号 / -2`（raw 24068）。 */
+  mainGlyphHalf: 21633,
+  /** 同上竖排版（`_this[46818]` = `Font+101976`；raw 24069）。 */
+  mainGlyphHalfVertical: 46818,
+  /**
+   * **注音字号的 4 格派生态**（`0x197` raw 24109-24112 / `0x2FE` raw 41623-41627 —— 同一批格）：
+   * `rubyLfHeight` = `Font+1292` = `-注音字号`、`rubyGlyphHalf` = `Font+1296` = `注音字号 / -2`；
+   * `*Vertical` 是竖排模板（`Font+102032` / `Font+102036`）。
+   * ★C 的整数除法**向零截断**（15 / -2 = -7）⇒ 重写侧必须 `Math.trunc`，不许 `Math.floor`。
+   */
+  rubyLfHeight: 21647,
+  rubyGlyphHalf: 21648,
+  rubyLfHeightVertical: 46832,
+  rubyGlyphHalfVertical: 46833,
   /** 逐字/字格游标（`_this[107704]`；`0x72` 清零、帧循环 `(k+1) % 模数`）。 */
   charCursor: 107704,
   /** 逐字/字格循环模数（`_this[107705]` = `0x73` 的 op9）。 */
@@ -225,13 +297,24 @@ export const ENGINE_FIELD = {
   /**
    * **ADV 自动翻页的「行基准」**（`_this[122464]` = 字节 489856；`0x2E9`（`sub_426620` raw 33584-33586）写）。
    *
-   * 引擎读点（raw 28569 / 28579 / 20420 / 13714 / 13720；复位 raw 17987 清 0）：
-   * `v = (当前窗文本行数 − 1 − 本字段) * message:AutoMessageSpeed + message:AutoMessageMinTime`，
-   * 再 `if (v <= 100) v = 100` 交给 `sub_453A60`/`sub_453BD0` 计时 —— 即"从第几行起算自动翻页时长"。
-   * ⇒ **不是只写不读的死字段**（审计 `docs-new/03-engine/audit-2026-09-opcodes.md` 的 P0 `op-2-01`）。
+   * 引擎的**两个**消费点（两处公式不同，`tickets/T-0161` 读体后订正）：
+   *  ① `handlers/msgwin.ts` 的 `armCoexistAutoMessage`（raw 28556-28586）与 `vm/engine.ts` 的
+   *     `#autoMessageInterval`（raw 20384-20399 / 28568-28581）：
+   *     `ms = (该窗文本行数 − 1 − 本字段) × message:AutoMessagePitch{0,1} + message:AutoMessageTime{0,1}`，
+   *     再 `if (ms <= 100) ms = 100` 交 `sub_453A60`/`sub_453BD0`；
+   *  ② raw 20416-20426（等待泵 `sub_411BC0` 的另一支）：`if ((message:AutoMessageOption & 1) == 0) {`
+   *     `if (!_this[490004])`（下标 122501）`{ v20 = sub_407F20(Font, _this[489484]) - _this[489856]; …`
+   *     `sub_453A60(…) } return; }` —— **不减 1**（`行数 − 本字段`），且被 `122501`（语音忙碌）门控。
+   *  复位：raw 17987 清 0。
    *
-   * ★emulator 现状：自动翻页的**消费端尚未实现**（全库无 `message:AutoMessage*` 消费点）⇒ 本字段写入后
-   *   暂时无人读；`tickets/T-0076` 把「自动翻页」记为缺口。值本身必须照写，否则将来接上消费端时基线会漂。
+   * ★**键名订正**：这两处用的是 `message:AutoMessagePitch0/1` + `message:AutoMessageTime0/1`
+   *   （引擎字符串见 raw 4309-4313），外加开关键 `message:AutoMessageOption`。**没有**
+   *   `message:AutoMessageSpeed` / `message:AutoMessageMinTime` 这两个键 —— 旧注释把它们当键名，
+   *   会误导后续按不存在的键去接消费端。
+   *
+   * ★emulator 现状：① **已实现**（`tickets/T-0151` 落地 ⇒ 本字段不再是"只写不读"）；② 仍未实现
+   *   （`122501` 在 emulator 是已知缺口、恒 0 ⇒ 那一支不可达，见 `vm/engine.ts` 的 `#serviceAutoMessage`）。
+   *   守卫：`test/engine-fields-t0161.test.ts` 的"生产读者棘轮"（读者被删即红）。
    */
   autoMessageBaseline: 122464,
   /** 每窗「逐行贴出」闸门基址（`+win`）：bit0 闸门、bit16 已被泵接管（`0x300` 写）。 */
@@ -242,6 +325,24 @@ export const ENGINE_FIELD = {
   winRevealDoneBase: 122486,
   /** **文本项记账门**（`_this[97055]`）：`0x1BB` 写；非 0 时 `0x1D2` 等不记账。 */
   textBaseGate: 97055,
+
+  // -------------------------------------------------------------------------
+  // 纹理槽族（handlers/gfx-texture.ts；`tickets/T-0153` 的 VM 半边）
+  // -------------------------------------------------------------------------
+  /**
+   * **按槽号的「表面释放门」基址**（`_this[slot + 11676]` = 字节 `4*slot + 46704`）。
+   *
+   * 引擎读点只有一处：`sub_49E980`（`0x1FA` release-texture 的内核，raw **119591**）——
+   * `if ( !_this[a2 + 11676] ) { _this[5*a2 + 466] = -1; 析构并置 0 _this[a2 + 10614]; }`
+   * ⇒ 这门把"擦槽记录"与"销毁 CTexture 表面"**两件事一起**罩住（门关 ⇒ 两件都不做）。
+   * 批量清理路径（raw 19381 / 35310：`for (i = 0; i < 1000; ++i) sub_49E980(...)`）也走同一道门。
+   *
+   * ★**写者未在反编译里显形**（全库搜 `+ 11676` 只有 raw 119591 这一个读点；
+   * 该门表在构造里被清零 —— 与 `dword_55052C` 那类"脚本可配但写点偏移不同"的字段不同，这里连
+   * 写点都没有）⇒ emulator **默认 0**（= 门常开，与修前行为逐字节相同），需要复现"门关"时由
+   * 测试/宿主经 `engineValues` 注入。**不许**把它当"不存在"而省掉门（省掉就静默丢了引擎的一个分支）。
+   */
+  surfaceReleaseGate: 11676,
 
   // -------------------------------------------------------------------------
   // 跳读（快进）态（engine-fields.ts 的 0x1CF/0x1BF；audio.ts 的 play-bgm 读）
@@ -310,6 +411,22 @@ export const ENGINE_FIELD = {
   audioDeviceField0: 18656,
   /** `0x1C9` 音频设备初始化字段（`_this[18660]` = op3）。 */
   audioDeviceField1: 18660,
+  /**
+   * `0x1C9` 的 **op1 = 音频驱动 id**：引擎 `sub_4B8490(Engine+7912, id, 数据, 大小)` 把它写进
+   * **驱动对象**的 `_this[2179]`（raw 140301；装载失败写 −1，raw 140306）。换算到**引擎 dword 下标** =
+   * `(7912 + 4*2179) / 4` = **4157**（模块基址 `Engine+7912`）。重写侧没有驱动层 ⇒ 本工程把这一格
+   * 记进引擎字段表（审计 P3 `0x1c9 missing-consumer`，票 `T-0152`）。
+   */
+  audioDeviceDriverId: 4157,
+  /**
+   * 语音通道 **pan** 的设备格基址（`设备[375 + ch]`，byte 1548 + 4·ch）。
+   *
+   * 引擎：`0x2F8`（`sub_4268D0`）把钳制后的 op2 经 `sub_4B6940(设备, ch, pan)` 写进这一格，
+   * 之后 `sub_4BBAB0`（排队起播）读 `设备[387+ch]`（= 375 + 12 + ch，语音设备通道是 12..14）
+   * 把它当下发 pan。⇒ 本工程把这一格落进 `engineValues`
+   * （票 `T-0152` 的 P3 `0x2f8 missing-operand-io`）。
+   */
+  voicePanBase: 375,
 
   // -------------------------------------------------------------------------
   // 面板（handlers/panel.ts、route.ts）

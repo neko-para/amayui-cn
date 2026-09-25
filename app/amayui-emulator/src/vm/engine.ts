@@ -22,6 +22,15 @@ import type { Ref } from './ref.js';
 export const SLEEP_GATE = 0x20000000;
 
 /**
+ * **通用 `Queue_int` 队族的槽数 = 10**（`tickets/T-0156`）—— 不是 11。
+ *
+ * 引擎三处都是"从 10 数到 1"的 `do/while`（`v15 = 10; … v8 = v15-- == 1;`，即**恰好 10 次**）：
+ * `sub_40DF10` 的复位 raw 18081、`sub_40DF10` 的 `Stack_int` 支 raw 18111、构造函数 raw 22658。
+ * ⇒ 「11 个槽」是把先比较后自减的 `--` 数成了 11 次（`tickets/T-0156` 的 wrong-constant 修正）。
+ */
+export const QUEUE_INT_SLOTS = 10;
+
+/**
  * `effect_flags` 的 **bit31 = 等待推进门**（引擎主循环 `v35 < 0` 分支：`sub_411BC0` + `Sleep(2)`）。
  * 由 `0x72 wait-for-input` 置位；玩家推进时由每帧处理清除。**置位期间脚本完全不推进**。
  */
@@ -300,7 +309,7 @@ export class Engine {
    *   行为完全一致；这条容错已在 `handlers/control.ts` 的 `op_queue_push` 注释与
    *   `analysis/opcode-gaps.json` 的 `0x133` note 里披露。
    */
-  dispatchQueues: number[][] = Array.from({ length: 11 }, () => [] as number[]);
+  dispatchQueues: number[][] = Array.from({ length: QUEUE_INT_SLOTS }, () => [] as number[]);
 
   /** 引擎配置字段（稀疏 _this 索引，fidelity 到 engine.cpp）。默认值与引擎构造函数一致：
    *  构造函数/初始化（engine.cpp 22404，字节偏移 387932 = _this[96983]）把 96983 置 1；另一处重置（34632）清 0。

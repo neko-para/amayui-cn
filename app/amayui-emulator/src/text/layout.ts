@@ -336,6 +336,17 @@ export interface BlankExtent {
   /** `set:BlankExtentMode`（引擎注册表默认 0）。只有 `=== 1` 才开门（同引擎的 `== 1`）。 */
   mode: number;
   /**
+   * 引擎 `Font+201680`（= `Font` 对象 +0x313D0；**不是** `Engine+0x46100` 的 `font_metrics_mode`，
+   * 那个是 `0x2DB` 写的 `Engine[71744]`，见 raw 33530）。省略 = 0。
+   *
+   * 唯一作用：`0x204` **描边**直绘路径（`sub_471180` raw 87269）的空白字量宽多一道
+   * `Font+201680 <= 1` 门；档位 0 那条（`sub_46F2D0` raw 86057）**没有**这道门。
+   * ★已核：全库对 `Font+201680` 的写入只有 raw 78769 与 raw 78895（`Initialize` 里各写一次 `= 0`），
+   * 无其它写点 ⇒ 本 build 里它**恒 0**、这道门恒真（`<= 1` 连负数也算开门）。
+   * 仍留作入参是为了让判据在代码里是**显式**的、可被单测钉住（`test/text-204-blank-extent.test.ts`）。
+   */
+  fontMetricsFlag?: number;
+  /**
    * mode == 1 时的度量来源（引擎 = `GetTextExtentPoint32A`，`sub_404EE0` raw 10716-10739）。
    *
    * ★**emulator 现状 = 没有这个来源**（纯 Node 层无字体度量；宿主缝见文件尾「缺口」）：
@@ -344,8 +355,9 @@ export interface BlankExtent {
    *
    * 宿主实现时的期望语义：对**一个** SJIS 字符返回 GDI `SIZE` 的等价物 —— `cx` = 该字形在当前
    * 字体下的像素宽、`cy` = 字体像素高（≈ 请求的字号）；字体必须与**光栅化这一行用的同一**
-   * family/weight，因为引擎量的是度量 IC（`Font+1108` = Engine+0x15184）上当前选中的那支 HFONT
-   * （`font_metrics_mode != 0` 时先临时 `SelectObject(Font+201784)`，raw 10733-10737）。
+   * family/weight，因为引擎量的是度量 IC（`Font+1108` = Engine+0x15184）上当前选中的那支 HFONT：
+   * `Font+201680` 非 0 时先临时 `SelectObject` 参考面 `Font+201784`（raw 10733-10737），
+   * 否则用重建留在 IC 上的 `Font+101852`（raw 71041-71046）—— 见 `fontSet.ts` 的 `metricFaceSlot`。
    */
   measure?: (ch: string, size: number) => GlyphExtent | undefined;
 }
@@ -443,6 +455,45 @@ export interface DrawStringGlyph {
 }
 
 /**
+ * `0x204` 直绘路径的空白字前进量（引擎 `sub_471180` raw 87255-87280 / `sub_46F2D0` raw 86050-86067）。
+ *
+ * ★**与消息窗排版路径口径不同**（这是审计 `0x204`/approximation 的那条）：
+ * ```c
+ * // 描边档位 != 0 ⇒ sub_471180（raw 87269-87280）
+ * if ( Font+201680 <= 1 && GetConfig("set:BlankExtentMode") == 1 ) {
+ *   sub_404EE0(_this, &psizl, c); cx = psizl.cx;         // ← ★全角也取 cx
+ * } else cx = Font+201684 / ((c < 0x100) + 1);           //   网格：半角 字号/2、全角 字号
+ * // 描边档位 == 0 ⇒ sub_46F2D0（raw 86057-86067）：同一形状，但**没有** Font+201680 那道门，
+ * // 且网格除数用 `(__int16)Font+201704`（`sub_456C90` 写的度量字）而不是字号。
+ * ```
+ * 消息窗排版（`blankAdvance`）全角取的是 `psizl.cy`（raw 85129-85132）⇒ **两条路不许互相照搬**。
+ *
+ * ★`(int16)Font+201704` 那一格（档位 0 的 mode-0 除数）**未建模**：它是 `sub_456C90`（raw 68697-68718）
+ * 用 `GetGlyphOutline(Font+1108, 0x8C83, …)` 填的参考字度量，emulator 没有等价来源 ⇒ 这里统一用
+ * `size`（两者在标准字号下相等；差只可能出现在「参考字 0x8C83 的宽度 ≠ 字号」时）。
+ */
+export function drawStringBlankAdvance(
+  ch: string,
+  size: number,
+  outlineMode: 0 | 1 | 2 | 3,
+  blank?: BlankExtent,
+): { value: number; measured: boolean } {
+  const grid = sjisBytes(ch) * size * 0.5; // 引擎 raw 87279 / 86066 的 `字号 / ((全角?0:1)+1)`
+  if (blank?.mode !== 1) return { value: grid, measured: false };
+  // ★`Font+201680 <= 1` 只在描边路径上（raw 87269）；档位 0 那条没有这道门。
+  if (outlineMode !== 0 && (blank.fontMetricsFlag ?? 0) > 1) return { value: grid, measured: false };
+  const m = blank.measure?.(ch, size);
+  // ★全角也取 `cx`（不是消息窗那条的 `cy`）
+  if (m && m.cx > 0) return { value: m.cx, measured: true };
+  return { value: grid, measured: false };
+}
+
+/** `0x204` 直绘路径的单字前进量。 */
+export function drawStringAdvance(ch: string, size: number, outlineMode: 0 | 1 | 2 | 3, blank?: BlankExtent): number {
+  return isBlankExtentChar(ch) ? drawStringBlankAdvance(ch, size, outlineMode, blank).value : advance(ch, size);
+}
+
+/**
  * **单行直绘文本的字形位置表**（`0x204` draw-string → 引擎 `sub_456710` 的 GDI 整串直绘）。
  *
  * 与消息窗的区别：这里**不换行、不排版**，就是"从 (x,y) 起按等宽网格推进一路画过去"，
@@ -458,6 +509,7 @@ export function drawStringGlyphs(
   outlineMode: 0 | 1 | 2 | 3,
   outlineDx: number,
   outlineDy: number,
+  blank?: BlankExtent,
 ): DrawStringGlyph[] {
   const out: DrawStringGlyph[] = [];
   let cx = x;
@@ -482,7 +534,7 @@ export function drawStringGlyphs(
         out.push({ ch, x: cx, y, role: 'fill', alpha: 1 });
         break;
     }
-    cx += advance(ch, size);
+    cx += drawStringAdvance(ch, size, outlineMode, blank);
   }
   return out;
 }
@@ -720,10 +772,25 @@ export function visibleRubyInLine(line: TextLine, revealedInLine: number): RubyG
  *     逐字等价**，所以这条只影响玩家手动把该项设成 1 的情况。
  *
  * ## 还有两处没接（同一张票的显式缺口，写法与理由）
- *  - `0x204`（`drawStringGlyphs` → `native.drawString` → `renderer/pixi/textureCache`）：同一条 GDI
- *    直绘缝（`sub_456710`），但 `drawString` 的宿主参数里没有 `blankExtent` ⇒ 未接线；
+ *  - `0x204`（`drawStringGlyphs` → `native.drawString` → `renderer/pixi/textureCache`）：
+ *    ★**纯函数侧已按体补齐**（`tickets/T-0151`）：`drawStringBlankAdvance` / `drawStringAdvance`
+ *    实现了 `sub_471180`（raw 87269-87280）与 `sub_46F2D0`（raw 86057-86067）的空白字分支
+ *    （mode 1 取 `psizl.cx`、**全角也取 cx**；描边路径多一道 `Font+201680 <= 1` 门），
+ *    `drawStringGlyphs` 也多了第 8 个可选参 `blank?: BlankExtent`。
+ *    **仍未接线**：`renderer/pixi/textureCache.ts:375` 的调用点还停在 7 个实参、`native.drawString`
+ *    的宿主参数里也没有 `blankExtent` ⇒ `set:BlankExtentMode=1` 时直绘文本的空白字前进量仍走网格。
+ *    （那两个文件属别的 owner 的范围，本票没动；接线只需把 `emitWin` 的那份 `BlankExtent` 透传给宿主。）
  *  - **绘制期"无轮廓字"**：引擎在 `GetGlyphOutline` 返回 -1 时也走空白字分支（raw 85115/85808），
  *    那是**光栅化时**才知道的信息（本模块只有排版，拿不到字形是否缺轮廓）⇒ 未建模。
+ *
+ * ## 还缺的度量输入（`0x204` / `0x205` 共用）
+ *  - `sub_404EE0` 量的**是哪支句柄**已查清并落库：`Font+201680` 非 0 ⇒ `Font+201784`
+ *    （`sub_456C90` raw 68712-68716 建的 `"ＭＳ ゴシック"` 参考面），否则用度量 IC 上当时选中的
+ *    `Font+101852`（raw 71041-71046）—— 见 `fontSet.ts` 的 `metricFaceSlot`。
+ *  - **缩放修正**未建模：`Font+218592 / Font+218596`（纵横比修正，raw 71088-71090）与
+ *    `Font+218520`（raw 87289-87291 的 `cx = (int)(cx * Font+218592 + 0.5)`）。纯函数见
+ *    `fontSet.ts` 的 `aspectCorrectedLfWidth` / `aspectScaledLfHeight`；要不要用取决于
+ *    `display:AspectMode`，而 emulator 没有这对字段 ⇒ 登记在 `GDI_FACE_REBUILD_NOT_MODELED`。
  *
  * ## 还没读到、不确定的（不许沉默掩盖）
  *  - 全角分支在 20 余处里有两种写法：多数用 `psizl.cy`（raw 85130/85642/85815），

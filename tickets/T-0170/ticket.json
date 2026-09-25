@@ -1,0 +1,86 @@
+{
+  "title": "实现 0x1D1（`0x82` 的孪生：GDI 重画窗 op1 的第 op2 条文本项记录，`sub_4675A0`）：让 HISTORY.BIN 不再硬停",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/vm",
+  "why": "★★★ 2026-09-24 订正（**建票时的语义写错了**）：本票原写「`0x1D1` = 回想页渲染器 ⇒ 要建页面文本布局/滚动位置/选中页高亮」。**读体后推翻**：`sub_4675A0` 的可执行头部（raw 80524-80532）与 `0x82` 的被调体 `sub_466000`（raw 79319-80311）**逐句同形** —— `v9 = _this[3368] - _this[3364]`（该窗 72B 文本项记录表字节数）→ 门 `v9 / 72 > a3 && a3 >= 0`（记录下标越界 ⇒ 什么都不做）→ 窗对象 `_this[4*a2 + 1044] + 112 == 1` ⇒ 专用路径 `sub_4634B0`（`0x82` 那条是 `sub_462040`）→ 否则走 GDI（`GetCurrentObject`/`SelectObject`/`TEXTMETRICA`/`GetTextExtent`）。⇒ 真语义 = **「GDI 重画窗 `a2` 的第 `a3` 条 72B 文本项记录」（`a4` = 模式、`a5`/`a6` = 填充/描边色、`a7` = `&Engine[21032]`）**，是 `0x82` 的孪生，**不需要任何页面模型**。handler `sub_420310`（raw 29353-29371）也只做取值转发：arity 槽写 11（= 2*argc+1，argc 5；与 `analysis/functions.json:11322` 记的 `0x82` 同款）+ `sub_41BF50` 读 op5..op1（`sub_41BF50` = 读操作数，见 `functions.json:166` 的 `readIntOperand_41BF50`）⇒ **op1..op5 顺序直传 a2..a6，第 7 参不是操作数**。\n\n**但 `T-0168` 的结论仍然成立**：脚本停在它上面是因为命中即 `NotImplementedOp` **硬停**（后续帧不再跑）⇒ 画面出不来。所以本票要做的 = 按体把这条孪生实现出来（复用 emulator 已有的 `0x82` 实现 `MSGWIN_OPS.op_gdi_repaint_window`，逐项 diff 出差异）。\n\n原始立项文本：T-0168 的滚轮链实测把可见性逼到最后一步：把滚轮键位配成脚本绑给回想的那一位后，脚本真的派发 call-script 31 进入 HISTORY.BIN，但随后停在 0x1D1 未实现 ⇒ 画面不出现。全语料唯一调用点是 `src/HISTORY.txt:1314`。`opcode-gaps.json` 目前把它登记为 `deferred`。",
+  "acceptance": [
+    "0x1D1 在 emulator 里有真实 handler（不再是 `NotImplementedOp`），语义按体实现为 **`0x82`（`sub_466000`）的孪生**：读 op1..op5（全 int，`sub_41BF50`）→ 记录下标门 `(3368-3364)/72 > op2 && op2 >= 0`（越界 ⇒ 整条什么都不做）→ 窗对象 `+112 == 1` 走专用路径 `sub_4634B0`（未建模就如实登记）→ 否则按 `op3` 模式与 `op4`/`op5` 颜色重画该窗第 `op2` 条记录并重新发布该窗；**不得**引入页面/滚动/高亮模型",
+    "`analysis/opcodes.json` 的 `0x1D1` semantics 按上述通用语义写（带 raw 80524-80532 锚点），note 里保留字串 `回看页重绘`（既有守卫钉着这个标签）+ `sub_4675A0` + `raw 80312-81522`，并说明语料唯一**静态**调用点是 `src/HISTORY.txt:1314`（回想页那一步；★运行时该行会被反复命中 —— `tickets/T-0168/notes.md` 实测进回想后 4000 帧内命中 **280** 次 ⇒ 别写成「只跑一次」）",
+    "与 `0x82` 的**逐项差异表**落 `tickets/T-0170/changes.md`：至少覆盖 被调体 `sub_4675A0`（raw 80313-81522）vs `sub_466000`（raw 79319-80311）、专用路径 `sub_4634B0` vs `sub_462040`、以及 `sub_4675A0` 里缩放/度量相关的 `double`/`float`/`TEXTMETRICA` 用法；每处写清「同/异 + raw 锚点 + emulator 侧复用或分叉」",
+    "`analysis/opcode-gaps.json` 里 `0x1D1` 的处置从 `deferred` 改为 `implemented` 或 `partial`（不得留空）—— ★该文件归主 agent 结算，实施者只提供内容",
+    "E3 守卫 `test/recall-page-0x1d1.test.ts`（先红后绿）：① `OPS.has(0x1d1)`；② 端到端 `TITLE → Game Start → GAMESTART → SN0000 首文案 → set:wheelkeyup=8 → addWheel(120)` ⇒ `curScript().name === 'HISTORY.BIN'`（= 脚本不再硬停）；③ **记录重画真的发生**：越界下标 ⇒ 什么都不做、合法下标 ⇒ 该窗文本按 `op4/op5` 换色后重新发布（照 `test/op-0104-gdi-repaint.test.ts` 的形状写）",
+    "守卫测试文件登记进 tests[]"
+  ],
+  "id": "T-0170",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：status, evidence —— 开单：T-0168 的滚轮链实测把 HISTORY 可见性逼到 0x1D1（sub_4675A0，raw 80313；handler raw 29353-29370 收尾 return sub_4675A0(_this+21324, ...)，_this+21324 = 回看环）。语料唯一调用点 src/HISTORY.txt:1314 的 5 个操作数已抄进 evidence。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "decision",
+      "what": "★语义订正（主 agent 读体后推翻本票原有前提）：0x1D1 不是「回想页渲染器」，而是 0x82 的孪生 —— 「GDI 重画窗 op1 的第 op2 条 72B 文本项记录」（门 `(3368-3364)/72 > a3 && a3 >= 0`、窗对象 +112==1 ⇒ sub_4634B0 专用路径；raw 80524-80532 与 0x82 的 sub_466000 raw 79319+ 逐句同形）。handler 只做取值转发（arity 槽 11 = 2*argc+1；sub_41BF50 读 op1..op5 顺序直传 a2..a6，第 7 参 = &Engine[21032] 不是操作数）。⇒ 判据改为「实现成 0x82 的孪生 + 差异表」，删掉「页面布局/滚动/高亮模型」要求；T-0168 的「脚本硬停在 0x1D1」结论不变。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → doing —— 实现完成（OPS 真实现 + 13 例守卫含 E3）；仍未 done = opcode-gaps.json 的 deferred 结算归 T-0149/主 agent"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → done —— 0x1D1 按体实现（0x82 孪生 + 记录切片重画，OPS 真实现/emulator partial + 6 条 missing[]）；守卫 test/recall-page-0x1d1.test.ts 13/13（含 E3：wheelkeyup=8 ⇒ HISTORY.BIN ⇒ 3 行真实序章正文）；0x82 差异表落 changes.md；opcode-gaps 的 465 由主 agent 结算为 partial ⇒ 5 条判据全满足；test:all 1310/1304/fail 4 = 3 基线红 + 1 条 T-0171 的红，本票新增红 0"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4675A0",
+      "line": 80313,
+      "note": "渲染器本体（导出声明在 raw 1415；唯一调用者 raw 29370 = case 0x1D1 handler 的收尾 return）。★订正：它是 0x82 的 sub_466000 的孪生（raw 80524-80532 与 raw 79319+ 逐句同形），不是「页面渲染器」"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_4675A0((int)(_this + 21324), v2, v4, v5, v6, v7, v8);",
+      "line": 29370,
+      "note": "handler sub_420310（raw 29353-29371）的收尾：arity 槽写 11（2*argc+1）+ sub_41BF50 读 op5..op1 后**顺序直传** a2..a6，第 7 参 = &Engine[21032]（不是操作数）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v9 / 72 > a3 && a3 >= 0",
+      "line": 80529,
+      "note": "★真语义的决定性门：该窗 72B 文本项记录表的条数 > 记录下标 && 下标 >= 0（与 0x82 的 sub_466000 同一道门）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "return (int)sub_4634B0(_this, a2, a3, a4, a5, a6, v167);",
+      "line": 80532,
+      "note": "窗对象 +112 == 1 的专用路径（0x82 那条是 sub_462040）"
+    },
+    {
+      "file": "analysis/functions.json",
+      "anchor": "readIntOperand_41BF50",
+      "line": 167,
+      "note": "sub_41BF50 = 读操作数（类型检查失败抛 Command_Type_Exception；体 raw 26555+）⇒ 0x1D1 的 5 个操作数与形参一一对应"
+    },
+    {
+      "file": "src/HISTORY.txt",
+      "anchor": "i1d1 (local-int 4a9) (local-int 94) 40 0 0",
+      "line": 1314,
+      "note": "唯一**静态**调用点（回想页那一步）：5 个操作数 = (local-int 4a9) (local-int 94) 40 0 0 ⇒ 窗号 / 记录下标 0x94 / 模式 0x40 / 填充色 0 / 描边色 0。★运行时该行会被反复命中（进回想后 4000 帧内 280 次），不是「只跑一次」"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/recall-page-0x1d1.test.ts",
+    "app/amayui-emulator/test/op-1d0-1d1-text-metrics.test.ts"
+  ]
+}

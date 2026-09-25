@@ -162,6 +162,30 @@ const MAX_POINTS = 1 << 20;
 const MAX_EXTENT = 1 << 20;
 
 /**
+ * **引擎 `operator new[](8*n)` 在 32 位宿主上的可分配上界**（raw 39676）。
+ *
+ * `8 * 0x10000000` = 2^31 ⇒ 再大就超出 32 位 size_t 的可用堆 ⇒ 引擎在那之前就 `bad_alloc`
+ * （MSVC 默认终止），**根本到不了** `CreatePolygonRgn`。emulator 无法表示"进程终止"，
+ * 因此把这条上界当作"引擎到不了建区那一步"的边界，按引擎的 `else` 分支（错误串 + `op1 = 0`）处理。
+ * ★这不是 emulator 自造的业务上限（审计 P3 `0x147` 的 `host-invented`）：引擎那侧的真实边界就是
+ * **8n 字节的分配**，`MAX_POINTS = 2^20` 那条才是自造的（已删）。
+ */
+const ENGINE_POINT_ALLOC_MAX = 0x0fffffff;
+
+/**
+ * 引擎的"建 region 失败"分支（raw 39696-39700）：打印 `asc_520808`
+ * （`"リージョン作成失敗しました"`，raw 4451）后写 `op1 = 0`。
+ *
+ * ★**这条分支对 `n ≤ 1` 是确定可达的**（审计 P3 `0x147` 的 `approximation`）：`CreatePolygonRgn`
+ * 在 `count < 2` 时返回 NULL ⇒ n = 0（点数组一格未写）与 n = 1（只写了 `pts[0]`）都走这里。
+ * 可观测结果（`op1 = 0`）与 emulator 修前一致，但**那句错误串此前完全没有**。
+ */
+function polygonRegionFailure(c: StepCtx, why: string): void {
+  c.log(`i147：CreatePolygonRgn 失败（${why}）⇒ 引擎 raw 39698 打「リージョン作成失敗しました」并写 op1 = 0`);
+  planFor(c).setInt(1, 0);
+}
+
+/**
  * 半开矩形 region 的命中判定（`NtGdiCreateRectRgn` → `NtGdiSetRectRgn` 口径）：
  * 先把 `left>right`/`top>bottom` 各自**交换**，再判 `[left,right) × [top,bottom)`；
  * 交换后任一边为零 ⇒ 空 region（region.c 643-667）。
@@ -326,10 +350,20 @@ const op_polygon_region_hittest: OpHandler = (c) => {
   const xs = plan.ptr(4)!; // op4 = x 数组基址（**只读**）
   const ys = plan.ptr(5)!; // op5 = y 数组基址（**只读**）
   const n = (plan.int(6) ?? 0);
-  if (n > MAX_POINTS) {
-    throw new Error(`i147 点数异常（n=${n}）—— 超过 emulator 上限 ${MAX_POINTS}（引擎此处 operator new[](8*${n})）`);
+  // ★引擎 raw 39676 无条件 `operator new[](8*n)`；n 超出 32 位可分配范围 ⇒ 引擎终止（emulator 无法表示）。
+  //   修前这里是 `if (n > MAX_POINTS) throw`（审计 P3 `x147` 的 `host-invented`：把一个"引擎正常写
+  //   op1 = 0 并继续执行"的输入变成了**硬停**）。
+  if (n > ENGINE_POINT_ALLOC_MAX) {
+    polygonRegionFailure(c, `n = ${n} ⇒ 8n 字节超出 32 位可分配范围（raw 39676 的 operator new[]）`);
+    return;
   }
-  // 引擎：`if (v3 > 0) { … }` ⇒ n <= 0 时一个点都不读（region 为空）
+  // ★`count < 2` ⇒ GDI 建不出区（raw 39689 返回 NULL ⇒ else 分支 raw 39696-39700）。
+  //   修前是 `gdiPolygonWindingHit` 内部静默 `if (n < 2) return false`（结果对、错误串缺）。
+  if (n < 2) {
+    polygonRegionFailure(c, `n = ${n} < 2（GDI REGION_CreateEdgeTable 不加边）`);
+    return;
+  }
+  // 引擎：`if (v3 > 0) { … }` ⇒ n <= 0 时一个点都不读（region 为空）—— 上面 n < 2 已覆盖。
   const flat: number[] = [];
   for (let i = 0; i < n; i++) {
     flat.push(readSlot(e, frame, refAt(xs, i)), readSlot(e, frame, refAt(ys, i)));

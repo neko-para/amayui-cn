@@ -96,7 +96,27 @@ export function scanEngineTable(root) {
   return { handlerByOp, bodyLine };
 }
 
-const DISPOSITIONS = ['unimplemented', 'engine-internal', 'engine-internal-unjustified', 'implemented', 'deferred'];
+const DISPOSITIONS = ['unimplemented', 'engine-internal', 'engine-internal-unjustified', 'implemented', 'deferred', 'partial'];
+
+/**
+ * `partial` 的 `missing[]` schema（`tickets/T-0149`）。
+ *
+ * 为什么要有这个处置位：`implemented` 只回答「**注册了没有**」，一旦写上就再没人回头核对；
+ * 审计（2026-09）的 436 条缺口里绝大多数正落在「已注册、但缺分支 / 缺消费端 / 只是近似」这一类。
+ * ⇒ `partial` + `missing[]` 把「相对引擎体还缺什么」变成**可棘轮的一等状态**。
+ */
+const MISSING_WHAT_MIN = 8;
+const TICKET_RE = /^T-\d{4}$/;
+const RAW_RE = /^\d+(-\d+)?$/;
+
+/** 票号是否真实存在（`tickets/<id>/ticket.json`）。 */
+function ticketExists(root, id) {
+  try {
+    return fs.statSync(path.join(root, 'tickets', id, 'ticket.json')).isFile();
+  } catch {
+    return false;
+  }
+}
 
 /**
  * 处置统计 = `counts` 的**唯一口径**。
@@ -165,6 +185,33 @@ export function buildGapReport(root, opts = {}) {
     if (e.disposition === 'unimplemented' && registered.has(op)) {
       problems.push(`0x${op.toString(16)}：标为 unimplemented 但实际已注册（请改 disposition）`);
     }
+    if (e.disposition === 'partial' && !registered.has(op)) {
+      problems.push(`0x${op.toString(16)}：标为 partial 但 emulator 根本没注册（partial 的前提是「已注册、已达语料级可用」；未注册的应写 unimplemented）`);
+    }
+    if (e.disposition === 'partial') {
+      if (!Array.isArray(e.missing) || e.missing.length === 0) {
+        problems.push(`0x${op.toString(16)}：标为 partial 但 missing[] 为空/缺失（必须逐条写「还缺哪条分支/消费端」）`);
+      } else {
+        e.missing.forEach((m, i) => {
+          const at = `0x${op.toString(16)}：missing[${i}]`;
+          if (!m || typeof m.what !== 'string' || m.what.trim().length < MISSING_WHAT_MIN) {
+            problems.push(`${at}.what 缺/太短（必须一句话写清缺哪条分支或能力，带引擎行为描述）`);
+          }
+          if (typeof m?.ticket !== 'string' || !TICKET_RE.test(m.ticket)) {
+            problems.push(`${at}.ticket 格式错（${JSON.stringify(m?.ticket)}；应形如 T-0151）`);
+          } else if (!ticketExists(root, m.ticket)) {
+            problems.push(`${at}.ticket=${m.ticket} 在 tickets/ 下不存在（承接票必须真实存在，不许指向被删/未开的票）`);
+          }
+          if (typeof m?.raw !== 'string' || !RAW_RE.test(m.raw)) {
+            problems.push(`${at}.raw 不匹配 ^\\d+(-\\d+)?$（${JSON.stringify(m?.raw)}；只允许单一行号或单一段行区间）`);
+          }
+        });
+      }
+    } else if (Array.isArray(e.missing) && e.missing.length) {
+      problems.push(
+        `0x${op.toString(16)}：disposition=${e.disposition} 却带 ${e.missing.length} 条 missing[] ⇒ 要么改 disposition=partial（"还缺东西"不许藏在 implemented 里），要么删掉 missing[]`,
+      );
+    }
     if (e.disposition !== 'implemented' && !e.note) problems.push(`0x${op.toString(16)}：缺 note（写清体内真实效果/为什么不实现）`);
     const c = corpus.get(op);
     entries.push({
@@ -204,6 +251,10 @@ export function buildGapReport(root, opts = {}) {
   const internalOk = entries.filter((e) => e.disposition === 'engine-internal').sort((a, b) => a.opcode - b.opcode);
   const implemented = entries.filter((e) => e.disposition === 'implemented').sort((a, b) => a.opcode - b.opcode);
   const deferred = entries.filter((e) => e.disposition === 'deferred').sort((a, b) => b.corpusCount - a.corpusCount || a.opcode - b.opcode);
+  const partial = entries
+    .filter((e) => e.disposition === 'partial')
+    .sort((a, b) => a.opcode - b.opcode)
+    .map((e) => ({ ...e, missing: (e.missing ?? []).map((m) => ({ ...m })) }));
 
   // `counts`：写模式自动回填；只读模式把漂移报成 problem（守卫测试走这条 ⇒ 手写/漏跑都会红）。
   const tally = tallyDispositions(entries);
@@ -226,6 +277,7 @@ export function buildGapReport(root, opts = {}) {
       internalOk,
       implemented,
       deferred,
+      partial,
       counts: tally,
       corpusKinds: corpus.size,
       corpusUnimplCalls: unimpl.reduce((a, e) => a + e.corpusCount, 0),
@@ -274,6 +326,8 @@ export function renderGapMd(report) {
   L.push('> 语料命中数与注册状态**实时计算**：`^\\s*iXX\\b` 扫 `src/*.txt`（941 个脚本），注册表扫 `app/amayui-emulator/src/vm/handlers/*.ts`。');
   L.push('> 纪律（审计 `docs-new/99-records/2026-09-audit/audit-2026-09.md` §1「不静默跳过」）：**任何不实现/近似都必须在这里有一条**，');
   L.push('> 否则 `test/opcode-gaps.test.ts` 会红。');
+  L.push('> ★**「注册了没有」与「做全了没有」是两件事**：`implemented` 只回答前者（写上就再没人回头核对），');
+  L.push('> 「已注册、但相对引擎体还缺分支/消费端/写者」一律 `partial` + `missing[]`（§7，`tickets/T-0149`）。');
   L.push('>');
   L.push('> ★**本表只给一句话**（从真源 `note` 裁到 120 字）：`note` 是审计轨（体证叙事 + 逐轮沿革，71 条 ≈ 80 KB），');
   L.push('> 逐字铺进 md 会让生成物 92.8% 的字节都是它，而对"现在该怎么处置"没有导航价值。**全文取法**：');
@@ -290,6 +344,11 @@ export function renderGapMd(report) {
       (report.deferred.length
         ? `（语料合计 ${report.deferred.reduce((a, e) => a + e.corpusCount, 0)} 次调用）—— 明细见 §6`
         : ''),
+  );
+  const partialMissing = report.partial.reduce((a, e) => a + (e.missing?.length ?? 0), 0);
+  L.push(
+    `- **部分实现（\`partial\`：handler 已达语料级可用，但相对引擎体仍缺分支/消费端）**：**${report.partial.length}** 条 ` +
+      `opcode / **${partialMissing}** 条缺口 —— 明细见 §7`,
   );
   L.push('');
   L.push('## 2. 未实现（按语料命中数排序）');
@@ -339,6 +398,42 @@ export function renderGapMd(report) {
     );
   }
   L.push('');
+  L.push('## 7. 部分实现（`partial`：已注册、已达语料级可用，但相对引擎体仍缺分支 / 消费端 / 写者）');
+  L.push('');
+  L.push('> **口径（`tickets/T-0149`）**：`partial` = handler **已达语料级可用**（语料跑得通、不是硬停也不是纯 no-op），');
+  L.push('> 但**相对引擎体仍缺**某条分支 / 某个消费端 / 某个写者，或某处只是**披露近似**。');
+  L.push('> 它与邻居的分工：`implemented` = 已读完体且不缺东西；`engine-internal` = 有据 no-op；');
+  L.push('> `deferred` = 按当前范围整个不做；`partial` = **做了，但没做全**。');
+  L.push('>');
+  L.push('> ★**每条 `partial` 必须带 `missing[]`**（真源里逐条 `{what, ticket, raw}`）：`what` = 缺哪条分支/能力（一句话，带引擎行为描述）、');
+  L.push('> `ticket` = 承接它的票（必须在 `tickets/` 下真实存在）、`raw` = 引擎行号或**单一段**行区间。');
+  L.push('> `test/opcode-gaps.test.ts` 是棘轮：`missing[]` 空/缺字段、票号不存在、`raw` 不合规、或把 `missing[]` 挂在非 `partial` 上，一律红。');
+  L.push('> **本段按承接票分组**（下表把每条缺口摊成一行，便于各票逐条销账；销完即从 `missing[]` 删掉，全空则处置改回 `implemented`）。');
+  L.push('');
+  if (!report.partial.length) {
+    L.push('（当前无 `partial` 条目）');
+    L.push('');
+  } else {
+    /** 按 missing 条目自己的票分组（同一条 opcode 的缺口可以分属不同票）。 */
+    const groups = new Map();
+    for (const e of report.partial) {
+      for (const m of e.missing ?? []) {
+        if (!groups.has(m.ticket)) groups.set(m.ticket, []);
+        groups.get(m.ticket).push({ e, m });
+      }
+    }
+    for (const tk of [...groups.keys()].sort()) {
+      const rows = groups.get(tk).sort((a, b) => a.e.opcode - b.e.opcode || String(a.m.raw).localeCompare(String(b.m.raw)));
+      L.push(`### 7.${[...groups.keys()].sort().indexOf(tk) + 1} ${tk}（${new Set(rows.map((r) => r.e.opcode)).size} 条 opcode / ${rows.length} 条缺口）`);
+      L.push('');
+      L.push('| opcode | 助记符 | 语料 | 引擎 raw | 缺什么（承接票见分组标题） |');
+      L.push('|---|---|---|---|---|');
+      for (const { e, m } of rows) {
+        L.push(`| 0x${e.opcode.toString(16)} | ${fmtCall(e)} | ${e.corpusCount} | ${esc(m.raw)} | ${esc(m.what)} |`);
+      }
+      L.push('');
+    }
+  }
   return L.join('\n');
 }
 
@@ -357,7 +452,7 @@ function main() {
     else console.log('✓ md 是最新的');
   } else fs.writeFileSync(out, md);
 
-  console.log(`opcode 缺口台账：未实现 ${report.unimpl.length}（语料 ${report.corpusUnimplCalls} 次调用）/ unjustified no-op ${report.unjust.length} / 有据 no-op ${report.internalOk.length} / 已实现 ${report.implemented.length} / deferred ${report.deferred.length}`);
+  console.log(`opcode 缺口台账：未实现 ${report.unimpl.length}（语料 ${report.corpusUnimplCalls} 次调用）/ unjustified no-op ${report.unjust.length} / 有据 no-op ${report.internalOk.length} / 已实现 ${report.implemented.length} / deferred ${report.deferred.length} / partial ${report.partial.length}（缺口 ${report.partial.reduce((a, e) => a + (e.missing?.length ?? 0), 0)} 条）`);
   if (check) console.log(`md 最新性：${stale ? '✗ 见下方 problem' : '✓'}`);
   if (problems.length) {
     console.error('✗ 校验失败：');

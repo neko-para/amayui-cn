@@ -59,4 +59,4 @@ generated_by: scripts/build-scripts.mjs
 ## 证据与备注
 
 - 证据：src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888
-- 备注：★2026-09 订正：emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段），原「0x143 未实现 ⇒ 本脚本永不执行」的缺口已消失。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。
+- 备注：emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段）。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。

@@ -32,12 +32,37 @@
     }
   ],
   "id": "T-0108",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建：T-0105 判据 ④ 的手写文档部分已完成，数据层 146 处作为边界外残余单独立票"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 数据层沿革话术清零：181 处判定完毕（286 条落 journal[]/15 删除/3 类保留），生成物 订正 49→0，I9 扩到生成物并有辨别力证明"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/doc-model.test.ts#沿革不进叙述文档"
+  ],
+  "links": {
+    "docs": [
+      "docs-new/00-overview/authority.md"
+    ],
+    "analysis": [
+      "analysis/opcodes.json",
+      "analysis/engine-capabilities.json",
+      "analysis/opcode-gaps.json",
+      "analysis/functions.json",
+      "analysis/fields.json",
+      "analysis/scripts.json"
+    ],
+    "tickets": [
+      "T-0105"
+    ]
+  },
+  "doneWhy": "181 处（grep 订正 口径 168 处）逐条判定完毕：286 条结论级沿革原文逐字落 217 个实体的 journal[]（永不渲染，A2/A4），15 处纯措辞删除，3 类非沿革给保留理由；六份真源 journal[] 之外 0 处，四个生成器重跑后 opcode-table/engine-capabilities/opcode-gaps/05-scripts 的 订正 行数 49/8/1/8 → 0，doc-model.test.ts 的 I9 已扩到这三份生成物（注入一行即红、还原后 sha256 逐字节一致），四份台账 --validate 与 8 个守卫文件 49/49 全绿。逐条判定/抽查/残留清扫见 tickets/T-0108/changes.md"
 }

@@ -3,7 +3,7 @@
   "type": "bug",
   "priority": "P3",
   "area": "emulator/test",
-  "why": "`npm run verify` 在当前工作树上有 3 条常红（**不是** D1~D4 引入的；用「把我的 5 个改动文件 `git checkout --` 回 HEAD 再跑」做 A/B，两条红逐字相同、报告计数逐字节相同）：\n1. `engine-slot.test.ts` 的「真槽全部解出…」：`SAVE70.DAT: storedDwords=2069342 超出文件（2069662 字节）`、`SAVE71.DAT: storedDwords=2068813 超出文件（2069133 字节）` —— 机器上这两个真槽的**头格式与测试预期不同**（`save-slot.test.ts` 的「0x1A0 六个 u16」那条现实测 `format=0`，期望 ≥3）⇒ 大概率是**较新版本游戏/别的来源写出的槽**。\n2. `scene-report.test.ts` 的「可绘制项(24) 必须多于缺纹理项(26)」：该测试的冻结下限注释写的是「实测 drawItems=32 / drawableItems=24 / placeholderItems=8」，而现在（**基线与本次改动都**）是 `50 / 24 / 26` —— 多出来的 18 个占位项是**句柄 `0xD8..0xF1` 的 TITLE 版本号数字条项**（`i23b` 一族建出但从不 `draw-texture`），说明这条路线在基线里就已经漂了。\n3. `host-registry.test.ts` 的「真进程 `--idle-sec 1`」在**全量并行**下偶发超时（单跑必绿）⇒ 时序抖动，建议加宽等待或标 flaky。",
+  "why": "★★★ 2026-09-24 复核：本节列的 3 条就是**当前 `npm run verify` 的基线红**（实测见 `CONTEXT.md` §6：`engine-slot` 的 SAVE70/71 `storedDwords`、`save-slot` 真槽 `format=0`、`scene-report` 可绘制项 24 ≤ 缺纹理项 26）。**判绿口径**：本轮及后续所有修复以「**不新增红**」为准 —— 这 3 条不算新红、不算回归，**不要重复立项**；修它们时按下面 4 条判据走，仍不许删断言/降门槛。\n\n`npm run verify` 在当前工作树上有 3 条常红（**不是** D1~D4 引入的；用「把我的 5 个改动文件 `git checkout --` 回 HEAD 再跑」做 A/B，两条红逐字相同、报告计数逐字节相同）：\n1. `engine-slot.test.ts` 的「真槽全部解出…」：`SAVE70.DAT: storedDwords=2069342 超出文件（2069662 字节）`、`SAVE71.DAT: storedDwords=2068813 超出文件（2069133 字节）` —— 机器上这两个真槽的**头格式与测试预期不同**（`save-slot.test.ts` 的「0x1A0 六个 u16」那条现实测 `format=0`，期望 ≥3）⇒ 大概率是**较新版本游戏/别的来源写出的槽**。\n2. `scene-report.test.ts` 的「可绘制项(24) 必须多于缺纹理项(26)」：该测试的冻结下限注释写的是「实测 drawItems=32 / drawableItems=24 / placeholderItems=8」，而现在（**基线与本次改动都**）是 `50 / 24 / 26` —— 多出来的 18 个占位项是**句柄 `0xD8..0xF1` 的 TITLE 版本号数字条项**（`i23b` 一族建出但从不 `draw-texture`），说明这条路线在基线里就已经漂了。\n3. `host-registry.test.ts` 的「真进程 `--idle-sec 1`」在**全量并行**下偶发超时（单跑必绿）⇒ 时序抖动，建议加宽等待或标 flaky。",
   "acceptance": [
     "查清 SAVE70/71 的**来源与格式**（哪一版游戏/什么工具写的；`format=0` 是\"未混淆的引擎格式\"还是别的容器）⇒ 要么把解析改对、要么把这些槽登记为\"非本作格式、测试应跳过并给出判据\"，不许让两条 E4 常红掩盖真回归",
     "查清 `scene-report` 的 18 个 TITLE 数字条占位项是**何时**开始变多的（git log/blame 到那次改动；若是真回归就修，若是\"路线本来就如此\"就把冻结下限改成现值 + 在测试里写清这些句柄是什么）",
@@ -35,7 +35,9 @@
       "T-0063",
       "T-0083"
     ],
-    "docs": []
+    "docs": [
+      "CONTEXT.md"
+    ]
   },
   "id": "T-0146",
   "status": "open",
@@ -44,6 +46,11 @@
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "decision",
+      "what": "复核：把这 3 条明确登记为 `npm run verify` 的基线红（CONTEXT.md §6 实测口径），并写进 why 开头：后续修复一律以「不新增红」判绿，这 3 条不算新红、不得重复立项。"
     }
   ]
 }

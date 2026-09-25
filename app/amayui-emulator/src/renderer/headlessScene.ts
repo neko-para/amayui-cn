@@ -100,6 +100,7 @@ import type { Item } from './drawItem.js';
 import { AudioEngine, type AudioHost, type AudioIntent } from '../audio/audioEngine.js';
 import type { MsgWinInput } from '../text/layout.js';
 import type { InputManager } from '../vm/input.js';
+import { slotNodeSizeOf, type SlotNode } from './slotSurface.js';
 
 export interface HeadlessOptions {
   /** 日志回调（默认丢弃；CLI 里可指向 stdout）。 */
@@ -154,6 +155,12 @@ export class HeadlessScene implements NativeBridge {
   readonly proceduralSlots = new Set<number>();
   /** 程序化槽的**表面尺寸**（`0x1F8` 的 op2/op3）—— 引擎 `CTexture+1040/+1044`。 */
   readonly slotSize = new Map<number, { w: number; h: number }>();
+  /**
+   * 槽对象（引擎 `Engine[slot + 94672]`，字节 `+378688`）：`0x20F` play-movie / `0x236` 惰性建，
+   * `0x1F8`/`0x1F9`/`0x1FA` 置 0。★与 `slotImgid`/`slotSize`（**表面**表 `Scene+4*slot+42456`）
+   * 是**两张不同的表**：`0x23F` 读这张、`0x208` 读那张（`T-0153` 的 `0x23F` 条目）。
+   */
+  readonly slotNodes = new Map<number, SlotNode>();
 
   /** 渲染/模型时钟（ms）。★由 `advanceModel(nowMs)`/`advance(clock)` 推入；门判据用同一份（`tickets/T-0008`）。 */
   clockMs = 0;
@@ -246,6 +253,8 @@ export class HeadlessScene implements NativeBridge {
   bindTexture(imgid: number, slot: number): void {
     this.slotImgid.set(slot, imgid);
     this.proceduralSlots.delete(slot); // 绑定了文件图像 ⇒ 不再是程序化纹理
+    // ★`0x1F9`（sub_422CB0 raw 31211-31221）在开文件之前先销毁 `Engine[slot + 94672]` 的旧对象
+    this.slotNodes.delete(slot);
   }
 
   /**
@@ -262,9 +271,18 @@ export class HeadlessScene implements NativeBridge {
     return out;
   }
 
+  /**
+   * `0x1FA` release-texture（`sub_422E00` raw 31245-31268 → `sub_49E980` raw 119586-119603）：
+   * ① 析构该槽对象；② 槽→imgid 记录写 −1、析构 CTexture 表面。
+   *
+   * ★`T-0153` 的 `0x1FA` 条目：**尺寸缓存必须一起撤**（旧实现只删 `slotImgid`/`proceduralSlots`，
+   * 于是 `0x208` 还能答出旧尺寸，而引擎此时表项为 0 ⇒ 必答 0×0，`sub_49ED60` raw 119786-119795）。
+   */
   releaseTexture(slot: number): void {
     this.slotImgid.delete(slot);
     this.proceduralSlots.delete(slot);
+    this.slotSize.delete(slot); // ★`CTexture+1040/+1044` 随表面一起没了
+    this.slotNodes.delete(slot); // ★① 该槽 movie 对象（raw 31255-31265）
   }
 
   /** `0x20D` 设置渲染目标（`tickets/T-0017`：混合选择子值 2 的门控依据）。 */
@@ -281,10 +299,34 @@ export class HeadlessScene implements NativeBridge {
     // 引擎：释放旧纹理对象并**新建**一张程序化纹理 ⇒ 该槽不再指向已绑定的文件图像，
     // 且槽上的直绘文本随新表面一起消失（`0x204` 是往"已有表面"上叠字）。
     this.proceduralSlots.add(slot);
+    // ★`0x1F8`（sub_422C20 raw 31171-31183）先销毁 `Engine[slot + 94672]` 的旧对象（与 `0x20F` 同一张表）
+    this.slotNodes.delete(slot);
     scSetSlotMode(this.scene, slot, _mode); // ★纹理创建模式（`CTexture+1048`）：混合门控只认 mode 1
     scCreateTextureReset(this.scene, slot);
     if (_w > 0 && _h > 0) this.slotSize.set(slot, { w: _w, h: _h }); // 新建表面尺寸（0x208 getter 用）
     this.note('createTexture(程序化纹理内容由 draw-string 直绘，未生成位图)', `slot=${slot} ${_w}x${_h}`);
+  }
+
+  /**
+   * **`0x20F` play-movie**（`sub_4237B0` raw 31605-31670；`0x236` 同族 `sub_4246B0` raw 32243-32288）：
+   * 惰性建该槽的对象（`Engine[slot + 94672]`，`operator new(0x480)` + `sub_489040`）。
+   *
+   * ★无头宿主**也建**这张表（旧实现连方法都没有 ⇒ `native.playMovie` 的缺口只落进 DropRecorder）：
+   * 这样 `0x23F`（读对象表）在两个宿主里是同一份判据（`T-0153` 的 `0x23F` 条目）。
+   */
+  playMovie(id: number, slot: number, mode: number): void {
+    const created = !this.slotNodes.has(slot);
+    this.slotNodes.set(slot, { kind: 'movie', id, mode });
+    this.note(`playMovie(影片对象${created ? '新建' : '复用'}，无像素)`, `id=0x${id.toString(16)} slot=${slot} mode=${mode}`);
+  }
+
+  /**
+   * **`0x23F` 的宿主侧答案**（`sub_4307B0` raw 40019-40030）：`present: false` ⇒ 引擎写 `op1 = -1`；
+   * `present: true` ⇒ 尺寸来自该槽表面（`sub_4080B0` 经 `obj[+1044]` 的子对象；语料里就是同一槽的
+   * `create-texture` 表面，`src/FIELD.txt:13718-13721`），拿不到 ⇒ 0（引擎对未分派类型返回 `0.0`）。
+   */
+  slotNodeSize(slot: number): { present: boolean; w: number; h: number } {
+    return slotNodeSizeOf(this.slotNodes.get(slot), this.slotSize.get(slot));
   }
 
   /** `0x204` draw-string：把整串文本记进该槽（无光栅化 —— headless 不做像素）。 */
@@ -419,10 +461,58 @@ export class HeadlessScene implements NativeBridge {
     if (r.nodes > 0) this.log(`clearDrawContainer: 同时清 572B 立绘节点 l2dNodes=${r.nodes}`);
   }
 
-  /** `0x32B`（sub_41A4A0）：清网格槽表（headless 只有模型 ⇒ 清 `scene.meshes`）。 */
+  /**
+   * **`0x20F` play-movie 的输入前提**：该槽有没有 CTexture 对象（引擎 `_this[4*slot + 365288]`）。
+   *
+   * 引擎体 raw 31645-31650 在该格为空时抛 `asc_520248`（"テクスチャが確保されていません"）。
+   * headless 侧的对应物 = 「`0x1F8` create-texture 建过表面」或「`0x1F9` 绑过图像」
+   * （两者都让引擎那张表有对象：前者 `operator new(CTexture)`、后者装载文件表面）；
+   * ★它**不是** `slotNodes`（那是影片对象表 `+378688`，两张表不许混）。
+   */
+  hasSlotTexture(slot: number): boolean {
+    if (this.proceduralSlots.has(slot)) return true;
+    return this.slotImgid.has(slot) || this.slotSize.has(slot);
+  }
+
+  /**
+   * `0x32B`（sub_41A4A0）：清网格槽表（headless 只有模型 ⇒ 清 `scene.meshes`）。
+   */
   clearMeshSlots(): void {
     const n = scClearMeshSlots(this.scene);
     if (n > 0) this.log(`clearMeshSlots: 释放 meshes=${n}`);
+  }
+
+  /**
+   * **`0x23D`（sub_41A300 raw 25320-25347）：销毁「slot 42..999」的影片/纹理槽**。
+   *
+   * 体两段（每轮，`v1` 从 **42** 走到 **999**）：
+   * ```c
+   * if ( *v3 ) { sub_488FB0(*v3); (**v3)(*v3, 1); *v3 = 0; }   // ① Engine[94714+k] 的影片对象析构
+   * result = sub_49E980(v2, v1);                                // ② Scene 侧卸槽（raw 119586）：
+   * //   if ( !_this[a2 + 11676] ) { _this[5*a2 + 466] = -1;      //   槽→imgid 写 −1
+   * //     if ( _this[a2 + 10614] ) { 析构; _this[a2 + 10614] = 0; } }   //  CTexture 表面析构
+   * ```
+   * ★宿主侧对应物两张表**都要动**：`slotNodes`（= ①，`Engine[94672+slot]` 那张对象表）与
+   * `slotImgid`/`proceduralSlots`（= ② 的槽记录）。
+   *
+   * ★**不删 `slotSize`**：那张表是 `0x208` 的尺寸答案缓存，`0x1FA` 释放时由
+   * `test/op-23f-slot-size.test.ts` 钉了"释放后必须答 0×0"（`T-0153`）；`0x23D` 只解绑记录、
+   * 不清尺寸缓存，行为与 `0x259`（只清标志位）一致 —— 语料 **203 处** `i23d`，但没有一条
+   * 能与"槽 42..999 的尺寸查询"配对，所以这里按引擎体只做 ①②。
+   *
+   * ★`T-0164`：本方法**此前两个宿主都没有** ⇒ 这条指令的 958 个槽的绑定与对象全部留存。
+   */
+  releaseMovieSlots(): void {
+    let nodes = 0;
+    let bindings = 0;
+    for (let slot = 42; slot < 1000; slot++) {
+      if (this.slotNodes.delete(slot)) nodes++;
+      if (this.slotImgid.delete(slot)) bindings++;
+      this.proceduralSlots.delete(slot);
+    }
+    this.log(
+      `releaseMovieSlots 42..999：析构影片对象 ${nodes} 个、解绑槽→imgid 记录 ${bindings} 条（引擎 raw 25331-25343）`,
+    );
   }
 
   /**

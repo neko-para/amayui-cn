@@ -247,6 +247,37 @@ export interface SceneState {
    */
   sceneRotRad: number;
   /**
+   * ★★**`i229` 的「区间门」起点 `Scene+1112`**（`tickets/T-0154`）。
+   *
+   * 引擎读端 = RenderScene raw 133397-133401（`if ((a3 & 1) == 0) { v11 = *(Scene+1112);
+   * if (a2 >= v11 && a2 < v11 + *(Scene+1116)) { … 乘 Scene 世界矩阵 … } }`）与帧提交
+   * raw 134872-134874 —— ⇒ **区间外的层连乘都不乘**（"吃不吃 Scene 世界矩阵"这一层门），
+   * 区间内的层再按 `(层号−20) > 9` 分支（`[20,30)` 走 decompose 压 2D，其余走完整 3D 矩阵）。
+   * 写端 = `sub_49A6C0`（raw 117098-117099，= `0x229` 的 op1/op2）；exe 初值 = **(0,0)**
+   * （`sub_498B60` 之后的 raw 115834-115835）⇒ 没下发过 `i229` 时**谁都不吃**。
+   *
+   * ★口径（本仓的有意近似，见 `ops.ts` 的 `sceneLayerInGate`）：emulator 的 2D 合成把区间内的
+   * 两支折成同一个 2D 仿射 ⇒ 判据取**并集**（`sceneLayerAffected(layer) || sceneLayerInGate(...)`），
+   * 于是"区间关着时 [20,30) 仍吃变换"这条修前行为被保留（= 已披露的残留偏差）。
+   */
+  sceneLayerStart: number;
+  /**
+   * ★**区间门的跨度 `Scene+1116`**（`i229` 的 op2；与 `sceneLayerStart` 一起构成半开区间
+   * `[start, start+count)`）。写端同 `sub_49A6C0` raw 117098-117099，读端同 raw 133401。
+   */
+  sceneLayerCount: number;
+  /**
+   * ★**Scene 变换记录的 pivot**（引擎模板 `Scene+1120` 的 `+24/+28/+32`；写端 = `i229` 的
+   * op3/op4/op5 → `sub_49A6F0` raw 117109-117112）。
+   *
+   * 消费链（逐字）：`sub_49AA30` raw 117368-117371 取 `a2[6..8]` → 117425-117429 把
+   * `T(−pivot)` **乘在最前面**，收尾 raw 117932 再把 `T(+pivot)` 乘在最后
+   * ⇒ 净效果 = **绕该点做缩放/旋转**（共轭 `T(−p)·M·T(+p)`）。语料里它不是常数：
+   * `REIGN.txt:3241` 的 `i229 64 9b78 280 2d0 0` = pivot (640,720)、
+   * `$5$SC0370.txt:9138` 的 `i229 1 (local-int 0) 280 168 0` = pivot (640,360)。
+   */
+  scenePivot: { x: number; y: number; z: number };
+  /**
    * ★★**3D 天气/粒子效果管理器**（引擎 `Scene+50704`，`operator new(0x4F4)`，`sub_4530B0` 构造；
    * 创建点 = `sub_4A6EE0` raw 126541-126545）—— 审计 §4.2 #21 / #18 的核心缺口。
    *
@@ -393,6 +424,14 @@ export function newSceneState(): SceneState {
     // ★Scene 自己的"绕轴旋转"角（引擎 `Scene+1856`，raw 133427）：反编译里**无写点** ⇒ 默认 0
     //   （恒等旋转 = 与修前逐字节相同），由宿主经 `scSetSceneRotationRad` 注入实测值。见 `sceneRotRad` 说明。
     sceneRotRad: 0,
+    // ★`i229` 的区间门：exe 初值 = (0,0)（Scene Initialize raw 115834-115835
+    //   `*(_DWORD *)(_this + 1112) = 0; *(_DWORD *)(_this + 1116) = 0;`）⇒ 没下发过 `i229` 时
+    //   区间为空；`sceneAffine2DOf` 取并集判据 ⇒ 该初值不改变修前的 [20,30) 行为（见字段说明）。
+    sceneLayerStart: 0,
+    sceneLayerCount: 0,
+    // ★模板 `+24/28/32` 的 pivot：`sub_49A300`（模板复位）把它清 0（raw 116904-116906），
+    //   于是"没下发过 i229 ⇒ pivot = 原点" ⇒ 共轭 `T(0)·M·T(0)` = `M`，与修前逐字节相同。
+    scenePivot: { x: 0, y: 0, z: 0 },
     // ★3D 天气/粒子管理器（`Scene+50704`）：新建场景 = 管理器已建、三效果槽全空（`sub_4530B0` raw 65353-65355）。
     weather: newWeatherManager(),
     // ★`0x222` 的区间队列（见字段说明）：新场景 = 没有脚本点名过任何区间。

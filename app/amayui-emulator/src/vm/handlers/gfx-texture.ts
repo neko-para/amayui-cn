@@ -7,6 +7,7 @@
 import type { OpHandler, StepCtx } from '../step.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
+import { ENGINE_FIELD } from '../engineFieldIds.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -78,6 +79,21 @@ const op_get_texture_size: OpHandler = (c) => {
  * ⇒ 与 `0x1F9` 同样是"槽 ↔ 图像"绑定，但**先释放旧槽对象**、带颜色、且**失败会抛异常**。
  * 语料：`i249` **20 处 / 8 个脚本**（`BTL` 7 / `ALLMAP` 3 / `MOVERUIN` 3 / `SHOWALLMAP` 3 / `ADDEXP` 1 …）。
  *
+ * ★**`0x249` 与 `0x1F9` 在槽记录上的差别**（`T-0153` 的 VM 半边，raw 32757 / 31232）：
+ * `sub_4A3800(Scene, imgid, hFile, slot, color, a6)` 的**第 6 参**在这里是 **1**、在 `0x1F9` 是 **0**；
+ * callee（raw 123373-123381）写的是
+ * ```c
+ * if ( a6 ) v7[466] = -1; else v7[466] = a2;   // v7 = &Scene[5*slot]
+ * v7[467] = a5;                                // ★颜色进 `Scene[5*slot+467]`
+ * _this[5 * a4 + 470] = 0;                     //   槽状态清 0
+ * ```
+ * ⇒ **`0x249` 把槽→imgid 记录写成 −1**（不是 imgid！），`0x1F9` 才写 imgid。
+ * ★emulator 现状与本条的偏差（**如实登记，未修**）：本 handler 把 `texSlots` 写成 `imgid`，
+ * 并走宿主的 `bindTexture`/`setTextureObjectParam`（与 `0x1F9` 同路）—— 即 `a6` 这一位在
+ * `NativeBridge.bindTexture` 上没有对应参数（见 `changes-renderer.md` §1 ① 的"装载路径也建
+ * DividedTexture"同族缺口）。要精确复刻需给宿主缝加"类/记录策略"参数（跨 renderer 半边），
+ * 记在 `tickets/T-0153/changes-texvm.md` 的「待应用/耦合」节。
+ *
  * **emulator 取舍**：槽绑定 + 「已使用」标记 + `native.bindTexture` 与 `0x1F9` 一致；
  * 「文件不存在 ⇒ 抛 `画像ファイル %s の読み込みに失敗しました`」这条**归宿主**（`FileSource` 是异步接口，
  * handler 不能同步探测；宿主 `bindTexture` 拿不到图时按自己的缺口通道报告）。
@@ -105,33 +121,52 @@ const op_load_texture_by_id: OpHandler = (c) => {
  * （把 op2 按常量缩放后写进对象的浮点字段）。emulator 无 CTexture 对象 ⇒ 转发给宿主的
  * 纹理对象参数缝（未实现该缝的宿主只当"记录"）。
  * 语料 0 处，但它是"对象属性面"的一员，且会写宿主可见的对象状态，故不 no-op。
+ *
+ * ★**单位**（`T-0153` 的 VM 半边，raw 32672-32673）：下发给宿主的必须是 `op2 / 1000`
+ * —— `dbl_51FB50 = 1000.0`（raw **4393**）。修前把 `op2` **原值**直传 ⇒ 单位差 **1000 倍**
+ * （同一个物理量的另一条 `0x246` 是 ÷100，两族**不是同一个常量**，不许合并）。
  */
 const op_texture_obj_float: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(1) ?? 0);
   const value = (plan.int(2) ?? 0);
-  c.native.setTextureObjectFloat?.(slot, value);
+  c.native.setTextureObjectFloat?.(slot, value / 1000);
 };
 
 /**
  * `0x246`（`sub_425250` raw 32680-32700）：**纹理对象子对象的 vtable+56 调用**。
  *
- * 引擎：`obj = Engine[op1+94672]`；若 `*(obj+1084) == dword_52839C`（对象类型判定）
- * 则 `(**(obj+1044))+56` 用 `op2 / dbl_5201F0`（÷100，`dbl_5201F0` = 缩放常量）调用。
- * 即"对纹理对象的某个子对象下发一个浮点参数"。emulator 同 `0x245`：转发宿主缝。
+ * 引擎两道门：① `obj = Engine[op1+94672]` 存在；② `*(obj+1084) == dword_52839C`（= **0**，raw 4867）
+ * ⇒ `(**(obj+1044))+56` 用 `op2 / dbl_5201F0`（**÷100**）调用。
+ * emulator 同 `0x245`：转发宿主缝。
+ *
+ * ★**单位**（`T-0153` 的 VM 半边，raw 32696-32697）：`dbl_5201F0 = 100.0`（raw **4430**）⇒ 下发 `op2 / 100`。
+ * 修前原值直传 ⇒ 单位差 **100 倍**。
+ * ★**未建模的缺口（如实登记，未修）**：上面那两道门 emulator **都没有** ——
+ *  (a) "对象存在"这一道：VM 侧没有 `Engine[slot+94672]` 的表（`0x236` 的 handler 尚未注册，
+ *      见 `changes-texvm.md` 的待应用节）；②"类型标记 == 0"这一道：宿主缝只收 `(slot, value)`，
+ *      拿不到 `obj[+1084]`，所以**无从判**。★另注：本缝与 `0x1F9`/`0x249` 的**颜色**载荷共用
+ *      （同一个 `setTextureObjectParam`）—— 那是两个不同的引擎动作（颜色进 `Scene[5*slot+467]`，
+ *      这里是子对象 vtable 调用），宿主侧无法分辨；已在报告里登记为与 renderer 半边的耦合点。
  */
 const op_texture_obj_param: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(1) ?? 0);
   const value = (plan.int(2) ?? 0);
-  c.native.setTextureObjectParam?.(slot, value);
+  c.native.setTextureObjectParam?.(slot, value / 100);
 };
 
 /**
  * `0x1F8` create-texture（sub_422C20, raw 31161）：读 op1=槽、op2/op3/op4（w/h/mode）；
- * 引擎**先释放该槽旧纹理对象**（`_this[slot+94672]`：`sub_488FB0` + vtable delete + 置 0），
+ * 引擎**先释放该槽旧纹理对象**（`_this[slot+94672]`：`sub_488FB0` + vtable delete + 置 0，raw 31173-31183），
  * 再 `sub_4A2C10(_this+80708, slot, w, h, mode)` 新建 ⇒ 程序化/空白纹理（非文件图像）。
  * emulator：转发 `native.createTexture`（渲染器侧刷新该槽图像缓存）。
+ *
+ * ★**槽记录被擦成 −1**（`T-0153` 的 VM 半边）：`sub_4A2C10` 的第一件事是
+ * `*(_DWORD *)(_this + 20 * a2 + 1864) = -1;`（raw **122847**）= `Scene[5*slot + 466]`
+ * ——就是 `0x1F9` 写 imgid（raw 123379）、`0x1FA` 写 −1（raw 119594）、`0x215`/`0x216` 读的那一格。
+ * ⇒ 建新表面时该槽的 imgid 记录**必须被擦掉**：留着旧 imgid 会让 `0x215` 反查出已不存在的绑定。
+ * 另两格（颜色 `Scene[5*slot+467]`、槽状态 `Scene[5*slot+470]=1`，raw 122847-122848）见族注释。
  */
 const op_create_texture: OpHandler = (c) => {
   const plan = planFor(c);
@@ -139,38 +174,62 @@ const op_create_texture: OpHandler = (c) => {
   const w = (plan.int(2) ?? 0);
   const h = (plan.int(3) ?? 0);
   const mode = (plan.int(4) ?? 0);
-  c.e.texSizes.set(slot, [w, h]); // 见 `Engine.texSizes`（0x23F 的尺寸来源）
+  c.e.texSlots.set(slot, -1); // raw 122847：`Scene[5*slot+466] = -1`（槽记录，与 0x1F9/0x1FA 同一格）
+  c.e.texSizes.set(slot, [w, h]); // 见 `Engine.texSizes`（渲染侧表面尺寸的 VM 镜像，供诊断/报告）
   c.native.createTexture?.(slot, w, h, mode);
 };
 
 /**
  * **`0x23F`**（`sub_4307B0` raw 40019-40031，argc 2）：**`op1 = 槽 op2 的尺寸 ×1000；缺 ⇒ −1`**。
  *
- * 引擎体：`v2 = _this[sub_41BF50(_this, 2) + 94672]`（按 op2 取对象）；`v2 == 0` ⇒ `op1 = -1`，
- * 否则 `op1 = (int)(sub_4080B0(v2) * 1000.0)`（`dbl_51FB50 = 1000.0`，raw 4393；`sub_4080B0` = 该对象的
- * 尺寸 getter，体 raw 12960-12980，按 `node[+1084]` 分派 vtable `+40`/`+68`）。
+ * 引擎体：`v2 = _this[sub_41BF50(_this, 2) + 94672]`（按 op2 取**对象表** `Engine+4*slot+378688` 的格）；
+ * `v2 == 0` ⇒ `op1 = -1`（raw 40025-40027），否则 `op1 = (int)(sub_4080B0(v2) * 1000.0)`
+ * （`dbl_51FB50 = 1000.0`，raw 4393；`sub_4080B0` = 该对象的尺寸 getter，体 raw 12960-12980，
+ * 按 `node[+1084]` 分派 vtable `+40`/`+68`，**都不是 ⇒ 返回 `0.0`** ⇒ ×1000 = 0，**不是** −1）。
  * ★**语料**：`0x23F` 3 处（FIELD×2、BTL×1），且 `op2` 是**刚 `create-texture` 出来的槽**
- * （`src/FIELD.txt:13718-13721`：`create-texture 2a 78 78 0` → `i23f (local-int 80e8) 2a`），
+ * （`src/FIELD.txt:13718-13721`：`create-texture 2a 78 78 0` → `i236` → `i23f (local-int 80e8) 2a`），
  * 该纹理 120×120 = **正方形** ⇒ **`sub_4080B0` 对应宽还是高，本文语料不可分辨**（如实披露，不猜）。
  * `0x23E`（`sub_430750`，同族另一半）**语料 0 处** ⇒ 登记 `deferred`。
- * emulator 侧尺寸来自 `0x1F8` 建槽时记下的 `Engine.texSizes`（AGF 载入的槽在 VM 侧无尺寸 ⇒ 同样回 −1）。
+ *
+ * ★`T-0153` 的 VM 半边接线：尺寸来源从"`0x1F8` 记的 `Engine.texSizes`"改成**宿主的对象表**
+ * （`native.slotNodeSize`，两宿主同一份判据 `renderer/slotSurface.ts` 的 `slotNodeSizeOf`，
+ * 由本票 renderer 半边交付）。修前本 handler 只信 `Engine.texSizes` ⇒ 对**没有对象**的槽
+ * （AVG 载入的槽、或 `0x236` 建的对象——`0x236` 尚未注册）也答出一个尺寸，与引擎的 −1 相反。
+ * 宿主**没实现**该缝 ⇒ 按"没有对象"答 −1（并留一条闸门 A 缺口），**不许**静默答 0。
  */
 const op_get_slot_size: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(2) ?? 0);
-  const sz = c.e.texSizes.get(slot);
-  if (!sz) {
-    plan.setInt(1, -1);
+  const node = c.native.slotNodeSize?.(slot);
+  if (!node?.present) {
+    plan.setInt(1, -1); // raw 40025-40027：`if (!v2) return sub_42B4B0(_this, 1, -1);`
     return;
   }
-  plan.setInt(1, Math.trunc(sz[0] * 1000));
+  // raw 40028-40029：`v3 = sub_4080B0(v2) * dbl_51FB50;`（`(int)` 截断）
+  plan.setInt(1, Math.trunc(node.w * 1000));
 };
 
+/**
+ * `0x1FA` release-texture（`sub_422E00` raw 31245-31268）：
+ * ① 先销毁该槽的 movie 对象（`_this[op1 + 94672]`，raw 31255-31265）；
+ * ② `sub_49E980(_this + 80708, op1)`（raw 119586-119603）**整体挂在外层门下**：
+ * ```c
+ * if ( !_this[a2 + 11676] ) {            // ★raw 119591：门关 ⇒ 下面两件都不做
+ *   _this[5 * a2 + 466] = -1;            //   槽→imgid 记录写 −1（`0x216` 读的就是这一格）
+ *   if (_this[a2 + 10614]) { 析构; _this[a2 + 10614] = 0; }   //   CTexture 表面
+ * }
+ * ```
+ * ⇒ emulator 侧：门关时**不写槽记录、不删尺寸镜像**（两者都是"门内那两件"的建模）；
+ * 宿主侧的释放调用仍然下发（`0x1FA` 的第①步在门外，与 `Engine[slot+94672]` 那张对象表同属宿主）。
+ */
 const op_release_texture: OpHandler = (c) => {
   const plan = planFor(c);
   // 0x1FA：op1=layer。
   const layer = (plan.int(1) ?? 0);
-  c.e.texSizes.delete(layer); // 见 `Engine.texSizes`
+  // ★raw 119591：`if (!_this[a2 + 11676])` —— 门关 ⇒ 记录与表面清理整块跳过（返回未初始化的 result）
+  if ((c.e.engineValues.get(ENGINE_FIELD.surfaceReleaseGate + layer) ?? 0) !== 0) return;
+  c.e.texSlots.set(layer, -1); // raw 119594：`_this[5*a2 + 466] = -1`
+  c.e.texSizes.delete(layer); //   同一块的"表面尺寸"这一面（渲染侧的表由宿主撤）
   c.native.releaseTexture?.(layer);
 };
 

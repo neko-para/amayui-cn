@@ -41,7 +41,7 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, writeIntOperand } from '../operand.js';
 import { cfgInt } from '../../engineConfig.js';
-import { CFG } from '../../configRegistry.js';
+import { CFG, registryDefault } from '../../configRegistry.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -58,13 +58,22 @@ function planFor(c: StepCtx): PlannedOperands {
  * `0x19D`：`op1 ← 统一文件 id op2 是否已被打开过`（0/1）。
  * 扩展包资源（高字节 ≠ 0）在 `set:SaveVersion1 < 3`（或 `== 3` 且 `SaveVersion2 < 10`）时恒 0
  * （引擎的"旧存档不认扩展包资源"门，raw 38275-38281）。
+ *
+ * ★**缺键时取的是注册表内建默认，不是 0**（`T-0164` 的 P2 条目，raw 38277-38278）：
+ * 体里的 `v2 = (*(_this[174405] + 4))(_this + 174405, aSetSaveversion)` 就是 `GetConfig`
+ * （`sub_4072F0` 一族）—— 引擎的注册表在**键不存在**时返回的是 `sub_434D00` 注册时写下的
+ * **内建默认**（`set:SaveVersion1` 的默认 = **1**，见 `configRegistry.ts` 的
+ * `CONFIG_REGISTRY_DEFAULTS` 与 `registryDefault()`）。旧实现写 `cfgInt(..., 0)` ⇒ 缺键得 0，
+ * 于是 `v1 < 3` 的门虽然**结论相同**（0 与 1 都 < 3），但与 `v1 = 2` 的真实旧档无法区分，
+ * 一旦默认值或门限变动就会静默选错分支 —— 这正是"缺省不等于引擎默认"这一类缺陷（`tickets/T-0065`）。
  */
 const op_file_used_query: OpHandler = (c) => {
   const plan = planFor(c);
   const id = (plan.int(2) ?? 0);
   if ((id & 0xff000000) !== 0) {
-    const v1 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion1, 0) : 0;
-    const v2 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion2, 0) : 0;
+    // ★缺键 ⇒ 引擎内建默认（`set:SaveVersion1 = 1`），不是 0
+    const v1 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion1, registryDefault(CFG.setSaveVersion1)) : registryDefault(CFG.setSaveVersion1);
+    const v2 = c.e.config ? cfgInt(c.e.config, CFG.setSaveVersion2, registryDefault(CFG.setSaveVersion2)) : registryDefault(CFG.setSaveVersion2);
     if (v1 < 3 || (v1 === 3 && v2 < 10)) {
       plan.setInt(1, 0);
       return;

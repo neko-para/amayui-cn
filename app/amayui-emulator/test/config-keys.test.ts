@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CFG, CONFIG_REGISTRY_KEYS, DYNAMIC_INI_KEY_PATTERNS, isRegistryKey } from '../src/configRegistry.js';
+import { CFG, CONFIG_REGISTRY_DEFAULTS, CONFIG_REGISTRY_KEYS, DYNAMIC_INI_KEY_PATTERNS, isRegistryKey } from '../src/configRegistry.js';
 import { cfgBool, cfgEquals, cfgInt, parseIni } from '../src/engineConfig.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -87,4 +87,40 @@ test('cfgBool / cfgEquals 的语义：非 0 vs 精确相等', () => {
   assert.equal(cfgInt(cfg, CFG.soundKeepMusicVolume, -1), 2);
   assert.equal(cfgInt(cfg, CFG.setWheelKeyDown, -1), -1, '缺键 ⇒ fallback');
   assert.equal(cfgEquals(cfg, CFG.setDrawMode, 0), true);
+});
+
+/**
+ * ★**权威键表自身不得有重复 key**（`tickets/T-0161` 读体时发现的在飞缺陷）。
+ *
+ * 为什么这是**静默**缺陷（两个消费点方向**相反**）：
+ *  1. `CONFIG_REGISTRY_DEFAULTS = new Map(CONFIG_REGISTRY_KEYS.map(...))` ⇒ **后写者胜**
+ *     （`registryDefault()` 拿到靠后那条的 `def`）；
+ *  2. `engineConfig.ts` 的 `formatIni()` 用 `seen` 去重 ⇒ 写进 INI 的是**先出现那条**的 `def`；
+ *  3. 外加表头声明的契约「顺序 = `sub_491880` 构造顺序」也被重复项破坏。
+ * ⇒ 同一个"内建默认值"在同一份表里给出**两个答案**，谁都不报错。
+ * 实测形态：`set:DependMovieSound` 被加了第二条（sound 段，`def: 0`），原条目是 `def: 1`
+ * ⇒ 新玩家首跑的 INI 得到 0、而 `registryDefault()` 返回 1。
+ * 引擎真值：raw 111734-111735 `v13 = 1; sub_434D00(v2, aSetDependmovie, &v13);`（注册顺序 = raw 111728-111739：
+ * TexHeight → CreateObject → DrawMode → DependMovieSound → WheelKeyUp → WheelKeyDown）⇒ 只应保留 `def: 1`。
+ *
+ * 第二条判据（`size === length`）抓"Map 静默去重"这一形态：即使将来重复项写成不同大小写
+ * （查询一律小写、Map 键也是小写）⇒ size 一样会变小。
+ */
+test('权威键表不得有重复 key（Map 后写者胜 vs formatIni 先写者胜 = 默认值静默分叉）', () => {
+  const seen = new Map<string, number>();
+  for (const { key } of CONFIG_REGISTRY_KEYS) {
+    const k = key.toLowerCase(); // 键表语义大小写不敏感（查询统一小写）
+    seen.set(k, (seen.get(k) ?? 0) + 1);
+  }
+  const dupes = [...seen].filter(([, n]) => n > 1).map(([k, n]) => `${k} ×${n}`);
+  assert.deepEqual(
+    dupes,
+    [],
+    `键表里有重复键（registryDefault 取靠后那条、formatIni 取靠前那条 ⇒ 内建默认值分叉；表头还声明"顺序=构造顺序"）：${dupes.join(' ')}`,
+  );
+  assert.equal(
+    CONFIG_REGISTRY_DEFAULTS.size,
+    CONFIG_REGISTRY_KEYS.length,
+    'Map 化后条目数变少 ⇒ 有重复 key 被静默去重（后写者胜）',
+  );
 });

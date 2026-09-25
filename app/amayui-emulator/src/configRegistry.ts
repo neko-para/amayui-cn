@@ -88,6 +88,12 @@ export const CONFIG_REGISTRY_KEYS: readonly RegistryKey[] = [
   { key: 'sound:MusicFadeOnVoicePlayingVolume', kind: 'int', def: 50 },
   { key: 'set:KeepMusicVolume', kind: 'int', def: 0 },
   { key: 'set:TransferMusicVolume', kind: 'int', def: 0 },
+  // ★`set:DependMovieSound` **只有一条**（原来的那条，`def: 1`），位置由 `sub_491880` 的构造顺序决定：
+  //   raw 111728-111739 依次注入 TexHeight=2048 → CreateObject=1 → DrawMode=0 → **DependMovieSound=1**
+  //   （raw 111734-111735 `v13 = 1; sub_434D00(v2, aSetDependmovie, &v13);`）→ WheelKeyUp=3 → WheelKeyDown=1。
+  //   `tickets/T-0161`：曾在 sound 段误加第二条 `def: 0` ⇒ **默认值静默分叉**（`registryDefault` 走 Map ⇒
+  //   后写者胜 = 1；`formatIni` 的 `seen` ⇒ 先写者胜 = 0），守卫见 `test/config-keys.test.ts` 的
+  //   "权威键表不得有重复 key"。**不要在这里再插一条。**
   { key: 'set:RegRootPath', kind: 'string', def: '' },
   { key: 'set:RegSubKey', kind: 'string', def: '' },
   { key: 'set:Copyright', kind: 'string', def: '' },
@@ -212,6 +218,22 @@ export const CFG = {
    * 随包默认 **0**（`tickets/T-0031/evidence/generated-SYS4REG.ini` 的 `BlankExtentMode=0`）⇒ 默认与网格等价。
    */
   setBlankExtentMode: 'set:BlankExtentMode',
+  /**
+   * **换曲时的音量衔接方式**（引擎 `sub_420E00` raw 29828 读它、`sub_418580` 消费）。
+   *
+   * `0xC2` 的 bit0x200 已置（= 上一段淡变还没完）时：**1** = 按 `Music[262]` 的淡变进度把
+   * `Music[264]`（当前音量运行态）插值到 `Music[265]`（新目标）；**2** = 直接跳到目标；
+   * 其余值 ⇒ `sub_418580` 不做任何事。缺省 0（raw 111xxx 的 INI 载入）⇒ 常态不触发。
+   * 见 `handlers/audio.ts` 的 `op_bgm_fade`（票 `T-0152` 的 P2 `0xc2 missing-branch`）。
+   */
+  setTransferMusicVolume: 'set:TransferMusicVolume',
+  /**
+   * **哪一类声音跟着影片播放器走**（引擎 `sub_406DF0` raw 12055/12093 读它，与传入类别比对）。
+   * 值 = 类别号（1 音乐 / 2 SE / 3 语音 / 4 影片）；等于本类别时才把该影片的
+   * `对象+1144` 写成开关值（`v4 = a3 != 0`，raw 12052）并 `sub_4879E0` 下发。
+   * 见 `handlers/audio.ts` 的 `applyDependentMovie`（票 `T-0152` 的 P2 `0x1ba missing-consumer`）。
+   */
+  setDependMovie: 'set:DependMovieSound',
   setSaveVersion1: 'set:SaveVersion1',
   setSaveVersion2: 'set:SaveVersion2',
   setGameVersion: 'set:GameVersion',

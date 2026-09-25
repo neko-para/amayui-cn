@@ -316,7 +316,7 @@
       "case0/1 等返回具体代表的转换细节"
     ],
     "evidence": "raw 26249-26293",
-    "notes": "case2 按位取反(^ ~) 拷贝疑似字符串再解码；语义名赋的，原始名 sub_41B640"
+    "notes": "case2 按位取反(^ ~) 拷贝疑似字符串再解码；语义名赋的，原始名 sub_41B640 　★T-0162：本条的每条数值路径（tag 0/1/3/4/6/9/10/12）返回前都过 `sub_41A6C0`（raw 26331/26347）做 **ASCII→全角**（本机 exe = 中文版 ⇒ GBK `0xA3xx`）。★数组 tag（`0x8003` 族）在本条里**没有 case** ⇒ `default:` 抛 `Command_Type_Exception`（raw 26355-26357，与 `sub_42A420` / `sub_41B9B0` 的关键差别）；float 指针族 tag 7/13 同样抛。逐 tag 对照表见 `tickets/T-0162/changes-c162.md` §3。"
   },
   {
     "addr": "0x418B90",
@@ -900,7 +900,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 37985-37996",
-    "notes": "纯内存拷贝；n 以元素数计，乘以 4 得字节数"
+    "notes": "纯内存拷贝；n 以元素数计，乘以 4 得字节数 　★T-0162：跨类型裸拷贝（边类型不同）在 emulator 显式抛错（缺口见 `tickets/T-0162`）。"
   },
   {
     "addr": "0x430CF0",
@@ -1189,6 +1189,12 @@
   },
   {
     "addr": "0x4ACF60",
+    "journal": [
+      {
+              "at": "2026-09（轮 7 / T-0097④）",
+              "what": "★scope 订正：本条原记 `this(Engine*)` 是错的 —— 调用点传进来的是 Scene（`Engine+0x4ED10`），体内 `_this+258`/`_this+1032` 即绘制项 map，故 param0 = Scene。"
+            }
+    ],
     "raw_name": "sub_4ACF60",
     "semantic_name": "setDrawColorAlpha_4ACF60",
     "status": "ANALYZED",
@@ -1197,7 +1203,7 @@
     "sub_behaviors": ["绘制项(_this+258) sub_4AAD40 定位", "item+48=blend(a3)", "item+96=FROM(a4)", "_this[11627]=1 脏"],
     "fields_used": ["Scene+0x408 draw_item_map（体内 _this+258）", "DrawItem.blend_mode", "DrawItem.from_color"],
     "evidence": "raw 131871-131883",
-    "notes": "与 setDrawColor_4AD0C0 配合：FROM=item+96, TO=item+100，逐帧对 item+96 做 from→to 插值。 ★scope 订正（轮 7 / T-0097④）：raw 31415 `sub_4AD0C0(_this + 80708,…)` / raw 31450 `sub_4ACF60(_this + 80708,…)`（opcode handler 的 `_this` 是 Engine）⇒ 传进来的是 Scene（`Engine+0x4ED10`）；本函数体内 `_this + 258`（dword）/`_this + 1032`（byte）即绘制项 map，故 param0 = Scene，不是 Engine。"
+    "notes": "与 setDrawColor_4AD0C0 配合：FROM=item+96, TO=item+100，逐帧对 item+96 做 from→to 插值。 param0 = **Scene**（不是 Engine）：调用点 raw 31415 `sub_4AD0C0(_this + 80708,…)` / raw 31450 `sub_4ACF60(_this + 80708,…)`（opcode handler 的 `_this` 是 Engine）⇒ 传进来的是 Scene（`Engine+0x4ED10`）；本函数体内 `_this + 258`（dword）/`_this + 1032`（byte）即绘制项 map。"
   },
   {
     "addr": "0x4AD0C0",
@@ -1229,6 +1235,12 @@
   },
   {
     "addr": "0x4AAD40",
+    "journal": [
+      {
+              "at": "2026-09（轮 7 / T-0097④）",
+              "what": "★scope 订正：本条原记 arg0 = `this(Engine*)` 是错的 —— arg0 是容器本身（各调用点传 `Scene+1032`）。"
+            }
+    ],
     "raw_name": "sub_4AAD40",
     "semantic_name": "getDrawItemNode_4AAD40",
     "status": "PARTIAL",
@@ -1247,7 +1259,7 @@
       "表节点懒初始化/树结构细节"
     ],
     "evidence": "raw 130154(定义)；setDrawColor/Alpha 与 renderPolygonMesh 均经它定位项",
-    "notes": "同族：mesh 表用 sub_40DC30(_this+266)；两者为绘制项/mesh 的持久场景图底座。★scope 订正（轮 7 / T-0097④）：arg0 是容器本身（各调用点传 `Scene+1032`，如 raw 131877 `sub_4AAD40(_this + 258, &a2)` 而该处 `_this` 是 Scene），不是 Engine；原记 `this(Engine*)`。"
+    "notes": "同族：mesh 表用 sub_40DC30(_this+266)；两者为绘制项/mesh 的持久场景图底座。 arg0 = **容器本身**（不是 Engine）：各调用点传 `Scene+1032`，如 raw 131877 `sub_4AAD40(_this + 258, &a2)` 而该处 `_this` 是 Scene。"
   },
   {
     "addr": "0x422E70",
@@ -1277,6 +1289,12 @@
   },
   {
     "addr": "0x41ACD0",
+    "journal": [
+      {
+              "at": "2026-09（T-0047）",
+              "what": "★订正：原结论「`Engine[429812]` 恒 0、`effect_flags & 0x8000000` 无额外影响」是错的 —— 该格 = 最后一次 `mouse-callback`(0xCC) 的 op1（`sub_453A60` 写），故 ADV 里这一位是**旁路节流**。"
+            }
+    ],
     "raw_name": "sub_41ACD0",
     "semantic_name": "op_get_input_type_41ACD0",
     "op": "0xCD",
@@ -1295,7 +1313,7 @@
     ],
     "unmodeled": "[\"Engine+430656/430696 语义未定\",\"+388772 区（帧返回栈）未进 fields.json\"]",
     "evidence": "raw 25827-25876",
-    "notes": "★订正（T-0047）：`Engine[429812]`（节流间隔）**不是恒 0** —— 它是最后一次 `mouse-callback`(0xCC) 的 op1（`sub_453A60` 写，操作数十进制/十六进制见 0xCC 条目：`10`=16ms、`32`=50ms）。因此 `effect_flags & 0x8000000`（ADV 激活）这一位的作用是**在 ADV 里旁路节流**（ADV 每次调用都推进），不是\"无额外影响\"。emulator 已按此建模（`InputManager.advanceThrottle`，tickets/T-0047）。"
+    "notes": "`Engine[429812]`（节流间隔）= 最后一次 `mouse-callback`(0xCC) 的 op1（`sub_453A60` 写，操作数十进制/十六进制见 0xCC 条目：`10`=16ms、`32`=50ms）。因此 `effect_flags & 0x8000000`（ADV 激活）这一位的作用是**在 ADV 里旁路节流**（ADV 每次调用都推进）。emulator 已按此建模（`InputManager.advanceThrottle`，tickets/T-0047）。"
   },
   {
     "addr": "0x421980",
@@ -2691,6 +2709,12 @@
   },
   {
     "addr": "0x4192F0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：原记「`i0ae` 语料 0 处」是**漏计** —— 实际 339 处（脚本入口都有它）。"
+            }
+    ],
     "raw_name": "sub_4192F0",
     "semantic_name": "op_version_branch_4192F0",
     "op": "0xAE",
@@ -2701,7 +2725,7 @@
     "fields_used": ["this->_this[140457/151210](版本2/3目标帧)", "this->cur_script", "this->_this+174405(配置对象)"],
     "unmodeled": ["版本->目标帧/装载映射细节", "_this[140457/151210/129624] 写入方"],
     "evidence": "raw 24634-24773（io 分支 24665-24700、sv1==3 分支 24702-24736）",
-    "notes": "★订正：旧文档写『语料 0 处』是漏计 —— i0ae 实际 339 处（脚本入口都有它：src/SYSTEM4.txt:143、src/\\\\.txt:1003，形如 label: i0ae / 循环）。表 A/B/C = 当前帧那份脚本自己的三张表（0x71 消息 / 0x3 call-script / 0x8F call，见 loadScriptFrame_40ED40 与 script/bin.ts 的 ipTables）。emulator 已按同形状实现（handlers/frame.ts 的 op_save_version_branch + Engine.saveResume）。"
+    "notes": "`i0ae` 实际 **339 处**（脚本入口都有它：src/SYSTEM4.txt:143、src/\\\\.txt:1003，形如 label: i0ae / 循环）。表 A/B/C = 当前帧那份脚本自己的三张表（0x71 消息 / 0x3 call-script / 0x8F call，见 loadScriptFrame_40ED40 与 script/bin.ts 的 ipTables）。emulator 已按同形状实现（handlers/frame.ts 的 op_save_version_branch + Engine.saveResume）。"
   },
   {
     "addr": "0x41AB80",
@@ -2810,6 +2834,12 @@
   },
   {
     "addr": "0x431FC0",
+    "journal": [
+      {
+              "at": "2026-09（T-0076 acceptance #3）",
+              "what": "★订正：原注写「构造默认 1」是**错的** —— 注册表对象构造 `sub_491880` 里是 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw 111578-111579）⇒ 内建默认 0。"
+            }
+    ],
     "raw_name": "sub_431FC0",
     "semantic_name": "op_get_effect_skip_431FC0",
     "op": "0x306",
@@ -2820,7 +2850,7 @@
     "fields_used": ["this->config_registry(_this[174405])"],
     "unmodeled": [],
     "evidence": "raw 40948-40951 (sub_431FC0)",
-    "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按**引擎内建默认 0**（注册表对象构造 sub_491880 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw 111578-111579），与 configRegistry.ts 的 def: 0 一致；旧注「构造默认 1」是错的，见 tickets/T-0076 acceptance #3）"
+    "notes": "emulator：op_get_effect_skip 读启动加载的 SYS4REG.INI；键缺失按**引擎内建默认 0**（注册表对象构造 sub_491880 的 `v13 = 0; sub_434D00(v2, aSystemEffectsk, &v13);`（raw 111578-111579），与 configRegistry.ts 的 def: 0 一致）"
   },
   {
     "addr": "0x42F560",
@@ -2844,6 +2874,12 @@
   },
   {
     "addr": "0x4ACEE0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★归属订正：本条 handler 是 `sub_423BA0`（注册偏移 678144 ⇒ opcode 0x219）；原注写成了 0x21E。"
+            }
+    ],
     "raw_name": "sub_4ACEE0",
     "semantic_name": "drawItemSetPosition_4ACEE0",
     "op": "0x219",
@@ -2864,7 +2900,7 @@
       "绘制期 CTexture::Draw 的 order 归一化分支（order∈[20,30)）"
     ],
     "evidence": "raw 131843-131856 (sub_4ACEE0)、raw 31807-31820 (op 0x219 handler sub_423BA0)、raw 133443 (sub_4AEEA0 读 &v26[9])",
-    "notes": "★归属修正：handler 是 sub_423BA0（注册偏移 678144 ⇒ opcode 0x219），旧注把它写成 0x21E。"
+    "notes": "handler 是 `sub_423BA0`（注册偏移 678144 ⇒ opcode **0x219**）。"
   },
   {
     "addr": "0x4ACF20",
@@ -2891,6 +2927,12 @@
   },
   {
     "addr": "0x49A150",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原记为「网格项清除」是**错的** —— op1 是灯光索引（0..9），体内是 `Scene+54708+4*op1` + `IDirect3DDevice9::LightEnable`。"
+            }
+    ],
     "raw_name": "sub_49A150",
     "semantic_name": "lightEnable_49A150",
     "op": "0x32F",
@@ -2911,7 +2953,7 @@
       "灯光对最终画面的影响（emulator 无灯光模型）"
     ],
     "evidence": "raw 116741-116748 (sub_49A150)、raw 34117-34121 (handler sub_4272B0)、raw 116726-116736 (sub_49A080=SetLight)",
-    "notes": "★重大修正：旧文档把它写成「网格项清除」。op1 是**灯光索引**，不是纹理槽/图元 id。emulator：native.setLight（记录）。"
+    "notes": "op1 是**灯光索引**（0..9），不是纹理槽/图元 id。emulator：native.setLight（记录）。"
   },
   {
     "addr": "0x41A090",
@@ -2964,6 +3006,17 @@
   },
   {
     "addr": "0x41A300",
+    "journal": [
+        {
+          "at": "2026-09",
+          "what": "★订正：本条原标「停靠标志/纹理槽释放」是错的 —— 实际是 movie+槽 42..999 释放，不碰停靠标志。"
+        },
+        {
+          "at": "2026-09-25（T-0164 复核）",
+          "field": "purpose",
+          "what": "沿革（不进渲染字段）：raw 区间与两个子行为已逐行复核通过（raw 25327 帧状态槽 = 1；25333-25341 逐槽析构 `sub_488FB0` + vtable[0](obj,1) + 表项置 0；25342 `sub_49E980(Scene, i)` 解绑槽；`v1 = 42` / `while (v1 < 1000)` ⇒ 槽 41 与 1000 都在区间外），本轮只补 journal，不改渲染字段。"
+        }
+      ],
     "raw_name": "sub_41A300",
     "semantic_name": "op_release_movie_slots_41A300",
     "op": "0x23D",
@@ -2983,10 +3036,16 @@
       "sub_49E980 的槽记录复位细节"
     ],
     "evidence": "raw 25320-25355 (sub_41A300)、raw 25411-25430 (sub_41A4A0)",
-    "notes": "★修正：旧文档把 0x23D 标成\"停靠标志/纹理槽释放\"；实际是 movie+槽释放，**不碰**停靠标志。emulator：native.releaseMovieSlots（记录）。"
+    "notes": "实际是 movie+槽释放，**不碰**停靠标志。emulator：native.releaseMovieSlots（记录）。"
   },
   {
     "addr": "0x41A3A0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原记为「纹理槽释放」是错的 —— 它只清记录（不 delete 对象）。"
+            }
+    ],
     "raw_name": "sub_41A3A0",
     "semantic_name": "op_clear_slot_records_41A3A0",
     "op": "0x259",
@@ -3005,7 +3064,7 @@
       "这些记录项的确切用途（imgid/flagA/flagB/blank 语义由 re-texture.md 给出）"
     ],
     "evidence": "raw 25357-25390 (sub_41A3A0)",
-    "notes": "★修正：旧文档把它当\"纹理槽释放\"；它只清记录。emulator：native.clearSlotRecords（记录）。"
+    "notes": "它只清两张 1000×2 组槽记录表（不 delete 对象）。emulator：native.clearSlotRecords（记录）。"
   },
   {
     "addr": "0x41A4A0",
@@ -3422,6 +3481,12 @@
   },
   {
     "addr": "0x41ED80",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原注「显示一段消息文本」易被读成「呈现已入队文本」；真语义 = 「开始一段新消息」，文本由随后的 0x6E(show-text) 写入。"
+            }
+    ],
     "raw_name": "sub_41ED80",
     "semantic_name": "op_message_show_41ED80",
     "op": "0x71",
@@ -3446,15 +3511,21 @@
       "sub_45EC60/sub_48FFB0/sub_48E870/sub_48F000 已另立条目，但其下游（sub_48FBB0 等）未分析"
     ],
     "evidence": "raw 28419-28473",
-    "notes": "★2026-09 复核：0x71 的语义 = 「开始一段新消息」（先清窗再判显示态）；旧注「显示一段消息文本」易被读成「呈现已入队文本」。文本内容由随后的 0x6E(show-text) 写入（CONFIG.txt:171-179 / CONFIG1.txt:2916-2932 即此顺序）。"
+    "notes": "0x71 的语义 = 「开始一段新消息」（先清窗再判显示态）—— 文本内容由随后的 0x6E(show-text) 写入（CONFIG.txt:171-179 / CONFIG1.txt:2916-2932 即此顺序）。"
   },
   {
     "addr": "0x41EEF0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条曾把末尾 LABEL_17（raw 28539-28555）读成「文字显现的启动点」—— 错。它只做三件事（置当前窗、查字格数、置等待门/重启 ▼ 节拍）；逐字游标 FontVWindow+132 由 `sub_45BE20` 泵推进、由 0x71/`sub_45EC60` 复位。"
+            }
+    ],
     "raw_name": "sub_41EEF0",
     "semantic_name": "op_wait_for_input_41EEF0",
     "op": "0x72",
     "status": "PARTIAL",
-    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽；★末尾 LABEL_17（raw 28539-28555）**不是文字显现的启动点**（2026-09 订正）：它做三件事 —— Engine[122371] = 窗、sub_45A940(Font, 窗, -1, Engine+107705) 查字格数、置 bit31 等待门；若 bit30 未置则置 0x40000000 + Engine[107704] = 0 + sub_453A90(Engine+430600) 重启**▼ 字格节拍**。文字的逐字游标（FontVWindow+132）由 sub_45BE20 泵推进、由 0x71/sub_45EC60 复位，0x72 一概不动 ⇒ **门指令重跑（悬停 label 的 ret）不会重放文字**。",
+    "purpose": "ADV「等待推进」：刷输入掩码（+0x40=跳读中）→ 按 message:ReadTextSkip 分支判 sub_48E870/sub_48F000 → 置/清 effect_flags 的 0x8000000 → 未显示完时把 3 个消息槽交付 sub_4BB840 并清槽；★末尾 LABEL_17（raw 28539-28555）只做三件事 —— Engine[122371] = 窗、sub_45A940(Font, 窗, -1, Engine+107705) 查字格数、置 bit31 等待门；若 bit30 未置则置 0x40000000 + Engine[107704] = 0 + sub_453A90(Engine+430600) 重启**▼ 字格节拍**。文字的逐字游标（FontVWindow+132）由 sub_45BE20 泵推进、由 0x71/sub_45EC60 复位，0x72 一概不动 ⇒ **文字显现的启动点不在它**：门指令重跑（悬停 label 的 ret）不会重放文字。",
     "sub_behaviors": "[\"sub_4780D0(Engine+258,&mask)；mask |= 0x40 if Engine+1415\",\"未显示完（!122455 && !(mask&0x40)）⇒ 清 0x8000000 + 冲 3 个消息槽 sub_4BB840(Engine+21032, i, slot, ..., +122505 区)\",\"仍激活 ⇒ 再刷一次输入并置 effect_flags |= 0x80000000（bit31），清输入掩码\",\"★LABEL_17：Engine[122371] = 窗（当前消息窗）+ Engine[107705] = win+92（sub_45A940 的 -1 查询 = 字格数/模数）\",\"★LABEL_17：若 effect_flags & 0x40000000 == 0 ⇒ |= 0x40000000（逐字模式）+ Engine[107704] = 0（游标归零）+ sub_453A90(Engine+430600)（重启节拍）—— 即每次 wait-for-input 都重新武装逐字\"]",
     "fields_used": [
       "Engine+699204",
@@ -3569,6 +3640,12 @@
   },
   {
     "addr": "0x45EC60",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★纠正三处旧口径：①原写 `Engine+85296(文本对象)` 又标 dword 写法 `Engine[21324]`，易混（同一格）；②本条不是「写文本」而是「开始一段新消息」；③「清 win+208 记录向量」清的是 120B/条**文本**记录，不是 24B 行记录。"
+            }
+    ],
     "raw_name": "sub_45EC60",
     "semantic_name": "text_window_begin_message_45EC60",
     "status": "ANALYZED",
@@ -3577,7 +3654,7 @@
     "fields_used": "[\"FontVWindow+44/+132/+208/+284/+296/+104/+276/+849\",\"Font+1228/+845/+846/+859/+860/+1040\"]",
     "unmodeled": "[\"sub_43E260 清区参数\",\"sub_48FFB0/sub_48E870（既读 DB）\"]",
     "evidence": "raw 74196-74282",
-    "notes": "★纠正三处旧口径：①Font 在 Engine+85296 字节（旧文写 Engine+85296(文本对象) 又标 dword 写法 Engine[21324]，易混）；②它不是「写文本」而是「开始一段新消息」（清记录 + 复位游标 + 清表面），文本由之后的 sub_46BE30/sub_46CBF0 依 show-text 铺排；③「清 win+208 记录向量」是 120B/条的**文本**记录（不是 24B 行记录），即槽里的正文被清空。 ★2026-09 A2/A3 落地：emulator 在 `handlers/msgwin.ts` 的 `op_message_show`(0x71) 里调 `textItems.markGroupStart(win)`（对应引擎的 `Font[win+849] = 1`）⇒ 下一条记录带组首位，`0x1D3`/`0x1D4`/`0x2F3` 的扫描在此停。"
+    "notes": "三处口径：①Font 在 `Engine+85296` 字节（= dword 写法 `Engine[21324]`）；②语义 = 「开始一段新消息」（清记录 + 复位游标 + 清表面），文本由之后的 sub_46BE30/sub_46CBF0 依 show-text 铺排；③清 win+208 记录向量 = 120B/条的**文本**记录（不是 24B 行记录），即槽里的正文被清空。 ★2026-09 A2/A3 落地：emulator 在 `handlers/msgwin.ts` 的 `op_message_show`(0x71) 里调 `textItems.markGroupStart(win)`（对应引擎的 `Font[win+849] = 1`）⇒ 下一条记录带组首位，`0x1D3`/`0x1D4`/`0x2F3` 的扫描在此停。"
   },
   {
     "addr": "0x48F000",
@@ -3763,6 +3840,12 @@
   },
   {
     "addr": "0x41A470",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：原结论「文本/计时刷新（无操作数）；驱动文本子系统按时间推进」是**误判** —— `sub_453530` 是 `; Attributes: thunk` → `jmp sub_453150`（3D 效果管理器「释放全部效果」）。教训：反编译里没有函数体 ≠ 二进制里没有。"
+            }
+    ],
     "raw_name": "sub_41A470",
     "semantic_name": "op324_release3DEffects_41A470",
     "op": "0x324",
@@ -3774,7 +3857,7 @@
       "sub_453530 未分析"
     ],
     "evidence": "raw 25403-25408；清单 40901-40910（尾调用 `jmp sub_453530`）；thunk 目标见清单 135090-135093",
-    "notes": "★订正（2026-09）：旧结论\"文本/计时刷新（无操作数）；驱动文本子系统按时间推进\"是**误判** —— `sub_453530` 在 IDA 清单里是 `; Attributes: thunk` → `jmp sub_453150`，真身是 3D 效果管理器的\"释放全部效果\"，与 0x325/0x326/0x327/0x328 同一对象。教训：反编译里没有函数体 ≠ 二进制里没有"
+    "notes": "`sub_453530` 在 IDA 清单里是 `; Attributes: thunk` → `jmp sub_453150`，真身是 3D 效果管理器（`Engine[93384]`）的「释放全部效果」，与 0x325/0x326/0x327/0x328 同一对象。"
   },
   {
     "addr": "0x420640",
@@ -4206,6 +4289,12 @@
   },
   {
     "addr": "0x45BE20",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：emulator 曾按「行数 × 节拍」算逐字预算（⇒ 比引擎快 ~14×，设置里的显示速度滑条几乎没效果，用户实测）；引擎的节拍 = message:MessageSpeed = **每字毫秒**，整段耗时 = 字数 × 节拍。"
+            }
+    ],
     "raw_name": "sub_45BE20",
     "semantic_name": "text_reveal_step_char_45BE20",
     "status": "ANALYZED",
@@ -4226,7 +4315,7 @@
       "sub_45B2B0 分支"
     ],
     "evidence": "raw 72172-72457",
-    "notes": "★2026-09 订正：24B 记录表（win+44/48）是逐字 push 的 —— sub_46BE30 的逐字循环里 String 只装一个字（raw 83582 String[0]=v24、83586 双字节分支），83601 用它量宽判换行，83918 在本轮末尾 push 一条 24B 记录（120B 文本记录 sub_45E870 才是按换行 push 的）。因此节拍 message:MessageSpeed = 每字毫秒，整段耗时 = 字数 × 节拍。emulator 曾按「行数 × 节拍」算预算 ⇒ 快 ~14×、设置里的显示速度滑条几乎没效果（用户实测）；现按字形数算（src/vm/msgwin.ts 的 RevealState.budgetMs）。"
+    "notes": "24B 记录表（win+44/48）是逐字 push 的 —— sub_46BE30 的逐字循环里 String 只装一个字（raw 83582 String[0]=v24、83586 双字节分支），83601 用它量宽判换行，83918 在本轮末尾 push 一条 24B 记录（120B 文本记录 sub_45E870 才是按换行 push 的）。因此节拍 message:MessageSpeed = 每字毫秒，整段耗时 = 字数 × 节拍。emulator：`src/vm/msgwin.ts` 的 `RevealState.budgetMs` 按**字形数**算预算。"
   },
   {
     "addr": "0x45AD30",
@@ -4741,11 +4830,17 @@
   },
   {
     "addr": "0x42D580",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条（0xAA）原来被记成「文本项记录查询」（那条是 0x2F3 / `sub_431A10`）；真语义 = 写文件（保存族）。"
+            }
+    ],
     "raw_name": "sub_42D580",
     "semantic_name": "op_write_file_42D580",
     "op": "0xAA",
     "status": "ANALYZED",
-    "purpose": "★订正：0xAA 不是「文本项记录查询」。读 op2=字符串表下标（sub_454FA0 取值）→ CreateFileA(name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, 0)；失败 ⇒ ShowMessage(\"E…\") + 写 op1 = 1；成功 ⇒ 取注册表值（set:SaveVersion）经 sub_40CD10(this, 文件句柄, 版本, \\set:SaveVersion\") 写入文件、CloseHandle、写 op1 = 返回值（保存/写文件族）",
+    "purpose": "0xAA = **写文件（保存族）**：读 op2=字符串表下标（sub_454FA0 取值）→ CreateFileA(name, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, 0)；失败 ⇒ ShowMessage(\"E…\") + 写 op1 = 1；成功 ⇒ 取注册表值（set:SaveVersion）经 sub_40CD10(this, 文件句柄, 版本, \\set:SaveVersion\") 写入文件、CloseHandle、写 op1 = 返回值（保存/写文件族）",
     "signature_override": {
       "param0": "this(Engine*)"
     },
@@ -6067,6 +6162,12 @@
   },
   {
     "addr": "0x42DDE0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：原 semantic_name `op_save_slot_42DDE0` / purpose「存档到槽位」是**误** —— 存档是 0x19E（`sub_42D980`），本条只读档。"
+            }
+    ],
     "raw_name": "sub_42DDE0",
     "semantic_name": "op_load_slot_42DDE0",
     "op": "0x1A1",
@@ -6075,7 +6176,7 @@
     "sub_behaviors": "[\"CreateFileA(%s\\\\SAVE%2.2d.DAT, GENERIC_READ, OPEN_EXISTING)；打不开 ⇒ return 1（不写 op1）\",\"sub_410160(Engine, ver2, hFile, ver1, set:SaveVersion, 1, 1) 装载\",\"for(i=0;i<Engine[95738]+1;i++) pool_int[i] = ENC(pool_int[i])（raw 38433-38438）\",\"★全程不调 sub_42B4B0 ⇒ 操作数 1 不被写（真脚本给 (global-int f7ffd) 只是占位）\"]",
     "fields_used": "[\"Engine[95738]（pool_int 计数）\",\"Engine[95744]（pool_int）\",\"Engine[97059]（ENC key）\",\"Engine+174405（版本查询对象）\"]",
     "evidence": "raw 38407-38440；调度器丢弃返回值 raw 21217；语料 335 次（src/.txt:579，前一行 comment savemesskip q-load）",
-    "notes": "emulator 已实现（handlers/save-slot.ts）。★旧注（semantic_name op_save_slot_42DDE0 / purpose 存档到槽位）是**误**：存档是 0x19E（sub_42D980）；这条只读档。★与 0x19F 的差别：0x19F 写 op1、这条不写；0x190 是同内核的任意路径版。"
+    "notes": "emulator 已实现（handlers/save-slot.ts）。本条 = **读档**（op2 = 槽号）；存档是 `0x19E`（sub_42D980）。★与 0x19F 的差别：0x19F 写 op1、这条不写；0x190 是同内核的任意路径版。"
   },
   {
     "addr": "0x430DF0",
@@ -6460,6 +6561,12 @@
   },
   {
     "addr": "0x420C00",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：曾按统一文件 id 解释 op1 ⇒ 标题 play-bgm 1f（曲号 31）会放成 id 31 = BGM041.OGG。op1 是**曲号**。"
+            }
+    ],
     "raw_name": "sub_420C00",
     "semantic_name": "op_bgm_play_slot_loop_420C00",
     "op": "0xB7",
@@ -6469,10 +6576,16 @@
     "fields_used": ["this->music(Engine+697816 int 174454)", "this->effect_flags(174801) bit0x200"],
     "unmodeled": [],
     "evidence": "raw 29719-29734；sub_489F80 raw 106352-106372",
-    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。守卫 test/audio-bgm-naming.test.ts。"
   },
   {
     "addr": "0x420C60",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：曾按统一文件 id 解释 op1 ⇒ 标题 play-bgm 1f（曲号 31）会放成 id 31 = BGM041.OGG。op1 是**曲号**。"
+            }
+    ],
     "raw_name": "sub_420C60",
     "semantic_name": "op_bgm_play_slot_once_420C60",
     "op": "0xB9",
@@ -6486,7 +6599,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 29736-29751",
-    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。守卫 test/audio-bgm-naming.test.ts。"
   },
   {
     "addr": "0x420D90",
@@ -6508,11 +6621,17 @@
   },
   {
     "addr": "0x420DC0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：opcode-table 原写「op1 = 1..3」与 raw（`result <= 2`）不一致 —— 多算了 3、漏了 0。"
+            }
+    ],
     "raw_name": "sub_420DC0",
     "semantic_name": "op_bgm_mode_420DC0",
     "op": "0xBC",
     "status": "ANALYZED",
-    "purpose": "op 0xBC BGM 开关/模式：result = op1；if (result <= 2) sub_408CF0(_this, result - 1) —— 即 op1 ≤ 2 才动作，a2 = op1 - 1（a2 == 0 = 关、其余含 −1 = 开）。★opcode-table 旧写的「op1 = 1..3」与 raw 不一致（多算 3、漏了 0），语料 0 处 ⇒ emulator 按 raw 实现。",
+    "purpose": "op 0xBC BGM 开关/模式：result = op1；if (result <= 2) sub_408CF0(_this, result - 1) —— 即 op1 ≤ 2 才动作，a2 = op1 - 1（a2 == 0 = 关、其余含 −1 = 开）。语料 0 处 ⇒ emulator 按 raw 实现。",
     "signature_override": { "param0": "this(Engine*)" },
     "fields_used": ["this->music(Engine+697816)", "this->Engine[174712]/[174713]/[174715]"],
     "unmodeled": [],
@@ -7272,6 +7391,12 @@
   },
   {
     "addr": "0x420B00",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：op2 早期记作「通道指针」，实为 **SE 通道号（0..9）**。"
+            }
+    ],
     "raw_name": "sub_420B00",
     "semantic_name": "op_play_sound_effect_420B00",
     "op": "0xB4",
@@ -7286,7 +7411,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 29680-29687；sub_4B4F60 raw 137629-137658",
-    "notes": "★只装载+绑缓冲，不起播（起播要 0xB5/0xBA）。★订正：op2 是通道号，早期记作「通道指针」。全库 2170 处（SP2563.txt:409 play-sound-effect 2e 1）。emulator：stubSubsystem → native.playSound。"
+    "notes": "★只装载+绑缓冲，不起播（起播要 0xB5/0xBA）。全库 2170 处（SP2563.txt:409 play-sound-effect 2e 1）。emulator：stubSubsystem → native.playSound。"
   },
   {
     "addr": "0x420B40",
@@ -7335,6 +7460,12 @@
   },
   {
     "addr": "0x420CC0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：曾按统一文件 id 解释 op1 ⇒ 标题 play-bgm 1f（曲号 31）会放成 id 31 = BGM041.OGG。op1 是**曲号**。"
+            }
+    ],
     "raw_name": "sub_420CC0",
     "semantic_name": "op_play_bgm_420CC0",
     "op": "0xBF",
@@ -7351,7 +7482,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 29754-29780；sub_489C20 raw 106225-106253；sub_489E50 raw 106323-106341",
-    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。2026-09 订正：曾按统一 id 解释 ⇒ 标题 play-bgm 1f（曲号 31）放成 id 31 = BGM041.OGG。守卫 test/audio-bgm-naming.test.ts。"
+    "notes": "★op1 是**曲号**不是统一文件 id：引擎 MusicBase 查「曲号 → 文件 id」表（sub_48DB80 raw 108738 索引 = 曲号 − 2），本作等价于文件名 BGM%03d.OGG（MUINIT.txt 的 A/B 两表与 34 个剧本曲号全部吻合）。守卫 test/audio-bgm-naming.test.ts。"
   },
   {
     "addr": "0x420F70",
@@ -7385,6 +7516,12 @@
   },
   {
     "addr": "0x426820",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条早期记成「清消息回调槽 / 消息文本回调」，实为**语音通道复位**（Voice 模块 @ Engine+84128）。"
+            }
+    ],
     "raw_name": "sub_426820",
     "semantic_name": "op_voice_channel_reset_426820",
     "op": "0x2F6",
@@ -7409,10 +7546,16 @@
     ],
     "unmodeled": [],
     "evidence": "raw 33677-33692；sub_4BB9F0 raw 142546-142560；sub_404CB0 raw 10583-10598",
-    "notes": "★订正：早期把本指令记成「清消息回调槽 / 消息文本回调」，实为**语音通道复位**（Voice 模块 @ Engine+84128）。全库 86687 处（最高频音频指令）；惯用法 i2f6 ch 紧接 i2f8 ch 0（SP2563.txt:17025-17028）。emulator：engine-internal no-op。"
+    "notes": "**语音通道复位**（Voice 模块 @ Engine+84128）。全库 86687 处（最高频音频指令）；惯用法 i2f6 ch 紧接 i2f8 ch 0（SP2563.txt:17025-17028）。emulator：engine-internal no-op。"
   },
   {
     "addr": "0x4268D0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★两次订正：本条早期记作泛化的「声音通道音量」—— ①只作用在 VOICE 通道（设备 12..14）、通道号 0..2；②语义是 pan（左右平衡）而非音量。"
+            }
+    ],
     "raw_name": "sub_4268D0",
     "semantic_name": "op_voice_channel_pan_4268D0",
     "op": "0x2F8",
@@ -7436,7 +7579,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 33705-33715；sub_4B6940 raw 139064-139089；sub_4B6350 raw 138742-138756；sub_4B6210 raw 138693-138735",
-    "notes": "★两次订正：早期记作泛化的「声音通道音量」，其实①只作用在 **VOICE 通道（设备 12..14）**、通道号 0..2；②语义是 **pan（左右平衡）而非音量** —— 判据：sub_4B7110 的错误串是「左右相対ボリューム変更に失敗しました」(vtable+64=SetPan)、钳制是**对称** ±10000（SetVolume 值域为 [-10000,0]），且全库 op2 **14642/14642 恒为 0** = 回中央。SYSTEM4.txt:476-480 的子程序 label_00001ec8 = i2f8 0 0 / 1 0 / 2 0（三路语音 pan 复位到中央，被 SYSTEM4.txt:11、:320 调用）。全库 14644 处。emulator：engine-internal no-op。"
+    "notes": "①只作用在 **VOICE 通道（设备 12..14）**、通道号 0..2；②语义是 **pan（左右平衡）而非音量** —— 判据：sub_4B7110 的错误串是「左右相対ボリューム変更に失敗しました」(vtable+64=SetPan)、钳制是**对称** ±10000（SetVolume 值域为 [-10000,0]），且全库 op2 **14642/14642 恒为 0** = 回中央。SYSTEM4.txt:476-480 的子程序 label_00001ec8 = i2f8 0 0 / 1 0 / 2 0（三路语音 pan 复位到中央，被 SYSTEM4.txt:11、:320 调用）。全库 14644 处。emulator：engine-internal no-op。"
   },
   {
     "addr": "0x4B70B0",
@@ -7654,6 +7797,12 @@
   },
   {
     "addr": "0x48D970",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：`Engine[698900]` 此前记为「索引/名字数据管理器」，实为 `Music`（Engine+697816，ctor `sub_489970`）的 [271] 槽 = PCM 播放器。"
+            }
+    ],
     "raw_name": "sub_48D970",
     "semantic_name": "pcm_ctor_48D970",
     "status": "ANALYZED",
@@ -7672,7 +7821,7 @@
     ],
     "unmodeled": [],
     "evidence": "raw 108570-108578；调用点 sub_489970 raw 106127-106132（operator new(0x540) ⇒ Music[271]）",
-    "notes": "★「Engine[698900] 是什么」的答案：= `Music`（Engine+697816，ctor sub_489970）的 [271] 槽 = PCM 播放器（此前 functions.json 记为「索引/名字数据管理器」—— 已订正）。"
+    "notes": "★「Engine[698900] 是什么」的答案：= `Music`（Engine+697816，ctor sub_489970）的 [271] 槽 = PCM 播放器。"
   },
   {
     "addr": "0x419720",
@@ -8943,6 +9092,12 @@
   },
   {
     "addr": "0x4072F0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：`bit16` 语义是**半角**（未设时按全角渲染）；opcode-table 早前记反了。"
+            }
+    ],
     "raw_name": "sub_4072F0",
     "semantic_name": "formatNumberCell_4072F0",
     "status": "ANALYZED",
@@ -8960,7 +9115,7 @@
       "Engine+697620(配置对象)"
     ],
     "evidence": "raw 12198-12334；全角转换 sub_41A6C0 raw 25539-25593",
-    "notes": "★**订正**：`bit16` 语义是**半角**（未设时按全角渲染），opcode-table 早前记反。emulator：`handlers/msgwin.ts` 的 `formatNumberCell`（纯函数）+ `op_draw_number_string`（回写 op2）。缺口：BlankExtentMode 的 GDI 字宽量测未建模（统一用字号当格宽）。"
+    "notes": "`bit16` 语义是**半角**（未设时按全角渲染）。emulator：`handlers/msgwin.ts` 的 `formatNumberCell`（纯函数）+ `op_draw_number_string`（回写 op2）。缺口：BlankExtentMode 的 GDI 字宽量测未建模（统一用字号当格宽）。"
   },
   {
     "addr": "0x425310",
@@ -9351,6 +9506,12 @@
   },
   {
     "addr": "0x490590",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原记为「把注册表写回 INI 文件」，实为**写 HKCU 注册表**（`RegCreateKeyExA` + `RegSetValueExA`）；SYS4REG.INI 在引擎里是只读输入。"
+            }
+    ],
     "raw_name": "sub_490590",
     "semantic_name": "configExportFixedOrder_490590",
     "status": "PARTIAL",
@@ -9371,7 +9532,7 @@
       "调用时机（是否 WM_CLOSE）未逐段确认"
     ],
     "evidence": "raw 110734-110963",
-    "notes": "★订正：这不是“把注册表写回 INI 文件”，而是**写 HKCU 注册表**；配套读取端 `sub_492CB0`（raw 111846）也是 `RegQueryValueExA`。SYS4REG.INI 在引擎里是**只读输入**。emulator 用“写 INI”作为跨平台替代（`engineConfig.ts`），因此**导出形态应对齐本函数：固定顺序 + 全量**（见 tickets/T-0031）。"
+    "notes": "本函数**写 HKCU 注册表**（不是写 INI 文件）；配套读取端 `sub_492CB0`（raw 111846）也是 `RegQueryValueExA`。SYS4REG.INI 在引擎里是**只读输入**。emulator 用“写 INI”作为跨平台替代（`engineConfig.ts`），因此**导出形态应对齐本函数：固定顺序 + 全量**（见 tickets/T-0031）。"
   },
   {
     "addr": "0x407E20",
@@ -9444,6 +9605,12 @@
   },
   {
     "addr": "0x42D980",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：原注把存档（本条 0x19E）与 0x1A1 弄反了。"
+            }
+    ],
     "raw_name": "sub_42D980",
     "semantic_name": "op_save_slot_42D980",
     "op": "0x19E",
@@ -9464,7 +9631,7 @@
       "Engine+387924（窗口）"
     ],
     "evidence": "raw 38287-38331；存档目录拼装 sub_408A40；确认框调用 raw 38310；写状态 sub_40CD10 raw 17676-17707",
-    "notes": "emulator 已实现（handlers/save-slot.ts）。★真正的存档 opcode 是这条，不是 0x1A1（旧注把两者弄反）。宿主无对话框 ⇒ 恒等于玩家点了是（SLOT_GAPS ③）。"
+    "notes": "emulator 已实现（handlers/save-slot.ts）。★**存档** opcode 是这条（`0x19E`）；`0x1A1` 不是。宿主无对话框 ⇒ 恒等于玩家点了是（SLOT_GAPS ③）。"
   },
   {
     "addr": "0x42DB10",
@@ -9517,7 +9684,7 @@
     "semantic_name": "op_delete_slot_42DFC0",
     "op": "0x1AB",
     "status": "ANALYZED",
-    "purpose": "删槽：DeleteFileA(SAVE%2.2d.DAT) 失败 ⇒ op1=1；DeleteFileA(SAVE%2.2d.STH) 失败 ⇒ op1=2；都成功 ⇒ 0",
+    "purpose": "删槽：DeleteFileA(SAVE%2.2d.DAT) 失败 ⇒ v4=1；随后 DeleteFileA(SAVE%2.2d.STH) 失败 ⇒ v4=2（**覆盖 .DAT 的失败码**）；都成功 ⇒ 0。★两份都失败 ⇒ **2**（不是 1；raw 38477-38481）",
     "sub_behaviors": [
       "指令码 5 记进 Engine+30*Engine[95776]+95805",
       "v4 = !DeleteFileA(DAT)",
@@ -9529,7 +9696,7 @@
       "Engine[95776]（当前存档页/槽页索引）"
     ],
     "evidence": "raw 38463-38483；语料 1 处",
-    "notes": "emulator 已实现；宿主层删槽只删 overlay（arch/nodeFileSource.ts），base 那份不动。"
+    "notes": "emulator 已实现；宿主层删槽只删 overlay（arch/nodeFileSource.ts），base 那份不动。★结果码优先级（raw 38477-38481）：.STH 的失败码**覆盖** .DAT 的 ⇒ 两份都失败 = 2（原实现与守卫同错写成 1，已在 src/vm/handlers/save-slot.ts 的 op_slot_delete/op_slot_copy 与 test/save-delete-slots.test.ts 的 op1Of 同步，见 tickets/T-0153 / T-0159）。"
   },
   {
     "addr": "0x42E0A0",
@@ -9757,6 +9924,12 @@
   },
   {
     "addr": "0x41FBF0",
+    "journal": [
+      {
+              "at": "2026-09（tickets/T-0038）",
+              "what": "★订正：原口径把 `Font+1380` 当「第四色」是**错的** —— 它是**行间距**（op 0x8B 写，初值 6），换行步进 = 字号 + 本字段。"
+            }
+    ],
     "raw_name": "sub_41FBF0",
     "semantic_name": "op_set_line_spacing_41FBF0",
     "op": "0x8B",
@@ -9769,7 +9942,7 @@
       "Font+1380(line_spacing)"
     ],
     "evidence": "raw 29021-29030",
-    "notes": "旧口径把 Font+1380 当「第四色」是错的（tickets/T-0038 订正）"
+    "notes": "Font+1380 同时是 `Engine[21669]`；换行步进 `sub_46AF90` 读它（字号 + 本字段）。"
   },
   {
     "addr": "0x417800",
@@ -10194,7 +10367,7 @@
       "sub_4BC720 / sub_4BC3E0 的 SDK 内部实现"
     ],
     "evidence": "raw 92523-92553",
-    "notes": "实例不持有设备指针（装载模型/纹理时才把 D3D 设备传进来）"
+    "notes": "实例不持有设备指针（装载模型/纹理时才把 D3D 设备传进来） ★`+16` = `live2d::EyeBlinkMotion`（`sub_4BC380(104)` → `sub_4BC3E0`；`.data:0052E30C` 的 vftable）；`+23` 由 dword 存 `[esi+15h]` 一并清 0（Hex-Rays 视图里 `+23` 不出现 ⇒ 只读 `.c` 会误判成未初始化堆字节）。"
   },
   {
     "addr": "0x478330",
@@ -10258,7 +10431,7 @@
       "vtable+8 / +12（ALive2DModel 的 update/draw）、vtable+236 的 D3D 调用"
     ],
     "evidence": "raw 92578-92615",
-    "notes": "★动作推进与出画在同一次调用里 ⇒ 只画不推进 = 动作不动（这正是\"缺失时静默\"的机制，见能力台账 live2d-node-draw-advance）"
+    "notes": "★动作推进与出画在同一次调用里 ⇒ 只画不推进 = 动作不动（这正是\"缺失时静默\"的机制，见能力台账 live2d-node-draw-advance） ★眨眼那一支（raw 92605-92606）：`if (*(BYTE*)_this+23) sub_4BC550(_this[4] = +16 的 EyeBlinkMotion, *_this)`；门 `+23` 由 `sub_478270` 的 dword 存 `mov [esi+15h], ebx`（ebx = 0）清 0（`.lst` 00478309）且全库无写者 ⇒ 随包二进制里恒不执行（`T-0166`）。"
   },
   {
     "addr": "0x478490",
@@ -10459,6 +10632,12 @@
   },
   {
     "addr": "0x4A1970",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：0x345 原记成「图形/3D 模型加载」，实为 L2D 纹理装载（`D3DXCreateTextureFromFileInMemory`）。"
+            }
+    ],
     "raw_name": "sub_4A1970",
     "semantic_name": "loadL2DTextureSlot_4A1970",
     "status": "ANALYZED",
@@ -10471,7 +10650,7 @@
       "Scene+55812（= Scene+4*slot+55812，10 个 L2D 实例槽指针）"
     ],
     "evidence": "raw 121702-121721",
-    "notes": "入口：0x345 handler(sub_427CF0)，签名 (Scene, 资源表, 文件id, hFile, 字节数, **槽号 op2**, **纹理号 op3**)。旧文档把 0x345 记成\"图形/3D 模型加载\"，实为 L2D 纹理装载"
+    "notes": "入口：0x345 handler(sub_427CF0)，签名 (Scene, 资源表, 文件id, hFile, 字节数, **槽号 op2**, **纹理号 op3**)。本条 = L2D 纹理装载（0x345）"
   },
   {
     "addr": "0x4A19F0",
@@ -10592,6 +10771,12 @@
   },
   {
     "addr": "0x427CB0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原写「纹理槽变换记录」是**误读** —— `record[1]` 是 Live2D 实例槽号（0..9），正是 `sub_4B0360` 的出画门控所查（raw 134320）。"
+            }
+    ],
     "raw_name": "sub_427CB0",
     "semantic_name": "op_l2d_create_node_427CB0",
     "op": "0x344",
@@ -10608,7 +10793,7 @@
       "Scene+46508(场景脏位)"
     ],
     "evidence": "raw 34504-34515",
-    "notes": "★语义订正（2026-09）：旧文档写「纹理槽变换记录」是误读 —— record[1] 是 **Live2D 实例槽号**，正是 sub_4B0360 的出画门控所查（raw 134320）。emulator 见 handlers/live2d.ts 的 op_l2d_create_node 与 live2d/runtime.ts 的 l2dCreateNode；守卫 test/live2d-chain.test.ts（TITLE 的 i344 14 0）。"
+    "notes": "record[1] 是 **Live2D 实例槽号**，正是 sub_4B0360 的出画门控所查（raw 134320）。emulator 见 handlers/live2d.ts 的 op_l2d_create_node 与 live2d/runtime.ts 的 l2dCreateNode；守卫 test/live2d-chain.test.ts（TITLE 的 i344 14 0）。"
   },
   {
     "addr": "0x428200",
@@ -11191,11 +11376,17 @@
   },
   {
     "addr": "0x4245B0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：本条原名为 `op_anim_translate_window`、旧注为「平移窗」—— 是误：消费端 raw 118228 用 D3DXMatrixRotationAxis 把 op3/op4/op5 当**旋转轴**；平移分量在 0x290 矩阵（0x235）里。"
+            }
+    ],
     "raw_name": "sub_4245B0",
     "semantic_name": "op_anim_rotate_window_4245B0",
     "op": "0x234",
     "status": "ANALYZED",
-    "purpose": "op 0x234（argc 5）旋转窗：写指令长度槽 11；op3/op4/op5 为 float **不除**（旋转轴三元组）、op2=周期、op1=handle ⇒ sceneAnimRotateWindow_4AD850(Scene, op1, op2, ax, ay, az)。★订正：本条不是平移窗（旧名 op_anim_translate_window 与旧注「平移」是误）—— 消费端 raw 118228 用 D3DXMatrixRotationAxis 把该三元组当旋转轴，且角度 = 360 乘（now 减 start）对 period 取模再除 period ⇒ 匀速旋转；平移分量在 0x290 矩阵（0x235）里",
+    "purpose": "op 0x234（argc 5）旋转窗：写指令长度槽 11；op3/op4/op5 为 float **不除**（旋转轴三元组）、op2=周期、op1=handle ⇒ sceneAnimRotateWindow_4AD850(Scene, op1, op2, ax, ay, az)。消费端 raw 118228 用 D3DXMatrixRotationAxis 把该三元组当旋转轴，且角度 = 360 乘（now 减 start）对 period 取模再除 period ⇒ 匀速旋转；平移分量在 0x290 矩阵（0x235）里",
     "signature_override": { "param0": "this(Engine*)" },
     "sub_behaviors": ["写 frames[cur].len_slot = 11（=2*5+1）", "readFloatOperand(op3/4/5)（不除）", "readIntOperand(op2)=时长、readIntOperand(op1)=handle", "sub_4AD850(_this+80708, op1, op2, x, y, z)"],
     "fields_used": "[\"this->frames[cur].len_slot\",\"this->scene(+0x4ED10)\",\"DrawItem+0x00 flags\",\"DrawItem+0x214 rot_win_start\",\"DrawItem+0x228 rot_win_dur\",\"DrawItem+0x244 rot_win_axis\"]",
@@ -11204,6 +11395,12 @@
   },
   {
     "addr": "0x424080",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★以体订正筛体：筛体「op1 = handle」与体不符 —— 三条读全是 `sub_41C300`（float），体内无 handle 查表。"
+            }
+    ],
     "raw_name": "sub_424080",
     "semantic_name": "op_i22a_sceneSetScale_424080",
     "op": "0x22a",
@@ -11212,10 +11409,16 @@
     "sub_behaviors": ["arity 槽 = 7", "v3/v4/v5 = readFloatOperand(1/2/3) / dbl_5201F0(=100)", "sub_49A720(Engine+80708, v3, v4, v5)"],
     "fields_used": ["Engine+80708(Scene)"],
     "evidence": "raw 32003-32016",
-    "notes": "★以体订正筛体：op1 不是 handle（三条读全是 sub_41C300，体内无 handle 查表）。被调体写 Scene[306]=1 + D3DXMatrixScaling(Scene+307) + Scene[11627]=1。消费端见 0x49AA30 / 0x4A1E90 / RenderScene raw 133403-133438（只作用于层号 ∈ [20,30) 的项）。"
+    "notes": "op1 不是 handle（三条读全是 sub_41C300，体内无 handle 查表）。被调体写 Scene[306]=1 + D3DXMatrixScaling(Scene+307) + Scene[11627]=1。消费端见 0x49AA30 / 0x4A1E90 / RenderScene raw 133403-133438（只作用于层号 ∈ [20,30) 的项）。"
   },
   {
     "addr": "0x424180",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★以体订正筛体两处：① 筛体「op1 = handle」与体不符；② 筛体称本条与 0x1FF「同字段族/消费端已建模」不准确 —— 0x1FF 写某项 DrawItem 的 work 矩阵（按 handle 查表），本条写 Scene 自己的变换块。"
+            }
+    ],
     "raw_name": "sub_424180",
     "semantic_name": "op_i22c_sceneSetTranslation_424180",
     "op": "0x22c",
@@ -11223,7 +11426,7 @@
     "purpose": "opcode 0x22C 的 handler：Scene 级立即平移（像素，不除）",
     "sub_behaviors": ["arity 槽 = 7", "v3/v4/v5 = readFloatOperand(1/2/3)（不除）", "sub_49A820(Engine+80708, v3, v4, v5)"],
     "evidence": "raw 32034-32046",
-    "notes": "★以体订正筛体两处：① op1 不是 handle；② 与 0x1FF「同字段族/消费端已建模」不准确 —— 0x1FF 写某项 DrawItem 的 work 矩阵（+0x16C，按 handle 查表），本条写 Scene 自己的变换块。被调体写 Scene[306]=1 + D3DXMatrixTranslation(Scene+371) + Scene[11627]=1。"
+    "notes": "① op1 不是 handle；② 与 0x1FF 结构不同 —— 0x1FF 写某项 DrawItem 的 work 矩阵（+0x16C，按 handle 查表），本条写 Scene 自己的变换块。被调体写 Scene[306]=1 + D3DXMatrixTranslation(Scene+371) + Scene[11627]=1。"
   },
   {
     "addr": "0x4241F0",
@@ -11238,6 +11441,12 @@
   },
   {
     "addr": "0x424330",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★以体订正筛体：筛体写「+323 + D3DXMatrixScaling」与体不符 —— 本条体内是 D3DXMatrixTranslation(Scene+387)（`sub_49A9C0` 里 D3DXMatrixScaling 一次都没有；+323/Scaling 属 0x22D 的 `sub_49A870`）。"
+            }
+    ],
     "raw_name": "sub_424330",
     "semantic_name": "op_i22f_sceneAxisTranslation_424330",
     "op": "0x22f",
@@ -11245,7 +11454,7 @@
     "purpose": "opcode 0x22F 的 handler：Scene 级带轴平移（op1/op2 = int，op3/4/5 轴分量不除）",
     "sub_behaviors": ["arity 槽 = 11", "op3/4/5 = readFloatOperand(3/4/5)（不除）", "op1/op2 = readIntOperand(1/2)", "sub_49A9C0(Engine+80708, op1, op2, axis)"],
     "evidence": "raw 32087-32103",
-    "notes": "★以体订正筛体：筛体写「+323 + D3DXMatrixScaling」——与体不符，本条体内是 D3DXMatrixTranslation(Scene+387)（sub_49A9C0 里 D3DXMatrixScaling 一次都没有；+323/Scaling 属 0x22D 的 sub_49A870）。"
+    "notes": "本条体内是 **D3DXMatrixTranslation(Scene+387)**（sub_49A9C0 里 D3DXMatrixScaling 一次都没有；+323/Scaling 属 0x22D 的 sub_49A870）。"
   },
   {
     "addr": "0x49A720",
@@ -11279,13 +11488,19 @@
   },
   {
     "addr": "0x49A9C0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★以体订正筛体：筛体把本条的被调体记成 Scaling，体内实为 D3DXMatrixTranslation(Scene+387)。"
+            }
+    ],
     "raw_name": "sub_49A9C0",
     "semantic_name": "sceneSetAxisTranslationMatrix_49A9C0",
     "status": "ANALYZED",
     "purpose": "Scene 变换记录的「带轴平移」写入端（0x22F 的被调体）",
     "sub_behaviors": ["Scene[280] |= 2", "Scene[293] = 0", "Scene[297] = op1 / Scene[302] = op2", "Scene[306] = 1", "D3DXMatrixTranslation(Scene+387)", "Scene[11627] = 1 / Scene[11629] = 1"],
     "evidence": "raw 117222-117236",
-    "notes": "被 0x22F（sub_424330）调用。★体内无 D3DXMatrixScaling（以体订正筛体的「Scaling」）。"
+    "notes": "被 0x22F（sub_424330）调用。★体内无 D3DXMatrixScaling。"
   },
   {
     "addr": "0x4A1E90",
@@ -11300,6 +11515,12 @@
   },
   {
     "addr": "0x42FBC0",
+    "journal": [
+      {
+              "at": "2026-09",
+              "what": "★订正：原注记的体区间 raw 33570-33612 **有误**，正确为 39570-39638；目标不是「静态定不了的外部服务」而是 AGERC.DLL!_ShowDialog@12。"
+            }
+    ],
     "raw_name": "sub_42FBC0",
     "semantic_name": "op140_showDialog8_42FBC0",
     "op": "0x140",
@@ -11309,7 +11530,7 @@
     "fields_used": ["global/0x55E1B4 agerc_showdialog", "Engine+0x29036 显示模式", "Engine[96981] 消息窗 HWND"],
     "unmodeled": ["Engine+0x29036（167990 显示模式）未登记", "sub_406050/sub_406220 的 DDraw 层 30/31 重设与 effect_flags |= 0x200000 未建模", "cmd8 的两张运行时表：Engine[4*cur_frame+495964]（帧标签表）与 Engine+0xA609C/0xA64A8（文件表）未登记", "对话框是 Win32 模态框 ⇒ emulator 无 AGERC 对话框宿主缝"],
     "evidence": "raw 39570-39638（handler 完整体）；被调真身 engine/AGERC.DLL_utf8.c L1584-1685 + L1466-1578；指针来源 raw 141984 / 109386-109427 / 65952-65956",
-    "notes": "★旧注记的体区间 raw 33570-33612 有误 正确为 39570-39638；目标不是「静态定不了的外部服务」而是 AGERC.DLL!_ShowDialog@12（见 analysis/opcode-gaps.json 本条 note 与 fields.json 0x55E1B4）；返回值由真人点选决定 ⇒ 维持 deferred"
+    "notes": "体区间 raw **39570-39638**；目标是 AGERC.DLL!_ShowDialog@12（见 analysis/opcode-gaps.json 本条 note 与 fields.json 0x55E1B4）；返回值由真人点选决定 ⇒ 维持 deferred"
   },
   {
     "addr": "0x41F720",
@@ -11337,6 +11558,618 @@
     "unmodeled": ["体内其余约 970 行（raw 79319-80311 的细节：逐字排版/裁剪/描边/换行）"],
     "evidence": "raw 79319-80311 (sub_466000，前 20 行 + SelectObject×12 / GetTextExtent×2 的分布)",
     "notes": "语义 = 「用给定颜色重画某窗的第 N 条文本项记录」；参数 a2=窗、a3=记录下标、a4=模式(char)、a5/a6=填充/描边色。emulator 侧的等价物应基于 vm/textItems.ts 的 records（同口径 72 B/条）+ 重新发布该窗文本，见 tickets/T-0104。"
+  },
+  {
+    "addr": "0x420310",
+    "raw_name": "sub_420310",
+    "semantic_name": "op_1d1_repaint_text_record_420310",
+    "op": "0x1D1",
+    "status": "ANALYZED",
+    "purpose": "op 0x1D1：**用给定颜色把「某窗的第 N 条文本项记录」重新画一遍**（= 0x82 的孪生）—— handler 只做取值转发：arity 槽写 11（= 2*argc+1，argc 5）→ `sub_41BF50` 读 op5..op1（全 int）→ `sub_4675A0(Engine+21324, op1..op5, &Engine[21032])`；第 7 实参不是操作数。",
+    "sub_behaviors": [
+      "arity 槽 `_this[30*Engine[95776]+95805] = 11`（2*5+1 ⇒ argc 5）",
+      "`sub_41BF50` 依次读 op5/op4/op3/op2/op1，**顺序直传** a2..a6",
+      "v8 = _this + 21032（= Engine+84128，语音对象）作为第 7 实参 —— 不是操作数",
+      "return sub_4675A0((int)(_this + 21324), v2, v4, v5, v6, v7, v8)"
+    ],
+    "fields_used": [
+      "Engine+30*Engine[95776]+95805（arity 槽）",
+      "Engine+21324（0x1D1 传给被调体的窗/记录对象基）",
+      "Engine+21032（第 7 实参 = &Engine[21032]）"
+    ],
+    "evidence": "raw 29353-29371 (sub_420310)；被调体 sub_4675A0 raw 80313-81522；语料唯一静态调用点 src/HISTORY.txt:1314（运行时 4000 帧内命中 280 次，tickets/T-0168）",
+    "notes": "★建票时的「回想页渲染器 / 页面布局 / 滚动位置 / 选中页高亮」语义**已被读体推翻**（tickets/T-0170）：raw 80524-80532 与 0x82 的 sub_466000 raw 79499-79508 逐句同形 ⇒ 真语义 = 0x82 的孪生（GDI 重画某窗的第 N 条 72 B 文本项记录）。emulator 已按孪生实现（opcodes.json 记 emulator: partial，缺 sub_4634B0 专用路径，见 T-0170 的 missing[]）。"
+  },
+  {
+    "addr": "0x4675A0",
+    "raw_name": "sub_4675A0",
+    "semantic_name": "gdiRepaintTextRecord_4675A0",
+    "status": "PARTIAL",
+    "purpose": "GDI 文本记录重画例程（被 0x1D1 调用）：0x82 的 sub_466000 的**孪生体** —— 按「窗索引 a2 + 该窗 72 B 文本项记录下标 a3」把那条记录用 a5/a6 的颜色重画；a4 = 模式位、a7 = &Engine[21032]。",
+    "signature_override": { "param0": "this(窗/记录对象 = Engine+21324)" },
+    "sub_behaviors": [
+      "v9 = *(_DWORD *)(_this + 3368) - *(_DWORD *)(_this + 3364) = 该窗 72 B 文本项记录表的字节数",
+      "门：if (v9 / 72 > a3 && a3 >= 0) —— 记录下标越界 ⇒ 直接 return（连颜色都不改、不报错）",
+      "a2 = 窗索引：取 *(_DWORD *)(_this + 4*a2 + 1044) 那个窗对象；若其 +112 == 1 ⇒ return sub_4634B0(_this, a2, a3, a4, a5, a6, a7)（GDI-only 变体；0x82 那条是 sub_462040）",
+      "否则按记录走 GDI：GetCurrentObject/SelectObject + sub_45EA70(窗对象) + GetTextMetricsA / GetTextExtentPoint32A 度量 + 按 a5/a6 设色后绘制"
+    ],
+    "fields_used": [
+      "_this+3364/+3368（记录表 begin/end）",
+      "_this+1044+4*w（每窗对象表）",
+      "窗对象+112（专用路径判据）",
+      "_this+1108（HDC）"
+    ],
+    "unmodeled": [
+      "体内其余部分（raw 80313-81522 的细节：逐字排版/裁剪/描边/换行/语音图标/栏带四边形）",
+      "专用路径 sub_4634B0（raw 77500-78716）"
+    ],
+    "evidence": "raw 80313-81522 (sub_4675A0；导出声明 raw 1409)；门 + 专用路径分叉 raw 80524-80532；与 0x82 的 sub_466000（raw 79499-79508）逐句同形",
+    "notes": "语义 = 「用给定颜色重画某窗的第 N 条文本项记录」；与 sub_466000 的差异见 tickets/T-0170/changes.md 的逐项差异表。emulator 侧 partial：记录切片重画已实现，专用路径 sub_4634B0 未建模。"
+  },
+  {
+    "addr": "0x45F090",
+    "raw_name": "sub_45F090",
+    "semantic_name": "pushTextItemRecord_45F090",
+    "status": "ANALYZED",
+    "purpose": "把一条 72 B 文本项记录压进当前消息窗的记录表：填 11 个 dword（窗号 a2 / 记录 flags a3 / 几何 a4[0..3] / 三个字体·颜色·度量格 _this[340..342] / a5 / a6）后 sub_45E7E0(_this + 841, &rec) 入队，并把 Src 文本串复制进记录的 +44 std::string。",
+    "sub_behaviors": [
+      "若 _this[a2 + 849]（该窗首次）⇒ a3 |= 1（bit0 = 首记录）",
+      "v12[0] = a2（窗号）、v12[10] = a3（记录 flags）、v12[1..4] = a4[0..3]（几何）",
+      "v12[5..7] = _this[340]/_this[341]/_this[342]、v12[8] = a6、v12[9] = a5",
+      "sub_40C210(&v13, Src, strlen(Src)) 复制文本串",
+      "sub_45E7E0(_this + 841, &v12) 入队"
+    ],
+    "fields_used": [
+      "_this+841（记录表容器）",
+      "_this+a2+849（首记录旗标）",
+      "_this+340/+341/+342"
+    ],
+    "evidence": "raw 74359-74400 (sub_45F090)；两个画正文行的调用点 raw 76446 / 79248，其 flags 里的 0x4 在 raw 76381 / 79181 置起（v66/v62 = a4 | 4）",
+    "notes": "★记录 flags 的 0x4（ITEM_ROW_TEXT = 带正文串的已画行）由本函数的两个调用点经 a4|4 传入；0x8（ITEM_ROW_LINE = 换行记录）由 sub_4691D0 经 sub_4691A0 传入。0x82 / 0x1D1 的重画体就是按这两个位分流（tickets/T-0170）。"
+  },
+  {
+    "addr": "0x4691D0",
+    "raw_name": "sub_4691D0",
+    "semantic_name": "newlineTextItemRecord_4691D0",
+    "status": "ANALYZED",
+    "purpose": "消息窗的换行：把当前写点下移一行（调整记录几何 + 递增已画行计数），随后经 sub_4691A0 压一条 flags 带 0x8 的换行记录（携带 unk_51F030 占位串）。",
+    "sub_behaviors": [
+      "v3 = a2 ? a2 : _this[307]（窗号缺省 = 当前窗）",
+      "v4 = _this[50420] ? _this[50421] : -_this[308]（行距）",
+      "记录 = (_DWORD *)_this[v3 + 261]；几何下移 v4 + _this[345]（*(v5[12] - 20) -= v4 + _this[345]；*(v5[12] - 16) = v5[8]）",
+      "++*(v5[12] - 4)；++v5[71]（已画行计数）",
+      "若 a3 >= 0 ⇒ memset(v6,0) + sub_4691A0(_this, v3, a3 | 8, v6, 0, &unk_51F030)（压换行标志记录）"
+    ],
+    "fields_used": [
+      "_this+307（当前窗号）",
+      "_this+50420/+50421（行距覆盖）",
+      "_this+308（行距）",
+      "_this+345",
+      "_this+4*窗+1044（窗对象表）"
+    ],
+    "evidence": "raw 81529-81553 (sub_4691D0)；转发体 sub_4691A0 raw 81523-81527（sub_45F090(_this, a2, a3, a4, a5, _this[343], Src)）",
+    "notes": "a3 | 8 ⇒ 换行记录（ITEM_ROW_LINE = 0x8）；0x82 / 0x1D1 的重画体按该位走「换行 ⇒ v209 += Font[1380] + sub_404EC0(Font)」那条路（tickets/T-0170）。"
+  },
+  {
+    "addr": "0x494220",
+    "raw_name": "sub_494220",
+    "semantic_name": "config_applyRegistryBlob_494220",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "配置对象的**注册表数据块应用器**（vtable 第 3 项，`.data:00529808`，同表 = sub_492CB0/load / sub_490590/save / sub_491060）。吃一个 `key\\0value\\0…` 序列化块，用**大写**键名逐个 `_stricmp` 后写进配置注册表（字符串族 `sub_434E00`、int 族 `sub_434D00`）。",
+    "evidence": "raw 112319-112853；键名常量 `String1=\"REGROOTPATH\"`(raw 5107)、`aVerregpos=\"VERREGPOS\"`(5105)、`aGameversion=\"GAMEVERSION\"`(5104)；`GAMEVERSION` 支 raw 112426-112433、`VERREGPOS` 支 raw 112410-112424、`REGROOTPATH` 支 raw 112378-112392；`set:VerRegPos` 非空后的注册表覆盖 raw 112835-112851（调 sub_490010）",
+    "notes": "★`0x2EB` 的第 2 层来源 —— 与 `SYS4REG.INI` 的 `[set]` 节**无关**（INI 装载器 `sub_492CB0` 不读 `set:GameVersion`）。这条是本轮 T-0161 读体后订正审计前提的关键证据。"
+  },
+  {
+    "addr": "0x4034D0",
+    "raw_name": "sub_4034D0",
+    "semantic_name": "engine_reportDiagnostic_4034D0",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "**引擎的诊断/错误串出口**：`sub_4034D0(this, str)` → `sub_4976A0(this[1], str)`。",
+    "evidence": "raw 9433-9435",
+    "notes": "★不是消息窗：全链 `sub_4976A0`(raw 114428-114457，栈帧在时前缀 `(%s：%d行目) `) → `sub_497620`(114402-114416) → `sub_438CC0`(45660-45667 = `WriteFile` 到 remote-debug 句柄) ⇒ **只写日志**：不弹窗、不中断、不写操作数。0xC5/0xC7/0x141/0x1B8/0x2E6 的越界支共用它。"
+  },
+  {
+    "addr": "0x4976A0",
+    "raw_name": "sub_4976A0",
+    "semantic_name": "remoteDebug_writeWithLocation_4976A0",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "给诊断串加 `(文件：行目) ` 前缀（脚本栈帧存在时）后交 `sub_497620`。",
+    "evidence": "raw 114428-114457（`sprintf_s(v4, v5+1024, \"(%s：%d行目) %s\", sub_454FA0(...), v8, lpBuffer)`）"
+  },
+  {
+    "addr": "0x497620",
+    "raw_name": "sub_497620",
+    "semantic_name": "remoteDebug_write_497620",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "remote-debug 通道写出（先试回调、失败则 `sub_438CC0` 直接 WriteFile）。",
+    "evidence": "raw 114402-114416"
+  },
+  {
+    "addr": "0x438CC0",
+    "raw_name": "sub_438CC0",
+    "semantic_name": "logFile_write_438CC0",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "日志文件 `WriteFile`（句柄 = `this[1]`，为 -1 时什么都不做）。",
+    "evidence": "raw 45660-45667"
+  },
+  {
+    "addr": "0x4765C0",
+    "raw_name": "sub_4765C0",
+    "semantic_name": "queryEngineRunFlag_4765C0",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "**导出给脚本/宿主的布尔查询**：`return *(_DWORD *)(dword_55E1BC + 699248) != 0;`（= `_this[174812]`，0x142 写的那个运行开关）。",
+    "evidence": "raw 91057-91061；字段全库 4 处引用 = raw 22591/17961（构造/复位置 1）、31026（0x142 写）、91060（本函数读）",
+    "notes": "工程内**零调用**（导出 API）⇒ emulator 无对应 opcode ⇒ 该字段的消费者在 emulator 侧缺席（T-0161 登记，不编消费者）。同族邻居 sub_4765E0(effect_flags bit26)/sub_476600(effect_flags < 0)。"
+  },
+  {
+    "addr": "0x426620",
+    "raw_name": "sub_426620",
+    "semantic_name": "op_set_auto_message_baseline_426620",
+    "op": "0x2E9",
+    "status": "ANALYZED",
+    "purpose": "`_this[122464] = readIntOperand(1)`（ADV 自动翻页的行基准）。",
+    "evidence": "raw 33579-33589（`arity 槽 = 1` → `result = sub_41BF50(_this, 1); _this[122464] = result; return result;`）",
+    "notes": "★opcodes.json 早就有这一条，functions.json 缺 —— 两个消费点见 entries[0x2e9].semantics（raw 20384-20399 / 28556-28586 / 20416-20426）。"
+  },
+  {
+    "addr": "0x408440",
+    "raw_name": "sub_408440",
+    "semantic_name": "showMessageImage_load_408440",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "消息态图像加载：解码资源并渲进 Scene 的固定帧纹理；`sub_4A7210(...) != 1` 时 `_CxxThrowException(&_TI1_AVCommand_ShowMessage_Exception__)`。",
+    "evidence": "被 0x25B 调（raw 33219）；body raw 13147-13155",
+    "notes": "★失败**抛异常** ⇒ 影响控制流（脚本侧弹消息窗并中断）。emulator 未建模（T-0161 登记）。"
+  },
+  {
+    "addr": "0x4A5470",
+    "raw_name": "sub_4A5470",
+    "semantic_name": "scene_mediaDispatch_4A5470",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "Scene 侧媒体/影片下发（0x25A 的两条门各调一次）。",
+    "evidence": "raw 33198-33199（模式镜像 `_this[92377]==0`）、raw 33200-33201（`!_this[167990]`）",
+    "notes": "宿主媒体子系统；emulator 未建模，且门的输入 `92377` 在 emulator 无维护者（T-0161 登记）。"
+  },
+  {
+    "addr": "0x408050",
+    "raw_name": "sub_408050",
+    "semantic_name": "safeSprintf_408050",
+    "op": null,
+    "status": "ANALYZED",
+    "purpose": "格式化进固定缓冲（越界诊断串的统一构造点，等价 `sprintf_s`）。",
+    "evidence": "被 0xC5(38659)/0xC7(38715)/0x141(31008)/0x1B8(38060)/0x2E6(40368) 调用"
+  },
+  {
+    "addr": "0x41A6C0",
+    "raw_name": "sub_41A6C0",
+    "semantic_name": "toFullWidthAscii_41A6C0",
+    "op": "",
+    "status": "ANALYZED",
+    "purpose": "ASCII 数字串 → 双字节全角（原地扩写：n 字符 → 2n 字节）。先 strlen、再 GlobalAlloc 一份输入副本（sub_407F60），然后逐字符写 2 字节：0x30..0x5A 与 0x61..0x7A ⇒ {0xA3, c+0x80}（0→A3B0、9→A3B9、A→A3C1、a→A3E1）、- ⇒ A3AD、+ ⇒ A3AB、# ⇒ A3A3、其余任何字符 ⇒ {0x81,0x48}（raw 25574-25576）；末尾 a1[2*i]=0 收尾并 GlobalFree 副本，返回 a1。本机 exe = 中文版（心愿屋）⇒ 字符集 GBK ⇒ 0xA3xx 正是 GBK 的全角 ASCII 区。",
+    "sub_behaviors": [
+      "strlen → GlobalAlloc 副本(sub_407F60)",
+      "逐字符按上表写 a1[2*i]/a1[2*i+1]",
+      "a1[2*i]=0 收尾 + GlobalFree"
+    ],
+    "fields_used": [],
+    "unmodeled": [
+      "GlobalAlloc 的失败路径（v4 = NULL 时后续按字节写会崩）",
+      "被调 sub_407F60（拷贝助手）本条未单独建模"
+    ],
+    "evidence": "raw 25539-25593",
+    "notes": "调用点是 8 处（机械扫描全反编译）：`sub_41B640` raw 26331/26347、`sub_42A420` raw 36376/36421/36509/36530、`sub_41A780`（= `0x7D` 的十六进制形态，raw 25624 的 `_itoa_s(...,16)` 后）raw 25625、`sub_4072F0`（`0x205` 的格式回落点；handler `sub_4233E0` raw 31486 调它）raw 12315。★`sub_41B9B0`（→ `0x1B2`）与专用 int→串 `0x1C8`（`sub_433820` raw 41990-42010）都**不调**它 ⇒ 同一条 `0x192` 拿 int 得全角、`0x1B2` / `0x1C8` 得半角。`fields_used` 为空：本条是 `__stdcall(a1)`，体里不引用任何 Engine 字段/全局数字缓冲（`dword_55C8E0`/`dword_55CCF0`/`dword_55D128` 是**调用方**持有的 1024B 缓冲）。emulator 对应物 = `src/vm/operand.ts` 的 `toFullWidthNumber`（模块私有、未 export；与 `handlers/msgwin.ts` 的 `toFullWidth` 是同一口径的两份实现），守卫 `test/operand-string-primitive.test.ts`。",
+    "journal": [
+      {
+        "at": "2026-09-25（T-0162）",
+        "what": "按 `tickets/T-0162/changes-c162.md` §5 新建本条；两处口径按读体/机械扫描修正：调用点是 8 处（§5 的枚举只列了 7 处，漏 `sub_41A780` 的 raw 25625；§3 的「全库 8 处」本身是对的），`fields_used` 为空（§5 列的 dword_55C8E0 族是调用方缓冲，本条体里不引用）。"
+      }
+    ]
+  },
+  {
+    "addr": "0x41B9B0",
+    "raw_name": "sub_41B9B0",
+    "semantic_name": "readStringOperand_41B9B0",
+    "op": "0x1B2",
+    "status": "ANALYZED",
+    "purpose": "读字符串操作数（返回 const char*）—— 三条转串原语里的**第三条**，全库只有 `0x1B2`（`sub_42A9B0` raw 36550-36558）用它。tag 分派与 `sub_41B640` 同形，但两处不同：① **不做全角化**（全函数体零处调 `sub_41A6C0`）；② **支持 float 指针族 tag 7/13**（case 7 raw 26441-26445、case 13 raw 26475-26480），前两条原语对 7/13 抛 `Command_Type_Exception`。数组族：`0x8003`/`0x8009` 空容器返回全局 `a0`=\"0\"（半角）、否则半角 `_itoa_s(DEC(vec[0]))`；`0x8005`/`0x800B` 走 pointer-in-string 语义（串空/向量空 ⇒ 空串 `byte_51EA3C`）。",
+    "sub_behaviors": [
+      "tag 0/1 立即数 → _itoa_s/%lf（**无** sub_41A6C0）",
+      "tag 2 内嵌字面量：逐 dword 取反解出（raw 26405-26418）",
+      "tag 3/9 int 池 → _itoa_s(DEC)",
+      "tag 4/10 float 池 → %lf",
+      "tag 5/11 string 池 SSO",
+      "tag 6/12 int 指针 → _itoa_s(DEC(*ptr))",
+      "tag 7/13 float 指针 → %lf(*ptr)",
+      "tag 8/14 string 指针 SSO",
+      "0x8003/0x8009 空 ⇒ a0；0x8005/0x800B ⇒ atoi 解指针取 vec[0]"
+    ],
+    "fields_used": [
+      "_this[30*cur+95781..95794](帧池基址)",
+      "_this[95744..95754](全局池)",
+      "a0(raw 4399)",
+      "byte_51EA3C(raw 4302)"
+    ],
+    "unmodeled": [],
+    "evidence": "raw 26366-26549",
+    "notes": "emulator 对应物 = `src/vm/operand.ts` 的 `readStringOperand` + `stringPrimitiveForOp`（按 opcode 选原语）。★与 `sub_41B640` / `sub_42A420` 的差就是本条的关键：见 `operand.ts` 头注的三列对照表。",
+    "journal": [
+      {
+        "at": "2026-09-25（T-0162）",
+        "what": "按 `tickets/T-0162/changes-c162.md` §5 新建本条；evidence 由 §5 的 raw 26366-26548 改为 26366-26549（函数的收尾 `}` 落在 26549）。"
+      }
+    ]
+  },
+  {
+    "addr": "0x42A420",
+    "raw_name": "sub_42A420",
+    "semantic_name": "coerceOperandToString_42A420",
+    "op": "0x192/0x193/0x194/0x195/0x1A9/0x2C2",
+    "status": "ANALYZED",
+    "purpose": "把第 3 个实参指定的操作数**强制转成 std::string**（写入 a2）。tag 分派与 `sub_41B640` 同形（含全角化 `sub_41A6C0` raw 36376/36421/36509/36530），但**多了四个数组 tag**：`0x8003`/`0x8009` int 数组（空/null ⇒ 全角 `０` = `asc_5205D4` raw 4438）、`0x8005`/`0x800B` 字符串数组（串空/向量空 ⇒ 空串 `byte_51EA3C` raw 4302）。tag 7/13 float 指针**没有 case** ⇒ `default:` 抛 `Command_Type_Exception`（raw 36389-36392）。",
+    "sub_behaviors": [
+      "tag 0..14 的转串（数值族 over sub_41A6C0）",
+      "0x8003/0x8009 ⇒ DEC(vec[0]) 或 全角０",
+      "0x8005/0x800B ⇒ atoi(串槽) 当向量指针取 [0] 或空串"
+    ],
+    "fields_used": [
+      "_this[30*cur+95781..95794](帧池基址)",
+      "_this[95744..95754](全局池)",
+      "this->key(_this[97059]，DEC/ENC 用)",
+      "asc_5205D4(raw 4438 = 全角０)",
+      "byte_51EA3C(raw 4302 = 空串)",
+      "dword_55D128(1024B 数字缓冲，本函数持有)"
+    ],
+    "unmodeled": [
+      "0x8005/0x800B 的 pointer-in-string 语义（emulator 无对应值类型）"
+    ],
+    "evidence": "raw 36318-36544",
+    "notes": "emulator 对应物 = `src/vm/operand.ts` 的 `readStringOperand`（按 opcode 选原语）；`0x8005`/`0x800B` 分支**有意抛错**并登记为缺口（见 `tickets/T-0162/changes-c162.md` §4 缺口②，台账 = `analysis/opcode-gaps.json` 的 402/403/434）。",
+    "journal": [
+      {
+        "at": "2026-09-25（T-0162）",
+        "what": "按 `tickets/T-0162/changes-c162.md` §5 新建本条；`fields_used` 由 §5 的占位串「同 sub_41B640」换成按体读出的实际字段表（§5 只给了交叉引用，不是字段清单）。"
+      }
+    ]
+  },
+  {
+    "addr": "0x4BC3E0",
+    "raw_name": "sub_4BC3E0",
+    "semantic_name": "live2dEyeBlinkMotionCtor_4BC3E0",
+    "op": "",
+    "status": "ANALYZED",
+    "purpose": "构造 live2d::EyeBlinkMotion（104B）：设 vftable + 两个参数名对象（LDString） + 眨眼时序参数",
+    "sub_behaviors": [
+      "vftable = ?_7EyeBlinkMotion@live2d@@6B@（.data:0052E30C）",
+      "+32 = 1（右眼取负）",
+      "+36/+40 = PARAM_EYE_L_OPEN 的 LDString；+60/+64 = PARAM_EYE_R_OPEN 的 LDString",
+      "眨眼时序 +84 = 4000（间隔上界 ms）/ +88 = 100（闭眼）/ +92 = 50（闭合）/ +96 = 150（睁眼）"
+    ],
+    "fields_used": [
+      "EyeBlinkMotion+0(vftable)",
+      "+16(状态机)",
+      "+32",
+      "+36/+40",
+      "+60/+64",
+      "+84",
+      "+88",
+      "+92",
+      "+96"
+    ],
+    "unmodeled": [
+      "sub_4BF510 / sub_4BF020（SDK LDString 的赋值/重置）"
+    ],
+    "evidence": "raw 143001-143018（调用点 sub_478270 raw 92540-92545）",
+    "notes": "★本作这一支恒不执行（门 +23 恒 0，见 0x4783D0 的 notes）⇒ 这些参数值只是「配置在那里」。"
+  },
+  {
+    "addr": "0x4BC500",
+    "raw_name": "sub_4BC500",
+    "semantic_name": "live2dEyeBlinkNextTime_4BC500",
+    "op": "",
+    "status": "PARTIAL",
+    "purpose": "算下一次眨眼时刻：clock() + rand() * dbl_52E310 * (2*EyeBlinkMotion+84 - 1)",
+    "sub_behaviors": [
+      "读 +84（间隔上界）与 dbl_52E310（= .data:0052E310 = 0.00003051850947599719 = 1/32767）",
+      "时间源 = sub_4BF8D0() = clock() 毫秒",
+      "返回 u64 毫秒，范围 [now, now + 2*+84 - 1]"
+    ],
+    "fields_used": [
+      "EyeBlinkMotion+84",
+      "dbl_52E310(=1/32767)",
+      "sub_4BF8D0()(=clock())"
+    ],
+    "unmodeled": [
+      "rand() 的全局 srand 状态（序列不可复现）"
+    ],
+    "evidence": "raw 143030-143039；调用点 sub_4BC550 raw 143106 / 143115",
+    "notes": "★dbl_52E310 = 0.00003051850947599719 是**恰好 1/32767**，不是 2^-15（差 9.3e-10）—— 已在本工程加常量棘轮断言。"
   }
 
-]
+,
+    {
+      "addr": "0x4223A0",
+      "raw_name": "sub_4223A0",
+      "semantic_name": "op_push_stack_4223A0",
+      "op": "0x138",
+      "status": "ANALYZED",
+      "purpose": "0x138（argc 2）：把 op2 压进 Stack_int 族第 op1 个容器（`_this + 4*op1 + 388292`）。入口把本帧指令长度槽写成 5（= 2*argc+1）；op1 > 0xA ⇒ 组 aPush 串经 sub_408050 + sub_4034D0 投递（不动容器）；否则 sub_409D40(容器, op2) 压栈。",
+      "sub_behaviors": [
+        "写 frames[cur][95805] = 5（指令长度槽）",
+        "op1 = readIntOperand(1)（sub_41BF50）",
+        "op1 > 0xA ⇒ sub_408050(aPush) + sub_4034D0 投递，不碰容器",
+        "否则 sub_409D40(Stack_int 对象, readIntOperand(2)) 压栈"
+      ],
+      "fields_used": [
+        "Engine+388292（+4*i，Stack_int 族容器）",
+        "frames[cur].operand_count(383220 / dword 95805)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 30733-30750",
+      "notes": "与 0x137（sub_4222B0 ResetStack）同族，容器是 Stack_int 对象（[1]=256 容量 / [2]=256 增量 / [3]=buf / [4]=-1 顶下标，构造见 sub_407BD0）；★与 Queue_int 族（388252）的字段布局不同 ⇒ 0x132/0x133/0x134 的 `op1 = 0xA` 越到这里是类型混淆（见 opcode-gaps 的 0x132/0x133/0x134 与 0x9）。emulator 未建模该族（0x137 是 no-op、0x138 未注册）。"
+    },
+    {
+      "addr": "0x407BD0",
+      "raw_name": "sub_407BD0",
+      "semantic_name": "stackIntCtor_407BD0",
+      "op": "",
+      "status": "ANALYZED",
+      "purpose": "Stack_int 构造函数（20 字节对象）：[1]=256（容量）、[2]=256（增量）、*[0]=&Stack_int::vftable_、[3]=new[](0x400)（256 个 int 缓冲）、[4]=-1（顶下标 = 空栈）。",
+      "sub_behaviors": [
+        "设 vftable = &Stack_int____vftable_",
+        "[1]=256、[2]=256",
+        "[3]=operator new[](0x400)",
+        "[4]=-1"
+      ],
+      "fields_used": [
+        "Stack_int+0(vftable)",
+        "+4(cap)",
+        "+8(inc)",
+        "+12(buf)",
+        "+16(top)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 12623-12631",
+      "notes": "★与 Queue_int 的 sub_407C50（raw 12654-12663：vftable / [1]=buf / [2]=rd=0 / [3]=wr=0 / [4]=256 / [5]=256 / [6]=0）**字段布局不同** —— 这是 `op1 = 0xA` 类型混淆的根据。构造点：sub_40DF10 在 raw 18116-18126 逐个 new(0x14) 后调它重建 Stack_int 族；raw 18110 是这一族的起点（byte 388292）。"
+    },
+    {
+      "addr": "0x453A60",
+      "raw_name": "sub_453A60",
+      "semantic_name": "frameTimerSet_453A60",
+      "op": "",
+      "status": "ANALYZED",
+      "purpose": "帧节流计时器置值（7 dword 对象，vftable = FadeTimer）：[2]=1（每帧步数）、[5]=timeGetTime()（起算时刻）、[6]=a2（每步 ms；a2==0 抬成 1）。",
+      "sub_behaviors": [
+        "[2]=1",
+        "[5]=timeGetTime()",
+        "[6]=a2（0 ⇒ 1）"
+      ],
+      "fields_used": [
+        "FadeTimer+8(dword 2)",
+        "+20(dword 5)",
+        "+24(dword 6)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 66101-66112；消费者 sub_453AF0 raw 66149-66186",
+      "notes": "消费者 sub_453AF0：[6]*[2] 与已过 ms 的差 < 5 ⇒ 返回 -1（本拍不推进）；> 0 ⇒ `Sleep(差值)` 后按 [6] 归一化推进 [2]。0xc8（sleep）在 n>=10 时用它（`sub_453A60(_this + 107440, n)`，raw 30307）；另有 handler 用 `_this + 107447` / `+107454` 的同类对象（raw 30325/30338，对象步长 7 dword）。"
+    },
+    {
+      "addr": "0x42FAC0",
+      "raw_name": "sub_42FAC0",
+      "semantic_name": "op_totalq_42FAC0",
+      "op": "0x13E",
+      "status": "ANALYZED",
+      "purpose": "0x13E（argc 2）：TOTALQ —— 把 Queue_int 族第 op1 个容器的项数写进 op2。入口把长度槽写成 5；op1 > 0xA ⇒ 错误串 aTotalq（不动容器）；否则容器 [2]=rd、[3]=wr，rd < wr ⇒ op2 = wr - rd，否则 op2 = 0。",
+      "sub_behaviors": [
+        "写 frames[cur][95805] = 5",
+        "op1 > 0xA ⇒ aTotalq + sub_4034D0",
+        "rd < wr ⇒ sub_42B4B0(_this, 2, wr-rd)；否则写 0"
+      ],
+      "fields_used": [
+        "Engine+388252 起（Queue_int 族第 op1 个）",
+        "Queue_int+8([2] rd)/+12([3] wr)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 39521-39546",
+      "notes": "★作用在 **Queue_int** 容器（388252）上，与 0x132/0x133/0x134 同族；**不是** Stack_int 族的指令（Stack_int 族只有 0x137 ResetStack / 0x138 Push，容器 388292）。emulator 未注册 0x13E（语料无使用）。"
+    },
+    {
+      "addr": "0x42FB40",
+      "raw_name": "sub_42FB40",
+      "semantic_name": "op_check_bit_42FB40",
+      "op": "0x13F",
+      "status": "ANALYZED",
+      "purpose": "0x13F（argc 3）：check-bit —— op1 = ((1 << op3) & op2) != 0。入口把长度槽写成 7；bit 号 = readIntOperand(3)，> 0x1F ⇒ 错误串 aGetbit（不写 op1）；否则取 op2 判位并写 op1。",
+      "sub_behaviors": [
+        "写 frames[cur][95805] = 7",
+        "bit = readIntOperand(3)；bit > 0x1F ⇒ aGetbit + sub_4034D0",
+        "否则 v4 = readIntOperand(2)，写 op1 = ((1 << bit) & v4) != 0"
+      ],
+      "fields_used": [
+        "frames[cur].operand_count(383220 / dword 95805)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 39548-39568",
+      "notes": "mnemonic 已登记为 `check-bit`（opcodes.json opcode 319 / argc 3），emulator 已在 OPS 注册。★与 0x13E 共用 aGetbit/aTotalq 的错误串风格，但 check-bit 本身不碰队列容器（只读 op2/op3 写 op1）。"
+    },
+    {
+      "addr": "0x42F990",
+      "raw_name": "sub_42F990",
+      "semantic_name": "op_acquireq_42F990",
+      "op": "0x139",
+      "status": "ANALYZED",
+      "purpose": "0x139（argc 3）：ACQUIREQ —— 用 Queue_int 容器 [6]（第三条游标，与 [2]=rd 并列的取用游标）从队里取下一个值、不动 [2]。入口把长度槽写成 7；op1 > 0xA ⇒ 错误串 aAcquireq；否则 [6] < [3](wr) ⇒ 取值 + [6]++ + 成功位 1，否则成功位 0；最后写 op2 = 成功位、op3 = 值。",
+      "sub_behaviors": [
+        "写 frames[cur][95805] = 7",
+        "op1 > 0xA ⇒ aAcquireq + sub_4034D0",
+        "[6] < [3] ⇒ v = buf[[6]]、[6]++、成功位 1；否则成功位 0（v = 未初始化局部）",
+        "sub_42B4B0(_this, 2, 成功位) / sub_42B4B0(_this, 3, v)"
+      ],
+      "fields_used": [
+        "Engine+388252 起（Queue_int 族第 op1 个）",
+        "Queue_int+4(buf)/+12([3] wr)/+24([6] 取用游标)"
+      ],
+      "unmodeled": [
+        "空队分支的 v5 是未初始化局部（raw 39512，Hex-Rays 标 possibly undefined）⇒ 引擎写进 op3 的是栈残留"
+      ],
+      "evidence": "raw 39446-39518",
+      "notes": "与 0x13C（REWINDQ = [6] = [2]）成对：ACQUIRE 前进 [6]、REWIND 把它退回 rd，二者都不动 rd/wr。emulator 未注册 0x139（语料无使用）。"
+    },
+    {
+      "addr": "0x422860",
+      "raw_name": "sub_422860",
+      "semantic_name": "op_rewindq_422860",
+      "op": "0x13C",
+      "status": "ANALYZED",
+      "purpose": "0x13C（argc 1）：REWINDQ —— 把 Queue_int 族第 op1 个容器的取用游标退回读游标：`*(queue + 24) = *(queue + 8)`（[6] = [2]）。入口把长度槽写成 3；op1 > 0xA ⇒ 错误串 aRewindq。",
+      "sub_behaviors": [
+        "写 frames[cur][95805] = 3",
+        "op1 > 0xA ⇒ aRewindq + sub_4034D0",
+        "否则 [6] = [2]（不动 rd/wr）"
+      ],
+      "fields_used": [
+        "Engine+388252 起（Queue_int 族第 op1 个）",
+        "Queue_int+8([2] rd)/+24([6])"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 30982-30997",
+      "notes": "与 0x139（ACQUIREQ）成对（[6] 是第三条游标）。emulator 未注册 0x13C（语料无使用）。"
+    },
+    {
+      "addr": "0x40EA00",
+      "raw_name": "sub_40EA00",
+      "semantic_name": "frameRelease_40EA00",
+      "op": "",
+      "status": "PARTIAL",
+      "purpose": "释放并复位一个脚本帧（frames[a2]，帧步长 30 dword = 0x78）：释放脚本缓冲 [95781]（GlobalFree）、local_int/local_float 数组 [95789]/[95790]（后者 = `_this[30*(a2+3193)]`）、四个帧局部池数组 [95791..95794]（local_string / local_ptr / local_float_ptr / local_string_ptr；[95791] 是 28 字节元素的 vector，逐元素 sub_40B3F0 析构）、两组 vector<vector> [95809]/[95810]；复位 [95782]=0、[95795]/[95796]=-1（返回帧/脚本身份）、[95803]/[95804]=-1（两个返还点偏移）、`_this[a2 + 122372]`/`_this[a2 + 122412]` = -1（两个回退游标），并把 dword 107725 起 33 格、109045 起 330 格 memset 成 0xFF。",
+      "sub_behaviors": [
+        "GlobalFree 脚本缓冲 [95781] 并置 0",
+        "delete[] local_int/local_float 数组（[95789]/[95790]）",
+        "delete[] 四个帧局部池数组 [95791..95794]（[95791] 逐元素 sub_40B3F0 析构）",
+        "delete[] 两组 vector<vector>（[95809]/[95810]，内层元素 sub_40CAD0 逐条析构）",
+        "复位 [95782]/[95795]/[95796]/[95803]/[95804] 与两个回退游标（a2+122372/+122412）",
+        "memset 0xFF：dword 107725 起 33 格、109045 起 330 格"
+      ],
+      "fields_used": [
+        "frames[a2][95781..95810]",
+        "ScriptContext+0x0C/+0x14/+0x18/+0x6C/+0x70",
+        "Engine+122372/+122412（逐帧回退游标）",
+        "Engine+107725/109045（逐帧块）"
+      ],
+      "unmodeled": [
+        "两组 vector<vector> 的两级容器语义未逐项建模（只确认逐元素析构路径）",
+        "sub_40B3F0 / sub_40CAD0（元素析构器）内部未读"
+      ],
+      "evidence": "raw 18398-18574",
+      "notes": "调用点：exit-script 对全部 40 帧逐个调（raw 35208-35209）、exit(0x2) 在相邻返回时释放被放弃帧（raw 25679-25680）、sub_40ED40 装载前先释放本帧（raw 18635）、sub_41C8D0 按 op1 释放指定帧（raw 26873）；call-frame(0x8) 不调它（只改目标帧的返回帧与 ip，raw 26906-26911）。★帧的四个局部池数组是 [95791..95794]（不是「三张表」）；三张 ip 表在 [95797..95802]（见 0x5D8C8）。"
+    },
+    {
+      "addr": "0x407C50",
+      "raw_name": "sub_407C50",
+      "semantic_name": "queueIntCtor_407C50",
+      "op": "",
+      "status": "ANALYZED",
+      "purpose": "Queue_int 构造函数（28 字节对象，= 空队）：*[0]=&Queue_int::vftable_、[1]=new[](0x400)（256 个 int 缓冲）、[4]=256（容量）、[5]=256（增量）、[2]=[3]=[6]=0（rd/wr/取用游标都清零）。",
+      "sub_behaviors": [
+        "设 vftable = &Queue_int____vftable_",
+        "[1]=operator new[](0x400)",
+        "[4]=256、[5]=256",
+        "[2]=[3]=[6]=0"
+      ],
+      "fields_used": [
+        "Queue_int+0(vftable)",
+        "+4(buf)",
+        "+8(rd)",
+        "+12(wr)",
+        "+16(cap)",
+        "+20(inc)",
+        "+24(acquire)"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 12654-12663",
+      "notes": "调用点：0x132（RESETQ）析构旧队后 `new(0x1C)` + 本函数（raw 30666-30679）；sub_40DF10 对 10 个槽逐个「析构 + new + 本函数」（raw 18091-18097）；teardown 对 10 个槽析构后置 NULL（raw 19204-19213）；引擎 ctor 把 388252+4*i（i=0..9）逐个置 0（raw 22655-22664）。★布局与 Stack_int（sub_407BD0）不同 ⇒ `op1 = 0xA` 越族是类型混淆。"
+    },
+    {
+      "addr": "0x4054D0",
+      "raw_name": "sub_4054D0",
+      "semantic_name": "decode_movie_mode_4054D0",
+      "status": "ANALYZED",
+      "purpose": "`0x20F` 的 op3 **位解码器**：按位从低到高第一个命中的位换算成播放模式 —— `a2 & 0x10000` → 0、`& 0x20000` → 1、`& 0x40000` → 2、`& 0x80000` → 3；四位都不置 ⇒ 返回 `GetConfig(set:DependMovieSound)` 的**原值**（该键是 0..3 的枚举，不是开关）。",
+      "signature_override": {
+        "param0": "this(Engine*)",
+        "param1": "op3（位掩码/枚举）"
+      },
+      "sub_behaviors": [
+        "0x10000 → 0 / 0x20000 → 1 / 0x40000 → 2 / 0x80000 → 3（先命中的位优先）",
+        "四位都不置 ⇒ 走配置对象 vtable+4 查 GetConfig(set:DependMovieSound) 并返回原值（不折成 BOOL）"
+      ],
+      "fields_used": [
+        "Engine+697620（配置对象基址，_this[174405]）"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 11107-11118",
+      "notes": "唯一调用点 = `0x20F` 的 raw 31654-31655（`v9 = readIntOperand(3)` → `v10 = sub_4054D0(o, v9)`，随后 `sub_405460(o, v10)` 折成音源 BOOL）。★返回的是**模式枚举 0..3**，不是答案本身。emulator：`src/vm/handlers/gfx-misc.ts` 的 `decodeMovieMode`。"
+    },
+    {
+      "addr": "0x405460",
+      "raw_name": "sub_405460",
+      "semantic_name": "movie_audio_gate_405460",
+      "status": "ANALYZED",
+      "purpose": "播放模式 → 「音源可用」BOOL。★模式 1 的判据是 `GetConfig(sound:Music) >= 0`（**不是** `!= 0`：该键用 -1 表示「音乐关闭」，0 仍是可用）；2/3/4 分别是 `sound:SE` / `sound:Voice` / `sound:Movie` 的 `!= 0`；0 与其它值恒 0。",
+      "signature_override": {
+        "param0": "this(Engine*)",
+        "param1": "模式（sub_4054D0 的输出）"
+      },
+      "sub_behaviors": [
+        "case 1：GetConfig(sound:Music) >= 0",
+        "case 2/3/4：GetConfig(sound:SE / sound:Voice / sound:Movie) != 0",
+        "default：恒 0"
+      ],
+      "fields_used": [
+        "Engine+697620（配置对象基址，_this[174405]）"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 11081-11104",
+      "notes": "唯一调用点 = `0x20F` 的 raw 31656；返回值写进影片对象的 +1144（raw 31658）并据它决定 `sub_4879E0(obj, *(obj+1140))`（有音源 ⇒ 用原音量）还是 `sub_4879E0(obj, 0)`（raw 31659-31662）。emulator：`src/vm/handlers/gfx-misc.ts` 的 `movieAudioGate`。"
+    },
+    {
+      "addr": "0x4237B0",
+      "raw_name": "sub_4237B0",
+      "semantic_name": "op_play_movie_4237B0",
+      "op": "0x20F",
+      "status": "ANALYZED",
+      "purpose": "op `0x20F` **play-movie**（argc 3）：op1 = movie 资源 id、op2 = 槽号、op3 = 模式。惰性建 `_this[4*slot + 378688]` 的 CMovieToTexture 对象并 `sub_488DC0` 装载（失败抛 asc_51F560）；该槽图像/纹理对象 `_this[4*slot + 365288]` 为空 ⇒ 抛 asc_520248；随后 `sub_489230` 绑定槽、`sub_4054D0` 位解码 op3、`sub_405460` 折音源 BOOL、置音量、`sub_4883A0` 启动；收尾 `_this[699204] |= 0x2000` 与 `_this[675972] = 1`。",
+      "signature_override": {
+        "param0": "this(Engine*)"
+      },
+      "sub_behaviors": [
+        "帧状态槽 = 7（`_this[30 * _this[95776] + 95805] = 7`，raw 31625）",
+        "对象表空 ⇒ operator new(0x480) + sub_489040 建 CMovieToTexture（raw 31629-31634）",
+        "sub_488DC0 装载失败 ⇒ 抛 asc_51F560（错误码 65541，raw 31638-31643）",
+        "槽图像/纹理对象为空 ⇒ 抛 asc_520248（raw 31645-31650）",
+        "sub_489230(obj, FileDB, 路径 id, 槽对象) 绑定（raw 31651-31653）",
+        "op3 → sub_4054D0 位解码 → sub_405460 音源 BOOL → 写 obj+1144 并 sub_4879E0 设音量门（raw 31654-31662）",
+        "音量 = _this[20032] * sub_408350(o, op3) / 10000（raw 31663-31665）",
+        "sub_4883A0 启动，置 effect_flags |= 0x2000、_this[675972] = 1（raw 31666-31668）"
+      ],
+      "fields_used": [
+        "Engine+378688+4*slot（CMovieToTexture 对象表）",
+        "Engine+365288+4*slot（槽图像/纹理对象表）",
+        "Engine+699204（effect_flags 的 0x2000 位 = movie）",
+        "Engine+675972（有影片在放）",
+        "Engine+20032（全局音量）、Engine+387924、Engine+680092（FileDB）",
+        "frames[cur][95805]（帧状态槽）"
+      ],
+      "unmodeled": [
+        "sub_488DC0 的装载失败语义（DirectShow/DLL 内部）",
+        "sub_4885A0/sub_4883A0/sub_408350 的细节（音量与启动）"
+      ],
+      "evidence": "raw 31605-31670",
+      "notes": "emulator：`src/vm/handlers/gfx-misc.ts` 的 `op_play_movie`（三段：槽纹理门走可选宿主缝 `hasSlotTexture`、op3 位解码 `decodeMovieMode`、音源门 `movieAudioGate`），守卫 `test/t0164-misc-batch.test.ts`。缺口两条见 `analysis/opcode-gaps.json` 的 0x20F 条目 `missing[]`（装载失败支不可达、675972 无生产读者）。"
+    }]

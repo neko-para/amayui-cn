@@ -10,10 +10,10 @@
     "engine/天结_unpacked.exe_utf8.c"
   ],
   "counts": {
-    "total": 34,
+    "total": 36,
     "analyzed": 10,
-    "partial": 23,
-    "stub": 1
+    "partial": 24,
+    "stub": 2
   },
   "entries": [
     {
@@ -564,7 +564,7 @@
         {
           "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
           "lines": "182-229",
-          "what": "★场景装配块（`label_00000d70`）：先 `eq (global 3f90) 0` + `jcc label_000013e0` ⇒ **3f90==0 时整块跳过**（detach 19258、槽 0x48 背景、`draw-texture 186a0`、`i1f6`、`i23d`、`create-mesh 19258`）；`4fd9 != 0` 时才走 `i1f6` 那一支"
+          "what": "★场景装配块（`label_00000d70`）：先 `eq (local-int 0) (global-int 3f90) 0` + `jcc (local-int 0) ffffffff label_000013e0`：**3f90 == 0 ⇒ 落下句、整块执行**（detach 19258、槽 0x48 背景、`draw-texture 186a0`、`i1f6`、`i23d`、`create-mesh 19258`）；3f90 != 0 ⇒ 跳 `label_000013e0` 跳过（★原写「3f90==0 时整块跳过」是**反的** —— `jcc` 口径见 `analysis/opcodes.json` 的 `0xA0` 行 / `tickets/T-0145`）；`4fd9 == 0` 时才走 `i1f6` 那一支（`4fd9 != 0` ⇒ 画 `draw-texture 186a0` 背景，不跑 `i1f6`；`label_00000f9c` 在 src/SYSTEM4.txt:211-213）"
         }
       ],
       "slots": [
@@ -592,7 +592,7 @@
         "全库只有 27 处 `i073`（SYSTEM4.txt:41、NOVEL.txt:11/265、SN0000 各页）⇒ 只有序章/NOVEL/SYSTEM4 走引擎的『字格逐字』路径",
         "★顺序是「先 LOADCONFIG 再 INITCONFIG 分支」而不是都跑：INITCONFIG 会把选项**写回默认值**，跑错分支的后果是「玩家设置每次启动都被重置」且不报错",
         "SAVE.DAT 必须在脚本之前装载（引擎 WinMain raw 142107）：装载晚了，第 71 行的 load-int 读到 0 ⇒ 白白走 INITCONFIG",
-        "★`i1f6` 与 `draw-texture 186a0` 都在 `3f90`/`4fd9` 两个门之后，而 `3f90` 全语料恒 0、本机真槽 `4fd9` 也是 0 ⇒ **读档时不能指望 SYSTEM4 清画面或画背景**（清画面是 `sub_410160` 行内做的：`capabilities` 的 `save-load-drawitem-clear-and-restore`）"
+        "★`i1f6` 与 `draw-texture 186a0` 都在 `3f90`/`4fd9` 两个门之后：`3f90` 全语料恒 0 ⇒ **第一道门恒放行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`；运行期反证 = `src/NOVEL.txt:191` 的 `i1f6` 在 SN0000→SC0000 边界确实执行过）；真正分叉的是 `4fd9`（本机真槽 = 0 ⇒ 走 `i1f6` 支、不画 `draw-texture 186a0`）⇒ **读档时不能指望 SYSTEM4 清画面或画背景**（清画面是 `sub_410160` 行内做的：`capabilities` 的 `save-load-drawitem-clear-and-restore`）"
       ],
       "gaps": [
         "音频族（0x2F8/0xB5 等）在 emulator 里是空操作 ⇒ 本脚本的「三路语音 pan 复位」子程序无实际效果"
@@ -812,7 +812,13 @@
       ],
       "status": "partial",
       "evidence": "src/SN0000.txt:1075-1085 / 575-580；页序列断言见 test/char-reveal.test.ts 的『真实序章页序列（SN0000…）』",
-      "notes": "★2026-09-24（T-0103 轮 14）：章切换链已读到 `exit`（见 layout 的 3009-3073 段）；「黑幕/白晕/人物轮廓/章节标题贴片」全在 **SC0000**（本轮新登记 SC0000 条目），本脚本只做拆场 + 一次 i250 SlideBlur；★`jcc` 极性（v==0 才跳）见 gotchas。★2026-09 已修三处（原记录：菜单 mesh 被近似成全屏黑叠加块 ⇒ 进本场景后整屏黑）：① mesh 整屏黑 —— `0x320` 的 op2..op8 是**数组基址**（x/y/z 浮点数组 + 逐顶点色数组 + UV 数组），presenter 已按真实几何 + 真实颜色合成；且 `0x322/0x323` 补上引擎的\"负值 = 取当前 state0\"回退（序章 50% 暗幕 `0x19640` = 0x80000000，曾算成不透明）。守卫 `test/mesh-vertex-quad.test.ts`（E3）。② 首文案跑到左上角 —— 文字块原点 = `0x7A` 覆盖值（`SN0000.txt:1087 i07a 8 8c 12c` = (140,300)；默认是 `SYSTEM4.txt:54 i079 8 8c 10` 的 (140,16)），行中心由 `SYSTEM4.txt:70 i303 8 1 1f4` 定为 140+500=640。守卫 `test/text-layout.test.ts`。③ 逐字过慢 —— 字格路径（`i073`）一拍 = **一个字格**（模数 = op9 = cells），整段 = cells × op10 = 800ms，不是\"一字一拍\"（58 字 ⇒ 5.8s）。守卫 `test/char-reveal.test.ts`。★2026-09 再修两处（同一轮用户复测）：④ **进场景时背景闪一下** —— 淡入幕 `0x19258` 的 `0x322 set-vertex-color` 写 state0=0xFF000000（全黑）后，`0x323 set-vertex-color-alpha` 才把 state1=0（透明）挂上 3.6s 淡出窗；两帧之间\"无动画窗\"时 `calcDiffuse` 曾返回 state1 ⇒ 那一帧幕是**透明**的 ⇒ 背景先露一下再被黑色盖上重淡。引擎的可见色是**顶点缓冲里那份**：`sub_4AE2C0`(raw 132816-132823) 写完 state0 立刻以比例 0 刷 VB、`sub_4AE330`(raw 132834-132843) 不碰 VB ⇒ 未开窗时可见色 = state0。守卫 `test/mesh-vertex-quad.test.ts`。⑤ **逐字出现前整页先亮一次** —— 本页的 `i073` 在文本**之后**（`SN0000.txt:1240`，而 `:1081` 在页首），字格总门（`win+88`）自首屏起恒 1；但 `0x72 wait-for-input` 才进逐字模式（`effect_flags & 0x40000000`）、主循环才逐格 `sub_45A940` 拍字 ⇒ 在 `0x6E` 入队到 `0x72` 武装之间屏幕上一个字都没有。\"无显现状态\"曾一律读成\"全部\"（-1），于是那一帧整页先亮、随后被逐字从头重播。已把判决点收敛到 `MsgWindow.revealedOf` 一处（字格门与 `0x300` 逐行泵并列为例外）。守卫 `test/char-reveal.test.ts`。（其余序章正文页、战斗/地图分支仍未读。） ★2026-09-24：ADV 键位绑定表已登记（layout 76-114）；滚轮/回看链的现状与缺口见 `tickets/T-0168`。 ★2026-09-24 追查补记：键位表里 **位 8 → `label_00002f84` → `call-script 31 // HISTORY`**（`SN0000.txt:831/836`）就是「回想」入口（位号来源 `SYSTEM4.txt:87-97` 的 `i10c 8 c9`，键码 0xC9 = PageUp）；位 0..3 = ↑/→/↓/← 的菜单导航 ⇒ 随包 `set:WheelKeyUp=3` 时滚轮上滚 = 菜单导航（不是回想）。HISTORY 的页渲染 `i1d1`（0x1D1）在 emulator 未实现 ⇒ 即便进了 HISTORY.BIN 也看不见画面（见 tickets/T-0168）。"
+      "notes": "★2026-09-24（T-0103 轮 14）：章切换链已读到 `exit`（见 layout 的 3009-3073 段）；「黑幕/白晕/人物轮廓/章节标题贴片」全在 **SC0000**（本轮新登记 SC0000 条目），本脚本只做拆场 + 一次 i250 SlideBlur；★`jcc` 极性（v==0 才跳）见 gotchas。★三处已修：① mesh 整屏黑 —— `0x320` 的 op2..op8 是**数组基址**（x/y/z 浮点数组 + 逐顶点色数组 + UV 数组），presenter 已按真实几何 + 真实颜色合成；且 `0x322/0x323` 有引擎的\"负值 = 取当前 state0\"回退（序章 50% 暗幕 `0x19640` = 0x80000000）。守卫 `test/mesh-vertex-quad.test.ts`（E3）。② 首文案跑到左上角 —— 文字块原点 = `0x7A` 覆盖值（`SN0000.txt:1087 i07a 8 8c 12c` = (140,300)；默认是 `SYSTEM4.txt:54 i079 8 8c 10` 的 (140,16)），行中心由 `SYSTEM4.txt:70 i303 8 1 1f4` 定为 140+500=640。守卫 `test/text-layout.test.ts`。③ 逐字过慢 —— 字格路径（`i073`）一拍 = **一个字格**（模数 = op9 = cells），整段 = cells × op10 = 800ms，不是\"一字一拍\"（58 字 ⇒ 5.8s）。守卫 `test/char-reveal.test.ts`。★2026-09 再修两处（同一轮用户复测）：④ **进场景时背景闪一下** —— 淡入幕 `0x19258` 的 `0x322 set-vertex-color` 写 state0=0xFF000000（全黑）后，`0x323 set-vertex-color-alpha` 才把 state1=0（透明）挂上 3.6s 淡出窗；两帧之间\"无动画窗\"时可见色必须是 state0（读到 state1 会让那一帧幕**透明** ⇒ 背景先露一下再被黑色盖上重淡）。引擎的可见色是**顶点缓冲里那份**：`sub_4AE2C0`(raw 132816-132823) 写完 state0 立刻以比例 0 刷 VB、`sub_4AE330`(raw 132834-132843) 不碰 VB ⇒ 未开窗时可见色 = state0。守卫 `test/mesh-vertex-quad.test.ts`。⑤ **逐字出现前整页先亮一次** —— 本页的 `i073` 在文本**之后**（`SN0000.txt:1240`，而 `:1081` 在页首），字格总门（`win+88`）自首屏起恒 1；但 `0x72 wait-for-input` 才进逐字模式（`effect_flags & 0x40000000`）、主循环才逐格 `sub_45A940` 拍字 ⇒ 在 `0x6E` 入队到 `0x72` 武装之间屏幕上一个字都没有。\"无显现状态\"必须读成\"无\"而不是\"全部\"（-1）—— 读成\"全部\"会让那一帧整页先亮、随后被逐字从头重播。判决点收敛在 `MsgWindow.revealedOf` 一处（字格门与 `0x300` 逐行泵并列为例外）。守卫 `test/char-reveal.test.ts`。（其余序章正文页、战斗/地图分支仍未读。） ★2026-09-24：ADV 键位绑定表已登记（layout 76-114）；滚轮/回看链的现状与缺口见 `tickets/T-0168`。 ★2026-09-24 追查补记：键位表里 **位 8 → `label_00002f84` → `call-script 31 // HISTORY`**（`SN0000.txt:831/836`）就是「回想」入口（位号来源 `SYSTEM4.txt:87-97` 的 `i10c 8 c9`，键码 0xC9 = PageUp）；位 0..3 = ↑/→/↓/← 的菜单导航 ⇒ 随包 `set:WheelKeyUp=3` 时滚轮上滚 = 菜单导航（不是回想）。HISTORY 的页渲染 `i1d1`（0x1D1）在 emulator 未实现 ⇒ 即便进了 HISTORY.BIN 也看不见画面（见 tickets/T-0168）。",
+      "journal": [
+        {
+          "at": "2026-09（T-0103 轮 14）",
+          "what": "★订正（本条 notes 原有的三处缺口描述）：① 菜单 mesh 曾被近似成「全屏黑叠加块」⇒ 进本场景后整屏黑（引擎是真实几何 + 真实颜色）；② `0x322/0x323` 的「负值 = 取当前 state0」回退曾缺失，序章 50% 暗幕 `0x19640` = 0x80000000 曾算成不透明；③ `calcDiffuse` 在「无动画窗」时曾返回 state1 ⇒ 淡入幕透明一帧（背景闪一下）；④「无显现状态」曾被读成「全部」（-1）⇒ 逐字前整页先亮一次。"
+        }
+      ]
     },
     {
       "id": "TITLE",
@@ -965,7 +971,7 @@
         "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
         "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）",
         "★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位",
-        "★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）；旧文档写\"纹理槽变换\"会让整套节点/槽接线对不上",
+        "★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）—— 把它当\"纹理槽变换\"会让整套节点/槽接线对不上",
         "★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`",
         "★`detach-texture 64 12c`（line 818，删 [100,400)）只在 **Game Start** 分支被调（line 320）；`i1f6`（line 810）只在 **Room** 分支（line 368）与退出路径（line 822）—— **Load Data 分支没有任何清理** ⇒ 不能假设「进菜单前标题项会被清」",
         "★`0x5A0`/`0x502` 是 **atlas 源列**、`0x9E` 是 atlas 行距，不是屏幕坐标（曾据此误判「在屏外」；屏幕落点来自 line 16/17 的两张常量表）；同理 `0x64` 那条的源 y=1161 已越过 BG050ABL 的图高 1152"
@@ -1014,7 +1020,13 @@
       ],
       "status": "partial",
       "evidence": "src/TITLE.txt:579-596；E3 断言见 test/config-version-substr.test.ts（启动链跑到 TITLE 后，CG 数字条各项的源矩形还原出 1.07.0019）；E4 截图 .tmp/vercheck-0-title.png；Live2D 支：src/TITLE.txt:526-557（分叉 + 装载）、552-556（i352/i34e）、589-590（i344 建节点）；E3 断言见 test/live2d-chain.test.ts（用真实 TITLE.MOC/TITLE00.PNG/TITLE.MTN 走同一条 0x341/0x345/0x352/0x34E/0x344 链）；E3 断言见 test/live2d-render.test.ts（装载 TITLE.MOC + 绑 0x4f9f/0x4fa0/0x4fa1 + 建节点 0x14 后，`l2dBatches` 的几何自洽且与快照同源）",
-      "notes": "版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。 Live2D 支（526-557 / 589-590）已读并落库：`a9d0` 门控、MOC/纹理/MTN 的统一文件 id 实测为 0x4f9e=TITLE.MOC / 0x4f9f=TITLE00.PNG / 0x5274=TITLE.MTN。未读：SETL2DMOC 家族正文、L2D 支的点击/演出细节。 出画（2026-09 收尾）：出画几何在 `app/amayui-emulator/src/live2d/render.ts` 一处实现（画布居中 + 按纹理号分组 + 第四路归并键 = 节点 key），Pixi 侧只把 positions/uvs/indices 塞进 MeshGeometry，快照导出的是同一份 ⇒ 报告与画面不可能漂移。"
+      "notes": "版本号显示 + 菜单命中/派发（Game Start 一列）已读；Load Data / Room / Option / Quit 各自进去之后的路径未读。「进入游戏」的完整链路（TITLE → GAMESTART → INITGAME → SETFATE → SC0000 → SN0000）见 docs-new/03-engine/scene-start-flow.md。 Live2D 支（526-557 / 589-590）已读并落库：`a9d0` 门控、MOC/纹理/MTN 的统一文件 id 实测为 0x4f9e=TITLE.MOC / 0x4f9f=TITLE00.PNG / 0x5274=TITLE.MTN。未读：SETL2DMOC 家族正文、L2D 支的点击/演出细节。 出画（2026-09 收尾）：出画几何在 `app/amayui-emulator/src/live2d/render.ts` 一处实现（画布居中 + 按纹理号分组 + 第四路归并键 = 节点 key），Pixi 侧只把 positions/uvs/indices 塞进 MeshGeometry，快照导出的是同一份 ⇒ 报告与画面不可能漂移。",
+      "journal": [
+        {
+          "at": "2026-09",
+          "what": "★订正：本条原写「纹理槽变换」是**误读** —— `i344` 的 op2 是 L2D 实例槽号（0..9）。"
+        }
+      ]
     },
     {
       "id": "INITCONFIG",
@@ -1484,9 +1496,15 @@
       },
       "status": "partial",
       "evidence": "src/$1$AUTORUN.txt 全文 67 行实读；派发路径 raw 25168-25191（i143 → queueScript(slot<<24)）；调用方 src/INIT2.txt:140；掩码比对 src/SAVE.txt:875-888",
-      "notes": "★2026-09 订正：emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段），原「0x143 未实现 ⇒ 本脚本永不执行」的缺口已消失。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。",
+      "notes": "emulator 侧 `0x143`（i143 派发）与扩展包发现/注册**均已实现**（守卫 `test/append-packs.test.ts`，含真实语料 10.8 万步派发链的 E3 段）。包 2..5 的 AUTORUN 未逐行读（结构与包 1 同构，仅条目/包号不同）。",
       "guards": [
         "test/append-packs.test.ts"
+      ],
+      "journal": [
+        {
+          "at": "2026-09",
+          "what": "★订正：本条原有缺口「0x143 未实现 ⇒ 本脚本永不执行」—— 已消失（`0x143` 派发与扩展包发现/注册均已实现）。"
+        }
       ]
     },
     {
@@ -2706,7 +2724,7 @@
         {
           "anchor": "draw-texture 186a0 48 0 0 500 2d0 0 0",
           "lines": "32-58",
-          "what": "「恢复上一屏背景」块（画在 handle 0x186A0、槽 0x48）：门是 `(global-int 3f90) != 0`（见 invariants ⇒ 恒不执行）；3f90==0 时 `jcc label_0000088c` 整段跳过"
+          "what": "「恢复上一屏背景」块（画在 handle 0x186A0、槽 0x48）：门 = `eq local0,(global 3f90),0` + `jcc local0 ffffffff label_0000088c` ⇒ **`3f90 == 0` ⇒ 落下句、整块执行**；`3f90 != 0` ⇒ 跳 `label_0000088c` 跳过（★原写「门是 3f90 != 0」「3f90==0 时整段跳过」两处都反了 —— `jcc` 口径见 `analysis/opcodes.json` 的 `0xA0` 行 / `tickets/T-0145`）"
         },
         {
           "anchor": "call-script (global-int 1394)",
@@ -2716,7 +2734,7 @@
         {
           "anchor": "detach-texture 109a0 1",
           "lines": "174-191",
-          "what": "ADV 收场：3f90 != 0 时 `i259`（清两张槽记录镜像）+ 区间 detach + `i1f6`"
+          "what": "ADV 收场：`3f90 == 0` 时 `i259`（清两张槽记录镜像）+ `call label_000013fc/000016a0/00001db4` + 后续按 `4fd9` 分叉（`4fd9 == 0` ⇒ 跳 `label_00000c18` 走 `i1f6`）—— ★原写「3f90 != 0 时」是**反的**（见 `tickets/T-0145`）"
         }
       ],
       "slots": [
@@ -2734,7 +2752,7 @@
         }
       ],
       "invariants": [
-        "`global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ line 32-58 那条「恢复背景」路径在正式脚本里恒不执行（handle 0x186A0 从未被真正画出）"
+        "`global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ **line 32-58 那条「恢复背景」路径恒执行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`）；但决定画不画 `186A0` 的是下一道 `4fd9` 门：`4fd9 == 0`（本机真槽）⇒ 跳 `label_00000448` 走 `i1f6`/`i23d` 支，**handle 0x186A0 在本机从未被画出**"
       ],
       "gotchas": [
         "★`i0ae`（line 29）**早于**背景块（line 32-58）⇒ 读档续跑时那一块被跳过；「读档后背景由 NOVEL 重画」这个说法是**错的**（app/amayui-emulator/src/vm/handlers/save-slot.ts:319-322 的括注就是这么错的，见 tickets/T-0083）"
@@ -2810,7 +2828,7 @@
         "本文件是**纯分派 + 门控写**：没有 draw/纹理操作，画面变化只能来自它写下的全局量"
       ],
       "gotchas": [
-        "★★**两套同名脚本**：`src/SCJUMP.txt`（16059 条指令，运行的就是它）与 `src/$1$SCJUMP.txt`（698 行，包 1 变体，门读 `1dd7`）。T-0102 §E 曾按后者逐行解读、却拿前者的日志当证据 ⇒ 整段极性/变量名都错（订正见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md）",
+        "★★**两套同名脚本**：`src/SCJUMP.txt`（16059 条指令，运行的就是它）与 `src/$1$SCJUMP.txt`（698 行，包 1 变体，门读 `1dd7`）。按后者逐行解读会**整段极性/变量名都错**（读法见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md）",
         "★**`jcc` 极性**：`op1≠0 → 跳 op2`、`op1==0 → 跳 op3`，目标 `0xFFFFFFFF` = **落下句**（引擎 `sub_4209B0` raw 29615-29639）。所以 `ne local, 13d7, 1` 后跟 `jcc local, ffffffff, LABEL` 的意思是\"**13d7 已演(≠1 为假 → local=0) 就跳过本块**\" —— 读反一次就会得出\"门没挡住\"的错误结论",
         "★`global f8080` **在保存池之外**（池长 1015792）⇒ 它是进程内裸量；但 `13d7/13d8/…` **在池里**（随存档持久化）⇒ \"哪一节演过\"是存档状态，\"闸值\"不是",
         "本文件是「一个脚本装全部章」的巨型分派（各章支结构同型，改一处要防同型支漏改）"
@@ -2831,7 +2849,13 @@
       ],
       "status": "partial",
       "evidence": "src/SCJUMP.txt:6-36（分派）、38-54（节选择块，实测命中 47-54）；运行期帧栈与门量见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md（SCJUMP.BIN ip=43、13d7=1 / 13d8=0 / f8080=INT_MAX）；行为守卫 test/t0102-chapter-chain.test.ts",
-      "notes": "2026-09-23 订正：file 从 `src/$1$SCJUMP.txt`（包变体，698 行）改为运行期真正执行的 `src/SCJUMP.txt`；门量 1dd7 → 13d7/13d8；\"`mov global0 1` 是元凶\" → 它是**选中下一节的正常动作**。未读：其余各章支。"
+      "notes": "file = 运行期真正执行的 `src/SCJUMP.txt`（包变体是 `src/$1$SCJUMP.txt`，698 行）；门量 = `13d7`/`13d8`；`mov global0 1` 是**选中下一节的正常动作**。未读：其余各章支。",
+      "journal": [
+        {
+          "at": "2026-09-23",
+          "what": "★订正：本条 file 原写 `src/$1$SCJUMP.txt`（包变体，698 行），改为运行期真正执行的 `src/SCJUMP.txt`；门量 1dd7 → 13d7/13d8；原把 `mov global0 1` 当元凶，其实它是选中下一节的正常动作。另：T-0102 §E 曾按包变体逐行解读、却拿运行支的日志当证据 ⇒ 整段极性/变量名都错。"
+        }
+      ]
     },
     {
       "id": "ALLMAP",
@@ -2879,8 +2903,8 @@
         "跳转表循环上界固定 20（`lt local566, f807f, 20`）"
       ],
       "gotchas": [
-        "★**`b22a` 门的极性**（2026-09-23 订正）：`eq local566, b22a, 0` + `jcc local566, ffffffff, label_000003f4` = **`b22a == 0` 才置 `3f3d = 1`**（cond 真 ⇒ 落下句）。旧条目写成\"`b22a != 0` 时置 1\"，是读反了",
-        "★`label_000065cc` 就是 `call-script 512f (SETADVFLAG)`：它把 `global f8080` 写成 INT_MAX ⇒ `SCJUMP` 的 `gr f8080, 10` **必然放行**；真正决定\"选中哪一节\"的是 `13d7/13d8/…` 那组\"已演\"标志（`tickets/T-0102` 轮 19 订正）",
+        "★**`b22a` 门的极性**：`eq local566, b22a, 0` + `jcc local566, ffffffff, label_000003f4` = **`b22a == 0` 才置 `3f3d = 1`**（cond 真 ⇒ 落下句；读成 `b22a != 0` 就把极性读反了）",
+        "★`label_000065cc` 就是 `call-script 512f (SETADVFLAG)`：它把 `global f8080` 写成 INT_MAX ⇒ `SCJUMP` 的 `gr f8080, 10` **必然放行**；真正决定\"选中哪一节\"的是 `13d7/13d8/…` 那组\"已演\"标志（`tickets/T-0102` 轮 19）",
         "本文件是「大地图 + 章节跳转」共用的入口，读它时要区分 `3f3d=1`（第 1 章）与 `3f3d=b` 两支"
       ],
       "gaps": [
@@ -2898,7 +2922,13 @@
       ],
       "status": "partial",
       "evidence": "src/ALLMAP.txt:28-60（入口 + b22a 门 + 置 3f3d + SETADVFLAG + 跳转表循环）；:153/:198（另一支置 3f3d=b）；运行期取值（b22a=0 ⇒ 3f3d=1）见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md",
-      "notes": "2026-09-23 订正：`b22a` 门的极性（`== 0` 才置）与\"`f8080` 必然放行\"这条因果。未读：行 60 之后的全部分支与大地图绘制/选择逻辑。"
+      "notes": "`b22a` 门的极性 = `== 0` 才置；`f8080` 必然放行（因果见 gotchas）。未读：行 60 之后的全部分支与大地图绘制/选择逻辑。",
+      "journal": [
+        {
+          "at": "2026-09-23（tickets/T-0102 轮 19）",
+          "what": "★订正：本条 gotcha 原写「`b22a != 0` 时置 1」—— 读反了；真极性 = `b22a == 0` 才置 `3f3d = 1`。另：`label_000065cc`（call-script 512f = SETADVFLAG）把 `global f8080` 写成 INT_MAX ⇒ `SCJUMP` 的 `gr f8080, 10` 必然放行。"
+        }
+      ]
     },
     {
       "id": "SETADVFLAG",
@@ -2941,7 +2971,7 @@
         "`mov (global-int f8080) 7fffffff` 在本文件里**无条件**执行（行 24，不在任何 jcc 之后）"
       ],
       "gotchas": [
-        "★本文件把 `f8080` 抬到 INT_MAX ⇒ **`SCJUMP` 的闸值门（`gr f8080, 10`）必然放行**。所以\"选中哪一节\"完全由 `SCJUMP` 里那串 **`13d7`/`13d8`/`13d9`…（该节是否已演）** 决定 —— ★**不是** `1dd7`/`3318`/`1521`/`2f3c`（那是**包变体** `$1$SCJUMP.txt` 的读法，运行期跑的是 `src/SCJUMP.txt`）；T-0102 曾据此把因果读反，订正见 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md` §4",
+        "★本文件把 `f8080` 抬到 INT_MAX ⇒ **`SCJUMP` 的闸值门（`gr f8080, 10`）必然放行**。所以\"选中哪一节\"完全由 `SCJUMP` 里那串 **`13d7`/`13d8`/`13d9`…（该节是否已演）** 决定 —— ★**不是** `1dd7`/`3318`/`1521`/`2f3c`（那是**包变体** `$1$SCJUMP.txt` 的读法，运行期跑的是 `src/SCJUMP.txt`）；读法见 `tickets/T-0102/evidence/chapter-chain-runtime-trace.md` §4",
         "`f8080 = 1015936` **在保存池之外**（池长 1015792）⇒ 它不随存档持久化，是进程内裸量"
       ],
       "gaps": [
@@ -2957,7 +2987,13 @@
       "guards": [],
       "status": "partial",
       "evidence": "src/SETADVFLAG.txt:14-41（全文 41 行，除注释外已通读）；运行期见 tickets/T-0102/evidence/clear-slot-records-root-cause.md §10（日志里 `[call-script] 0x512f -> SETADVFLAG.BIN` 紧随 ALLMAP）",
-      "notes": "本脚本很短（41 行），已通读；未核的是它引用的表与数组。本条是 2026-09-22 白底定位（T-0102）的副产品 ★2026-09-23 订正：删掉\"第一道门要 1dd7 && 3318 …\"这句（它属于包变体，不是运行的那支）。"
+      "notes": "本脚本很短（41 行），已通读；未核的是它引用的表与数组。本条是 2026-09-22 白底定位（T-0102）的副产品",
+      "journal": [
+        {
+          "at": "2026-09-23（tickets/T-0102）",
+          "what": "★订正：曾据包变体（`src/$1$SCJUMP.txt`）的读法把因果读反 —— 原有一条「第一道门要 1dd7 && 3318 …」，那不是运行那支（`src/SCJUMP.txt`）的判据，已删。"
+        }
+      ]
     },
     {
       "id": "SC0000",
@@ -3091,6 +3127,213 @@
       "status": "partial",
       "evidence": "src/SC0000.txt 的区间见 layout；运行期时间线（setTransition/createMesh/setVertexColor/detach 的先后）见 tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md 与实例日志的 [transition] 行（T-0103 轮 14）",
       "notes": "未读：G0002 之后的各章头块、各节的 ADV 正文段（本文件 33997 行 / 24501 指令，只读了入口 1008-1084 与 G0000/G0001 段 1256-1705）、`label_00070b40`（全层硬销毁）与 `label_0006fed8`/`label_00071120` 等辅助子程序的逐句；层 5/6 的素材未列全。"
+    },
+    {
+      "id": "HISTORY",
+      "file": "src/HISTORY.txt",
+      "bin": "HISTORY.BIN",
+      "role": "回想（历史）画面：把 ADV 已经压进引擎记录表 `Font+3364` 的页按 5 行一屏列出来，逐行取字段画页码/图标/说话人名，**正文由 `i1d1`（`0x1D1`）让引擎重画**；自带列表游标、滚轮翻页与滑块。",
+      "entry": "唯一入口 = ADV 侧边栏菜单的 action id 6：`$1$SC0330.txt:477-513` 里的 `call-script 31 // HISTORY`（callgraph 实测**335 个** `$n$SC*/SG*` 脚本都走这一格）。出口 = `ret`（`label_00000978` / `label_000056a8` / `label_00005710`）。它自己只 `call-script 46 // DRAWCHARM`（`src/HISTORY.txt:1586`），不调别的 BIN。",
+      "layout": [
+        {
+          "anchor": "label_000007c4",
+          "lines": "109-131",
+          "what": "入口初始化：`call label_00003484`/`35a4`（建表/复位）→ 调 `3cd0`/`3d0c`/`14c4` 登记输入回调 → `read-mouse-pos` → 进 `label_000008e0` 的 `get-input-type` 轮询（`sleep 1`，直到 `local 85 == 1`）"
+        },
+        {
+          "anchor": "label_0000069c",
+          "lines": "88-107",
+          "what": "给 5 个列表行窗（**窗号 = 3 + 行号**）逐个 `i071`（= 清该窗 + 压一条回看页 + 置组首，raw 74267-74276）+ 把该行的位置写进 `local 2c`（= `local 30` 起 5 格）与 `local 18`（5 格的 y 表）"
+        },
+        {
+          "anchor": "i1d0 (local-int 93) (local-int 94) (local-int 9a)",
+          "lines": "20-44",
+          "what": "★**页收集**：`i1d0` 取页（op1 = 窗号 → `local 93`、op2 = 该页在记录表里的起始下标 → `local 94`、op3 = 步数 → `local 9a`，从 0 起递减 = 向旧翻）→ `sub 4a9 = -1` 后 `i1d3 (96) (97) (93) (94) (4a9)`（key = -1）判「该页有没有已画正文行」→ **`found != 0` 或 `win == 9`** 才把该步数写进 `local 9c[]`（`local 485` 计数）"
+        },
+        {
+          "anchor": "read-mouse-wheel (local-int 90)",
+          "lines": "292-316",
+          "what": "右键 / 滚轮：`read-mouse-wheel (local 90)` 非 0 ⇒ `label_000027bc`；否则看 `local 82`（鼠标位）再 `i0ff`/`i100`（`local 8e` 作返回值 + `local 8f` 计时）"
+        },
+        {
+          "anchor": "joy-callback 0 label_00001614",
+          "lines": "318-336",
+          "what": "输入回调登记：`joy-callback 0..c`（13 条，`label_00001614`…`label_00002794`）+ `mouse-callback 10 label_00000934`（右键 = 退出）；`local 8a = 1`、`local 8f = 0`、`read-mouse-wheel (local 90)` 作前置清账"
+        },
+        {
+          "anchor": "label_00002be4",
+          "lines": "752-831",
+          "what": "列表区（第 9..13 项）的字段收集：`i1d0` 取页 → `i1d3` 取 key `4`/`5`（`local 97`）→ 查 `global 52a49c`（→ `14acdb` 类别码）与 `14acdc`→`14b0c4`（→ `14acda`）→ `global 3b4e[14acda]` 判是否可点；命中后 `i1d3` key `7`/`8`（`local 4a3`）+ `i2f3`（语音选择器，`local 91`）"
+        },
+        {
+          "anchor": "label_00004980",
+          "lines": "1140-1214",
+          "what": "逐行取字段（同样的两次 `i1d3`：key `10` → `local 49c`，key `4`/`5` → `local 97`）⇒ 决定 `global 14acda/14acdb`（列表项的类别码），再 `i1d3` key `0`（`local 4a5`）判有无；`label_00004d90` 用 `draw-texture 11 25a 55d ea 14 30c` 画选中标记"
+        },
+        {
+          "anchor": "i1d1 (local-int 4a9) (local-int 94) 40 0 0",
+          "lines": "1240-1315",
+          "what": "★**回看页正文重画**（全语料唯一调用点）：`i1d3` key `3`（`local 98`）取图标项 → `lookup-array-2d global 149d39` 命中则 `set-texture`+`draw-texture` 贴图标；`i1d3` key `0`/`1` 从 `global-string f612`/`f9fa` 取**说话人名** → `i07a (3+行号) 3c 4` + `show-text`（`label_00005488-1292`）；最后 `i07a (3+行号) (4b2) (4b3)` 设该行文本块原点，`i1d1 (3+行号) (local 94) 40 0 0` 让引擎把该页**正文**画进该窗"
+        },
+        {
+          "anchor": "detach-texture (local-int 4a9) 1",
+          "lines": "1338-1361",
+          "what": "逐行贴图收尾：`detach-texture` 卸旧图元 → 按 `local 88`（选中项）分支 `draw-texture 11 …` 画列表底/条纹/页码，并 `i217`（层序）/`i1fd`（滑块）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "local-int 94",
+          "what": "★当前页在**记录表** `Font+3364` 里的起始下标（`i1d0` 的 op2，也是 `i1d1` 的 op2）"
+        },
+        {
+          "key": "local-int 93",
+          "what": "该页的窗号（`i1d0` 的 op1）"
+        },
+        {
+          "key": "local-int 9a",
+          "what": "页步数（`i1d0` 的 op3）；从 0 起递减 = 向「旧」翻"
+        },
+        {
+          "key": "local-ptr 0 / local-int 9c",
+          "what": "收集到的**页步数数组**（`local 9c` 起；`local 485` = 收集到的页数）"
+        },
+        {
+          "key": "local-int 91",
+          "what": "列表行号 0..4 ⇒ **窗号 = 3 + 91**（`label_0000069c` 与 `label_0000561c` 两处都是这个算法）"
+        },
+        {
+          "key": "local-int 88",
+          "what": "当前选中项（列表游标，0..13；`label_0000576c` 起按它分支画）"
+        },
+        {
+          "key": "local-int 89",
+          "what": "进入时记住的选中项（用于恢复）"
+        },
+        {
+          "key": "local-int 4a9",
+          "what": "★**多义槽**：在页收集段是 `i1d0`/`i1d3` 的出参；在画正文段被复用成「目标窗号」=`3 + 91`（`src/HISTORY.txt:1311`）"
+        },
+        {
+          "key": "local-int 4b2 / 4b3",
+          "what": "该行文本块的原点 (x, y)：`i07a <win> <4b2> <4b3>`（`label_0000561c`）；y 会按数据类型 `+28`/`+14` 累加（`1302`/`1308`）"
+        },
+        {
+          "key": "local-int 486 / 487 / 488",
+          "what": "滑块/滚动条的分子/分母（`label_000003f8` 的 `div/mul/mod` 算出，喂 `i1fd`）"
+        },
+        {
+          "key": "local-int 7d/7e/7f/80/81/82",
+          "what": "鼠标：当前位置（`7d`/`7e`）、上一帧位置（`7f`/`80`）、按键位（`81`）、拖拽态（`82`）"
+        },
+        {
+          "key": "local-int 4a3/49a/49b/49c/49d/4a5/4a6",
+          "what": "`i1d3`/`i2f3` 的输出槽（字段值/语音 id/循环位/类别码/布尔）"
+        }
+      ],
+      "invariants": [
+        "`i1d1` 的 op2 必须 `<` 记录表条数（引擎 `sub_4675A0` raw 80529 的越界门；不满足则整条指令什么都不做）",
+        "`i1d1` 全脚本**只在 `label_0000561c` 一支被调用 1 次**（`src/HISTORY.txt:1314`），且在 `i07a <win> <4b2> <4b3>` 之后",
+        "列表行窗号恒 = `3 + local 91`（`91 ∈ 0..4` ⇒ 窗 3..7）",
+        "页收集的收页条件 = 「该页能查到 key = -1 的记录」**或**「该页窗号 == 9」（`label_000001b8` 的 `and (4ab) (4a9) (4aa)`）",
+        "`i1d0` 的 op3 从 0 起逐轮 `sub …,1`（向旧翻），与 `local 485` 的步数数组下标同步递增"
+      ],
+      "gotchas": [
+        "★**`i1d1` 不是「页面渲染器」**：滚动位置、选中页高亮、翻页、页码全部由**本脚本**用 `i1d0`/`i1d3` + `draw-texture`/`i217`/`i1fd` 自己画；`0x1D1` 只负责「把从 op2 起的那一段**记录**重画进窗 op1」。引擎体 raw 81140-81522 全域搜索无 `FillRect`/`Rectangle`/`PatBlt`/区域填充（`tickets/T-0170` 实测）",
+        "★本脚本自己用 `i071` 给窗 3..7 清场（`src/HISTORY.txt:99`）⇒ **回看页表里会混进 7 条「本脚本压的页」**，而 `i1d0` 的步数是相对 `Font[860]` 游标走的，别假设页表只装 ADV 页",
+        "★`show-text`（`1292`）画的是**说话人名**（来自 `global-string f612`/`f9fa`），**不是正文**；正文只由 `i1d1` 画。两者必须在同一行窗上（先 `i07a` 设原点）",
+        "★`i1d3` 的 key 有 `-1/0/1/2/3/4/5/7/8/a` 多种，同一支里连续查两次是常态（先判布尔再取值）；key 由 ADV 脚本的 `i1d2` 压进记录",
+        "★`local 4a9` 在同一个函数里被复用成两种含义（i1d0/i1d3 的出参 → 目标窗号），读 `1311-1314` 那段时容易看错"
+      ],
+      "gaps": [
+        "未读：13 个 `joy-callback`（`label_00001614`..`label_00002794`）的体、`label_000028b8`..`label_00004694`、`label_0000576c` 之后的 1400-1703（含 `call-script 46 // DRAWCHARM` 那一支）",
+        "未读：它 `call` 的 9 个子例程（`3484`/`35a4`/`3cd0`/`3d0c`/`410c`/`4514`/`576c`/`64f4`/`16xxx`）的职责只按调用点推的",
+        "`i1d1` 落点 `sub_4675A0` 的两处未实现（`missing[]`）：专用路径 `sub_4634B0`（窗对象 `+112 == 1`）与 `win[56]/[70]` 栏带四边形循环（raw 81498-81509）"
+      ],
+      "links": {
+        "capabilities": [
+          "backlog-drawn-row-recording",
+          "text-item-record-table",
+          "msgwin-backlog-cursor"
+        ],
+        "functions": [
+          "0x41F720",
+          "0x466000",
+          "0x45D660",
+          "0x45EC60",
+          "0x45EFA0",
+          "0x42D4A0",
+          "0x45EBE0"
+        ],
+        "docs": [
+          "docs-new/03-engine/opcode-table.md",
+          "docs-new/03-engine/adv-text-rendering.md"
+        ]
+      },
+      "guards": [
+        "test/recall-page-0x1d1.test.ts",
+        "test/op-1d0-page-index.test.ts"
+      ],
+      "status": "partial",
+      "evidence": "`src/HISTORY.txt` 实测读过 1-340 / 752-831 / 1128-1399（layout 逐段的 lines 就是读过的范围）；运行期断言见 `app/amayui-emulator/test/recall-page-0x1d1.test.ts` 的 ⑧（E3：滚轮位 8 ⇒ `HISTORY.BIN` ⇒ 该页切出 13 条记录 / 3 行真实序章正文）；入口见 `output/callgraph.json`（335 个调用者）",
+      "notes": "★本页由 `tickets/T-0170` 新建（此前 `docs-new/05-scripts/` 没有 HISTORY 页，T-0168 的台账里已注明这一空缺）。`role` 里的「正文由 `i1d1` 让引擎重画」是本轮实测的关键：记录表里 13 条记录中只有 4 类，正文行来自渲染层 `sub_45F090` 的记账（见第二层 `backlog-drawn-row-recording`）。未读部分见 `gaps`。"
+    },
+    {
+      "id": "SETL2DMOC",
+      "file": "src/SETL2DMOC.txt",
+      "bin": "SETL2DMOC.BIN",
+      "role": "**Live2D 模型装载分发表**（统一文件 id `0x522d`）：按 `global f8c46`（模型文件 id）逐支比较，命中即 `i341 <MOC id> (global f8c47)` 把模型装进 `f8c47` 指定的实例槽，再跟若干条 `i345 <纹理 id> <槽> <模型内纹理号>` 绑它的贴图，最后 `jmp` 到收尾段。",
+      "entry": "**不是被直接常驻 call 的脚本**，而是「间接 call-script 表」的成员：`src/INIT2.txt:115` 把 `global 708ab6` 写成 `0x522d`，TITLE/BTL/INFOEN 再预设 `f8c46`/`f8c47` 并逐个 `call-script` 那张表（TITLE 见 `src/TITLE.txt:533-554`）。",
+      "layout": [
+        {
+          "anchor": "eq (local-int 0) (global-int f8c46) 4c8e",
+          "lines": "6-11",
+          "what": "`f8c46 = 0x4c8e` ⇒ `i341 4c8e <槽>` + `i345 4f9a/4f9b`（模型内纹理 0/1），再 `jmp label_00007544` 收尾"
+        },
+        {
+          "anchor": "eq (local-int 0) (global-int f8c46) 395f",
+          "lines": "13-19",
+          "what": "`f8c46 = 0x395f` ⇒ 同形状（纹理 `4f9c`/`4f9d`）"
+        },
+        {
+          "anchor": "eq (local-int 0) (global-int f8c46) 4f9e",
+          "lines": "21-28",
+          "what": "★**TITLE 走的那一支**：`f8c46 = 0x4f9e`（TITLE.MOC）⇒ `i341 4f9e <槽>` + `i345 4f9f/4fa0/4fa1`（模型内纹理 0/1/2）"
+        }
+      ],
+      "slots": [
+        {
+          "key": "f8c46",
+          "what": "**输入**：要装的模型文件 id（调用方在 call 之前写好；TITLE 写 `0x4f9e`）"
+        },
+        {
+          "key": "f8c47",
+          "what": "**输入**：目标 Live2D 实例槽号（TITLE 写 `0`）"
+        }
+      ],
+      "invariants": [
+        "每支形状一致：1 条 `i341` + N 条 `i345` + `jmp` 收尾 ⇒ 「模型 + 它的贴图」在脚本层面是一个整体（不会只装模型不装图）"
+      ],
+      "gotchas": [
+        "**本体在扩展包里**：不挂 append pack（或没跑 `INIT2`）的环境里 `call-script 0x522d` 会响亮报「拡張ファイル情報ファイル 72 は読み込まれていません．」——真链路靠 boot 链挂包解决（实测：单脚本跑 TITLE 时 `708ab6` 未被写 ⇒ 那张表整轮被跳过）"
+      ],
+      "gaps": [
+        "238 个 `i341` 分支只读了前 4 支（含 TITLE 支）；`jmp label_00007544` 的收尾段与 `$n$SETL2DMOC` 变体的覆盖范围未读"
+      ],
+      "links": {
+        "capabilities": [],
+        "functions": [],
+        "docs": [
+          "docs-new/03-engine/live2d.md"
+        ]
+      },
+      "guards": [
+        "test/live2d-enabled-flag.test.ts",
+        "test/input.test.ts"
+      ],
+      "status": "stub",
+      "evidence": "src/SETL2DMOC.txt:6-28（前 4 支逐行读）；调用链 src/INIT2.txt:115 + src/TITLE.txt:533-554；守卫 test/live2d-enabled-flag.test.ts 在真链路上证实 `a9d0 = 0` ⇒ `l2dSlots` 有 `0:0x4f9e`",
+      "notes": "只登记「谁调它 / 它做什么 / TITLE 那支」，其余 234 支未读（stub）。"
     }
   ]
 }

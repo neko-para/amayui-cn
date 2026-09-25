@@ -22,12 +22,21 @@
     ]
   },
   "id": "T-0159",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-slot-engine-codes.test.ts"
+  ],
+  "doneWhy": "P2 7：真修 5（`0x19e` 覆盖确认分支 + 宿主缝、`0x19f` 码域 →{1,−1,0}、`0x1af` 0 字节⇒2、`0x1ae` 槽没创建⇒2 + 0 字节空文件、覆盖确认写失败码 2→1）+ 1 条已他票完成 + 1 条口径本来就对（加守卫钉死）；P3 7：落地 5 + 登记 2。守卫 test/save-slot-engine-codes.test.ts **10 红/5 绿 → 15/15 绿**，含 5 条变异证明。详见 tickets/T-0159/changes-slots.md。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }

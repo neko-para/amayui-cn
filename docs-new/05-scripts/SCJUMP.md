@@ -43,7 +43,7 @@ generated_by: scripts/build-scripts.mjs
 
 ## 坑（踩过一次，别再踩）
 
-- ★★**两套同名脚本**：`src/SCJUMP.txt`（16059 条指令，运行的就是它）与 `src/$1$SCJUMP.txt`（698 行，包 1 变体，门读 `1dd7`）。T-0102 §E 曾按后者逐行解读、却拿前者的日志当证据 ⇒ 整段极性/变量名都错（订正见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md）
+- ★★**两套同名脚本**：`src/SCJUMP.txt`（16059 条指令，运行的就是它）与 `src/$1$SCJUMP.txt`（698 行，包 1 变体，门读 `1dd7`）。按后者逐行解读会**整段极性/变量名都错**（读法见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md）
 - ★**`jcc` 极性**：`op1≠0 → 跳 op2`、`op1==0 → 跳 op3`，目标 `0xFFFFFFFF` = **落下句**（引擎 `sub_4209B0` raw 29615-29639）。所以 `ne local, 13d7, 1` 后跟 `jcc local, ffffffff, LABEL` 的意思是"**13d7 已演(≠1 为假 → local=0) 就跳过本块**" —— 读反一次就会得出"门没挡住"的错误结论
 - ★`global f8080` **在保存池之外**（池长 1015792）⇒ 它是进程内裸量；但 `13d7/13d8/…` **在池里**（随存档持久化）⇒ "哪一节演过"是存档状态，"闸值"不是
 - 本文件是「一个脚本装全部章」的巨型分派（各章支结构同型，改一处要防同型支漏改）
@@ -61,4 +61,4 @@ generated_by: scripts/build-scripts.mjs
 ## 证据与备注
 
 - 证据：src/SCJUMP.txt:6-36（分派）、38-54（节选择块，实测命中 47-54）；运行期帧栈与门量见 tickets/T-0102/evidence/chapter-chain-runtime-trace.md（SCJUMP.BIN ip=43、13d7=1 / 13d8=0 / f8080=INT_MAX）；行为守卫 test/t0102-chapter-chain.test.ts
-- 备注：2026-09-23 订正：file 从 `src/$1$SCJUMP.txt`（包变体，698 行）改为运行期真正执行的 `src/SCJUMP.txt`；门量 1dd7 → 13d7/13d8；"`mov global0 1` 是元凶" → 它是**选中下一节的正常动作**。未读：其余各章支。
+- 备注：file = 运行期真正执行的 `src/SCJUMP.txt`（包变体是 `src/$1$SCJUMP.txt`，698 行）；门量 = `13d7`/`13d8`；`mov global0 1` 是**选中下一节的正常动作**。未读：其余各章支。

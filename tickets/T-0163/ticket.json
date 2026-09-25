@@ -19,7 +19,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/input.ts",
       "anchor": "[0x10c, op_set_key_multi]",
       "note": "本票 P1（0x10c）已修：真实现读 op1=位号/op2=键码、unsigned >0x1F 抛引擎同文 ShowMessageError、写 `Input[1176 + Input[1432+键码]] = 位号`。两张运行期表见 src/vm/input.ts 的 keycodeToVk / vkToBit。",
-      "line": 481
+      "line": 559
     },
     {
       "file": "app/amayui-emulator/src/vm/input.ts",
@@ -45,12 +45,34 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → done"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests, doneWhy —— 2026-09-24 轮：29 条逐条处置见 changes-c163.md（红 5/14 到绿 19/0；新增 4 个守卫文件）；0x308 按 T-0111 判据② 从 STUB_NATIVE_OPS 的 unhandled 桩改登记为 ENGINE_INTERNAL_OPS 有据 no-op；上一轮误置的 done 改回 doing。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "done → doing —— 上一轮的 done 是误置（changes.md 自述其余 18 条不在范围、票保持 open）：本票 29 条尚未全部完成（0x137/0x30a 的越界诊断、0x245/0x246 宿主缝、opcode-gaps 条目、verify 全绿），改回 doing。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
   ],
   "tests": [
+    "app/amayui-emulator/test/stub-308-touch-register.test.ts",
+    "app/amayui-emulator/test/stub-setweather-noop-comments.test.ts",
+    "app/amayui-emulator/test/stub-engine-internal-gaps.test.ts",
+    "app/amayui-emulator/test/agerc-module-error-paths.test.ts",
     "app/amayui-emulator/test/input.test.ts",
     "app/amayui-emulator/test/keyboard-mask.test.ts",
-    "app/amayui-emulator/test/opcode-operands.test.ts",
-    "app/amayui-emulator/test/registry-classification.test.ts"
-  ]
+    "app/amayui-emulator/test/op-a4-a6.test.ts",
+    "app/amayui-emulator/test/op-327-32e-setweather-noop.test.ts",
+    "app/amayui-emulator/test/registry-classification.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts"
+  ],
+  "doneWhy": "本票 29 条（P2 7 / P3 22，清单见 tickets/T-0163/changes-c163.md §1，来源 = 审计批 stubs-native + agerc 八条 + 两条 cap 行）已逐条处置：本轮修/订正 15 条（含 0x308 有据 no-op 登记、0x14C 的 op3 与引擎同文文案、SETWEATHER 族注释订正），复核后已对/前提被推翻 5 条，如实登记为做不到/有意差异 9 条（理由与重新评估条件逐条写明）。判据未全部完成（analysis/opcode-gaps.json 条目与 npm run verify 归主 agent）故 status=doing。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }

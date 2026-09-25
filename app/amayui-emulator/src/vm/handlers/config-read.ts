@@ -50,19 +50,51 @@ interface CfgReadSpec {
    * （raw 38697/38709）。同一不对称口径在 raw 11090（`sub_405460` case 1）也出现。
    */
   boolMode?: Record<number, 'nonzero' | 'nonneg'>;
-  /** 选择器越界时的行为：'skip' 只记不写（引擎在 0xC5 里是报错路径）。 */
+  /**
+   * 选择器越界时的行为：`'skip'` = **不写操作数**（引擎在这些 opcode 里就是"只报错、不写"），
+   * 并按 `errText` 留一条诊断。
+   */
   onBadSelector?: 'skip';
+  /**
+   * ★**越界时引擎写进 remote-debug 流的那句常量**（`sprintf_s(_this + 8, …, aXxx); sub_4034D0(…)`）。
+   *
+   * 为什么要它（审计 2026-09 `0xC5 missing-branch`）：这些 handler 的注释原写「'skip' 只记不写」，
+   * 但代码里**没有"记"** —— 脚本给了越界档位时真机有诊断输出、emulator 连一行日志都没有。
+   * 该链路 `sub_4034D0`（raw 9433-9435）→ `sub_4976A0`（raw 114428-114457，栈帧在时前缀
+   * `(%s：%d行目) `）→ `sub_497620`（raw 114402-114416）→ `sub_438CC0`（raw 45660-45667，
+   * `WriteFile` 到 debug 句柄）⇒ **只是诊断输出**：不弹窗、不中断、不改控制流、不写操作数。
+   * 因此 emulator 的等价物就是 `c.log(引擎那句)`。
+   */
+  errText?: string;
 }
 
+/**
+ * 配置读取族越界时引擎的常量串（逐条对 raw 的 `char aXxx[]` 定义取证）。
+ * ★这四条都是「`sub_408050(_this + 8, 1024, aXxx); sub_4034D0(_this, _this + 8);`」同一条诊断链路。
+ */
+const ENGINE_TEXT_GET_VOLUME = 'GetVolumeの引数が不正です．\r\n'; // raw 4442（0xC5：sub_42E540 raw 38657-38661）
+const ENGINE_TEXT_GET_SOUND_MODE = 'GetSoundModeの引数が不正です．\r\n'; // raw 4443（0xC7：sub_42E670 raw 38715-38716）
+const ENGINE_TEXT_GET_AUTO_MES_SP = 'GetAutoMesSpの引数が不正です．\r\n'; // raw 4408（0x1B8：sub_42D2F0 raw 38058-38062）
+const ENGINE_TEXT_GET_AUTO_MES_PI = 'GetAutoMesPiの引数が不正です．\r\n'; // raw 4435（0x2E6：sub_431110 raw 40366-40370）
+
 const CFG_READ: Record<number, CfgReadSpec> = {
-  // sound:Volume0..4 → op2（op1 = 0..4；引擎越界走报错分支，emulator 不写）
+  /**
+   * `sound:Volume0..4` → op2（op1 = 0..4）。
+   *
+   * ★体里 op1 的形状与 `0xC7` **不对称**（`sub_42E540` raw 38635-38667）：先判 `if (op1)`，
+   * 为 0 走 **else** 写 `Volume0`；非 0 再过 `== 1/2/3/4`，都不中就落到**唯一的 else**
+   * （raw 38657-38661）报 `aGetvolume` 且**不写**。⇒ 负值（如 -1）和 ≥5 都走报错路径（无符号/有符号
+   * 都不匹配那些 `==`），emulator 的 `keys[sel] === undefined` 判定与之一致。
+   */
   0xc5: {
     operand: 2,
     selector: 1,
     keys: { 0: 'sound:volume0', 1: 'sound:volume1', 2: 'sound:volume2', 3: 'sound:volume3', 4: 'sound:volume4' },
     onBadSelector: 'skip',
+    errText: ENGINE_TEXT_GET_VOLUME,
   },
   // sound:Music(≥0)/SE/Voice/Movie（非 0）→ op2（op1 = 1..4）
+  // ★越界（含 **op1 == 0** —— 体的四个分支都是 `== 1/2/3/4`，0 会落到最后的报错支）⇒ 报 aGetsoundmode
   0xc7: {
     operand: 2,
     selector: 1,
@@ -76,13 +108,26 @@ const CFG_READ: Record<number, CfgReadSpec> = {
      */
     boolMode: { 1: 'nonneg', 2: 'nonzero', 3: 'nonzero', 4: 'nonzero' },
     onBadSelector: 'skip',
+    errText: ENGINE_TEXT_GET_SOUND_MODE,
   },
-  // message:AutoMessageTime0/1 → op2（op1 = 0/1）
-  0x1b8: { operand: 2, selector: 1, keys: { 0: CFG.messageAutoMessageTime0, 1: CFG.messageAutoMessageTime1 }, onBadSelector: 'skip' },
+  // message:AutoMessageTime0/1 → op2（op1 = 0/1；其它值报 aGetautomessp，raw 38058-38062）
+  0x1b8: {
+    operand: 2,
+    selector: 1,
+    keys: { 0: CFG.messageAutoMessageTime0, 1: CFG.messageAutoMessageTime1 },
+    onBadSelector: 'skip',
+    errText: ENGINE_TEXT_GET_AUTO_MES_SP,
+  },
   // message:AdvanceMesOnWheel → op1
   0x2cc: { operand: 1, key: CFG.messageAdvanceMesOnWheel },
-  // message:AutoMessagePitch0/1 → op2（op1 = 0/1）
-  0x2e6: { operand: 2, selector: 1, keys: { 0: CFG.messageAutoMessagePitch0, 1: CFG.messageAutoMessagePitch1 }, onBadSelector: 'skip' },
+  // message:AutoMessagePitch0/1 → op2（op1 = 0/1；其它值报 aGetautomespi，raw 40366-40370）
+  0x2e6: {
+    operand: 2,
+    selector: 1,
+    keys: { 0: CFG.messageAutoMessagePitch0, 1: CFG.messageAutoMessagePitch1 },
+    onBadSelector: 'skip',
+    errText: ENGINE_TEXT_GET_AUTO_MES_PI,
+  },
   // message:AutoMessageOption → op1
   0x2ea: { operand: 1, key: CFG.messageAutoMessageOption },
   /**
@@ -119,7 +164,14 @@ const op_cfg_read: OpHandler = (c) => {
     sel = p.int(spec.selector);
     if (sel === undefined) return;
     key = spec.keys?.[sel];
-    if (key === undefined) return; // 越界：引擎走报错分支（不写操作数）
+    if (key === undefined) {
+      // 越界：引擎走报错分支（**不写操作数**，但会把 aXxx 那句经 `sub_4034D0` 写给 remote-debug 流）
+      // ⇒ emulator 的等价物 = 一行诊断（不是静默，见 `CfgReadSpec.errText`）。
+      if (spec.errText !== undefined) {
+        c.log(`0x${c.instr.opcode.toString(16)}：${spec.errText.trim()}（op1=${sel} 不在 ${Object.keys(spec.keys ?? {}).join('/')} 内）`);
+      }
+      return;
+    }
   }
   if (key === undefined) return;
   let v = cfg(c, key);
@@ -134,25 +186,48 @@ const op_cfg_read: OpHandler = (c) => {
  * `0x2EB`（`sub_434830` raw 42575-42593）：**读配置字符串写回 op1**。
  *
  * 引擎：`v = GetConfig("set:GameVersion")`（走配置对象 vtable+8 的查询，raw 42583）→
- * `sub_40C210` 拷成 std::string → `sub_433310(this, 1, 串)` 写进 **op1**（字符串操作数）。
+ * `sub_40C210(v3, v2, strlen(v2))` 拷成 std::string → `sub_433310(this, 1, 串)` 写进 **op1**。
+ * ★体对取到的串**没有任何兜底**（取到什么写什么，含空串）—— 兜底必须来自"引擎侧根本取不到空串"
+ * 这件事本身（见下面第 2 条的订正）。
  *
- * 键值的来源（raw 111337-111644 的"配置缺省安装" + 112835-112851 的注册表覆盖）：
- *  1. 引擎启动时把 `set:GameVersion` 置为内建常量 `a100 = "1.00"`（raw 111627-111629）；
- *  2. 读 `SYS4REG.INI` 时 `[set]` 段的同名键会覆盖它（raw 112426-112433）；
- *  3. 若 `set:VerRegPos` 非空，则再用它去查安装信息的 `DisplayVersion` 覆盖
- *     （`sub_490010` raw 110485-110502，查不到退回 `"1.00.0000"`）。
+ * ## 键值的三层结构（**逐条读体后的订正版**，审计 `0x2eb approximation`）
+ *  1. **内建 `"1.00"`**：注册表构造 `sub_491880` 在 raw 111627-111629
+ *     `sub_40C210((int)v9, a100, 4u); sub_434E00(..., aSetGameversion, ...)`，`a100 = "1.00"`。
+ *  2. **`GAMEVERSION` 键覆盖**：**不是** `SYS4REG.INI` 的 `[set]` 节！`SYS4REG.INI` 的装载器
+ *     `sub_492CB0`（raw 111846-112310）逐条读了 60 余个键（`sub_4957F0`/`sub_495950`），
+ *     **里面没有 `set:GameVersion`**。真正写 `aSetGameversion` 的第二处是
+ *     `sub_494220`（raw 112319-112853）—— 它吃一个 `key\0value\0…` 序列化块，用**大写**键名
+ *     `REGROOTPATH`(raw 5107) / `REGSUBKEY` / `VERREGPOS`(raw 5105) / `GAMEVERSION`(raw 5104) 逐个
+ *     `_stricmp`；该函数只出现在配置对象 vtable 的第三项（`.data:00529808`，同表还有
+ *     `sub_492CB0`/`sub_490590`/`sub_491060`）⇒ 那是**注册表数据块**的装载路径，与 INI 无关。
+ *  3. **注册表 `DisplayVersion` 覆盖**：`set:VerRegPos` 非空时 `sub_490010`（raw 110485-110502）
+ *     查 `HKLM\…\Uninstall\InstallShield_{%s}` 的 `DisplayVersion`，查不到退回 `"1.00.0000"`；
+ *     结果在 raw 112835-112851 写回 `aSetGameversion`。
  *
- * ★emulator 的取舍：不做注册表查询（跨平台、且本机这份是免安装拷贝 ⇒ 引擎也不会走到第 3 步），
- *   **取值 = 当前生效的 `SYS4REG.INI`（overlay → 真游戏那份）的 `[set] GameVersion`**，
- *   缺省用 `DEFAULT_GAME_VERSION`（= 被模拟的 `amayui_107.exe` 的 FileVersion `1.07.0019`；
- *   引擎内建其实是 `1.00`，而真游戏 INI 没有 `[set]` 节 —— 详见 `engineConfig.ts` 的说明）。
- *   于是 TITLE 的 "Version X.YY.ZZZZ" 不再显示占位值。
+ * ## emulator 的取舍与其**边界**（★本票修的是边界上的那个洞）
+ * 不做注册表查询（跨平台；本机是免安装拷贝 ⇒ 第 3 层走不到），**取值 = 当前生效的
+ * `SYS4REG.INI` 的 `[set] GameVersion`，缺省用 `DEFAULT_GAME_VERSION`**（= 被模拟的
+ * `amayui_107.exe` 的 FileVersion `1.07.0019`；引擎内建其实是 `1.00` —— 详见 `engineConfig.ts`）。
+ * 于是 TITLE 的 "Version X.YY.ZZZZ" 不再显示占位值。
+ *
+ * ★**空串必须当"未指定"**（审计 P2 `0x2eb missing-branch`）：第 1 层保证引擎侧该键**永远非空**
+ * （构造期就注入 `"1.00"`），而 INI 装载器**根本不读**这个键 ⇒ 引擎侧的空串**不可达**。
+ * 那 emulator 这份 overlay 里的 `GameVersion=`（空值）是从哪来的？—— 是 **emulator 自己**写的：
+ * `configRegistry.ts` 的键表把 `set:GameVersion` 的 `def` 记成 `''`，`formatIni` 又是"键表全量导出"，
+ * 于是首跑生成的 INI 天然带一行空值（本机 `.tmp/instances/<id>/overlay/SYS4REG.INI` 实测如此，
+ * 而 base 那份真游戏 INI 连 `[set]` 节都没有）。若照 `cfgStr` 的"键在就返回字符串（含空串）"口径，
+ * op1 就是 `''` ⇒ TITLE 第一段空、`atoi("") = 0` ⇒ 屏幕上 "0.00.0000"。
+ * ⇒ 这里把**空串**（一个引擎不可达的取值）映射到 emulator 的缺省 `DEFAULT_GAME_VERSION`，
+ * 与"键缺失"同一条路。★`cfgStr` 本身**不改**（配置层对空串仍原样返回，见
+ * `test/config-t0161.test.ts` 的反面断言）：回退只属于本 handler 的替代口径。
  *
  * 真实用例：`TITLE.txt:583` `i2eb (local-string 0)` → 586/589/592 三处 `i2c7` 切片 + `i2ec`(atoi)
  * + `i23b`(CG 数字条) 画成 "Version 1.07.0019"。
  */
 const op_cfg_read_string: OpHandler = (c) => {
-  const ini = c.e.config ? cfgStr(c.e.config, CFG.setGameVersion, DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
+  const raw = c.e.config ? cfgStr(c.e.config, CFG.setGameVersion, DEFAULT_GAME_VERSION) : DEFAULT_GAME_VERSION;
+  // ★空串 = "引擎不可达的取值，只可能是 emulator 自己导出的 INI 留下的" ⇒ 当未指定处理（见上）。
+  const ini = raw === '' ? DEFAULT_GAME_VERSION : raw;
   const p = operandsFor(c);
   if (!p) throw new Error('0x2eb：配置字符串读取走操作数计划层，但没有声明计划');
   p.setStr(1, ini);

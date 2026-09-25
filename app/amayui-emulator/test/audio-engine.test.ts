@@ -251,7 +251,9 @@ test('0x2FF 只是预备、0x302 才生效并改增益（每通道音量因子�
   assert.equal(eng.debug().voice[0]!.prepared, 5000);
   eng.voiceFactorApply(0, 5000); // i302 0 2710/2
   assert.equal(p.gain, base * 0.5, '因子 50% ⇒ 增益减半');
-  assert.equal(eng.debug().voice[0]!.prepared, null);
+  // ★T-0152 订正：引擎 `sub_426A30`（raw 33767-33777）**只写** `[21321+ch]`，没有"应用即清预备"这一步
+  //   ⇒ 宿主侧的对应量 `preparedFactor` 保留原值（旧断言 `prepared === null` 的前提不成立）。
+  assert.equal(eng.debug().voice[0]!.prepared, 5000, '★预备值保留（引擎不清 [21321+ch]）');
 });
 
 test('语音通道占用：非循环语音播完即空闲（可被下一条队列使用）', async () => {

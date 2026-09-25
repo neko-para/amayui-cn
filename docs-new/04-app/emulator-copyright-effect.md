@@ -12,7 +12,7 @@ state: live
 ## 0. 实现状态（已完成，2024 已落地）
 
 ### 最终采用的引擎式 present 模型（关键）
-- **脚本"一条一条跑到门控止"**：无门控时在 `SAFETY_PER_FRAME(=10000)` 内连续跑指令，命中 `0x400`（`0x21C` 置位）即停。`SAFETY` **只防无门控死循环**（如 TITLE 轮询），**不是 present 触发**（引擎没有每帧指令上限；主循环 `LABEL_216`(21041) 每迭代派发 1 条、循环到门控）。
+- **脚本"一条一条跑到门控止"**：无门控时在 `SAFETY_PER_FRAME(=10000)` 内连续跑指令，命中 `0x400`（`0x21C` 置位）即停。`SAFETY` **只防无门控死循环**（如 TITLE 轮询），**不是 present 触发**（引擎没有每帧指令上限；主循环 `LABEL_216`(21216) 每迭代派发 1 条、循环到门控）。
 - **present 由"场景脏 || 动画在播 || 0x400 门控"驱动**（`PixiBackend.needsRender()`，对应引擎 `0x2400 + 场景脏`）：配置类 op（draw-texture/set-texture/set-vertex-color(-alpha)/set-draw-color(-alpha)/create-mesh/release-texture/play-movie/set-wait-flag/scene-change）置 `sceneDirty`；`0x400` 动画等待时**每帧 present**（动画由墙钟 `performance.now()-wallStart` 单调推进）。
 - **时钟 = 墙钟毫秒**（等价 `this[46500]` = 主循环每帧写入 `timeGetTime()`，非帧计数器）。
 - **场景切换清图**：`#onSceneChange` 清空 drawItems/meshes 并置脏（确保新场景至少 present 一次）；`clockMs` 不归零（新对象各自 lock 起点）。
@@ -52,15 +52,15 @@ state: live
 
 ### 2.1 配置 / 渲染解耦
 - **配置**（指令）：`draw-texture`(0x1fb)、`set-texture`(0x1f9)、`create-mesh`(0x320)、`set-vertex-color(-alpha)`(0x322/0x323)、`set-draw-color(-alpha)`(0x202/0x203) **只改对象字段**（`sub_4ACE50`/`sub_4AD0C0`/`sub_4ACF60`/`sub_4AE2C0`/`sub_4AE330`），不立即出像素。
-- **渲染**（present）：`sub_4B4040`(134702) → `sub_4B06D0`(132387) → `sub_4AF1C0`(mesh) / `sub_4AEEA0`(图像)，**逐帧对整个对象图合成**到 backbuffer。
+- **渲染**（present）：`sub_4B4040`(136741) → `sub_4B06D0`(134417，调用点 136796) → `sub_4AF1C0`(133458, mesh) / `sub_4AEEA0`(133326, 图像)，**逐帧对整个对象图合成**到 backbuffer。
 
 ### 2.2 动画在"每帧渲染"求值，不是指令求值
-- mesh：`sub_4AF1C0`(131491-131501) 读 `this[46500]` 算 `(clock-start)/count` → `sub_4A2050`(CalcDiffuse)。
-- 文字 draw-item：`sub_49A300`(115116) 读 `this[46500]` 算 `(clock-start-delay)/count` → 改 item+96。
+- mesh：`sub_4AF1C0`(133505-133541) 读 `this[46500]` 算 `(clock-start)/count` → `sub_4A2050`(CalcDiffuse, 122248)。
+- 文字 draw-item：`sub_49AA30`(117239) 读 `this[46500]`（117438 首帧锁存 start）算 `(clock-start-delay)/count` → 改 item+96（117470-117479）。
 - 脚本本身已执行完（ip 停在 0x400 等待），动画在后台逐帧播。
 
 ### 2.3 门控局部循环 = `effect_flags` 门控级联状态机（"奇怪"所在）
-主循环（20422 起）是**嵌套 `while(1)` 级联**，每层检查 `effect_flags` 的一个位（20594-20633）：
+主循环（20464 起）是**嵌套 `while(1)` 级联**，每层检查 `effect_flags` 的一个位（20769-21158）：
 ```
 v17 = effect_flags(_this+699204)
 if (v17 == 0)                       → 无门控：默认相位 = 推进脚本下一帧/指令
@@ -68,13 +68,13 @@ if (v17 & 0x400000)                 → 等消息 GetMessage
 if (v17 & 0x1000000)                → 处理 0x2000 相关
 if (v17 & 0x2000)                   → 处理 0x2000 对象
 if (v17 & 0x40)                     → sub_408F10
-if (v17 & 0x400)  (20934)           → sub_407E20(pool) 挂起？→ 停脚本；动画完才清 0x400 放行
+if (v17 & 0x400)  (21111)           → sub_407E20(pool) 挂起？→ 停脚本；动画完才清 0x400 放行
 if (v17 & 0x8000000)                → sub_411900 + 清 scene + present(sub_4B4040)
 默认（无 gate）                      → 派发脚本下一条
 ```
 每层若命中：要么**等待**（消息/动画），要么**处理**；未命中则 `break` 落到下一层。⇒ 这是一个**按 effect_flags 挑选"该做哪件事"的状态机**，而不是"update→render→指令"的线性管线。
 
-> "奇怪"因它**交织**了：时钟推进 + present + 门控挂起 + 脚本派发在同一循环里，且**present 是条件性**（如 `sub_40BE10(pool)==1 || v90==1` 才 present，20581）。这跟"每帧必 update+render"的常识不同。
+> "奇怪"因它**交织**了：时钟推进 + present + 门控挂起 + 脚本派发在同一循环里，且**present 是条件性**（如 `sub_40BE10(pool)==1 || v90==1` 才 present，20756）。这跟"每帧必 update+render"的常识不同。
 
 ---
 
@@ -194,7 +194,7 @@ function assertFlags(kind, handle, flags): void {
 
 - **写路径**（draw-texture/ set-draw-color / set-vertex-color-alpha / create-mesh setter）：先 `assertFlags`，只允许置已知位。
 - **读路径**（`drawItemAlpha` / `calcDiffuse` / present 前）：`assertFlags`。
-- **bit2（draw-item `&4`）**：引擎有检查（`sub_4AEEA0` 131368 → 调 `sub_49BCC0` 额外分支），但我们**未逐字解码 `sub_49BCC0` 语义** ⇒ 按"不认识的 flag"**拒绝**（版权页指令只置 bit0/bit1，故不会误伤）。若日后确需，再解码 bit2 并纳入掩码。
+- **bit2（draw-item `&4`）**：引擎有检查（`sub_4AEEA0` 133389-133390 → 调 `sub_49BCC0` 额外分支），但我们**未逐字解码 `sub_49BCC0` 语义** ⇒ 按"不认识的 flag"**拒绝**（版权页指令只置 bit0/bit1，故不会误伤）。若日后确需，再解码 bit2 并纳入掩码。
 - 与 `NotImplementedOp`（未实现 opcode 硬报错）互补：**opcode 未实现** 与 **flag 未识别** 两级中断，杜绝静默误渲染。
 
 ---

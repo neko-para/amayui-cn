@@ -3,7 +3,9 @@
 /** 鼠标/输入子系统测试。
  *  1) InputManager 单元（位置/按钮/按下沿/移动/flush/consume/派发目标/get-input-type 节流门）。
  *  2) TITLE 端到端：登记 mouse_callback -> get-input-type（时间节流）派发到鼠标 handler 且不崩。
- *  语义依据 docs-new/03-engine/input-system.md（0x108/0x109/0xCC/0xFB/0xCD/0x12E 等，0xCD 为时间节流/ADV 激活触发）。 */
+ *  语义依据 docs-new/03-engine/input-system.md（0x108/0x109/0xCC/0xFB/0xCD/0x12E 等，0xCD 为时间节流/ADV 激活触发）。
+ *  ★TITLE **单脚本**运行要先补一条真链路里的前置（`SETL2DMOC` 装 `TITLE.MOC` 进实例槽 0），
+ *    否则 `TITLE.txt:554` 的 `i34e` 会按引擎 raw 34728 抛错 —— 见例内「前置」注释。 */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as path from 'node:path';
@@ -14,9 +16,9 @@ import { Engine, SLEEP_GATE } from '../src/vm/engine.js';
 import { loadScriptData, stepOnce } from '../src/vm/interpreter.js';
 import { dec } from '../src/vm/bits.js';
 import { makeCtx } from '../src/vm/step.js';
-import { ENGINE_INTERNAL_OPS, OPS } from '../src/vm/ops.js';
+import { ENGINE_INTERNAL_OPS, OPS, loadScriptIntoFrame } from '../src/vm/ops.js';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { im, instr, loc, mkEngine } from './harness.js';
+import { im, instr, loc, mkEngine, scriptDerived } from './harness.js';
 import { NodeFileSource } from '../src/arch/nodeFileSource.js';
 import { resolveResourceDir } from '../src/arch/resourceDir.js';
 
@@ -123,6 +125,49 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   const e = new Engine(new StubNative(), input);
   e.fileSource = src;
 
+  // ---- 前置：`SETL2DMOC` 在真链路里为 TITLE 装的那一步（`T-0176`）----
+  // 真链路：`INIT2.txt:115` 把 `global 708ab6` 写成脚本 id `0x522d`（SETL2DMOC.BIN），
+  // `TITLE.txt:533-554` 再预设 `f8c46 = 0x4f9e`（模型文件 id）/`f8c47 = 0`（实例槽）并逐个
+  // `call-script` 那张表里的脚本 ⇒ SETL2DMOC 的 `f8c46 == 0x4f9e` 支（`src/SETL2DMOC.txt:22-28`）
+  // 就是下面四条：`i341 4f9e <槽>` + 三条 `i345`（模型内纹理 0/1/2）。
+  // ★为什么本测试要手工补：这里**单脚本**跑 TITLE（不跑 INIT2，也不挂扩展包 ⇒ `0x522d` 那条
+  //   `call-script` 根本调不动），而 `TITLE.txt:554` 的 `i34e 5274 0 0 1` 要求实例槽 0 里**先有模型**
+  //   （引擎 `sub_478640` raw 92817 的 `if (!*_this) return 0` ⇒ `sub_428200` raw 34722-34731 抛
+  //   「L2Dモーションファイル %s の読み込みに失敗しました」）。`T-0160` 之前 emulator 把这条**静默吞掉**，
+  //   于是"缺模型"这个真实前提被掩盖；同一支路由 `test/live2d-enabled-flag.test.ts` 在真链路上钉住
+  //   （`a9d0 = 0` ⇒ `l2dSlots` 有 `0:TITLE.MOC(0x4f9e)`）。
+  {
+    const prelude = [
+      instr(0x341, [im(0x4f9e), im(0)]), // SETL2DMOC：装 TITLE.MOC 进实例槽 0
+      instr(0x345, [im(0x4f9f), im(0), im(0)]), // 模型内纹理 0
+      instr(0x345, [im(0x4fa0), im(0), im(1)]), // 模型内纹理 1
+      instr(0x345, [im(0x4fa1), im(0), im(2)]), // 模型内纹理 2
+      instr(0x1a7, []), // ret：这段合成脚本只当前置用
+    ];
+    loadScriptIntoFrame(
+      e.curScript(),
+      {
+        ...scriptDerived(),
+        signature: 'SYS0000',
+        isVer5: false,
+        headerLen: 0,
+        localVars: [0, 0, 0, 0, 0, 0],
+        subHeaderLength: 0,
+        tables: [],
+        instructions: prelude.map((o, i) => ({ ...o, index: i })),
+        labelTargets: new Set(),
+        raw: new Uint8Array(0),
+      },
+      'SETL2DMOC-PRELUDE.BIN',
+    );
+    for (const _ of prelude) await stepOnce(e);
+    assert.equal(
+      e.l2dSlots.get(0)?.modelId,
+      0x4f9e,
+      '前置应把 TITLE.MOC(0x4f9e) 装进实例槽 0（SETL2DMOC 的 TITLE 支；缺它 ⇒ TITLE.txt:554 的 i34e 会抛）',
+    );
+  }
+
   const r = await src.readScript(0x5264); // TITLE.BIN
   assert.ok(r, '应读到 TITLE.BIN');
   loadScriptData(e, r.data, r.name);
@@ -197,6 +242,12 @@ test('TITLE: mouse_callback 登记 -> get-input-type 时间节流派发 -> 鼠�
   assert.equal(hoverIdx, 0, `0x12E 悬停命中应给出第 0 项 (got ${hoverIdx})`);
 
   // sleep(0xC8)：步进到 sleep 指令，验证置 SLEEP_GATE + sleepUntil（引擎帧让步；renderer 到点放行）
+  // ★`tickets/T-0156` 读体后的补充（断言未改）：`src/TITLE.txt:63` 的实参是 **1** ⇒ 引擎 `sub_4218D0`
+  //   raw 30304 只在 `v3 >= 10` 时进"帧节流计时器"支，`n < 10` 走 raw 30311 的 `Sleep(v3)`（**同一次派发内的
+  //   进程级硬阻塞**、不置 `effect_flags |= 1`）。本仓两支都装 `SLEEP_GATE`+`sleepUntil` 是**架构性等价物**
+  //   （帧循环 `maxStepsPerFrame` 默认 `Infinity` ⇒ 不装门的话 TITLE 的 `sleep 1; jmp` 会空转冻结）；
+  //   两支的差别改由 `sleepUntil = nowMs + max(0, n)` 与"只 n>=10 才 `effect_flags |= 1`"承载，
+  //   守卫见 `test/t0156-control-frame.test.ts`。
   guard = 0;
   let sleptAt = -1;
   while (guard++ < 2000) {

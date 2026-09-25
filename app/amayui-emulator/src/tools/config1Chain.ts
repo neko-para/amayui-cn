@@ -298,19 +298,22 @@ export interface AdvReturnProbe {
    * `i082` 执行那一刻 `Engine.textItems.records.length`（引擎 `Font+3364..3368` 的条数）。
    *
    * ★为什么要记它：引擎那道门是 `v8 > op2 && op2 >= 0`（raw 79502）—— **记录表为空时
-   * `i082` 在引擎里也什么都不做**。本探针跑的是一条"没有 ADV 消息历史"的链路（CONFIG 页不 push
-   * 文本项记录），所以这里多半是 0；`republishByI082` 必须与它**一致**（0 ⇒ 都不做；
-   * >0 ⇒ 必须重发布），否则就是实现与引擎分叉。
+   * `i082` 在引擎里也什么都不做**。★**`tickets/T-0170` 起这条链路里它非空**：引擎在**画正文行**时
+   * 经 `sub_45F090`（raw 74360-74400）push **带正文串的已画行记录**（记录 `flags & 4`），而
+   * `0x6E`/`0x196`/`0x6F` 正是它的调用链 ⇒ 本探针实测 **3**（= 那页样例正文的 3 行）、
+   * `seedRecords` 打开时 **6**（= 3 种子 + 3 行）。`republishByI082` 必须与它**一致**
+   * （0 ⇒ 都不做；>0 ⇒ 必须重发布），否则就是实现与引擎分叉。
    */
   recordsAtI082: number;
   /**
    * **`seedRecords`（`tickets/T-0102` 的判决实验）**：把「ADV 侧已经显示过一条消息」这一态铺出来。
    *
    * 为什么需要它：`0x82` 的门是 `records.length > op2`（引擎 raw 79502；emulator 同口径，见
-   * `handlers/msgwin.ts` 的 `op_gdi_repaint_window`），而 `records`（引擎 `Font[841..842]` 的 72B 向量）
-   * **只有文本项入队时才 push** ⇒ 「TITLE 菜单 → CONFIG」这条链里它是**空的**（引擎在那里同样什么都不做），
-   * 而真实 **ADV → CONFIG** 路径上它**非空**。⇒ 这个开关就是"把 ADV 路径的差别补上"，
-   * 用来回答「`i082` 到底会不会重画、用哪个颜色重画」。
+   * `handlers/msgwin.ts` 的 `op_gdi_repaint_window`）。`records`（引擎 72B 文本项向量）的填充者
+   * **不止**"文本项入队"那一族：**画正文行**时经 `sub_45F090`（raw 74360-74400）push 带串记录
+   * （`tickets/T-0170`）—— 所以「TITLE 菜单 → CONFIG」这条链里它**也非空**（实测 3）；而真实
+   * **ADV → CONFIG** 路径上更多（本开关把"ADV 已经显示过一条消息"这一态铺出来，用来回答
+   * 「`i082` 到底会不会重画、用哪个颜色重画」）。
    */
   seedRecords?: number;
   /**

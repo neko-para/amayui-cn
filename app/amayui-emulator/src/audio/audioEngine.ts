@@ -5,7 +5,7 @@
  *
  * | 引擎 | 这里 |
  * |---|---|
- * | 设备 15 通道（0..9 = SE / 12..14 = 语音） | `se[10]` + `voice[3]`（语音逻辑通道 0..2 ↔ 设备 12..14） |
+ * | 设备 15 通道（0..9 = SE / 10..11 备用 / 12..14 = 语音） | `se[15]` + `voice[3]`（语音逻辑通道 0..2 ↔ 设备 12..14） |
  * | `设备[327+ch]` 通道音量（0..10000 线性） | `seVolume` / `voiceVolume` / `bgmVolume`（由 `sound:Volume0..4` 驱动） |
  * | `设备[342]` 主音量 | `master` |
  * | `设备[375+ch]` **pan** ±10000（`sub_4B6940` → `SetPan`） | `channel.pan` → `playback.setPan` |
@@ -15,7 +15,7 @@
  * | SE 延迟播 `[262/272/282/292]` + 每帧 `sub_4B5230` | `seDelay` + `tick()` |
  * | 语音 3 路槽（`armed/delay/id/loop`）+ 每帧 `sub_4BBAB0` | `voiceQueue` + `tick()` |
  * | ADV 激活位期间寄存（`Engine[122505/122508+ch]`）+ 位清除时冲刷 | `voiceDefer` + `tick(nowMs, advActive)` |
- * | Music 淡变（`sub_489D10`/`sub_489E50`：按步长走到目标） | `bgmFadeTo` + `tick()` |
+ * | Music 淡变（`sub_489D10`/`sub_489E50`：每次 CALL +100，受 `sub_453A60` 节流） | `bgmFadeTo` + `tick()` |
  *
  * ★两条刻意的近似（都在代码里写明，避免以后被当成 bug）：
  *  1. **BGM 与语音重叠**：引擎在 `set:KeepMusicVoice` + `sound:MusicFadeOnVoicePlaying` 打开时**暂停** BGM
@@ -27,12 +27,34 @@
  * （`src/renderer/audio/webAudioHost.ts`），测试宿主 = `test/helpers/fakeAudioHost.ts`。
  */
 
-/** SE 通道数（设备 0..9）。 */
-export const SE_CHANNELS = 10;
+/**
+ * SE 通道表的长度 = **设备通道表长度 15**（引擎 `Device[405+ch]` = 15 格 SoundBuffer 指针，ch = 0..14）。
+ *
+ * ★2026-09 订正（审计 P2，票 `T-0152` 的 `0xb4`/`0xb5`）：这里**不是 10**。证据：
+ *  - `sub_4B6020`（`0xB5`/`0xBA` 的落点）raw **138599** 的值域门是 `if ( a2 > 0xE )` ⇒ 0..14 全合法；
+ *  - `sub_4B4F60`（`0xB4` 的装载落点）raw **137654** 写 `*(_DWORD *)(_this + 4 * ch + 1212)`（**无值域门**）；
+ *  - `sub_4B69B0`（Sound 析构）raw 139101-139108 逐个删 **15** 个 critical section；
+ *  - `sub_4B60C0`（释放）raw 138630 的值域门是 `if ( a2 >= 15 )`。
+ *
+ * ★但 15 格里**只有 0..9 与 12..14 会被真的绑缓冲**：`sub_4B5CF0`（raw 138415+，DirectSoundCreate
+ * 之后）只建 2 个缓冲（主缓冲 `_this[259]` + 流缓冲 `_this[260]`），`_this[a2+405]` 那 15 格是
+ * 按需（`0xB4` 装载 → `sub_4B6570` 绑 / `0xB6` 释放）建的；语音经 `Engine+21032` 那层走
+ * `sub_4BB840` → `sub_4B6020(设备, ch+12, …)` ⇒ **12/13/14 归语音**，10/11 是**备用直通**格。
+ * ⇒ 越界判据是**两段**：`ch > 14` 报 `dsPlaySound(%d)`（raw 138599-138604）、`ch` 合法但**该通道
+ * 没有缓冲**报 `dsPlay(%d)`（raw 138605-138612）。本工程只建模第一段（第二段见 `sePlay` 的说明）。
+ */
+export const SE_CHANNELS = 15;
 /** 语音逻辑通道数（设备 12..14）。 */
 export const VOICE_CHANNELS = 3;
 /** 语音第一条通道对应的设备通道号（仅用于日志/诊断）。 */
 export const VOICE_CHANNEL_BASE = 12;
+/**
+ * `sub_408D90`（`0xBB` / `0x1BA op1=2` 的 SE 总开关）关 SE 时逐个释放的**音效通道数**。
+ *
+ * ★为什么单列而不是用 `SE_CHANNELS`：引擎那一段的循环上界是 **10**（raw 13561-13568 逐个
+ * `sub_4B60C0(SE, i)`），**不碰** 10..14 那几格（12..14 属语音）⇒ 关 SE 不得把语音通道一起停掉。
+ */
+export const SE_ENABLE_RELEASE_CHANNELS = 10;
 
 /** 音量/pan 的量程（引擎 `±10000`）。 */
 export const VOLUME_MAX = 10000;
@@ -160,7 +182,27 @@ export type AudioIntent =
   | { kind: 'bgm-stop' }
   | { kind: 'bgm-pause'; paused: boolean }
   | { kind: 'bgm-mode'; mode: number }
-  | { kind: 'bgm-fade'; value: number; step: number }
+  /**
+   * BGM 淡变。`step` = **每次 CALL 的进度增量**（引擎 `sub_489D10(Music, op1, v9)` 的 v9），
+   * `throttleMs` = **两次 CALL 的最小间隔毫秒**（`sub_453A60(_this+107503, op2<1000?op2/10:op2/1000)`）。
+   * 不在场 = 0 = 每帧一次（清 bit0x200 那条内部路径用的旧口径）。见 `bgmFadeTo`。
+   */
+  | { kind: 'bgm-fade'; value: number; step: number; throttleMs?: number }
+  /**
+   * **换曲时的音量衔接**（引擎 `0xC2` raw 29826-29830 → `sub_418580`；键 `set:TransferMusicVolume`）：
+   * `mode = 1` ⇒ 按淡变进度把当前音量运行态插值到新目标（`Music[264] ← (Music[262]*(100-p)+p*Music[265])/100`）；
+   * `mode = 2` ⇒ 直接跳到目标（`Music[264] = Music[265]`）；其余值 ⇒ 什么都不做。
+   */
+  | { kind: 'bgm-transfer-volume'; mode: number }
+  /**
+   * **影片音轨跟随声音开关**（引擎 `sub_406DF0` 的播放器循环，raw 12095-12103；由 `0xBB`/`0xBC`/
+   * `0x1BA` 四条分支的收尾触发）。
+   *
+   * `category` = 1 音乐 / 2 SE / 3 语音 / 4 影片；`on` = **归一成 0/1**（raw 12052 `v4 = a3 != 0`）。
+   * 影片播放器对象表在重写侧未建模 ⇒ 宿主未接时由闸门 A 留痕（见 `handlers/audio.ts` 的
+   * `applyDependentMovie`，票 `T-0152` 的 P2 `0x1ba missing-consumer`）。
+   */
+  | { kind: 'movie-dependent-audio'; category: number; on: number }
   | { kind: 'enable'; target: AudioBus; on: boolean }
   | { kind: 'volume'; category: number; value: number }
   | { kind: 'policy'; keepMusicVoice: boolean; fadeOnVoice: boolean }
@@ -232,8 +274,12 @@ export class AudioEngine {
     paused: boolean;
     /** 宿主不支持 `setPaused` 时记下的暂停位置（秒），恢复时作 `offsetSec`。 */
     pausePos: number;
-    /** 淡变：从 `from` 走到 `to`（都是 0..1 的增益比例），进度 0..100。 */
-    fade: { from: number; to: number; progress: number; step: number } | null;
+    /**
+     * 淡变：从 `from` 走到 `to`（都是 0..1 的增益比例），进度 0..100。
+     * `step` = 每次 CALL 的进度增量（引擎 `sub_489E50` 恒 +100 之外，`0xC2` 还给了 `op2<1000?10:1`）；
+     * `throttleMs`/`nextAtMs` = 两次 CALL 的最小间隔（引擎 `sub_453A60(_this+107503, v4)` 的等价物）。
+     */
+    fade: { from: number; to: number; progress: number; step: number; throttleMs: number; nextAtMs: number } | null;
   } = { bgm: 0, clip: null, playback: null, loop: true, mode: 1, paused: false, pausePos: 0, fade: null };
 
   #volumes = { master: VOLUME_MAX, bgm: VOLUME_MAX, se: VOLUME_MAX, voice: VOLUME_MAX, movie: VOLUME_MAX };
@@ -251,7 +297,10 @@ export class AudioEngine {
 
   constructor(host: AudioHost, opts: AudioEngineOptions = {}) {
     this.#host = host;
-    this.#log = opts.log ?? host.log ?? ((): void => {});
+    // ★必须**绑住宿主**：`host.log` 是宿主上的方法（`FakeAudioHost.log` 走 `this.logs`），
+    //   `opts.log ?? host.log` 直接取方法引用会让调用点丢掉 `this`（实测 `this.logs` 为
+    //   undefined ⇒ 异步装载完成的日志把 TypeError 抛到 unhandledRejection 上）。见 T-0152。
+    this.#log = opts.log ?? (host.log ? (m: string): void => host.log!(m) : (): void => {});
     this.#cacheBytes = opts.cacheBytes ?? DEFAULT_CACHE_BYTES;
     this.#duckGain = opts.duckGain ?? DEFAULT_DUCK_GAIN;
     for (let ch = 0; ch < SE_CHANNELS; ch++) {
@@ -286,7 +335,15 @@ export class AudioEngine {
       case 'bgm-stop': this.bgmStop(); break;
       case 'bgm-pause': this.bgmPause(intent.paused); break;
       case 'bgm-mode': this.bgmMode(intent.mode); break;
-      case 'bgm-fade': this.bgmFadeTo(intent.value, intent.step); break;
+      case 'bgm-fade': this.bgmFadeTo(intent.value, intent.step, intent.throttleMs); break;
+      case 'bgm-transfer-volume': this.bgmTransferVolume(intent.mode); break;
+      // 影片音轨跟随（`sub_406DF0`）：影片播放器对象表未建模 ⇒ 只记一行（有据登记，见意图注释）。
+      case 'movie-dependent-audio':
+        this.#log(
+          `[audio] 影片音轨跟随：类别 ${intent.category} ⇒ ${intent.on}（引擎 sub_406DF0 raw 12095-12103；` +
+            '播放器对象表未建模，重开条件 = 影片对象表进 emulator）',
+        );
+        break;
       case 'enable': this.setEnabled(intent.target, intent.on); break;
       case 'volume': this.setVolume(intent.category, intent.value); break;
       case 'policy': this.setPolicy(intent.keepMusicVoice, intent.fadeOnVoice); break;
@@ -323,7 +380,18 @@ export class AudioEngine {
     });
   }
 
-  /** `0xB5`（loop=false）/ `0xBA`（loop=true）：SE 通道起播。装载未完成则挂起，装载完自动起播。 */
+  /**
+   * `0xB5`（loop=false）/ `0xBA`（loop=true）：SE 通道起播。装载未完成则挂起，装载完自动起播。
+   *
+   * ★**值域 = 0..14**（审计 P2，票 `T-0152` 的 `0xb5`）：引擎 `sub_4B6020` 的门是 `if ( a2 > 0xE )`
+   * （raw 138599）⇒ 10..14 也在值域内（12..14 是语音的设备通道，见 `SE_CHANNELS` 的说明）。
+   *
+   * ★**没有建模的第二段**（同一函数 raw 138605-138612）：值域内但**该通道没有缓冲**时引擎报的是
+   * 另一条错误串 `dsPlay(%d)` 并**不起播**。本工程不建这一半，因为它会与「装载未完成 ⇒ 挂起」
+   * 这条**刻意的异步近似**打架：`0xB4` 的 `loadedId` 是**同步**写的，"已排队等装载"与"从未装载"
+   * 在本实现里无法区分（`src/vm/handlers/audio.ts` 文件头第 33-35 行记了这条取舍）。
+   * 判据留在**通道号**这一半（可由脚本直接触发），第二段登记在 `tickets/T-0152/changes-audio.md`。
+   */
   sePlay(ch: number, loop: boolean): void {
     const c = this.#seChannel(ch, 'se-play');
     if (!c) return;
@@ -439,10 +507,17 @@ export class AudioEngine {
     if (v) v.flag = 1;
   }
 
-  /** `0x2FF`：音量因子**预备**（引擎 `Engine[21318+ch]=1`、`[21321+ch]=op2`；尚未生效）。 */
+  /**
+   * `0x2FF`：音量因子**预备**（引擎 `Engine[21318+ch]=1`、`[21321+ch]=op2`；尚未生效）。
+   *
+   * ★**原值直写、不钳位**（审计 P3 `0x2ff approximation`，票 `T-0152`）：同一槽在 `0x302` 里会被写成
+   * `0x10000`（65536，raw 33768-33769）——**远超 10000** ⇒ 那一格不是 0..10000 域。钳位只应发生在
+   * "把因子换算成增益"那一步（`#voiceGain` 里的 `v.factor / VOLUME_MAX`，而 `v.factor` 自带
+   * `clampVolume`，因为它是**下发用的**值，与引擎 `设备[402+ch]` 的取值口径一致）。
+   */
   voiceFactorPrepare(ch: number, value: number): void {
     const v = this.#voiceChannel(ch, 'voice-factor-prepare');
-    if (v) v.preparedFactor = clampVolume(value);
+    if (v) v.preparedFactor = value;
   }
 
   /** `0x302`：音量因子**生效**并应用（引擎 `Engine[21318+ch]=0x10000` → `sub_4BBC30`）。 */
@@ -450,7 +525,10 @@ export class AudioEngine {
     const v = this.#voiceChannel(ch, 'voice-factor-apply');
     if (!v) return;
     v.factor = clampVolume(value);
-    v.preparedFactor = null;
+    // ★**不清 preparedFactor**（审计 P3 `0x302 host-invented`，票 `T-0152`）：引擎 `sub_426A30`
+    //   （raw 33767-33777）只写 `[21318+ch] = 0x10000` 与 `[21321+ch] = op2` 再 `sub_4BBC30` 下发，
+    //   没有"把预备值清掉"这一步；`[21321+ch]` 在 `sub_4BBC30` 之后仍在（后续还能被读/被覆盖）。
+    //   ⇒ 宿主侧的对应量 `preparedFactor` 保留原值（它只进诊断快照；真正发声用 `v.factor`）。
     v.playback?.setGain(this.#voiceGain(v));
   }
 
@@ -569,10 +647,51 @@ export class AudioEngine {
     this.#log(`[audio] BGM 暂停态 = ${paused}（当前没有在播的曲子 ⇒ 只记状态）`);
   }
 
-  /** `0xC2`：把 BGM 淡变到 `value`（0..10000），每帧推进 `step`（引擎 `sub_489D10`/`sub_489E50`）。 */
-  bgmFadeTo(value: number, step: number): void {
+  /**
+   * `0xC2`：把 BGM 淡变到 `value`（0..10000），每次 CALL 推进 `step`，两次 CALL 至少隔 `throttleMs` 毫秒
+   * （引擎 `sub_489D10`/`sub_489E50` + `sub_453A60`）。
+   *
+   * ★**节流的那一半**（审计 P2 `0xc2 approximation`，票 `T-0152`）：引擎 `0xC2`（`sub_420E00`
+   * raw 29831-29839）把 op2 **原值**按 `op2 < 1000 ? op2/10 : op2/1000` 折算成**节流毫秒**交给
+   * `sub_453A60`，而每次 CALL 的进度增量恒由 `sub_489E50(Music, 100)` 给（raw 106328
+   * `Music[262] += 100`）或由 `sub_489D10` 的第 3 实参 `op2<1000 ? 10 : 1` 给
+   * （raw 29837）⇒ **op2 不是每帧步长**。修前把它当每帧步长 ⇒ `op2 = 500` 淡变快 2 倍、
+   * `op2 = 1200` 慢约 1.2 倍（语料 943 处 `i0c2` 里 `< 1000` 的约 121 处）。
+   */
+  bgmFadeTo(value: number, step: number, throttleMs = 0): void {
     const to = clampVolume(value) / VOLUME_MAX;
-    this.#bgm.fade = { from: this.#bgmGain(), to, progress: 0, step: Math.max(1, Math.abs(step)) };
+    this.#bgm.fade = {
+      from: this.#bgmGain(),
+      to,
+      progress: 0,
+      step: Math.max(1, Math.abs(step)),
+      throttleMs: Math.max(0, throttleMs),
+      nextAtMs: this.#lastTickMs,
+    };
+  }
+
+  /**
+   * `0xC2` 的 `set:TransferMusicVolume` 分支（引擎 `sub_418580`，由 raw 29828-29829 调用）。
+   *
+   * 引擎体的三支（raw 24041-24053）：
+   * ```c
+   * if ( a2 == 1 ) { result = _this[262]; if ( result < 100 )
+   *     { result = (_this[264] * (100 - result) + result * _this[265]) / 100; _this[264] = result; } }
+   * else if ( a2 == 2 ) _this[264] = _this[265];
+   * ```
+   * 本工程把 `Music[264]`（当前音量运行态）的等价物放在宿主：`#bgm.fade` 的 `from`→`to` 插值就是
+   * 那条式子（`progress` = `Music[262]`、`to` = `Music[265]`）⇒
+   *  - `mode == 2`：**直接跳到目标** ⇒ 把当前淡变的起点重设为终点（下一帧就到目标，不再插值）；
+   *  - `mode == 1`：保留当前插值（引擎那一步写回的 `Music[264]` 与"按 progress 插值"同值 ⇒ 无额外动作）；
+   *  - 其余：什么都不做（引擎那两支都不成立）。
+   */
+  bgmTransferVolume(mode: number): void {
+    if (mode === 2 && this.#bgm.fade) {
+      this.#bgm.fade.from = this.#bgm.fade.to;
+      this.#log('[audio] set:TransferMusicVolume = 2 ⇒ 淡变直接跳到目标（引擎 sub_418580 的 a2==2 支）');
+      return;
+    }
+    this.#log(`[audio] set:TransferMusicVolume = ${mode}（引擎 sub_418580：1 = 按进度插值 / 2 = 跳到目标 / 其余无动作）`);
   }
 
   // ==================== 开关 / 音量 / 策略 ====================
@@ -581,7 +700,9 @@ export class AudioEngine {
   setEnabled(target: AudioBus, on: boolean): void {
     this.#enabled[target] = on;
     if (on) return;
-    if (target === 'se') for (let ch = 0; ch < this.#se.length; ch++) this.#stopSe(ch);
+    // ★关 SE 只停 0..9（引擎 `sub_408D90` 的循环上界 = 10，raw 13561-13568）——
+    //   12..14 属语音、10/11 是备用直通格，都不归 SE 开关管（见 SE_ENABLE_RELEASE_CHANNELS）。
+    if (target === 'se') for (let ch = 0; ch < SE_ENABLE_RELEASE_CHANNELS; ch++) this.#stopSe(ch);
     else if (target === 'voice') for (let ch = 0; ch < this.#voice.length; ch++) this.#stopVoice(ch);
     else this.#stopBgm();
     this.#log(`[audio] ${target} 总线关闭 ⇒ 该总线通道已停`);
@@ -589,7 +710,11 @@ export class AudioEngine {
 
   /** `0xC6`：设音量（0 = 主 / 1 = BGM / 2 = SE / 3 = 语音 / 4 = 影片）。 */
   setVolume(category: number, value: number): void {
-    const v = clampVolume(value);
+    // ★**原值直存**（审计 P3 `0xc6 approximation`，票 `T-0152`）：引擎 `sub_4071D0`/`sub_489B80`/`sub_4B68A0`
+    //   对脚本给的音量是**原值直用**（`sound:Volume0..4` 与设备格存的都是原始值）；
+    //   钳位只发生在"把 0..10000 换算成增益"那一步（各 `#*Gain()` 里）。
+    //   语料 5 处全是 0..10000 的合法值 ⇒ 越界时才会与修前分叉（修前配置里会被钳成 0/10000）。
+    const v = Number.isFinite(value) ? value : 0;
     switch (category) {
       case VOLUME_MASTER:
         this.#volumes.master = v;
@@ -673,13 +798,18 @@ export class AudioEngine {
     const bgm = this.#bgm;
     if (bgm.fade) {
       const f = bgm.fade;
-      f.progress = Math.min(FADE_STEPS, f.progress + f.step);
-      const t = f.progress / FADE_STEPS;
-      const gain = f.from + (f.to - f.from) * t;
-      bgm.playback?.setGain(this.#clampGain(gain * this.#duckFactor()));
-      if (f.progress >= FADE_STEPS) {
-        bgm.fade = null;
-        if (f.to === 0) this.#stopBgm(); // 淡到 0 = 停（引擎在进度满且目标为 0 时 stop）
+      // ★节流：引擎是「节流毫秒到期才 CALL 一次」（raw 29836 + 106328）——
+      //   `throttleMs === 0` 时每帧都到期（= 清 bit0x200 那条内部路径的旧口径）。见 `bgmFadeTo`。
+      if (nowMs >= f.nextAtMs) {
+        f.nextAtMs = nowMs + f.throttleMs;
+        f.progress = Math.min(FADE_STEPS, f.progress + f.step);
+        const t = f.progress / FADE_STEPS;
+        const gain = f.from + (f.to - f.from) * t;
+        bgm.playback?.setGain(this.#clampGain(gain * this.#duckFactor()));
+        if (f.progress >= FADE_STEPS) {
+          bgm.fade = null;
+          if (f.to === 0) this.#stopBgm(); // 淡到 0 = 停（引擎在进度满且目标为 0 时 stop）
+        }
       }
     } else if (bgm.playback) {
       bgm.playback.setGain(this.#bgmGain());
@@ -799,13 +929,23 @@ export class AudioEngine {
 
   #seChannel(ch: number, what: string): SeChannel | null {
     if (ch >= 0 && ch < this.#se.length) return this.#se[ch]!;
-    this.#log(`[audio] ${what}：SE 通道越界 ${ch}（引擎报 dsPlaySound/dsSetPan 分支）`);
+    this.#log(`[audio] ${what}：SE 通道越界 ${ch}（引擎 sub_4B6020 raw 138599 的 a2 > 0xE ⇒ 报 dsPlaySound）`);
     return null;
   }
 
+  /**
+   * 语音逻辑通道（0..2 ↔ 设备 12..14）。
+   *
+   * ★**越界处置 = 有据豁免，不是缺口**（审计 P3 `0x2f6 missing-consumer` / `0x2f8 missing-branch`，
+   * 票 `T-0152`）：引擎那一侧 `Engine[ch + 21315]` / `Sound[ch + 375]` 是**无门直接下标**
+   * （raw 33676-33704 / 139063-139089；值域门只在下游设备层 `a2 >= 15`）⇒ ch = 3..14 时引擎会
+   * **写坏相邻字段**（`[21315+3]` 已是别的槽）。本工程用独立的 `#voice[3]` 建模语音、**不复制这种
+   * 越界写坏** ⇒ 越界只记日志、不动作。语料实测 `0x2F6` 的 op1 只有 0..2（86687 处）、
+   * `0x2F8` 只有 `0/1/2 0`（14644 处）⇒ 现实不可见。
+   */
   #voiceChannel(ch: number, what: string): VoiceChannel | null {
     if (ch >= 0 && ch < this.#voice.length) return this.#voice[ch]!;
-    this.#log(`[audio] ${what}：语音通道越界 ${ch}（引擎报 dsPlaySound 分支）`);
+    this.#log(`[audio] ${what}：语音通道越界 ${ch}（引擎按 ch 直接下标、设备层才判 < 15；本实现只建模 0..2）`);
     return null;
   }
 
@@ -856,6 +996,10 @@ export class AudioEngine {
     this.#bgm.playback = null;
     this.#bgm.clip = null;
     this.#bgm.fade = null;
+    // ★注意：`0xB8`（停 BGM）**不动** `#bgm.mode`/`#enabled.bgm` —— 引擎 `sub_419720`（raw 24817-24829）
+    //   只做「帧状态槽 = 1 + 清 bit0x200 + sub_489B50」，**不碰**任何 BGM 模式/开关字段
+    //   （审计 P2 `0xb8 missing-behavior`，票 `T-0152`）⇒ 停完之后 `#bgm.mode` 必须原样保留，
+    //   否则 `bgmPlay` 的 `mode === 0` 早退会让"停 → 重播"习语整段静音。
     // 引擎 `sub_489B50`（停）第二行就把暂停位清 0（raw 106186）⇒ 停播一律回到"非暂停"。
     this.#bgm.paused = false;
     this.#bgm.pausePos = 0;
@@ -873,19 +1017,31 @@ export class AudioEngine {
     return this.#voice.some((v) => this.#voiceBusy(v));
   }
 
+  /**
+   * 音量换算的**唯一钳位点**（`#volumes.*` 里存的是脚本给的**原值**，见 `setVolume` 的说明）：
+   * 引擎 `sub_4B68E0`/`sub_4B6210` 把 0..10000 映射成 DirectSound 的百分之一 dB，越界值在那里被物理域限住。
+   */
+  #vol(v: number): number {
+    return clampVolume(v);
+  }
+
   /** SE 通道增益 = `sound:Volume2 × 主音量`（引擎 `设备[327+ch] × 设备[342]`，通道各自无因子）。 */
   #seGain(_ch: number): number {
-    return this.#clampGain((this.#volumes.se / VOLUME_MAX) * (this.#volumes.master / VOLUME_MAX));
+    return this.#clampGain((this.#vol(this.#volumes.se) / VOLUME_MAX) * (this.#vol(this.#volumes.master) / VOLUME_MAX));
   }
 
   #voiceGain(v: VoiceChannel): number {
     return this.#clampGain(
-      (this.#volumes.voice / VOLUME_MAX) * (v.factor / VOLUME_MAX) * (this.#volumes.master / VOLUME_MAX),
+      (this.#vol(this.#volumes.voice) / VOLUME_MAX) *
+        (this.#vol(this.#volumes.master) / VOLUME_MAX) *
+        (clampVolume(v.factor) / VOLUME_MAX),
     );
   }
 
   #bgmGain(): number {
-    return this.#clampGain((this.#volumes.bgm / VOLUME_MAX) * (this.#volumes.master / VOLUME_MAX) * this.#duckFactor());
+    return this.#clampGain(
+      (this.#vol(this.#volumes.bgm) / VOLUME_MAX) * (this.#vol(this.#volumes.master) / VOLUME_MAX) * this.#duckFactor(),
+    );
   }
 
   /** 语音在响且策略允许时压低 BGM（近似，见文件头）。 */

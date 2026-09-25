@@ -22,12 +22,30 @@
     ]
   },
   "id": "T-0164",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：doneWhy, tests —— T-0164 修复批交付：P2 5/5 落地 + P3 26 行逐条处置（5 修 / 1 推翻 / 6 登记 / 2 无偏离 / 6 越界只登记）。过程文档 tickets/T-0164/changes-c164.md 与 test/t0164-misc-batch.test.ts（14 用例）。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "open → done —— 全部判据做完：守卫 14/14 绿、opcode-operands 0/1→1/1、fast 1208/1208、tsc 0 错、死写无新增、tickets --validate 0 警告。P3 中锚在 engine.ts/engineFieldIds.ts/renderer-scene 的 6 条按父 agent 指令只登记（其余票在飞）。"
     }
+  ],
+  "doneWhy": "P2 五条全部落地：0x20F（effect_flags|=0x2000 + _this[675972]=1 + op3 位解码/音源 BOOL + 槽纹理表空抛 asc_520248）、0x23D（两个宿主新实现 releaseMovieSlots：析构 42..999 影片对象并解绑槽→imgid）、0x19D（缺键改 registryDefault(set:SaveVersion1)=1）、0x60（CRT rand() LCG 进程级流，可复现 + 恰好 0 才抛 + 先推进 + 抛前先写 op1=0）、0x21D（三表独立用例；顶点缓冲两条错误路径无对应物⇒登记）。P3 26 行逐条处置见 tickets/T-0164/changes-c164.md 的 §1 表：5 修 / 1 前提被推翻 / 6 如实登记 / 2 复核后确认无偏离 / 6 越界只登记（engine.ts 0x14b·0x14d、engineFieldIds.ts 0x2f6、scene·drawitem 三处，均被别的票占着）。守卫 test/t0164-misc-batch.test.ts 14 用例（T0 合成）：实现前 2/13 → 实现后 14/14；test/opcode-operands.test.ts 修前 0/1（0x20F 在合成夹具上抛错）→ 修后 1/1（改走可选宿主缝 hasSlotTexture，宿主不建模时不抛，无需 SKIP 豁免）；test/run.ts fast 1209 例 1208 过 0 红（1 skip）；tsc tsconfig.json 0 错；死写闸门无新增死写（基线仍 13）。",
+  "tests": [
+    "app/amayui-emulator/test/t0164-misc-batch.test.ts",
+    "app/amayui-emulator/test/opcode-operands.test.ts",
+    "app/amayui-emulator/test/op-23f-slot-size.test.ts",
+    "app/amayui-emulator/test/gallery-bgm-list.test.ts",
+    "app/amayui-emulator/test/native-tap.test.ts"
   ]
 }

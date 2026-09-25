@@ -72,14 +72,22 @@ test('③ 方向：下滚置 `1 << set:WheelKeyDown`（默认位 1 = 0x2）；�
   assert.equal(e.input.wheelKeyBits, 0xa, '再上滚 ⇒ 0x2 | 0x8（引擎也是 `|=`）');
 });
 
-test('④ 横滚：`set:HWheelKeyUp/Down` 各自成路（缺省 -1 = 不映射 ⇒ 退回累加器）', () => {
+test('④ 横滚：`set:HWheelKeyUp/Down` 各自成路（引擎缺省 **−1** ⇒ 模式开时横滚什么都不做）', () => {
   const e = mkEngine([instr(0x72, [im(0)])]);
-  // 只配竖直滚轮 ⇒ 横滚没有键位 ⇒ 仍然进 hwheelDelta（与修前一致）
+  // ★引擎**内建缺省** = −1（raw 111740-111743 两条 `v13 = -1; sub_434D00(v2, aSetHwheelkey*, &v13);`），
+  //   而 WndProc 只判 `v19 >= 0`（raw 141604）⇒ **模式开 + 缺省**时横滚既不置位、**也不累加**
+  //   （累加支是模式门的 `else`，raw 141608-141611，模式开时不可达）。旧断言与 ⑤ 是同一个 bug（`T-0171`）。
   withWheelConfig(e);
   e.effectFlags |= ADVANCE_GATE;
   e.input.addHWheel(120);
-  assert.equal(e.input.hwheelDelta, 120, '缺 `set:HWheelKeyUp` ⇒ 走累加器');
-  assert.equal(e.input.wheelKeyBits, 0);
+  assert.equal(e.input.wheelKeyBits, 0, '缺省 -1 => 一个位都不置');
+  assert.equal(e.input.hwheelDelta, 0, '★也不回流累加器：模式开时累加支不可达');
+
+  // 模式关（effect_flags & 0x90100000 == 0）=> 才走累加器 —— 那正是 0x2E5 读的那条路（如 SAVE 列表）
+  e.effectFlags &= ~ADVANCE_GATE;
+  e.input.addHWheel(120);
+  assert.equal(e.input.hwheelDelta, 120, '模式关 => 累加器可用（0x2E5 读并清零）');
+  e.effectFlags |= ADVANCE_GATE;
 
   // 配上横滚键位 ⇒ 走掩码位（raw 141594-141606）
   withWheelConfig(e, '[set]\nWheelKeyUp=3\nWheelKeyDown=1\nHWheelKeyUp=5\nHWheelKeyDown=6\n');
@@ -91,14 +99,25 @@ test('④ 横滚：`set:HWheelKeyUp/Down` 各自成路（缺省 -1 = 不映射 �
   assert.equal(e.input.wheelKeyBits, (1 << 5) | (1 << 6), '左滚 ⇒ `set:HWheelKeyDown = 6`');
 });
 
-test('⑤ 位号越界/`-1` ⇒ 不进掩码也不弄坏累加器（引擎 `if (v19 >= 0)` 的守卫）', () => {
-  const e = mkEngine([instr(0x72, [im(0)])]);
-  withWheelConfig(e, '[set]\nWheelKeyUp=-1\nWheelKeyDown=99\n');
-  e.effectFlags |= ADVANCE_GATE;
-  e.input.addWheel(120);
-  e.input.addWheel(-120);
-  assert.equal(e.input.wheelKeyBits, 0, '位号非法 ⇒ 一个位都不置（负数/≥32）');
-  assert.equal(e.input.wheelDelta, 0, '也**不**回流到累加器：引擎那条 else 只在模式关时走');
+test('⑤ 位号 `<0` ⇒ 什么都不做；位号 `≥32` ⇒ 按引擎 `shl cl` 取模（两者都**不**回流累加器）', () => {
+  // (a) 负位号：引擎 raw 141604-141606 的 `if ( v19 >= 0 )` 那条 `js` 跳过整个置位 ⇒ 不置位、**也不累加**。
+  //     ★只喂**一个方向**：修前这里会掉进 `wheelDelta +=`（= 120），旧断言（+120/−120 两次）恰好互相抵消
+  //       才"看起来对" ⇒ 抓不住这个 bug（`tickets/T-0171`）。
+  const neg = mkEngine([instr(0x72, [im(0)])]);
+  withWheelConfig(neg, '[set]\nWheelKeyUp=-1\nWheelKeyDown=-1\n');
+  neg.effectFlags |= ADVANCE_GATE;
+  neg.input.addWheel(120);
+  assert.equal(neg.input.wheelKeyBits, 0, '负位号 ⇒ 一个位都不置');
+  assert.equal(neg.input.wheelDelta, 0, '★单方向喂也不回流累加器：累加支是模式门的 else（raw 141580-141583），模式开时不可达');
+
+  // (b) 位号 ≥ 32：引擎只判 `>= 0`，随后是 x86 的 `shl cl`（移位量掩到 5 位）⇒ `99 & 31 = 3` ⇒ 置 **bit3**。
+  //     ★所以"越界"的正确口径是**取模**，不是"什么都不做"（C 源码里的 `1 << 99` 是 UB，二进制实际行为才是权威）。
+  const big = mkEngine([instr(0x72, [im(0)])]);
+  withWheelConfig(big, '[set]\nWheelKeyUp=99\nWheelKeyDown=99\n');
+  big.effectFlags |= ADVANCE_GATE;
+  big.input.addWheel(120);
+  assert.equal(big.input.wheelKeyBits, 1 << 3, '★位号 99 → bit3（`shl cl` 取模），而不是"不置位"');
+  assert.equal(big.input.wheelDelta, 0, '模式开仍然是"不累加"（与 (a) 同一条门）');
 });
 
 test('⑥ `consumeEdges()` 消费这一位（引擎每轮处理的收尾是 `*v9 = 0` 清整张掩码）', () => {

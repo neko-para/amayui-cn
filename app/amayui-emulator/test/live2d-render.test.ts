@@ -264,20 +264,38 @@ test('`VISIBLE:` 覆盖生效（模型初始 visible=0 的部件可被动作/0x3
   assert.ok(after.vertices > before, '打开隐藏部件 ⇒ 顶点数应增加');
 });
 
-test('`textureNo == -1` 不当成纹理号（-1 号键是 `0x34F` 的乘色记录，不是文件 id）', () => {
+test('`textureNo == -1` 不当成纹理号（无纹理网格 ≠ `0x34F` 的乘色记录）', () => {
   const e = mkEngine();
   const model = syntheticModel();
   // 把 P_A 的第一个网格改成"没有纹理"（`.moc` 里 `textureNo = -1` 的语义）
   model.parts[0]!.drawables[0]!.textureNo = -1;
   l2dLoadModel(e, 0, 0x100, model);
-  // `0x34F` 把乘色写进 `textures` 的 **-1 号键**（引擎同口径的"乘色记录"）
+  // `0x34F` 收下乘色（引擎 `sub_428400` raw 34794-34821）
   l2dTextureMulColor(e, 0, 0x80ff00ff);
   l2dCreateNode(e, 0x14, 0);
   const bs = l2dBatches(e, VIEW_W, VIEW_H);
   const none = bs.find((b) => b.textureNo === -1);
   assert.ok(none, '应有 textureNo = -1 的那一批');
-  assert.equal(none.textureFileId, null, '★不能把乘色记录 0x80ff00ff 当成纹理文件 id');
-  assert.equal(none.mulColor, 0x80ff00ff, '乘色记录本身要能读到（渲染时乘在纹理上）');
+  assert.equal(none.textureFileId, null, '★不能把乘色当成纹理文件 id');
+  // ★`T-0160` 最小 retarget：旧前提是"乘色以**原始打包 int** 存在 `textures` 的 -1 号键"，于是这里
+  //   比的是 `0x80ff00ff`。按体改掉了三件事：① 不再复用 `textures` 的 -1 号键（那是纹理号空间），
+  //   原始值搬到 `inst.mulColorRaw`；② 批次里给的是**解码后的三分量**；③ ★`0x80ff00ff` 作为**有符号
+  //   int 是负数**（bit31 置位）⇒ 引擎 `sub_428400` raw 34805 的 `if (v2 < 0)` 成立 ⇒ 走
+  //   `sub_4ADD60` 工作色回退（`StubNative` 的缝返回 -1 ⇒ 三分量全 1）。旧断言之所以"看得见"那个值，
+  //   正是因为旧实现**不看符号**；现在看符号才是对的 ⇒ 两半都钉住，并补一条**正数**走解码支。
+  assert.deepEqual(
+    none.mulColor,
+    [1, 1, 1],
+    '★0x80ff00ff 是有符号负数 ⇒ 走工作色回退（缝返回 -1 ⇒ 全 1），不是当颜色解码',
+  );
+  assert.equal(e.l2dSlots.get(0)!.mulColorRaw, -1, '回退源查不到 ⇒ 原始值就是 -1（引擎 sub_4ADD60 缺项返回值）');
+  l2dTextureMulColor(e, 0, 0x00112233); // 正数 ⇒ 走解码支
+  const bs2 = l2dBatches(e, VIEW_W, VIEW_H);
+  assert.deepEqual(
+    bs2.find((b) => b.textureNo === -1)?.mulColor,
+    [0x11 / 255, 0x22 / 255, 0x33 / 255],
+    '解码口径 = [BYTE2/255, BYTE1/255, BYTE0/255]（引擎 raw 34813-34818 的实参序）',
+  );
 });
 
 test('★出画对象跨帧复用（不每帧 new Mesh/geometry）—— 防 Pixi 的 GPU 资源堆积', () => {

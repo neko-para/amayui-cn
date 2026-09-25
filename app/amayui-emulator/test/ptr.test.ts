@@ -107,7 +107,10 @@ test('memcpy 拷贝 n 个元素；copy-local-array 填字面数组（含 ENC）'
   // 源：global.int[10..12] = 1,2,3
   for (let i = 0; i < 3; i++) e.globals.int.set(10 + i, enc(e.key, i + 1));
 
-  // lea ptr0 = &global.int[10]（dest），lea ptr1 = &global.int[10]（src），memcpy ptr0 ptr1 3
+  // lea ptr0 = &global.int[10]（**源 op1**），lea ptr1 = &global.int[10]（**目标 op2**），memcpy ptr0 ptr1 3
+  // ★方向口径（`tickets/T-0162` 读体订正）：引擎 0x1B0 是 `memcpy(dest = addr(op2), src = addr(op1), 4*op3)`
+  //   （raw 37991-37995）—— 本用例两个指针指向同一处，所以断言在两种口径下都成立；用不同地址区分方向的
+  //   新守卫见 `test/operand-memcpy-direction.test.ts`。
   const lea = OPS.get(0x63)!;
   lea({ ...c, instr: mk(0x63, [0xc, 0], [0x3, 10]).instr });
   lea({ ...c, instr: mk(0x63, [0xc, 1], [0x3, 10]).instr });

@@ -37,7 +37,15 @@ const op_write_global_slot: OpHandler = (c) => {
   c.e.globalSlot97058 = (plan.int(1) ?? 0);
 };
 
-/** 0x148 (sub_42FEC0)：`op1 = _this[97058]`（读）。 */
+/**
+ * `0x148` (sub_42FEC0)：`op1 = _this[97058]`（读）。
+ *
+ * ★**该槽的读者是宿主窗口过程**（审计 `0x148 missing-consumer`，`tickets/T-0161`）：
+ * `sub_4B9240`（raw 141038-141043）用 `timeGetTime() - dword_55E1D8 > *(_DWORD *)(dword_55E1BC + 388232)`
+ * 决定是否继续走"弹系统对话框"那一支 —— 即这一格是**点击去抖阈值/时间基准**，
+ * 消费端是消息循环，不是脚本/渲染。emulator 没有对应的宿主子系统（去抖与系统对话框都没建模）
+ * ⇒ 读写往返在 emulator 里**无人消费**（如实登记，不编消费者；见 `changes-c161.md`）。
+ */
 const op_read_global_slot: OpHandler = (c) => {
   const plan = planFor(c);
   plan.setInt(1, c.e.globalSlot97058);
@@ -76,7 +84,13 @@ const op_get_engine_value: OpHandler = (c) => {
     //   （`v2 = GetConfig(_this[174405], "message:MesWinAlpha")`）。
     //   ★它**不读任何 Engine 字段** —— 不要回退到 `engineValues`，那里没有这个键的值
     //   （历史上曾把 21668 当成"消息窗 α"，而 21668×4 = 86672 = Font+1376 = message:MessageSpeed）。
-    v = c.e.config ? cfgInt(c.e.config, CFG.messageMesWinAlpha, 0) : 0;
+    //   ★缺键/无 INI 时的回退必须取**注册表内建缺省 8**，不是 0（审计 `0x131 missing-behavior`）：
+    //   注册表构造 `sub_491880` 在 raw 111471-111472 注入
+    //   `v13 = 8; sub_434D00(v2, aMessageMeswina, &v13);`（`aMessageMeswina = "message:MesWinAlpha"`，
+    //   raw 4428）⇒ 引擎侧"INI 没有这个键"时 `GetConfig` 回的就是 8。同一个访问器
+    //   （`registryDefault`）已被 frame.ts/control.ts/`op_get_effect_skip` 采用，这里补齐。
+    const def = registryDefault(CFG.messageMesWinAlpha);
+    v = c.e.config ? cfgInt(c.e.config, CFG.messageMesWinAlpha, def) : def;
   } else {
     const field = ENGINE_FIELD_GET.get(c.instr.opcode);
     if (field === undefined) {
@@ -127,6 +141,14 @@ interface FieldStoreSpec {
   map: Record<number, number>;
   /** 取到的值变换（默认原样）。 */
   transform?: (v: number) => number;
+  /**
+   * **同一条指令无条件写死的常量格**：`字段 → 常量`。
+   *
+   * 为什么需要（审计 `0x25b missing-operand-io`）：引擎里有"写一个 operands 值 + 顺手写一个模式位"
+   * 的体，而 `map` 的键是**操作数序号**、表达不了"与操作数无关的常量"。
+   * 只允许放**逐字读到**的常量（每条都要有 raw 锚点），不得当"顺手补一个字段"的口袋。
+   */
+  constWrites?: Record<number, number>;
 }
 const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldStoreSpec>([
   // ---- 消息窗（メッセージウィンドウ）属性/几何 ----
@@ -144,7 +166,20 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
   // ★`0x2EE` **不在这里**（`tickets/T-0097` ①）：它的体除了写 `_this[80106]` 还 `SetConfig("message:MessageFade")`
   //   ⇒ 走专用 handler `op_set_message_fade`（只写字段会在重启后回默认值）。
   [0x2db, { map: { 1: ENGINE_FIELD.fontMetricsMode } }], // 文本属性（引擎随后 sub_459F40 重排文本）
-  [0x25b, { map: { 1: ENGINE_FIELD.msgMediaImageId } }], // 消息态图像：`_this[92381]=op1`（模式位 92379=2 由它在引擎里写）
+  /**
+   * **`0x25B`（`sub_425E20` raw 33206-33221）：消息态"图像"（模式 2）** —— 体内写**两格**：
+   * ```c
+   * _this[92379] = 2;                 // ★模式位（同族 0x25A 置 1 = 影片）
+   * _this[92381] = result;            // 图像 id（= op1）
+   * if ( !_this[167990] ) { v3 = sub_41BF50(_this, 1); return sub_408440((int)_this, v3); }
+   * ```
+   * ★修前只写 92381 ⇒ 模式位永远停在 0（不对称于 0x25A 的 `mediaMode = 1`），`constWrites` 补齐。
+   * ★末行那条**加载分支**（非全屏 `display:ScreenMode == 0` 时真解码资源并把图渲进 Scene 的固定帧
+   *   纹理，`sub_408440` 失败时 `_CxxThrowException(Command_ShowMessage_Exception)` ⇒ **影响控制流**）
+   *   在 emulator **未建模**（无宿主媒体缝；同族 `0x25A` 的 `sub_4A5470(Scene, id)` 也一样）——
+   *   登记为缺口，见 `tickets/T-0161/changes-c161.md`。
+   */
+  [0x25b, { map: { 1: ENGINE_FIELD.msgMediaImageId }, constWrites: { [ENGINE_FIELD.mediaMode]: 2 } }],
   // ---- 数据/配置/标志 ----
   [0x21b, { map: { 1: ENGINE_FIELD.engineBool }, transform: (v) => (v !== 0 ? 1 : 0) }], // 引擎布尔寄存器（配套 getter 0x247）
   [0x24e, { map: { 1: ENGINE_FIELD.msgField92340 } }],
@@ -154,8 +189,18 @@ const ENGINE_FIELD_STORE: Map<number, FieldStoreSpec> = new Map<number, FieldSto
    * **`0x2E9`（`sub_426620` raw 33580-33587）**：`_this[122464] = op1` —— **ADV 自动翻页的行基准**。
    * 该字段在引擎里有 6 个读取点（raw 28569/28579/20420/13714/13720 拿它算自动翻页时长，raw 17987 复位清 0）
    * ⇒ 它**不是**"只写不读、可当 no-op"的字段（审计 P0 `op-2-01`：语料 480 处 / 330 脚本，
-   * 未实现时命中即 `NotImplementedOp`，ADV 主流程直接停）。字段语义与「消费端尚未实现」见
-   * `ENGINE_FIELD.autoMessageBaseline` 的注释与 `tickets/T-0076`。
+   * 未实现时命中即 `NotImplementedOp`，ADV 主流程直接停）。
+   *
+   * ★**消费端已在 emulator 落地**（审计 `0x2e9 missing-consumer` 的两条在 `tickets/T-0151` 后复核为已修）：
+   *  - `handlers/msgwin.ts` 的 `armCoexistAutoMessage`（raw 28556-28586）与
+   *  - `vm/engine.ts` 的 `#autoMessageInterval`（raw 20384-20399 / 28568-28581）
+   * 都按 `(该窗文本行数 − 1 − 本字段) × message:AutoMessagePitch{0,1} + message:AutoMessageTime{0,1}`
+   * 算时长、再夹到 ≥ 100 ms 交 `sub_453A60`/`sub_453BD0` 计时器。
+   * ★**没有** `message:AutoMessageSpeed` / `message:AutoMessageMinTime` 这两个键（旧注释把它们当键名，
+   * 已订正；4 个 `AutoMessage*` 键的引擎字符串见 raw 4309-4313）。守卫见
+   * `test/engine-fields-t0161.test.ts` 的"生产读者棘轮"。
+   * ★仍未建模的是**第二个计算点**（raw 20416-20426，被 `_this[122501]` 门控、用 `(行数 − 基准)`
+   * 而非 `(行数 − 1 − 基准)`）—— 见 `tickets/T-0161/changes-c161.md`。
    */
   [0x2e9, { map: { 1: ENGINE_FIELD.autoMessageBaseline } }],
   // ---- 输入（按键绑定表；emulator 无按键表，但值原样入字段以便口径统一）----
@@ -241,6 +286,10 @@ const op_engine_field_store: OpHandler = (c) => {
     const v = p.int(Number(nStr));
     if (v === undefined) continue; // 缺实参的合成指令：与老路 `readIntOperand` 的容错一致
     c.e.engineValues.set(field, spec.transform ? spec.transform(v) : v);
+  }
+  // ★与操作数无关的常量格（见 `FieldStoreSpec.constWrites`）：无条件写，不受缺实参影响。
+  for (const [field, value] of Object.entries(spec.constWrites ?? {})) {
+    c.e.engineValues.set(Number(field), value);
   }
 };
 
@@ -333,8 +382,19 @@ const op_get_effect_skip: OpHandler = (c) => {
  *  - `L354 i142 1`：在设置页收尾（`i1bb` 恢复、`i080 8` 回第 8 窗格）之前置回 **1**。
  *  ⇒ 即**进设置页时"挂起"、离开时"恢复"**的状态开关（构造/复位默认 1 = 正常）。
  *
- * emulator 建模：写入 `Engine.engineValues`（稀疏字段表），语义与引擎一致；当前无脚本经 opcode 读回它，
- * 故它不会改变 emulator 的输出，但**必须写**（否则上游若加 getter，值会漂）。
+ * emulator 建模：写入 `Engine.engineValues`（稀疏字段表），语义与引擎一致；当前无脚本经 opcode 读回它
+ * ⇒ 它不会改变 emulator 的输出，但**必须写**（否则上游若加 getter，值会漂）。
+ *
+ * ★**两个已登记的缺口**（`tickets/T-0161`，都要改 `src/vm/engine.ts` ⇒ 不在本票可写路径内）：
+ *  ① **初值/复位值 = 1 未建模**（审计 `0x142 missing-behavior`）：引擎构造 `sub_415640`（raw 22591
+ *     `*(_DWORD *)(_this + 699248) = 1;`）与整体复位 `sub_40DF10`（raw 17961 同形）都置 **1**
+ *     ⇒ `i142 1`（`src/CONFIG.txt:354` 离开设置页）之前、"该开关应为默认 1"的读取在 emulator 得到
+ *     `engineValues.get(...) ?? 0` = **0**。`Engine` 构造/复位都不在本文件里 ⇒ 本票只能登记
+ *     （守卫形态见审计建议：构造后断言 `engineValues.get(scriptEngineFlag) === 1`）。
+ *  ② **读者只有"导出给脚本的查询口"**（审计 `0x142 missing-consumer`）：全库该格只有 4 处引用 ——
+ *     写（本 handler raw 31026）、构造/复位（上面两处）、以及 `sub_4765C0(){ return *(_DWORD *)(dword_55E1BC
+ *     + 699248) != 0; }`（raw 91057-91061）。那是**引擎导出给脚本/宿主的布尔查询**（工程内零调用），
+ *     emulator 没有这一层导出 ⇒ 值写进去即断链。**不编消费者**（没有对应的 opcode），登记缺口。
  */
 /**
  * `0x141`（sub_4228C0 raw 30999-31017）：**SetMesWinAlpha** —— 越界报错，否则
@@ -346,13 +406,23 @@ const op_get_effect_skip: OpHandler = (c) => {
  * 同样**越界**，走 `sub_408050`/`sub_4034D0` 的错误串分支（**打错误串后继续**，不写配置）。
  * 旧实现用有符号 `v > 0x10` ⇒ `-1` 被当成"≤ 0x10"**照写进配置**（口径错；语料 0 处 ⇒ 不可见但不对）。
  * ★体也把同一个操作数读了两次（raw 31006 / 31014，同样只是重读）⇒ 读一次复用等价。
+ *
+ * ★**越界分支的可见性订正**（审计 `0x141 missing-behavior`）：`sub_408050(_this + 8, 1024, aGetmeswina)`
+ * 写的是 `_this + 8` 那块**错误缓冲**，随后 `sub_4034D0`（raw 9433-9435）→ `sub_4976A0`
+ * （raw 114428-114457，栈帧在时前缀 `(%s：%d行目) `）→ `sub_497620`（raw 114402-114416）→
+ * `sub_438CC0`（raw 45660-45667）**本质是 `WriteFile`**（写给 remote-debug 句柄）
+ * ⇒ 它是**诊断输出**，不是玩家可见的消息窗（审计原文"把该串当消息派发（= 玩家可见的错误提示）"
+ * 在这一环上过强）。因此 emulator 的等价物就是**把引擎那句常量记下来**（`c.log`），
+ * 与 `0xC5`/`0xC7`/`0x1B8`/`0x2E6` 的越界分支同一条处置（见 `config-read.ts` 的 `errText`）。
  */
+const ENGINE_TEXT_GET_MESWIN_A = 'GetMesWinAの引数が不正です．\r\n'; // raw 4427（`char aGetmeswina[]`）
+
 const op_set_meswin_alpha: OpHandler = (c) => {
   const plan = planFor(c);
   const v = (plan.int(1) ?? 0);
   if ((v >>> 0) > 0x10) {
     // 引擎：op1 > 0x10（无符号）⇒ 打错误串（`aGetmeswina`）并返回，**不写配置**
-    c.log(`0x141(SETMESWINALPHA): op1=${v}（无符号 ${v >>> 0}）> 0x10 ⇒ 按引擎走错误串分支（不写 ${CFG.messageMesWinAlpha}）`);
+    c.log(`0x141(SETMESWINALPHA)：${ENGINE_TEXT_GET_MESWIN_A.trim()}（op1=${v}，无符号 ${v >>> 0} > 0x10 ⇒ 不写 ${CFG.messageMesWinAlpha}）`);
     return;
   }
   setConfigValue(c.e, CFG.messageMesWinAlpha, v); // 统一走 setConfigValue ⇒ 一样会通知落盘
@@ -429,7 +499,37 @@ const op_set_media_movie: OpHandler = (c) => {
 // A5（单行字段 / 计时）—— 2026-09 落地
 // ---------------------------------------------------------------------------
 
-/** `0xD9`（sub_419970 raw 24939）：清 `effect_flags & 0x1000`（派发中时同清 `Engine[95779]` 的该位）。 */
+/**
+ * `0xD9`（sub_419970 raw 24939-24949）：清 `effect_flags & 0x1000`（派发中时同清 `_this[95779]` 的该位）。
+ *
+ * 体全文（raw 24943-24948）：
+ * ```c
+ * _this[30 * _this[95776] + 95805] = 1;   // arity 槽 ⇒ argc 0
+ * result = -4097;                          // ★返回值由派发器**丢弃**（见下）
+ * _this[174801] &= ~0x1000u;               // effect_flags
+ * if ( _this[124350] ) _this[95779] &= ~0x1000u;
+ * ```
+ *
+ * ★① **返回值不参与任何控制流**（审计 `0xd9 missing-consumer` 的前提被推翻）：唯一的调用点是
+ * 派发器 raw 20161-20165 —— `((void (__thiscall *)(int *))_this[v7 + 168999])(_this);`，
+ * 函数指针被**强转成返回 `void`** ⇒ `result = -4097` 的位模式无人接收；而 `.lst` 里
+ * `sub_419970` 只有 `DATA XREF: sub_415640+1164`（构造函数把地址装进 opcode 表），没有直接调用点。
+ * emulator 侧 `OpHandler` 的类型就是 `void | Promise<void>`（`vm/step.ts:6`）⇒ 无需也无法建模。
+ *
+ * ★② **门（124350）现在是活的**（审计原文"全仓无写点 ⇒ 门恒假"已被 `tickets/T-0157` 推翻）：
+ * 写点是 `handlers/control.ts` 的 `setDispatching`（raw 18149 构造清 0 / 18980 装载置 1 /
+ * 25176+25187 `0x143` 入队循环 / 25667 `exit` 的 -10 收尾），被派发的脚本正跑在帧 37
+ * ⇒ 它执行 `i0d9` 的那一刻引擎确实会清 `95779`。
+ *
+ * ★③ **`_this[95779]` 在 emulator 里有两份表示，本票把活儿接上**：
+ *  - `Engine.dispatchSavedFlags`（`vm/engine.ts`）：**活槽** —— `control.ts:382` 存、`:373` 取回；
+ *  - `engineValues[ENGINE_FIELD.dispatchSavedFlags]`：只有本 handler 自己读写（`op-a5.test.ts:176-189`
+ *    钉住的那一份）。
+ * 修前只清了后者 ⇒ 引擎真的会清的那一位在 emulator 里没被清。两份都写（这不是"又造一个消费者"：
+ * 前者有真存取点，后者是既有守卫钉住的"引擎字段 id"表示）；理想形态是 control.ts 直接读
+ * `engineValues[95779]`、把 `Engine.dispatchSavedFlags` 撤掉 —— 那要改 `control.ts` 与
+ * `test/op-a5.test.ts`（都不在本票可写路径内），已登记在 `tickets/T-0161/changes-c161.md`。
+ */
 const op_clear_flag_1000: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
@@ -437,6 +537,8 @@ const op_clear_flag_1000: OpHandler = (c) => {
   if ((e.engineValues.get(ENGINE_FIELD.dispatchInProgress) ?? 0) !== 0) {
     // 引擎：`if (_this[124350]) _this[95779] &= ~0x1000;`（124350 = 脚本派发中标志）
     e.engineValues.set(ENGINE_FIELD.dispatchSavedFlags, (e.engineValues.get(ENGINE_FIELD.dispatchSavedFlags) ?? 0) & ~0x1000);
+    // ★活槽（control.ts 存/取的那一份）也要清，否则"派发中"这一支在 emulator 里等于没做。
+    e.dispatchSavedFlags &= ~0x1000;
   }
 };
 

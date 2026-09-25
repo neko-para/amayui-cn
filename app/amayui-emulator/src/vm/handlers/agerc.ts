@@ -19,6 +19,30 @@
  *  - **op5 的数组原样传入、不 DEC**（引擎直接 `sub_42AEA0(this, 5)` 取指针）；
  *  - 实参首项 `Engine[96981]`（byte 387924）= 引擎的消息窗 HWND（`_SetNameLenMax` 忽略它）。
  *
+ * ## 报错口径与**已登记的三处有意差异**（2026-09-24，`tickets/T-0163` 的 AGERC 八条判据）
+ * 引擎的错误串**原文**（raw 31079-31135 / 39810-39855，逐字）：
+ *  - `0x14B` 失败：`sub_408050(_this+8, 1024, "%sを読み込み出来ません．\r\n\r\nERRORCODE = %d", 名, GetLastError())`
+ *    （`%s` = `FileDB.name(op1)` 解析出的文件名、`%d` = `GetLastError()`）。
+ *  - `0x14C` 取地址失败：`"%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d"`（raw 31111）；
+ *    ★**模块未加载时引擎也走这一条** —— 它直接 `GetProcAddress(NULL, op2)`（raw 31106）失败即报此串。
+ *  - `0x14C` 槽越界：`"%sの関数インデックスが不正です．0から99までを指定してください．\r\n…"`（raw 31128），
+ *    其 `%s` 实参是 **op3**（`sub_41B640(_this, 3)`，raw 31120）—— 注意引擎的次序是
+ *    **先 `GetProcAddress`（31106）再判 `slot > 0x63`（31117）**，且 `op3` **只在越界分支**被读一次。
+ *  - `0x14D`：`v14 = …&_this[sub_41BF50(_this, 1) + 122519]` 之后**直接 `(*v14)(...)`**（raw 39839/39843）
+ *    —— 槽未绑定（该项 = 0）或 op1 越界（0..99 之外）**就是跳 NULL / 跳到表外**（真机 = 访问违例）；
+ *    `len <= 0` 时临时缓冲指针 `v3` **保持 0（NULL）** 并原样当第 2 实参传给导出（raw 39828-39843）。
+ *
+ * **有意差异（逐条：为什么 + 重新评估条件）**：
+ *  1. `0x14B` 错误串用 **id** 代替 `%s` 文件名、**不伪造** `ERRORCODE` —— emulator 运行期没有**同步**的
+ *     id→名字表（`FileSource` 是异步接口，handler 不能同步查名）。重新评估条件 = 给 `Engine` 加一个
+ *     `sub_454FA0` 等价的同步解析器。
+ *  2. `0x14D` 槽未绑定/越界 ⇒ **明确抛错**，而不是让宿主跳 NULL 崩溃（比引擎安全，属有意换法）。
+ *  3. `0x14D` `len <= 0` ⇒ emulator 取 `buf[0] ?? 0` = `nameLenMax = 0`；引擎把 **NULL** 交给
+ *     `_SetNameLenMax@20`，而该导出是 `dword_100A9000 = *a2` **无条件解引用**
+ *     （`docs-new/03-engine/agerc-internals.md` §3）⇒ 真机是 UB/崩溃。`op3` 所指内存两侧都不动
+ *     （引擎 raw 39844 的 `if (v2 > 0)` 回写门）。
+ *  守卫：`test/agerc-module-error-paths.test.ts`（八条判据逐条可失败）。
+ *
  * ## 内置导出表（21 个）
  * PE 导出表实读见 `docs-new/03-engine/agerc-internals.md` §1/§2。其中**脚本侧只会用到
  * `_SetNameLenMax@20`**（唯一调用点就是上面那条 `SAVE.txt`），另 17 个地图/地块/碰撞导出
@@ -69,15 +93,21 @@ const op_agerc_load: OpHandler = (c) => {
   const plan = planFor(c);
   const e = c.e;
   if (e.agerc.loaded) {
-    // 引擎：已有句柄 ⇒ FreeLibrary 并清 0（重载语义）
+    // 引擎（raw 31068-31076）：已有句柄 ⇒ `FreeLibrary(句柄)` + `*(Engine+490072) = 0`；
+    // 随后 `LoadLibraryA` 的结果（**含失败时的 NULL**）无条件写回该槽，**然后**才报 ShowMessage
+    // ⇒ "第二次加载失败"之后句柄槽是 NULL、旧库已卸（`exports` 随之作废）。
+    // ★T-0163 的 P2 判据：emulator 这里**同向**（先清 loaded/exports 再处理失败）⇒ 重载失败后
+    //   0x14C 必须报「地址取得失败」，不许再绑到旧导出（守卫 test/agerc-module-error-paths.test.ts 第①条）。
     e.agerc.loaded = false;
     e.agerc.exports.clear();
   }
   const id = (plan.int(1) ?? 0);
   if (id !== AGERC_FILE_ID) {
-    // 引擎：FileDB.name(id) → LoadLibraryA(名)；除 AGERC.DLL 外一律失败。
-    // ★缺口：emulator 运行期没有 id→名字表（FileSource 是异步接口，handler 不能同步查名）
-    //   ⇒ 报错里给出 id；真机上这里会是「<解析出的文件名>を読み込み出来ません．ERRORCODE = 126」。
+    // 引擎（raw 31079-31082）：`FileDB.name(id)` → `LoadLibraryA(名)`；除 AGERC.DLL 外一律失败，
+    // 错误串 = `"%sを読み込み出来ません．\r\n\r\nERRORCODE = %d"`（%s = 解析出的文件名、
+    // %d = GetLastError()）。★已登记差异：emulator 运行期没有**同步**的 id→名字表（`FileSource`
+    // 是异步接口，handler 不能同步查名）⇒ `%s` 以 id 代替、`ERRORCODE` 不伪造；
+    // 重新评估条件 = 给 Engine 加 `sub_454FA0` 等价的同步解析器（见文件头「有意差异」①）。
     throw new Error(
       `0x14B: id=0x${(id >>> 0).toString(16)} を読み込み出来ません．（本作唯一可加载的模块是 ` +
         `${AGERC_MODULE_NAME}，id=0x${AGERC_FILE_ID.toString(16)}；引擎此处抛 ShowMessage）`,
@@ -96,13 +126,28 @@ const op_agerc_bind_export: OpHandler = (c) => {
   const slot = plan.int(1) ?? 0;
   const name = plan.str(2) ?? '';
   if (!e.agerc.loaded) {
-    throw new Error(`0x14C: 模块未加载 ⇒ 无法取 "${name}" 的地址（引擎此处抛 ShowMessage）`);
+    // ★T-0163 的 P3 判据（`0x14C` P3 missing-behavior）：引擎在句柄槽为 0 时**不另起文案** ——
+    // 它直接 `GetProcAddress(NULL, op2)`（raw 31106）失败，走 raw **31111** 的
+    // 「`%sのアドレス取得に失敗しました．\r\n\r\nERRORCODE = %d`」（`GetLastError()` 真机为
+    // 126 = ERROR_MOD_NOT_FOUND）⇒ 这里改用引擎同文（`ERRORCODE` 实参**不伪造**，见文件头差异①）。
+    throw new Error(
+      `0x14C: "${name}"のアドレス取得に失敗しました．（模块未加载 ⇒ 引擎对 NULL 句柄调 ` +
+        `GetProcAddress，raw 31106/31111；ERRORCODE = %d 的真机值未复现）`,
+    );
   }
   if (!EXPORT_SET.has(name)) {
+    // 引擎 raw 31111（同一条串）：`GetProcAddress(模块, op2)` 返回 0 ⇒ 地址取得失败。
     throw new Error(`0x14C: "${name}"のアドレス取得に失敗しました．（AGERC.DLL 没有这个导出）`);
   }
   if (slot < 0 || slot > 99) {
-    throw new Error(`0x14C: "${name}"の関数インデックスが不正です．0から99までを指定してください．（槽 ${slot}）`);
+    // 引擎 raw 31117-31128：`if (result > 0x63)` ⇒ 该错误串的 `%s` 实参是 **op3**
+    // （`sub_41B640(_this, 3)`，raw 31120），**且只在越界分支读 op3**（合法槽路径一格都不碰；
+    // 计划 argc=2 ⇒ 语料那条 2 格调用与引擎一致）。★操作数读取是**分支相关**的：
+    // 有第 3 格就用它当 `%s`（与体一致），缺第 3 格才回退到导出名（引擎此处读的是栈上残留）。
+    const op3 = c.instr.args.length >= 3 ? readStringOperand(e, c.frame, c.instr, 3) : undefined;
+    throw new Error(
+      `0x14C: "${op3 ?? name}"の関数インデックスが不正です．0から99までを指定してください．（槽 ${slot}）`,
+    );
   }
   e.agerc.exports.set(slot, name);
 };
@@ -114,10 +159,18 @@ const op_agerc_call_export: OpHandler = (c) => {
   const len = readIntOperand(e, c.frame, c.instr, 4);
   const name = e.agerc.exports.get(slot);
   if (!name) {
+    // ★有意差异②（T-0163 的 P2 `approximation`）：引擎**对槽表函数指针零校验** ——
+    // `v14 = …&_this[sub_41BF50(_this, 1) + 122519]` 之后直接 `(*v14)(...)`（raw 39839/39843）⇒
+    // 槽未绑定（该项 = 0）或 op1 越界（0..99 之外）就是**跳 NULL / 跳到表外**（真机访问违例）。
+    // emulator 换成明确抛错（比崩溃安全）；重新评估条件 = 真机上补到"引擎确实会崩"的实机证据。
     throw new Error(`0x14D: 槽 ${slot} 未绑定导出（引擎此处会跳到空函数指针）`);
   }
   // 把 op3 的数组按引擎语义"解密成普通值"——emulator 的 `readRef` 已经过 DEC（见 `vm/ref.ts`），
   // 因此这里拿到的就是 `sub_430170` 里那个 DEC 后的临时缓冲。
+  // ★有意差异③（T-0163 的 P3 `unclear` + P3 `approximation`）：`len <= 0` 时引擎把临时缓冲指针
+  // **保持 0（NULL）**（raw 39828 `v3 = 0`，只有 `if (v2 > 0)` 才 `new[]`）并把它当第 2 实参传给导出；
+  // 而 `_SetNameLenMax@20` 是 `dword_100A9000 = *a2` **无条件解引用**（`agerc-internals.md` §3）
+  // ⇒ 真机是 UB/崩溃，emulator 取 `buf[0] ?? 0` = 0（下面 nameLenMax 分支）。两侧都不动 op3 所指内存。
   const buf: number[] = [];
   if (len > 0) {
     const arr = refFromOperand(e, c.frame, c.instr, 3);

@@ -120,7 +120,10 @@ test('Live2D E3：真实 TITLE 资产装进实例槽 0（`.MOC` 解析 + 纹理 
   assert.ok(motion.durationMs > 0, '.MTN 应有非零时长');
   assert.ok(inst.current, '装载即入队 ⇒ 当前动作应已在播');
   assert.equal(inst.current.loop, true, 'op4=1 ⇒ 循环位应为真');
-  assert.equal(inst.motions.get(0), motion, '动作槽 0 应持有该动作');
+  // ★`T-0160` 最小 retarget：动作槽的载体从 `motions: Map<槽, Mtn>` 变成**动作记录**
+  //   `records: Map<槽, L2dMotionRecord>`（= 引擎实例 `+4`/`+8` 指向的那个动作对象，见 `mtn.ts`）——
+  //   旧前提"槽里存的就是 `Mtn` 本身"不再成立。断言强度不变：仍然是"槽 0 持有**这个**动作对象"。
+  assert.equal(inst.records.get(0)?.motion, motion, '动作槽 0 的动作记录应持有该动作');
 
   // ── ④ 推进绑在节点绘制上（引擎没有独立 tick）──
   const before = new Map(inst.params);

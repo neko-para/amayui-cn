@@ -50,11 +50,11 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   //   越界抛 `ShowMessageError`、写两张可改写按键表 ⇒ 白名单条目已删（删后本测试仍绿 = 修好的机械证明）。
   '0x137': 'engine-internal no-op（ResetStack；int 栈家族语料 1 处、无压栈 ⇒ 观测等价）',
   '0x2fa': 'engine-internal no-op（只写无人读的 Engine[1951]）',
-  '0x308': 'STUB_NATIVE_OPS 的 unhandled 桩（op1/Engine[1954] 未建模；见 stubs.ts 注释）',
+  '0x308': '有据 no-op（已从 STUB_NATIVE_OPS 移入 ENGINE_INTERNAL_OPS；体 = sub_426B20 raw 33808-33815 → sub_407B20 raw 12579-12618 的 LoadLibraryA/GetProcAddress 触摸 DLL 转交，emulator 无该宿主触点；只会额外写 Engine[1954]。见 stubs.ts 的 [0x308, op_engine_internal] 与 tickets/T-0111）',
   // ★`0x82` 已转真实现（`tickets/T-0104`，计划层声明 5 个 int ⇒ 全读）⇒ 白名单条目已删。
   '0x30a': 'engine-internal no-op（键位注册；emulator 无按键表）',
-  '0x325': 'engine-internal no-op（有据：体写 Effect3D 管理器 [+0x4D8]/[+0x4DC] 的销毁判据，emulator 无 Effect3D 子系统）',
-  '0x326': 'engine-internal no-op；体建 ID3DXEffect 并重建 Snow（3D 子系统缺口 ⇒ T-0076）',
+  '0x325': 'engine-internal no-op（有据：体写 Effect3D 管理器 [+0x4D8]/[+0x4DC] 的销毁判据；Scene 模型侧自 T-0167 起已有 Effect3D 半边，缺的是 opcode→模型那一半）',
+  '0x326': 'engine-internal no-op；体建 ID3DXEffect 并重建 Snow（Scene 模型侧已有 Effect3D 半边，缺的是 opcode→模型那一半 ⇒ T-0076）',
   // ★`0x222`（3D 层区间提交，审计 §4.2 #19 `render-3d-layer-dual-commit`）：**本条目已删**
   //   （2026-09-24 接通）：宿主缝 `NativeBridge.sceneCommitRange(op1, op2)` 已加
   //   （`src/vm/native.ts` + `nativeTap.ts` 的 `BRIDGE_METHODS`），handler = `OPS` 的
@@ -74,14 +74,19 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x1a7': '`comment`：引擎体就是 nop（dev 注释）',
   // ---- 合成指令下的"提前返回"（不是漏读：真实脚本路径带真实上下文）----
   '0x2fc': '引擎语义如此：无触点路径只写 op1 后立即 return（op2..op5 保持不动；raw 40798-40799）—— emulator 恒无触点',
-  '0x19e': 'save-slot 族：合成指令里没有 fileSource/slot 数据 ⇒ 提前返回（真实路径读 op1..）',
-  '0x19f': '同上（短读）',
-  '0x1a0': '同上（读槽头）',
-  '0x1a1': '同上（读档）',
-  '0x1ab': '同上（删档）',
-  '0x1ac': '同上（复制档）',
-  '0x1ae': '同上（写 .STH）',
-  '0x1af': '同上（读 .STH 校验）',
+  // ★`T-0159` 实测口径（见 `test/save-slot-engine-codes.test.ts` 的最后一条）：
+  //   这 8 条不是「没读操作数」，而是「**已读 op2/op3**、缺的是写侧输出格 op1」—— 合成指令注入的宿主
+  //   fileSource 是 `new Proxy({}, { get: () => () => new Promise(() => {}) })`（本文件下方 runOne 夹具），
+  //   写调用**永不结算** ⇒ handler 挂在 `await fs.write*…()` 上，`plan.setInt(1, …)` 执行不到。
+  //   引擎侧同序：先 `sub_41BF50(_this, 2)` 取槽号再建文件名（raw 38303/38383/38530）。
+  '0x19e': 'op2 已读（save-slot 族：先取槽号再建文件名，raw 38303）；缺的是写侧输出格 op1 —— 合成指令注入的宿主写调用永不结算（见本文件 runOne 夹具）',
+  '0x19f': '同 0x19e（短读档）：op2 已读；缺 op1（写侧永挂）',
+  '0x1a0': '同 0x19e（读槽头）：op2 已读；缺 op1（写侧永挂）',
+  '0x1a1': '同 0x19e（读档）：op2 已读；op1 本就 unused（引擎不调 sub_42B4B0）',
+  '0x1ab': '同 0x19e（删槽）：op2 已读；缺 op1（写侧永挂）',
+  '0x1ac': '同 0x19e（复制槽）：op2/op3 已读（raw 38500/38502）；缺 op1（写侧永挂）',
+  '0x1ae': '同 0x19e（写 .STH）：op2/op3 已读（raw 38530/38540）；缺 op1（写侧永挂）',
+  '0x1af': '同 0x19e（读 .STH）：op2/op3 已读（raw 38567/38575）；缺 op1（写侧永挂）',
   '0x1c9': '音频设备初始化：合成指令里 native 未建模 ⇒ 提前返回',
   '0xc7': 'config 读取带 selector：合成指令给的 selector=0 非法 ⇒ 按 onBadSelector:skip 不写 op2（引擎同）',
   '0x228': '项不存在 ⇒ 走引擎的失败分支（只写 op1=1，不写 op3/4/5）—— 真实路径项存在时三者都写',
@@ -99,7 +104,7 @@ const ALLOW_UNDERRUN: Record<string, string> = {
   '0x1d3': '引擎体的 arg[3] 是死读：sub_42D4A0 raw 38124 读 op3 ⇒ 传 sub_457960 第 3 形参 a3（raw 38125），该形参在 69328-69364 全函数体未出现 ⇒ 引擎不消费；op4=起始下标 / op5=key',
   '0x1d4': '引擎体的 arg[3] 是死读：sub_42D510 raw 38141 读 op3 ⇒ 传 sub_457A20 第 3 形参 a5（raw 38142），该形参在 69366-69406 全函数体未出现 ⇒ 引擎不消费；op4=起始下标（选择器恒 0）',
   '0x2f3': '引擎体的 arg[4] 是死读：sub_431A10 raw 40736 读 op4 ⇒ 传 sub_457A20 第 3 形参 a5（raw 40737），该形参在 69366-69406 全函数体未出现 ⇒ 引擎不消费；op5=起始下标 / op6=选择器',
-  '0x33f': '★核体后有据豁免（缺消费端，不是"未定论"）：sub_427A90 raw 34423-34446 **三格全读**——op2=α（>255 钳 255；<0 ⇒ 由 op1 索取的绘制项当前 α，raw 34430 sub_4ADD60 读 DrawItem+96）、op3=颜色（<0 ⇒ 该项当前色，raw 34440）→ 写 `Scene+1264`，由效果通路 raw 65904-65907 下发成 shader 混合常量。emulator **没有绘制项 `Item.+96` 当前 α/当前色模型、也没有 Scene+1264 的效果常量通路** ⇒ 无处安放该值（写个只写不读的字段即死写）⇒ 缺消费端，回链 T-0017（混合模式/效果通路票）',
+  '0x33f': '★核体后有据豁免（缺消费端，不是"未定论"）：sub_427A90 raw 34423-34446 **三格全读**——op2=α（>255 钳 255；<0 ⇒ 由 op1 索取的绘制项当前 α，raw 34430 sub_4ADD60 读 DrawItem+96）、op3=颜色（<0 ⇒ 该项当前色，raw 34440）→ 写 `Scene+1264`，由效果通路 raw 65904-65907 下发成 shader 混合常量。emulator **没有 `Scene+1264` 的效果常量通路** ⇒ 无处安放该值（写个只写不读的字段即死写）⇒ 缺消费端，回链 T-0017（混合模式/效果通路票）。★2026-09（tickets/T-0155）订正：三格**操作数本身现在都读**（回退源 `sub_4ADD60` 接到了既有宿主缝 `getDrawItemColor`，与 0x202/0x203 同一个缝）——本条豁免保留的理由只剩"Scene+1264 没有消费端"，不再是"op2/op3 没读"；守卫 test/gfx-state-operand-io.test.ts + test/op-underun-fixups.test.ts（三格触点 [1,2,3]）',
 };
 
 /**

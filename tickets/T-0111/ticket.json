@@ -3,7 +3,7 @@
   "type": "docs",
   "priority": "P3",
   "area": "emulator/ops",
-  "why": "`T-0080` 的 B7 分类（`tickets/T-0080/evidence/b7-coverage.md` §4C）剩下的都是**低影响但口径不一**的项：\n\n① `opcode-table.md` 与 `analysis/opcodes.json`、运行时的三方口径不一致 —— 典型 `0x304`：文档/真源仍 `仅映射` + 空语义，而运行时 `OPS` 已注册 `op_text_block_begin`；同族 `0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`（**语料 0 处**）可补语义或转 `deferred`；`0x1D3` 的 handler 锚点（表里 `sub_42D4A0` vs `opcodes.json` 的 `sub_457960`）要统一。\n② `0x308`（输入触摸注册）在 `stubs.ts` 仍是 `[0x308, op_stub_unhandled]`（记录后放行）而语料 **31279 处** —— 属「近似放行面」，要么补实现 + 命名守卫、要么把近似口径写成显式登记（含影响面评估）。\n③ `0x1F5` 到 0 时的 `sub_40FB60` 派发尚未接线（`src/frame/frame.ts` 自述「本条尚未接线（`T-0057` 记录）」）。\n\n3D/Live2D 内部面（`passive-camera-and-effect-render-state`/`vertex-buffer-lock-scale`/`lazy-movie-*`）按 `plan-2026-09.md` §1 RF-C 与审计 §4 属**范围外**，本票不碰。",
+  "why": "★★★ 2026-09-24 复核（**读 acceptance 前先读这段**）★★★ 判据③（`0x1F5` → `sub_40FB60` 派发接线）**已由 `T-0157` 完成** —— 引擎解锁路径的三层门 + `dispatchNextRequest` 导出 + 停靠闸 + `setDispatching` 接入 124350 的 5 个写点，守卫 `test/op-1f5-dequeue.test.ts` 6 例（红 1/6 → 绿 6/6），见 `tickets/T-0157/changes.md`；**不经本票**。判据②（`0x308`）**处置已定、尚未执行**：体 = `sub_426B20`（raw 12579-12618 / 33808-33815）= `RegisterTouchWindow`/`UnregisterTouchWindow`（USER32）+ 写 `_this[1954]`（**3 写 0 读**，不碰文本/绘制/存档表；见 `tickets/T-0098/notes.md`）⇒ 走「**有据 no-op 登记**」路线：把 `stubs.ts` 的 `[0x308, op_stub_unhandled]` 改成显式有据登记（带 why + raw 锚点，不再打 `unhandled` 日志），并补 `opcode-table.md` 现在**缺失**的表行（`0xDD` 同缺，一并核）。判据①剩余：0 语料 8 条（`0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`）的「补语义或转 `deferred`」、`0x1D3` 的 handler 锚点统一（表 `sub_42D4A0` vs 真源 `sub_457960`）、运行时三表与文档的全量对账。\n\n`T-0080` 的 B7 分类（`tickets/T-0080/evidence/b7-coverage.md` §4C）剩下的都是**低影响但口径不一**的项：\n\n① `opcode-table.md` 与 `analysis/opcodes.json`、运行时的三方口径不一致 —— 典型 `0x304`：文档/真源仍 `仅映射` + 空语义，而运行时 `OPS` 已注册 `op_text_block_begin`；同族 `0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`（**语料 0 处**）可补语义或转 `deferred`；`0x1D3` 的 handler 锚点（表里 `sub_42D4A0` vs `opcodes.json` 的 `sub_457960`）要统一。\n② `0x308`（输入触摸注册）在 `stubs.ts` 仍是 `[0x308, op_stub_unhandled]`（记录后放行）而语料 **31279 处** —— 属「近似放行面」，要么补实现 + 命名守卫、要么把近似口径写成显式登记（含影响面评估）。\n③ `0x1F5` 到 0 时的 `sub_40FB60` 派发尚未接线（`src/frame/frame.ts` 自述「本条尚未接线（`T-0057` 记录）」）。\n\n3D/Live2D 内部面（`passive-camera-and-effect-render-state`/`vertex-buffer-lock-scale`/`lazy-movie-*`）按 `plan-2026-09.md` §1 RF-C 与审计 §4 属**范围外**，本票不碰。 ★★2026-09-24 主 agent 收 T-0163 的读体结论 ⇒ **`0xDD` 那句「同缺，一并核」作废**：`0xDD`（221）**不是本作指令** —— 派发槽 `675996 + 4*221 = 676880` 在整份反编译里**零赋值**（邻槽 676872..676888 同），只被 raw 22722 的 `memset32(..., sub_418E30, 0x400)` 填默认桩；`analysis/opcodes.json` 的 entries 与 fallbackDefault、`scripts/asm/opcodes.json`、语料 `^idd` **三处都不含 221** ⇒ 表行本就不该有，不是缺口。★`0x308` 的表行经核对**本来就存在**（`opcodes.json` 记 `{opcode:776, argc:1, handler:\"sub_426B20\", status:\"已核对\"}`，`docs-new/03-engine/opcode-table.md:528` 已渲染）⇒ 判据②只需「从 unhandled 桩改为有据 no-op 登记」。",
   "acceptance": [
     "① 逐条给出「改文档 / 改真源 / 转 `deferred`」三选一的处置并执行：改动必须走**真源**（`analysis/opcodes.json`）再重跑 `scripts/build-opcode-table.mjs`，不许手改生成物；转 `deferred` 要有语料计数与「为什么不影响」的一句依据\n★进度（轮 1，**样本已做（0x304），其余列出**）：① **`0x304` 四方口径已统一**：`analysis/opcodes.json` 从 `仅映射`/空语义 → **已核对** + 读体语义（handler `sub_41A420` raw **25385-25399**：置 `Engine[122497]=1`（赋值非 `|=`）→ 取 `v1 = Engine[122371]`（= 最近一次 `0x6E` 的槽号；0 ⇒ 退回默认窗 `Engine[21631]`）→ 窗表 `Engine[v1+21585]` → **`win+296 = win+132`**（保存行游标）；与 `0x305` 的 `+132 ← +296` 成对，语料成对出现如 `$1$SG0331.txt:1719 i304` → `:1724 i305`）；`scripts/build-opcode-table.mjs` 已重生成。② **顺带补齐 RF-A 计划层**：`src/vm/operandPlan.ts` 新增 `declarePlan(0x304, { argc: 0, kinds: [], io: [], evidence })`（此前 `0x304` 未计划 ⇒ 一旦它变 `已核对` 就落进\"C 待迁移\"、把 `T-0082` 的覆盖账棘轮顶红 —— 实测正是这条守卫抓到的）。**剩余（下一轮）**：`0x105/0x2CA/0x309/0x339/0x026/0x144/0x2FD/0x22E`（语料 0 处）逐条\"补语义或转 `deferred`\"、`0x1D3` 的 handler 锚点（表 `sub_42D4A0` vs `opcodes.json` `sub_457960`）、以及 `0x304` 之外是否还有\"运行时已注册但文档仍 `仅映射`\"的行（需与运行时三表做一次全量对账）。",
     "② `0x308`：读体确认引擎语义（`sub_407B20` / `_this[1954]`）后，或补真实现 + 命名守卫，或在 `analysis/opcode-gaps.json` 与能力台账里把「近似放行 + 语料 31279 处」写成显式登记（含影响面评估）\n★进度（轮 1）：**未开始**。`0x308` 在 `stubs.ts` 仍是 `[0x308, op_stub_unhandled]`（记录后放行），引擎体 = 读 op1 → `sub_407B20` → 写 `_this[1954]`（语料 31279 处）⇒ 下一轮二选一：补真实现 + 命名守卫，或把\"近似放行 + 影响面\"写进 `opcode-gaps.json`/台账 note。",
@@ -26,9 +26,9 @@
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/stubs.ts",
-      "anchor": "[0x308, op_stub_unhandled]",
-      "note": "0x308 的近似放行点（语料 31279 处）",
-      "line": 310
+      "anchor": "[0x308, op_engine_internal]",
+      "note": "★判据②已落地（T-0163）：原锚点 `[0x308, op_stub_unhandled]` 随本次登记改写消失 ⇒ 按棘轮纪律 retarget 到新登记行。现在 0x308 在 `ENGINE_INTERNAL_OPS`（有据 no-op：体 sub_426B20 raw 33808-33815 → sub_407B20 raw 12579-12618 = USER32 触摸注册 + 写 `_this[1954]` 3 写 0 读；语料 31279 处；emulator 无 HWND/窗口级触摸面 ⇒ 无宿主触点可复现），`op_stub_unhandled` handler 与其日志点已删除；守卫 = test/stub-308-touch-register.test.ts；缺口台账条目 = analysis/opcode-gaps.json 的 0x308（`engine-internal`）。",
+      "line": 355
     },
     {
       "file": "app/amayui-emulator/src/vm/operandPlan.ts",
@@ -38,15 +38,21 @@
     }
   ],
   "links": {
+    "docs": [
+      "tickets/T-0111/changes-c163.md"
+    ],
     "tickets": [
       "T-0080",
       "T-0076",
       "T-0081",
-      "T-0057"
+      "T-0057",
+      "T-0157",
+      "T-0098",
+      "T-0163"
     ]
   },
   "id": "T-0111",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-22",
@@ -62,6 +68,44 @@
       "at": "2026-09-22",
       "kind": "status",
       "what": "open → doing —— 轮 1：`0x304` 四方口径统一（真源从\"仅映射\"补成\"已核对\" + 读体语义 raw 25385-25399 + 与 `0x305` 的配对方向；build-opcode-table 重生成），并顺带补齐 `operandPlan` 的 `0x304` 计划（否则 T-0082 的覆盖账棘轮会红 —— 实测被它抓到）。剩余：0 语料那 8 条的 deferred/语义、`0x1D3` 锚点、运行时三表与文档的全量对账、`0x308` 登记、`0x1F5` 接线。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "decision",
+      "what": "复核后重定剩余范围：判据③（0x1F5→sub_40FB60）已由 T-0157 完成（三层门 + dispatchNextRequest + 停靠闸 + setDispatching 接入 124350 的 5 个写点；守卫 test/op-1f5-dequeue.test.ts 6 例），本票不再承接；判据②（0x308）处置定为「有据 no-op 登记」—— 体 sub_426B20 raw 12579-12618 = RegisterTouchWindow/UnregisterTouchWindow + 写 _this[1954]（3 写 0 读），需改 stubs.ts 的显式登记并补 opcode-table 缺行；判据①剩余 8 条 0 语料 + 0x1D3 锚点 + 三表全量对账。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— 判据②落地（T-0163 施工）：0x308 从 STUB_NATIVE_OPS 的 unhandled 桩移入 ENGINE_INTERNAL_OPS 有据 no-op；evidence[2] 锚点按棘轮纪律 retarget 到新登记行"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：links, tests —— 判据②已落地（本轮，T-0163 承接）：0x308 从 STUB_NATIVE_OPS 的 op_stub_unhandled 改为 ENGINE_INTERNAL_OPS 的有据 no-op 登记（不再打 unhandled 日志），handler 与其日志点删除；体证 = sub_426B20 raw 33808-33815 到 sub_407B20 raw 12579-12618（USER32.DLL 的 RegisterTouchWindow/UnregisterTouchWindow，门 op1 或 GetConfig system:LimitTouch 的 bit0，加写 _this[1954] 三写零读），语料 31279 处 345 文件；守卫 test/stub-308-touch-register.test.ts；台账片段与 0xDD 的核实（非本作指令，前提被推翻）见 tickets/T-0111/changes-c163.md。判据①未动，票保持 doing。"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：links —— 票面订正（收 T-0163 读体）：0xDD 非本作指令（派发槽零赋值）⇒ 撤销「同缺一并核」；0x308 表行本来就存在 ⇒ 判据②只剩「桩→有据登记」；回链 T-0163"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：tests, doneWhy —— 判据①落地（8 条逐条读体 + 全量对账：168 条仅映射里只有 1 条是真过期）；判据②由 T-0163、③ 由 T-0157 完成 ⇒ 三判据全闭合"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing → done —— doing → done —— 判据 ①②③ 全落地（判据⑤ verify 按 CONTEXT §6 替代口径）"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/doc-model.test.ts",
+    "app/amayui-emulator/test/opcode-arity.test.ts",
+    "app/amayui-emulator/test/opcode-gaps.test.ts",
+    "app/amayui-emulator/test/stub-308-touch-register.test.ts",
+    "app/amayui-emulator/test/opcode-json-sync.test.ts"
+  ],
+  "doneWhy": "三条判据全部闭合。**判据①（2026-09-24 主 agent 落库）**：8 条「语料 0 处」的 `仅映射` 行逐条读体后给出三选一 —— 5 条（`0x105`/`0x2CA`/`0x309`/`0x339`/`0x22E`）补成 `已核对` + 语义（各自 handler 体区间 raw 与语料计数都**自己用 Select-String 数过**）并在缺口台账新增 `unimplemented`（语料 0 处 ⇒ 保持硬报错、非静默）；3 条（`0x026` 1 处 / `0x144` 1 处 / `0x2FD` 4 处 —— ★票面写的「语料 0 处」**对这三条不成立**，且它们要的宿主缝都不存在）**保留 `deferred`** 并补语料计数与「为什么不影响」。**判据②**由 `T-0163` 落地（`0x308` 从 `unhandled` 桩改为 `ENGINE_INTERNAL_OPS` 有据 no-op + 缺口台账条目）。**判据③**由 `T-0157` 完成。**判据④**：`analysis/opcodes.json` 是唯一真源，`build-opcode-table.mjs` 重生成（恰好 9 行变化）、`scripts/asm/build-opcodes.js` 重生成两份（`scripts/asm/opcodes.json` 与包内 `src/generated/opcodes.json`，`opcode-json-sync` 要求逐字节相同）、`build-opcode-gaps.mjs` 回填 counts，`doc-model`/`opcode-arity`/`opcode-gaps`/`opcode-operands`/`operand-plan`/`opcode-json-sync` 全绿。★**本轮最有价值的产出是 (c) 全量对账的数字**：现盘 544 条里 `status == 仅映射` 共 **168 条**，与运行时三表（`OPS` 299 / `NATIVE_OPS` 54 / `ENGINE_INTERNAL_OPS` 13，并集 366）逐条对账后，**「文档仍 `仅映射` 但运行时已注册」恰好 1 条 = `0x222`**（已改 `已核对` + 语义）⇒ 「文档 vs 运行时口径不一致」这一项**归零**；其余 167 条是**真的没注册**（命中即硬报错），不是文档过期。★另订正票面两处：「`0x1D3` 的 handler 锚点不一致」**不成立**（读体：派发槽 raw 22875 写 `sub_42D4A0`，它读 op3/op4/op5 后调 `sub_457960`，现盘真源本来就对）；「`0xDD` 同缺」已作废（非本作指令）。判据⑤的替代口径见 CONTEXT §6。"
 }

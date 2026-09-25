@@ -1,0 +1,60 @@
+{
+  "title": "0x400 等待门的图形池旗标基址核对：[11629](=引擎+369348) 到底由谁置位；131881 族 setter 置的是 [11627](=+46508) 还是 [11629]",
+  "type": "analysis",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "T-0172 交回时的卡点 + 主 agent 核实：docs-new/03-engine/rendering.md 的 line 84 与第 92 行**自相矛盾** —— 第 92 行自己写着 mesh-draw「以池基读成 [46500]」（池基 = 引擎+322832），而 line 84 又用 base=引擎(0) 去解释同一个 _this[11629]，把 46516 与 369348 判成「两个不同字节」（按它自己的口径：池基+46516 ≡ 引擎基+369348，同一个 dword）。更麻烦的是 T-0172 的锚点表显示 131881/131977/132823/132844 四个 raw 行含的是 **11627**（= 池+46508，Scene dirty 旗标），而 sub_4AF1C0 在 133528 写的是 `_this + 46516`（= [11629]）⇒ 图形池里**两个相邻 dword** 被不同写者置位，line 84 那句「由图形池绘制项 setter（131881/131977/132823/132844…）置 1」把它们混成了一个。不核清这层，「0x400 等待 ~5s 的驱动者」这个未收敛项就永远悬着。",
+  "acceptance": [
+    "三问逐条读体并给 raw：① sub_407E20（raw 12762-12790）的门读的到底是 _this[11629] 还是别的格；② sub_4B4040（present，raw 136792-136793）清 46508/46516 与 mesh-draw 置位的**先后与后果**；③ sub_4AF1C0 的 _this 基址是池基还是引擎基（用 engine/天结_unpacked.exe.lst 的调用点/寄存器交叉核对，别只靠偏移巧合）",
+    "把 rendering.md line 84 与 line 92 的口径统一（**必须保留 T-0172 三向棘轮钉在那两行的全部 cites**：line 84 的 12762/12768/12783/32303-32312/131881/131977/132823/132844/133528/136792-136793；改完跑 check-anchors.mjs 与 test/doc-model.test.ts）",
+    "若结论是「确实是两个不同旗标」⇒ 把 [11627] 与 [11629] 各自的写者/读者/生命周期写进文档与（必要时）engine-capabilities.json；若结论是「同一个」⇒ 明确写出并给出反证路径。两种都要把「等几秒」的驱动者结论收敛或如实标成未收敛",
+    "叙事文档纪律：kind: narrative，H1/锚点串不动，不得出现「订正/原记/旧写」"
+  ],
+  "evidence": [
+    {
+      "file": "docs-new/03-engine/rendering.md",
+      "anchor": "两处就是同一个 dword",
+      "note": "已核结论（line 84）：46516 与 369348 是同一个 dword（池基口径）"
+    },
+    {
+      "file": "docs-new/03-engine/rendering.md",
+      "anchor": "mesh-draw 以池基读成",
+      "note": "同一份文档第 92 行的同向口径（本票据此统一了 line 84）"
+    },
+    {
+      "file": "tickets/T-0172/evidence/anchors.json",
+      "anchor": "rendering-84-gate400-wait",
+      "note": "该行的 cites 与 raw 约束（本票改写时已逐个保留，check-anchors 46/0）"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0172"
+    ]
+  },
+  "status": "done",
+  "id": "T-0174",
+  "history": [
+    {
+      "at": "2026-09-24",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— 改指 evidence[0] 的锚点：原文「两个不同字节」已被主 agent 改成「是不是同一个字节取决于两处的基址口径」（同一段，锚点串随改动改指、不删）"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：status, doneWhy —— 主 agent 亲自核完三问并改写 rendering.md line 84；台账（engine-capabilities.json）部分等 T-0108 释放后再搬"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "scope",
+      "what": "改字段：evidence —— 改指 evidence[0] 锚点（原文「是不是同一个字节取决于两处的基址口径」已被本票改写成「已核…两处就是同一个 dword」）"
+    }
+  ],
+  "doneWhy": "三问全部读体收敛（详见 tickets/T-0174/changes.md）：① sub_407E20(raw 12762-12786) 返回 [11629]、其副作用才是置 [11627]=1（raw 12773）；② present 族每帧清 46508/46516 两格（raw 136792-136793）；③ sub_4AF1C0 与 sub_407E20 同基（池基 = Engine+322832；证据 = raw 21111 显式传池基 + raw 135581/135596 同函数共用 _this）⇒ 46516 与 369348 是同一个 dword，rendering.md line 84 的旧判定被取代，且「~5s 驱动者」随之收敛（mesh#2 动画窗 delay 4500ms + dur 500ms 每帧重置 [11629]）。已改 rendering.md 并保住 T-0172 钉的 10 个 cites（check-anchors 46/0、doc-model 10/10）"
+}

@@ -91,7 +91,12 @@ export interface L2dMeshBatch {
   /** 该纹理号绑的图像**统一文件 id**（`0x345` 的 op1）；`null` = 还没绑。 */
   textureFileId: number | null;
   /** `0x34F` 的乘色（`get(-1)`）；`null` = 没设过。 */
-  mulColor: number | null;
+  /**
+   * `0x34F` 的**乘色**（引擎 `sub_478590` 逐纹理下发的那一份），三分量 0..1、
+   * 顺序 = `sub_4BD150(tex, a3, a4, a5, 1.0)` 的实参序（`[BYTE2/255, BYTE1/255, BYTE0/255]`）。
+   * `null` = 本批次的纹理槽没收到乘色。
+   */
+  mulColor: [number, number, number] | null;
   /** 画布坐标顶点（x,y 交错，已含居中平移）。 */
   positions: Float32Array;
   /** UV（与 `positions` 同长，**未翻转**）。 */
@@ -177,7 +182,11 @@ export function l2dBatches(
 
     const { dx, dy } = l2dPlacement(model.canvasWidth, model.canvasHeight, viewW, viewH);
     const nt = l2dNodeTransform(node);
-    const mulColor = inst.textures.get(-1) ?? null;
+    // ★乘色**按纹理号**取（`tickets/T-0160`，审计 row 95）：引擎 `0x34F` 的解码结果由
+    //   `sub_478590`（raw 92723-92743）**逐纹理槽**下发（`if (*v6) sub_4BD150(model, i, r, g, b)`），
+    //   所以一个网格能不能被着色，取决于**它用的那个纹理槽**有没有收到乘色。
+    //   没有纹理的网格（`textureNo == -1`，`.moc` 里"这个网格没有纹理"）不属于那 10 个槽
+    //   ⇒ 退到实例级的解码值（诊断口径，别再把它当纹理文件 id —— 见下面 `textureFileId` 的挡板）。
 
     // ★**一个网格一个批次**（= 引擎的一次 DrawIndexedPrimitive），顺序 = drawOrder。
     //   理由见文件头"批次粒度"：按纹理号合并会让 op=0 的网格把整张纹理压成全透明。
@@ -215,6 +224,8 @@ export function l2dBatches(
       if (!Number.isFinite(x0) || !Number.isFinite(y0)) continue;
 
       const textureNo = dd.textureNo;
+      const mulColor =
+        textureNo >= 0 ? inst.mulColors.get(textureNo) ?? null : inst.mulColor;
       out.push({
         key: node.key,
         slot: node.slot,

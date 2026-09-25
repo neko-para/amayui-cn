@@ -1,0 +1,644 @@
+{
+  "_doc": "T-0172 · rendering.md / emulator-copyright-effect.md 的 raw 行号锚点表（唯一真源）。",
+  "_schema": {
+    "id": "唯一标识",
+    "doc": "docs-new/ 下的相对路径",
+    "line": "该锚点在文档里的 1-based 行号（硬断言：那一行必须含 row，且必须含全部 cites）",
+    "row": "该锚点行的可定位片段（anchorText）",
+    "cites": "文档那一行必须写着的行号字面量（含区间写法，如 133505-133541）",
+    "raw": "[{line, has}]：该 raw 行号处必须含 has 这段代码串（rawLine/rawText）"
+  },
+  "_discipline": "每条都先在 engine/*_unpacked.exe_utf8.c 里读体确证；raw[].line 必须被 cites[] 覆盖（精确或落在某个 A-B 区间内）——不许'文档没写却拿来断言'。改这些文档的行号 ⇒ 必须先读体，再改本表。",
+  "anchors": [
+    {
+      "id": "rendering-26-fadefamily",
+      "doc": "03-engine/rendering.md",
+      "line": 26,
+      "row": "fade opcode 家族确为视效渐变",
+      "cites": ["27282", "27311", "27348", "27383", "27422", "27559", "27837", "28192", "27273", "27308", "27345", "27380", "27418", "28189"],
+      "raw": [
+        { "line": 27282, "has": "sub_441410" },
+        { "line": 27311, "has": "sub_441410" },
+        { "line": 27348, "has": "sub_441410" },
+        { "line": 27383, "has": "sub_441410" },
+        { "line": 27422, "has": "sub_441410" },
+        { "line": 27559, "has": "sub_441410" },
+        { "line": 27837, "has": "sub_441410" },
+        { "line": 28192, "has": "sub_441410" },
+        { "line": 27273, "has": "_this + 107461" },
+        { "line": 27308, "has": "_this + 107461" },
+        { "line": 27345, "has": "_this + 107461" },
+        { "line": 27380, "has": "_this + 107461" },
+        { "line": 27418, "has": "_this + 107461" },
+        { "line": 28189, "has": "_this + 107461" }
+      ]
+    },
+    {
+      "id": "rendering-30-movie-2000",
+      "doc": "03-engine/rendering.md",
+      "line": 30,
+      "row": "line 20796-20813 / 20899-20917",
+      "cites": ["20796-20813", "20899-20917"],
+      "raw": [
+        { "line": 20796, "has": "& 0x2000" },
+        { "line": 20809, "has": "_this + 378684) = 0" },
+        { "line": 20810, "has": "~0x2000u" },
+        { "line": 20899, "has": "& 0x2000" },
+        { "line": 20916, "has": "_this + 378684) = 0" },
+        { "line": 20917, "has": "~0x2000u" }
+      ]
+    },
+    {
+      "id": "rendering-31-bgm-fade",
+      "doc": "03-engine/rendering.md",
+      "line": 31,
+      "row": "line 20826）是 **BGM/音乐淡入**",
+      "cites": ["20826", "20827", "20835"],
+      "raw": [
+        { "line": 20826, "has": "_this + 430012" },
+        { "line": 20827, "has": "sub_489D10" },
+        { "line": 20835, "has": "sub_489E50" }
+      ]
+    },
+    {
+      "id": "rendering-33-vertexcolor",
+      "doc": "03-engine/rendering.md",
+      "line": 33,
+      "row": "`sub_426CF0`(0x323, line 33888)",
+      "cites": ["33888", "133458", "133505-133541"],
+      "raw": [
+        { "line": 33888, "has": "sub_426CF0" },
+        { "line": 133458, "has": "4AF1C0" },
+        { "line": 133505, "has": "v40[0] & 2" },
+        { "line": 133511, "has": "_this + 46500" },
+        { "line": 133526, "has": "sub_4A2050" },
+        { "line": 133541, "has": "}" }
+      ]
+    },
+    {
+      "id": "rendering-35-gate-400",
+      "doc": "03-engine/rendering.md",
+      "line": 35,
+      "row": "主循环 **0x400 卫门**（line 21109-21153）",
+      "cites": ["21109-21153"],
+      "raw": [
+        { "line": 21109, "has": "& 0x400" },
+        { "line": 21111, "has": "sub_407E20" },
+        { "line": 21149, "has": "LABEL_186" },
+        { "line": 21151, "has": "~0x400u" },
+        { "line": 21153, "has": "}" }
+      ]
+    },
+    {
+      "id": "rendering-44-createmesh",
+      "doc": "03-engine/rendering.md",
+      "line": 44,
+      "row": "**mesh 建立**（`create-mesh`/0x320",
+      "cites": ["41011", "132685", "122331", "132755"],
+      "raw": [
+        { "line": 41011, "has": "432150" },
+        { "line": 132685, "has": "4ADFE0" },
+        { "line": 132755, "has": "sub_4A2280" },
+        { "line": 122331, "has": "4A2280" }
+      ]
+    },
+    {
+      "id": "rendering-51-blendselector",
+      "doc": "03-engine/rendering.md",
+      "line": 51,
+      "row": "[9]=**alpha 混合模式选择子**",
+      "cites": ["119370-119399"],
+      "raw": [
+        { "line": 119370, "has": "a8 == 1" },
+        { "line": 119381, "has": "+ 4 * v11 + 42456" },
+        { "line": 119396, "has": "171, 3" },
+        { "line": 119398, "has": ", 20, 2" }
+      ]
+    },
+    {
+      "id": "rendering-54-vertexcolor-clamp",
+      "doc": "03-engine/rendering.md",
+      "line": 54,
+      "row": "α>255 夹到 255",
+      "cites": ["33865-33884"],
+      "raw": [
+        { "line": 33865, "has": "v2 <= 255" },
+        { "line": 33870, "has": "sub_4AE3C0" },
+        { "line": 33875, "has": "v2 = 255" },
+        { "line": 33880, "has": "sub_4AE3C0" },
+        { "line": 33884, "has": "sub_4AE2C0" }
+      ]
+    },
+    {
+      "id": "rendering-58-calcdiffuse",
+      "doc": "03-engine/rendering.md",
+      "line": 58,
+      "row": "**CalcDiffuse（sub_4A2050, 122248",
+      "cites": ["122248", "122281", "122289-122293", "122316-122317", "122294-122306"],
+      "raw": [
+        { "line": 122248, "has": "4A2050" },
+        { "line": 122281, "has": "CalcDiffuse" },
+        { "line": 122289, "has": "a3" },
+        { "line": 122293, "has": "a2 + 52" },
+        { "line": 122294, "has": "== -1" },
+        { "line": 122302, "has": "+ 16)" },
+        { "line": 122317, "has": "/ 0xFF" }
+      ]
+    },
+    {
+      "id": "rendering-69-clock",
+      "doc": "03-engine/rendering.md",
+      "line": 69,
+      "row": "主循环每帧：`v3=timeGetTime`(20620)",
+      "cites": ["20620", "20640-20642", "20746-20751", "20750", "20751", "20758", "25193", "25206", "25207", "25258", "25267", "25271", "25307", "136741", "134417", "136796", "135596", "135770", "135993", "136106", "136299", "136564", "136667", "136916", "133458-134274"],
+      "raw": [
+        { "line": 20620, "has": "timeGetTime" },
+        { "line": 20640, "has": "v3" },
+        { "line": 20642, "has": "v94 = v5" },
+        { "line": 20746, "has": "667860" },
+        { "line": 20750, "has": "369336" },
+        { "line": 20751, "has": "369332" },
+        { "line": 20758, "has": "sub_4B4040" },
+        { "line": 25193, "has": "41A090" },
+        { "line": 25206, "has": "107438" },
+        { "line": 25207, "has": "timeGetTime" },
+        { "line": 25258, "has": "41A1A0" },
+        { "line": 25267, "has": "timeGetTime" },
+        { "line": 25271, "has": "sub_4B4040" },
+        { "line": 25307, "has": "41A2C0" },
+        { "line": 136741, "has": "4B4040" },
+        { "line": 134417, "has": "4B06D0" },
+        { "line": 136796, "has": "sub_4B06D0" },
+        { "line": 135596, "has": "sub_4AF1C0" },
+        { "line": 135770, "has": "sub_4AF1C0" },
+        { "line": 135993, "has": "sub_4AF1C0" },
+        { "line": 136106, "has": "sub_4AF1C0" },
+        { "line": 136299, "has": "sub_4AF1C0" },
+        { "line": 136564, "has": "sub_4AF1C0" },
+        { "line": 136667, "has": "sub_4AF1C0" },
+        { "line": 136916, "has": "sub_4AF1C0" },
+        { "line": 133458, "has": "4AF1C0" },
+        { "line": 134274, "has": "}" }
+      ]
+    },
+    {
+      "id": "rendering-70-v39",
+      "doc": "03-engine/rendering.md",
+      "line": 70,
+      "row": "**v39 0→1 与刷新**",
+      "cites": ["133511-133512", "134936", "12796", "136842", "133531-133538", "136792-136793"],
+      "raw": [
+        { "line": 133511, "has": "_this + 46500" },
+        { "line": 133512, "has": "v40[10] = v4" },
+        { "line": 134936, "has": "46512) = 1" },
+        { "line": 12796, "has": "46512) = 1" },
+        { "line": 136842, "has": "46512) = 0" },
+        { "line": 133531, "has": "v40[11] = 0" },
+        { "line": 133538, "has": "v40[10] = 0" },
+        { "line": 136792, "has": "46508) = 0" },
+        { "line": 136793, "has": "46516) = 0" }
+      ]
+    },
+    {
+      "id": "rendering-78-merge",
+      "doc": "03-engine/rendering.md",
+      "line": 78,
+      "row": "逐 present 提交序（`sub_4B06D0`(134417)",
+      "cites": ["134417"],
+      "raw": [{ "line": 134417, "has": "4B06D0" }]
+    },
+    {
+      "id": "rendering-79-drawitem",
+      "doc": "03-engine/rendering.md",
+      "line": 79,
+      "row": "`sub_422E70`(31270；`SetRect` 31293",
+      "cites": ["31270", "31293", "31299", "131816", "131824-131838", "132507-132516"],
+      "raw": [
+        { "line": 31270, "has": "422E70" },
+        { "line": 31293, "has": "SetRect" },
+        { "line": 31299, "has": "sub_4ACE50" },
+        { "line": 131816, "has": "4ACE50" },
+        { "line": 131826, "has": "|= 1u" },
+        { "line": 131835, "has": "result[9] = a8" },
+        { "line": 131838, "has": "11627" },
+        { "line": 132507, "has": "sub_4ADC20" },
+        { "line": 132515, "has": "+ 4)" }
+      ]
+    },
+    {
+      "id": "rendering-80-i214",
+      "doc": "03-engine/rendering.md",
+      "line": 80,
+      "row": "`sub_4ABEF0` raw 131135-131139",
+      "cites": ["131135-131139"],
+      "raw": [
+        { "line": 131135, "has": "qmemcpy" },
+        { "line": 131136, "has": "sub_4AAD40" },
+        { "line": 131138, "has": "qmemcpy" },
+        { "line": 131139, "has": "11627" }
+      ]
+    },
+    {
+      "id": "rendering-81-mesh",
+      "doc": "03-engine/rendering.md",
+      "line": 81,
+      "row": "- mesh：`create-mesh` → `sub_432150`(41011)",
+      "cites": ["41011", "132685", "132753", "132759-132782", "135596", "135770", "135993", "136106", "136299", "136564", "136667", "136916"],
+      "raw": [
+        { "line": 41011, "has": "432150" },
+        { "line": 132685, "has": "4ADFE0" },
+        { "line": 132753, "has": "v19 = sub_40DC30" },
+        { "line": 132759, "has": "[5] = v20" },
+        { "line": 132762, "has": "operator new[]" },
+        { "line": 132782, "has": "memcpy" },
+        { "line": 135596, "has": "sub_4AF1C0" },
+        { "line": 136916, "has": "sub_4AF1C0" }
+      ]
+    },
+    {
+      "id": "rendering-84-gate400-wait",
+      "doc": "03-engine/rendering.md",
+      "line": 84,
+      "row": "**0x400 等待（",
+      "cites": ["12762", "12768", "12783", "32303-32312", "131881", "131977", "132823", "132844", "133528", "136792-136793"],
+      "raw": [
+        { "line": 12762, "has": "sub_407E20" },
+        { "line": 12768, "has": "11631" },
+        { "line": 12783, "has": "11629" },
+        { "line": 32303, "has": "sub_4248C0" },
+        { "line": 32309, "has": "92338" },
+        { "line": 32310, "has": "92339" },
+        { "line": 131881, "has": "11627" },
+        { "line": 131977, "has": "11627" },
+        { "line": 132823, "has": "11627" },
+        { "line": 132844, "has": "11627" },
+        { "line": 133528, "has": "+ 46516" },
+        { "line": 136792, "has": "46508) = 0" },
+        { "line": 136793, "has": "46516) = 0" }
+      ]
+    },
+    {
+      "id": "rendering-93-clock-write",
+      "doc": "03-engine/rendering.md",
+      "line": 93,
+      "row": "- 每帧写入：主循环(20464 起",
+      "cites": ["20464", "20615", "20620", "20640", "20746-20751", "20643", "20758"],
+      "raw": [
+        { "line": 20464, "has": "412290" },
+        { "line": 20615, "has": "while ( 1 )" },
+        { "line": 20620, "has": "timeGetTime" },
+        { "line": 20640, "has": "v3" },
+        { "line": 20643, "has": "429752" },
+        { "line": 20746, "has": "667860" },
+        { "line": 20751, "has": "v94" },
+        { "line": 20758, "has": "sub_4B4040" }
+      ]
+    },
+    {
+      "id": "rendering-100-itemcolor-fields",
+      "doc": "03-engine/rendering.md",
+      "line": 100,
+      "row": "- 字段（`sub_4ACF60`(131870)",
+      "cites": ["131870", "131956", "131969", "131878", "131972", "131880", "131976", "117239"],
+      "raw": [
+        { "line": 131870, "has": "4ACF60" },
+        { "line": 131878, "has": "+ 48" },
+        { "line": 131880, "has": "+ 96" },
+        { "line": 131956, "has": "4AD0C0" },
+        { "line": 131969, "has": "|= 2u" },
+        { "line": 131972, "has": "+ 56" },
+        { "line": 131976, "has": "+ 100" },
+        { "line": 117239, "has": "49AA30" }
+      ]
+    },
+    {
+      "id": "rendering-101-itemcolor-eval",
+      "doc": "03-engine/rendering.md",
+      "line": 101,
+      "row": "逐帧（**`sub_49AA30`**(117239 起)",
+      "cites": ["117239", "117430", "117438", "117449", "117470-117479"],
+      "raw": [
+        { "line": 117239, "has": "49AA30" },
+        { "line": 117430, "has": "& 2" },
+        { "line": 117438, "has": "v113 + 46500" },
+        { "line": 117449, "has": "v112 == 1" },
+        { "line": 117470, "has": "LODWORD(v117)" }
+      ]
+    },
+    {
+      "id": "rendering-102-itemdraw",
+      "doc": "03-engine/rendering.md",
+      "line": 102,
+      "row": "`sub_4AEEA0`(133326；调 `sub_4A2D50` 于 133443)",
+      "cites": ["133326", "133443", "122890", "123146", "123208"],
+      "raw": [
+        { "line": 133326, "has": "4AEEA0" },
+        { "line": 133443, "has": "sub_4A2D50" },
+        { "line": 122890, "has": "4A2D50" },
+        { "line": 123146, "has": "+ 20" },
+        { "line": 123208, "has": "+ 20" }
+      ]
+    },
+    {
+      "id": "rendering-126-worldmatrix",
+      "doc": "03-engine/rendering.md",
+      "line": 126,
+      "row": "引擎侧（`sub_49AA30` raw 117425-117429",
+      "cites": ["117425-117429"],
+      "raw": [
+        { "line": 117425, "has": "v83 = -v91" },
+        { "line": 117428, "has": "D3DXMatrixTranslation" },
+        { "line": 117429, "has": "D3DXMatrixMultiply" }
+      ]
+    },
+    {
+      "id": "rendering-160-blend-table",
+      "doc": "03-engine/rendering.md",
+      "line": 160,
+      "row": "| 值 | D3D 组合 | 语义 |",
+      "cites": ["123089-123121", "119369-119399", "119512-119578"],
+      "raw": [
+        { "line": 123089, "has": "1040" },
+        { "line": 123096, "has": ", 19, 5" },
+        { "line": 123100, "has": "a6 != 2" },
+        { "line": 119369, "has": "27, 1" },
+        { "line": 119372, "has": ", 19, 5" },
+        { "line": 119383, "has": ", 19, 2" },
+        { "line": 119396, "has": "171, 3" },
+        { "line": 119512, "has": "27, 1" },
+        { "line": 119525, "has": ", 19, 2" },
+        { "line": 119536, "has": "171, 3" }
+      ]
+    },
+    {
+      "id": "rendering-167-blend-write",
+      "doc": "03-engine/rendering.md",
+      "line": 167,
+      "row": "- **写入**：`0x203` 的 op2",
+      "cites": ["131878", "132818"],
+      "raw": [
+        { "line": 131878, "has": "+ 48" },
+        { "line": 132818, "has": "[9] = a3" }
+      ]
+    },
+    {
+      "id": "rendering-168-scene-default",
+      "doc": "03-engine/rendering.md",
+      "line": 168,
+      "row": "场景默认 = `0x33F` op1",
+      "cites": ["34442-34444"],
+      "raw": [
+        { "line": 34442, "has": "sub_41BF50" },
+        { "line": 34444, "has": "1260" }
+      ]
+    },
+    {
+      "id": "rendering-169-blend-deliver",
+      "doc": "03-engine/rendering.md",
+      "line": 169,
+      "row": "- **送达**：draw-item 见 `sub_4AEEA0` raw 133443",
+      "cites": ["133443", "133617"],
+      "raw": [
+        { "line": 133443, "has": "sub_4A2D50" },
+        { "line": 133617, "has": "sub_49E390" }
+      ]
+    },
+    {
+      "id": "rendering-172-scene-default-nogate",
+      "doc": "03-engine/rendering.md",
+      "line": 172,
+      "row": "场景默认那一档没有门控",
+      "cites": ["65841", "65861-65869"],
+      "raw": [
+        { "line": 65841, "has": "4535F0" },
+        { "line": 65861, "has": "v3 == 2" },
+        { "line": 65865, "has": "19," },
+        { "line": 65867, "has": "v12" }
+      ]
+    },
+    {
+      "id": "rendering-178-drawitem-noleak",
+      "doc": "03-engine/rendering.md",
+      "line": 178,
+      "row": "draw-item 的 `0` 不重置",
+      "cites": ["123100-123117"],
+      "raw": [
+        { "line": 123100, "has": "a6 != 2" },
+        { "line": 123103, "has": "LABEL_42" },
+        { "line": 123107, "has": ", 20" }
+      ]
+    },
+    {
+      "id": "rendering-179-mesh-leak",
+      "doc": "03-engine/rendering.md",
+      "line": 179,
+      "row": "`(ONE,ZERO)`（raw 119474-119476",
+      "cites": ["119474-119476"],
+      "raw": [
+        { "line": 119474, "has": "+ 228" },
+        { "line": 119475, "has": ", 19, 2" },
+        { "line": 119476, "has": ", 20, 1" }
+      ]
+    },
+    {
+      "id": "rendering-180-merge-block",
+      "doc": "03-engine/rendering.md",
+      "line": 180,
+      "row": "2D 合并段（`sub_4B06D0` raw 134417-136734）",
+      "cites": ["134417-136734"],
+      "raw": [
+        { "line": 134417, "has": "4B06D0" },
+        { "line": 136719, "has": "46508" }
+      ]
+    },
+    {
+      "id": "rendering-189-sprite-object",
+      "doc": "03-engine/rendering.md",
+      "line": 189,
+      "row": "| 精灵对象 | 122816-122823",
+      "cites": ["122816-122823"],
+      "raw": [
+        { "line": 122816, "has": "42452" },
+        { "line": 122823, "has": "D3DXCreateSprite" }
+      ]
+    },
+    {
+      "id": "rendering-190-sprite-begin",
+      "doc": "03-engine/rendering.md",
+      "line": 190,
+      "row": "| **每项的开始** | **123087-123088** |",
+      "cites": ["123087-123088"],
+      "raw": [
+        { "line": 123087, "has": "42452) + 20" },
+        { "line": 123088, "has": "42452) + 32" }
+      ]
+    },
+    {
+      "id": "rendering-191-sprite-states",
+      "doc": "03-engine/rendering.md",
+      "line": 191,
+      "row": "| 引擎的每项覆盖 | 123090-123120 |",
+      "cites": ["123090-123120"],
+      "raw": [
+        { "line": 123090, "has": "+ 276" },
+        { "line": 123093, "has": "15, 0" },
+        { "line": 123104, "has": "171, 3" },
+        { "line": 123113, "has": ", 19, 2" }
+      ]
+    },
+    {
+      "id": "rendering-192-sprite-draw",
+      "doc": "03-engine/rendering.md",
+      "line": 192,
+      "row": "| 绘制 | 123208 / 123224",
+      "cites": ["123208", "123224"],
+      "raw": [
+        { "line": 123208, "has": "+ 20)" },
+        { "line": 123224, "has": "+ 20)" }
+      ]
+    },
+    {
+      "id": "rendering-193-sprite-end",
+      "doc": "03-engine/rendering.md",
+      "line": 193,
+      "row": "| 每项的收尾 | 123244 |",
+      "cites": ["123244"],
+      "raw": [{ "line": 123244, "has": "+ 44" }]
+    },
+    {
+      "id": "rendering-197-mesh-quad",
+      "doc": "03-engine/rendering.md",
+      "line": 197,
+      "row": "唯一调用点 raw 133617",
+      "cites": ["133617"],
+      "raw": [{ "line": 133617, "has": "sub_49E390" }]
+    },
+    {
+      "id": "rendering-198-mesh-default-blend",
+      "doc": "03-engine/rendering.md",
+      "line": 198,
+      "row": "在选择子 `0`/≥4 时**显式**设",
+      "cites": ["119389-119394", "119392", "119393", "119375", "119530-119534", "119533", "119517"],
+      "raw": [
+        { "line": 119389, "has": "v12 = *" },
+        { "line": 119392, "has": ", 19, 5" },
+        { "line": 119393, "has": "v19 = 6" },
+        { "line": 119375, "has": ", 20)" },
+        { "line": 119530, "has": "v8 = *" },
+        { "line": 119533, "has": "19, 5" },
+        { "line": 119517, "has": ", 20)" }
+      ]
+    },
+    {
+      "id": "app-copyright-15-label216",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 15,
+      "row": "主循环 `LABEL_216`(21216)",
+      "cites": ["21216"],
+      "raw": [{ "line": 21216, "has": "LABEL_216" }]
+    },
+    {
+      "id": "app-copyright-55-present-chain",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 55,
+      "row": "- **渲染**（present）：`sub_4B4040`(136741)",
+      "cites": ["136741", "134417", "136796", "133458", "133326"],
+      "raw": [
+        { "line": 136741, "has": "4B4040" },
+        { "line": 134417, "has": "4B06D0" },
+        { "line": 136796, "has": "sub_4B06D0" },
+        { "line": 133458, "has": "4AF1C0" },
+        { "line": 133326, "has": "4AEEA0" }
+      ]
+    },
+    {
+      "id": "app-copyright-58-mesh-anim",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 58,
+      "row": "mesh：`sub_4AF1C0`(133505-133541)",
+      "cites": ["133505-133541", "122248"],
+      "raw": [
+        { "line": 133505, "has": "& 2" },
+        { "line": 133516, "has": "_this + 46500" },
+        { "line": 133526, "has": "sub_4A2050" },
+        { "line": 122248, "has": "4A2050" }
+      ]
+    },
+    {
+      "id": "app-copyright-59-item-anim",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 59,
+      "row": "文字 draw-item：`sub_49AA30`(117239)",
+      "cites": ["117239", "117438", "117470-117479"],
+      "raw": [
+        { "line": 117239, "has": "49AA30" },
+        { "line": 117438, "has": "v113 + 46500" },
+        { "line": 117471, "has": "a2 + 96" },
+        { "line": 117479, "has": "<< 8" }
+      ]
+    },
+    {
+      "id": "app-copyright-63-flag-cascade",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 63,
+      "row": "主循环（20464 起）是**嵌套",
+      "cites": ["20464", "20769-21158"],
+      "raw": [
+        { "line": 20464, "has": "412290" },
+        { "line": 20769, "has": "699204" },
+        { "line": 21158, "has": "0x8000000" }
+      ]
+    },
+    {
+      "id": "app-copyright-71-gate400",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 71,
+      "row": "if (v17 & 0x400)  (21111)",
+      "cites": ["21111"],
+      "raw": [{ "line": 21111, "has": "sub_407E20" }]
+    },
+    {
+      "id": "app-copyright-77-present-cond",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 77,
+      "row": "才 present，20756",
+      "cites": ["20756"],
+      "raw": [{ "line": 20756, "has": "sub_40BE10" }]
+    },
+    {
+      "id": "app-copyright-135-322-flush",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 135,
+      "row": "`0x322` 写完 state0 立刻以比例 0 刷 VB",
+      "cites": ["132816-132823"],
+      "raw": [
+        { "line": 132816, "has": "sub_4AAB80" },
+        { "line": 132818, "has": "[9] = a3" },
+        { "line": 132822, "has": "sub_4A2050" }
+      ]
+    },
+    {
+      "id": "app-copyright-136-323-noflush",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 136,
+      "row": "`0x323` 只置窗与 state1 不碰 VB",
+      "cites": ["132834-132843"],
+      "raw": [
+        { "line": 132834, "has": "sub_4AAB80" },
+        { "line": 132836, "has": "|= 2u" },
+        { "line": 132843, "has": "result[14]" }
+      ]
+    },
+    {
+      "id": "app-copyright-197-bit2",
+      "doc": "04-app/emulator-copyright-effect.md",
+      "line": 197,
+      "row": "- **bit2（draw-item `&4`）**",
+      "cites": ["133389-133390"],
+      "raw": [
+        { "line": 133389, "has": "sub_49AA30" },
+        { "line": 133390, "has": "& 4" }
+      ]
+    }
+  ]
+}

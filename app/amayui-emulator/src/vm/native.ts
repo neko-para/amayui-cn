@@ -276,6 +276,25 @@ export interface NativeBridge {
    * 0x249（sub_425310：绑定时的颜色 `op3`）：**纹理对象/槽的参数下发**。宿主可选实现。
    */
   setTextureObjectParam?(slot: number, value: number): void;
+  /**
+   * **`0x23F` 的槽对象表查询**（`Engine[slot + 94672]`，字节 `4*slot + 378688`；
+   * `sub_4307B0` raw 40019-40030）—— `tickets/T-0153` 的 VM 半边接线缝。
+   *
+   * ★**与 `getTextureSize`（`0x208`）不是同一个问题**：`0x208` 读**表面**表
+   * （`Scene + 4*slot + 42456` → `CTexture+1040/+1044`，`sub_49ED60` raw 119786-119795），
+   * 本方法读的是 `0x20F` play-movie（`sub_4237B0` raw 31627-31644）与 `0x236`（`sub_4246B0`
+   * raw 32245-32252）**惰性创建**的那张**对象**表。两张表在引擎里并列，不许混用
+   * （`renderer/slotSurface.ts` 的 `SlotNode` 注释有完整依据）。
+   *
+   * 返回三态（`renderer/slotSurface.ts` 的 `slotNodeSizeOf` 是两个宿主的同一份判据）：
+   *  - `present: false` ⇒ 引擎 `v2 == 0` ⇒ `0x23F` 写 `op1 = -1`；
+   *  - `present: true` ⇒ `op1 = (int)(尺寸 × 1000)`；尺寸不可得 ⇒ `w = h = 0`
+   *    （= `sub_4080B0` 对未分派类型的 `0.0`，raw 12967/12979 ⇒ ×1000 = 0，**不是** −1）。
+   *
+   * ★**未实现本方法的宿主**（`StubNative`）⇒ `0x23F` 按"没有对象"答 −1（与引擎缺对象同码），
+   * 并且这次调用会被**闸门 A**（`withNativeTap`）记成一条宿主缺口 —— 不允许静默答 0。
+   */
+  slotNodeSize?(slot: number): { present: boolean; w: number; h: number } | undefined;
 
   // ---- A4 图元 / 网格 / 纹理 / 渲染状态族（2026-09 落地；语义见 handlers/gfx-state.ts）----
   /** `0x1FC`（sub_422F80 → `sub_4AC470`）：**复位图元变换**（清 DrawItem 的缩放/旋转/平移等字段）。 */
@@ -341,6 +360,23 @@ export interface NativeBridge {
   setLight?(idx: number, on: boolean): void;
   /** 0x23D（sub_41A300）：**销毁 movie/纹理槽 42..999**（CMovieToTexture 族析构 + Scene 卸槽）。 */
   releaseMovieSlots?(): void;
+  /**
+   * **该纹理槽有没有 CTexture 对象**（引擎 `_this[4*slot + 365288]`）——`0x20F` play-movie 的
+   * **输入前提**（`T-0164` 的 P2 条目）。
+   *
+   * 引擎体（raw 31645-31651，`0x20F` 建完影片对象之后立刻检查）：
+   * ```c
+   * if ( !*(_DWORD *)(_this + 4 * v2 + 365288) ) {
+   *   pExceptionObject = asc_520248;   // "ムービーの初期化に失敗しました．\r\n
+   *   _CxxThrowException(…);           //  テクスチャが確保されていません．"
+   * }
+   * ```
+   * ★与影片对象表 `_this[4*slot + 378688]`（本桥的 `playMovie`/`slotNodeSize`）**是两张表**：
+   * 那张由 `0x20F`/`0x236` 惰性建，这张由 `0x1F8` create-texture（/`0x1F9` 载图）建。
+   * 返回 `undefined` = 宿主不建模这张表 ⇒ 调用方**不**据此抛错（保持修前的行为，
+   * 缺口由闸门 A/审计留痕）。
+   */
+  hasSlotTexture?(slot: number): boolean | undefined;
   /** 0x32B（sub_41A4A0）：**清 D3DX 网格层级槽表**（Scene+50708 区 1000 槽，逐项 delete）。 */
   clearMeshSlots?(): void;
   /** 0x259（sub_41A3A0）：清两张 1000×2 组 5-DWORD 记录表（只清记录、不 delete 对象）。 */
@@ -428,7 +464,8 @@ export interface NativeBridge {
    * ——这与 `0x322`/`0x323` 的负值回退（`scene/ops.ts` 的 `vertexColorArg`）是同一条纪律。
    * 返回 −1 时 **`0x203` 的行为与引擎一致**：`(unsigned)−1 >> 24 = 255`（α）、颜色 = `0xFFFFFF`。
    *
-   * ★只给 `0x203` 用（`0x33f` 的同类回退写的是 `Scene+1264`，那条通路仍未建模，见 T-0017）。
+   * ★本缝的消费者：`0x203`（负 α/color 回退）**与** `0x34f`（`op2 < 0` 时的 `sub_4ADD60` 回退，raw 34808）。
+   * （`0x33f` 的同类回退走的是另一条通路 `Scene+1264`，仍未建模，见 T-0017。）
    */
   getDrawItemColor?(handle: number): number;
   /** 0x1F7 detach-texture（sub_422BC0）：删单/区间图元。op1=handle、op2=count；count≤1 删单，count>1 删 [handle,handle+count)。 */

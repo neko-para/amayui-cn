@@ -22,12 +22,21 @@
     ]
   },
   "id": "T-0155",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-24",
+      "kind": "status",
+      "what": "doing/open → done —— 主 agent 收口：票内判据全落地，范围外项已移交（engine.ts→T-0156 / renderer→T-0154 / 其余见 changes-*.md）；verify 判据按 CONTEXT §6 的替代口径（tsc 双 config + 本票守卫 + 四台账 + 七生成物 + 死写无新增）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/gfx-state-operand-io.test.ts"
+  ],
+  "doneWhy": "10 行全处置：修 `0x32d`（轴向 红=op2>>16 / 绿=>>8 / 蓝=&0xff）/ `0x320` 顶点半像素 −0.5 / `0x21e` ÷256→÷100 / `0x33f` 三格读满并接既有 `getDrawItemColor` 缝 / `0x258` 注释写明「建模≠有消费端」；受阻并如实登记 4（`0x32` GDI 支 / `0x20e` 双 Clear / `0x24f` 工作纹理 / `0x258` 镜像表）。守卫 test/gfx-state-operand-io.test.ts **2/3 红 → 3/3 绿**，相关 13 文件 79/79。详见 tickets/T-0155/changes-gfxstate.md。 ★★主 agent 收口（2026-09-24，波次收口轮）：票内判据全部落地（逐条见本票 changes-*.md）；本票在范围外留下的项已逐条移交并登记（见下），不再由本票承接。★判据「`npm run verify` 全绿」的替代口径（本机 `node_modules/.bin` 缺失 ⇒ npm 脚本跑不了，`CONTEXT.md` §7）：`node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit` + `-p tsconfig.test.json --noEmit` 均 exit 0、本票守卫文件全绿、四份台账 `--validate` 与七份生成物 `--check` 全绿、`check:dead-writes` 无新增（基线 13）。★移交去向：`src/vm/engine.ts` / `src/frame/loop.ts` 系 → `T-0156`（D 波在跑）；`src/renderer/**` 系 → `T-0154`（D 波在跑）；`src/vm/handlers/msgwin.ts` + `renderer/**` 的行淡入色窗 → 待开；宿主媒体/触摸/媒体缝（`native.ts`/`nativeTap.ts`/宿主）→ 待开；`analysis/*.json` 的其余条目 → 主 agent 串行结算。"
 }
