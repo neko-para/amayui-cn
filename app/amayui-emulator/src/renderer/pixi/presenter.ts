@@ -121,6 +121,27 @@ export class ScenePresenter {
   >();
   /** 本帧出现过的批次键（帧末回收没出现的）。 */
   #l2dLive = new Set<string>();
+  /**
+   * **本帧为裁剪而新建的临时纹理**（`cropSprite` 的产物）。
+   *
+   * 为什么必须显式记着它们：Pixi v8 的 `Texture` 构造会给源挂一条 `resize` 监听，
+   * 而**只有 `destroy()` 才摘掉**（见 `present` 开头那段长注释与 `tickets/T-0181` 的实测）。
+   * 这些纹理是"每帧一次性"的（不在任何缓存里、也不跨帧复用）⇒ 帧末统一 `destroy(false)`。
+   */
+  #frameTextures: Texture[] = [];
+
+  /** 销毁上一帧留下的临时裁剪纹理（**不销毁 source** —— 那是图片缓存持有的共享源）。 */
+  #disposeFrameTextures(): void {
+    if (this.#frameTextures.length === 0) return;
+    for (const t of this.#frameTextures) {
+      try {
+        t.destroy(false);
+      } catch {
+        /* 已销毁/已被别处回收：诊断工具不该因为清理失败把合成打断 */
+      }
+    }
+    this.#frameTextures.length = 0;
+  }
 
   constructor(
     private readonly drawRoot: Container<ContainerChild>,
@@ -158,6 +179,17 @@ export class ScenePresenter {
      */
     transitionRender: readonly TransitionRenderItem[] = [],
   ): number {
+    // ★★**先销毁上一帧那些临时裁剪纹理**（`tickets/T-0181`：用户用 heap timeline 抓到的
+    //   `ImageSource._events.resize` **54 万+ 条**就是这里漏出来的）。
+    //
+    // Pixi v8 的机制（`dist/pixi.mjs` 的 `Texture` 构造 + `set source`）：
+    //   只要走 `new Texture({ source, frame })`，构造里就会 `value.on('resize', this.update, this)`
+    //   —— **每个 Texture 对象一条监听**，而**只有 `texture.destroy()` 会 `off` 掉它**。
+    //   我们每帧、**每个绘制项**都 `cropSprite()` 新建一个裁剪纹理（`itemSprite`），
+    //   却从来没有 `destroy` 过它们 ⇒ 监听器**只增不减**：60fps × 165 项 ≈ **1 万条/秒**
+    //   （实测 54 万条 ≈ 一分钟的游玩）。这也是页面堆以 MB/s 增长、最后 OOM 的根。
+    //   ⇒ 本帧结束时统一销毁（`destroy(false)`：**不碰共享的 source**，那是图片缓存持有的）。
+    this.#disposeFrameTextures();
     this.drawRoot.removeChildren();
     this.#l2dLive.clear();
     const tPresent0 = performance.now();
@@ -448,6 +480,12 @@ export class ScenePresenter {
       }
     }
 
+    // ★帧末：销毁本帧新建的**临时裁剪纹理**（它们的 Sprite 还在 `drawRoot` 上，但宿主会在
+    //   下一次 `present` 开头 `removeChildren()`；而 Pixi 绘制用的顶点/批次在本次 `present`
+    //   之后由 ticker 的 `app.render()` 消费 —— 所以销毁必须**在 present 全部画完之后**）。
+    //   ★这一步不做，源上的 `resize` 监听就会只增不减（`tickets/T-0181` 实测 54 万条）。
+    this.#disposeFrameTextures();
+
     // 诊断：记下窗口里最慢那一帧的"间隔 / 合成耗时 / 批次数"
     const presentMs = performance.now() - tPresent0;
     const lastDt = this.#dt.length > 0 ? this.#dt[this.#dt.length - 1]! : 0;
@@ -559,7 +597,10 @@ export class ScenePresenter {
         }
         return null;
       }
-      const spr = cropSprite(tex, rect);
+      const { sprite: spr, cropped } = cropSprite(tex, rect);
+      // ★临时裁剪纹理**必须登记**：它是"每帧一次性"的，Pixi 给源挂的 `resize` 监听只有
+      //   `destroy()` 能摘（`tickets/T-0181` 实测 54 万条泄漏就是漏了这一步）—— 帧末统一销毁。
+      this.#frameTextures.push(cropped);
       // 位置：DrawItem`+36/+40/+44`（由 `0x219` 写；未写时 = draw-texture 的 op7/8）。
       //
       // ★**世界矩阵门**（引擎 `sub_4A2D50` raw 123055）：`if (Scene+46532) 乘上该项的世界矩阵`，
@@ -741,9 +782,11 @@ function sceneXform2D(
   return sceneAffine2DOf(scene, layer);
 }
 
-function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): Sprite {  const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
+/** 裁剪出来的临时纹理（调用方**必须**把它登记进 `ScenePresenter.#frameTextures`，帧末销毁）。 */
+function cropSprite(tex: Texture, rect: { x: number; y: number; w: number; h: number }): { sprite: Sprite; cropped: Texture } {
+  const frame = new Rectangle(rect.x, rect.y, rect.w, rect.h);
   const cropped = new Texture({ source: tex.source, frame });
-  return new Sprite(cropped);
+  return { sprite: new Sprite(cropped), cropped };
 }
 
 /** mesh 顶点几何的外接矩形（屏幕像素）。 */

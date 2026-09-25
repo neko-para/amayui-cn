@@ -1644,6 +1644,8 @@ export class PixiBackend implements NativeBridge {
     l2dTex: number;
     l2dInflight: number;
     live: number;
+    /** 每个源的监听器条数（降序；`tickets/T-0181` 的泄漏观测量）。 */
+    srcListeners: { imgid: number; source: string; listeners: number; keys: string[] }[];
   } {
     // 当前被绘制项引用的槽号（"reachable" 的判据；只读遍历）
     const reachableSlots = new Set<number>();
@@ -1661,6 +1663,9 @@ export class PixiBackend implements NativeBridge {
       l2dInflight: this.#l2dTextures.pendingCount,
       // 本帧画进 `drawRoot` 的 Sprite/Container 数（每帧重建 ⇒ 这个数就是"本帧画了多少个对象"）
       live: this.drawRoot.children.length,
+      // ★`tickets/T-0181`：源上的 `resize`/`update` 监听条数 —— 泄漏的**直接观测量**
+      //   （Pixi 只在 `texture.destroy()` 时摘；健康稳态应与帧数无关）。
+      srcListeners: this.textures.srcListenerCounts().sort((a, b) => b.listeners - a.listeners),
     };
   }
 

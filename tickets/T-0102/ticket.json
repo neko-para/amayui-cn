@@ -81,7 +81,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "spr.tint = color & 0xffffff;",
       "note": "★2026-09-22 订正：这一行**无条件覆盖**占位块自己的调试色 ⇒ 白占位块的颜色 = 该项 diffuse；与 `0x203` 给的 alpha(≈0xa0) 相乘即 `#E3E3E3`（与归档帧采样逐点吻合）⇒ **白底 = #placeholder** 这条成立。但**触发原因**不是「槽 11 未绑定」（该结论已判死，见 evidence/texture-slot-identity.md），而是宿主侧 `TextureCache.resolve` 在 `texSlots[17]=0x5260` 已就位时仍返回空纹理。",
-      "line": 568
+      "line": 638
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
@@ -231,7 +231,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "inMsgTextRange(scene.msgRanges.values(), it.handle)",
       "note": "修复点：itemSprite 的取值侧跳过（此前走 #placeholder 白块）",
-      "line": 488
+      "line": 555
     },
     {
       "file": "app/amayui-emulator/test/msg-text-range.test.ts",

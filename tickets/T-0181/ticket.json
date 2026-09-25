@@ -1,36 +1,37 @@
 {
   "id": "T-0181",
-  "title": "DSH web 形态页面 JS 堆涨到 1.7~1.9GB 后 OOM 崩溃（同一游戏状态下 Electron 形态只有 104MB）",
+  "title": "每帧新建的裁剪纹理从不 destroy ⇒ 源上 resize 监听器泄漏（54 万条）⇒ 页面堆涨到 1.5~2GB 后 OOM",
   "type": "bug",
   "priority": "P0",
   "area": "emulator/render",
   "why": "用户实测：接入 emu in DSH 之后**两次 `out of memory` 崩溃**；在 ~500MB 时采样到「Pixi 的 `ImageSource` 占 300MB+」。\n\n本轮实测（同一台机、同一份真资源、**同一游戏状态** = `bin=TITLE.BIN`、`live=85` 个绘制对象、`img=5` 张）：\n\n| 形态 | JS 堆 used | 堆 limit |\n|---|---|---|\n| **Electron 默认形态**（`npm run dbg:srv`，可见游戏窗） | **104.0MB**（total 149.7MB） | 3585.8MB |\n| **DSH web 形态**（`web/host.ts --attach-headless`，宿主自持隐藏页） | **1673~1936MB** | 4192.0MB |\n\n⇒ 同一个页面的代码，web 形态的页面堆是 Electron 形态的 **16 倍**，并且**还在涨**。\n\n时间曲线（实例 `mem2`，每 4s 采一次 `mem`）：6.2s 时 1732MB（**那时 `img` 只有 1 张 / 12250 像素** ⇒ 与纹理无关），62.6s 时 1936MB；**70s 之后该页再也答不上 `debug-query`（HTTP 504/503）= 页面没了**，与会话里反复出现的「前端 crash」时间尺度吻合。\n\n★已排除的（同一份 `mem` 实测）：**我们自己的缓存不是主因** —— 文件图 5 张 / 6,008,794 像素 ≈ **22.9MB** RGBA、槽表面 0 个、L2D 已载图 3、待销毁 0。用户看到的「`ImageSource` 300MB+」在 **TITLE 这个状态**下量不出来；它是**另一笔、随游戏推进增长**的账（本票也要一起测）。\n\n⇒ 本票要回答两个问题：① 那 1.7GB 的**基线**是什么（页面代码与 Electron 形态几乎同一份）；② 随时间增长的那部分（含 `ImageSource`）是谁。",
   "acceptance": [
     "**先能测**：落地 `mem` 调试命令（只读：JS 堆 used/total/limit + 文件图/槽表面的**项数与像素数** + 槽账 + 本帧绘制对象数），并接进命令表与帮助。✅ 已落地（见第 1 节）。",
-    "**基线归因**：找出「web 形态页面堆 1.7GB vs Electron 104MB」的**具体持有者**（用 CDP 的 `performance.measureUserAgentSpecificMemory()` 或 `HeapProfiler.takeHeapSnapshot` 做一次归因；★本轮未完成 —— 探针受环境限制跑不起来，见第 1 节的「没做完」，不许当成已答）。",
-    "**增长归因**：解释「随时间增长」那部分（用户采到的 `ImageSource` 300MB+ 属这一笔）。",
-    "修完之后：同一序列（TITLE → Load Data → 若干页 → 回标题）下页面堆**不随操作单调增长**，且峰值显著低于堆上限；给出**前后实测数字**。",
-    "`cd app/amayui-emulator && npm run verify` 全绿（当前 1717+5 = 1722 条）。"
+    "**基线归因**：✅ **已定位（第 4 节）** —— 用户用 DevTools heap timeline 抓到 `ImageSource._events.resize` 有 **540000+** 条。根因 = Pixi v8 的 `Texture` 构造会给源挂一条 `resize` 监听、**只有 `destroy()` 会摘**（`dist/pixi.mjs` 的 `set source` / `destroy` 逐行核过），而 `ScenePresenter.#buildItemSprite` **每帧每个绘制项**都 `new Texture({source, frame})` 且从不销毁 ⇒ TITLE/LOAD 上 ≈165 项 × 60fps ≈ **1 万条/秒**（54 万条 ≈ 一分钟游玩）。",
+    "**增长归因**：✅ **已核** —— 同一个缺陷就是增长本身：监听器钉住每个 `Texture`（连带它的 `Sprite`）⇒ 堆以 MB/s 上涨（修前实测空闲 ~1.8~4 MB/s），最终 OOM。用户采到的「`ImageSource` 300MB+」即这一族。",
+    "**修复与前后实测**：✅ **已修（第 4.2/4.3 节）** —— `cropSprite()` 返回 `{sprite, cropped}`、调用方登记进 `#frameTextures`、`present()` 帧末 `#disposeFrameTextures()` 逐个 `destroy(false)`（不碰共享 source）。**红→绿**：守卫 `test/texture-listener-leak-t0181.test.ts`（连画 30 帧断言监听条数不随帧数增长）注掉销毁即**红**、恢复即**绿**；实测同一实例形态下\"源监听器\"读数 **线性增长 → 恒定 2 条**，60~180 秒的堆走势 **单调上涨 → 稳定在 ~800MB 上下震荡**。★顺带修掉第二个高频源：`session.ts` 的 `sleep` 门 `cleared` 支漏了 `#sleeping` 闩锁 ⇒ 每帧一行（3713 行/10s）⇒ 宿主日志 **4.1 KB/s → 1.6 KB/s**。",
+    "**回归可见**：`mem` 命令新增\"源监听器\"读数（`TextureCache.srcListenerCounts()`）—— 判据 = **与帧数无关**；一旦随帧数涨就是又漏了临时纹理。✅ 已落地。"
   ],
   "evidence": [
     {
-      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
-      "anchor": "memStats(): {",
-      "note": "宿主侧的只读内存账（`mem` 命令的实现；JS 堆 + 纹理缓存项数/像素数 + 槽账）"
+      "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
+      "anchor": "#disposeFrameTextures(): void {",
+      "note": "帧末销毁本帧的临时裁剪纹理（原来从不销毁 ⇒ 源上 resize 监听泄漏 54 万条）"
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
-      "anchor": "stats(reachableSlots?: Iterable<number>): {",
-      "note": "纹理缓存的项数/像素数/可达数（\"谁留住了内存\"的观测量）"
+      "anchor": "srcListenerCounts(): { imgid: number; source: string; listeners: number; keys: string[] }[] {",
+      "note": "泄漏的直接读数（每个源上各事件的监听条数）"
     },
     {
-      "file": "app/amayui-emulator/test/mem-accounting-t0181.test.ts",
-      "anchor": "★接线棘轮：`mem` 一条链",
-      "note": "守卫：计账算术 + `mem` 的解析/派发/只读纪律"
+      "file": "app/amayui-emulator/test/texture-listener-leak-t0181.test.ts",
+      "anchor": "★临时裁剪纹理必须销毁：源上的监听条数**不随帧数增长**",
+      "note": "红→绿实测过的守卫（连画 30 帧）"
     }
   ],
   "tests": [
-    "app/amayui-emulator/test/mem-accounting-t0181.test.ts"
+    "app/amayui-emulator/test/mem-accounting-t0181.test.ts",
+    "app/amayui-emulator/test/texture-listener-leak-t0181.test.ts"
   ],
   "links": {
     "tickets": [
@@ -39,12 +40,17 @@
     ]
   },
   "notes": "实测原始数据在 .tmp/t0181/（mem2-boot.jsonl = web 形态时间曲线；mem-soak.mjs = 采样脚本）。★本轮**只做到「能测」**：基线归因没做完（CDP 探针在本会话的环境里跑不起来，两次 `npx electron` 探针都静默退出），如实登记，不许含糊收口。",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-26",
       "kind": "created",
       "what": "创建 —— 起因：用户报 emu in DSH 之后两次 `out of memory`（并在 ~500MB 时采样到 Pixi `ImageSource` 300MB+）。本轮把「能测」做出来了（`mem` 调试命令 + 纹理缓存计账 + 守卫），并量到关键事实：**同一游戏状态下 web 形态 1673~1936MB vs Electron 形态 104MB**，且 70s 后页面消失（= 崩溃）。已排除我们自己的缓存（文件图仅 22.9MB）。★基线归因**未完成**（CDP 探针受限），如实留在 acceptance ②。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → done —— 根因定位并修复：**每帧新建的裁剪纹理从不 destroy** ⇒ Pixi 给共享源挂的 `resize` 监听只增不减（用户 heap timeline 抓到的 54 万条；Pixi 只在 `texture.destroy()` 里 `off`）。修法 = 登记本帧临时纹理 + 帧末统一 `destroy(false)`；红→绿守卫见 tests[1]；实测监听条数由\"随帧数线性增长\"变为\"恒定 2 条\"、堆由单调上涨变为稳定震荡。顺带修 `sleep` 门 `cleared` 支漏闩锁导致的每帧一行日志（宿主日志 4.1→1.6 KB/s）。`mem` 新增\"源监听器\"读数作为长期可见性。"
     }
   ]
 }

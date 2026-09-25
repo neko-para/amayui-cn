@@ -121,13 +121,23 @@ test('★接线棘轮：`mem` 一条链（解析 → 会话派发 → 宿主只�
 
   const backend = read('src/renderer/pixiBackend.ts');
   // ★只读纪律：这个方法体里不许出现任何清理/销毁（诊断不许改状态）。
-  //   切片按**下一个成员**收口（第一版切了固定 2400 字符，把后面的 `present()` 也圈进来了 ⇒ 假红）。
+  //   切片按**方法体结束**收口（第一版切固定 2400 字符、第二版按下一个 `\n  /**` 切，
+  //   都被"方法后面紧跟别的成员"或"签名变长"弄成假红/假绿）⇒ 用花括号配平切。
   const at = backend.indexOf('memStats(): {');
   assert.ok(at > 0, '宿主要有这个只读方法');
-  const nextMember = backend.indexOf('\n  /**', at);
-  const body = backend.slice(at, nextMember > at ? nextMember : at + 1500);
-  assert.doesNotMatch(body, /\.destroy\(|collectGarbage|\.clear\(\)/, '`memStats` 只许读（不许顺手清理）');
+  // ★收口用**下一个成员**的注释块（`\n\n  /**`）—— 与"类型里的花括号""里面的 `  }`"都无关。
+  const nextDoc = backend.indexOf('\n\n  /**', at);
+  const body = backend.slice(at, nextDoc > at ? nextDoc : backend.length);
+  assert.ok(body.includes('srcListeners'), `切出来的方法体应当包含实现（实际长度 ${body.length}）`);
+  // ★先剥掉**行注释**再查代码：注释里正解释着"Pixi 只在 `texture.destroy()` 时摘监听"这类机制，
+  //   不剥的话判据会被自己的说明文字绊倒（本测试第四版踩的坑）。
+  const code = body
+    .split('\n')
+    .map((l) => l.replace(/\/\/.*$/, ''))
+    .join('\n');
+  assert.doesNotMatch(code, /\.destroy\(|collectGarbage|\.clear\(\)/, '`memStats` 只许读（不许顺手清理）');
   assert.match(body, /jsHeap: readJsHeap\(\)/, '要报 JS 堆（那是"页面 OOM"的直接观测量）');
+  assert.match(body, /srcListeners: this\.textures\.srcListenerCounts\(\)/, '要报源上的监听条数（T-0181 的泄漏读数）');
   // 堆怎么读（`performance.memory`）在本文件的模块级 `readJsHeap()` 里（`memStats` 只调它）
   assert.match(backend, /function readJsHeap\(\)[\s\S]{0,400}?performance as unknown as \{ memory/, '`readJsHeap` 要读 Chromium 的 `performance.memory`');
 

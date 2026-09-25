@@ -679,6 +679,13 @@ export class RendererSession {
             ` · L2D 已载图 ${m.l2dTex} · 待销毁 ${m.pendingDestroy}`,
         );
         lines.push(`本帧绘制对象：${m.live} 个（drawRoot 子节点数）`);
+        // ★`tickets/T-0181`：源上的监听条数 —— 泄漏的**直接读数**（Pixi 只在 `destroy()` 时摘）。
+        //   它必须**与帧数无关**；一旦开始随帧数涨，就是又漏了临时纹理。
+        const worst = m.srcListeners[0];
+        lines.push(
+          `源监听器：${m.srcListeners.length} 个源，最多的一个 ${worst ? worst.listeners : 0} 条` +
+            (worst && worst.listeners > 0 ? `（${worst.source}：${worst.keys.join(' ')}）` : '（健康：无残留）'),
+        );
         this.#traceLog.line(`[mem] ${lines.join(' · ')}`);
         return lines;
       }
@@ -797,8 +804,15 @@ export class RendererSession {
         if (e.nowMs >= e.sleepUntil) {
           // ★不改状态：清位是**驱动**的事（这里只观察）—— 观察者一旦也改门旗标，就又出现
           //   "同一件事两处实现"（`T-0008` 的 `waitFlags` 镜像事故正是这么来的）。
+          // ★★**只在"睡着→醒了"这一次跳变上打**（`tickets/T-0181` 实测抓到的缺陷）：
+          //   修前这一支**不看 `#sleeping`**，而 TITLE 的 `sleep(1)` 是**到点即放行**的
+          //   （每帧 `nowMs >= sleepUntil` 都成立）⇒ 每帧印一行 ⇒ 实测 **3713 行/10s（≈370 行/秒）**，
+          //   而每行都是一次 `window.api.logLine` ⇒ 一次 `POST /api/event`。
+          //   后果不止是日志脏：那条腿的洪峰会拖着宿主/页面一起涨（本票的 OOM 就是这么几百
+          //   请求/秒地喂出来的）。**与 `0x400` 的 WAIT 支、本支的 WAIT 支同一口径**：
+          //   只报状态跳变，不报稳态。
+          if (this.#sleeping) this.#traceLog.line(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
           this.#sleeping = false;
-          this.#traceLog.line(`=== gate sleep cleared (t=${Math.round(e.nowMs)}ms) ===`);
         } else {
           if (!this.#sleeping) {
             this.#traceLog.line(`=== gate sleep WAIT (until ${Math.round(e.sleepUntil)}ms) steps=${this.#steps} ===`);

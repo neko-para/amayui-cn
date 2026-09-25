@@ -7,7 +7,7 @@
 
 ## 概览
 
-共 **179** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **6** · ✅ done **168** · 🚫 dropped **2**（P0 9 / P1 69）
+共 **179** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **5** · ✅ done **169** · 🚫 dropped **2**（P0 9 / P1 69）
 
 按域：`emulator/render` 28 · `emulator/vm` 17 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1
 
@@ -19,18 +19,17 @@
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0179`](./T-0179/ticket.json) | P2 | refactor | `analysis/analysis/emulator/vm` | 缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件） | 5 | — | `notes.md` `changes-round70.md` `changes-t0179.md` | — |
 
-## ⬜ open（6）
+## ⬜ open（5）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0181`](./T-0181/ticket.json) | P0 | bug | `emulator/render` | DSH web 形态页面 JS 堆涨到 1.7~1.9GB 后 OOM 崩溃（同一游戏状态下 Electron 形态只有 104MB） | 5 | `app/amayui-emulator/test/mem-accounting-t0181.test.ts` | `changes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | `notes.md` | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
 | [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 4 | — | `notes.md` evidence/(5) | — |
 | [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | `notes.md` | — |
 
-## ✅ done（168）
+## ✅ done（169）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -42,6 +41,7 @@
 | [`T-0076`](./T-0076/ticket.json) | P0 | bug | `emulator/ops` | emulator 零注册的引擎指令（P0/P1 共 21 条）：命中即硬停或让脚本读到陈旧操作数 | 6 | `app/amayui-emulator/test/opcode-gaps.test.ts` `app/amayui-emulator/test/op-20b-fill-texture.test.ts` `app/amayui-emulator/test/op-191-fabs.test.ts` `app/amayui-emulator/test/op-23f-slot-size.test.ts` `app/amayui-emulator/test/ops-142-12f-306.test.ts` `app/amayui-emulator/test/engine-config.test.ts` `app/amayui-emulator/test/op-a2-a3.test.ts` `app/amayui-emulator/test/draw-item-loop-anim.test.ts` `app/amayui-emulator/test/op-132-134-queue.test.ts` `app/amayui-emulator/test/op-24f-250-251-transitions.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0081`](./T-0081/ticket.json) | P0 | req | `emulator/ops` | RF-B 缺口治理基建：缺口真源 + 生成 md + 守卫棘轮（未登记的硬停/no-op 即红） | 6 | `app/amayui-emulator/test/opcode-gaps.test.ts` | `notes.md` | — |
 | [`T-0138`](./T-0138/ticket.json) | P0 | bug | `emulator/hosts` | 面板状态切换会重建 iframe ⇒ 实例被重启（VM 活在页面里）：单一 iframe + 观察者数告警 | 8 | `plugins/amayui-emulator/smoke-client.mjs` `plugins/amayui-emulator/float-e2e.cjs` | `changes.md` evidence/(2) | — |
+| [`T-0181`](./T-0181/ticket.json) | P0 | bug | `emulator/render` | 每帧新建的裁剪纹理从不 destroy ⇒ 源上 resize 监听器泄漏（54 万条）⇒ 页面堆涨到 1.5~2GB 后 OOM | 5 | `app/amayui-emulator/test/mem-accounting-t0181.test.ts` `app/amayui-emulator/test/texture-listener-leak-t0181.test.ts` | `changes.md` | — |
 | [`T-0006`](./T-0006/ticket.json) | P1 | bug | `emulator/audio` | headless 没有音频帧泵 ⇒ 寄存语音/延迟 SE/BGM 淡变整条缺失 | 2 | `app/amayui-emulator/test/audio-node-host.test.ts` `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0007`](./T-0007/ticket.json) | P1 | bug | `emulator/input` | headless 完全没有悬停：serviceAdvanceWait 只在 Electron 被调用 | 3 | `app/amayui-emulator/test/game-start-chain.test.ts` `app/amayui-emulator/test/scenario.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` | `notes.md` | — |
 | [`T-0008`](./T-0008/ticket.json) | P1 | bug | `emulator/render` | PixiBackend.waitFlags 只置不清 ⇒ needsRender() 永久为真（Electron 此后每帧 present） | 3 | `app/amayui-emulator/test/anim-window-done.test.ts` `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` `changes.md` | — |

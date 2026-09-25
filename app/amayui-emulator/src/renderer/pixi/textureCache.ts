@@ -320,6 +320,34 @@ export class TextureCache {
     return [...this.#imgCache.keys()].sort((a, b) => a - b);
   }
 
+  /**
+   * **每个源的 `resize` 监听器条数**（`tickets/T-0181` 的核心观测量）。
+   *
+   * 为什么单列这一项：Pixi v8 的 `Texture` 构造会给源挂一条 `resize` 监听，
+   * 而**只有 `texture.destroy()` 会摘掉**（`pixi.mjs` 的 `set source` / `destroy`）。
+   * 我们每帧每项都新建一个**临时裁剪纹理** ⇒ 漏一处销毁就是 **1 万条/秒**的泄漏
+   * （用户用 heap timeline 抓到的正是 `ImageSource._events.resize` 54 万+）。
+   * 健康的稳态应是"每张源 ≈ 常量条数"（等于同时引用它的纹理数），**不随帧数增长**。
+   */
+  srcListenerCounts(): { imgid: number; source: string; listeners: number; keys: string[] }[] {
+    const out: { imgid: number; source: string; listeners: number; keys: string[] }[] = [];
+    const dump = (label: string, tex: Texture): void => {
+      const src = tex.source as unknown as { _events?: Record<string, unknown>; label?: string; uid?: number };
+      const ev = src._events ?? {};
+      const keys = Object.keys(ev).filter((k) => Array.isArray((ev as Record<string, unknown[]>)[k]));
+      const listeners = keys.reduce((n, k) => n + ((ev as Record<string, unknown[]>)[k] ?? []).length, 0);
+      out.push({
+        imgid: Number.isFinite(Number(label)) ? Number(label) : -1,
+        source: `${src.label ?? '?'}#${src.uid ?? '?'}`,
+        listeners,
+        keys: keys.map((k) => `${k}=${((ev as Record<string, unknown[]>)[k] ?? []).length}`),
+      });
+    };
+    for (const [id, tex] of this.#imgCache) dump(String(id), tex);
+    for (const [, cs] of this.#canvasSlots) dump('canvas', cs.tex);
+    return out;
+  }
+
   /** 某张已载入图的源尺寸（没载入 ⇒ null）。 */
   imgSize(imgid: number): { w: number; h: number } | null {
     const tex = this.#imgCache.get(imgid);
