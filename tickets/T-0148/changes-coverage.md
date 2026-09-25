@@ -414,3 +414,77 @@ verdicts         {"有据豁免":22,"有缺口":159,"一致":210,"描述过期":
 | `0x25a`（P3 `missing-consumer`） | 无需新登记 | 该条**早已**在缺口台账里（`T-0161` 登记，`partial` + 1 `missing` 正是那两条媒体下发门）⇒ §5.2 表里那句"现已在缺口台账"是对的，本轮复核后确认不必动 |
 
 ⇒ `T-0179` 的 `missing` 数：144 → **146**（`0x108` + `0x223` 各 1 条）；缺口台账 **181** 条（partial 92 / implemented 53 / deferred 22）。
+
+---
+
+## §5.4 §5.2 `still-present` 半边的收口（第 70 轮，2026-09-25 / `T-0179`）
+
+§5.2 那张表共 36 条（`still-present` 23 + `quote-gone` 13）。**`still-present` 半边本轮裁决完毕**：
+3 条已在 §5.3 裁定（`0x108` / `0x223` / `0x25a`）+ 10 条带 opcode 的由 `T-0179` 的缺口台账逐条承接（`0x248`/`0x32f`/`0x340`/`0x245`/`0x246`/`0x61`/`0x192`/`0x193`/`0x1b2`/`0xa0`）+ **opcode 栏为 `—` 的 10 条本轮逐条裁决**。
+
+### §5.4.1 opcode 栏为 `—` 的 10 条：7 条可关 + 2 条改台账后可关 + 1 条转 `opcode-gaps`
+
+★**方法论（本轮最值钱的一句）**：§5.2 的 `quote-still-there` 只说明"**审计当时引的代码还在**"，
+**不说明"缺口还在"** —— 这 10 条里 **9 条是"审计快照过期"**（代码与台账早已被 §5.3 之后的
+`T-0154`/`T-0163`/`T-0164`/`T-0166`/`T-0167` 改到位），只有 1 条需要动台账。
+
+| # | kind | file | 裁决 | 落点 |
+|---|---|---|---|---|
+| 1 | `approximation` | `src/renderer/scene/state.ts` | **③ 可关** | 能力条 `scene-layer-xform-compose-20-29` 明写"只建模 [20,30) 支、非该区间未实现"；装置登记在 `opcode-gaps` 的 `0x22a`/`0x22c`/`0x22d`/`0x22f`（`missing`，承接 `T-0179`） |
+| 2 | `stale-ledger` | `test/mesh-vertex-quad.test.ts` | **③ 可关** | `lazy-mesh-map-node` = `modeled-verified`/`E2`，`guard` 已非空且指向真实用例（`test/blend-mode.test.ts#0x322 的 op2 必须落进 MeshObj.blend`）；note 已逐字复述并订正审计 |
+| 3 | `stale-ledger` | `test/op-327-32e-setweather-noop.test.ts` | **③ 可关** | `scene-3d-weather-effects-rain-snow-leaf`：`guard` 已非"（无）"；`src/vm/handlers/stubs.ts` 的"根本没注册"陈旧注释**已删**且与 `ENGINE_INTERNAL_OPS` 注册一致 |
+| 4 | `stale-ledger` | `src/renderer/scene/ops.ts` | **③ 可关** | `scene-flag-46528-bits` = `modeled-verified`/`E2` + guard；`trigger` 的极性已更正（bit2 置位 = 忽略冻结） |
+| 5 | `approximation` | `src/renderer/scene/ops.ts` | **③ 可关**（代码 + **审计建议的守卫用例**都已存在） | `bullet-dirty-from-freeze-or-pending`：`ops.ts` 的 freeze 分支**第一句就无条件 `s.dirty = true`**（逐字引 raw 136718-136719）；守卫 `test/scene-t0154-scene-state.test.ts:188`（"场景里没有可冻结窗时也要置脏"）就是审计要的那条 |
+| 6 | `missing-behavior` | `src/vm/handlers/msgwin.ts` | **③ 可关** | 由**新条目** `msgwin-coexist-auto-message`（`partial`/`E2`，守卫 `test/adv-msgwin.test.ts` 4+1 例）整体承接 `0x72` 尾段的自动放行分支 |
+| 7 | `missing-consumer` | `src/vm/handlers/msgwin.ts` | **② 改台账后可关** | `msgwin-config-gates`：5 个键全有读者；note 里"见 `T-0166`"那半句**本轮补成结论** |
+| 8 | `stale-ledger` | `src/text/layout.ts` | **② 改台账后可关** | `text-layout-wrap-ruby`：**删掉 vestigial 顶层 `note`（数组）** + 例数 `13 → 实测 18` |
+| 9 | `stale-ledger` | `src/vm/handlers/msgwin.ts` | **③ 可关** | `text-font-rebuild-cascade` 已换标识符锚 + `#用例名锚` 棘轮；note 里的行号漂移**本轮改为不写行号** |
+| 10 | `missing-behavior` | `src/renderer/pixiBackend.ts` | **② 改台账后可关** | **`lazy-movie-texture-slot` 描述过期**：`absent`/`E1`/无守卫 ⇒ `partial`/`E2` + 守卫；真缺口与 `opcode-gaps` 的 `0x20f`（2 条 `missing`）/`0x23f` 完全重合 |
+
+### §5.4.2 本轮的 4 处能力台账落地（`analysis/engine-capabilities.json`）
+
+| 能力条目 | 改动 |
+|---|---|
+| `lazy-movie-texture-slot` | `absent`/`E1`/`guard: ""` ⇒ **`partial`/`E2` + `guard: test/t0164-misc-batch.test.ts#★P3 0x20F：该槽纹理表为空 ⇒ 抛错`**；note 重写（`T-0164` 已把"对象表惰性创建 + 复用 + `0x23D` 清表 + `0x23F` 判据"做进两个宿主；旧 note 的"本票文件范围外 / 没有可绑的对象"**已被推翻**）；`engine.fns` 补 `sub_4237B0`(0x20F)/`sub_4246B0`(0x236)/`sub_488DC0`(装载)/`sub_489230`(起播)/`sub_41A300`(0x23D)，`reads` 补 `Engine+365288`（CTexture 槽表） |
+| `text-layout-wrap-ruby` | 删 vestigial 顶层 `note`（数组 → 消失；沿革早已在 `journal` 记"本次合并成整串"）；`emulator.note` 例数 `13 → 实测 18` |
+| `msgwin-config-gates` | 把 `set:ReDrawTextOnKey`/`set:WheelKeyUp|Down` 那半句从"见 `T-0166`"补成结论（内建默认 1/3/1 ⇒ 分支可走到、emulator 已实现滚轮推进与悬停重绘门） |
+| `scene-flag-46528-bits` / `scene-3d-weather-effects-rain-snow-leaf` / `bullet-dirty-from-freeze-or-pending` | 三处**裸文件守卫加真实用例锚**（把"文件存在"升级成"**字面用例名**存在"的棘轮） |
+
+### §5.4.3 顺带清掉的杂键（`capabilities.js --validate` 看不见的那一类）
+
+- `scene-freeze-flag`：删顶层 vestigial `capability`（= `name` + 括号补充）与 `evidence`（= `emulator.evidence` 的重复）。
+- `live2d-mesh-batches`：删顶层 vestigial `evidence: "E4"` —— 它与权威字段 `emulator.evidence: "E3"` **互相矛盾**，
+  且 note 里那句"E4 已做"的依据是 `.tmp/l2dfix-0-title.png` / `.tmp/t0042d-0-title.png`，而 `.tmp/` 是 gitignore 的临时区
+  （纪律：**证据不许指 `.tmp/`**）⇒ 不构成持久 E4 凭据，故不改 `emulator.evidence`，只把沿革落 `journal`。
+- ⇒ **教训**：`--validate` 只查 `emulator.note` 的**类型与语义**，**顶层杂键一律漏检** —— 这类数据损坏只能靠盘点。
+
+### §5.4.4 剩余面
+
+`T-0148` 的剩余面收敛为：① §5.2 的 `quote-gone` 半边（13 条；其中 8 条 `stale-ledger` 已由 A–F 波解决，其余按 §5.1 记录）；
+② 与 `T-0179` 串行的 msgwin 族（`T-0019` 拆分票）；③ 三张 doing 票（`T-0148`/`T-0091`/`T-0067`）。
+
+---
+
+## §5.5 §5.2 的 `quote-gone` 半边收口（第 70 轮 goal round 3，2026-09-25）
+
+13 条全部裁完：**① 真缺口 ×1**（#12，已实现 + 守卫 + 红→绿 `1/4 → 4/4`）· **② 结构性不适用 ×4** · **③ 早已补上没回台 ×8**。
+★其中 **#9 / #10 推翻了审计原文本身**（#9 的「队列恰剩 1 项」是审计记错成 `0x1F5`、实际属 `0x7C`；#10 的「每帧效果推进完全没有」与代码不符 ——
+`scWeatherAdvance` 就是 `sub_453540`，由 `renderer/scene/commit.ts:90-92` 每帧经两宿主 `advanceModel` 调）。全文见 `quote-gone-adjudication.md`。
+
+**#12 摘要（本轮唯一的代码单元）**：右键「取消/跳读」的**通路早已在位**，但 `engine.ts` 的 `#cancelRoute()` 读错了格 ——
+修前读 `input.mouseJump`（= `0xCC` 的 `107664`，读者是 `0xCD`），而体 raw 20367 读 `489488 + 4*cur` = **`rewindMainBase + cur`**（写者 `0x7B`）。
+语料 **`i0cc` 0 处 / `i07b` 1097 处（334 文件）** ⇒ 修前**真脚本上右键取消永不触发**。改一行 + 新增分水岭负例。
+
+**顺带**：本轮把体检脚本从 `.tmp/` 提升为常驻工具 **`.agents/skills/amayui-engine-analysis/scripts/check-ledger-refs.js`**
+（台账正文里 `文件:行` 引用的**只读**体检；这一格此前**没有任何棘轮保护**），带 `test/agent-workflow.test.ts` 守卫，并写进两个技能的工具体表。
+它第一次跑就抓到两处真问题：`0x142` 的行号引用漂移 + `engineFieldIds.ts` 里一句与代码相反的陈旧注释（都已订正）。
+
+★**重复项（建议 owner 直接标 `closed(dup)`）**：§5.2 的 `still-present` 里有 4 行与 §5.1 的「已改」同源 ——
+`src/renderer/scene/ops.ts`（`46528` bit2）、`src/vm/handlers/msgwin.ts`（排版锚点）、`test/mesh-vertex-quad.test.ts`、`test/op-327-32e-setweather-noop.test.ts`。
+
+
+## 2026-09-25
+
+第 70 轮：§5.2 的 still-present 半边（23 条）裁决完毕（§5.4）。
+★收口实测：`cd app/amayui-emulator && npm run verify` **exit 0**（tests 1678 / pass 1676 / fail 0 / skipped 2）；
+四份台账 `--validate` 全绿；五份生成物 `--check` 全绿；`fix-evidence-lines --any --check` 漂移 0 / 失效锚点 0。

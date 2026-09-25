@@ -115,7 +115,7 @@
       "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
       "anchor": "#captureStageCanvas",
       "note": "【第三轮·决定 ②】整帧抓取**已经存在**（私有方法，转场的新/旧帧来源，与 frameTick 同一条 extract.canvas）⇒ 截图桥 = 提公开 + 接到 FrameHost.capture，个位数行；且 extract 是渲染进临时纹理再读像素，不依赖 preserveDrawingBuffer",
-      "line": 1215
+      "line": 1265
     },
     {
       "file": "app/amayui-emulator/src/vm/debugCommand.ts",
@@ -151,7 +151,7 @@
       "file": "app/amayui-emulator/src/vm/route.ts",
       "anchor": "sub_403C50`（raw 9787-9824）：**按坐标命中测试**",
       "note": "【订正 5】hover 可注入（3/4）：hitTest 的语义标题即引擎 sub_403C50（WM_MOUSEMOVE 里的命中测试）⇒ routes.cursor / 侧栏悬停由此产生",
-      "line": 222
+      "line": 279
     },
     {
       "file": "app/amayui-emulator/src/frame/scenario.ts",

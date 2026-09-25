@@ -145,6 +145,47 @@ export class RoutePanel {
 
   constructor(private readonly field?: PanelField) {}
 
+  /**
+   * **面板态的完整快照 / 恢复**（`tickets/T-0122` 的 `routes` 分区）。
+   *
+   * 为什么由本类提供而不是让快照模块直接 `structuredClone(this.routes)`：后者会**丢掉原型**
+   * （`RoutePanel` 的方法全没），把实例换成普通对象；而私有格（`#fillPending`/`#hitDone`/`#pageStep`/
+   * `#shown`/`#closePending`）外部也读不到。⇒ 由本类给出「读得出的全量状态」与「灌回去」这一对方法，
+   * 快照模块只经它走。
+   */
+  snapshotState(): Record<string, unknown> {
+    return {
+      entries: this.entries.map((e) => ({ ...e })),
+      cursor: this.cursor,
+      hover: this.hover,
+      enterPending: this.enterPending,
+      ownerScriptId: this.ownerScriptId,
+      fallbackLabel: this.fallbackLabel,
+      fillPending: this.#fillPending,
+      hitDone: this.#hitDone,
+      pageStep: this.#pageStep,
+      shown: this.#shown,
+      closePending: this.#closePending,
+    };
+  }
+
+  /** `snapshotState()` 的逆（**按字段灌**，不换实例 —— 换实例会让持有者拿到旧引用）。 */
+  restoreState(s: Record<string, unknown>): void {
+    const n = (k: string, d = 0): number => (typeof s[k] === 'number' ? (s[k] as number) : d);
+    this.entries.length = 0;
+    for (const e of (s.entries as RouteEntry[] | undefined) ?? []) this.entries.push({ ...e });
+    this.cursor = n('cursor', -1);
+    this.hover = n('hover', -1);
+    this.enterPending = n('enterPending');
+    this.ownerScriptId = n('ownerScriptId', -1);
+    this.fallbackLabel = n('fallbackLabel', -1);
+    this.#fillPending = n('fillPending');
+    this.#hitDone = n('hitDone');
+    this.#pageStep = n('pageStep');
+    this.#shown = n('shown');
+    this.#closePending = n('closePending');
+  }
+
   get count(): number {
     return this.entries.length;
   }

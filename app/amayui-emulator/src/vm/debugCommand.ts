@@ -64,6 +64,14 @@ export type DebugAction =
         valid?: boolean
       }[]
     }
+  /**
+   * **引擎态快照**（`tickets/T-0122`）：`snapshot` 只读地导出当前引擎态（JSON 由渲染窗放进结果的一行）；
+   * `restore <base64>` 把快照灌回去（base64 里的原文是 UTF-8 的 JSON）。
+   * ★与 `capture`（画面 PNG）并列但不同物：这个记的是**引擎态**（池/帧链/槽/门/文本项/路由），
+   *   那个记的是**画面**。两者的落盘都在守护进程/宿主侧（渲染进程没有 fs）。
+   */
+  | { a: 'snapshot' }
+  | { a: 'restore'; json: string }
   /** 其它输入一律当查询（`runQuery`）；这样"查一个值"不需要任何前缀。 */
   | { a: 'query'; text: string };
 
@@ -104,6 +112,8 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '  focus [auto|on|off]   宿主焦点模式（缺省 auto）：auto=跟随真实 DOM 焦点；',
   '                        on/off=调试器显式接管（off 立即释放全部按住态并忽略后续 DOM 焦点事件）',
   '  capture               抓一帧当前画面（页面内 extract；PNG 见结果的 png 字段）',
+  '  snapshot              导出一份**引擎态**快照（JSON；池/帧链/槽/门/文本项/路由）',
+  '  restore <base64>      灌回一份引擎态快照（base64 里是 snapshot 输出的 UTF-8 JSON）',
   '  move <x> <y>          注入光标移动到虚拟坐标（1280×720；触发引擎的命中测试/悬停）',
   '  leave                 注入「光标出窗」（等价窗口 mouseleave；侧栏收起那条路）',
   '  click <x> <y> [左|右]  注入一次点击（= press + release；缺省左键）',
@@ -147,6 +157,26 @@ export function parseDebugCommand(raw: string): DebugAction | null {
   // `capture`：抓一帧（PNG base64 由渲染窗填进结果的 `png` 字段）。只认裸命令，不吃参数。
   // ★不叫 `shot`：那个名字被 `tools/debugsrv.cjs` 在主进程截获（capturePage 路线，见 `T-0133` §B.4.4）。
   if (cmd === 'capture') return { a: 'capture' };
+
+  // ---- 引擎态快照 / 恢复（`tickets/T-0122`）----
+  // `snapshot` 只读导出；`restore <base64>` 灌回（base64 里是 UTF-8 JSON）。
+  // ★为什么走 base64 而不是裸 JSON：命令是**按行**传输的（`\n` 会截断），而 JSON 里有换行/引号/反斜杠。
+  if (cmd === 'snapshot') return { a: 'snapshot' };
+  if (cmd === 'restore') {
+    // ★这里用字面量而不是下面那个 `bad()` 帮助函数：`bad` 在**输入注入那一节**才声明（在后面），
+    //   而本块在它之前 —— 用它会撞 TDZ（`tsc` 的 "used before its declaration"）。
+    const badRestore = (msg: string): DebugAction => ({ a: 'query', text: msg });
+    if (parts[1] === undefined) return badRestore('restore：用法 restore <base64 的 JSON>（先用 snapshot 取一份）');
+    let json: string;
+    try {
+      const bin = atob(parts[1]);
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      json = new TextDecoder().decode(bytes);
+    } catch {
+      return badRestore('restore：base64 解不开（参数应当是 snapshot 输出的 base64 形式）');
+    }
+    return { a: 'restore', json };
+  }
 
   // ---- 输入注入（`tickets/T-0135`；解析出来的就是 `ScenarioEvent` 的形状）----
   // 非法参数一律走既有的"当查询回报"口径（不抛错、不崩），面板与 CLI 拿到同一句失败。

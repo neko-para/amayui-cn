@@ -154,8 +154,10 @@ export const ENGINE_FIELD = {
    *
    * ★构造/复位默认 **1**（审计 `0x142 missing-behavior`，`tickets/T-0161`）：引擎构造 `sub_415640`
    * raw 22591 与整体复位 `sub_40DF10` raw 17961 都是 `*(_DWORD *)(_this + 699248) = 1;`。
-   * **emulator 未建模**（`Engine` 构造与复位在 `vm/engine.ts`，不在本票可写路径内）⇒ 在 `i142 1`
-   * （`src/CONFIG.txt:354`）之前读到的会是 0。
+   * **emulator 两侧都按体落地**：构造初值表 `src/vm/engine.ts` 的 `[ENGINE_FIELD.scriptEngineFlag, 1]`、
+   * `exit-script`（`0x1`）整体复位走 `src/vm/handlers/control.ts` 的
+   * `engineValues.set(ENGINE_FIELD.scriptEngineFlag, 1)`。
+   * （★旧注写「emulator 未建模 ⇒ 在 `i142 1` 之前读到的会是 0」，自 `T-0175`/`T-0169` 落地后已作废。）
    *
    * ★该格全库只有 4 处引用：写（raw 31026）、构造/复位（raw 22591/17961）、以及**导出给脚本的
    * 布尔查询** `sub_4765C0(){ return *(_DWORD *)(dword_55E1BC + 699248) != 0; }`（raw 91057-91061，

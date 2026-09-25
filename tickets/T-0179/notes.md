@@ -15,3 +15,26 @@
 ## 2026-09-25
 
 2026-09-25 第三批（§8.2 零痕迹清单的前两条）：**0x245 / 0x246 的两道门**。① 0x245：按体补上「该槽没有 CTexture 对象 ⇒ 连 op2 都不读、不下发」的门（raw 32663），用 T-0164 引入的可选缝 hasSlotTexture（undefined=宿主不建模 ⇒ 保持旧行为），守卫 test/op-245-246-texture-object-gate.test.ts 4 例、红→绿 = 摘掉门 ⇒ 3/4（1 红），恢复 ⇒ 4/4 ⇒ 新登记 0x245 = implemented；② 0x246：第一道门同样补上；第二道门（类型标记 obj[+1084]==0，raw 32693）收窄为 1 条 missing（宿主缝拿不到该字段）；其原有第二条 missing（『宿主三实现都没有 setTextureObjectParam，且该缝被 0x1F9/0x249 复用来传颜色』）**关掉** —— 由 T-0175 的 ③ 拆缝解决。缺口台账 158→159（implemented 41→42、missing 139→138）。
+
+## 2026-09-25（第 70 轮）—— 逐条裁决**收口**
+
+四波并行只读裁决（A 操作数/数组/字符串族、B renderer/scene/gfx 族、C msgwin/text/font/audio/save 族、D `T-0148` §5.2 剩余面）
++ 主 agent 串行落库。**起点 `missing` 104 条 / 80 opcode（其中 28 条无任何判词）⇒ 终点 95 条 / 72 opcode，
+95/95 全部带「重开条件」（机械核过 0 条缺）**；累计（本票生命周期）`missing` 140 → 95（删 45 条）。
+
+本轮：③ 删 9 条（`0x213`/`0x24f`/`0x223`/`0x61`/`0x8c`/`0x2f5`/`0xcd`/`0x75`(字号 5 格)/`0x208`）、
+② 判词重写 23 条、① 实现 **1** 条（`0x208`：`session.ts` 的屏障门收窄回单条 opcode ⇒ `0x249` 等不到屏障，
+语料 2 处 `i249 → i208 → draw-texture`）。
+
+★两条**推翻前轮结论**的复核：`0x61` 由"有意分叉(②)"改判"③ 零缺口"（引擎 `sub_418CC0` 的 default 支**也抛**
+`Command_Type_Exception`，与 emulator 同构）；`0x2f5` 的三处前提全被体推翻。
+
+★**本轮顺带修掉一个真 bug**：`ledger.js` 的 `unset`/`set` 用 `indexOf('"key"')` 找**第一次出现**、
+会穿透嵌套 —— 对 `text-layout-wrap-ruby` 的裸键 `note` 会**删掉 `emulator.note`**（被工具自己的"写盘后回读复核"拦下）。
+已改为按「容器 + 局部深度 1」定位（`findDirectKey`），`unset` 因此也支持点路径。
+
+★**为什么本票留在 `doing`**：acceptance ②（逐条三态、不许留空）已满足，但 95/95 条 `missing[].ticket` 仍指向本票 ⇒
+置 `done` 会**原样重建**本票 §1 要修的那个结构问题（登记账失去 live owner）。故留在 `doing` 作为长尾的常驻 owner；
+取舍的两种做法与理由见 `changes-round70.md` §22.4。
+
+详见 `changes-round70.md`（含各波裁决表、数据卫生清单、收尾实测与 `T-0148` §5.2 的四处能力台账改动）。

@@ -47,7 +47,13 @@ import { JsonlWriter } from './jsonlWriter.js';
 import { Telemetry } from './telemetry.js';
 import type { TraceLog } from './traceLog.js';
 import type { BootedApp } from './boot.js';
-import { observeTextureBarrier } from './textureBarrier.js';
+import { observeTextureBarrier, shouldAwaitTextureBarrier } from './textureBarrier.js';
+import {
+  captureEngineSnapshot,
+  restoreEngineSnapshot,
+  snapshotFromJson,
+  snapshotToJson,
+} from '../../vm/engineSnapshot.js';
 
 /**
  * 一帧内最多推进的指令数 —— **仅作病态死循环兜底**，不是引擎语义。
@@ -170,6 +176,15 @@ export class RendererSession {
   #frames = 0;
   #stepBase = 0;
   #frameBase = 0;
+  /**
+   * **等一帧边界**的等待者（`tickets/T-0122`）—— 引擎态快照/恢复**只在帧边界**做。
+   *
+   * 为什么需要这道门：调试命令到达时落在**指令**边界（`stepOnce` 是原子的、handler 内无 await 点），
+   * 而不在**帧**边界 ⇒ 那一瞬可能正处在"本帧画了一半 / 池在 memflip 双缓冲交换中 / 纹理屏障在途"的中间态。
+   * 引擎自己的存档/重放也只在帧边界发生（`0x1F5` 计到 0 那一刻）。⇒ 本类把快照/恢复**推迟到下一个
+   * `#onFrameEnd`**，并在超时（帧循环没在跑）时**响亮失败**而不是静默地就地做。
+   */
+  #boundaryWaiters: (() => void)[] = [];
   #lastStepLog = 0; // 节流：traceAll 全量打印时 step trace 的最小间隔(ms)
   #waiting = false;
   #sleeping = false;
@@ -309,6 +324,16 @@ export class RendererSession {
                 png: bytesToBase64(png),
               }
             : { query: raw, ok: false, lines: ['capture：当前宿主没有 capture 能力（headless 没有像素）'] };
+        } else if (act && (act.a === 'snapshot' || act.a === 'restore')) {
+          // ★`tickets/T-0122`：**只在帧边界做**。命令到达时落在指令边界（不是帧边界）⇒ 先等一帧末，
+          //   再走同步的 `#applyDebugAction`（这样"取/灌"两个动作都在确定的帧边界上发生）。
+          //   超时 ⇒ `ok:false` + 原因（不静默地就地做：那会读到"画了一半"的中间态）。
+          try {
+            await this.#atFrameBoundary();
+            result = { query: raw, ok: true, lines: this.#applyDebugAction(act) };
+          } catch (err) {
+            result = { query: raw, ok: false, lines: [`✗ ${(err as Error).message}`] };
+          }
         } else if (act && act.a !== 'query') {
           result = { query: raw, ok: true, lines: this.#applyDebugAction(act) };
         } else {
@@ -582,6 +607,31 @@ export class RendererSession {
         this.#traceLog.line(`[input] 注入 ${act.events.length} 个事件：${kinds}`);
         return [`已注入 ${act.events.length} 个输入事件（${kinds}）`];
       }
+      case 'snapshot': {
+        // ★`tickets/T-0122`：引擎态快照。**只读**（`captureEngineSnapshot` 不改任何状态）。
+        //   场景态经 `sceneForSnapshot`（只读引用）传入 —— 快照要覆盖 `render4` 那两格。
+        const snap = captureEngineSnapshot(this.#e, Date.now(), this.#pixi.sceneForSnapshot);
+        this.#traceLog.line(`[snapshot] 导出引擎态：cur=${snap.cur} frames=${snap.frames.length}`);
+        return [snapshotToJson(snap)];
+      }
+      case 'restore': {
+        // ★恢复的 `warnings` **必须**打出去（`SNAPSHOT_EXCLUDED` 的口径：不许静默地"恢复了个不全的快照"）。
+        const snap = snapshotFromJson(act.json);
+        const rep = restoreEngineSnapshot(this.#e, snap, this.#pixi.sceneForSnapshot);
+        for (const w of rep.warnings) this.#traceLog.line(`[restore] ${w}`);
+        this.#traceLog.line(`[restore] 已恢复分区：${rep.restored.join(', ')}`);
+        return [
+          `已恢复：${rep.restored.join(', ')}`,
+          ...rep.warnings.map((w) => `⚠ ${w}`),
+          ...rep.skipped.map((s) => `· 跳过：${s}`),
+        ];
+      }
+      case 'snapshot':
+        // ★`tickets/T-0122`：`snapshot`/`restore` 必须**在帧边界**做 ⇒ 走 `onDebugQuery` 的异步分支
+        //   （那里先 `await #atFrameBoundary()` 再回到这里）。走到这一行只可能是有人把它接到了同步派发上。
+        return ['（内部错误：snapshot 必须走 onDebugQuery 的异步分支 —— 它要等帧边界）'];
+      case 'restore':
+        return ['（内部错误：restore 必须走 onDebugQuery 的异步分支 —— 它要等帧边界）'];
       case 'capture':
         // ★`capture` 是**异步**的（要 await 抓帧）⇒ 不走这条同步路径：真正的处理在 `onDebugQuery` 的
         //   `act.a === 'capture'` 分支（那里能 await 并把 base64 放进结果的 `png` 字段）。
@@ -717,7 +767,13 @@ export class RendererSession {
     // ★每次派发之后尽早采样：`lastDispatch` 是"最近一次"，同一帧里可能被后续派发覆盖 ⇒
     //   只在帧边界采样会漏掉点击/悬停（实测：pump 模式下的 `click` 就漏了）。
     this.#sampleDispatch();
-    if (t.opcode === 0x1f9) await this.#awaitTextureBound(t);
+    // ★门必须走 `shouldAwaitTextureBarrier`，**不许**在调用点再内联写 opcode（`T-0179` 第 70 轮修）：
+    //   修前这里只判**单条** opcode（`0x1F9`），把 `app/textureBarrier.ts` 判据集合里的 `0x249` 又滤掉了
+    //   —— 于是「同族门 0x249 也过」只在那份纯函数单测里成立，会话接线处**永远等不到它**。
+    //   语料证据（`T-0179` C 波）：全库「`i249`/`i1f9` 紧邻 `i208`」的现场只有 2 处、**都是 `i249`**
+    //   （`src/BTL.txt:4174-4175`、`src/DRAWCHP.txt:56-59`），紧接着的 `draw-texture` 直接把 `i208` 的
+    //   宽高当**源矩形**用 ⇒ 0×0 就是"贴图不可见"。守卫 = `test/texture-barrier-observable.test.ts` 的源棘轮。
+    if (shouldAwaitTextureBarrier(t.opcode)) await this.#awaitTextureBound(t);
   }
 
   #onFrameEnd(o: FrameObservation): void {
@@ -727,6 +783,32 @@ export class RendererSession {
     this.#reportDiagnostics();
     this.#traceLog.flush(); // 每帧末落盘一次（批量，避免逐行 IPC）
     this.#jsonl.flush(); // 定向 trace 也按帧末批量发送
+    // ★`tickets/T-0122`：帧边界到了 —— 放行所有等边界的快照/恢复（见 `#boundaryWaiters`）。
+    if (this.#boundaryWaiters.length > 0) {
+      const ws = this.#boundaryWaiters;
+      this.#boundaryWaiters = [];
+      for (const w of ws) w();
+    }
+  }
+
+  /**
+   * 等**下一个帧边界**（`tickets/T-0122` 的「优先只在帧边界做」）。
+   *
+   * 超时（默认 5s）⇒ 抛：帧循环没在跑时"就地做"会读到中断态，那比失败更糟 ⇒ **响亮失败**。
+   */
+  #atFrameBoundary(timeoutMs = 5000): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const t = setTimeout(() => {
+        const i = this.#boundaryWaiters.indexOf(hit);
+        if (i >= 0) this.#boundaryWaiters.splice(i, 1);
+        reject(new Error(`${timeoutMs}ms 内没等到帧边界（帧循环没在跑？）—— 快照/恢复只在帧边界做，拒绝在中断态就地做`));
+      }, timeoutMs);
+      const hit = (): void => {
+        clearTimeout(t);
+        resolve();
+      };
+      this.#boundaryWaiters.push(hit);
+    });
   }
 
   /**

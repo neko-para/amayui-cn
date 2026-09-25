@@ -22,8 +22,8 @@ generated_by: scripts/build-capabilities.mjs
 |---|---|---|
 | `modeled-verified` | 79 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 30 | 只实现了一部分（缺口写在该条 note） |
-| `absent` | 6 | 引擎有、emulator 完全没有 |
+| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
+| `absent` | 5 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
 | **合计** | **144** | 需要关注（非 n/a 且非已核验）= **41** |
 
@@ -61,7 +61,7 @@ generated_by: scripts/build-capabilities.mjs
 | `scene-dirty-flag-lifecycle` | 帧循环 | Scene+46508 「本帧需要重画」脏标志 | ✅ 已核验 | E2 · `test/headless-needs-render.test.ts` |
 | `scene-freeze-flag` | 帧循环 | Scene+46512 动画强制冻结 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
 | `scene-pending-flag-0x400-gate` | 转场 | Scene+46516 转场/等待在途标志（0x400 卫门值） | ✅ 已核验 | E3 · `test/wait-gate-timer.test.ts` |
-| `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
+| `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts#i242 <h> 1` |
 | `scene-norender-mode` | 渲染 | Engine+167990 = display:ScreenMode 镜像（窗口/全屏模式；非 0 时跳过一批窗口同步门） | 🟠 部分 | E1 · `test/engine-config.test.ts` |
 | `3d-effect-level-gate` | 3D | Scene+46668 3D 特效等级 | ➖ n/a | E1 |
 | `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ✅ 已核验 | E3 · `test/t0167-blend-env-frozen.test.ts#BlendEnv.sceneFrozen` |
@@ -102,7 +102,7 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-vram-query-64` | 资源 | 显存容量查询惰性缓存（64 位 QWORD） | ➖ n/a | E1 |
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
 | `lazy-movie-dll` | AGERC | 惰性模块加载 = AGERC 模块接口（0x14B/0x14C/0x14D；**不是**影片解码库） | ✅ 已核验 | E2 · `test/op-a4-a6.test.ts` |
-| `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | ❌ 缺失 | E1 |
+| `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | 🟠 部分 | E2 · `test/t0164-misc-batch.test.ts#★P3 0x20F：该槽纹理表为空 ⇒ 抛错` |
 | `lazy-gdi-font-set` | 消息窗 | 消息窗字体句柄组的重建（主套 CreateFontIndirectA ×10 / 注音套 ×4）——含字形度量面与两张 lfEscapement=1800 竖排面 | 🟠 部分 | E2 · `test/text-font-rebuild-set.test.ts` |
 | `lazy-script-operand-hashmap-node` | 资源 | 脚本 VM 操作数 HashMap 节点惰性分配 | 🟡 已建模未核验 | E1 |
 | `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts` |
@@ -110,7 +110,7 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-mesh-map-node` | 3D | MeshEntry 表节点惰性插入（表头 eager 130348） | ✅ 已核验 | E2 · `test/blend-mode.test.ts#0x322 的 op2 必须落进 MeshObj.blend` |
 | `lazy-572b-node-map` | 渲染 | 572B 节点表（精灵/特效）惰性插入 | 🟠 部分 | E3 · `test/live2d-chain.test.ts` |
 | `lazy-scene-effect-release-gap` | 3D | Scene+46492 / +46496 两张 effect 的释放缺口 | ➖ n/a | E1 |
-| `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | ✅ 已核验 | E3 · `test/headless-needs-render.test.ts` |
+| `bullet-dirty-from-freeze-or-pending` | 帧循环 | 冻结/pending 强制延续刷帧 | ✅ 已核验 | E3 · `test/scene-t0154-scene-state.test.ts#没有**可冻结窗时也要置脏` |
 | `chained-3d-layer-commit` | 3D | 572B「立绘 / 变换节点」层的归并与提交（原被误标为「3D 场景层」） | ✅ 已核验 | E3 · `test/live2d-render.test.ts` |
 | `adv-flag-lifecycle` | 消息窗 | ADV 激活位（effect_flags 0x8000000）的设置与清除 | 🟠 部分 | E2 · `test/adv-msgwin.test.ts#0x71 在跳读/自动模式（97050≠0）下保留显示态并置 ADV` |
 | `adv-perframe-dispatch` | 帧循环 | ADV 激活时的每帧处理：派发 1 条脚本指令 + 输入泵 | ✅ 已核验 | E2 · `test/adv-msgwin.test.ts#ADV 每帧服务：未显示完判定成立时清掉 ADV` |
@@ -147,7 +147,7 @@ generated_by: scripts/build-capabilities.mjs
 | `gallery-unlock-file-used-flags` | 资源 | 回想/鉴赏的解锁标志（FileDB「已使用文件」表）与收集度 | 🟠 部分 | E4 · `test/gallery-bgm-list.test.ts` |
 | `texture-bind-synchronous-then-query` | 资源 | set-texture 是同步装载 ⇒ 同帧「绑定 → 查尺寸/查 imgid → 画」必然一致 | 🟠 部分 | E2 · `test/texture-frame-barrier.test.ts` |
 | `mesh-vertex-quad-and-per-vertex-color` | 3D | Mesh 是「按 create-mesh 参数生成的顶点四边形 + 逐顶点 diffuse」，不是全屏黑覆盖层 | ✅ 已核验 | E3 · `test/mesh-vertex-quad.test.ts` |
-| `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | 🟠 部分 | E3 · `test/scene-3d-weather.test.ts` |
+| `scene-3d-weather-effects-rain-snow-leaf` | 3D | 3D 天气/粒子效果管理器（Rain / Snow / Leaf）的创建·重建·逐帧推进·销毁 | 🟠 部分 | E3 · `test/scene-3d-weather.test.ts#推进 N 次后粒子状态` |
 | `passive-camera-and-effect-render-state` | 帧循环 | 3D 效果的逐帧渲染状态重设（不是 opcode 设置的） | ✅ 已核验 | E3 · `test/scene-3d-weather.test.ts` |
 | `agerc-module-interface-and-version-lock` | 资源 | AGERC.DLL 模块接口：启动时加载 + 版本锁 + 100 槽导出表 | ✅ 已核验 | E3 · `test/op-a4-a6.test.ts` |
 | `text-item-record-table` | 消息窗 | 文本项记录表（Font+3364 的 72B/条 vector）：回想/历史与语音重播的账本 | ✅ 已核验 | E3 · `test/op-a2-a3.test.ts` |
@@ -285,14 +285,14 @@ generated_by: scripts/build-capabilities.mjs
 - **读的字段**：Engine+697620, Engine+378684
 - **emulator 现状**：影片未实现
 
-### `lazy-movie-texture-slot`（absent）
+### `lazy-movie-texture-slot`（partial）
 
 - **能力**：电影纹理槽（每索引）惰性创建
 - **触发**：`Engine+378688+4*i` 槽为空且该槽被指定为影片纹理
 - **缺失时为什么静默**：多个调用点（32245 / 32528 / 32600 / 32877）共享同型守卫；失败按空槽处理，无日志
-- **引擎**：sub_489040 @ raw 31627-31630
-- **读的字段**：Engine+378688
-- **emulator 现状**：未建模（why：`0x20F` 的 handler 在 `src/vm/handlers/gfx-misc.ts`，本票文件范围外；且 `Engine+4*i+378688` 是 VM 侧 `Engine` 的对象表 —— emulator 的宿主缝只拿得到意图、没有可绑的对象）。体核实（raw 31625-31649）：槽空 ⇒ `operator new(0x480)` + `sub_4890…
+- **引擎**：sub_489040, sub_4237B0, sub_4246B0, sub_488DC0, sub_489230, sub_41A300 @ raw 31627-31630
+- **读的字段**：Engine+378688, Engine+365288
+- **emulator 现状**：2026-09 `T-0164` 已落地对象表那一半（本条原写「emulator 没有可绑的对象 / 本票文件范围外」，已被它推翻）：`Engine+4*slot+378688` 的等价物 = 两个宿主的 per-slot 对象表 —— `src/renderer/pixi/textureCache.ts` 的 `#slotNodes`（`noteSlotNode` 只在槽空时建、已有即复用并返回…
 
 ### `lazy-gdi-font-set`（partial）
 
@@ -418,7 +418,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：★`sub_459F40` 入口守卫 `if (!Font+1260) return`：面名为空 ⇒ **整个重建不发生**，句柄保持 0，GDI 用系统默认字体把字画出来，全程无错误。同理 `0x2BD`（加粗）只改模板里的 lfWeight 并触发重建，不重建则"加粗"这一档完全无效。`sub_459F40` 不是"文本重排"、`0x2BD` 也不是"调 `sub_459F40`"（它不在派发表里）。
 - **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
 - **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
-- **emulator 现状**：7 条参数面（0x75/0x197/0x1A5/0x2BD/0x2BE/0x2FE/0x2DB）与面名映射/竖排都已落地并接线。★T-0151（P2 stale-ledger）换掉了两个指错的锚点。当前锚点（用标识符，行号仅参考）：op 体 `op_set_main_size`(0x75):1816 / `op_set_ruby_size`(0x197):1825 / `op_set_main_f…
+- **emulator 现状**：7 条参数面（0x75/0x197/0x1A5/0x2BD/0x2BE/0x2FE/0x2DB）与面名映射/竖排都已落地并接线。★T-0151（P2 stale-ledger）换掉了两个指错的锚点。当前锚点一律用标识符（行号刻意不写 —— 它们随每次重构漂，实测已漂过一轮，见 journal）：op 体 `op_set_main_size`(0x75) / `op_set_ruby_size`(0…
 
 ### `gallery-unlock-file-used-flags`（partial）
 

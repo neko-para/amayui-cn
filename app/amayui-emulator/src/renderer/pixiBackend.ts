@@ -41,6 +41,7 @@ import {
   scTransitionBlurPlan,
   scTransitionBlurOffsets,
   scTransitionRangeHandles,
+  transitionTargetKind,
   TRANSITION_BLUR_CENTER_WEIGHT,
   scPoolPending,
   sceneNeedsRender,
@@ -179,6 +180,18 @@ export class PixiBackend implements NativeBridge {
    * 这样"报告说对、画面不对"这类最难查的漂移就不可能发生。
    */
   private scene: SceneState = newSceneState();
+
+  /**
+   * **只读暴露场景态给调试器**（`tickets/T-0122` 的引擎态快照需要 `render4` 那两格：
+   * `transitions` / `slotModes`）。
+   *
+   * ★为什么开这个口子而不是让快照模块自己去摸：渲染侧的场景态是**封装**的（`private scene`），
+   * 而"引擎态快照"按票面必须覆盖 `render4`。⇒ 这里只给**只读**引用，且注释写明用途 ——
+   * 别在别处拿它绕封装去改场景（改场景一律走 `sc*` 那套 setter，它们的置脏/发布语义在那边）。
+   */
+  get sceneForSnapshot(): SceneState {
+    return this.scene;
+  }
 
   /**
    * **挂上 Live2D 运行态宿主**（`Engine`；`tickets/T-0054`）。
@@ -1368,6 +1381,20 @@ export class PixiBackend implements NativeBridge {
       const cat = rec[0] ?? 0;
       const slot = rec[4] ?? -1;
       if (cat !== 0 && cat !== 2 && cat !== 3) continue;
+      // ★`[4]` 落在引擎那张 0..999 槽表之外（含 `-1`）⇒ 引擎走的是**后台缓冲**那条路
+      //   （`sub_4A50C0` raw 124839 `if (a2 > 0x3E7)`：取后台缓冲、`SetRenderTarget`、记 `Scene+46456 = -1`
+      //   ⇒ 转场是**直接画在屏幕上**）。emulator 只建模了"画进 `create-texture` 出来的槽"那一种
+      //   ⇒ 这里**如实登记为有据缺口**（`tickets/T-0091` 第②项 + 能力条目 `clock-read-transition-window`
+      //   的「仍未建模 (b)」），并且**不许**把它混进 `composeIntoSlot` 的"该槽没有 create-texture 出来的
+      //   表面"那句 —— 那是**错的理由**（该分支根本不去查槽表）。守卫 = `test/transition-render-wiring.test.ts`
+      //   的「★`[4]` 的两个分支」源棘轮 + `transitionTargetKind` 的单元用例。
+      if (transitionTargetKind(slot) === 'backbuffer') {
+        this.#pushLog(
+          `[transition] id=0x${id.toString(16)} cat=${cat} [4]=${slot} ⇒ 引擎走后台缓冲（直接画到屏幕，` +
+            `sub_4A50C0 raw 124839-124861 / Scene+46456=-1）；emulator 未建模该分支 ⇒ 本帧不合成（有据缺口，T-0091 ②）`,
+        );
+        continue;
+      }
       let blurLog: string | null = null;
       let srcLog = '';
       const ok = this.textures.composeIntoSlot(slot, (ctx, w, h) => {

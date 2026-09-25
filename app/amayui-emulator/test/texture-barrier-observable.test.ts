@@ -109,4 +109,18 @@ test('★源棘轮：会话真的接上了这份判据（不再自己内联写 o
     /t\.opcode !== 0x1f9 && t\.opcode !== 0x249/,
     '★旧的内联 opcode 集合必须删掉：留着就是"判据两份"，改一处不会影响另一处',
   );
+  // ★★2026-09-25（`T-0179` 第 70 轮）：**调用点的门**也必须走判据（修前是 `if (t.opcode === 0x1f9)`）。
+  //   为什么单列一条：上面那条反向断言只覆盖"旧的 `!== && !==` 内联式"，看不见"把集合收窄回一条"这个
+  //   更隐蔽的漂移 —— 实测它真的存在（`0x249` 在纯函数判据里、却被调用点滤掉），而语料里
+  //   「`i249` → `i208` → `draw-texture`」的现场有 2 处（`src/BTL.txt:4174-4175`、`src/DRAWCHP.txt:56-59`）。
+  assert.match(
+    src,
+    /shouldAwaitTextureBarrier\(t\.opcode\)/,
+    '★调用点必须用 `shouldAwaitTextureBarrier(t.opcode)`，不许自己内联写 opcode 集合',
+  );
+  assert.doesNotMatch(
+    src,
+    /t\.opcode === 0x1f9\b/,
+    '★调用点不得把判据收窄回单条 opcode（`0x249` 会被滤掉 ⇒ 那些槽的宽高停留在 0×0）',
+  );
 });

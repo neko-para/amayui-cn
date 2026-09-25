@@ -7,8 +7,13 @@
  * node tools/dbg.cjs bl                             # 列断点（等推送）
  * node tools/dbg.cjs c                              # 继续
  * node tools/dbg.cjs click 807 621                  # 远程点一下（输入坐标；见 debugsrv.cjs 文件头）
+ *                                                   # ★默认走主进程 `sendInputEvent`（真 DOM 事件）；
+ *                                                   #   设 `AMAYUI_DEBUG_INPUT=vm` ⇒ 走渲染窗命令表（与 web 宿主同源，T-0142）
  * node tools/dbg.cjs clickimg 400 325               # 远程点一下（截图图像坐标）
  * node tools/dbg.cjs move 1240 300                  # 只移动光标（悬停门控）
+ * node tools/dbg.cjs save .tmp/x.snap.json          # ★引擎态快照落盘（`tickets/T-0122`）
+ * node tools/dbg.cjs load .tmp/x.snap.json          # ★把该快照灌回去（回执里逐条列出"没恢复的量"）
+ * node tools/dbg.cjs snapshot                       # 只取快照 JSON（不落盘；`restore <base64>` 是它的逆）
  * node tools/dbg.cjs --wait 5000 global 0           # 等最多 5s 把推送也收进来
  * node tools/dbg.cjs --json global 0                # 原样打 JSONL（不给人类看的排版）
  * node tools/dbg.cjs --ping / --quit

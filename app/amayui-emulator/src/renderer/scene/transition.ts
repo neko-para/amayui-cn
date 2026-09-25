@@ -28,7 +28,11 @@
  * 3. **`[4]` 是渲染目标层，不是"屏幕"**。引擎 `sub_4A50C0(_this, v384[4])` 把渲染目标切到那一层
  *    （raw 136174 / 134937 / 135824），淡入淡出/条带都画进**那一层**，画完由脚本自己 `draw-texture`
  *    呈现（语料里紧随其后就是 `draw-texture … (local-ptr 2) …`）。所以本模块只产出**几何/参数**，
- *    "画到哪一层"由宿主决定（`tickets/T-0084` 的缺口：emulator 的离屏层合成尚未建模）。
+ *    "画到哪一层"由宿主决定 —— 宿主已按体落地：`TextureCache.composeIntoSlot` 把 2D 合成画进
+ *    `create-texture` 出来的槽画布（`tickets/T-0084`）。
+ *    ★**仍有一个分支未建模**（`tickets/T-0091` 第②项）：`[4]` 落在引擎那张 0..999 槽表**之外**（含 `-1`）时
+ *    引擎走的是**后台缓冲**（= 直接画到屏幕、并记 `Scene+46456 = -1`，`sub_4A50C0` raw 124839-124861）；
+ *    判据由 `transitionTargetKind` 给出，宿主对它**只登记不假装**（见该函数的说明）。
  */
 import type { SceneState } from './state.js';
 
@@ -110,6 +114,44 @@ const CAT_FADE = 0;
 export const CAT_BLOCK_FADE = 1;
 const CAT_BLIND = 2;
 const CAT_BLUR = 3;
+
+/** `[4]`（渲染目标层）指向哪儿 —— 引擎 `sub_4A50C0` 的两条路（`tickets/T-0091` 第②项）。 */
+export type TransitionTargetKind =
+  /** `0..999`：引擎按**槽表** `Scene[4*slot + 42456]` 取该槽的 CTexture 对象当渲染目标。 */
+  | 'slot'
+  /** `> 999`（含 `-1`）：引擎走**后台缓冲**（= 屏幕），不查槽表。 */
+  | 'backbuffer';
+
+/**
+ * **`[4]` 的两个分支**：`slot` 还是后台缓冲（`tickets/T-0091` 第②项）。
+ *
+ * 体（`sub_4A50C0` raw 124819-124920，逐行读过）：
+ * ```c
+ * v4 = *(_DWORD *)(*(_DWORD *)(_this + 1860) + 1040);      // 设备
+ * if ( a2 > 0x3E7 ) {                                       // ★> 999（含 -1，a2 是 unsigned）
+ *   v12 = *(…)(*(_DWORD *)v4 + 72);  …GetBackBuffer…        //   取后台缓冲
+ *   if ( !v13 ) { …"バックバッファ取得に失敗しました．"… }   //   失败 ⇒ 错误串
+ *   v15 = (*(…)(*(_DWORD *)v4 + 148))(v4, 0, a2);           //   SetRenderTarget(后台缓冲)
+ *   if ( !v15 ) { …; *(_DWORD *)(_this + 46456) = -1; return 1; }   // ★成功 ⇒ 记 -1
+ * } else {
+ *   if ( !*(_DWORD *)(_this + 4 * a2 + 42456) ) {            // ★0..999 但该槽没有 CTexture 对象
+ *     sprintf_s(… "SetTargetTexture エラー：テクスチャが作成されていません． TEXTURE=%d" …);
+ *     return 0;                                             //   ★不改 Scene+46456、返回 0
+ *   }
+ *   …取该对象的 surface ⇒ SetRenderTarget ⇒ *(_DWORD *)(_this + 46456) = v2; return 1;
+ * }
+ * ```
+ * ⇒ 三种情形的**可观测差别**：`> 999`（含 `-1`）⇒ **画到屏幕**（后台缓冲）且 `Scene+46456 = -1`；
+ * `0..999` 且有对象 ⇒ 画进该槽；`0..999` 但**对象为空** ⇒ 只报错、**不动已绑的渲染目标**。
+ *
+ * ★**emulator 侧只建模了中间那一种**（`TextureCache.composeIntoSlot` 把 2D 合成画进
+ * `create-texture` 出来的槽画布）⇒ 这是**已登记的有据缺口**（见能力条目 `clock-read-transition-window`
+ * 的「仍未建模 (b)」与 `tickets/T-0091` 第②项），本函数只把**分支判据**抽出来供宿主分辨，
+ * 免得宿主把「后台缓冲」误报成「该槽没有 create-texture 出来的表面」（那是**错的理由**）。
+ */
+export function transitionTargetKind(slot: number): TransitionTargetKind {
+  return slot < 0 || slot > 999 ? 'backbuffer' : 'slot';
+}
 
 /** 记录里那一格的取法（越界/缺字段一律按 0；记录一定是 24 格，这里只是防御）。 */
 function at(rec: TransitionRecord, i: number): number {

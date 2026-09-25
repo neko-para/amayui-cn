@@ -200,3 +200,7 @@
 5. **报告说**（`frame-render-gate-mainloop` note ③）：「`sub_409400` 第二落点 `raw 13923-13929` … 多出的 `result = 0`（『这一帧不算画面推进』）」——**体里是**：`result` 只被 `raw 21178` 的调用点**丢弃**（`sub_409400(_this);` 不看返回值）⇒ 那一格的差别**不可观测**；真正可观测的是「闩锁支会**一次贴完当前窗**」。
 6. **报告说**（`src/vm/msgwin.ts:801` 的注释，同一段文字短暂出现在被回滚的 `msgwin-reveal.ts`）：「`Engine[97053]` … 该格全库只写不读」——**体里是**：`raw 13917` 就是它的读者（`else if (*(_DWORD *)(_this + 388212))`），`raw 13941` 写 1（`raw 17973`/`22604` 清 0）。
 7. **报告说**（`docs-new/03-engine/adv-text-rendering.md` 与台账口径）：「逐字期间的输入出口只有左键」——**体里是**：`raw 13935-13938` 是**三条**（左键 `0x10` / `AdvanceMesOnWheel & 1` 且滚轮下键位 / 滚轮累加器 `Engine[7796] < 0` 读后清）—— emulator 的 `serviceRevealAdvanceInput` 已按三条实现（此条只作口径提醒，非新增缺口）。
+
+## 2026-09-25
+
+第 70 轮 goal round 3：§4 别人该接 #1 已落地（由 T-0179 那轮执行）—— engine.ts 的 #cancelRoute 改读 ENGINE_FIELD.rewindMainBase + cur（raw 20367 的正确格）；守卫改成用 0x7B 造现场并新增「只注 i0cc 不注 i07b ⇒ 什么都不变」的负例（红→绿 1/4 → 4/4）。

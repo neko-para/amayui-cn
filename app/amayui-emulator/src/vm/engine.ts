@@ -1519,21 +1519,21 @@ export class Engine {
    * ⇒ emulator 直接 `frame.ip = p`，与 `0x199`（`jumpToDword`）同一条"自行定 ip"的口径。
    * `stepOnce` 之后照常从新 ip 继续派发。
    *
-   * ★**本路由的「表项」取值来源与体不符（已知口径差，`tickets/T-0169` 复核，登记不擅改）**：
-   * 体 raw 20367 读的是 `_this + 4*v6 + 489488` ⇒ 绝对下标 **`122372 + cur`** = `ENGINE_FIELD.rewindMainBase`
-   * （`0x7B` `sub_41F530` raw 28729 的 **op1** 写的就是它）；而 `0xCC`（`mouse-callback`）写的是
-   * `_this[107664]`（raw 30322，字节 430656）—— 那是**另一格**，读者是 `0xCD`（raw 25851
-   * `v4 = *(_DWORD *)(_this + 430656)`）。本函数目前取 `input.mouseJump`（= `0xCC` 的 `107664`）。
-   * ⇒ 差别：脚本只跑 `i0cc` 而不跑 `i07b` 时，引擎这里读到 -1（**直接 return、什么都不做**），
-   * 而本函数会把 `0xCC` 的目标派发出去。**本票不改行为**（`test/adv-right-click-cancel-route.test.ts`
-   * 的 8 例按现口径钉着，属 `T-0167`/`T-0168` 的文件）⇒ 修法与判据写进
-   * `tickets/T-0169/changes-reveal.md` 的「别人该接」#1。
+   * ★**本路由的「表项」取值来源 = `rewindMainBase + cur`**（`tickets/T-0169` §4「别人该接」#1，
+   * `T-0179` 第 70 轮 goal round 3 落地）：体 raw 20367 读的是 `_this + 4*v6 + 489488`
+   * （`v6 = _this[383104]` = 本帧 `cur`）⇒ 绝对下标 **`122372 + cur`** = `ENGINE_FIELD.rewindMainBase`，
+   * 写者是 **`0x7B`**（`sub_41F530` raw 28729 的 **op1**）。
+   * ★`0xCC`（mouse-callback，raw 30322）写的是 `_this[107664]`（字节 430656）—— **另一格**，
+   * 读者是 `0xCD`（raw 25851 `v4 = *(_DWORD *)(_this + 430656)`）⇒ 它**不喂本路由**。
+   * 修前本函数取 `input.mouseJump`（= `0xCC` 的那一格），后果是**真脚本上右键取消永不触发**：
+   * 语料 `i0cc` **0 处**、`i07b` **1097 处 / 334 文件**（`$1$SC03xx`/`SC08xx` 一族的 ADV 现场）。
+   * 守卫 `test/adv-right-click-cancel-route.test.ts` 的「只注 i0cc ⇒ 不取消」负例即此口径。
    *
-   * @returns `true` = 本帧有注册的 mouseJump label 且已被派发；`false` = 未注册（**什么都不变**）。
+   * @returns `true` = 本帧有注册的回退游标且已被派发；`false` = 未注册（**什么都不变**）。
    */
   #cancelRoute(): boolean {
-    // `Engine[489488 + 4*cur]`：本帧的 mouseJump 表（`0xCC` 的 op2 写 `input.mouseJump`）。
-    const jump = this.input.mouseJump | 0;
+    // `Engine[489488 + 4*cur]` = `rewindMainBase + cur`（`0x7B` 的 op1 写；raw 20367 的 v6 = cur）。
+    const jump = (this.engineValues.get(ENGINE_FIELD.rewindMainBase + this.cur) ?? -1) | 0;
     if (jump === -1 || jump === 0xffffffff) return false; // raw 20367-20368：★直接 return
     const f = this.curScript();
     const p = f.labelMap.get(jump);

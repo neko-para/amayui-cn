@@ -93,6 +93,24 @@ function withTimeout<T>(p: Promise<T>, ms: number, msg: string): Promise<T> {
   ]);
 }
 
+/**
+ * ★`T-0146`（验收③）：下面那条**真进程**用例的三条等待上限。
+ *
+ * 为什么要有名字、还要连用例的 `timeout` 一起算：原来的写法是三条各写各的数字（60s/30s/60s）
+ * 而用例 `timeout` 只有 **120s** ⇒ 三条等待之和（最多 150s）**大于**用例的超时 —— 慢机/全量
+ * 并行时失败形态会从"某条判据红（消息里带子进程输出，能归因）"退化成"整个用例被 node 掐断
+ * （只有一句 `test timed out`）"，后者与"真挂死"无法区分。⇒ 三条之和必须**严格小于**用例超时。
+ *
+ * ★这些是**上限**不是期望值：正常机器上三条都在**秒级**内满足（自停阈值本身只有 1s，
+ * 见 `shouldIdleStop` 与 `src/web/host.ts` 的检查周期），加大它们只是"机器无关化"，
+ * **判据一个字都没放松**（仍是：登记字段逐个对 + 启动横幅含真实端口 + 自停日志 + 记录被摘掉）。
+ */
+const IDLE_REGISTER_TIMEOUT_MS = 120_000;
+const IDLE_BANNER_TIMEOUT_MS = 60_000;
+const IDLE_EXIT_TIMEOUT_MS = 120_000;
+/** 用例级超时 = 三条等待之和 + 松量（把它写在派生表达式里 ⇒ 以后改上面任何一个都不会再踩"和 > timeout"）。 */
+const IDLE_TEST_TIMEOUT_MS = IDLE_REGISTER_TIMEOUT_MS + IDLE_BANNER_TIMEOUT_MS + IDLE_EXIT_TIMEOUT_MS + 60_000;
+
 test('registryPath = `<root>/instance.json`（冻结口径：插件按它找记录）', () => {
   assert.equal(registryPath('/a/b'), path.join('/a/b', 'instance.json'));
 });
@@ -261,7 +279,8 @@ test('summarizeStatus：`renderer-status` 的任意形状都收窄成 `{bin,fram
 
 test(
   '★真进程 `--idle-sec 1`：登记（真端口/真 pid/心跳）→ 秒级自停 → 记录被摘掉',
-  { timeout: 120_000 },
+  // ★`T-0146`：由三条等待之和派生（见上面 `IDLE_TEST_TIMEOUT_MS` 的说明）。
+  { timeout: IDLE_TEST_TIMEOUT_MS },
   async () => {
     const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'amayui-idle-'));
     const id = 'idle-probe';
@@ -293,8 +312,10 @@ test(
 
     try {
       // ① 等登记。★故意**不**打 /health：那会刷新活动时刻，把自停推后（探测只读文件）。
-      const r = await waitFor(() => readRecord(root), 60_000);
-      assert.ok(r, `60s 内没登记（子进程输出：\n${out}）`);
+      //   ★`T-0146`：上限用常量（见 `IDLE_REGISTER_TIMEOUT_MS`）—— 正常机器上这是**秒级**的事，
+      //   放宽只是为了不让"全量并行时的启动抖动"变成偶发红；判据（真 pid/真端口/心跳）不变。
+      const r = await waitFor(() => readRecord(root), IDLE_REGISTER_TIMEOUT_MS);
+      assert.ok(r, `${IDLE_REGISTER_TIMEOUT_MS / 1000}s 内没登记（子进程输出：\n${out}）`);
       assert.equal(r.id, id);
       assert.equal(r.pid, child.pid);
       assert.ok(r.port > 0, '`--port 0` ⇒ 记录里必须是 OS 分配的真实端口');
@@ -308,12 +329,16 @@ test(
       //   「记录已出现」并不蕴含「横幅已进 `out`」。全量并行跑时这里实测偶发红
       //   （`out` 里只有 `[web] 实例 …` 那一行）。判据本身不变（仍要求横幅 + 真实端口），
       //   只是不再假设"记录一出现横幅就已刷出"。
-      const banner = await waitFor(() => (/就绪 http:\/\/127\.0\.0\.1:/.test(out) ? out : null), 30_000);
-      assert.ok(banner, `30s 内没等到启动横幅（子进程输出：\n${out}）`);
+      const banner = await waitFor(() => (/就绪 http:\/\/127\.0\.0\.1:/.test(out) ? out : null), IDLE_BANNER_TIMEOUT_MS);
+      assert.ok(banner, `${IDLE_BANNER_TIMEOUT_MS / 1000}s 内没等到启动横幅（子进程输出：\n${out}）`);
       assert.match(out, /就绪 http:\/\/127\.0\.0\.1:/, '必须有启动横幅（含真实端口）');
 
       // ② 等它自己收工：检查周期被阈值压到 1s ⇒ 秒级（阈值 1s + 一次检查）
-      const { code, signal } = await withTimeout(exited, 60_000, `进程没在 60s 内自停（输出：\n${out}）`);
+      const { code, signal } = await withTimeout(
+        exited,
+        IDLE_EXIT_TIMEOUT_MS,
+        `进程没在 ${IDLE_EXIT_TIMEOUT_MS / 1000}s 内自停（输出：\n${out}）`,
+      );
       assert.equal(signal, null, `不该被信号杀掉（输出：\n${out}）`);
       assert.equal(code, 0, `自停是正常退出（输出：\n${out}）`);
       assert.match(out, /闲置 1s 且无观察者 ⇒ 自停/, '必须留下那行自停日志');

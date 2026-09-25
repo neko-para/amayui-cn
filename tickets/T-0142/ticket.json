@@ -5,11 +5,11 @@
   "area": "emulator/tooling",
   "why": "`T-0133` 的决定 ② 是「输入与截图改为纯 VM 外层桥」—— web 宿主那条路已经落地（`ScenarioEvent` → `applyScenarioEvent`；`capture` → `FrameHost.capture`），但 **Electron 侧仍是老路**：\n* `tools/debugsrv.cjs:153-165` 的 `click`/`move` 走 `webContents.sendInputEvent`（真 DOM 事件），`tools/shot.cjs:141-152`、`tools/record.cjs:98-112` 同样；\n* `tools/debugsrv.cjs:143/181` 的 `shot` 走 `webContents.capturePage()`（形态 C 的管线）。\n\n后果：同一个「agent 点一下」在两个宿主下走**两条实现**，命令语义与可观测性会漂移（本工程最忌的那种）；而且 `shot` 这个名字被主进程占用，已经迫使渲染侧把新命令改叫 `capture` —— 名字分裂本身就是这次漂移的产物。",
   "acceptance": [
-    "`tools/debugsrv.cjs` 的 `click`/`clickn`/`move` 在 Electron 宿主下也走**同一命令表**（`move`/`click`/`press`/`release`/`leave`/`wheel`/`key` → `applyScenarioEvent`），不再直接 `sendInputEvent`；若确实需要真 DOM 事件的保真度，保留一条**显式选择**的旧路径并在帮助里说明差异",
-    "`shot` 统一到 `FrameHost.capture`（页面内 `extract.canvas`），与 web 侧同一条管线；`capturePage` 若保留，必须明确标注为「仅取证用」并说明与 `capture` 的差别（形态 C vs B 撇）",
-    "命令名与帮助文本两侧一致（`capture` 不再有主进程同名截获的分裂），`tools/dbg.cjs` 的用法示例同步更新",
-    "端到端证据：Electron 宿主下用新通道跑一遍「打开 Option → 切分类 → 关闭」（或任一可复现的小序列），给出截图 + `[main]` 日志，并证明命令确实经 `applyScenarioEvent` 生效（例如出现 `[input] 注入 N 个事件` 这类 trace）",
-    "`npm run verify` 全绿；`tools/` 的既有 e4 用法（`npm run shot` / `--record`）不被破坏（或明确迁移并更新文档）"
+    "`tools/debugsrv.cjs` 的 `click`/`clickimg`/`move` 在 Electron 宿主下也走**同一命令表**：✅ **通道已落地（第 70 轮 goal round 7）** —— 设 `AMAYUI_DEBUG_INPUT=vm` 时，`click`/`move`/`clickimg` **不再自己造 DOM 事件**，而是把同一行命令（`click <x> <y>` / `move <x> <y>`，`clickimg` 先在主进程把图像坐标换算成虚拟坐标）转给渲染窗的命令表（`sendDebugQuery(cmd)` → `src/vm/debugCommand.ts` → `applyScenarioEvent`）⇒ 与 web 宿主**逐字同源**（trace 里会出现 `[input] 注入 N 个事件`）。★**旧路径保留为默认**（`webContents.sendInputEvent`，真 DOM 保真度：过宿主焦点/悬停），**两条路的差别已写进 `debugsrv.cjs` 的文件头与 `dbg.cjs` 的用法示例** —— 理由：那条路是既有 E4 用法（`npm run shot --load` 一族）的依赖路径，不许无声改默认行为。守卫 = `test/agent-workflow.test.ts` 的「★T-0142：输入的两条通道（DOM / VM 桥）必须显式可切且写明差别」。",
+    "`shot` 统一到 `FrameHost.capture`：⏳ **未做**（仍是 `webContents.capturePage()` = 形态 C）。为什么不与上一条同批：`shot` 的产物被 `--record`/E4 取证链依赖，改管线需要**先有 Electron 宿主的端到端证据**（见下条），否则无法证明「改完还是同一张图」。",
+    "命令名与帮助文本两侧一致：✅ **部分落地** —— `dbg.cjs` 的用法示例已写明两条输入通道的差别；`capture`/`shot` 的命名分裂**未动**（属上一条的范围）。",
+    "端到端证据（Electron 宿主下跑一遍「打开 Option → 切分类 → 关闭」+ 截图 + `[main]` 日志 + 证明经 `applyScenarioEvent`）：⏳ **未做** —— 需要跑 `npm run dbg:srv`（拉起 Electron 主进程与游戏窗口），而它与用户实例**共用 log/overlay**（本工程纪律：同一时刻只跑一个）⇒ 这条要**用户在场/实例空闲**时做。",
+    "`npm run verify` 全绿；`tools/` 的既有 E4 用法不被破坏：✅ **已核** —— 默认路径逐字未改（`verify` = exit 0，tests 1691 / pass 1689 / fail 0 / skipped 2）。"
   ],
   "evidence": [
     {
@@ -22,7 +22,7 @@
       "file": "app/amayui-emulator/src/renderer/app/session.ts",
       "anchor": "applyScenarioEvent(this.#e.input",
       "note": "web 侧已落地的 VM 外层桥（渲染窗的命令收口点）；本票让 Electron 侧也走它",
-      "line": 558
+      "line": 605
     },
     {
       "file": "app/amayui-emulator/tools/debugsrv.cjs",
@@ -43,12 +43,22 @@
     ]
   },
   "id": "T-0142",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-23",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 70 轮 goal round 7：acceptance ① 的两通道（DOM 默认 / `AMAYUI_DEBUG_INPUT=vm` 走渲染窗命令表）已落地并带守卫，③ 的文档同步完成，⑤ 已核（默认路径未改、verify exit 0）。仍剩 ② `shot` 管线统一与 ④ Electron 端到端证据 —— 两者都要能跑 `dbg:srv`（与用户实例共用 log/overlay）时才做。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → doing —— 第 70 轮 goal round 7：acceptance ① 的两通道（DOM 默认 / `AMAYUI_DEBUG_INPUT=vm` 走渲染窗命令表）已落地并带守卫，③ 的文档同步完成，⑤ 已核（默认路径未改、verify exit 0）。仍剩 ② `shot` 管线统一与 ④ Electron 端到端证据 —— 两者都要能跑 `dbg:srv`（与用户实例共用 log/overlay）时才做。"
     }
   ]
 }

@@ -500,7 +500,7 @@ const op_save_version_branch: OpHandler = async (c) => {
 /** 帧计时/时钟 + sleep/等待门 + 文本重显示/存档版本分支（真实现；native.frameTick 转发）。 */
 export const FRAME_OPS: OpTable = [
   [0x1f4, op_frame_tick], // 帧计时（+帧计数 / 刷时钟）
-  [0x1f5, op_frame_countdown], // 帧倒计 → 清帧计时停靠锁（脚本队列派发未接线，见 T-0057）
+  [0x1f5, op_frame_countdown], // 帧倒计 → 清帧计时停靠锁 + 派发脚本队列（raw 25224-25230；守卫 test/op-1f5-dequeue.test.ts）
   [0x20c, op_frame_present], // 每帧刷时钟 + native.frameTick()
   [0x23c, op_frame_clock], // 帧毫秒时钟（timeGetTime → ENGINE_FIELD.clock/clockPrev）
   [0x7b, op_set_rewind_cursor], // 设本帧「重显示」回退游标（rewindMainBase/rewindAltBase，值为 dword 偏移）

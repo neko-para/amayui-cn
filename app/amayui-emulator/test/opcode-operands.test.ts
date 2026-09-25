@@ -116,9 +116,14 @@ const EXPECTED_THROW: Record<string, string> = {
   '0x53': '除数为 0 ⇒ 引擎抛除零异常（合成指令里除数是 0）',
   '0x54': '模数为 0 ⇒ 同 0x53',
   '0x60': 'random 模数为 0 ⇒ 同 0x53',
-  '0x61': '合成指令给的是 int 本地槽 ⇒ `setRefOperand` 抛（src/vm/operand.ts:147）。★**引擎并不要求 op1 是指针型**：体按操作数自身 tag 分派（`sub_418CC0(_this, 1, tag, 值, …)`，raw 37750），直接型就写同类型的直接槽 ⇒ 这是 emulator 侧的已知分叉，见 `analysis/opcode-gaps.json` 的 `0x61` partial 条目',
-  '0x63': '同 0x61（`setRefOperand` 的 6 种指针型限制；引擎按 tag 分派）',
-  '0x12c': '同 0x61（`setRefOperand` 的 6 种指针型限制；引擎按 tag 分派）',
+  // ★理由订正（2026-09-25，`T-0179` 第 70 轮）：旧注写「引擎并不要求 op1 是指针型 / 引擎按 tag 分派」是**误读**。
+  //   读 `sub_418CC0`（raw 24363-24404）全文：`switch (*(v6 - 1))` 只有 case 6/7/8/12/13/14（指针族），
+  //   `default:` 直接 `_CxxThrowException(&pExceptionObject, &_TI1_AVCommand_Type_Exception__)`（raw 24399-24401）
+  //   ⇒ **引擎对直接型 op1 也抛**，emulator 的 `setRefOperand` default 支（src/vm/operand.ts:146-148）与它同构。
+  //   语料侧复核：`^lookup-array ` 143885 处的 op1 全是指针族（直接型 0 处）⇒ 这条 throw 是**与引擎一致**的行为，不是分叉。
+  '0x61': '合成指令给的是 int 本地槽 ⇒ `setRefOperand` 抛（src/vm/operand.ts:147）。★与引擎一致（`sub_418CC0` raw 24399-24401 对直接型同样 `_CxxThrowException(Command_Type_Exception)`），不是 emulator 侧的分叉',
+  '0x63': '同 0x61（`setRefOperand` 的 6 种指针型限制与引擎 `sub_418CC0` 同构）',
+  '0x12c': '同 0x61（`setRefOperand` 的 6 种指针型限制与引擎 `sub_418CC0` 同构）',
   '0x64': 'copy-local-array 需要字面数组数据（脚本携带的 dataArray）',
   // ★三条控制流 + `0xa3` 的理由同源（`T-0179` 的两级解析）：合成脚本里目标不是标签、也不是
   //   `dwordToInstr` 里的合法偏移（合成脚本只有这一条指令）⇒ 两级都查不到 ⇒ 抛宿主护栏「越出脚本」。
@@ -131,7 +136,7 @@ const EXPECTED_THROW: Record<string, string> = {
   '0x7c': 'local-ret（重显示返回端）：要求 redisplayMode 的 0x2000000 位置位（合成指令没有上下文 ⇒ 引擎同样抛 aEnd.hwl）',
   '0x14c': 'AGERC 导出绑定：需要先加载模块（合成指令里模块未加载）',
   '0x14d': 'AGERC 槽调用：需要先绑定导出',
-  '0x2c9': '需要**指针型**目标操作数（同 0x61：`setRefOperand` 的限制，非引擎要求）',
+  '0x2c9': '需要**指针型**目标操作数（同 0x61：`setRefOperand` 的限制与引擎 `sub_418CC0` 同构）',
   '0x2dd': '同 0x192（需要字符串型）',
   // ★B3（`tickets/T-0076`）新注册的两条字符串族：合成指令给不出字符串型操作数（`0x1B2` 读 op1 字符串、
   //   `0x1C8` 写 op1 字符串）⇒ 与 0x192/0x1A9 同因；语义与守卫见 `test/op-1b2-text-buffer.test.ts`。

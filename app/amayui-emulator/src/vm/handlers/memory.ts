@@ -62,8 +62,8 @@ const op_lookup_array_2d: OpHandler = (c) => {
  * ```
  * ★**方向**：源是 `op1`、目标是 `op2`（`sub_42AEA0(this,1)` 是**第 2 实参** `memcpy` 的 src）。
  *   修前的 emulator 把 `op1` 当目标、`op2` 当源 —— **反了**，于是每个脚本里的 `i1b0` 都在往错的
- *   方向搬（把目标清成源的旧值）。语料里 `^i1b0` 命中 **0** 处（941 个 `src/*.txt`），所以这条修正
- *   只能由合成守卫证伪/证实（`test/operand-memcpy-direction.test.ts`）。
+ *   方向搬（把目标清成源的旧值）。★**语料计数订正（2026-09-25，`T-0179` 第 70 轮）**：原来这里写「`^i1b0` 命中 0 处」是**助记符写错** —— `0x1B0` 的助记符是 **`memcpy`**（`analysis/opcodes.json` opcode 432），实测 `^memcpy ` = **255 处**（op1 = global-int 187 / local-int 10 / local-ptr 58；op2 = global-int 192 / local-int 20 / local-ptr 43，两列各自合计 255），含指针族的实例如 `CALCARM.txt:8 memcpy (local-ptr 0) (global-int 519ae1) 8`。
+ *   ⇒ 方向修正**有真实语料面**；跨 kind 只在 ptr 指向 float/str 槽时触发（静态不可判定）。
  *
  * ★**异构但仍要抛（登记的限制，不是"照命名抛"）**：引擎是**裸 `memcpy`（4*n 字节）**，完全不看两边的
  *   类型。emulator 的池是**带类型**的（int 池存 `ENC(值)`、float 池存 JS number、str 池存 JS 字符串、

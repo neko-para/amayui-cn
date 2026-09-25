@@ -225,6 +225,7 @@ node scripts/asm/cli.js -e sjis -a src/XXX.txt      # 重汇编（改脚本后�
 | `.agents/skills/amayui-engine-analysis/scripts/scripts.js` | 第三层台账：查询 + 增删改 + 自检（`--summary/--index/--coverage/--find/--id/--validate`、`--add/--edit/--rm`、`--recount`） | **不另起一份**，避免两份漂移 |
 | `.agents/skills/amayui-engine-analysis/scripts/ledger.js` | 条目级手术（`layout`/`slots` 整段替换、按计划文件做 `set/add/unset/mutate`）；★默认 dry-run，`--write` 才落盘 | 结构化数组/多条一起改时**优于** `--set`；改 `counts` 会被拒 |
 | `.agents/skills/amayui-engine-analysis/scripts/gaps.js` | 缺口台账全文/明细（`--show` / `--missing` / `--stale` / `--recount`） | 脚本里遇到的"未实现/近似"最终落在缺口台账，用它取全文 |
+| `.agents/skills/amayui-engine-analysis/scripts/check-ledger-refs.js` | **台账正文里的 `文件:行` 引用体检**（只读；`--check` 有候选即非零） | 改过被台账引用的源码之后跑一次：行号是"缓存"、**没有棘轮保护**，重构后会静默指错 |
 | `scripts/build-scripts.mjs` | 把台账渲染成 `docs-new/05-scripts/` | 仓库根；生成物勿手改 |
 | `scripts/build-callgraph.mjs` | 重建 `output/callgraph.json`（谁 call 谁） | `entry` 的证据来源 |
 | `scripts/asm/cli.js` | 反汇编 / 重汇编（`-d` / `-a`，`-e sjis`） | 指令集 = `scripts/asm/opcodes.json` |

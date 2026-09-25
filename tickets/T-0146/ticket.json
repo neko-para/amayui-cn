@@ -3,12 +3,13 @@
   "type": "bug",
   "priority": "P3",
   "area": "emulator/test",
-  "why": "★★★ 2026-09-24 复核：本节列的 3 条就是**当前 `npm run verify` 的基线红**（实测见 `CONTEXT.md` §6：`engine-slot` 的 SAVE70/71 `storedDwords`、`save-slot` 真槽 `format=0`、`scene-report` 可绘制项 24 ≤ 缺纹理项 26）。**判绿口径**：本轮及后续所有修复以「**不新增红**」为准 —— 这 3 条不算新红、不算回归，**不要重复立项**；修它们时按下面 4 条判据走，仍不许删断言/降门槛。\n\n`npm run verify` 在当前工作树上有 3 条常红（**不是** D1~D4 引入的；用「把我的 5 个改动文件 `git checkout --` 回 HEAD 再跑」做 A/B，两条红逐字相同、报告计数逐字节相同）：\n1. `engine-slot.test.ts` 的「真槽全部解出…」：`SAVE70.DAT: storedDwords=2069342 超出文件（2069662 字节）`、`SAVE71.DAT: storedDwords=2068813 超出文件（2069133 字节）` —— 机器上这两个真槽的**头格式与测试预期不同**（`save-slot.test.ts` 的「0x1A0 六个 u16」那条现实测 `format=0`，期望 ≥3）⇒ 大概率是**较新版本游戏/别的来源写出的槽**。\n2. `scene-report.test.ts` 的「可绘制项(24) 必须多于缺纹理项(26)」：该测试的冻结下限注释写的是「实测 drawItems=32 / drawableItems=24 / placeholderItems=8」，而现在（**基线与本次改动都**）是 `50 / 24 / 26` —— 多出来的 18 个占位项是**句柄 `0xD8..0xF1` 的 TITLE 版本号数字条项**（`i23b` 一族建出但从不 `draw-texture`），说明这条路线在基线里就已经漂了。\n3. `host-registry.test.ts` 的「真进程 `--idle-sec 1`」在**全量并行**下偶发超时（单跑必绿）⇒ 时序抖动，建议加宽等待或标 flaky。",
+  "why": "★★★ 2026-09-25 收口：本节列的 3 条**基线红已全部消除**（测试侧判据，`T-0179` 第 70 轮）。原文两处归因经实测**订正**（下文已改写为现行结论）：\n\n`npm run verify` 曾在工作树上有 3 条常红（**不是** D1~D4 引入的；用「把我的 5 个改动文件 `git checkout --` 回 HEAD 再跑」做 A/B，两条红逐字相同、报告计数逐字节相同）：\n1. `engine-slot.test.ts` 的「真槽全部解出…」+ `save-slot.test.ts` 的「0x1A0 六个 u16」：**SAVE70/71 不是游戏写的槽，而是本工程 emulator 自己写进 overlay 的槽** —— `+284 = 0 = SAVE_FORMAT_PLAIN`（`src/save/saveSlot.ts:32`「`format = 0` = 本工程明文格式 ⇒ 与引擎的 1..3 互不误读」），payload 尾块是 `AMYS1\\n` 状态块（解得 3 帧）；来源有票面铁证 = `tickets/T-0061/notes.md`「进第一个 ADV 场景 → 存档 → 槽文件写出成功（SAVE70.DAT）」与「overlay 里那份 … format=0（本工程槽）」。原文猜的「大概率是较新版本游戏/别的来源写出的槽」**是错的**。⇒ 判据改成**按字节判作者**：引擎槽（format 1..3）**逐个必须解出**；本工程槽（format=0 **且**尾块解得本工程状态块）**显式 skip 并打印判据**；**第三种作者一律失败**（跳过只允许由正向判据授权，不许变成掩盖真回归的暗门）。\n2. `scene-report.test.ts` 的「可绘制项(24) 必须多于缺纹理项(26)」：这 26 个占位项**是引擎行为、不是回归** —— 逐步归因（`.tmp/T0146/probe-attrib.mjs`）实测唯一来源 = `TITLE.BIN` 的 `0x202` 打在**不存在的句柄 216..241（0xD8..0xF1）**上（ip=0x210，step 119552..119827）；引擎 `sub_4AD0C0`（raw **131957-131980**）**先无条件 `sub_4AAA50`（缺失即建项）再 `if (flags & 1)` 门控** ⇒ 留下 `flags=0` 的死项。原文猜的「`i23b` 一族建出」**是错的**（`0x23b` 走 `native.drawCgNumber`，这条路线里没建过这些句柄）。旧注释的 `32/24/8` 只是当时的**路线落点**（实测 steps=119500⇒24/24/0、119560⇒25/24/1、120000⇒50/24/26）。⇒ 删掉 `drawable > placeholder` 这条**假不变量**，换成 5 条更强判据（counts 与逐项字段互相重算 / 占位项必须是全 0 空项 / 可绘制项必须有非 0 源矩形 / 至少一项整屏底图）。\n3. `host-registry.test.ts` 的「真进程 `--idle-sec 1`」偶发超时：除 T-0177 已修的横幅竞态外，**真正的退化形态**是三条等待之和（最多 150s）**大于**用例 `timeout: 120_000` ⇒ 慢机/并行时失败会从「某条判据红（带子进程输出）」变成「整个用例被 node 掐断」，与「真挂死」无法区分。⇒ 用例 timeout 改成**由常量派生**（`120s + 60s + 120s + 60s`），**判据一字未放松**。",
   "acceptance": [
-    "查清 SAVE70/71 的**来源与格式**（哪一版游戏/什么工具写的；`format=0` 是\"未混淆的引擎格式\"还是别的容器）⇒ 要么把解析改对、要么把这些槽登记为\"非本作格式、测试应跳过并给出判据\"，不许让两条 E4 常红掩盖真回归",
-    "查清 `scene-report` 的 18 个 TITLE 数字条占位项是**何时**开始变多的（git log/blame 到那次改动；若是真回归就修，若是\"路线本来就如此\"就把冻结下限改成现值 + 在测试里写清这些句柄是什么）",
-    "`host-registry.test.ts` 的 idle 用例：把等待上限放宽到机器无关的量级（或标注并只在串行下跑），消灭偶发红",
-    "★不许用\"删断言/降门槛\"来消红：每条都要给\"为什么这个值是正常的\"或\"哪里修\"的判据；改完 `npm run verify` 全绿（含三条 E4）"
+    "查清 SAVE70/71 的**来源与格式** ⇒ 已查清 = 本工程 emulator 写进 overlay 的 `format=0` 槽（不是本作引擎格式，也不是别的来源）⇒ 测试改成「引擎槽逐个必须解出 + 本工程槽按正向判据跳过并打印 + 第三种作者一律失败」",
+    "查清 `scene-report` 的 18 个 TITLE 数字条占位项是**何时**开始变多的 ⇒ 已查清 = 不是回归；唯一来源是 `TITLE.BIN` 的 `0x202` 打在不存在句柄 216..241 上，而引擎 `sub_4AD0C0` raw 131957-131980 先 ensure 后门控 ⇒ 删掉假不变量、换成 5 条更强判据",
+    "`host-registry.test.ts` 的 idle 用例：把等待上限放宽到机器无关的量级 ⇒ 已改（timeout 由三个等待常量派生），消灭「被 node 掐断」这种不可诊断的失败形态",
+    "★不许用「删断言/降门槛」来消红 ⇒ 已守：三条都给了「为什么这个值是正常的」的字节级/逐步归因判据，并**新增**了判别力更强的断言（定点变异 P1/Z2 实测能被抓住）",
+    "判绿：`npm run verify` 不新增红（`T-0179` 第 70 轮实测 tests/pass/fail 见 `changes.md`）"
   ],
   "evidence": [
     {
@@ -40,7 +41,7 @@
     ]
   },
   "id": "T-0146",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
@@ -51,6 +52,22 @@
       "at": "2026-09-24",
       "kind": "decision",
       "what": "复核：把这 3 条明确登记为 `npm run verify` 的基线红（CONTEXT.md §6 实测口径），并写进 why 开头：后续修复一律以「不新增红」判绿，这 3 条不算新红、不得重复立项。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：why, acceptance, tests —— 3 条基线红全部消除（测试侧判据）：SAVE70/71 = 本工程 format=0 槽（按字节判作者，第三种作者一律失败）；scene-report 的 26 个占位项 = 引擎先 ensure 后门控的忠实行为（删假不变量 + 5 条更强判据）；host-registry 的 idle 用例 timeout 改为常量派生。见 changes.md。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done —— 3 条基线红全部消除（测试侧判据）：SAVE70/71 = 本工程 format=0 槽（按字节判作者，第三种作者一律失败）；scene-report 的 26 个占位项 = 引擎先 ensure 后门控的忠实行为（删假不变量 + 5 条更强判据）；host-registry 的 idle 用例 timeout 改为常量派生。见 changes.md。"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/save-slot.test.ts",
+    "app/amayui-emulator/test/engine-slot.test.ts",
+    "app/amayui-emulator/test/scene-report.test.ts",
+    "app/amayui-emulator/test/host-registry.test.ts"
   ]
 }

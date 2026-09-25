@@ -30,7 +30,7 @@ const RAW = resolveResourceDir(ROOT);
 // 120k 步足以越过启动画面进入 draw-texture 阶段（实测 0x1fb 首次出现在 step 96154）
 const OPTS = { script: 0, steps: 120_000, write: false as const, resourceDir: RAW, frameMs: 16 };
 
-test('场景执行报告：产出 op 计数 / 模型快照 / 三张缺口清单', async () => {
+test('场景执行报告：产出 op 计数 / 模型快照 / 三张缺口清单', async (t) => {
   const { report, jsonl, snapshotText } = await runSceneReport(OPTS);
 
   assert.ok(report.meta.steps > 1000, `应执行足量指令（实际 ${report.meta.steps}）`);
@@ -46,16 +46,72 @@ test('场景执行报告：产出 op 计数 / 模型快照 / 三张缺口清单'
   assert.ok(c.drawableItems >= 0 && c.placeholderItems >= 0, '两个计数都应存在');
   // ★2026-09-23 补独立 oracle（`tickets/T-0125` / 变异实测 Z2）：原来这里**只有**下面那条恒等式，
   //   而 `snapshot.ts` 就是 `placeholderItems: drawItems.length - drawable.length` —— 把 `drawable`
-  //   恒置空也照样绿（实测：全量 1078 例无一红）。恒等式保留作口径自检，但真正有判别力的是**冻结下限**：
-  //   这条路线（启动链 120k 步）实测 drawItems=32 / drawableItems=24 / placeholderItems=8。
-  assert.ok(c.drawItems >= 28, `绘制项应 >= 28（实测 32，实测值见本行注释）`);
+  //   恒置空也照样绿（实测：全量 1078 例无一红）。恒等式保留作口径自检，但真正有判别力的是**冻结下限**。
+  assert.ok(c.drawItems >= 28, `绘制项应 >= 28（实测 50 = 24 可绘制 + 26 个 TITLE 淡入段建出的空项）`);
   assert.ok(c.drawableItems >= 20, '可绘制项应 >= 20（实测 24）—— 这是独立下限，不是 drawItems - placeholderItems');
+
+  /*
+   * ★★2026-09-25（`tickets/T-0146`）：**删掉**旧断言 `drawableItems > placeholderItems`，
+   * 换成下面几条**语义**判据。为什么旧断言必须走：
+   *
+   *  1. 实测（逐步归因 `.tmp/T0146/probe-attrib.mjs`）26 个占位项的**唯一**来源是
+   *     `TITLE.BIN` 的 `0x202 set-draw-color` 打在**不存在的句柄 216..241**（= `0xD8..0xF1`，
+   *     `ip=0x210`，step 119552..119827，每次 `(delay=400, dur=200, α=-1, rgb=-1)`）。
+   *  2. 引擎在**同一格就是这么做**的 —— `sub_4AD0C0`（raw 131957-131980）**先无条件调
+   *     `sub_4AAA50`（缺失即建项：`sub_49A300` 建一个全 0 元素再插进 `Scene+1032` 的表）**，
+   *     之后才 `if ((*(_BYTE*)result & 1) != 0)` 启动颜色窗 ⇒ 句柄不存在时引擎**留下一个
+   *     `flags = 0` 的死元素**（永远不进渲染）。emulator 的 `scEnsureItem` + 门控与它逐字同形。
+   *  3. ⇒ 「占位 > 可绘制」是这条路线的**事实**，不是缺陷；旧断言把「缺纹理项」这个名字用错了
+   *     （**占位 ≠ 缺纹理**：占位项连纹理槽/源矩形都是 0，是"从没被画过"，不是"纹理找不到"）。
+   *  4. 冻结下限注释里那句 `drawItems=32 / 24 / 8` 是 2026-09-23 那次快照的**路线落点**，不是不变量：
+   *     这 26 项在 120k 步预算的**最后 ~450 步**才建出来（实测：steps=119500 ⇒ `24/24/0`；
+   *     119560 ⇒ `25/24/1`；120000 ⇒ `50/24/26`）⇒ 预算在脚本里的落点只要漂几百步，两个数就换一组。
+   *
+   * 换上的几条都是**性质**（不假设两个计数谁大，也不钉句柄号），而且**比旧断言更强**：
+   * 把 `drawable` 判空（Z2 变异）会让 24 个真项混进占位集合 —— 它们 `tex=4`、源矩形非 0 ⇒ ①立刻红。
+   */
+  const items = report.snapshot.drawItems;
+  const placeholders = items.filter((d) => !d.drawable);
+  const hex = (d: { handle: number }): string => `0x${d.handle.toString(16)}`;
+  // ⓪ `counts` 的两个数必须能由**逐项导出的 `drawable` 字段**重算出来（两个口径同源，互相钉住）。
+  //   ★这条是独立重算（不是 `counts` 内部的减法）：只改 `snapshot.ts` 里那个局部 `drawable` 数组
+  //   （或改 flags 判据）而不同步逐项字段 ⇒ 这里立刻红。判别力取证见 `.tmp/T0146/`（变异 P1）。
+  assert.equal(
+    c.drawableItems,
+    items.filter((d) => d.drawable).length,
+    'counts.drawableItems 必须等于逐项 `drawable` 字段的计数（不许只在计数上做手脚）',
+  );
+  assert.equal(
+    c.placeholderItems,
+    items.filter((d) => !d.drawable).length,
+    'counts.placeholderItems 必须等于逐项 `!drawable` 的计数',
+  );
+  // ① 占位项 = **全 0 空项**（引擎 `sub_49A300` 的默认元素；由 setter 在缺失句柄上建出）
+  const notBlank = placeholders.filter((d) => d.tex !== 0 || d.flags !== 0 || d.src.w !== 0 || d.src.h !== 0);
+  assert.deepEqual(
+    notBlank.map(hex),
+    [],
+    '占位项必须是全 0 的空项（有纹理槽/flags/源矩形 ⇒ 它其实是被画过的项，判据把它们算漏了）',
+  );
+  // ② 每个可绘制项都必须有非 0 源矩形（"可绘制"这个名字的兑现）
+  const noSrc = items.filter((d) => d.drawable && (d.src.w <= 0 || d.src.h <= 0));
+  assert.deepEqual(noSrc.map(hex), [], '可绘制项必须有非 0 源矩形（否则它画不出任何东西）');
+  // ③ 启动链真的把整屏画出来了：至少一项可绘制项是覆盖屏幕的底图（**不依赖句柄号**的语义判据）
+  const fullScreen = items.filter(
+    (d) => d.drawable && d.dst.x === 0 && d.dst.y === 0 && d.src.w >= 1000 && d.src.h >= 600,
+  );
   assert.ok(
-    c.drawableItems > c.placeholderItems,
-    `可绘制项(${c.drawableItems}) 必须多于缺纹理项(${c.placeholderItems})：这条路线不该以缺纹理为主`,
+    fullScreen.length >= 1,
+    `至少一项可绘制项是覆盖屏幕的底图（实测 ${fullScreen.length} 项，句柄 ${fullScreen.map(hex).join(',')}）`,
   );
   assert.equal(c.drawItems, c.drawableItems + c.placeholderItems, '空项 + 可绘制 = 总数（口径自检）');
   assert.ok(snapshotText.includes('场景快照'), '应产出人可读快照文本');
+  // 把实测口径打进诊断（下一个审计者不必重跑探针就知道这两个数是谁）：
+  t.diagnostic(
+    `[snapshot] drawItems=${c.drawItems} drawable=${c.drawableItems} placeholder=${c.placeholderItems}` +
+      `（占位句柄 ${placeholders.length ? `${hex(placeholders[0]!)}..${hex(placeholders[placeholders.length - 1]!)}` : '无'}，` +
+      `全部 tex=0/flags=0/源矩形 0）`,
+  );
 
   // ★闸门 A：这条路线确实会调用宿主没实现的 native（setLight / stringResourceId / unhandled …）
   assert.ok(report.droppedIntents.length > 0, '应有"意图被丢弃"清单');

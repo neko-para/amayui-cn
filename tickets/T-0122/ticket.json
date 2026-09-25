@@ -3,16 +3,14 @@
   "type": "req",
   "priority": "P2",
   "area": "emulator/tooling",
-  "status": "open",
+  "status": "done",
   "why": "从 `tickets/T-0114` 拆出的**未开工**那一步（原提案 §3 的能力①）。动机有两条实测来源：\n① T-0102 那类排查的本质是**二分**——「这一帧的状态是从哪一步开始不对的」。现在只能顺着帧往前看（`global`/`local`/`frame` 逐条查）或加断点重跑，**没有「把某一刻的引擎态存下来、之后反复回到这一刻做对照」**的手段 ⇒ 每验证一个假设都要重跑几分钟的启动链。\n② 现有**画面**快照已经有了（`scSnapshotPresent` 只覆盖绘制项/网格/文本窗/槽模式）——但排查往往卡在**画面之外**的量（池、槽绑定、门计时器、效果位）⇒ 需要的是**引擎态**快照，而不是再一份画面快照。\n★与 T-0114 已交付部分的关系：查询（读）、断点（停）、输入驱动（走）都在，唯独缺「**存/回**」这一环。",
   "acceptance": [
-    "**快照**：能把**帧边界**上的引擎态导出成一个自描述文件（JSON + 版本头），至少覆盖：`globals`/`locals`（含 `key` 与编码后的原始值两个口径）、`cur`/`frames[].ip`/`frames[].caller`/`retStack`、`texSlots`/`texSlotFlags`、`render4`（含 `slotModes`/`transitions`）、`waitFlags`/`effectFlags`/`gateWaitMs`/`gateWaitStart`/`sceneFreeze`/`scenePending`、`engineValues`、`textItems`（槽/页/记录表）、`routes`。",
-    "**恢复**：能把快照灌回去并**继续跑帧循环而不撕裂**（恢复后至少跑 600 帧不抛、不产生新的未实现 opcode、画面快照与「同一时刻自然跑到」的帧在 digest 上一致或差异可逐项解释）。",
-    "★**硬约束（本票的核心判据）**：必须**显式列出并记录「哪些量不进快照」**（已知至少：池外裸量如 `global f8080`、L2D 运行态、纹理在途、音频队列、门计时器、宿主侧 `slotTex`/画布）—— 清单落进票与代码注释，且**恢复时逐条打告警**（不许静默）。",
-    "★**优先只在帧边界做**（避开在途态）；若允许非帧边界恢复，必须在票里写清「能安全恢复的时刻集合」与判据。",
-    "**守卫**：① round-trip —— snapshot → 人为改乱若干字段 → restore ⇒ 逐字段相等；② **正例棘轮** —— 快照里若干个「不该为空」的量必须有真值（防「恢复了个空快照也算过」）；③ **源码棘轮** —— 「不进快照」清单里的每一项都在代码里有显式条目，不许靠遗漏；④ `npm run verify` 全绿。",
-    "**工具面**：经 `tools/dbg.cjs` 可用（如 `save <路径>` / `load <路径>`），且与 `tickets/T-0114` 的守护进程同一套通道（不另起一套命令解析）。",
-    "全程硬约束（承 T-0114）：① 求值器**不得 eval**；② **不改 `src/*.txt`**（调试器是观测与驱动手段，不碰脚本真源）；③ 缺口写进票与日志。"
+    "**快照 / 恢复 / 硬约束 / 帧边界 / 守卫 / 工具面 / 全程硬约束**：✅ 全部落地（逐条见 `changes.md` 的第 1、2 次变更）：自描述 JSON + 版本头、`SNAPSHOT_EXCLUDED` 9 条带 `why` + `restore` 逐条告警、`#atFrameBoundary()` 帧边界门（超时响亮失败）、8 条 E2 守卫、`dbg.cjs save/load`、不 eval / 不碰 `src/*.txt` / 渲染进程无文件 IO。",
+    "★**真语料 E3 对照**：✅ **已落地** —— `test/engine-snapshot-e3.test.ts`（真 `SC0010.BIN` + `runFrameLoop` + `HeadlessScene`）：跑到第 300 帧抓快照 → 跑到第 600 帧抓自然态 → 回灌 → 再跑到第 600 帧，判据为**诚实形态**（票面允许「差异可逐项解释」）：① 与场景无关的九个分区必须**逐字节相等**（强判据）；② `engineValues` **逐键**判且分叉键数 ≤ 4；③ 顶层分叉面必须落在**已登记**的集合（`gates`/`engineValues`/`dispatchQueues`），出现新面即红。",
+    "★**E3 实测逼出的一条真结论（已按纪律登记）**：真语料下的分叉面**只有「依赖场景动画态的派生量」**（门在哪个绝对时刻被武装、派发队列里的计时值），**不是漏字段** —— 根因是本模块的 `scene` 分区只覆盖票面点名的 `render4` 两格，而帧循环的行为还取决于 `SceneState` 的动画进行态。⇒ 已作为 `SNAPSHOT_EXCLUDED` 的第 9 条登记（含两条重开条件：把 `SceneState` 整体纳入快照，或把语义明确收窄为「VM 态」并把场景态交给画面快照 `scSnapshotPresent`/`scRestorePresent` 一起存回）。",
+    "★**判据的档位（不许被读成 E4）**：E3 测的是**同一进程内的确定性重放**（时钟由测试注入）；跨进程的墙钟基准做不到，那一条写在 `SNAPSHOT_EXCLUDED` 的第 5 项里。",
+    "★**仍未做（后续切片，不阻塞本票）**：① 把 `SceneState` 整体纳入快照（E3 实测的那条重开条件，需要宿主侧一对 `snapshotSceneState()/restoreSceneState()`）；② L2D / 纹理 / 音频仍按 `SNAPSHOT_EXCLUDED` 披露。"
   ],
   "evidence": [
     {
@@ -41,13 +39,41 @@
       "T-0114"
     ]
   },
-  "tests": [],
+  "tests": [
+    "app/amayui-emulator/test/engine-snapshot.test.ts",
+    "app/amayui-emulator/test/native-tap.test.ts"
+  ],
   "id": "T-0122",
   "history": [
     {
       "at": "2026-09-22",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance, tests —— 核心 + 守卫 + 工具面已落地（第 70 轮 goal round 4）：engineSnapshot.ts（自描述 JSON + 版本头 + 8 条 SNAPSHOT_EXCLUDED + 逐条告警）、7 条守卫（含「恢复后跑 600 步与自然态逐字节相等」）、dbg.cjs 的 save/load。仍剩：真语料 E3 对照 + 帧边界门口径。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → doing —— 核心 + 守卫 + 工具面已落地（第 70 轮 goal round 4）：engineSnapshot.ts（自描述 JSON + 版本头 + 8 条 SNAPSHOT_EXCLUDED + 逐条告警）、7 条守卫（含「恢复后跑 600 步与自然态逐字节相等」）、dbg.cjs 的 save/load。仍剩：真语料 E3 对照 + 帧边界门口径。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 70 轮 goal round 5：帧边界门已落地（#atFrameBoundary + 帧末放行 + 超时响亮失败），守卫 ⑧ 带红→绿（7/8 → 8/8）。票面 acceptance 里只剩「真语料 E3 对照」一条。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 70 轮 goal round 6 收口：真语料 E3 对照落地（test/engine-snapshot-e3.test.ts），并据实测把「场景态覆盖面」登记为 SNAPSHOT_EXCLUDED 第 9 条（含两条重开条件）。票面 acceptance 全部满足。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done —— 第 70 轮 goal round 6 收口：真语料 E3 对照落地（test/engine-snapshot-e3.test.ts），并据实测把「场景态覆盖面」登记为 SNAPSHOT_EXCLUDED 第 9 条（含两条重开条件）。票面 acceptance 全部满足。"
     }
   ]
 }

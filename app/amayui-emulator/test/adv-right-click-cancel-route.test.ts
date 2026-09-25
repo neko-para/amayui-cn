@@ -17,15 +17,19 @@
  * *(_DWORD *)(_this + 430712) = *(_DWORD *)(_this + 120*v6 + 383184);      // 20372：本帧脚本身份
  * *(_DWORD *)(_this + 120*v6 + 383128) = …383124 + 4 * *(_DWORD *)(…489488);  // 20373-20374：★改写帧 ip
  * ```
- * `489488 + 4*cur` 就是 `0xCC`（`mouse-callback`，raw 30322 `_this[107664] = sub_41BF50(_this, 2)`）
- * 注册的 **mouseJump label**（dword 偏移）—— emulator 侧即 `InputManager.mouseJump`。
+ * `489488 + 4*cur` = **`ENGINE_FIELD.rewindMainBase + cur`**，写者是 **`0x7B`**（`set-rewind-cursor`，
+ * `sub_41F530` raw 28729 的 op1）—— **不是** `0xCC`（`mouse-callback`）那一格 `_this[107664]`
+ * （raw 30322，字节 430656；它的读者是 `0xCD`，raw 25851）。★这条口径差在 `T-0179` 第 70 轮
+ * goal round 3 修掉：修前 `#cancelRoute` 取 `input.mouseJump` ⇒ **真脚本上右键永不取消**
+ * （语料 `i0cc` **0 处**、`i07b` **1097 处 / 334 文件**）。
  *
  * ## 修前 / 修后（本文件的判据）
  * 修前 emulator 只有「右击 ⇒ 整段悬停/推进被跳过」那半句（`hoverDispatchAllowed()` 里的
  * `mask & 0x20`）⇒ **ip 不变、`effect_flags` 不清**。修后：
- *  - 注册过 mouseJump ⇒ 帧 ip **改写**到该 label、`effect_flags` 清 0、
+ *  - 注册过回退游标（`i07b`）⇒ 帧 ip **改写**到该 label、`effect_flags` 清 0、
  *    `redisplayMode` 记 `flags | 0x6000000`、`redisplayScriptId` 记本帧脚本身份；
- *  - 未注册（`-1`）⇒ **什么都不变**（ip/effect_flags/两个引擎格都不动）。
+ *  - 未注册（`-1`）⇒ **什么都不变**（ip/effect_flags/两个引擎格都不动）；
+ *  - ★只注 `i0cc`（`mouseJump`）⇒ 同样什么都不变（第四节的分水岭负例）。
  *
  * ★`489808`/`430712` 复用 `ENGINE_FIELD.redisplayMode`(122452) / `ENGINE_FIELD.redisplayScriptId`(107678)
  * —— 与 `0x199`（重显示）/`0x7C`（local-ret）是**引擎里同一批格子**（raw 20369-20372 与
@@ -44,10 +48,24 @@ import type { BinArg } from '../src/script/bin.js';
 import { im, instr, mkEngine } from './harness.js';
 
 /**
+ * 本帧「回退游标」的注册 —— ★**这才是右键取消路由读的那一格**（`tickets/T-0169` §4「别人该接」#1）。
+ *
+ * 体 raw 20367 `_this + 4*v6 + 489488`（`v6` = `cur`）⇒ 绝对下标 `122372 + cur` =
+ * `ENGINE_FIELD.rewindMainBase`，写者 = **`0x7B`**（`sub_41F530` raw 28729 的 op1）。
+ * ★语料 `i07b` **1097 处 / 334 文件**、`i0cc` **0 处** ⇒ 用例必须用这一格造现场（见负例那条）。
+ */
+function setRewindCursor(e: ReturnType<typeof mkEngine>, jump: number): void {
+  const h = OPS.get(0x7b);
+  assert.ok(h, '0x7B（set-rewind-cursor）必须已注册');
+  h!(makeCtx(e, e.curScript(), instr(0x7b, [im(jump), im(0)]), e.native, () => {}));
+}
+
+/**
  * 本帧的 `0xCC`（mouse-callback）注册 —— raw 30317-30325。
  *
  * `slot`（op1）= `0xCD` 的推进间隔（`sub_453A60` 写 `Engine+107447[6]`，`tickets/T-0047`），
- * `jump`（op2）= 本帧 mouseJump label 的 **dword 偏移**（raw 30322 `_this[107664] = 读 op2`）。
+ * `jump`（op2）= 它自己那一格 `_this[107664]`（raw 30322）—— ★**不是**右键取消路由读的格
+ * （那一格是 `rewindMainBase + cur`，读者是 `0xCD`）。
  */
 function registerMouseCallback(e: ReturnType<typeof mkEngine>, slot: number, jump: number): void {
   const h = OPS.get(0xcc);
@@ -58,13 +76,20 @@ function registerMouseCallback(e: ReturnType<typeof mkEngine>, slot: number, jum
 /**
  * 建一帧 ADV 现场（**用 `harness.ts` 的 `mkEngine`**）：11 条 `i72`（`wait-for-input`）、
  * 面板已显示（`0x94` ⇒ raw 20239 的 `Engine[51828]` 门）、等待门已置（bit31），
- * 并把 label `0x2140` 手工挂到第 4 条指令上（`0xCC` 的 mouseJump 表项指向它）。
+ * 并把 label `0x2140` 手工挂到第 4 条指令上。
+ *
+ * `via` 决定用哪条 opcode 注册现场（★这是本文件的核心判据面）：
+ *  - `'rewind'`（缺省）= `0x7B` ⇒ `rewindMainBase + cur`，**引擎右键取消路由读的就是它**；
+ *  - `'mousecallback'` = `0xCC` ⇒ 它自己那一格，**喂的是 `0xCD`，不喂本路由**（负例用）。
  *
  * ★不叫 `mk`/`makeCtx`/`mkEngine`：那四个名字是 `test/harnessScan.ts` 的扫描口径
  * （`tickets/T-0020` 的棘轮基线），本项目**不许新增**自造变体 —— 本函数只是 `mkEngine` +
  * `step()` 的薄包装，不是第二份 fixture 实现。
  */
-function advPumpScene(registerJump: number | null): {
+function advPumpScene(
+  registerJump: number | null,
+  via: 'rewind' | 'mousecallback' = 'rewind',
+): {
   e: ReturnType<typeof mkEngine>;
   step: (op: number, args?: BinArg[]) => void;
 } {
@@ -73,7 +98,10 @@ function advPumpScene(registerJump: number | null): {
   const f = e.curScript();
   const LABEL = 0x2140;
   f.labelMap.set(LABEL, 4);
-  if (registerJump !== null) registerMouseCallback(e, 0x10, registerJump);
+  if (registerJump !== null) {
+    if (via === 'rewind') setRewindCursor(e, registerJump);
+    else registerMouseCallback(e, 0x10, registerJump);
+  }
   const step = (op: number, args: BinArg[] = []): void => {
     const h = OPS.get(op);
     assert.ok(h, `0x${op.toString(16)} 应在 OPS 里`);
@@ -85,7 +113,7 @@ function advPumpScene(registerJump: number | null): {
   return { e, step };
 }
 
-test('★右键（掩码 bit5）在 0xCC 注册过 mouseJump 时**改写帧 ip** + 清整个 effect_flags（raw 20369-20374）', () => {
+test('★右键（掩码 bit5）在 `i07b`（`rewindMainBase + cur`）注册过回退游标时**改写帧 ip** + 清整个 effect_flags（raw 20369-20374）', () => {
   const LABEL = 0x2140;
   const { e } = advPumpScene(LABEL);
   const f = e.curScript();
@@ -147,6 +175,35 @@ test('★未注册 mouseJump（表项 -1）⇒ **什么都不变**（引擎 raw 
     '★redisplayScriptId（430712）不被写',
   );
   assert.equal(e.awaitingAdvance, true, '门保持');
+});
+
+test('★负例：只注 `i0cc`（`mouseJump`）**不**注 `i07b` ⇒ 右键什么都不变（raw 20367 读的是 `rewindMainBase + cur`）', () => {
+  // 这一条是 `T-0179` 第 70 轮修掉的口径差的分水岭：修前 `#cancelRoute` 读 `input.mouseJump`
+  // （= `0xCC` 写的那一格），于是「只跑 i0cc」的现场也会派发；而体 raw 20367 读的是
+  // `489488 + 4*cur` = `rewindMainBase + cur`（`0x7B` 写、`0xCD` 读 mouseJump）。
+  // ★语料证据：`i0cc` **0 处**、`i07b` **1097 处 / 334 文件** ⇒ 修前的行为在真脚本上从不触发。
+  const LABEL = 0x2140;
+  const { e } = advPumpScene(LABEL, 'mousecallback');
+  const f = e.curScript();
+  const ipAtGate = f.ip;
+  assert.equal(e.input.mouseJump, LABEL, '前置：0xCC 那一格确实写进去了（它喂 0xCD，不喂本路由）');
+  assert.equal(
+    e.engineValues.get(ENGINE_FIELD.rewindMainBase + e.cur),
+    undefined,
+    '前置：回退游标那一格没被注册',
+  );
+  const flags = (ADVANCE_GATE | CHAR_REVEAL_ACTIVE) | 0;
+  e.effectFlags = flags;
+  e.input.pressMouse(1);
+  assert.equal(e.serviceAdvanceWait(), false, '右键仍然不走 LABEL_44（raw 20368 直接 return）');
+  assert.equal(f.ip, ipAtGate, '★ip 不动：0xCC 的目标**不是**本路由的输入');
+  assert.equal(e.effectFlags, flags, '★effect_flags 不清');
+  assert.equal(
+    e.engineValues.get(ENGINE_FIELD.redisplayMode),
+    undefined,
+    '★redisplayMode（489808）不被写',
+  );
+  assert.notEqual(e.lastDispatch?.kind, 'cancel-route', '★不许报成取消路由派发过');
 });
 
 test('右键分支排在滚轮块**之后**：ADV 位在 + 滚轮键同时按下时，右键仍然照 raw 20365 收口', () => {

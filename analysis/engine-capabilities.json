@@ -19,8 +19,8 @@
     "total": 144,
     "modeled-verified": 79,
     "modeled-unverified": 5,
-    "partial": 30,
-    "absent": 6,
+    "partial": 31,
+    "absent": 5,
     "n/a-known": 24,
     "needsAttention": 41
   },
@@ -381,8 +381,6 @@
         "guard": "test/wait-gate-timer.test.ts",
         "note": "部分建模（T-0024）：`Engine.sceneFreeze`（`Scene+46512`）与 `skipWaitGate()`（= `sub_407EA0`：置冻结 + 清等待计时器）已实现，并且已接**ADV 分支每帧**（raw 21161，见 `frame/loop.ts` 的 `adv` 分支）；帧驱动在锁存池挂起位时把它折进来（`scenePending = !sceneFreeze && poolPending`）随后按 raw 130427 每遍清零。★**轮 9（`tickets/T-0091` 第③项）已修掉上面第 ② 条**：绘制期「窗立刻算结束」（raw 134941/135806/136182）与 **`+720` bit0 的冻结豁免**（raw 117440-117442）现在**真的作用在窗状态上** —— `scAdvance(s, clock, freeze)` 把**非豁免**（`entryParam & 1 === 0`）的 A 层开窗当帧收尾 + mesh 一律收尾；`scAnimationsPending(s, clock, freeze)` 同口径。★**两处规格（以体为准；design.md §5.3 的「freeze ⇒ 直接返回 false」不成立）**：① **`+720` bit0 的项豁免冻结**（`SN0000:1043` 的 80 000 ms 慢推不许被跳过截断，因为它用 `i242 <h> 1` 把自己排除出池挂起位）；② **B 层（bit2）循环动画不受冻结影响**（唯一读者 `sub_40BE10` raw 16028 判的是 `flags & 4`，与 `46512` 无关）。守卫 `test/wait-gate-timer.test.ts`（3 条，含豁免对照与驱动级真帧循环）。★**仍缺**：① **门等待期间的玩家输入跳过**（raw 21113-21135）—— 功能性缺口「等待期间点键无效」，也正是 G1 拿不到真语料 E3 的原因；★`Scene+46528` 三位本 exe 无写者（唯一写点 raw 130430 复位清 0）⇒ 豁免判据只看 `+720` bit0（依据已登记 `analysis/fields.json` 的 `Scene/0xB5C0 wait_gate_deadbits`）。守卫：test/wait-gate-timer.test.ts（冻结 ⇒ 计时器立刻到期、池挂起位下次绘制归零）。"
       },
-      "capability": "Scene+46512 动画强制冻结（让所有动画窗立刻算\"已结束\"）",
-      "evidence": "E2",
       "journal": [
         {
           "at": "2026-09（T-0091）",
@@ -444,7 +442,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E2",
-        "guard": "test/wait-gate-timer.test.ts",
+        "guard": "test/wait-gate-timer.test.ts#i242 <h> 1",
         "note": "`Scene+46528` bit2（冻结豁免）已建模进冻结路径（等价判据 = `entryParam & 1`），守卫 `test/wait-gate-timer.test.ts`。★体里的极性是「bit2 **置位**时忽略已置冻结值」（raw 117441 `(46528 & 4) == 0 ⇒ v112 = 0`）。★同一 dword 的**写者与其余读者**（审计 §4.5 补漏 #16 的核实顺带得到）：唯一置位点 = `0x24E`（`sub_4258C0` raw 32965 `_this[92340] = op1`；语料 `i24e` 422 处、取值全 `10001` = `0x2711` ⇒ bit0/bit4/bit8/bit9/bit10/bit13 置、bit1 与 bit2 均 0），清零点 = raw 12782（`& 0x10000` 门内）与 raw 130773（每次绘制）；bit1 除本条的 raw 12793 之外还被 `sub_409400`（raw 13910/13923）与 `sub_41B180`（raw 26023/26090）读，bit0 被 raw 21114 读。`src/vm/engine.ts` 与 `scene/ops.ts` 里「该格无置位点/恒 0」的说法与 raw 32965 不符（结论未变的理由见 `frame-render-gate-mainloop` 条）。"
       },
       "journal": [
@@ -841,7 +839,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/transition-corpus-e3.test.ts",
-        "note": "★2026-09（`tickets/T-0076` 的 B3 + `T-0084` 轮 5/6）状态迁移：写入端 → 窗口模型 → 12 种条带几何 → 快照进度 → 渲染端（画进记录 `[4]` 指定的离屏槽）。①**记录表** `Scene+1048`（96 B / 24 dword）：写入端 `0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）逐格照抄引擎的 `sub_4AAE10`，`0x224` 清空；★运行期值另存 `render4.transitionRuntime` —— 引擎就地改 `[1]`/`[3]`，而记录表被写入端守卫**整条 deepEqual**，不能就地改。②**窗口模型** `src/renderer/scene/transition.ts`：首帧锁存 `[1]`、按 clock 算 `t`/`off`、到点杀记录、一遍绘完没有在途转场就清空整表（raw 134867-134871 / 136840-136841）；两个宿主的 `advanceModel` 共用 `scTransitionTick`。③**条带几何** `scTransitionBands`：12 个 case 全部按 raw 134947-135510；`span()` **不归一化**（引擎对 `left > right` 直接丢弃）。④**渲染端**：类别 0（交叉淡化）/类别 2（盲帘）/类别 3（插值模糊，**已披露近似**）都画进记录 `[4]` 的离屏槽（宿主 = `TextureCache.composeIntoSlot`；`[4]` 是**渲染目标层**，语料实证 `src/SC0000.txt:1337-1339`）；`needsRender` 接上第三项（`Scene+46508`，读者 `sub_40BE10` raw 16022）。⑤**类别 0/2 的源** = 记录那两条 item 区间的**离屏子集**（层 36/37 的真身：`for v60<2 { SetTarget(36+v60); Clear; 画该趟区间; }`，raw 136014-136176 / asm `0x4B379C` 起）：`presenter.itemSprite`（唯一一份画法）+ `renderItemSubset` + `pixiBackend.#renderRangeCanvas` + `scTransitionRangeHandles`；旧的「上一帧整屏快照」（`#transOld`）概念已删除。⑥**类别 3 是「参数确证 + 像素已披露近似」**：`scTransitionBlurPlan` 逐条对应 raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`（含 `CenterU/V` 归一化），采样数取引擎 CPU 回退常数 **33**、中心权重 **3**（raw 126180-126183）；**未复刻**引擎 `(2L+1)²` 核（`sub_4A0120`）的逐点权重与 SlideBlur 采样密度 ⇒ 类型/快照/注释三处都带 `approximate` 标记。★**仍未建模（有据缺口，不许沉默）**：(a) 类别 1 `0x24D` —— 语料 0 处 + 规格 §3.5 U2 未确证 ⇒ `analysis/opcode-gaps.json` 记 `deferred`，消费端 = 两趟 item 重绘 + `sub_4A2750([9..12])` 收尾 + `SetRandomFade` 族参数来源；(b) `[4]` 指向**非** `create-texture` 槽的情形（没有画布表面可写）；(c) `Scene+46508`/`46512`/`46516` 三个标志**本身**未建（只把 46508 等价折进 `sceneNeedsRender` 第三项、46512 的「立即收尾」折进窗口模型）；(d) 类别 3 的**源层** —— 引擎显式跳过类别 3 的两趟 item 重绘（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 它模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**（写在代码注释里，不是猜）。★**E4 缺口**：本机没有冷启动就能跑到 `i223`/`i24f` 的路径（试了 178 个含 `i223` 的脚本的前 12 个 × 3000 帧，全部停在等待、零转场；`--load 79` 只到 SN0000，它的 `i250` 在 line 3036 之后）⇒ 这条路的证据目前是 **E3**（真语料 SC0010.BIN 的窗口级断言 `test/transition-corpus-e3.test.ts`）+ E2（`test/sc-transition-window.test.ts`、`test/sc-transition-geometry.test.ts`、`test/transition-render-wiring.test.ts`），像素级真机对照待有可达路径再补。 ★2026-09-24（T-0103 轮 14）新发现的**已知偏差（未登记过）**：**到期那一帧 emulator 不再合成** —— `scTransitionWindow` 在到期帧返回 `active:false`（`transition.ts:126-129`、`scTransitionTick` 585-589）⇒ `scTransitionsPending` 为假 ⇒ 宿主 `present()` 跳过 `#compositeTransitions`（`pixiBackend.ts:1470` + `:1494`）⇒ **记录 `[4]` 收不到 t=1 的终帧**（`rt.channels` 算了但没人用）。引擎在到期帧**仍然渲一遍**（raw 135808-135811 只把通道锁成终值，135824 之后无分支跳过），记录要到帧尾才被 `sub_4A9BE0` 清（raw 136840-136841）⇒ **emulator 比引擎少渲染转场末帧**（`tickets/T-0091` 的剩余项）。 ★2026-09-24 落地（`tickets/T-0091` 的 D2）：到期帧现在**交付终值** —— `scTransitionTick` 返回 `render` 快照（`{id, rec, rt}`，`rt.t = 1` + 终值通道），pixi 宿主把它存进 `#pendingTransitionRender` 交给 `present()` 合成（`#compositeTransitions` 优先用快照、其次查表）；`scTransitionsPending` 仍只算**在窗内**（与引擎\"到期分支不置 46516\"一致 ⇒ 门/`needsRender` 语义不变），交付那一帧靠 tick 置 `scene.dirty` 保证被合成一次。守卫 `test/sc-transition-window.test.ts`（3 例：到期交付 + 只多一帧 + `[13]<0` 立即收尾）与 `test/transition-render-wiring.test.ts`（三条同帧交付+清表）。"
+        "note": "★2026-09（`tickets/T-0076` 的 B3 + `T-0084` 轮 5/6）状态迁移：写入端 → 窗口模型 → 12 种条带几何 → 快照进度 → 渲染端（画进记录 `[4]` 指定的离屏槽）。①**记录表** `Scene+1048`（96 B / 24 dword）：写入端 `0x223`（类别 0）/`0x24F`（类别 2）/`0x250`/`0x251`（类别 3）逐格照抄引擎的 `sub_4AAE10`，`0x224` 清空；★运行期值另存 `render4.transitionRuntime` —— 引擎就地改 `[1]`/`[3]`，而记录表被写入端守卫**整条 deepEqual**，不能就地改。②**窗口模型** `src/renderer/scene/transition.ts`：首帧锁存 `[1]`、按 clock 算 `t`/`off`、到点杀记录、一遍绘完没有在途转场就清空整表（raw 134867-134871 / 136840-136841）；两个宿主的 `advanceModel` 共用 `scTransitionTick`。③**条带几何** `scTransitionBands`：12 个 case 全部按 raw 134947-135510；`span()` **不归一化**（引擎对 `left > right` 直接丢弃）。④**渲染端**：类别 0（交叉淡化）/类别 2（盲帘）/类别 3（插值模糊，**已披露近似**）都画进记录 `[4]` 的离屏槽（宿主 = `TextureCache.composeIntoSlot`；`[4]` 是**渲染目标层**，语料实证 `src/SC0000.txt:1337-1339`）；`needsRender` 接上第三项（`Scene+46508`，读者 `sub_40BE10` raw 16022）。⑤**类别 0/2 的源** = 记录那两条 item 区间的**离屏子集**（层 36/37 的真身：`for v60<2 { SetTarget(36+v60); Clear; 画该趟区间; }`，raw 136014-136176 / asm `0x4B379C` 起）：`presenter.itemSprite`（唯一一份画法）+ `renderItemSubset` + `pixiBackend.#renderRangeCanvas` + `scTransitionRangeHandles`；旧的「上一帧整屏快照」（`#transOld`）概念已删除。⑥**类别 3 是「参数确证 + 像素已披露近似」**：`scTransitionBlurPlan` 逐条对应 raw 135837-135881 的 `SetTechnique` + 四个 `SetFloat`（含 `CenterU/V` 归一化），采样数取引擎 CPU 回退常数 **33**、中心权重 **3**（raw 126180-126183）；**未复刻**引擎 `(2L+1)²` 核（`sub_4A0120`）的逐点权重与 SlideBlur 采样密度 ⇒ 类型/快照/注释三处都带 `approximate` 标记。★**仍未建模（有据缺口，不许沉默）**：(a) 类别 1 `0x24D` —— 语料 0 处 + 规格 §3.5 U2 未确证 ⇒ `analysis/opcode-gaps.json` 记 `deferred`，消费端 = 两趟 item 重绘 + `sub_4A2750([9..12])` 收尾 + `SetRandomFade` 族参数来源；(b) `[4]` 指向**非** `create-texture` 槽的情形 —— ★**判据已建模 + 已加守卫（`T-0091` 第②项收口）**：引擎 `sub_4A50C0`（raw 124819-124920，逐行读过）只有两条路 —— `a2 > 0x3E7`（`a2` 是 **unsigned** ⇒ 含 `-1`）走**后台缓冲**（取后台缓冲 + `SetRenderTarget` + 记 `Scene+46456 = -1` + `return 1`，raw 124839-124861 ⇒ 转场是**直接画到屏幕**）；`0..999` 则查槽表 `Scene[4*slot + 42456]`，**对象为空**时打 `SetTargetTexture エラー：テクスチャが作成されていません． TEXTURE=%d` 并 `return 0`（**不动已绑的渲染目标**，raw 124872-124882）。emulator 只建模了「`0..999` 且该槽有 `create-texture` 表面」这一种（`TextureCache.composeIntoSlot`）⇒ 判据抽成纯函数 `transitionTargetKind(slot)`（`scene/transition.ts`，`slot < 0 || slot > 999 ⇒ \"backbuffer\"`），宿主对后台缓冲分支**只登记不假装**（`pixiBackend.#compositeTransitions` 打一条点明 raw 的日志并跳过，**不再**混进「该槽没有 create-texture 出来的表面」那句错理由）。守卫 = `test/transition-render-wiring.test.ts` 的「★`[4]` 的两个分支」单元用例（8 例：0/1/36/37/999 ⇒ `slot`；1000/-1/-2 ⇒ `backbuffer`）+ 同文件的源棘轮（宿主必须走 `transitionTargetKind`，且 `#compositeTransitions` 体内不许内联判 `-1`；红→绿实测：把判据降级成恒假 ⇒ 7/8 红，恢复 ⇒ 8/8）。**重开条件**：① 出现 `[4] = -1`／`> 999` 的语料现场或 E4 采样（届时把后台缓冲分支实现成\"合成到屏幕 pass\"，并同批接 `Scene+46456 = -1`）；② 宿主引入真实离屏渲染目标与「当前目标」状态（那时 `0..999` 但无对象的那条 `return 0` 才可逐字复刻）。；(c) `Scene+46508`/`46512`/`46516` 三个标志**本身**未建（只把 46508 等价折进 `sceneNeedsRender` 第三项、46512 的「立即收尾」折进窗口模型）；(d) 类别 3 的**源层** —— 引擎显式跳过类别 3 的两趟 item 重绘（asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 它模糊读的是**陈旧 scratch**，emulator 取本帧屏幕合成是**有意的改正**（写在代码注释里，不是猜）。★**E4 缺口**：本机没有冷启动就能跑到 `i223`/`i24f` 的路径（试了 178 个含 `i223` 的脚本的前 12 个 × 3000 帧，全部停在等待、零转场；`--load 79` 只到 SN0000，它的 `i250` 在 line 3036 之后）⇒ 这条路的证据目前是 **E3**（真语料 SC0010.BIN 的窗口级断言 `test/transition-corpus-e3.test.ts`）+ E2（`test/sc-transition-window.test.ts`、`test/sc-transition-geometry.test.ts`、`test/transition-render-wiring.test.ts`），像素级真机对照待有可达路径再补。 ★2026-09-24（T-0103 轮 14）新发现的**已知偏差（未登记过）**：**到期那一帧 emulator 不再合成** —— `scTransitionWindow` 在到期帧返回 `active:false`（`transition.ts:126-129`、`scTransitionTick` 585-589）⇒ `scTransitionsPending` 为假 ⇒ 宿主 `present()` 跳过 `#compositeTransitions`（`pixiBackend.ts:1470` + `:1494`）⇒ **记录 `[4]` 收不到 t=1 的终帧**（`rt.channels` 算了但没人用）。引擎在到期帧**仍然渲一遍**（raw 135808-135811 只把通道锁成终值，135824 之后无分支跳过），记录要到帧尾才被 `sub_4A9BE0` 清（raw 136840-136841）⇒ **emulator 比引擎少渲染转场末帧**（`tickets/T-0091` 的剩余项）。 ★2026-09-24 落地（`tickets/T-0091` 的 D2）：到期帧现在**交付终值** —— `scTransitionTick` 返回 `render` 快照（`{id, rec, rt}`，`rt.t = 1` + 终值通道），pixi 宿主把它存进 `#pendingTransitionRender` 交给 `present()` 合成（`#compositeTransitions` 优先用快照、其次查表）；`scTransitionsPending` 仍只算**在窗内**（与引擎\"到期分支不置 46516\"一致 ⇒ 门/`needsRender` 语义不变），交付那一帧靠 tick 置 `scene.dirty` 保证被合成一次。守卫 `test/sc-transition-window.test.ts`（3 例：到期交付 + 只多一帧 + `[13]<0` 立即收尾）与 `test/transition-render-wiring.test.ts`（三条同帧交付+清表）。"
       }
     },
     {
@@ -1417,8 +1415,7 @@
         "evidence": "E1",
         "guard": "",
         "note": "why: **为什么是\"有据 no-op\"（自足口径，2026-09-25 复核批）**：同 `lazy-3d-effect-202-snow` —— 属 3D 效果子系统（`Effect3D` 管理器 `sub_4530B0` raw 65345-65363、帧推进 `sub_4535F0`），emulator 没有该子系统且这些 handler 对 VM 不可观测（不回写操作数、不改 `ip`/`cur`）⇒ 登记为 `engine-internal`、故意不上桩。**为什么静默**：见本条 `whySilent` —— 创建失败走 `LABEL_8` 错误分支；成功则继续，不影响脚本流程；★注意引擎侧**退出时该槽无 `Release`**（泄漏），emulator 不建模该泄漏。**重开条件**：与 `lazy-3d-effect-202-snow` 相同（① 建起 3D 效果子系统；② 或证明脚本路径依赖这些 no-op 的副作用）。"
-      }
-    ,
+      },
       "journal": [
         {
           "at": "2026-09-25（T-0148 复核批）",
@@ -1426,7 +1423,7 @@
           "what": "note 自足化：原文只有一句「why: 同上／（0x326 已按 no-op 处理并注释）」，而\"同上\"没有前项 ⇒ 补上管理器/帧推进的 raw 锚点、静默原因与两条重开条件（内容取自本条 whySilent 与 scene-3d-weather-effects-rain-snow-leaf，未改结论）。"
         }
       ]
-},
+    },
     {
       "id": "lazy-3d-effect-202-snow",
       "subsystem": "3D",
@@ -1450,8 +1447,7 @@
         "evidence": "E1",
         "guard": "",
         "note": "why: **为什么是\"有据 no-op\"（自足口径，2026-09-25 复核批）**：这两条（`0x326`/`0x327` 一族）落在 **3D 效果子系统**上，而 emulator 没有该子系统 —— 引擎侧它由 `Effect3D` 管理器承载（`sub_4530B0` 的 `operator new(0x4F4)`，raw 65345-65363；创建点 `sub_4A6EE0` raw 126541-126545），槽/参数/销毁阈值/旗标/时钟落在 `Scene+50704` 一族，逐帧由 `sub_4535F0` 推进。emulator 侧的等价物**尚未建**（\"opcode → 模型\"这一半没接线）⇒ 这些条目的 handler 被登记为本表 `engine-internal`（`handlers/stubs.ts`），并**故意不上桩**：它们对 VM 不可观测（体内不回写操作数、不改 `ip`/`cur`，只写长度槽）。**为什么静默**：见本条 `whySilent` —— 纹理槽为空时引擎只 `sprintf_s` 一条错误串进错误缓冲；effect 创建失败时把 0 传给 `sub_453330`，表现只是\"不画\"，脚本流程照走。**重开条件**（两条任一成立就回来做）：① 建起 3D 效果子系统（`sub_4530B0` 管理器 + 三效果槽 + `sub_4535F0` 帧推进 + `sub_4531B0`）；② 或者证明某条脚本路径**依赖**这些 no-op 的副作用（当前语料：`src/SETWEATHER.txt` 1 处、`call-script 47`）。归属面见 `scene-3d-weather-effects-rain-snow-leaf`（同族汇总条目）。"
-      }
-    ,
+      },
       "journal": [
         {
           "at": "2026-09-25（T-0148 复核批）",
@@ -1459,7 +1455,7 @@
           "what": "note 自足化：原文只有一句「why: 同上／（0x326 已按 no-op 处理并注释）」，而\"同上\"没有前项 ⇒ 补上管理器/帧推进的 raw 锚点、静默原因与两条重开条件（内容取自本条 whySilent 与 scene-3d-weather-effects-rain-snow-leaf，未改结论）。"
         }
       ]
-},
+    },
     {
       "id": "lazy-sprite-recreate",
       "subsystem": "渲染",
@@ -1741,20 +1737,26 @@
       "trigger": "`Engine+378688+4*i` 槽为空且该槽被指定为影片纹理",
       "engine": {
         "fns": [
-          "sub_489040"
+          "sub_489040",
+          "sub_4237B0",
+          "sub_4246B0",
+          "sub_488DC0",
+          "sub_489230",
+          "sub_41A300"
         ],
         "raw": "31627-31630"
       },
       "reads": [
-        "Engine+378688"
+        "Engine+378688",
+        "Engine+365288"
       ],
       "whySilent": "多个调用点（32245 / 32528 / 32600 / 32877）共享同型守卫；失败按空槽处理，无日志",
       "confidence": "tentative",
       "emulator": {
-        "status": "absent",
-        "evidence": "E1",
-        "guard": "",
-        "note": "未建模（why：`0x20F` 的 handler 在 `src/vm/handlers/gfx-misc.ts`，本票文件范围外；且 `Engine+4*i+378688` 是 **VM 侧 `Engine`** 的对象表 —— emulator 的宿主缝只拿得到意图、没有可绑的对象）。体核实（raw 31625-31649）：槽空 ⇒ `operator new(0x480)` + `sub_489040`（CMovieToTexture ctor）存回 `_this[4*v2+378688]`，装载失败抛 `asc_51F560`；随后该槽的 CTexture 表 `_this[4*v2+365288]` 仍为空 ⇒ 抛 `asc_520248`（两条都是 `AVCommand_ShowMessage_Exception`）。emulator 现状：`play-movie` 只 `pushLog`（`src/renderer/pixiBackend.ts`）。**重开条件**：影片子系统（`0x20F` 起播/生命周期、`0x23D` 释放整段 42..999 槽）单独立票且允许改 `src/vm/**` 时，把对象表 + 槽绑定 + 两条抛错分支一并做；在那之前如实登记为 `absent`，不做假的播放器。"
+        "status": "partial",
+        "evidence": "E2",
+        "guard": "test/t0164-misc-batch.test.ts#★P3 0x20F：该槽纹理表为空 ⇒ 抛错",
+        "note": "2026-09 `T-0164` 已落地**对象表那一半**（本条原写「emulator 没有可绑的对象 / 本票文件范围外」，已被它推翻）：`Engine+4*slot+378688` 的等价物 = 两个宿主的 per-slot 对象表 —— `src/renderer/pixi/textureCache.ts` 的 `#slotNodes`（`noteSlotNode` 只在槽空时建、已有即复用并返回 false = 引擎 raw 31627 的 `if (!slot)` 门）、`src/renderer/headlessScene.ts` 同表；`0x23D` 用同一张表析构（raw 25331-25343），`0x23F` 的对象尺寸判据走 `slotNodeSize`。VM 侧 `0x20F` 是完整 handler（`src/vm/handlers/gfx-misc.ts`）：`sub_488DC0` 装载段未建模 ⇒ 保留「该槽没有 CTexture ⇒ 抛 asc_520248」那条**可判定**分支（宿主缝 `hasSlotTexture`），`sub_489230` 起播与像素输出不实现（emulator 无影片解码器）。**仍缺（登记，各有重开条件）**：① CTexture 真槽绑定 = `sub_489230`（要有解码器才有意义）；② `0x236`（`sub_4246B0`，与 `0x20F` 同型的惰性创建）仍是 `deferred` 且**未注册** ⇒ 命中即 `NotImplementedOp`（语料 6 处：`BTL.txt:3841/4156/4414`、`CALLBACK_LOAD.txt:162`、`FIELD.txt:13719/13757`）。★真缺口的正式登记在 `analysis/opcode-gaps.json` 的 `0x20f`（partial + 2 条 `missing`，`T-0179`）与 `0x23f`（partial）—— 本条与它们互相引用，不再各说各话。**重开条件**：影片解码器进 emulator（能真起播并上报「槽播放结束 / 对象析构」），届时按 `0x20f` 的两条 missing 一并接。"
       },
       "journal": [
         {
@@ -2022,7 +2024,7 @@
       "emulator": {
         "status": "modeled-verified",
         "evidence": "E3",
-        "guard": "test/headless-needs-render.test.ts",
+        "guard": "test/scene-t0154-scene-state.test.ts#没有**可冻结窗时也要置脏",
         "note": "引擎：`sub_4B06D0` raw 136718-136719 的收尾 `if (*(_QWORD *)(_this + 46512)) *(_DWORD *)(_this + 46508) = 1;` —— 8 字节一起判 ⇒ 46512（强制冻结）与 46516（池挂起）**任一非零**就把本遍标脏（`sub_4B06D0` 由 `sub_4B4040` 在 raw 136796/137039 调用）。emulator：`SceneState.pending`（src/renderer/scene/state.ts）是 `scNeedsRender` 的第一项；帧驱动每帧由 `host.poolPending()` 锁存 `Engine.scenePending`（src/frame/loop.ts，raw 46516 的等价物），freeze 那一半由 `scBeginRenderPass` 的 freeze 分支无条件置脏。⇒ 46516 有两条消费者（渲染判据 + `0x400` 等待门），**不再是\"只喂等待门\"**。★本条由 2026-09 P1 修复轮（tickets/T-0167）落地，冻结那一半由 T-0154 补（守卫 test/scene-t0154-scene-state.test.ts 第 ⑤ 组）。"
       },
       "journal": [
@@ -2145,8 +2147,7 @@
         "evidence": "E2",
         "guard": "test/adv-msgwin.test.ts#ADV 每帧服务：未显示完判定成立时清掉 ADV",
         "note": "已实现：Engine.serviceAdv()（= sub_411900 的输入泵 + 「未显示完」判定 + ADV 清除）与**帧驱动**的 adv 分支（每帧恰好 1 条指令，advErrors 分 stop/swallow 两档）；产品路径（session）与全部 headless 入口同构（B4 后同一份驱动）。\n\n★2026-09（`T-0169`）：三条 pump 与三个引擎函数的**一一对应**按体写清 —— 本条的 `sub_411900` 在 emulator 侧 = `Engine.serviceAdv()` + **帧驱动 adv 分支的恰好 1 条 `dispatch()`**（`raw 20161-20165`）；`serviceRevealAdvanceInput` / `serviceTextReveal` 是 **`sub_409400`**（`raw 21176-21181` 的 `0x20000000` 臂）的对口；`serviceAdvanceWait` 是 **`sub_411BC0`**（`raw 21224-21226`）的对口。「每轮恰好 1 条」的**唯一例外** = `set:CancelMesSkipOnClick == 2` 的整帧早退（`raw 20133-20136`，落 `Engine.advFrameAborted`）。守卫：`test/t0169-frame-reveal-pump.test.ts`。"
-      }
-    ,
+      },
       "journal": [
         {
           "at": "2026-09-25（T-0169）",
@@ -2154,7 +2155,7 @@
           "what": "沿革：原 note 只说「已实现 serviceAdv + adv 分支」；本次补上三条 pump 与三个引擎函数的对应，并落掉 raw 20133-20136 的整帧早退。"
         }
       ]
-},
+    },
     {
       "id": "adv-text-reveal-progress",
       "subsystem": "消息窗",
@@ -2181,7 +2182,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/t0151-msgwin-vm.test.ts#★0x6E 门序",
-        "note": "泵已实现：src/vm/msgwin.ts 的 tickRevealWin/tickReveal 与 src/vm/engine.ts 的 serviceTextReveal（+ #publishReveal），守卫 test/adv-reveal-under-throttle.test.ts。『显示完了吗』按体分两支读（raw 28339-28343 门关闭支 / raw 28345-28359 门打开支），并用 pageHasPendingText（本页是否还有未显示的文本）近似 sub_48F000 的返回值。★仍不复制：脚本分段表（Engine+80107+258，sub_48F000 raw 109810-109825 查 / sub_48FBB0 raw 110300- 建 / sub_48FFB0 raw 110456-110482 刷）与 0x71 的冲刷点 raw 28431 —— 见 src/vm/handlers/msgwin.ts 的 ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED（recheck：真机抓到门开时应当分段显示而 emulator 一段就完）。守卫 test/t0151-msgwin-vm.test.ts#★0x6E 门序。"
+        "note": "泵已实现：src/vm/msgwin.ts 的 tickRevealWin/tickReveal 与 src/vm/engine.ts 的 serviceTextReveal（+ #publishReveal），守卫 test/adv-reveal-under-throttle.test.ts。『显示完了吗』按体分两支读（raw 28339-28343 门关闭支 / raw 28345-28359 门打开支），并用 pageHasPendingText（本页是否还有未显示的文本）近似 sub_48F000 的返回值。★仍不复制：脚本分段表（Engine+80107+258，sub_48F000 raw 109810-109825 查 / sub_48FBB0 raw 110300- 建 / sub_48FFB0 raw 110456-110482 刷）与 0x71 的冲刷点 raw 28431 —— 见 src/vm/handlers/msgwin.ts 的 ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED（recheck：真机抓到门开时应当分段显示而 emulator 一段就完）。守卫 test/t0151-msgwin-vm.test.ts#★0x6E 门序。\n★**措辞收紧（2026-09-25，`T-0179` 第 70 轮 goal round 3）**：上面那句「用 `pageHasPendingText` **近似** `sub_48F000` 的返回值」容易被读成\"伪造返回值\"—— 准确说法是：配置 `message:ReadTextSkip` 只当**门**用（`readTextSkipOf`），**返回值来自本页显示态**（`pageHasPendingText`：逐字显现未走完 / 有字形且本页未被 `0x72` 武装）。与引擎 `sub_48F000`（查 `Font+258` 那张 `.8.8x` 脚本分段表的第 a3 项，miss/越界返回 0）的**真正差**是：引擎的\"一段\"由分段表切分（脚本可把它切成多段），重写侧把\"一段\"等同于\"本页\" ⇒ **没有**「同一页被切成多段、每段各翻一次 ADV 位」这条行为；该差已单点披露在 `src/vm/handlers/msgwin.ts` 的 `ADV_REVEAL_SEGMENT_TABLE_NOT_MODELED`。"
       },
       "journal": [
         {
@@ -2324,22 +2325,22 @@
         "note": "★`T-0161` 读体确证门控键名 = **`set:CancelMesSkipOnClick`**（raw 4346）：它既在引擎内建注册表（缺省 0）也在本工程的证据 INI 里（= 0）⇒ 本条在 emulator 侧「休眠」的原因是**值**（0），不是键缺失。三态机的迁移次序（raw 20119-20141）：遮罩位**为 0** 的那一帧走 `0→1`（else 分支），按下只驱动 `1→2`，`2→0` 那一帧才清 ADV / 复位 ReadTextSkip。emulator 侧：键名已对齐权威键表，守卫在 `test/config-t0161.test.ts`（断言常量 == 权威键名）；三态机极性本身属 `src/vm/engine.ts` 的范围（见 `T-0175`）。\n\n★2026-09（`T-0169`）：三态机**极性按体复核 = 与 emulator 逐支同形**（审计 `T-0161` §5 row 14 的 `overreach` 不成立）；真缺的三件已补齐：`raw 20120` 的 `*v2 &= ~0x10`（落 `input.inputMask`）、`raw 20127` 的 `sub_4053C0`（= `eatAllInput()`）、`raw 20133-20136` 的 `GetConfig(...) == 2` **整帧早退**（`Engine.advFrameAborted` + 帧驱动跳过那一条指令）。`engine.raw` 范围由 `20096-20160` 收窄为 `20115-20143`（三态机本体）。守卫：`test/t0169-frame-reveal-pump.test.ts`。"
       },
       "journal": [
-          {
-            "at": "2026-09-24（T-0161）",
-            "field": "emulator.note",
-            "what": "沿革（不进渲染字段）：旧 note 写的门控键 `GetConfig(\"set:CancelMessageKey\")` 与「随包 SYS4REG.INI 没有该键」两条事实都反了 —— 真键是 `set:CancelMesSkipOnClick`（raw 4346），且它既在权威键表（`configRegistry.ts:206`，`kind:int, def:0`）也在工程证据 INI 里 ⇒ 休眠是**值 0** 而不是缺键。"
-          },
-          {
-            "at": "2026-09-24（主 agent 修 guard 字段）",
-            "field": "emulator.guard",
-            "what": "沿革（不进渲染字段）：抄写员 D 把**两条** guard 用 ` · ` 拼成一个字符串（`test/adv-msgwin.test.ts#… · test/config-t0161.test.ts#…`）⇒ 台账守卫的「文件 + #锚点」解析把它当成一个不存在的文件/锚点。已改成单条真实文件 `test/config-t0161.test.ts`（#锚点写进 note）。"
-          },
-          {
-            "at": "2026-09-25（T-0169）",
-            "field": "emulator.note",
-            "what": "沿革：T-0161 把「极性要改 engine.ts」挂到 T-0175；本单元回体后确认极性本来就对，改的是另外三件（位消费 / eatAllInput / ==2 整帧早退）。"
-          }
-        ]
+        {
+          "at": "2026-09-24（T-0161）",
+          "field": "emulator.note",
+          "what": "沿革（不进渲染字段）：旧 note 写的门控键 `GetConfig(\"set:CancelMessageKey\")` 与「随包 SYS4REG.INI 没有该键」两条事实都反了 —— 真键是 `set:CancelMesSkipOnClick`（raw 4346），且它既在权威键表（`configRegistry.ts:206`，`kind:int, def:0`）也在工程证据 INI 里 ⇒ 休眠是**值 0** 而不是缺键。"
+        },
+        {
+          "at": "2026-09-24（主 agent 修 guard 字段）",
+          "field": "emulator.guard",
+          "what": "沿革（不进渲染字段）：抄写员 D 把**两条** guard 用 ` · ` 拼成一个字符串（`test/adv-msgwin.test.ts#… · test/config-t0161.test.ts#…`）⇒ 台账守卫的「文件 + #锚点」解析把它当成一个不存在的文件/锚点。已改成单条真实文件 `test/config-t0161.test.ts`（#锚点写进 note）。"
+        },
+        {
+          "at": "2026-09-25（T-0169）",
+          "field": "emulator.note",
+          "what": "沿革：T-0161 把「极性要改 engine.ts」挂到 T-0175；本单元回体后确认极性本来就对，改的是另外三件（位消费 / eatAllInput / ==2 整帧早退）。"
+        }
+      ]
     },
     {
       "id": "adv-advance-opcodes",
@@ -2501,7 +2502,7 @@
         "status": "partial",
         "evidence": "E2",
         "guard": "test/adv-right-click-cancel-route.test.ts",
-        "note": "2026-09（T-0167 的 P1 §4.2 #1）：**右键「取消/跳读」路由已接线**。引擎 sub_411BC0 raw 20365-20374：`v6 = frames[cur]`；`*v2 = 0`（消费输入）；`Engine[489488 + 4*v6] == -1` ⇒ **直接 return，什么都不做**；否则 `489808 = effect_flags | 0x6000000`、`effect_flags = 0`（清**整个**）、`489812 = 本帧指令条数`、`430712 = frames[cur][95796]`、ip 改写到该 label（`ip = ip_base + 4*表项`）。emulator：`serviceAdvanceWait` 新增 ③ 段（`mask & 0x20` ⇒ `consumeEdges()` + `#cancelRoute()` + **返回 false**，因为 raw 20368/20374 都不落 LABEL_44 ⇒ 本帧不算处理过推进、也不跑自动翻页块）+ 新增 `#cancelRoute()`（`-1/0xffffffff` ⇒ 什么都不变；否则清整个 effect_flags、`redisplayMode = saved|0x6000000`、`redisplayScriptId = frame.scriptId`、`frame.ip = labelMap.get(jump)`，不压返回点）。三格复用 `0x7C` 那套是忠于引擎：raw 20369-20372 与 raw 20872-20876 的 0x4000000 分支逐字同形；`ENGINE_FIELD` 家族注释已补「同时服务重显示与右键取消」（tickets/T-0167）。**仍登记的两条缺口**：① `489812`（redisplayReturn/122453）**有意不写** —— 它要「回调脚本跑完那一刻的 (ip−ip_base)>>2」，而 emulator 不装载/不跑 CALLBACK_TEXT.BIN，写猜测值会把 ip 还原到错的地方（比不动更坏）；因 redisplayMode 写的是 0x6000000（不含 0x2000000），真到 0x7C 会照 raw 25791-25796 抛 END.HWL ⇒「那条回调没跑」有可观测后果。**重开条件** = 补上「按名装载 + 立即派发回调脚本」的口（raw 20351 `sub_411560` → `sub_455000` + `sub_40FC90`；emulator 的 `FileSource.readScriptByName` 目前唯一调用点是读档的 CALLBACK_LOAD.BIN，见 handlers/save-slot.ts）。② `jump` 不在 `frame.labelMap` 时引擎是野跳，emulator 的 ip 是映像下标、无处野跳 ⇒ 选择「什么都不做」并登记（要改成硬错误需先确认真机表现）。`0x7C`（`sub_41AB80`）= handlers/frame.ts 的 op_redisplay_return（早已实现）；489488 是 **mouseJump 表**（0xCC 写 input.mouseJump），与 0x7C 不是一回事。守卫 test/adv-right-click-cancel-route.test.ts（3 例，红 3/8 → 绿 8/8）+ 既有 test/route-dispatch.test.ts。★**2026-09-24 实测（T-0167 收尾）**：`sub_411560(Engine, name)` = `sub_455000`（按名查统一 id，**找不到返回 -1**，raw 67420）→ `sub_40FC90(Engine, -1)`，而后者体首就是 `if (a2 != -1) { … }`（raw 19021-19026）⇒ **名字不在索引里时整跳是 no-op**。本机数据里**没有** `CALLBACK_TEXT.BIN`：`install/SYS4INI.BIN` 的 21109 条 / 565 个 `.BIN` 里只有 CALLBACK_LOAD /CALLBACK_SETTING / CALLBACK_WINDOW（`raw-parts/DATA1/` 的抽取结果一致，且**没有任何名字含 \"text\"**）。⇒ 引擎在 ADV 滚轮回看时的可见效果 = **游标回卷 + `effect_flags |= 0x100000`**（外加 `489816 = ∓1`），与 emulator 现在做的事一致 ⇒ 这条不再算缺口（真机同样 no-op）。**重开条件**：数据里出现 CALLBACK_TEXT.BIN（或换用带该文件的版本）时，把 `#textRewindWheel` 末尾接上\"按名装载 + 立即派发\"。★**2026-09-24 追查结论（只读探针，`.tmp/wheel-hist-probe/`）**：① 引擎里**没有**「滚轮 ⇒ HISTORY」这条引擎内链（`engine/*.c` 里 `HISTORY` 字面串 0 命中）；`HISTORY.BIN` 全语料只有一个入口 = **`call-script 31`**（669 处 / 335 文件，全在 ADV 菜单的 action 分发表：`eq (local-ptr 0) 6` ⇒ `call-script 31`，见 `src/$1$SC0330.txt:479-485`）。② 滚轮是**可赋值的按键**：WndProc 把上/下滚折算成掩码位 `1 << Conf(set:WheelKeyUp/Down)`（raw 141563-141606），而 ADV 脚本用 `0x97` 把这些位绑到**离屏 1×1 热点**的 labelC 上（`src/SN0000.txt:94-114`：位 0/1/2/3/8/7）。其中 **位 8 → `label_00002f84` → `call-script 31 // HISTORY`**（`SN0000.txt:831/836`）；位 0..3 是箭头键的菜单导航。③ 本机生效配置 `WheelKeyUp=3 / WheelKeyDown=1`（= ←/→）⇒ **默认滚轮在 ADV 走的是「菜单导航」那条 label**（实测 `lastDispatch={label:2817,kind:\"key\"}` = 位 3 的 `label_00002c40`，它会建/展开侧边栏菜单）——**这解释了用户实测「滚轮上滚打开侧边栏并停在第一个按钮」，且真机默认同样是这个行为**。④ 把 `set:WheelKeyUp` 改成 8 再滚，脚本**真的进了 `HISTORY.BIN`**（实测 `lastDispatch={label:3026}`、脚本轨迹 `… > SN0000.BIN > DRAWCHARM.BIN > HISTORY.BIN`），随后停在 **`0x1D1` 未实现**（回想页渲染器 `sub_4675A0` raw 80312-81522，唯一调用点 `src/HISTORY.txt:1314`）⇒ **画面可见性的最后一环是 `0x1D1`**（`opcode-gaps.json` 已登记 deferred）。⑤ 本台账的 ④（`#textRewindWheel`）**不负责开画面**：它只做\"回看页游标 ∓1 + `489816` + `0x100000`\"，且在产品帧循环里**几乎到不了**——泵的 ① 路由键命中（raw 20242）排在 20341 之前，而 ADV 把位 0/1/2/3/7/8 全绑给了路由项（探针清掉路由 keyBit 后 ④ 可达：`cursor 17→16`、`489816=-1`、`0x100000` 置位）。⑥ `0x100000` 的语义 = **「文本回调/回看泵进行中」**（主循环 raw 20882-20885 靠它每轮调 `sub_411590` + Sleep(5)），不是\"进入回看画面\"。⑦ `0x84`（`sub_41F790`）是同一标记的另一置位端，**全语料 0 处**。"
+        "note": "2026-09（T-0167 的 P1 §4.2 #1）：**右键「取消/跳读」路由已接线**。引擎 sub_411BC0 raw 20365-20374：`v6 = frames[cur]`；`*v2 = 0`（消费输入）；`Engine[489488 + 4*v6] == -1` ⇒ **直接 return，什么都不做**；否则 `489808 = effect_flags | 0x6000000`、`effect_flags = 0`（清**整个**）、`489812 = 本帧指令条数`、`430712 = frames[cur][95796]`、ip 改写到该 label（`ip = ip_base + 4*表项`）。emulator：`serviceAdvanceWait` 新增 ③ 段（`mask & 0x20` ⇒ `consumeEdges()` + `#cancelRoute()` + **返回 false**，因为 raw 20368/20374 都不落 LABEL_44 ⇒ 本帧不算处理过推进、也不跑自动翻页块）+ 新增 `#cancelRoute()`（`-1/0xffffffff` ⇒ 什么都不变；否则清整个 effect_flags、`redisplayMode = saved|0x6000000`、`redisplayScriptId = frame.scriptId`、`frame.ip = labelMap.get(jump)`，不压返回点）。三格复用 `0x7C` 那套是忠于引擎：raw 20369-20372 与 raw 20872-20876 的 0x4000000 分支逐字同形；`ENGINE_FIELD` 家族注释已补「同时服务重显示与右键取消」（tickets/T-0167）。**仍登记的两条缺口**：① `489812`（redisplayReturn/122453）**有意不写** —— 它要「回调脚本跑完那一刻的 (ip−ip_base)>>2」，而 emulator 不装载/不跑 CALLBACK_TEXT.BIN，写猜测值会把 ip 还原到错的地方（比不动更坏）；因 redisplayMode 写的是 0x6000000（不含 0x2000000），真到 0x7C 会照 raw 25791-25796 抛 END.HWL ⇒「那条回调没跑」有可观测后果。**重开条件** = 补上「按名装载 + 立即派发回调脚本」的口（raw 20351 `sub_411560` → `sub_455000` + `sub_40FC90`；emulator 的 `FileSource.readScriptByName` 目前唯一调用点是读档的 CALLBACK_LOAD.BIN，见 handlers/save-slot.ts）。② `jump` 不在 `frame.labelMap` 时引擎是野跳，emulator 的 ip 是映像下标、无处野跳 ⇒ 选择「什么都不做」并登记（要改成硬错误需先确认真机表现）。`0x7C`（`sub_41AB80`）= handlers/frame.ts 的 op_redisplay_return（早已实现）；489488 是 **mouseJump 表**（0xCC 写 input.mouseJump），与 0x7C 不是一回事。守卫 test/adv-right-click-cancel-route.test.ts（3 例，红 3/8 → 绿 8/8）+ 既有 test/route-dispatch.test.ts。★**2026-09-24 实测（T-0167 收尾）**：`sub_411560(Engine, name)` = `sub_455000`（按名查统一 id，**找不到返回 -1**，raw 67420）→ `sub_40FC90(Engine, -1)`，而后者体首就是 `if (a2 != -1) { … }`（raw 19021-19026）⇒ **名字不在索引里时整跳是 no-op**。本机数据里**没有** `CALLBACK_TEXT.BIN`：`install/SYS4INI.BIN` 的 21109 条 / 565 个 `.BIN` 里只有 CALLBACK_LOAD /CALLBACK_SETTING / CALLBACK_WINDOW（`raw-parts/DATA1/` 的抽取结果一致，且**没有任何名字含 \"text\"**）。⇒ 引擎在 ADV 滚轮回看时的可见效果 = **游标回卷 + `effect_flags |= 0x100000`**（外加 `489816 = ∓1`），与 emulator 现在做的事一致 ⇒ 这条不再算缺口（真机同样 no-op）。**重开条件**：数据里出现 CALLBACK_TEXT.BIN（或换用带该文件的版本）时，把 `#textRewindWheel` 末尾接上\"按名装载 + 立即派发\"。★**2026-09-24 追查结论（只读探针，`.tmp/wheel-hist-probe/`）**：① 引擎里**没有**「滚轮 ⇒ HISTORY」这条引擎内链（`engine/*.c` 里 `HISTORY` 字面串 0 命中）；`HISTORY.BIN` 全语料只有一个入口 = **`call-script 31`**（669 处 / 335 文件，全在 ADV 菜单的 action 分发表：`eq (local-ptr 0) 6` ⇒ `call-script 31`，见 `src/$1$SC0330.txt:479-485`）。② 滚轮是**可赋值的按键**：WndProc 把上/下滚折算成掩码位 `1 << Conf(set:WheelKeyUp/Down)`（raw 141563-141606），而 ADV 脚本用 `0x97` 把这些位绑到**离屏 1×1 热点**的 labelC 上（`src/SN0000.txt:94-114`：位 0/1/2/3/8/7）。其中 **位 8 → `label_00002f84` → `call-script 31 // HISTORY`**（`SN0000.txt:831/836`）；位 0..3 是箭头键的菜单导航。③ 本机生效配置 `WheelKeyUp=3 / WheelKeyDown=1`（= ←/→）⇒ **默认滚轮在 ADV 走的是「菜单导航」那条 label**（实测 `lastDispatch={label:2817,kind:\"key\"}` = 位 3 的 `label_00002c40`，它会建/展开侧边栏菜单）——**这解释了用户实测「滚轮上滚打开侧边栏并停在第一个按钮」，且真机默认同样是这个行为**。④ 把 `set:WheelKeyUp` 改成 8 再滚，脚本**真的进了 `HISTORY.BIN`**（实测 `lastDispatch={label:3026}`、脚本轨迹 `… > SN0000.BIN > DRAWCHARM.BIN > HISTORY.BIN`），随后停在 **`0x1D1` 未实现**（回想页渲染器 `sub_4675A0` raw 80312-81522，唯一调用点 `src/HISTORY.txt:1314`）⇒ **画面可见性的最后一环是 `0x1D1`**（`opcode-gaps.json` 已登记 deferred）。⑤ 本台账的 ④（`#textRewindWheel`）**不负责开画面**：它只做\"回看页游标 ∓1 + `489816` + `0x100000`\"，且在产品帧循环里**几乎到不了**——泵的 ① 路由键命中（raw 20242）排在 20341 之前，而 ADV 把位 0/1/2/3/7/8 全绑给了路由项（探针清掉路由 keyBit 后 ④ 可达：`cursor 17→16`、`489816=-1`、`0x100000` 置位）。⑥ `0x100000` 的语义 = **「文本回调/回看泵进行中」**（主循环 raw 20882-20885 靠它每轮调 `sub_411590` + Sleep(5)），不是\"进入回看画面\"。⑦ `0x84`（`sub_41F790`）是同一标记的另一置位端，**全语料 0 处**。\n★**2026-09-25（`T-0179` 第 70 轮 goal round 3）取值来源订正（`T-0169` §4「别人该接」#1 已接）**：`#cancelRoute` 修的**不是**通路（通路早已在位），而是**读错了格** —— 修前取 `input.mouseJump`（= `0xCC` 的 `_this[107664]`，读者是 `0xCD`，raw 25851），而体 raw 20367 读的是 `_this + 4*v6 + 489488`（`v6` = `_this[383104]` = 本帧 `cur`）⇒ 绝对下标 **`122372 + cur` = `ENGINE_FIELD.rewindMainBase`**，写者是 **`0x7B`**（`sub_41F530` raw 28729 的 op1，`handlers/frame.ts` 的 `op_set_rewind_cursor`）。⇒ 修前**真脚本上右键取消永不触发**：语料 `i0cc` **0 处**、`i07b` **1097 处 / 334 文件**（`$1$SC03xx`/`SC08xx` 一族的 ADV 现场）；修后该路由在语料可达。改动 = `src/vm/engine.ts` 的 `#cancelRoute()` 一行（`engineValues.get(ENGINE_FIELD.rewindMainBase + this.cur)`），其余（清整个 `effect_flags`、`redisplayMode = saved | 0x6000000`、`redisplayScriptId = frame.scriptId`、`ip = labelMap.get(jump)`、不压返回点、无 `CALLBACK_TEXT.BIN` 故不写 `489812`）一字未动。守卫 `test/adv-right-click-cancel-route.test.ts`（4 例：`i07b` 注册 ⇒ 改写 ip + 清 flags；未注册 ⇒ 什么都不变；**只注 `i0cc` ⇒ 什么都不变**（= 本次口径差的分水岭）；右键分支排在滚轮块之后）。**红→绿实测**：把取值改回 `input.mouseJump` ⇒ **1/4**（3 红），恢复 ⇒ **4/4**。"
       },
       "journal": [
         {
@@ -2554,7 +2555,7 @@
         "status": "modeled-verified",
         "evidence": "E3",
         "guard": "test/config1-chain.test.ts",
-        "note": "本条 missing-consumer 那一半（`message:AutoMessageTime{0,1}`/`Pitch{0,1}`/`Option` 有写入端无消费者）**已实现** —— 消费者 = `0x72` 尾段的自动翻页计时器 + 等待泵 `LABEL_44` 到期推进，实现与守卫见新条目 `msgwin-coexist-auto-message`（`handlers/msgwin.ts` 的 `armCoexistAutoMessage` + `engine.ts` 的 `#serviceAutoMessage`，守卫 test/adv-msgwin.test.ts）。★同为「配置门」的 `set:ReDrawTextOnKey`/`set:WheelKeyUp|Down` 那一半见 T-0166。★★那段每段文本 8ms 节流读的键是 **`message:MessageSpeed`**（`_this[21668]` = Font+1376 = Engine+86672，本条目 `reads` 里就有：raw 28361 的 `if (!_this[21668] || …)`、raw 28380-28382 的 `sub_453A60(_this+430572, _this[21668])`、raw 23736-23738 的灌入点）；`MesWinAlpha` 不进任何字段（只被 0x131/0x141 按名直读直写）。emulator 的唯一解析处 = src/vm/handlers/msgwin.ts 的 messageSpeedOf()。"
+        "note": "本条 missing-consumer 那一半（`message:AutoMessageTime{0,1}`/`Pitch{0,1}`/`Option` 有写入端无消费者）**已实现** —— 消费者 = `0x72` 尾段的自动翻页计时器 + 等待泵 `LABEL_44` 到期推进，实现与守卫见新条目 `msgwin-coexist-auto-message`（`handlers/msgwin.ts` 的 `armCoexistAutoMessage` + `engine.ts` 的 `#serviceAutoMessage`，守卫 test/adv-msgwin.test.ts）。★同为「配置门」的 `set:ReDrawTextOnKey` / `set:WheelKeyUp|Down`：内建默认 1/3/1（`sub_491880`）⇒ 分支**可走到**，emulator 已实现滚轮推进与悬停重绘门（`T-0166` 订正口径、`T-0168` 落「滚轮键 → 页游标」）。★★那段每段文本 8ms 节流读的键是 **`message:MessageSpeed`**（`_this[21668]` = Font+1376 = Engine+86672，本条目 `reads` 里就有：raw 28361 的 `if (!_this[21668] || …)`、raw 28380-28382 的 `sub_453A60(_this+430572, _this[21668])`、raw 23736-23738 的灌入点）；`MesWinAlpha` 不进任何字段（只被 0x131/0x141 按名直读直写）。emulator 的唯一解析处 = src/vm/handlers/msgwin.ts 的 messageSpeedOf()。"
       },
       "journal": [
         {
@@ -2639,15 +2640,8 @@
         "status": "modeled-verified",
         "evidence": "E2",
         "guard": "test/text-layout.test.ts",
-        "note": "缺口已补一半：等宽网格 / 边界硬断 / 注音配对 / 对齐已实现（src/text/layout.ts + test/text-layout.test.ts，13 例）。★两条易错点已钉住：①**排版恒为横向** —— 排版例程 sub_46BE30 不读 Font+235108（0x261），该标志只改绘制期源矩形；②**display-furigana 的 op2 是正文的一部分**（引擎 sub_46BE30(obj, part, op2, op3, flag)），只记注音不追加 op2 的症状是「汉字丢失」。仍未建模：120B 文本记录、win+208 记录向量、逐字 reveal 的分段边界。★sub_46BE30 的排版度量来源 = `GetTextMetricsA` 的 psizl.cx/cy + 24B 行记录（raw 83929-83940 读 `win+44/+48` 的 24B 记录向量）；FontVWindow+36/+40（右/下边界）与 Font+218592/+218596（缩放）不是排版度量来源，只在**绘制落点换算**里出现（raw 71055-71090 / 71240-71254）。"
+        "note": "缺口已补一半：等宽网格 / 边界硬断 / 注音配对 / 对齐已实现（src/text/layout.ts + test/text-layout.test.ts，实测 18 例）。★两条易错点已钉住：①**排版恒为横向** —— 排版例程 sub_46BE30 不读 Font+235108（0x261），该标志只改绘制期源矩形；②**display-furigana 的 op2 是正文的一部分**（引擎 sub_46BE30(obj, part, op2, op3, flag)），只记注音不追加 op2 的症状是「汉字丢失」。仍未建模：120B 文本记录、win+208 记录向量、逐字 reveal 的分段边界。★sub_46BE30 的排版度量来源 = `GetTextMetricsA` 的 psizl.cx/cy + 24B 行记录（raw 83929-83940 读 `win+44/+48` 的 24B 记录向量）；FontVWindow+36/+40（右/下边界）与 Font+218592/+218596（缩放）不是排版度量来源，只在**绘制落点换算**里出现（raw 71055-71090 / 71240-71254）。"
       },
-      "note": [
-        "缺口已补一半：等宽网格 / 边界硬断 / 注音配对 / 对齐已实现（src/text/layout.ts + test/text-layout.test.ts，13 例）。★两条易错点已钉住：①**排版恒为横向** —— 排版例程 sub_46BE30 不读 Font+235108（0x261），该标志只改绘制期源矩形；②**display-furigana 的 op2 是正文的一部分**（引擎 sub_46BE30(obj",
-        "part",
-        "op2",
-        "op3",
-        "flag)），只记注音不追加 op2 的症状是\"汉字丢失\"。仍未建模：120B 文本记录、win+208 记录向量、逐字 reveal 的分段边界。"
-      ],
       "journal": [
         {
           "at": "2026-09-24（T-0151）",
@@ -2850,7 +2844,7 @@
       "emulator": {
         "status": "partial",
         "evidence": "E2",
-        "note": "7 条参数面（0x75/0x197/0x1A5/0x2BD/0x2BE/0x2FE/0x2DB）与面名映射/竖排都**已落地并接线**。★T-0151（P2 stale-ledger）换掉了两个指错的锚点。当前锚点（用标识符，行号仅参考）：op 体 `op_set_main_size`(0x75):1816 / `op_set_ruby_size`(0x197):1825 / `op_set_main_face`(0x1A5):1834 / `op_set_ruby_face`(0x2FE):1842 / `op_set_main_bold`(0x2BD):1850 / `op_set_ruby_bold`(0x2BE):1859（均在 src/vm/handlers/msgwin.ts）；0x2DB 无专用 handler，走字段存储计划 src/vm/operandPlan.ts 的 declarePlan(0x2db,…):401 + src/vm/engineFieldIds.ts:209 的 font_metrics_mode；派发 = MSGWIN_OPS:2136；断言 = test/config1-chain.test.ts:93-94（mainSize=30 / rubySize=10，用例名「★CONFIG1 的 ADV 样例窗口：排版结果进入渲染模型」）。★T-0151 第三次（P3 overreach）：engine.calls 的 5 个 setter → 2 个重建体**调用点 raw** = 24081/24153/41403/41631/33401/33421/33531；sub_428990 是 sub_4328F0(41385)/sub_432DD0(41613) 的**被调**；engine.raw = 70940-71273（两个重建体的完整区间）。真正缺的只有 GDI HFONT 句柄层与字体级联（见 lazy-gdi-font-set）。",
+        "note": "7 条参数面（0x75/0x197/0x1A5/0x2BD/0x2BE/0x2FE/0x2DB）与面名映射/竖排都**已落地并接线**。★T-0151（P2 stale-ledger）换掉了两个指错的锚点。当前锚点一律用**标识符**（行号刻意不写 —— 它们随每次重构漂，实测已漂过一轮，见 journal）：op 体 `op_set_main_size`(0x75) / `op_set_ruby_size`(0x197) / `op_set_main_face`(0x1A5) / `op_set_ruby_face`(0x2FE) / `op_set_main_bold`(0x2BD) / `op_set_ruby_bold`(0x2BE)（均在 `src/vm/handlers/msgwin.ts`）；0x2DB 无专用 handler，走字段存储计划 `src/vm/operandPlan.ts` 的 `declarePlan(0x2db, …)` + `src/vm/engineFieldIds.ts` 的 `fontMetricsMode`；派发 = `MSGWIN_OPS`；断言 = `test/config1-chain.test.ts` 的「★CONFIG1 的 ADV 样例窗口：排版结果进入渲染模型（一行横排 / 30px / 注音 10px）」（mainSize=30 / rubySize=10）。★T-0151 第三次（P3 overreach）：engine.calls 的 5 个 setter → 2 个重建体**调用点 raw** = 24081/24153/41403/41631/33401/33421/33531；sub_428990 是 sub_4328F0(41385)/sub_432DD0(41613) 的**被调**；engine.raw = 70940-71273（两个重建体的完整区间）。真正缺的只有 GDI HFONT 句柄层与字体级联（见 lazy-gdi-font-set）。",
         "guard": "test/config1-chain.test.ts#排版结果进入渲染模型"
       },
       "journal": [
@@ -2873,6 +2867,11 @@
           "at": "T-0151",
           "field": "whySilent",
           "what": "旧口径把 sub_459F40 说成\"文本重排\"、把 0x2BD 说成\"调 sub_459F40\"，均不成立（它不在派发表里）。"
+        },
+        {
+          "at": "2026-09-25（T-0179 第 70 轮）",
+          "field": "note",
+          "what": "数据卫生：删掉 note 里全部 `文件:行` 数字锚（保留标识符）。实测漂移：6 个 op 体已从 1816/1825/1834/1842/1850/1859 移到 2229/2253/2282/2298/2336/2347，`MSGWIN_OPS` 从 2136 移到 2686，`engineFieldIds.ts` 的 `fontMetricsMode` 不在 :209（实际在 :245-246），`test/config1-chain.test.ts` 的断言从 :93-94 移到 :86。★`guard-spec` 只校验 `emulator.guard`，不校验 note 里的行号 ⇒ 这类漂移永远不会红，只能靠人删。"
         }
       ]
     },
@@ -3487,8 +3486,8 @@
       "emulator": {
         "status": "partial",
         "evidence": "E3",
-        "note": "引擎：管理器 `Scene+50704`（`operator new(0x4F4)`，`sub_4530B0` raw 65345-65363；创建点 `sub_4A6EE0` raw 126541-126545），三效果槽 `[258]` Rain / `[259]` Snow / `[260]` Leaf、三组 16-dword 参数块、销毁阈值 `[+0x4D8]`/`[+0x4DC]`（`0x325` 写）、旗标 `[312]`、时钟 `[313]`/`[314]`；每帧 `sub_4535F0(管理器,-1)` + `sub_453540`（raw 136828-136829 / 137169-137170）；销毁判据 `sub_4535F0` raw 65890-65909（`key >= [+0x4D8] ⇒ 释放 Rain`、`key >= [+0x4DC] ⇒ Snow+Leaf`）。本轮：`src/renderer/scene/weather.ts` 全建（三槽 + 参数块 + 两阈值 + 旗标/时钟 + `weatherNodeKey`（含\"一次性 + key<0 不触发\"）+ `weatherParticles` 确定性粒子场）；`0x324`（销毁全部 + 清旗标）、`0x325`（两阈值）经 `scWeatherDestroyAll`/`scWeatherSetDestroyThresholds` 落地 —— 模型侧函数已就位；**opcode→模型未接线**（同本条 ★仍缺 ②）；`0x326` 的 Snow 创建经 `scSet3DEffectSnow`（同批实测：`scWeatherDestroyAll`/`scWeatherSetDestroyThresholds`/`scSet3DEffectSnow`/`scSetEffect3DLevel` 在 `src/` 下**除定义外没有产品调用点**，唯一每帧被调的是 `scEnsureEffect3DSlots`，来自 `renderer/scene/commit.ts:95`）。★仍缺（两条，各有重开条件）：① **三个效果对象体**（`operator new(0xE4)` + vtable，如 `sub_4B58C0`）未复刻（D3D 顶点缓冲填充 + `DrawPrimitive`）⇒ 用\"逐粒子点精灵 + 时相/参数块重建\"替代，**不声称逐像素一致**；重开条件 = 有真机 dump 可比对粒子轨迹。② **opcode→模型那一半**：`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E`（以及 `0x324`/`0x325`/`0x326`）仍是 `ENGINE_INTERNAL_OPS`，因为 `test/op-327-32e-setweather-noop.test.ts` 与 `test/registry-classification.test.ts` 把类别钉住；重开条件 = 决定把 `0x327` 改成 `OPS` 真实现并同步那两处期望（模型侧已就绪）。引擎真源：engine/天结_unpacked.exe_utf8.c（raw 行号见本 note 内锚点）。守卫：test/scene-3d-weather.test.ts。★本条目由 2026-09 P1 修复轮（tickets/T-0167）落地，note 里的 file.ts:NNN 是交付时的落点。 ★T-0163（P3 overreach 成立）：`engine.fns` 补 `sub_4531B0`。★措辞收紧：模型侧函数（`scWeatherDestroyAll` / `scWeatherSetDestroyThresholds` / `scSet3DEffectSnow` / `scSetEffect3DLevel`）**除定义外没有产品调用点**，每帧唯一被调的是 `scEnsureEffect3DSlots` ⇒ 准确说法是「模型侧函数已就位，opcode → 模型**未接线**」，而不是「并有模型消费者」。",
-        "guard": "test/scene-3d-weather.test.ts"
+        "note": "引擎：管理器 `Scene+50704`（`operator new(0x4F4)`，`sub_4530B0` raw 65345-65363；创建点 `sub_4A6EE0` raw 126541-126545），三效果槽 `[258]` Rain / `[259]` Snow / `[260]` Leaf、三组 16-dword 参数块、销毁阈值 `[+0x4D8]`/`[+0x4DC]`（`0x325` 写）、旗标 `[312]`、时钟 `[313]`/`[314]`；每帧 `sub_4535F0(管理器,-1)` + `sub_453540`（raw 136828-136829 / 137169-137170）；销毁判据 `sub_4535F0` raw 65890-65909（`key >= [+0x4D8] ⇒ 释放 Rain`、`key >= [+0x4DC] ⇒ Snow+Leaf`）。本轮：`src/renderer/scene/weather.ts` 全建（三槽 + 参数块 + 两阈值 + 旗标/时钟 + `weatherNodeKey`（含\"一次性 + key<0 不触发\"）+ `weatherParticles` 确定性粒子场）；`0x324`（销毁全部 + 清旗标）、`0x325`（两阈值）经 `scWeatherDestroyAll`/`scWeatherSetDestroyThresholds` 落地 —— 模型侧函数已就位；**opcode→模型未接线**（同本条 ★仍缺 ②）；`0x326` 的 Snow 创建经 `scSet3DEffectSnow`（同批实测：`scWeatherDestroyAll`/`scWeatherSetDestroyThresholds`/`scSet3DEffectSnow`/`scSetEffect3DLevel` 在 `src/` 下**除定义外没有产品调用点**，唯一每帧被调的是 `scEnsureEffect3DSlots`，来自 `renderer/scene/commit.ts:95`）。★仍缺（两条，各有重开条件）：① **三个效果对象体**（`operator new(0xE4)` + vtable，如 `sub_4B58C0`）未复刻（D3D 顶点缓冲填充 + `DrawPrimitive`）⇒ 用\"逐粒子点精灵 + 时相/参数块重建\"替代，**不声称逐像素一致**；重开条件 = 有真机 dump 可比对粒子轨迹。② **opcode→模型那一半**：`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E`（以及 `0x324`/`0x325`/`0x326`）仍是 `ENGINE_INTERNAL_OPS`，因为 `test/op-327-32e-setweather-noop.test.ts` 与 `test/registry-classification.test.ts` 把类别钉住；重开条件 = 决定把 `0x327` 改成 `OPS` 真实现并同步那两处期望（模型侧已就绪）。引擎真源：engine/天结_unpacked.exe_utf8.c（raw 行号见本 note 内锚点）。守卫：test/scene-3d-weather.test.ts。★本条目由 2026-09 P1 修复轮（tickets/T-0167）落地，note 里的 file.ts:NNN 是交付时的落点。 ★T-0163（P3 overreach 成立）：`engine.fns` 补 `sub_4531B0`。★措辞收紧：模型侧函数（`scWeatherDestroyAll` / `scWeatherSetDestroyThresholds` / `scSet3DEffectSnow` / `scSetEffect3DLevel`）**除定义外没有产品调用点**，每帧唯一被调的是 `scEnsureEffect3DSlots` ⇒ 准确说法是「模型侧函数已就位，opcode → 模型**未接线**」，而不是「并有模型消费者」。\n★★**2026-09-25（`T-0179` 第 70 轮 goal round 3）两条审计原文的订正**（写在这里，防止下一位读者重复实现或重复指控）：① **`sub_453540`（每帧效果推进）在重写侧已经落地，不是缺口** —— 审计 P1「PixiBackend 每帧 present 不推进任何效果子系统」**与代码不符**：`src/renderer/scene/ops.ts:1175-1182` 的 `scWeatherAdvance` 是 `sub_453540`（raw 65791-65839）的逐字实现（墙钟量化到整数秒、上限 `WEATHER_MAX_STEPS = 100`、**三路各推进一次**、推进后前移 `[313]`），调用点 = `src/renderer/scene/commit.ts:90-92`（`scWeatherSetClock` + `scWeatherAdvance`），由**两个宿主**的 `advanceModel` 每帧各执行一次（`headlessScene.ts:945-946` / `pixiBackend.ts:1546-1547`），守卫 `test/scene-3d-weather.test.ts:78/98/145`（含「修前恒不动」的对照）⇒ 三路槽恒空时表现为**推进空转**，而不是「不推进」。② `stubs.ts` 的 `46668`-相关旧注「emulator 完全未建模」**早已不存在**（现为「模型侧已就位 / opcode→模型未接线」的精确表述，见上一段）；`Scene+46668` 本身已建模为 `SceneState.effect3DLevel`（构造取 2 见 `renderer/scene/state.ts:440`，写端 `scSetEffect3DLevel`，守卫 `test/scene-3d-effect-level.test.ts`）。⇒ **唯一真缺口仍是「opcode → 模型」**（`0x327`/`0x328`/`0x329`/`0x32C`/`0x32E` 仍是 `ENGINE_INTERNAL_OPS`，且 `scWeatherCreate`/`scWeatherDestroyAll`/`scWeatherSetDestroyThresholds`/`scSet3DEffectSnow` 除定义外无产品调用点），接上之后雨/雪/叶的挪动、100 步/帧上限、阈值销毁都会**自动经已就位的推进**落地。",
+        "guard": "test/scene-3d-weather.test.ts#推进 N 次后粒子状态"
       },
       "narrative": "docs-new/03-engine/opcode-table.md",
       "journal": [
@@ -3655,17 +3654,17 @@
         "guard": "test/op-a2-a3.test.ts"
       },
       "journal": [
-          {
-            "at": "T-0095",
-            "field": "note",
-            "what": "★订正：原表把 0x7B 的读者记成「点击路由游标」是误 —— 路由表是"
-          },
-          {
-            "at": "2026-09-25（T-0169）",
-            "field": "engine.raw",
-            "what": "沿革：`engine.raw` 由 `28724-28733` 扩到四条写者区间（`28724-28733,13997-14008,20365-20374,20859-20881`）；`trigger` 里「`effect_flags & 0x20`」按体更正为「**输入掩码** `& 0x20`（右键）」。"
-          }
-        ]
+        {
+          "at": "T-0095",
+          "field": "note",
+          "what": "★订正：原表把 0x7B 的读者记成「点击路由游标」是误 —— 路由表是"
+        },
+        {
+          "at": "2026-09-25（T-0169）",
+          "field": "engine.raw",
+          "what": "沿革：`engine.raw` 由 `28724-28733` 扩到四条写者区间（`28724-28733,13997-14008,20365-20374,20859-20881`）；`trigger` 里「`effect_flags & 0x20`」按体更正为「**输入掩码** `& 0x20`（右键）」。"
+        }
+      ]
     },
     {
       "id": "gfx-prim-mesh-and-render-state",
@@ -3848,22 +3847,22 @@
         "note": "已建模：MsgWindow.beginReveal／finishReveal／tickReveal／tickRevealWin + Engine.serviceTextReveal（普通消息路径与字格路径）与 Engine.serviceWinReveal（0x300 每窗逐行贴出闸门，见 msgwin-window-reveal-gate-300）。★速度定律（最终版）：引擎一步 = 一个字 —— sub_45BE20 的推送点（raw 83918 的 sub_45D120(win+44, v122)）就在 sub_46BE30 的逐字循环体内（83576 取一个字节 → 83582 / 83586 处 String 只装一个字 → 83596 量这一个字的宽 → 83601 判换行）；120B 文本记录（sub_45E870，83655）才是按换行 push 的。节拍 = message:MessageSpeed（GDI 路径 Sleep raw 13954／D3D 路径 sub_453B60 定时器），下限被一帧地板住 ⇒ 整段耗时 = 字数 × max(MessageSpeed, 一帧)，即 MessageSpeed = 每字毫秒。emulator：budgetMs = 字形数 × max(speed, 一帧)、tickRevealWin 按 total/budget 连续推进（carry 保分数余量）；0 ⇒ 同步排空（立即全显）。实测（42 字页）：1ms ⇒ 0.7s（帧率地板）、25ms ⇒ 1.05s、50ms ⇒ 2.1s、99ms ⇒ 4.17s。守卫：test/adv-msgwin.test.ts（速度定律）、test/option-font-speed-menu.test.ts（每字预算 + 可观察性跨度）。缺口：逐字淡入色窗（MessageSpeed × MessageFade / 100）未接、MessageFade 未消费。\n★2026-09（`tickets/T-0016`，用户实测「ADV 页右侧悬停 ⇒ 中间的 ADV 文字不断被重放、页不推进」）：**\"逐字启动\"必须按内容武装一次，而不是按门指令执行次数** —— 悬停/点击派发的 label 带返回点 -3（`sub_405360`）⇒ label 的 `ret` **正好回到门指令重跑** `0x72`（见 `hover-ret-reruns-gate-op`）。引擎的 `0x72` 尾段（raw 28539-28555）只做三件事：`Engine[122371] = 窗`、`sub_45A940(..., -1, Engine+107705)` 查字格数、置 bit31；bit30 未置时置 `0x40000000` + `Engine[107704] = 0` + 重启 **▼ 节拍**。文字游标 `FontVWindow+132` 由 `sub_45BE20` 推进、由 `0x71`/`sub_45EC60` 复位，`0x72` 一概不动 ⇒ emulator 的 `op_wait_for_input` 现在只在「这一页的内容还没武装过显现」时 `beginReveal`（`MsgWindow.revealArmed`，键 = 内容版本号 `contentRevOf`；`0x6E/0x6F/0x71/0x196` 改内容时 +1），`finishPage` 也按同一键**一页只记一次**。守卫：`test/adv-msgwin.test.ts`（重跑 0x72 不得重放 + 新内容必须重新逐字）、`test/route-dispatch.test.ts` 判据③、`test/game-start-chain.test.ts`（真实语料 `revealRestarts === 0`）。修前实测：悬停侧边栏一次 ⇒ 整页重放（E3 `revealRestarts = 2`）。\n★2026-09（`tickets/T-0033`，用户实测「快速多次点击 ⇒ 要等第一句逐字完成才播第二句」）：**逐字期间有一个专门的输入出口**。文本泵 `sub_409400` 的第二半（raw 13931-13946）在「没有 0x300 闸门槽活跃」时处理**当前窗**（`Engine[489484]`）：消费刷取掩码后，若 `mask & 0x10`（**只认左键**；等待泵才是 `0x50`）或滚轮键位命中（`message:AdvanceMesOnWheel & 1`）或滚轮累加器 `Engine[7796] < 0`（读后清）⇒ 清 `0x20000000`、置 `Engine[388212] = 1`、**自旋 `sub_45BE20` 到整页贴完**、把掩码清 0（这次点击被消费）；**不清 bit31**（等待门仍在 ⇒ 页不推进）也**不动 bit30**（用普通泵而非 `sub_45A940(..., -2, 0)` ⇒ ▼ 继续闪）。下一次调用见 `388212` 时再自旋一次，并在 `Engine[667856] == 1`（`set:DrawMode`）时清等待门计时器 + 置强制冻结（raw 13910-13915）。⇒ emulator：`Engine.serviceRevealAdvanceInput()`（帧驱动在 `textRevealing` 分支里、`serviceTextReveal` 之前调用）；验收 = 点击／点击／点击 ⇒ 贴完／下一句／跳过下一句的逐字。守卫：`test/adv-msgwin.test.ts`（逐字期间左键 ⇒ 整页 + 不推进 + 消费 + 不清 bit30；右键／上滚不生效）、`test/frame-loop.test.ts`（驱动层：点击帧不派发、后续帧不得攒成推进）。E3（真实语料）：点击后 1 帧 `shown` 0 → 52/52、ip／pages 不变、bit30 保持。\n\n★2026-09 轮 8（`tickets/T-0100`）：**「每帧只泵当前窗」这条已修好并被守卫钉住**。引擎 ADV 支只把**当前窗**交给泵（raw 13943-13945 `do result = sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484)); while (!result);`；`489484/4 = 122371` = 当前窗，由 `0x6E` raw 28365/28381 与 `0x71`/`0x72` raw 28545 写），而 emulator 修前有**三处**会发布「所有已知窗」：① `Engine.serviceRevealAdvanceInput`（逐字期间点击 ⇒ 整页贴完那条路）遍历 `msgwin.reveal` 的**所有**键；② `Engine.serviceTextReveal` 用 `tickReveal`（全窗版）；③ `0x70` 的 handler 调 `emitAllWins`。**用户可见后果（E4 实测）**：序章 `SN0000`（正文在**窗 8**，满屏 1280×720@(0,0)+居中）切到 `SC0000`（正文在**窗 1**）时，脚本已用 `detach-texture 19a28 1f4`（`src/NOVEL.txt:415`）删掉屏上正文行、emulator 也**忠实**清了 `scene.msgWins`，但**窗 8 的 `reveal` 条目仍然留着**（引擎同样保留 `win+132` 游标，**合法**）⇒ `SC0000` 第一页逐字期间**点一下鼠标**就把序章最后一页重新贴回**屏中央**（用户实测日志 8655/8658，此后每次点击复发）。**修法**：三处统一收敛到 `resolveWin(msgwin.lastArg)`。★**禁止的修法**（写进票据验收）：场景边界 `msgwin.reset()` / 清 `slots[8]` / 清 `reveal[8]`（引擎保留记录与游标；`exit`(0x2) 边界不 reset 是与引擎一致的）、给 `#holdFrames` 打补丁、用「清 DrawItem」修（边界两侧 DrawItem 已干净：26 → 4）、动 `scDetachTexture` 区间清。守卫 `app/amayui-emulator/test/op-0100-reveal-current-window.test.ts`（4 条：① 前置证明 `reveal` 里**确实同时**含残留窗与当前窗 ⇒ 旧的全窗发布必然发布 8，守卫有辨别力；② 点击只发布当前窗；③ 每帧泵不推进也不发布残留窗；④ `0x70` 只发布本窗）。回归：受影响的 12 个文件 124/124 + 真语料链 5 个文件 45/45 + `tsc --noEmit` 干净。\n★★2026-09 轮 8 追加（用户实测 2 条，同批修）：**「推进了就必须发布」+「节流位置位期间仍要跑泵」**。\n① **坑 A（当时由 T-0100 的改动引入）**：把 serviceTextReveal 从 \tickReveal（全窗）收窄成 \tickRevealWin(cur) 时**连带删掉了 \for (const win of dirty) #publishReveal(win)** ⇒ 游标在 VM 里照常走、宿主却只在 msgWinSync 才重绘 ⇒ 屏上停在第 0 个字直到别的路径发布一次（用户原话：「必须等待逐字完成后才直接展示出来」）。E4 判据：\textLayer.ts:104 只在 \revealed 变化时打印 [reveal] win=N x/总数，用户日志里 ADV 只有 \u0000/22 与最终 26/26、中间态全无；而同日志里 win=9（\u0000x300 闸门泵，不经此处）是 1/10…10/10 逐步的。修法 = 把那行发布加回（仍只发布当前窗）。\n② **坑 B（引擎建模反了）**：主循环 raw **21176-21181** if ((v35 & 0x20000000) != 0) { sub_409400(_this); if (Engine[489860]) goto LABEL_215; } ⇒ **节流位置位时引擎是「调文本泵」（等节拍→推一个字），不是「空等」**；而 \frame/loop.ts 的 sleep 分支修前什么都不做 ⇒ 门内既不推进也不重绘。★\u0000x6E 在轮 6 就置该位、**轮 7 的 T-0094 又把它加到 \u0000x196（6341 处、一句中间）** ⇒ 门内停顿频率在轮 7 后明显上升。修法 = sleep 分支加 serviceTextReveal(nowMs)（忠实 raw 21178），门仍照旧阻塞脚本派发。\n③ 守卫与判别力：新增 \test/adv-reveal-under-throttle.test.ts（2 条：中间态 ≥2 个 / **门还置着时必须收到过发布**）；两条修复的判别力都用脚本机械证明过（撤销→红、还原→绿、sha256 自检还原）。★首版「坑 B」守卫只断言「门后还有新中间态」，**撤销修复后仍绿 = 假守卫**，已改成按 waitFlags & SLEEP_GATE 当场打点的精确判据 —— 教训：**守卫必须证明自己有辨别力**。\n\n★2026-09（`T-0169`）：`sub_409400` 的**第二条落点**已补齐 —— `raw 13917-13930` 的 `else if (Engine[388212])` 支（清 `0x20000000` + 一次贴完当前窗；`set:DrawMode == 1` 时另置强制冻结/清等待计时器）。闩锁写点 = `raw 13941`（逐字期间的三个输入出口：左键 / `AdvanceMesOnWheel` 的滚轮下键 / 滚轮累加器 < 0，`raw 13935-13938`），清零点 = `0x72` 的 `raw 28557`（+ 整体复位 `raw 17973`、构造 `raw 22604`）；触发场景 = 点击贴完后同一句里 `0x196` 续写（`raw 29093` 置 `0x20000000`、**不**清 `97053`）。体里 `raw 13925` 的 `result = 0` **无消费者**（`raw 21178` 丢弃返回值）⇒ 不落。守卫：`test/t0169-frame-reveal-pump.test.ts`。"
       },
       "journal": [
-          {
-            "at": "2026-09",
-            "field": "note",
-            "what": "★速度定律（2026-09 二次订正 / 最终版）："
-          },
-          {
-            "at": "2026-09",
-            "field": "note",
-            "what": "★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。"
-          },
-          {
-            "at": "2026-09-25（T-0169）",
-            "field": "emulator.note",
-            "what": "沿革（不进渲染字段）：原 note 的「缺口：逐字淡入色窗未接」保留；本次补的是 raw 13917-13930 闩锁支（`frame-render-gate-mainloop` note ③ 登记过的那一条）。"
-          }
-        ]
+        {
+          "at": "2026-09",
+          "field": "note",
+          "what": "★速度定律（2026-09 二次订正 / 最终版）："
+        },
+        {
+          "at": "2026-09",
+          "field": "note",
+          "what": "★历史：曾按「一步 = 一行」把预算算成 行数 × 节拍 ⇒ 整段快「每行字数」倍（约 14 倍），设置界面「显示速度」滑条几乎看不出效果（用户实测：文字出现的速度几乎没有变）；再往前还有一版把 MessageSpeed 当每字间隔但没有帧率地板。"
+        },
+        {
+          "at": "2026-09-25（T-0169）",
+          "field": "emulator.note",
+          "what": "沿革（不进渲染字段）：原 note 的「缺口：逐字淡入色窗未接」保留；本次补的是 raw 13917-13930 闩锁支（`frame-render-gate-mainloop` note ③ 登记过的那一条）。"
+        }
+      ]
     },
     {
       "id": "save-slot-chain",
@@ -4429,14 +4428,19 @@
         "guard": "test/live2d-render.test.ts",
         "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。 ★切批粒度 = **一个网格一批**（`src/live2d/render.ts`；「按纹理号合并」是错的），直接锚点 raw **148038-148068** 写在 `trigger` 里；`engine.raw` = `134277-134416`（覆盖 572B 节点归并那一段）。"
       },
-      "evidence": "E4",
+
       "journal": [
-        {
-          "at": "2026-09-21（T-0075 审计 contradiction）",
-          "field": "note",
-          "what": "★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：本条的 `trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（`src/live2d/render.ts` 一个网格一批）自相矛盾 ⇒ 已按体与实现改写；`engine.raw` 同时扩到 `134277-134416`（覆盖 572B 节点归并那一段），切批粒度的直接锚点 raw **148038-148068** 写在 `trigger` 里。"
-        }
-      ]
+          {
+            "at": "2026-09-21（T-0075 审计 contradiction）",
+            "field": "note",
+            "what": "★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：本条的 `trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（`src/live2d/render.ts` 一个网格一批）自相矛盾 ⇒ 已按体与实现改写；`engine.raw` 同时扩到 `134277-134416`（覆盖 572B 节点归并那一段），切批粒度的直接锚点 raw **148038-148068** 写在 `trigger` 里。"
+          },
+          {
+            "at": "2026-09-25（T-0179 第 70 轮）",
+            "field": "evidence",
+            "what": "数据卫生：删掉顶层 vestigial 字段 evidence=E4（它与权威字段 emulator.evidence=E3 互相矛盾）。note 里那句「E4 已做」的依据是 .tmp/l2dfix-0-title.png / .tmp/t0042d-0-title.png 两张对照截图，而 .tmp/ 是 gitignore 的临时区（纪律：证据不许指 .tmp/）⇒ 不构成持久的 E4 凭据，故不改 emulator.evidence。沿革存于此。"
+          }
+        ]
     },
     {
       "id": "stage-stepper-0x40-gate",

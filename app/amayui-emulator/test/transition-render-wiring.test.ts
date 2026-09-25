@@ -33,6 +33,7 @@ import {
   scTransitionRangeHandles,
   scTransitionTick,
   scTransitionsPending,
+  transitionTargetKind,
 } from '../src/renderer/scene/transition.js';
 import { Container, Sprite, Texture } from 'pixi.js';
 import { ScenePresenter } from '../src/renderer/pixi/presenter.js';
@@ -157,8 +158,51 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
     /scAdvance\(this\.scene, nowMs, freeze\)/.test(backend),
     '★G1：pixi 的模型推进必须把 freeze 传给 scAdvance（否则冻结到不了窗模型）',
   );
+  // ★★`T-0091` 第②项：`[4]` 的**两个分支**必须被分辨，不许把"后台缓冲"混进"该槽没有表面"。
+  //   引擎 `sub_4A50C0`（raw 124819-124920，逐行读过）：`a2 > 0x3E7`（含 `-1`）⇒ **后台缓冲**（画到屏幕、
+  //   记 `Scene+46456 = -1`、`return 1`）；`0..999` 但 `Scene[4*slot+42456] == 0` ⇒ 报
+  //   「テクスチャが作成されていません」+ `return 0`（**不动已绑的渲染目标**）。
+  //   emulator 只建模了"画进 create-texture 出来的槽" ⇒ 后台缓冲那条**如实登记为有据缺口**，
+  //   但判据必须来自 `transitionTargetKind`（唯一来源），不许宿主自己写 `slot < 0` 之类。
+  //   ★判据的**作用域**只限 `#compositeTransitions`（文件里别处有正当的 `slot < 0`：`setRenderTarget`
+  //     的日志与 `#captureStageIntoSlot` 的守卫）⇒ 先切出该函数体再断言，避免变成"扫全文"的宽棘轮。
+  const compStart = backend.indexOf('#compositeTransitions(): void {');
+  assert.ok(compStart > 0, '必须能找到 `#compositeTransitions`');
+  const comp = backend.slice(compStart, backend.indexOf('\n  // ---- 动画求值 / 渲染驱动', compStart));
+  assert.ok(
+    /transitionTargetKind\(slot\) === 'backbuffer'/.test(comp),
+    '★宿主必须用 `transitionTargetKind(slot)` 分辨后台缓冲分支（判据的唯一来源在 scene/transition.ts）',
+  );
+  assert.ok(
+    !/slot === -1/.test(comp) && !/if \(slot < 0\)/.test(comp),
+    '★`#compositeTransitions` 里不许自己内联判 `-1`（那样会把「> 999」漏掉，且判据变成两份）',
+  );
+  {
+    const tsrc = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'scene', 'transition.ts'), 'utf8');
+    assert.ok(
+      tsrc.includes('export function transitionTargetKind'),
+      '判据函数必须在 `scene/transition.ts` 里（纯函数 ⇒ 可单测）',
+    );
+    assert.ok(
+      /slot < 0 \|\| slot > 999/.test(tsrc),
+      '★判据 = 引擎的 `a2 > 0x3E7`（unsigned ⇒ 含 `-1`）：`slot < 0 || slot > 999`',
+    );
+  }
   const cache = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'pixi', 'textureCache.ts'), 'utf8');
   assert.ok(cache.includes('composeIntoSlot('), 'TextureCache 必须提供"把 2D 合成画进槽表面"的入口');
+});
+
+test('★`[4]` 的两个分支：`0..999` = 槽表（引擎 `Scene[4*slot+42456]`），其余（含 -1）= 后台缓冲', () => {
+  // 体：`sub_4A50C0` raw 124839 `if ( a2 > 0x3E7 )` —— `a2` 是 **unsigned**，所以 `-1`（0xFFFFFFFF）
+  // 也落这一支；`0x3E7` = 999 = 那张槽表的上界（`Scene[4*slot + 42456]`）。
+  assert.equal(transitionTargetKind(0), 'slot', '槽 0 是表内第一格');
+  assert.equal(transitionTargetKind(1), 'slot');
+  assert.equal(transitionTargetKind(36), 'slot', '槽 36 = 转场 scratch 层 A（`Scene+42600`）');
+  assert.equal(transitionTargetKind(37), 'slot');
+  assert.equal(transitionTargetKind(999), 'slot', '999 是表的最后一格（含）');
+  assert.equal(transitionTargetKind(1000), 'backbuffer', '> 999 ⇒ 后台缓冲（raw 124839）');
+  assert.equal(transitionTargetKind(-1), 'backbuffer', '★默认记录的 `[4] = -1` ⇒ 后台缓冲（unsigned 比较）');
+  assert.equal(transitionTargetKind(-2), 'backbuffer');
 });
 
 test('★源码棘轮：`render4.transitionRuntime` 只被 `scene/transition.ts` / `scClearTransitions` 改', () => {

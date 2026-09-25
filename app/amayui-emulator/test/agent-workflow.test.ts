@@ -678,6 +678,90 @@ test('★fix-evidence-lines.js：多命中 + 无旧 line ⇒ 不猜（列待人�
 });
 
 // ---------------------------------------------------------------------------
+// (a3) `check-ledger-refs.js` —— 台账正文里 `文件:行` 引用的**只读**体检
+// ---------------------------------------------------------------------------
+//
+// 为什么也要守：它是"行号缓存"这类静默漂移**唯一**的机械发现手段（三个台账校验器只查字段类型/枚举/守卫，
+// 从不看正文里的行号）。实测（第 70 轮）一次体检查出 16 处漂移。而它自己必须**只读**（改行号是 owner 的
+// 判断，走 `ledger.js --plan` 的 patches）⇒ 这里钉住"跑完一个字节都不许变" + `--check` 的退出码语义。
+
+const CHECK_REFS = path.join(ENGINE_SCRIPTS, 'check-ledger-refs.js');
+
+test('★check-ledger-refs.js：只读体检（跑完逐字节不变）+ --check 的退出码语义 + --min-dist 过滤', () => {
+  const root = sandbox('check-refs');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'app', 'amayui-emulator', 'src', 'vm'), { recursive: true });
+    // 夹具：一个 40 行的假源文件，`wantedSymbol` 只出现在第 30 行
+    const srcLines = Array.from({ length: 40 }, (_, i) => (i === 29 ? 'const wantedSymbol = 1;' : `// filler ${i}`));
+    fs.writeFileSync(path.join(root, 'app/amayui-emulator/src/vm/fake.ts'), srcLines.join('\n'));
+    // 夹具：台账正文把 `wantedSymbol` 指到第 2 行（漂移 28 行）
+    const gaps = {
+      entries: [
+        {
+          opcode: 1,
+          disposition: 'partial',
+          note: '夹具',
+          missing: [{ what: '见 `wantedSymbol`（`src/vm/fake.ts:2`）', ticket: 'T-0001', raw: '1-2' }],
+        },
+      ],
+    };
+    const gp = path.join(root, 'analysis/opcode-gaps.json');
+    fs.writeFileSync(gp, JSON.stringify(gaps, null, 2));
+
+    const before = snapshot(path.join(root, 'analysis'));
+    const r = run(CHECK_REFS, ['--root', root]);
+    assert.equal(r.status, 0, '不带 --check 时永远 exit 0（只是报告）');
+    assert.match(r.stdout, /漂移 \*\*1\*\*/, r.stdout);
+    assert.match(r.stdout, /fake\.ts:2\s*→\s*30/, `要给出最近的真实行号：${r.stdout}`);
+    assert.equal(snapshot(path.join(root, 'analysis')), before, '★只读：跑完 analysis/ 必须逐字节不变');
+
+    // --check：有候选 ⇒ 非零
+    const chk = run(CHECK_REFS, ['--root', root, '--check']);
+    assert.notEqual(chk.status, 0, '--check 有候选必须非零退出');
+
+    // --min-dist：距离 28 ⇒ 阈值 15 时仍报；阈值 40 时被滤掉 ⇒ --check 转 0
+    assert.match(run(CHECK_REFS, ['--root', root, '--min-dist', '15']).stdout, /漂移 \*\*1\*\*/);
+    const wide = run(CHECK_REFS, ['--root', root, '--min-dist', '40', '--check']);
+    assert.equal(wide.status, 0, `--min-dist 滤掉全部候选后 --check 应为 0：${wide.stdout}`);
+
+    // 修好（指到第 30 行）⇒ 无候选
+    const fixed = JSON.parse(fs.readFileSync(gp, 'utf8'));
+    fixed.entries[0].missing[0].what = '见 `wantedSymbol`（`src/vm/fake.ts:30`）';
+    fs.writeFileSync(gp, JSON.stringify(fixed, null, 2));
+    const clean = run(CHECK_REFS, ['--root', root]);
+    assert.match(clean.stdout, /漂移 \*\*0\*\*/, clean.stdout);
+    assert.equal(run(CHECK_REFS, ['--root', root, '--check']).status, 0, '修好后 --check 应回 0');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// (a4) `T-0142`：Electron 侧输入的两条通道必须**显式**且有文档
+// ---------------------------------------------------------------------------
+//
+// 为什么守：`debugsrv.cjs` 的 `click`/`move` 默认走主进程 `sendInputEvent`（真 DOM 事件），
+// 而 web 宿主走渲染窗命令表（`applyScenarioEvent`）⇒ 同一个"agent 点一下"有**两条实现**。
+// 票面（`T-0142` acceptance ①）要求"走同一命令表；若确实需要真 DOM 保真度，保留一条**显式选择**的旧路径
+// 并在帮助里说明差异"。这条守卫钉的就是"那条新路存在 + 它是显式开关 + 两条路的差别有文档"。
+
+const DEBUGSRV = path.join(REPO, 'app', 'amayui-emulator', 'tools', 'debugsrv.cjs');
+const DBG_CLI = path.join(REPO, 'app', 'amayui-emulator', 'tools', 'dbg.cjs');
+
+test('★T-0142：输入的两条通道（DOM / VM 桥）必须显式可切且写明差别', () => {
+  const srv = fs.readFileSync(DEBUGSRV, 'utf8');
+  assert.match(srv, /AMAYUI_DEBUG_INPUT/, '① 要有显式开关（默认仍走 DOM 那条，不许无声改默认行为）');
+  assert.match(srv, /sendDebugQuery\(cmd\)/, '① VM 那条必须**经渲染窗的命令表**（不是自己造事件）');
+  assert.match(srv, /head === 'move' \? `move \$\{x\} \$\{y\}` : `click \$\{x\} \$\{y\}`/, '① 转的必须是同一条命令文本');
+  assert.match(srv, /真 DOM 保真度/, '① 两条路的差别要写在文件头（票面点名"在帮助里说明差异"）');
+  // 旧路必须**还在**（默认路径）——删了它等于无声迁移既有 E4 用法
+  assert.match(srv, /webContents\.sendInputEvent/, '① 旧路（DOM）必须保留为默认/可选路径');
+  const cli = fs.readFileSync(DBG_CLI, 'utf8');
+  assert.match(cli, /AMAYUI_DEBUG_INPUT/, '③ `dbg.cjs` 的用法示例要同步说明这条开关');
+});
+
+// ---------------------------------------------------------------------------
 // (b) 防漂移：三个 SKILL.md 的「★多 agent 并行纪律」节必须同源
 // ---------------------------------------------------------------------------
 

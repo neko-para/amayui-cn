@@ -168,6 +168,11 @@ const NON_BRIDGE = {
     //   与 `setSceneRotationRad` 同类 —— `Scene+46676` 在反编译里**零写点**（105 处读、0 处写），
     //   emulator 无法从脚本推出它 ⇒ 默认 false（= 与修前逐字节相同），要复现"冻结帧"必须由宿主/测试注入。
     //   没有一条 opcode 调它（`0x222` 只是把它当门读）。清单按**字典序**写。
+    // ★`sceneForSnapshot`（`tickets/T-0122` 的引擎态快照）：**调试器只读访问器**，不是"VM 让宿主做事" ——
+    //   调用方是会话的 `snapshot`/`restore` 两个命令（`session.ts`），用来把场景态的 `render4`
+    //   （`transitions`/`slotModes`）纳入/灌回快照。没有一条 opcode 调它；入桥会把"调试器的眼睛"
+    //   混进操作数面（而且它是渲染侧封装（`private scene`）的唯一开口，语义上属宿主内部）。
+    'sceneForSnapshot',
     'sceneFrozen',
     'setAudioSilent', // 同 `audioSilent`（T-0106）
     'setSceneFrozen',

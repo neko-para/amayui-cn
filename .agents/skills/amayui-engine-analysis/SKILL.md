@@ -62,6 +62,7 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 | `scripts/scripts.js` | **第三层：查询 + 增删改 + 离线自检**（`--summary/--index/--coverage/--find/--id/--validate`、`--add/edit/rm`、`--recount`） |
 | `scripts/ledger.js` | ★**通用写入口（条目级手术）**：按计划文件做 `set`/`add`（数组即 append）/`unset`/`mutate`（按 `raw` 删改 `missing[]`）/`topLevel`/`patches`（整串替换）。**默认 dry-run**，`--write` 才落盘；两阶段 + 恰好命中 1 条 + 写盘后回读复核。改不了 `counts`（那是派生物，指路 `--recount`） |
 | `scripts/gaps.js` | **缺口台账：查询 + 体检 + `counts` 重算**（`--show/--list/--missing/--stale/--disposition/--ticket/--search/--recount`；口径唯一 = `build-opcode-gaps.mjs`） |
+| `scripts/check-ledger-refs.js` | **台账正文里的 `文件:行` 引用体检**（只读）：扫 `opcode-gaps.json` 的 `note`/`missing[].what`（`--caps` 再加 `engine-capabilities.json`）里引用的 emulator `文件:NNN`，按「区间 + 最近标识符」报**候选漂移**。★行号是"缓存"、**不受任何棘轮保护**（三个校验器只查字段类型/枚举/守卫）⇒ 代码一重构就静默指错（第 70 轮一次查出 16 处）。`--check`（有候选 ⇒ exit 1）/ `--min-dist N`（滤掉"声明行落在函数体内"那类假阳，建议 15）/ `--strict` / `--json`。★**候选清单不是判决**，且**只报告不改写**（改行号走 `ledger.js --plan` 的 `patches`） |
 | `../../scripts/build-capabilities.mjs` | **第二层：把台账渲染成 md**（改完 JSON 必须重跑，否则守卫测试会因 md 不同步而失败） |
 | `../../scripts/build-scripts.mjs` | **第三层：把脚本台账渲染成 md**（同上，生成 `docs-new/05-scripts/`） |
 | `../../scripts/build-opcode-gaps.mjs` | **缺口台账：渲染 md + 回填 `counts`（写模式）/ `--check`（CI）** |
@@ -423,7 +424,7 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
   实测按"下一条"改错过一条处置位；`ledger.js` 已把这条钉成硬规则（命中 ≠1 条就**整体拒绝**、一个字都不写）。
 - ★**工具不许留在 `.tmp/`**：`.tmp/` 是 gitignore 的临时区。会被下一波复用的工具必须落在
   `.agents/skills/*/scripts/`（本工程当下的常驻工具：`report.js` / `sort-fields.js` / `capabilities.js` /
-  `scripts.js` / `ledger.js` / `gaps.js` / `brief.js` / `tickets.js` / `fix-evidence-lines.js`）。
+  `scripts.js` / `ledger.js` / `gaps.js` / `check-ledger-refs.js` / `brief.js` / `tickets.js` / `fix-evidence-lines.js`）。
 - **不写镜像 / 不写 libclang/AST 文本改写**；渲染只做纯数据报表，不依赖任何反编译器/特定工具。
 - **结论带证据**：`evidence` 以 raw 行区间（第一/二层）或 `src/*.txt` 行区间（第三层）为主。
 - **AGE 助记符不可靠**（`exit`≠程序退出、`ret`≠跨脚本返回），以**读反编译体为准**；**严禁读取/参考 emulator**（产物，非信息源）；凡 `推测`/未读体一律标 `partial`。

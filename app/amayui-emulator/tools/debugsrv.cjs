@@ -34,8 +34,14 @@
  *
  * 命令台只能**看**（只读查询 + 断点）；而要查的现象（如 `tickets/T-0102` 的白底）在
  * "点进去某一步之后"才出现 ⇒ 需要能**远程驱动输入**，否则仍要人坐在窗口前点。
- * 这三条命令**不经过渲染窗**：主进程直接 `webContents.sendInputEvent`（与 `tools/shot.cjs`
+ * 这三条命令**默认不经过渲染窗**：主进程直接 `webContents.sendInputEvent`（与 `tools/shot.cjs`
  * 的 `click`/`hover` 同一手法、同一套坐标口径），因此**不需要重新打包渲染窗**。
+ *
+ * ★**两条输入通道（`tickets/T-0142` 的 acceptance ①）**：设 `AMAYUI_DEBUG_INPUT=vm` 时，`click`/`move`/
+ * `clickimg` **不再自己造 DOM 事件**，而是把同一行命令转给渲染窗的**命令表**
+ * （`src/vm/debugCommand.ts` → `applyScenarioEvent`）—— 与 **web 宿主逐字同源**，trace 里会出现
+ * `[input] 注入 N 个事件`。差别：DOM 那条有"真 DOM 保真度"（过宿主焦点/悬停），VM 那条与宿主无关
+ * （两端同语义、可断言）。**默认仍是 DOM 那条**（不许无声改既有 E4 用法 `npm run shot --load` 的依赖路径）。
  *
  * ```
  * click <x> <y>        在游戏窗口里点一下（输入坐标 = `shot.cjs` 里 CONFIG_XY 那一套）
@@ -226,6 +232,31 @@ async function handle(sock, msg) {
       send(sock, { id, ok: false, lines: [`${head}：用法是 \`${head} <x> <y>${head === 'clickn' ? ' [次数] [间隔ms]' : ''}\`（收到「${text}」）`] });
       return;
     }
+    // ★`tickets/T-0142`（acceptance ①）：**VM 外层桥**这条输入通道。
+    //   为什么要它：Electron 侧原先走 `webContents.sendInputEvent`（真 DOM 事件），而 web 宿主走
+    //   `ScenarioEvent` → `applyScenarioEvent`（`src/vm/debugCommand.ts` 的命令表）⇒ **同一个"agent 点一下"
+    //   有两条实现**，语义与可观测性会漂（本工程最忌的那种）。打开这个开关后，本进程**不再自己造 DOM 事件**，
+    //   而是把同一行命令原样转给渲染窗的命令表 —— 与 web 宿主**逐字同源**（trace 里会出现 `[input] 注入 N 个事件`）。
+    //   ★**默认关**（`AMAYUI_DEBUG_INPUT=vm` 才开）：`sendInputEvent` 那条路有"真 DOM 保真度"（过宿主焦点/悬停），
+    //   而它是**既有 E4 用法（`npm run shot --load` 一族）依赖**的路径 ⇒ 不许无声改默认行为。
+    //   两条路的差别写在 `tools/dbg.cjs` 的用法头与 `debugsrv.cjs` 的文件头里。
+    if (String(process.env.AMAYUI_DEBUG_INPUT ?? '').toLowerCase() === 'vm' && head !== 'clickn') {
+      // `clickimg` 的坐标是**截图图像坐标**，得先在主进程换算成虚拟坐标（渲染窗只认 1280×720 虚拟坐标）。
+      let x = n[0];
+      let y = n[1];
+      if (head === 'clickimg') {
+        const mapped = await imgToSendLive(n[0], n[1]);
+        if (!mapped) {
+          send(sock, { id, ok: false, lines: ['没有游戏窗口（输入未发送）'] });
+          return;
+        }
+        [x, y] = mapped;
+      }
+      const cmd = head === 'move' ? `move ${x} ${y}` : `click ${x} ${y}`;
+      const r = await sendDebugQuery(cmd);
+      send(sock, { id, ...r });
+      return;
+    }
     if (head === 'clickn') {
       // ★为什么要"一次调用点 N 下"：ADV 推进是**一页一次点击**，而序章有上百页；每次点击都走一次
       //   "客户端短连接 → 服务端 → 渲染窗"的话，外部调用方的往返开销比游戏本身还大（实测每调用 ~1.5s）。
@@ -256,6 +287,40 @@ async function handle(sock, msg) {
     const [x, y] = [n[0], n[1]];
     const what = head === 'move' ? moveAt(x, y) : await clickAt(x, y);
     send(sock, { id, ok: true, lines: [what] });
+    return;
+  }
+
+  // ★`tickets/T-0122`：**引擎态快照的落盘/读取在"这一层"**（`save <路径>` / `load <路径>`）。
+  //   为什么不是渲染窗：渲染进程**没有 fs**（`engineSnapshot.ts` 自己也一处文件 IO 都没有，
+  //   见它的源码棘轮守卫）。⇒ 这里是唯一同时"够得到渲染窗的答案"又"够得到磁盘"的地方。
+  //   命令名刻意与渲染窗的 `snapshot` / `restore` 分开：`save`/`load` 是**带路径**的整件事，
+  //   `snapshot`/`restore` 是**纯内存**的两个动词（面板/别的宿主也能用）。
+  if (head === 'save' || head === 'load') {
+    const file = text.slice(head.length).trim();
+    if (!file) {
+      send(sock, { id, ok: false, lines: [`${head}：用法 ${head} <路径>（save = 导出引擎态快照；load = 灌回）`] });
+      return;
+    }
+    if (head === 'save') {
+      const r = await sendDebugQuery('snapshot');
+      const json = (r?.lines ?? [])[0];
+      if (r?.ok === false || typeof json !== 'string' || !json.startsWith('{')) {
+        send(sock, { id, ok: false, lines: [`✗ snapshot 没给出 JSON：${JSON.stringify(r).slice(0, 200)}`] });
+        return;
+      }
+      fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
+      fs.writeFileSync(file, `${json}\n`, 'utf8');
+      const bytes = fs.statSync(file).size;
+      send(sock, { id, ok: true, lines: [`已存引擎态快照 → ${file}（${bytes} 字节）`] });
+      return;
+    }
+    if (!fs.existsSync(file)) {
+      send(sock, { id, ok: false, lines: [`✗ 没有这个文件：${file}`] });
+      return;
+    }
+    const b64 = Buffer.from(fs.readFileSync(file, 'utf8'), 'utf8').toString('base64');
+    const r = await sendDebugQuery(`restore ${b64}`);
+    send(sock, { id, ...r });
     return;
   }
 

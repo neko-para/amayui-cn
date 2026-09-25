@@ -25,19 +25,19 @@
 
 TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_unpacked.exe_utf8.c`，只读；「raw NNNNN」= 该文件行号）。
 当前阶段：**审计遗留收尾**（2026-09 审计覆盖 364/364 opcode + 54/54 能力条目，产出 383 条 finding）。
+★**第 70 轮"清理剩余内容"收口后**：`T-0179` 的 `missing` 裁决做完（**95/95 带重开条件**）、`T-0148` §5.2 的 `still-present` 半边裁完、
+**3 条 `verify` 基线红清零**（`T-0146` 关单）⇒ `npm run verify` **exit 0**。
 判绿口径 = §6；未完成票 = §4；引擎侧硬结论 = §8。
 
-## 3. 台账现状（快照 · 2026-09-25 F 波收口后实测）
+## 3. 台账现状（快照 · 2026-09-25 第 70 轮"清理剩余内容"收口后实测）
 
 ```
-票据 177 张：✅done 163  ⬜open 9  🔜doing 3  🚫dropped 2  ⛔blocked 0
+票据 177 张：✅done 166  ⬜open 5  🔜doing 4  🚫dropped 2  ⛔blocked 0
   优先级 P0 8 / P1 68 / P2 63 / P3 38
   ★tickets.js --validate ✅ 177 张 / 0 条行号漂移警告（刷新工具 = `.agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js --any --write`；
-  ★**全库 1003 条被锚证据已补全**：漂移 0 / 失效锚点 0 / 缺 `line` 0 —— 补了 39 条（26 张票；
-  29 条唯一命中自动补 + 10 条**多命中**由 `--pick` 显式指定，含审计报告 §4.1 / §4.6 两份同句的指称区分），
-  且逐票复核"除 `evidence[].line` 外语义差异 = 0 处"）
-能力台账 144 条：已核验 79 / 已建模未核验 5 / 部分 30 / 缺失 6 / n/a 24
-缺口台账 182 条：partial 80（**104 条 missing[]，承接票统一 = `T-0179`**）/ implemented 66 / deferred 22 / 有据 no-op 9 / unimplemented 5 / unjustified 0
+  ★全库 1003 条被锚证据保持全额：漂移 0 / 失效锚点 0 / 缺 `line` 0）
+能力台账 144 条：已核验 79 / 已建模未核验 5 / 部分 31 / 缺失 5 / n/a 24（证据 E0 6 / E1 28 / E2 59 / E3 46 / E4 5）
+缺口台账 182 条：partial 72（**95 条 missing[]，承接票统一 = `T-0179`**）/ implemented 74 / deferred 22 / 有据 no-op 9 / unimplemented 5 / unjustified 0
 第一层：functions.json 620 条 / fields.json 393 条（fields 按 scope 分组、组内 offset 升序）
 脚本台账 37 条：已分析 10 / 部分 25 / 仅登记 2（src 分母 941）
 死写基线 11 条（check:dead-writes 只许收缩；棘轮基线 test/harness-convergence.baseline.json 亦只许收缩）
@@ -46,82 +46,107 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 
 ★`partial` 是一等处置位（`missing[{what,ticket,raw}]`，`raw` 只能单段）；缺口数**上升是好消息** —— 它把原先藏在
 `implemented`/`deferred` 里的"其实还缺东西"如实拆出来并挂票号。`unimplemented`（现 5 条）= 语料 0 处、命中即硬报错。
-★**本节全部数字已于第 57 轮与六份真源机械核对（逐项一致）**：票数/状态由 `tickets/*/ticket.json` 现数、能力处置由
+★**第 70 轮的位移（本轮实测）**：`missing` **104 → 95**、`implemented` **66 → 74**、`partial` **80 → 72**；
+累计（`T-0179` 生命周期内）`missing` **140 → 95**。★**95/95 条存量 `missing` 全部带「重开条件」（机械核过 0 条缺）** ⇒
+`T-0179` 的 acceptance ②（"逐条三态、不许留空"）已满足。
+★**为什么 `T-0179` 仍留在 `doing`**：95/95 条 `missing[].ticket` 仍指向它 ⇒ 置 `done` 会原样重建本票 §1 要修的
+"登记账失去 live owner"那个结构问题。取舍的两种做法与理由见 `tickets/T-0179/changes-round70.md` §22.4（**若要关单，改一行状态即可**）。
+★**本节全部数字于第 70 轮与六份真源机械核对（逐项一致）**：票数/状态由 `tickets/*/ticket.json` 现数、能力处置由
 `analysis/engine-capabilities.json` 现数、缺口与 `missing` 由 `analysis/opcode-gaps.json` 现数、第一层两条直接取数组长度、
 脚本台账取 `analysis/scripts.json` 长度、死写取 `app/amayui-emulator/dead-writes.baseline.json` 的 `known` 条数。
 
-### 3.1 收尾任务的真实剩余面（第 69 轮，用户要求暂停时的快照）
+### 3.1 收尾任务的真实剩余面（第 70 轮收口后）
 
-- **可关单池只剩一个**：`T-0179` 的 **104 条 `missing`（80 个 opcode）**。其中"便宜的两类"已扫光 ——
-  ③「早已修好没回台」的陈旧条目基本清完；剩下绝大多数是 **② 结构性不适用**（写判词 + 重开条件即交付）或 **① 需跨文件**
-  （`src/vm/native.ts` / `src/renderer/**` / `src/vm/operand.ts` / 影片解码器）。
-- **最大残留簇**：`0x1d1`×6、`0x82`×4、`0x192`×3、`0x193`×3、`0x1b2`×3。
-- **单点最大杠杆已做完**：记录驱动链 P1a–P1c（已落地）+ **P2/P3 守卫与口径**（第 69 轮 O 波）；**P4 判②不接线**
-  （唯一语料点 `CONFIG.BIN` 第 205 条执行时 `records=0`、目标窗 `segments=[]` ⇒ 零可观测差异；两条分叉已写成反向守卫）。
-- **非 `T-0179` 的尾巴（小体量）**：`T-0148`（§5.2 剩余面）、`T-0091`（转场渲染 `[4]` 槽 + E4 路径）、`T-0019`（msgwin 拆分，与 `T-0179` 串行）、
-  `T-0122`/`T-0142`（工具）、`T-0146`（3 条基线红的登记票）；主序列外：`T-0051`/`T-0067`/`T-0088`/`T-0118`（外部条件）与 `T-0103`（用户点名最后做）。
-- **粗估**：按每波 2 个 subagent、每波关 5–15 条的经验，**再 6–10 波（≈5–8 轮）**可把"能做的"做完；其余长尾会以 ② 判词 + 重开条件形式长期挂着。
-- **工具债（2026-09-25 工具评估轮已清，见 §7.17）**：原三处 ① `ledger-set.mjs` 不能给**在册条目追加** `missing`；
-  ② 够不到**顶层 `counts`**（靠一次性的 `.tmp/settle/apply-counts-68.mjs` 手写第二份口径）；③ 已 **3 次**出现
-  "subagent 实现了却漏删对应 `missing`"（第 52/64/69 轮）⇒ 现状：① 由 **`ledger.js`** 的 `add`（数组即 append）
-  + `mutate.deleteRaw/rewriteRaw` 覆盖；② 由 **`gaps.js --recount`** 覆盖（**直接调用** `build-opcode-gaps.mjs`
-  的 `tallyDispositions`，口径唯一，不再有第二份算法）；③ 已写进三个技能的 IMPLEMENTATION 派发模板验收项，
-  并配 **`gaps.js --stale`** 机械兜底（把 `what` 自述「已实现/不适用」的 `missing[]` 列出来）。
-  ★**残余的只有"人的自觉"那一半**：`--stale` 是**候选清单**（沿革话术如「已由第 N 轮…」也会命中），
-  裁决仍要按三态过滤逐条做。
-- **本轮新增/变更的工具**（全部在 `.agents/skills/*/scripts/`，带 `agent-workflow.test.ts` 守卫）：
-  `ledger.js`（新：条目级手术 + 默认 dry-run + 写盘后回读复核）、`gaps.js`（加 `--missing/--stale/--recount/--root`）、
-  `tickets.js`（加 `--edit-plan` 两阶段批量改单 + `done` 写盘前前置校验）、
-  `fix-evidence-lines.js`（新：从 `.tmp/settle/fix-lines.mjs` 提升）、`report.js`（加 `--check-fields-order`）。
-- **顺带修掉两处"没人守"的漂移**（`journal` 与 `fields` 排序）：
-  `report.js --check-fields-order` 补上 fields 排序不变式（原先只有 `.tmp/settle/check-fields-order.mjs` 这个孤儿脚本）；
-  沿革侧：`journal.js` 的 `--validate` **实测 exit 1**（两条真实条目用了未登记的 `kind: impl-status`，`round` 写成标签字符串
-  —— 而它的文件头一直声称"守卫 `test/journal.test.ts` 走同一套规则"，**那个文件当时不存在**）；
-  `status.md` 的"轮次"行因此渲染成乱序（`a - b` 对字符串是 NaN）。现修：`journal.js` 放宽 `round` 为「整数｜标签｜null」、
-  补 `impl-status`，`build-status.mjs` 把编号与标签**分组**渲染，并新增真守卫 `app/amayui-emulator/test/journal.test.ts`。
+- **`T-0179` 的裁决工作已收口**：存量 95 条 `missing` **全部**是 ② 结构性不适用（"写判词 + 重开条件即交付"）；
+  本轮删掉 9 条（`0x213`/`0x24f`/`0x223`/`0x61`/`0x8c`/`0x2f5`/`0xcd`/`0x75`(字号 5 格)/`0x208`）、重写 23 条判词、
+  实现 **1** 条（`0x208`：`session.ts` 的纹理屏障门收窄回单条 opcode ⇒ `0x249` 等不到屏障；语料 2 处 `i249 → i208 → draw-texture`）。
+  ★**下一批若要继续减账**，只剩三类：**① 需跨文件**（`src/vm/native.ts` / `src/renderer/**` / `src/vm/operand.ts` / 影片解码器）、
+  **② 等外部条件**（E4 采样 / 宿主子系统）、**③ 已判"永不"**（结构性不适用、重开条件写了"永不"）。
+- **`T-0148` §5.2 的 `still-present` 半边（23 条）已裁决完毕**：3 条在 §5.3、10 条带 opcode 的由 `T-0179` 承接、
+  **10 条 `—` 项本轮逐条裁决**（7 条可关 / 2 条改台账后可关 / 1 条转 `opcode-gaps`）。详见 `tickets/T-0148/changes-coverage.md` §5.4。
+  ★方法论：§5.2 的 `quote-still-there` 只说明"**审计当时引的代码还在**"，**不说明"缺口还在"** —— 那 10 条里 9 条是过期快照。
+- **`T-0148` §5.2 的 `quote-gone` 半边（13 条）也已裁完（goal round 3）**：**① 真缺口 ×1**（右键取消路由**读错格** ——
+  修前读 `input.mouseJump`（`0xCC`），体 raw 20367 读的是 `rewindMainBase + cur`（`0x7B` 写）；语料 `i0cc` **0 处** /
+  `i07b` **1097 处**⇒ 修前真脚本上右键取消永不触发。已一行修复 + 守卫，**红→绿 `1/4 → 4/4`**）·
+  **② 结构性不适用 ×4** · **③ 早已补上没回台 ×8**。★其中 **2 条推翻了审计原文本身**（`0x1F5` 的「队列恰剩 1 项」是审计记错成它、
+  实际属 `0x7C`；「每帧效果推进完全没有」与代码不符 —— `scWeatherAdvance` 就是 `sub_453540`，由 `commit.ts:90-92` 每帧经两宿主 `advanceModel` 调）。
+  全文见 `tickets/T-0148/quote-gone-adjudication.md`；★§5.2 表里还有 4 行与 §5.1 的「已改」**重复**，可直接标 `closed(dup)`。
+- ★**顺带补上一个结构性盲区**：**台账正文里的 `文件:行` 引用此前没有任何棘轮保护**（三个校验器只查字段类型/枚举/守卫）。
+  已把体检脚本提升为常驻工具 **`.agents/skills/amayui-engine-analysis/scripts/check-ledger-refs.js`**（只读，带 `agent-workflow` 守卫，
+  已写进两个技能的工具体表）；它第一次跑就抓到 2 处真问题（`0x142` 的行号引用 + `engineFieldIds.ts` 里一句与代码相反的陈旧注释）。
+- **3 条 `verify` 基线红已清零**（`T-0146` 关单）：真槽 SAVE70/71 判据改成"**按字节判作者**"（引擎槽逐个必须解出 +
+  本工程 `format=0` 槽按正向判据跳过 + 第三种作者一律失败）；`scene-report` 的 26 个占位项改成引擎 `sub_4AD0C0`
+  raw 131957-131980「先 ensure 后门控」的忠实行为（删假不变量 + 5 条更强判据）；`host-registry` 的 idle 用例 timeout 改成常量派生。
+- **非 `T-0179` 的尾巴**：`T-0019`（msgwin 拆分，与 `T-0179` 的 msgwin 族串行）、`T-0142`（Electron 调试通道，与用户实例冲突）、
+  主序列外：`T-0051`/`T-0067`/`T-0088`/`T-0118`（外部条件）与 `T-0103`（用户点名最后做）。
+  ★`T-0091` 已于第 70 轮**关单**（剩余四项全部收口）。
+- **`T-0122`（引擎态快照/恢复）已 ✅关单**（goal round 4–6）：核心（自描述 JSON + 版本头 + **9 条** `SNAPSHOT_EXCLUDED` + 逐条告警）
+  + **8 条 E2 守卫**（含"恢复后跑 600 步与自然态逐字节相等"）+ **1 条 E3 真语料守卫**（`test/engine-snapshot-e3.test.ts`）
+  + **帧边界门**（`#atFrameBoundary` / 帧末放行 / 超时响亮失败；红→绿 7/8→8/8）+ `dbg.cjs save/load`。
+  ★**E3 实测逼出的一条真结论**（已按纪律登记）：真语料下的分叉面**只有「依赖场景动画态的派生量」**（门被武装的绝对时刻、
+  派发队列计时值）——**不是漏字段**，而是"快照的覆盖面口径"：`scene` 分区只覆盖票面点名的 `render4` 两格。
+  ⇒ `SNAPSHOT_EXCLUDED` 第 9 条 + 两条重开条件（把 `SceneState` 整体纳入 / 或语义收窄为"VM 态"并交给画面快照一起存回）。
+  ★**它补的口子**是"排查时没有『把某一刻的引擎态存下来、之后反复回到这一刻』的手段"（此前只能顺着帧往前看或加断点重跑）。
+- **本轮顺带修掉一个"数据损坏级"的工具 bug**：`ledger.js` 的 `unset`/`set` 用 `indexOf('"key"')` 找**第一次出现**、
+  会**穿透嵌套** —— 对 `text-layout-wrap-ruby` 的裸键 `note` 会删掉 `emulator.note`（被工具自己的"写盘后回读复核"拦下）。
+  已改为按「容器 + 局部深度 1」定位（`findDirectKey`），`unset` 因此也支持点路径。
+  ★并清了能力台账的**顶层杂键**（`capabilities.js --validate` 只查 `emulator.note`，顶层杂键一律漏检）：
+  `note`(数组，逗号切碎事故残留)、`capability`/`evidence`(重复且 `live2d-mesh-batches` 的 `evidence:"E4"` 与权威 `E3` **矛盾**) 全删、沿革落 `journal`。
 
-## 4. 未完成票据（12 张 = doing 3 + open 9）
+## 4. 未完成票据（9 张 = doing 4 + open 5）
 
 | 票 | 状态 | 现状 |
 |---|---|---|
-| `T-0148` 全指令核对主票 | doing | 剩余面已收敛成**三张可枚举清单**（全在 `tickets/T-0148/changes-coverage.md`）：① §3/§8 = 80 个"审计点名但不在缺口台账"的 opcode **已机械化裁决完毕**（76/76 都在运行时表里 ⇒ 不是能力缺失；0 个 `unregistered`），其中 **58** 个带实质性 finding、**21** 个零痕迹项由 §8.2/§8.3 **已全部收口**（implemented 12 / partial+missing 6 / deferred+why 3 ⇒ 真正缺的只有第 49 轮已实现的 `0xa3` 派发目标）；② §4/§5 = 36 条分诊表与机械化复核（8 条 `stale-ledger` 已全解决；**23 条 `still-present`** 里 §5.3 已裁决 3 条 —— `0x108` 保留补丁落 `partial`、`0x223` 由 `implemented` 改判 `partial`、`0x25a` 早已登记 ⇒ **剩 20 条**）；③ §6 = `missing` 的 live 承接票缺口（已由 `T-0179` 承接）+ §7 已裁决清单 |
-| `T-0179` 缺口台账 `missing` 的承接与逐条裁决（开场 140 → 现 104） | open | ★**2026-09-25 新开**：实测 **140/140** 条 `missing[].ticket` 原先全部指向已 `done` 的票 ⇒ 登记账没有 live owner。开场已把 84 条 `partial` 的 `missing[].ticket` 批量改指本票（原票号进 `journal[]`，对照表见 `changes-t0179.md` §3）。**逐条裁决**（实现 / 关掉 / 保留并写重开条件）：已裁决批次 = `0xa0`、`0x8c`+`0x8f`、`0x245`+`0x246`、§8.3 两批共 15 条（第 49/50 轮）；族序 = vm 操作数-IO → renderer → msgwin（与 `T-0019` 串行） |
-| `T-0091` 转场渲染剩 4 项 | doing | 只剩 `[4]` 非 create-texture 槽 + E4 可达路径 |
+| `T-0148` 全指令核对主票 | doing | 剩余面 = ① §5.2 的 **`quote-gone` 半边**（13 条，其中 8 条 `stale-ledger` 已由 A–F 波解决；其余按 §5.1 记录）；② 与 `T-0019` 串行的 msgwin 族；③ 三张 doing 票。★§3/§8 的 80 个"审计点名但不在缺口台账"的 opcode **已机械化裁决完毕**（76/76 在运行时表里；0 个 `unregistered`）；★§5.2 的 **`still-present` 半边（23 条）已于第 70 轮裁决完毕**（3 条 §5.3 + 10 条带 opcode 的由 `T-0179` 承接 + 10 条 `—` 项逐条裁决），全文见 `tickets/T-0148/changes-coverage.md` §5.4 |
+| `T-0179` 缺口台账 `missing` 的逐条裁决（开场 140 → 现 **95**） | doing | ★**第 70 轮收口**：**95/95 条存量 `missing` 全部带「重开条件」**（机械核过 0 条缺）⇒ acceptance ② 已满足。本轮删 9 条 / 重写 23 条 / 实现 1 条（`0x208`）。★**仍留 `doing`**：95/95 条 `missing[].ticket` 仍指向本票 ⇒ 置 `done` 会原样重建本票 §1 要修的"登记账失去 live owner"问题（取舍见 `changes-round70.md` §22.4；要关单改一行状态即可）。剩余存量按性质分三类：**① 需跨文件**（`src/vm/native.ts` / `src/renderer/**` / `src/vm/operand.ts` / 影片解码器）、**② 等外部条件**（E4 采样 / 宿主子系统）、**③ 已判"永不"**（结构性不适用） |
 | `T-0067` 存档页闪一帧 | doing | 阻塞：需要一次干净窗口/用户 trace（`shot` 与用户实例共用 log/overlay） |
 | `T-0019` 拆 msgwin 两个大文件 | open | 分节边界见 `docs-new/04-app/emulator-refactor-plan.md` §1。★一次尝试已在半成品状态被停止并回滚（产出归档 `.tmp/t0019-split-wip/`），并因此新增两条硬要求（barrel 先补齐再搬、每次落盘先 typecheck）——见票内 notes；`T-0175` 的 ② 淡入色窗接线也交接给了它。★`T-0179` 里 msgwin 族的缺口必须与它**串行** |
-| `T-0122` / `T-0142` | open | 工具类：内存快照/恢复；Electron 调试通道收敛（后者与用户实例冲突） |
+| `T-0122` 内存快照/恢复 | ✅done | ★**第 70 轮 goal round 4–6 收口**：`src/vm/engineSnapshot.ts`（自描述 JSON + 版本头 + `SNAPSHOT_EXCLUDED` **9 条**带 `why` + `restore` 逐条告警）、**8 条 E2 守卫** + **1 条 E3 真语料守卫**（`test/engine-snapshot-e3.test.ts`）、**帧边界门**（超时响亮失败；红→绿 7/8→8/8）、`dbg.cjs save/load`。★E3 实测逼出一条真结论并按纪律登记：分叉面**只有"依赖场景动画态的派生量"**（不是漏字段）⇒ `SNAPSHOT_EXCLUDED` 第 9 条 + 两条重开条件。见 `tickets/T-0122/changes.md` |
+| `T-0142` Electron 调试通道收敛 | doing | ★**判定订正**：它**不是**"纯外部条件"（我先前判快了）—— acceptance ①（输入的**两条通道显式可切**：默认 `sendInputEvent`（真 DOM 保真度）/ `AMAYUI_DEBUG_INPUT=vm` ⇒ 转渲染窗命令表 = 与 web 宿主同源）**已落地并带守卫**（`test/agent-workflow.test.ts` 的「★T-0142」），③ 文档同步与 ⑤「默认路径未改」已核。**仍剩**：② `shot` 统一到 `FrameHost.capture`、④ Electron 端到端证据 —— 两者都要能跑 `npm run dbg:srv`（与用户实例**共用 log/overlay**）时才做 |
 | `T-0088` / `T-0118` / `T-0051` | open | 需外部条件：真人点选 AGERC / Intel Mac 跑 x86_64 slice / E4 真机核验 5 项 |
 | `T-0103` | open | 章节切换演出不一致 —— ★用户明确"最后再处理" |
-| `T-0146` | open | 它就是 3 条基线红本身的登记票（见 §6），**不得重复立项** |
+
+★**第 70 轮关掉的**：`T-0146`（3 条 `verify` 基线红）⇒ `npm run verify` 现 **exit 0**、基线红 **0** 条（见 §6）；
+`T-0091`（转场渲染剩余四项）⇒ ② 判据 `transitionTargetKind` + 守卫落地（红→绿 7/8→8/8）、
+④ 可达路径复现（读档 78 → 点 4 次 → `cat=0` 交叉淡化）并把 9 张截图归档 `tickets/T-0091/evidence/`、
+①③⑤⑥ 复核确认已有实现。★如实披露：④ 那组截图是"路径可达"的**可视证据**，
+**不是**像素级真机对照 ⇒ 能力条目 `clock-read-transition-window` 的 `evidence` 保持 **E3** 不变。
 
 ## 5. 后续计划
 
 1. **主序列**：P2 优先、逐票逐簇；一个文件同一时刻只归一个执行者（跨文件改动先串行化）。
 2. **每单元交付定义**：命名守卫 + **红→绿证据**（先跑出红）+ 三层台账同步（引擎层 → `functions/fields/capabilities`；脚本层 → `scripts.json` → 生成物）+ 票据收尾三连（`build-tickets` / `--validate` / `ticket-ledger.test.ts`）。
 3. **锚点是 ABI**：代码改名/搬家导致 `evidence.anchor` 消失 ⇒ 只改指不删，改完跑 `tickets.js --validate`。
-4. **下一波候选**（按"文件是否空闲"挑，别一次占同一文件）：`T-0179` 的 143 条 `missing` 逐条裁决（**当前最大的可关单池**；第 52 轮已证明其中有一批是「`what` 自述已实现」的陈旧条目，先清理再实现）、`T-0148` 的 80-opcode 裁决批、`T-0148` §5 的 20 条 `still-present`（§5.3 已裁 3 条）、`T-0019`、`T-0091`。
+4. **下一波候选**（按"文件是否空闲"挑，别一次占同一文件）：`T-0179` 剩余 **95 条**（**全部已带重开条件**；能继续减账的只剩
+   **① 需跨文件** 与 **② 等外部条件** 两类 —— `0x1d1`×6 / `0x82`×4 / `0x192`×3 / `0x193`×3 / `0x1b2`×3 等大簇都已判 ② 且写明前置）、
+   `T-0148` §5.2 的 `quote-gone` 半边 13 条、`T-0019`；`T-0146` 与 `T-0091` 均已关单。
 5. **不进主序列**：`T-0067`/`T-0088`/`T-0118`/`T-0051`（外部条件）与 `T-0103`（用户点名最后做）。
+6. **多 agent 并行的三条硬纪律（第 70 轮复用有效）**：① 子代理**默认只读**（结论回报告，台账由主 agent 单一写者串行落库）；
+   ② **每个 opcode 只出一个 `ledger.js` op**（同一字段被两个 op 先后改时，第一个 op 的"回读预期"是整字段比对 ⇒ 会假红）；
+   ③ 注释里**不要复述被判禁的字面串**（`doc-model.test.ts` 的 A4① 扫的是源文本，实测被自己的注释绊红过一次）。
 
 ## 6. 验证基线与"什么算绿"
 
 ```
 判据（项目自带）:  cd app/amayui-emulator && npm run verify
                    = npm run typecheck && typecheck:test && test:all && check:dead-writes
-实测（2026-09-25 **工具评估轮** + **票据证据行号补全轮**：新增 `ledger.js` / `fix-evidence-lines.js` / `journal.test.ts`
-      + `gaps.js`/`tickets.js`/`report.js`/`journal.js`/`build-status.mjs` 扩能与修补 + 6 条工具守卫）: tests 1678 / pass 1673 / fail 3 / skipped 2  ⇒ exit 1
-  （同一轮里 typecheck / typecheck:test 均 exit 0；五份生成物 `--check` 全绿；`check:dead-writes`「★ 无新增死写」；
-    四份台账 `--validate` 全绿；★因为 `test:all` 有 3 条基线红，`&&` 链会**跳过** `check:dead-writes` ⇒ 要单独跑一次）
-★3 条 fail 逐条都是既有基线（票 T-0146），不是新红：
-   · engine-slot   ★E4：本机真槽全部解出…（SAVE70/71 storedDwords）
-   · save-slot     E4：真存档槽的头 → 0x1A0 的六个 u16…（真槽 format 0 !== 3）
-   · scene-report  场景执行报告：可绘制项(24) 必须多于缺纹理项(26)
-⇒ 判绿 = "不新增红"；这 3 条不要去修（它们是历史数据/占位项口径，T-0146 已登记）
+实测（2026-09-25 **第 70 轮"清理剩余内容"收口**）: **npm run verify ⇒ exit 0**（`typecheck` / `typecheck:test` / `test:all` / `check:dead-writes` 全链通过）
+★**基线红已清零**：原先常红 3 条（`engine-slot` / `save-slot` / `scene-report`）**已由 `T-0146` 按测试侧判据全部消除**
+  —— 真槽改成「**按字节判作者**」（引擎槽逐个必须解出 + 本工程 `format=0` 槽按正向判据跳过 + 第三种作者一律失败）、
+  `scene-report` 删掉 `drawable > placeholder` 这条**假不变量**换成 5 条更强判据（占位项必须是全 0 空项等）、
+  `host-registry` 的 idle 用例 timeout 改为**常量派生**（消灭"整个用例被 node 掐断"这种不可诊断的失败形态）。
+  ⇒ 判绿口径升级为 **`npm run verify` 必须 exit 0**（不再有"可忽略的基线红"）。
+  ★★但注意 `&&` 链：一旦 `test:all` 非零，`check:dead-writes` 会被**跳过** —— 改动涉及字段读写时请**单独再跑一次**。
+  ★★`test:all` 的**运行器需要能起子进程**（`node --test` 与 `tsx` 用**管道 stdio**）：**受限沙箱下会 EPERM**，
+    表现为"整片用例 `status=null/-1`"的**伪红**（不是代码问题）⇒ 用 `danger-full-access` 跑，或改用逐文件 `stdio:'inherit'` 的等价口径。
 其它判据: 四份台账 --validate（tickets / capabilities / scripts / opcode-gaps）
           五份生成物 --check（opcode-table / opcode-gaps / doc-index / status / tickets）
           死写 check:dead-writes（基线 11，只许收缩）
           工具守卫 test/agent-workflow.test.ts（三个台账 CLI + 新工具 ledger.js/gaps.js --recount/--stale/
           tickets.js --edit-plan/fix-evidence-lines.js + 三个 SKILL.md 共享协议节同源）
           + test/journal.test.ts（沿革结构与票号回链；`--root` 沙箱；`round` 三种形态 + 非法值必须响亮失败）
+          + test/doc-model.test.ts 的 **A4①**（`03-engine/*.md` 与生成物里不得出现「订正/旧句/历史判据」
+            —— ★**渲染字段（`note`/`missing[].what`）里的沿革必须落 `journal`**；实测被这条绊红过一次）
           ★`harness-convergence` 棘轮按**正则扫全文**（连注释也算）：测试里别出现 `function mk(`、
           `const mk = `、`function mkEngine(`、`function makeCtx(` 这四种写法（基线只许收缩，不许登记例外）
    ★capabilities 与 scripts 两个生成器**不支持 --check**（无参数即重生成、幂等）

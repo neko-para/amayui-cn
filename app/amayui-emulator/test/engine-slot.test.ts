@@ -14,7 +14,7 @@
  *     没有真槽的机器上跳过（不假装通过）。
  */
 import { test } from 'node:test';
-import { findRealFiles, readReal, realSlotDirs } from './realSlots.js';
+import { classifyRealSlot, findRealFiles, readReal, realSlotDirs } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -220,13 +220,44 @@ test('★E4：本机真槽全部解出，且每帧记录的落点 opcode 与语�
     t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
+  // ★★2026-09-25（`tickets/T-0146`）：**先按字节判作者，再决定"该不该用引擎容器口径解它"**。
+  //   overlay 是本工程唯一的写目标 ⇒ 本机那里混着两个 **emulator 自己写的**槽 `SAVE70/71`
+  //   （`+284 = 0 = SAVE_FORMAT_PLAIN` + `AMYS1` 状态尾块；来源 = T-0061/T-0062/T-0063 的用户实测存档，
+  //   见 `test/realSlots.ts` 头注）。本工程明文容器的 292..312 那一格是**载荷长度**，不是 dword 计数
+  //   ⇒ 拿引擎容器口径去解它必然报 `storedDwords=2069342 超出文件`（实测），**这不是解析缺陷**：
+  //   `saveSlot.ts` 的 `format = 0` 就是为"与引擎的 1..3 **互不误读**"设计的。
+  //   ⇒ 本工程槽**显式跳过并打印判据**；★但跳过只允许由**正向判据**授权（`classifyRealSlot`：
+  //   format=0 **且**尾块解得出本工程状态块）—— 看不懂的第三种作者一律算失败。
+  //   ★引擎槽（format ∈ 1..3）**仍然逐个必须解出**：真回归不会被这条跳过掩盖。
+  const engine: { name: string; bytes: Uint8Array }[] = [];
+  const ours: string[] = [];
+  const unknown: string[] = [];
+  for (const real of reals) {
+    const bytes = readReal(real);
+    const o = classifyRealSlot(bytes);
+    if (o.kind === 'engine') engine.push({ name: real.name, bytes });
+    else if (o.kind === 'ours') ours.push(`${real.name}（${o.why}）`);
+    else unknown.push(`${real.name}: ${o.why}`);
+  }
+  assert.deepEqual(
+    unknown,
+    [],
+    `真槽里出现了既不是引擎槽、也不是本工程槽的文件（第三种作者 ⇒ 不许静默跳过）：\n${unknown.join('\n')}`,
+  );
+  if (engine.length === 0) {
+    t.skip(`本机这份目录里没有**真游戏**写的槽（全是本工程槽：${ours.join(' / ') || '一个都没有'}）`);
+    return;
+  }
+  t.diagnostic(
+    `[E4] 真槽 ${reals.length} 个 = 引擎槽 ${engine.length} 个（逐个解状态主体）+ 本工程槽 ${ours.length} 个` +
+      `（按 format=0 + AMYS1 尾块判据跳过：${ours.join('；') || '无'}）`,
+  );
+
   const src = new NodeFileSource({ resourceDir: resolveResourceDir(REPO), system });
   let checkedFrames = 0;
   let slots = 0;
   const failures: string[] = [];
-  for (const real of reals) {
-    const name = real.name;
-    const bytes = readReal(real);
+  for (const { name, bytes } of engine) {
     const dec = decodeEngineSlot(bytes);
     if (!dec.ok) {
       failures.push(`${name}: ${dec.reason}`);
@@ -285,9 +316,17 @@ test('★E4b：真槽的**绘制项清单**逐条可解码（handle 唯一 + fla
   let withList = 0;
   let items = 0;
   const failures: string[] = [];
+  // ★`T-0146`：与上面的 E4 同一道闸 —— 本工程槽（format=0 + AMYS1）在这里只是"不参与逐条解码"，
+  //   但**第三种作者**必须失败（否则"清单解不出来就 continue"会变成静默掩盖）。
+  const skippedOurs: string[] = [];
+  for (const { name, bytes } of found) {
+    const o = classifyRealSlot(bytes);
+    if (o.kind === 'unknown') failures.push(`${name}: 既不是引擎槽也不是本工程槽 —— ${o.why}`);
+    else if (o.kind === 'ours') skippedOurs.push(name);
+  }
   for (const { name, bytes } of found) {
     const dec = decodeEngineSlot(bytes);
-    if (!dec.ok) continue; // 坏档/旧布局由上面的 E4 负责，这里只看能解开的那些
+    if (!dec.ok) continue; // 坏档/旧布局/本工程槽由上面的 E4 负责，这里只看能解开的那些
     slots++;
     const list = dec.payload.drawItems;
     if (!list) continue;
@@ -311,7 +350,11 @@ test('★E4b：真槽的**绘制项清单**逐条可解码（handle 唯一 + fla
   }
   assert.deepEqual(failures, [], `真槽绘制项清单解码失败：\n${failures.join('\n')}`);
   assert.ok(slots >= 1, `至少解出一个真槽（实际 ${slots}）`);
-  t.diagnostic(`[E4b] 真槽 ${slots} 个（带绘制项清单 ${withList} 个），逐条解码 ${items} 项`);
+  // ★`T-0146`：诊断行里带上"跳过的是哪些、按什么判据跳的"（下一个审计者不必重跑探针）。
+  t.diagnostic(
+    `[E4b] 真槽 ${slots} 个（带绘制项清单 ${withList} 个），逐条解码 ${items} 项；` +
+      `本工程槽跳过 ${skippedOurs.length} 个${skippedOurs.length ? `（${skippedOurs.join(',')}）` : ''}`,
+  );
 });
 
 test('`buildScriptBin` 自检：三张表长度 = 对应 opcode 的出现次数（表口径棘轮）', () => {

@@ -198,6 +198,53 @@ function scanValue(text, i) {
 const getPath = (o, dot) =>
   dot.split('.').reduce((acc, seg) => (acc == null ? undefined : acc[seg]), o);
 
+/**
+ * 在**一个 JSON 容器内部**找它的**直接子字段** `"key"`（局部深度 1），返回 `{ keyStart, keyEnd }`。
+ *
+ * ★为什么不能用 `text.indexOf('"key"', lo)`（本工具踩过的真事故）：那只找**第一次出现**，
+ *   完全不管嵌套。实测：`text-layout-wrap-ruby` 的条目里 `emulator`（深度 1）**先于**顶层的
+ *   `note`（也是深度 1）出现，而 `emulator.note`（深度 2）里也有 `"note"` ⇒ 一个裸键 `note`
+ *   的 `unset`/`set` 会命中 `emulator.note`、把另一个字段删掉/改掉。
+ *   当时是**写盘后回读复核**把它拦住的（`emulator.note` 回读 `undefined`），否则就是静默数据损坏。
+ *   ⇒ 定位一律按**容器 + 局部深度**做：`lo` 必须指向一个容器开头（`{`），子字段在局部深度 1。
+ */
+function findDirectKey(text, key, lo, hi) {
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let expectKey = false;
+  for (let i = lo; i < hi; i++) {
+    const c = text[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { esc = true; continue; }
+      if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') {
+      if (expectKey && depth === 1) {
+        let j = i + 1;
+        let e = false;
+        for (; j < hi; j++) {
+          const d = text[j];
+          if (e) { e = false; continue; }
+          if (d === '\\') { e = true; continue; }
+          if (d === '"') break;
+        }
+        if (text.slice(i + 1, j) === key) return { keyStart: i, keyEnd: j + 1 };
+      }
+      inStr = true;
+      expectKey = false;
+      continue;
+    }
+    if (c === '{' || c === '[') { depth++; expectKey = c === '{'; continue; }
+    if (c === '}' || c === ']') { depth--; expectKey = false; continue; }
+    if (c === ',') { expectKey = true; continue; }
+    if (c === ':') { expectKey = false; continue; }
+  }
+  return null;
+}
+
 /** 在**条目文本**里按点路径整体替换一个值（保持缩进）。 */
 function applySet(entryText, dotPath, value) {
   const segs = dotPath.split('.');
@@ -205,9 +252,11 @@ function applySet(entryText, dotPath, value) {
   let hi = entryText.length;
   for (let s = 0; s < segs.length; s++) {
     const key = segs[s];
-    const kAt = entryText.indexOf(`"${key}"`, lo);
-    if (kAt < 0 || kAt > hi) throw new Error(`找不到字段 ${key}（在 ${dotPath} 的第 ${s + 1} 段）`);
-    const colon = entryText.indexOf(':', kAt + key.length + 2);
+    // ★按「容器 + 直接子字段」定位（见 findDirectKey 的注释：indexOf 会穿透嵌套、改错字段）
+    const found = findDirectKey(entryText, key, lo, hi);
+    if (!found) throw new Error(`找不到字段 ${key}（在 ${dotPath} 的第 ${s + 1} 段）`);
+    const kAt = found.keyStart;
+    const colon = entryText.indexOf(':', found.keyEnd);
     const vStart = colon + 1;
     const vEnd = scanValue(entryText, vStart);
     if (s === segs.length - 1) {
@@ -317,10 +366,23 @@ for (const [i, op] of (plan.ops ?? []).entries()) {
   // ---- unset：删字段 ----
   for (const dot of op.unset ?? []) {
     try {
-      const key = dot.split('.').pop();
-      const kAt = entryText.indexOf(`"${key}"`);
-      if (kAt < 0) throw new Error(`找不到字段 ${key}`);
-      const colon = entryText.indexOf(':', kAt + key.length + 2);
+      // ★按点路径逐级解析（与 applySet 同一套 findDirectKey）：
+      //   裸键只认**条目顶层**的同名字段，不再用 indexOf 穿透到嵌套里（那会删错字段）。
+      const segs = dot.split('.');
+      let lo = 0;
+      let hi = entryText.length;
+      let hit = null;
+      for (let s = 0; s < segs.length; s++) {
+        hit = findDirectKey(entryText, segs[s], lo, hi);
+        if (!hit) throw new Error(`找不到字段 ${dot}（第 ${s + 1} 段 ${segs[s]}）`);
+        if (s < segs.length - 1) {
+          const c2 = entryText.indexOf(':', hit.keyEnd);
+          lo = c2 + 1;
+          hi = scanValue(entryText, lo);
+        }
+      }
+      const kAt = hit.keyStart;
+      const colon = entryText.indexOf(':', hit.keyEnd);
       const vStart = colon + 1;
       const vEnd = scanValue(entryText, vStart);
       let start = entryText.lastIndexOf('\n', kAt) + 1;

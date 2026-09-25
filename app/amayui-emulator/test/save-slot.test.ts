@@ -13,7 +13,7 @@
  *    base 那一份先隔离到 `<overlay>/SAVE/.deleted/`；本文件下面那条槽用例的断言已随之 retarget。
  */
 import { test } from 'node:test';
-import { findRealFiles, firstRealFile, readReal, realSlotDirs } from './realSlots.js';
+import { classifyRealSlot, findRealFiles, readReal, realSlotDirs, type RealFile } from './realSlots.js';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -122,12 +122,47 @@ test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 存档时刻（SYSTEMTIM
   // ★2026-09-23：原来在**第一个**真槽上逐字段断「头 == 文件 mtime」。闸门打开后实测：
   //   本机 SAVE79 与 mtime **逐秒一致**（= 这个字段确实是存档时刻），而 SAVE78 的 mtime 是后来
   //   被重写/复制过的（头 00:48:39 vs mtime 13:26）⇒ 单槽硬比 mtime 会随"文件有没有被碰过"假红。
-  //   改成两层：① 每个槽的头都必须是**合法 SYSTEMTIME**（年/月/日/时/分/秒 在有效范围、format=3、游玩秒数>0）；
+  //   改成两层：① 每个槽的头都必须是**合法 SYSTEMTIME**（年/月/日/时/分/秒 在有效范围、format∈引擎域、游玩秒数>0）；
   //            ② **至少一个**槽的头与 mtime 一致（证明这个字段就是存档时刻 —— 这是判据的核心，不能省）。
+  //
+  // ★★2026-09-25（`tickets/T-0146`）：**判据①只适用于"真游戏写的槽"** —— 先按字节判作者。
+  //   为什么必须分：overlay 是**本工程唯一的写目标**（`src/arch/systemPaths.ts`），本机那里混着
+  //   两个 **emulator 自己写出来的**槽 `SAVE70/71`（`+284 = 0 = SAVE_FORMAT_PLAIN` + `AMYS1` 状态尾块，
+  //   来源 = T-0061/T-0062/T-0063 的用户实测存档，见 `test/realSlots.ts` 头注）⇒ 它们**不是**真游戏槽，
+  //   拿"真槽 format 必须 ≥3"去要求它们是把判据用错了对象（本工程槽的 `format=0` 正是为了**互不误读**）。
+  //   ★跳过（`ours`）只允许用在**已用正向判据证明**的槽上（`classifyRealSlot`：format=0 **且**尾块解得出
+  //   本工程状态块）；**看不懂的第三种作者一律失败**（`unknown` ⇒ 断言红）—— 这样"跳过"不会变成掩盖真回归的暗门。
+  //   ★引擎槽仍然**逐个**要求：头合法、format ∈ 1..3、游玩秒数 > 0、且至少一个与 mtime 一致。
+  const engine: { slot: RealFile; bytes: Uint8Array }[] = [];
+  const ours: { name: string; why: string }[] = [];
+  const unknown: string[] = [];
+  for (const slot of slots) {
+    const bytes = readReal(slot);
+    const o = classifyRealSlot(bytes);
+    if (o.kind === 'engine') engine.push({ slot, bytes });
+    else if (o.kind === 'ours') ours.push({ name: slot.name, why: o.why });
+    else unknown.push(`${slot.name}: ${o.why}`);
+  }
+  assert.deepEqual(
+    unknown,
+    [],
+    `既不是引擎槽、也不是本工程槽的真槽（第三种作者 ⇒ 不许静默跳过）：\n${unknown.join('\n')}`,
+  );
+  if (engine.length === 0) {
+    t.skip(
+      `本机这份目录里没有**真游戏**写的槽（全是本工程槽：${ours.map((o) => o.name).join(' / ') || '一个都没有'}）`,
+    );
+    return;
+  }
+  t.diagnostic(
+    `[E4] 真槽 ${slots.length} 个 = 引擎槽 ${engine.length} 个 + 本工程槽 ${ours.length} 个` +
+      `${ours.length ? `（${ours.map((o) => `${o.name}：${o.why}`).join('；')}）` : ''}`,
+  );
+
   const lines: string[] = [];
   let matched = 0;
-  for (const slot of slots) {
-    const r = parseSlotHeader(readReal(slot));
+  for (const { slot, bytes } of engine) {
+    const r = parseSlotHeader(bytes);
     assert.equal(r.ok, true, r.ok ? '' : `${slot.name}: ${r.reason}`);
     if (!r.ok) return;
     const h = r.header;
@@ -138,7 +173,12 @@ test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 存档时刻（SYSTEMTIM
     assert.ok(h.day >= 1 && h.day <= 31, `${slot.name} 日合法（+270 = ${h.day}；★+268 是星期、0x1A0 不取）`);
     assert.ok(h.hour <= 23 && h.minute <= 59 && h.second <= 59, `${slot.name} 时/分/秒合法（+272/+274/+276）`);
     assert.ok(h.playSeconds > 0, `${slot.name} 头 +280 = 游玩秒数（实际 ${h.playSeconds}）`);
-    assert.equal(h.format, 3, `${slot.name} 的 format（≥3 = 模幂混淆 + 压缩）`);
+    // ★判据钉在**引擎自己的域**上（`saveSlot.ts` 的 `SlotHeader.format` 文档：真槽写 1/2/3）：
+    //   本机 56/56 都是 3，写 1/2 的是引擎的旧布局（`SLOT_GAPS` 记着"仍未解析"）⇒ 两者都是「引擎槽」。
+    assert.ok(
+      h.format >= 1 && h.format <= 3,
+      `${slot.name} 的 format ∈ 1..3（= 引擎 SaveVersion1；实测本机真槽全是 3，实际 ${h.format}）`,
+    );
     const same =
       h.year === st.mtime.getFullYear() && h.month === st.mtime.getMonth() + 1 && h.day === st.mtime.getDate() &&
       h.hour === st.mtime.getHours() && h.minute === st.mtime.getMinutes() &&
@@ -149,6 +189,23 @@ test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 存档时刻（SYSTEMTIM
         ` / mtime ${st.mtime.toLocaleString()} ${same ? '（一致）' : '（文件被重写过 ⇒ 不参与一致性判据）'}`,
     );
   }
+  // 本工程槽（emulator 写的）：头字段**同形**（同一个 `buildSlotFile` 写 +264..+280），所以也逐项查一遍
+  // —— 这是"这些槽确实是我们自己写的那一份"的交叉验证。★**不查 `playSeconds > 0`**：那是引擎槽侧的
+  // "存档时钟"判据；本工程槽的 +280 是 `SlotStateBlock.playSeconds`，刚开档就是 0，为 0 不是异常。
+  for (const { name } of ours) {
+    const slot = slots.find((s) => s.name === name)!;
+    const r = parseSlotHeader(readReal(slot));
+    assert.equal(r.ok, true, r.ok ? '' : `${name}: ${r.reason}`);
+    if (!r.ok) continue;
+    const h = r.header;
+    assert.equal(h.magic, 'S4SD', `${name}（本工程槽）魔数`);
+    assert.equal(h.format, 0, `${name}（本工程槽）+284 = SAVE_FORMAT_PLAIN = 0`);
+    assert.ok(
+      h.year >= 2000 && h.year <= 2100 && h.month >= 1 && h.month <= 12 && h.day >= 1 && h.day <= 31 &&
+        h.hour <= 23 && h.minute <= 59 && h.second <= 59,
+      `${name}（本工程槽）头 +264..+276 也必须是合法 SYSTEMTIME（同一个写侧）`,
+    );
+  }
   assert.ok(
     matched >= 1,
     `至少应有一个真槽的头部时刻与文件 mtime 一致（= 头 +264..+276 确实是存档时刻）；实测：\n${lines.join('\n')}`,
@@ -156,9 +213,13 @@ test('E4：真存档槽的头 → 0x1A0 的六个 u16 = 存档时刻（SYSTEMTIM
 });
 
 test('E4：真存档槽能读到整份"头"；状态主体是引擎私有布局 ⇒ engineFormat = true（缺口已登记）', (t) => {
-  const slot = firstRealFile(REPO, 'DAT');
+  // ★`T-0146`：`firstRealFile` 取的是**名字最小**的那个（`SAVE00`），但那**不保证**是引擎槽
+  //   （本机 `SAVE70/71` 就是 emulator 写在 overlay 的本工程槽）⇒ 按判据挑**引擎槽**；
+  //   一个引擎槽都没有（这台机器没玩过 / 只有本工程槽）⇒ `t.skip`（与本用例原来的"没有真槽就跳"同口径）。
+  const engine = findRealFiles(REPO, 'DAT').filter((f) => classifyRealSlot(readReal(f)).kind === 'engine');
+  const slot = engine[0];
   if (!slot) {
-    t.skip(`本机没有真存档槽（${realSlotDirs(REPO).join(' / ')}）`);
+    t.skip(`本机没有**真游戏**写的槽（${realSlotDirs(REPO).join(' / ')}）`);
     return;
   }
   const r = parseSlotFile(readReal(slot));
