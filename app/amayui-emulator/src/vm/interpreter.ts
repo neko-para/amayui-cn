@@ -4,6 +4,7 @@ import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS, loadScriptIntoFrame } from './ops
 import { readIntOperand, readFloatOperand } from './operand.js';
 import { makeCtx } from './step.js';
 import { operandCountSlotValue } from './operandPlan.js';
+import { profiler } from './profile.js';
 import type { OpHandler } from './step.js';
 import { parseScriptBytes, type BinInstruction } from '../script/bin.js';
 
@@ -199,7 +200,11 @@ export async function stepOnce(e: Engine): Promise<StepTrace> {
   //   共享场景层（`scene/ops.ts`），那里看不到 VM 的 `e.cur`，所以每条指令派发前同步一次。
   e.native.setCurrentFrame?.(e.cur);
   const ctx = makeCtx(e, frame, instr, e.native, (m) => e.native.log(m));
+  // ★计时（`tickets/T-0180`）：`profile on` 之后才真的取时钟（关着时 `beginOp()` 只读一个布尔）。
+  //   量的是**整条 handler 的 wall time**，含它 `await` 的宿主 I/O —— 那正是"卡住"要归因的对象。
+  const t0 = profiler.beginOp();
   await handler(ctx);
+  profiler.endOp(op, instr.name, t0);
   // 注意：handler 可能改了 cur（call-script / ret），因此用"当前帧"来推进，而非 handler 前的 frame。
   const curFrame = e.curScript();
   const next = ctx._nextIp;

@@ -39,6 +39,7 @@ import { CFG } from '../configRegistry.js';
 import { cfgInt } from '../engineConfig.js';
 import { STAGE_GATE } from '../vm/stageLoop.js';
 import { NotImplementedOp, stepOnce, type StepTrace } from '../vm/interpreter.js';
+import { profiler } from '../vm/profile.js';
 import { ExitScript } from '../vm/ops.js';
 import type { BinInstruction } from '../script/bin.js';
 import type { FrameHost } from './host.js';
@@ -363,6 +364,11 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     if (frames >= cap) return finish({ frames, steps, stopReason: 'cap' });
     if (opt.until?.()) return finish({ frames, steps, stopReason: 'until' });
 
+    // ★帧看门狗（`tickets/T-0180`）：帧首取一次时钟。默认开着 —— "界面卡了 4 秒"这类问题
+    //   不靠它就只能靠推理，而推理在本工程已经被证伪过好几次（实测：读槽头在文件层只要 2ms）。
+    profiler.attachLog(e.native.log);
+    profiler.beginFrame(steps);
+
     const nowMs = host.now();
     e.nowMs = nowMs;
     opt.onFrameStart?.(nowMs, frames, e);
@@ -593,6 +599,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     }
     opt.onFrameEnd?.(nowMs, frames - 1, e);
     obs?.onFrameEnd?.(obsEnd(nowMs));
+    // ★帧看门狗收尾：**必须在 `yield()` 之前** —— 之后那段是"等下一帧"，不是"占住主线程"，
+    //   两者混在一起就分不出"我们算得慢"与"宿主不给帧"（`profile.ts` 的 `endFrame`）。
+    profiler.endFrame(frames - 1, steps);
     await host.yield?.();
   }
 }

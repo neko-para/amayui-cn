@@ -1,0 +1,61 @@
+{
+  "id": "T-0180",
+  "title": "文本直绘（0x204/0x205）每次调用新建画布 + GPU 回读 ⇒ 存档页切换一帧卡 1.5s（真机瞬时）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "用户实测：存档界面从**第 80 页**（该页 80~89 全空）切到**第 90 页**（90~99 全是真存档）时有 ~4s 的**同步阻塞**（界面不刷新），真机几乎瞬时。\n\n实测定位（`profile` 计时器，见 `app/amayui-emulator/src/vm/profile.ts`）：那一步**一帧内**做完 8790 条指令，其中\n* `0x204` draw-string ×80 = **582ms**（均 7.28ms）\n* `0x205` draw-number ×110 = **669ms**（均 6.09ms）\n* `0x1af` 读 .STH 缩略图 ×10 = **255ms**（均 25.5ms）\n⇒ 合计 1552ms 全在**一帧**里（主线程被占住 ⇒ 界面不刷新）。\n\n根因（`src/renderer/text/raster.ts` 的 `drawGlyphPassesOnSurface`，AA 路径；本机 INI 开着 AA）：\n每个**绘制遍**都 `document.createElement('canvas')` + `getContext('2d')` + `getImageData` 取覆盖率；\n而 2D 画布默认留在 GPU 上，**每次 `getImageData` 都要一次 GPU→CPU 同步**（~1.5ms）。\n该屏每次直绘 1~4 遍 ⇒ 单次 6~7ms，一帧 190 次 ⇒ 秒级卡顿。\n★这与真机不一致的性质是**性能**：引擎的 GDI 直绘是同步的 CPU 光栅化，没有这种回读。",
+  "acceptance": [
+    "中间图层必须**复用**（`raster.ts` 的 `scratchCtx` + `scratchCanvases`），绘遍循环里不许再 `createElement('canvas')`：✅ **已落地** —— `drawGlyphPassesOnSurface` 现在一张图层用到最后、每遍 `clearRect`（语义 = 原先的「新画布」，逐字相同）；`drawAliasedLayer` 与 `thresholdAlpha` 同样复用。",
+    "要回读的 2D 上下文必须带 `willReadFrequently: true`：✅ **已落地** —— `raster.ts`（图层）与 `textureCache.ts`（槽画布）**两处都改**（只改一处时实测只快一半：0x204 仍 1.78ms/次）。守卫 = `test/text-raster-perf.test.ts`（源码棘轮：池子存在、绘遍循环里没有建画布、两处都没有裸 `getContext('2d')`）。",
+    "实测红→绿（同一序列：TITLE→Load Data→右箭头×2，量第 90 页那一帧）：✅ **已核** —— 那一帧 **1552ms → 308ms**；`0x204` 均 7.28→0.94ms、`0x205` 均 6.09→0.20ms（≈20~30×），且 190 次直绘的**合计**从 1251ms 降到 ~19ms。",
+    "★**仍未收口**（本票只修了文本那一段，剩下的是别的成因）：同一序列里那一步仍有 **308~654ms**，而**指令计时显示它不在 opcode 里**（一帧 50 步、每条 0ms，却工作 654ms）⇒ 时间花在**帧循环自身的宿主工作**（`advanceModel`/`present`/纹理上传）上；另有一个 **10000 步 / 4.5s** 的帧（= 每帧步数上限），在修复**之前**的会话里同样存在（5103ms）⇒ 与本次修改无关、属独立缺陷。两项都要另开研究。",
+    "`npm run verify` 全绿：✅ **已核**（见 changes.md 的实测数字）。"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/text/raster.ts",
+      "anchor": "const scratchCanvases = new Map",
+      "note": "图层复用池（原先每个绘制遍新建一张画布）",
+      "line": 46
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/text/raster.ts",
+      "anchor": "if (written) target.putImageData",
+      "note": "绘遍循环的收尾：循环体内已无 createElement，覆盖率改用一张复用图层逐遍 clearRect",
+      "line": 347
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/profile.ts",
+      "anchor": "export const profiler = new Profiler()",
+      "note": "定位这次卡顿的计时器（profile 调试命令；帧看门狗 + 可选按指令计时）",
+      "line": 290
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/text-raster-perf.test.ts",
+    "app/amayui-emulator/test/profiler.test.ts"
+  ],
+  "links": {
+    "tickets": [
+      "T-0035",
+      "T-0042",
+      "T-0175",
+      "T-0142"
+    ]
+  },
+  "notes": "定位工具（profile 调试命令 + 帧看门狗）是本次一并落地的：src/vm/profile.ts + frame/loop.ts 的钩子 + interpreter.ts 的 handler 计时 + debugCommand.ts 的 profile on|off|reset|report|watch|slow。过程与全部实测数字见 tickets/T-0180/changes.md。",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-25",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done —— 文本直绘卡顿已修复并实测红→绿（第 90 页那一帧 1552ms → 308ms；190 次直绘合计 1251ms → ~19ms）。附带落地定位工具：profile 计时器（帧看门狗 + 按指令计时 + 慢帧归因）。★如实披露两项未收口：同一序列仍有 308~654ms 落在帧循环的宿主工作（present/纹理上传，指令计时显示 0ms 不在 opcode 里）、另有一个 10000 步/4.5s 的独立帧（修复前就存在）。"
+    }
+  ]
+}

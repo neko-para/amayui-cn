@@ -72,6 +72,12 @@ export type DebugAction =
    */
   | { a: 'snapshot' }
   | { a: 'restore'; json: string }
+  /**
+   * **计时器**（`tickets/T-0180`）：`profile [on|off|reset|report [minMs]|watch on|off|slow <ms>]`。
+   * 起因 = 用户实测"存档页 80→90 有 ~4s 同步阻塞"，而文件层实测只要 2ms/次 ⇒ 必须按帧记账才能定位。
+   * 无参 = `report`（最常问的那一个）。
+   */
+  | { a: 'profile'; cmd: 'on' | 'off' | 'reset' | 'report' | 'watch-on' | 'watch-off' | 'slow'; minMs?: number; slowMs?: number }
   /** 其它输入一律当查询（`runQuery`）；这样"查一个值"不需要任何前缀。 */
   | { a: 'query'; text: string };
 
@@ -121,6 +127,9 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '  wheel <±120> [x y]    注入滚轮（引擎单位：上滚正、一格 120；缺省沿用当前光标）',
   '  key <vk> / keyup <vk> 注入键盘按下/抬起（vk = Windows 虚拟键码，如 38=↑、13=Enter）',
   '  ? / help              本帮助',
+  '  profile [子命令]       计时器（`T-0180`）：无参 = 报告；on/off = 按 opcode 计时（默认关，开才有开销）；',
+  '                        reset = 清零；watch on/off = 帧看门狗（**默认开**，只报数不解释）；',
+  '                        slow <ms> = 慢帧阈值（默认 200）；report [minMs] = 只列累计 ≥ minMs 的指令',
   '  <其它>                当查询：global <下标> / local <下标> / frame [下标|all] / slot <槽> / run',
   '★下标与常量口径：`0x…`=十六进制；含 a-f 的串=十六进制；纯数字=十进制。',
 ];
@@ -162,6 +171,31 @@ export function parseDebugCommand(raw: string): DebugAction | null {
   // `snapshot` 只读导出；`restore <base64>` 灌回（base64 里是 UTF-8 JSON）。
   // ★为什么走 base64 而不是裸 JSON：命令是**按行**传输的（`\n` 会截断），而 JSON 里有换行/引号/反斜杠。
   if (cmd === 'snapshot') return { a: 'snapshot' };
+  // `profile`（`tickets/T-0180`）：无参 = report。非法子命令按既有口径"当查询回报"（不抛错、不崩）。
+  if (cmd === 'profile') {
+    const sub = (parts[1] ?? 'report').toLowerCase();
+    if (sub === 'on' || sub === 'off' || sub === 'reset' || sub === 'report') {
+      const minMs = sub === 'report' && parts[2] !== undefined ? Number(parts[2]) : undefined;
+      if (minMs !== undefined && !Number.isFinite(minMs)) {
+        return { a: 'query', text: `profile report：minMs 必须是数（收到「${parts[2]}」）` };
+      }
+      return { a: 'profile', cmd: sub, ...(minMs !== undefined ? { minMs } : {}) };
+    }
+    if (sub === 'watch') {
+      const v = (parts[2] ?? '').toLowerCase();
+      if (v !== 'on' && v !== 'off') return { a: 'query', text: 'profile watch：参数是 on / off' };
+      return { a: 'profile', cmd: v === 'on' ? 'watch-on' : 'watch-off' };
+    }
+    if (sub === 'slow') {
+      const ms = Number(parts[2]);
+      if (!Number.isFinite(ms) || ms <= 0) return { a: 'query', text: `profile slow：要一个正数 ms（收到「${parts[2] ?? ''}」）` };
+      return { a: 'profile', cmd: 'slow', slowMs: ms };
+    }
+    return {
+      a: 'query',
+      text: 'profile：子命令是 on / off / reset / report [minMs] / watch on|off / slow <ms>（无参 = report）',
+    };
+  }
   if (cmd === 'restore') {
     // ★这里用字面量而不是下面那个 `bad()` 帮助函数：`bad` 在**输入注入那一节**才声明（在后面），
     //   而本块在它之前 —— 用它会撞 TDZ（`tsc` 的 "used before its declaration"）。

@@ -17,6 +17,7 @@ import http from 'node:http'
 import path from 'node:path'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
+import { createRequire } from 'node:module'
 
 import { apply, inject, name } from './lib/index.js'
 
@@ -38,11 +39,19 @@ const EMPTY_ROOT = path.join(REPO, '.tmp', `emulator-smoke-empty-${process.pid}`
 let fakeRoot = EMPTY_ROOT
 let registered = null
 const effects = []
+/** agent tool 注册的落点（`T-0181`）：本冒烟不跑工具，只验"它被注册了、形状对"。 */
+const registeredTools = []
 const ctx = {
   webServer: {
     register(route) {
       registered = route
       return () => { registered = null }
+    },
+  },
+  tools: {
+    register(tool) {
+      registeredTools.push(tool)
+      return () => { registeredTools.pop() }
     },
   },
   get(key) {
@@ -59,11 +68,49 @@ const ctx = {
 assert.equal(name, 'amayui-emulator')
 assert.ok(inject.includes('webServer'), '★ inject 必须含 webServer（否则路由会被静默跳过）')
 assert.ok(inject.includes('fs'), '★ inject 应含 fs（Host 半仍声明工作区文件服务）')
+assert.ok(inject.includes('tools'), '★ inject 必须含 tools（否则工具注册会被静默跳过 —— 与 webServer 同一个坑）')
 apply(ctx)
 assert.ok(registered, '必须注册了路由')
 assert.equal(registered.kind, 'prefix', 'kind 必须是 prefix')
 assert.equal(registered.path, PREFIX, 'path 必须精确是 /dsh-emulator（不带尾斜杠）')
 console.log('[smoke] ✓ 路由注册：kind=prefix path=/dsh-emulator，inject 含 webServer')
+
+// ---- agent tool（`T-0181`）：注册了、名字对、参数面在 ----
+// ★`@deepseek-ai/dsh-tools` 只在 **profile 的** node_modules 里（本包是 junction 挂进去的），
+//   所以从仓库根跑这份冒烟时它**解析不到** ⇒ 那里注册会**优雅降级**（打印一条 ✗ 日志）。
+//   这里据此分两支：解析得到就**必须**注册（连形状一起验）；解析不到就明确 skip
+//   （别把"环境缺依赖"伪装成"工具没写对"，也别让冒烟在仓库根红掉）。
+let toolsResolvable = true
+try {
+  createRequire(import.meta.url).resolve('@deepseek-ai/dsh-tools')
+} catch {
+  toolsResolvable = false
+}
+if (toolsResolvable) {
+  assert.equal(registeredTools.length, 1, '必须注册**一个** agent tool')
+  const t = registeredTools[0]
+  assert.equal(t.name, 'amayui_emulator', 'tool 名必须是 amayui_emulator')
+  // ★`defineTool` 把 `parameters` 规格**编译成 JSON Schema** 再挂回来
+  //   （`dsh-tools/lib/index.js:846` 的 `parameterSchemaSpecToJsonSchema`）⇒
+  //   这里读到的是 `{type:'object', properties:{…}, required:[…]}`，不是我们传进去的那个原始对象。
+  const p = t.parameters
+  assert.equal(p.type, 'object', 'parameters 必须编译成 object 根 JSON Schema')
+  assert.ok(Array.isArray(p.required) && p.required.includes('action'), 'action 必须在 required 里')
+  for (const k of ['instance', 'command', 'commands', 'kind', 'x', 'y', 'until', 'sub', 'force']) {
+    assert.ok(p.properties && p.properties[k], `参数面缺 ${k}`)
+  }
+  assert.equal(typeof t.execute, 'function', 'tool 必须有 execute')
+  assert.equal(typeof t.output.render, 'function', 'tool 必须有 output.render')
+  // 真调一次**只读**动作（instances 不碰进程）—— 顺带把 execute 通路走通。
+  const r = await t.execute({ action: 'instances' }, { signal: undefined })
+  assert.equal(r.action, 'instances', 'execute 必须回 action=instances')
+  assert.ok(Array.isArray(r.instances), 'instances 必须是数组')
+  assert.ok(String(t.output.render({ action: 'instances' }, r)[0].text).includes('instances'), 'render 要出人读文本')
+  console.log(`[smoke] ✓ agent tool 注册：amayui_emulator（${Object.keys(p.properties).length} 个参数；execute({action:instances}) → ${r.instances.length} 个实例）`)
+} else {
+  assert.equal(registeredTools.length, 0, '解析不到 dsh-tools 时**不该**注册（否则会在装定时抛错）')
+  console.log('[smoke] … skip agent tool 断言：本进程解析不到 @deepseek-ai/dsh-tools（正常 —— 它只在 profile 的 node_modules 里）')
+}
 
 // ---- 把 handler 挂到真 server 上，用真 fetch 打 ----
 const server = http.createServer((req, res) => {

@@ -27,7 +27,7 @@
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "const fillAlpha = spec.antiAlias ? TEXT_FILL_ALPHA : 1;",
       "note": "第 2 次变更的实现点：描边不透明、填充按覆盖率 α 叠加（= 引擎的 α 合成）",
-      "line": 48
+      "line": 90
     },
     {
       "file": "app/amayui-emulator/src/text/layout.ts",
@@ -63,7 +63,7 @@
       "file": "app/amayui-emulator/src/renderer/text/raster.ts",
       "anchor": "export function engineGlyphPixel",
       "note": "第 3 次变更的实现点：引擎 `sub_46D9F0` 的单像素写入（A=max、A_dst==0 ⇒ RGB=C）逐像素复现",
-      "line": 199
+      "line": 241
     },
     {
       "file": "src/CONFIG1.txt",

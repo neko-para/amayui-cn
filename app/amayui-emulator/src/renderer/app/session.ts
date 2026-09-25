@@ -54,6 +54,7 @@ import {
   snapshotFromJson,
   snapshotToJson,
 } from '../../vm/engineSnapshot.js';
+import { profiler } from '../../vm/profile.js';
 
 /**
  * 一帧内最多推进的指令数 —— **仅作病态死循环兜底**，不是引擎语义。
@@ -606,6 +607,33 @@ export class RendererSession {
         const kinds = act.events.map((e) => (e.kind === 'cursor' && e.valid === false ? 'leave' : e.kind)).join(', ');
         this.#traceLog.line(`[input] 注入 ${act.events.length} 个事件：${kinds}`);
         return [`已注入 ${act.events.length} 个输入事件（${kinds}）`];
+      }
+      case 'profile': {
+        // ★`tickets/T-0180`：计时器（帧看门狗 + 可选的按指令计时）。它的输出是**给人看的行**，
+        //   与 `barrier`/`global` 那些查询同形 ⇒ 这里只做"转发到 profiler + 回报"。
+        switch (act.cmd) {
+          case 'on':
+            profiler.setOpEnabled(true);
+            return ['指令计时：**开**（再复现一次，然后 `profile report` 看分解）'];
+          case 'off':
+            profiler.setOpEnabled(false);
+            return ['指令计时：关（已累计的数还在；`profile reset` 清）'];
+          case 'reset':
+            profiler.reset();
+            return ['计时器已清零（含慢帧记录）'];
+          case 'watch-on':
+            profiler.setWatchEnabled(true);
+            return ['帧看门狗：**开**（超阈值会在宿主日志里打 `[perf] 帧 #N …`）'];
+          case 'watch-off':
+            profiler.setWatchEnabled(false);
+            return ['帧看门狗：关'];
+          case 'slow':
+            profiler.setSlowThresholdMs(act.slowMs ?? 200);
+            return [`慢帧阈值 = ${profiler.slowThresholdMs}ms`];
+          case 'report':
+            return profiler.report(act.minMs ?? 1);
+        }
+        return ['profile：未知子命令'];
       }
       case 'snapshot': {
         // ★`tickets/T-0122`：引擎态快照。**只读**（`captureEngineSnapshot` 不改任何状态）。

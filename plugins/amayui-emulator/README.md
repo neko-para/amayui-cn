@@ -1,4 +1,8 @@
-# @amayui/emulator-view · 静态 bundle 插件（把模拟器的**调试观察画面**嵌进 DSH）
+# @amayui/emulator-view · 静态 bundle 插件（把模拟器的**调试观察画面**嵌进 DSH，并给 agent 一套驱动工具）
+
+> **这个包有两个半**：`lib/index.js`（Host：GUI 面板的每实例反向代理）+ `lib/client.js`（浏览器浮窗）
+> —— 见下面「观察台」章节；以及 **`lib/tools.js`：agent tool `amayui_emulator`**，
+> 见 **§「agent tool」**（那是"取代每次临时写 .mjs"的那一半，也是本 README 后半段的重点）。
 
 在 DSH Web GUI 里放一个**常驻浮窗**（`shell.overlay`，`tickets/T-0137` 起）：默认收成右下角
 一枚小胶囊（「🖥」+ **活实例数**徽标），点开是一块 `position: fixed` 的面板 ——
@@ -256,7 +260,7 @@ dsh plugin --profile web add ./plugins/amayui-emulator
 
 ```bash
 node --check plugins/amayui-emulator/lib/index.js
-node --check plugins/amayui-emulator/lib/client.js
+node --check plugins/amayui-emulator/lib/tools.js
 node plugins/amayui-emulator/smoke.mjs          # 离线冒烟（Host 半）：路由 + 真起实例 + 注册表发现 + 代理 + 410（含 tsx 冷启）
 node plugins/amayui-emulator/smoke-client.mjs   # 离线冒烟（Client 半）：单一 iframe 不变式 / 三态切换不换节点 / viewers 告警 / 常驻胶囊 / 两档尺寸 / 拖动 / localStorage / 无启动停止
 dsh --profile web --dump-config | grep -A2 amayui-emulator-view
@@ -265,11 +269,20 @@ dsh --profile web --dump-config | grep -A2 amayui-emulator-view
 重启后：右下角出现一枚「🖥」小胶囊（徽标 = 活实例数；会话头部也有「🖥 调试画面」按钮）→
 点开面板 → 列表里选一个 → 画面出现；「放大」进全屏模态，「尺寸档」切 0.5×/0.25×，拖标题栏挪位置。
 列表为空 = 此刻确实没有活实例；按面板里的命令让 agent/自己起一个。
+**agent tool 侧**：重启 web profile 后，模型可见的工具面里会多出 `amayui_emulator`
+（`dsh --profile web --dump-config` 不显示工具面；直接让 agent 发一次 `action=instances` 最快）。
 
 ## 依赖与前提
 
-* 插件自身**零运行时依赖**（Host 半只用 `node:fs` / `node:http` / `node:path`）。
-* **被观察的 emulator 侧**要有依赖：`app/amayui-emulator/node_modules`（`tsx`）。
+* 插件自身**零运行时依赖**（Host 半只用 `node:fs` / `node:http` / `node:path` / `node:child_process`；
+  agent tool 另需 `@deepseek-ai/dsh-tools` 的 `defineTool`，由 profile 提供，见 `package.json` 的
+  `peerDependencies`）。
+  ★**从仓库根跑 `smoke.mjs` 需要它可解析**：本包以 junction 挂在 profile 的
+  `node_modules/@amayui/` 下，而 `@deepseek-ai/dsh-tools` 只在 **profile / DSH 安装**的
+  node_modules 里 ⇒ 仓库里放了一个 `plugins/amayui-emulator/node_modules/@deepseek-ai/dsh-tools`
+  junction（指向 DSH 安装那份；`node_modules/` 是 gitignored 的，与 `plugins/uimap` 同做法）。
+  没有它冒烟会**优雅降级**（打印一条 `✗ 加载 @deepseek-ai/dsh-tools 失败` 并 skip 工具断言）。
+* **被观察的 emulator 侧**要有依赖：`app/amayui-emulator/node_modules`（`tsx`；`--attach-headless` 还要 `electron`）。
 * 路由**没有认证**（`webServer.register` 的普通路由不走 `connection` 的鉴权/围栏）⇒
   宿主只绑 `127.0.0.1`、且 DSH 本身拒绝 `--host 0.0.0.0`。**不要**把这套路由暴露到网络。
 
@@ -286,9 +299,175 @@ dsh --profile web --dump-config | grep -A2 amayui-emulator-view
   `visibility:'hidden'`（**不要 `display:'none'`**）—— 卸载 iframe 或挂起页面都会让 VM 死/停；
 * 浮窗位置 / 尺寸档 / 收起态 / 选中实例存在 `localStorage`（键 `@amayui/emulator-view.panel.v1`），
   每个访问都在 `try/catch` 里；清掉这个键就等于恢复默认（收起胶囊、右下角、0.5×）；
-* 插件**不持有子进程**，所以卸载时没有需要清理的钩子（`T-0135` 的 `SIGTERM` 收尾随之删除）。
+* **GUI 面板不持有子进程**，所以卸载时没有需要清理的钩子（`T-0135` 的 `SIGTERM` 收尾随之删除）。
+  ★agent tool 那一半的 `start` **会**起进程 —— 见下一节末尾「两条不变量为什么不冲突」。
+
+---
+
+# agent tool：`amayui_emulator`（`tickets/T-0181`）
+
+## 为什么有它（它就是被"临时脚本"逼出来的）
+
+在它之前，让 agent 自己驱动一个 emulator 实例的**唯一**做法是**每次现场手写一个 `.mjs`**：
+
+```text
+写 drive.mjs → 起实例（长命令行 + 自己管后台进程 + 从注册表把端口捞回来）
+            → fetch POST debug-query → 自己量往返毫秒
+            → capture（把 1.8MB 的 base64 PNG 打到 stdout，**模型上下文直接烧掉**）
+            → 想等"跑到 TITLE"只能 Start-Sleep + 反复 frame 去猜
+            → 读输出 → 改脚本 → 再跑一遍
+```
+
+定位「存档页 80→90 切页卡 1.5s」那一轮，这个循环跑了十几次，每次都是一份新脚本，跑完就废。
+现在同样的事是**一次工具调用**。三条硬设计（取舍都写在这里，不藏在代码里）：
+
+| # | 设计 | 为什么 |
+|---|---|---|
+| 1 | **复用既有 HTTP 路由，不另写驱动逻辑** | 命令面只有一条：`app/amayui-emulator/src/web/host.ts` 的 `POST /api/debug-query`（命令表仍是 `src/vm/debugCommand.ts` 那一份）。插件**不解析任何仿真命令**，只拼字符串、转发、读回执。两处真源 = 之后必然漂移的债。 |
+| 2 | **PNG 只落盘，绝不回模型** | `capture` 回执里的 `png` 是 base64（1280×720 ≈ 1.8MB），打到 stdout/回执里就是一次上下文事故。工具就地解码写文件，只回 `{path, bytes, width, height}`；`lib/tools.js` 里 base64 只活在 `doCapture` 一个函数体内。 |
+| 3 | **往返毫秒是证据** | 每个动作回 `elapsedMs`，`query` 另有**逐条** `roundTripMs`。要量的是"卡多久"，不是"命令发了"。 |
+
+**为什么直连实例端口、不走本插件的 `/dsh-emulator/<id>/…` 代理**：同一条路由、同一份契约，
+但**少一跳 TCP** —— 把插件自己那一跳算进 `roundTripMs` 会**污染证据**。
+GUI 面板走代理（同源 iframe 需要它），agent 走直连：**两个调用方，一条被调用的路由**。
+
+## 参数表（一个工具，八个动作）
+
+```jsonc
+amayui_emulator {
+  action: "instances" | "start" | "stop" | "query" | "capture" | "input" | "profile" | "wait",
+  instance?: string,        // 实例 id；缺省要求"恰好一个活实例"（多个就报错并列出）
+  ...
+}
+```
+
+| action | 关键参数 | 行为 / 回执 |
+|---|---|---|
+| **`instances`** | `include_dead` | 读 `.tmp` 文件注册表（跨进程/跨终端可见）→ 每个实例 `{id, port, pid, live, bin, frames, gate, heartbeatAgeMs}`。**不碰进程**。 |
+| **`start`** | `port`(0) `idle_sec`(0) `headless`(true) `wait_ms`(20000) | 以**受管后台进程**起：`node --import tsx src/web/host.ts --instance <id> --port <p> --idle-sec <n> [--attach-headless]`，env `AMAYUI_AUDIO_ENABLED=0`（静音）、`detached:true`、stdout/stderr → `.tmp/emudbg/<id>.log`。**`--port 0` 的真实端口从注册表捞回来**再回执。`idle_sec` 缺省 **0**（agent 的实例不该自己消失）。 |
+| **`stop`** | `force` `grace_ms`(8000) | `SIGTERM` → 等 `grace_ms` → 还在就 `taskkill /T /F` 收**整棵树**（`--attach-headless` 的哑窗是宿主的子进程，不一起收就是孤儿）。**只收本进程起的**；别人的实例必须显式 `force:true`（注册表在磁盘上、跨进程可见 ⇒ 没有这道摩擦就可能一键杀掉用户正在看的那个）。 |
+| **`query`** | `command` 或 `commands[]` | 发任意调试命令（`run`/`global`/`frame`/`slot`/`barrier`/`snapshot`/`restore`/`focus`/`help`…），逐条回 `{cmd, status, roundTripMs, ok, lines[]}`。 |
+| **`capture`** | `out` | 抓帧 → **落盘** `.tmp/emudbg/<out>`（缺省 `<id>-<MMDD-HHMMSS>.png`）→ 回 `{path, bytes, width, height, pngRoundTripMs}`。宽高直接读 PNG 的 `IHDR`（8 字节，零依赖）。 |
+| **`input`** | `kind` `x` `y` `button` `hover`(click 缺省 true) `hover_wait_ms`(250) `settle_ms` `delta` `vk` `keyup`(true) | `click/move/leave/press/release/wheel/key` 的封装。★**合成悬停**：`move(目标左侧 2px) → move(目标) → 等 hover_wait_ms → click`。回执里逐条列命令与各自的 `roundTripMs`。 |
+| **`profile`** | `sub` `min_ms` `watch` `slow_ms` | `profile on/off/reset/report [minMs]/watch on\|off/slow <ms>` 的封装。归因卡顿的标准接法：`reset` → `on` → 发输入 → `report 20`。 |
+| **`wait`** | `until{}` `timeout_ms`(30000) `poll_ms`(200) | 轮询**只读**探针 `frame`（+ `run`/`global`）直到条件成立：`bin`（正则）、`gate`（`free`/`waiting`）、`frames_above`/`frames_below`/`frames_change`、`global`（正则，配 `until.global_idx`）。超时回 `ok:false` + **每个条件的期望/实得**。 |
+
+### `input` 的两条输入语义（照抄引擎实测，别踩）
+
+1. **悬停靠"位置真的变了"触发**（`src/vm/input.ts` 的 `setCursor`：同一点连发两次 `move`
+   **不**产生第二次 hover）⇒ 这就是 `hover:true` 要**先移到旁边再移回来**的原因，
+   也是"TITLE 这类菜单不悬停点不动"的机制。`move 867 385` 连发两次**没有用**。
+2. `click` = `cursor + press + release` 三连（天然会先移动），但需要"先悬停若干帧让菜单展开/高亮"
+   的界面仍要拆开 —— 那是 `hover_wait_ms` 在管的事。
+
+## 与"临时写 .mjs"的对比
+
+| 事 | 临时脚本 | 本工具 |
+|---|---|---|
+| 起实例 | 手写命令行 + 自己管后台 + 自己查端口 | `action=start`（自带静音/无头/日志/端口回填） |
+| 量往返 | 自己 `Date.now()` 包 fetch | 每条命令自带 `roundTripMs` |
+| 抓帧 | 自己 `base64` 解码 + **容易顺手 print 出去** | `action=capture` 落盘，base64 不出函数 |
+| 点菜单 | 猜坐标 + 反复 `click` | `action=input`（含合成悬停）+ `capture` 看图 |
+| 等状态 | `Start-Sleep` + 反复 `frame` 猜 | `action=wait`（带超时 + 条件差异） |
+| 归因 | 自己拼 `profile` 命令 | `action=profile` |
+| 收工 | 自己找 pid / 杀进程 | `action=stop`（含进程树） |
+| 复用 | 每次重写，跑完就废 | 一次调用，参数可变 |
+
+## 实测证据（2026-09-25，本机；报告原文 `.tmp/emudbg/acceptance-report.txt`）
+
+```text
+① instances  → 1 个活实例：hlt3 port=49946 pid=22712 bin=TITLE.BIN gate=sleep
+② wait {bin:"TITLE\\.BIN"}  → 成立（轮询 1 次，11ms）；state.bin=TITLE.BIN cur=1 ip=52
+③ query ["frame","run"]     → frame 200/2ms、run 200/2ms（往返都 2ms）
+④ capture @TITLE            → .tmp/emudbg/hlt3-1-title.png 1778973B 1280×720（capture 往返 6976ms）
+⑦ input click (1067,478)    → 3 条命令（含合成悬停）共 1080ms：
+                              move 1065 478 [3ms] / move 1067 478 [2ms] / click 1067 478 [3ms]
+⑧ capture @LoadData         → .tmp/emudbg/hlt3-2-loaddata.png 1795463B 1280×720（6940ms）
+⑨ wait {bin:"^(?!TITLE\\.BIN)"} → 成立：bin=SAVE.BIN ←cur（进的是 LOAD 画面）
+⑩ input click (1231,358)    → move 1229 358 [8ms] / move 1231 358 [1ms] / click 1231 358 [4ms]
+⑪ capture @arrow            → .tmp/emudbg/hlt3-3-arrow.png 1428671B 1280×720（1205ms）
+⑫ profile report 20         → 200/3ms：0x1a0 ×120 合计 202.8ms 最坏 3.3ms；慢帧 10 次（帧 #31 工作 137ms）
+```
+
+**坐标口径（★订正过一次，见下）**：
+
+* `capture` 的像素坐标 **== 引擎虚拟坐标，1:1（都是 1280×720）** —— 这一条成立且有用：
+  用 `capture` 落盘、在图里量出按钮中心，直接把那两个数喂给 `input` 即可。
+  （本插件验收里点页号按钮 `(559,21)` 真的翻到 020~029 页；独立一轮实测里点 `(1067,478)`
+  真的进了 LOAD 画面、点 `(1231,358)` 真的把列表从 070-079 翻到 080-089 再翻到 090-099。）
+* ★**「某个坐标是什么」不许当结论写死**，但**已被反复证实的值也不许写成"未定"**：
+  到 2026-09-25，`(1067,478)` = TITLE 的 Load Data、`(1231,358)` = LOAD 画面的右箭头
+  **已被三次独立实测证实**（每次都有截图或状态判据）：
+  ① 一轮性能定位里用它翻过 070-079 → 080-089 → 090-099；
+  ② 本插件 agent 验收里用它进了 LOAD（`cur=2 / SAVE.BIN`）；
+  ③ **本插件的 tool 实测**里用它把列表从 `0` 页（000-009）翻到 `10` 页（010-019，截图
+     `.tmp/emudbg/vtest-2-load.png` / `vtest-3-arrow.png`）—— 那次实例的 base 是**隔离空目录**，
+     所以"空列表 ⇒ 箭头不灵"这个猜想也不成立。
+  ★反例只有一条且**原因至今未查明**：另一次验收在 `(1231,358)` 上没翻页。
+  ⇒ 规则：坐标一律 **`capture` 现量**（像素 = 虚拟 1:1）；点了没反应先用 `wait` 看脚本名/`global` 变没变，
+   再考虑换落点。**不要**因一次失败就把某坐标判死 —— 技能手册里"大箭头点不动"那句就是这么来的（已订正）。
+* 页号按钮那条仍然最稳（`(606 + 42*N, 30)`，多种场合验过）：翻页不稳时优先用它。
+
+## 已知限制（都是实测结论，不是猜测）
+
+1. ★**`--attach-headless` 在本会话曾起不来（环境问题，不是本插件的问题；DSH 重启后已复现不了）**：宿主 spawn 的哑窗
+   **秒退，退出码 4294967295、零输出**（宿主日志只留一行
+   `[web] 无头渲染页退出 code=4294967295`）⇒ 实例活着但 `debug-query` 必然 503。
+   同一个 `electron.exe` 由 pwsh **直接**起同样的脚本却**能活**（实测挂住 60s+、`/health.viewers=1`、
+   VM 一路跑到 TITLE），所以不是 `tools/attach-headless.cjs` 的错，是"宿主 spawn 出去之后
+   那个子进程被本会话环境带走"。**绕过办法**（本次验收就是这么做的）：
+   宿主用 **不带** `--attach-headless` 起，再由 agent 用同样的隐藏窗口脚本自己附一个渲染页
+   （`show:false` + 那 5 个节流开关）；`viewers` 会显示 1，之后本工具一切照常。
+   ⛔**不要**为了这个去改 `app/**` 的 spawn 逻辑：先确认是不是所有终端都这样（本次只有 agent 会话里复现）。
+   ★**2026-09-25 DSH 重启后的复测**：`action=start`（`--port 0` → 62692）**无头页一次就附上了** ——
+   `action=wait {bin:"TITLE\.BIN"}` **7.8s** 成立、随后 `query`/`capture`/`input`/`profile`/`stop` 全部正常。
+   ⇒ 这条按"**会话环境瞬时问题**"记，不是插件的稳定缺陷；再遇到时按上面的绕过办法做。
+2. **坐标不属于本插件**：TITLE 菜单的命中位置随**游戏版本**变（本机是 `Version 1.0.0.1`）。
+   坐标请用 `capture` 对着量，或用 `plugins/uimap` 的 `amayui_uimap` 扫连通块；本工具只搬坐标。
+3. **`wait` 的探针是文本解析**：从 `frame`/`run`/`global` 的人读文本里正则取数
+   （`lib/tools.js` 的 `parseFrameLines`/`parseRunLines`）。这些行是 app 侧的稳定契约（有守卫测试），
+   但若那几行文案改版，`wait` 会**先失效**（回 `checks[].got=null`），`query`/`capture` 不受影响。
+   ★不新开一条"机读命令"是刻意的：那要在 app 侧加第二条真源，而等待是**调用方**的诉求。
+4. **`capture` 的耗时是"页面内读回"的真成本**（本机实测 **0.7~7.0s**：冷启动后第一张 ~7s、
+   之后同一实例 0.7~1.2s），**不是插件的开销**（同一个实例 `frame` 只要 2~18ms）。
+   连着抓多张要有耐心，别把它当成卡死；`capture` 的回执里自带 `capture 往返`，可直接对照。
+5. **`stop` 不保证注册项立刻消失**：宿主正常退会摘记录；被硬杀会留一条残记录，
+   20s 后自然不算活（`instances` 里消失）。`ok` 的判据是"进程没了"，不是"文件没了"。
+6. **`start` 的 `detached:true` 意味着实例不随 DSH 退出而死**：这是刻意的（"实例归 agent 管"），
+   代价是收工必须 `action=stop`（或让它 `idle_sec` 到期）。
+7. **本工具不碰用户实例**：没有 `instance` 参数而同时有多个活实例时**直接报错**，不猜；
+   `stop` 对非本进程起的实例要求 `force:true`。
+
+## 两条不变量为什么不冲突
+
+`lib/index.js` 头上的「纯观察（不 spawn、不 stop）」说的是 **GUI 面板**：面板里没有启动/停止按钮，
+它只列实例、只开 iframe。本节的 `start`/`stop` 是 **agent 显式要求**的，进程句柄只活在
+`lib/index.js` 的 `spawned` Map 里、**只覆盖"我自己起的那个"**；别人的实例一律只读。
+`T-0136` 的教训（"面板不该每次开一个新实例"）因此毫发无损。
+
+## 怎么验（不重启 DSH 也能做）
+
+```bash
+node --check plugins/amayui-emulator/lib/index.js
+node --check plugins/amayui-emulator/lib/tools.js
+node plugins/amayui-emulator/smoke.mjs          # Host 半（路由 + 代理 + 注册表发现）
+node plugins/amayui-emulator/smoke-client.mjs   # Client 半（浮窗/iframe 不变式）
+```
+
+★`lib/tools.js` 的逻辑是**纯函数级**可自测的（`createExecutor({getRoot, spawned, toolLog})`，
+不需要 Cordis 容器）—— 本次验收就是直接调它跑的（见 `.tmp/emudbg/acceptance.mjs`）。
+**bundle 成员是启动边界**：改了 `lib/*.js` 要重启 web profile（`dsh web`）工具才会出现。
 
 ## 变更历史
+
+* **`T-0181`**：**agent tool `amayui_emulator`（本 README 的「agent tool」整节）**。
+  起因是"每次驱动 emulator 都要现场写一个 `.mjs`"（那轮 1.5s 卡顿定位跑了十几次）。
+  新增 `lib/tools.js`（`createExecutor` + 注册表扫描 + `POST /api/debug-query` 客户端 +
+  PNG 落盘/尺寸 + `wait` 的只读探针），`lib/index.js` 增 `tools` 注入与工具注册，
+  `inject` 从 `['fs','webServer']` 扩到 `['fs','webServer','tools']`。
+  八个动作：`instances` / `start` / `stop` / `query` / `capture` / `input` / `profile` / `wait`。
+  三条硬设计：复用既有 HTTP 路由（不另写驱动逻辑）、**PNG 只落盘不回 base64**、
+  **往返毫秒进回执**。GUI 面板的"纯观察"不变量不变（`start`/`stop` 只覆盖本进程起的实例）。
 
 * **`T-0143`**：**静态产物缺失不再只说 `not found`**。宿主 `listen()` 成功后自检
   `dist/web/{index.html,bridge.js,renderer.js}`，缺了就打印含**绝对产物目录**与

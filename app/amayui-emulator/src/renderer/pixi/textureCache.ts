@@ -454,7 +454,7 @@ export class TextureCache {
     });
     if (decision === 'reuse-clear') {
       // 同尺寸同 DPR ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）。清空要用物理尺寸。
-      const ctx = old!.canvas.getContext('2d');
+      const ctx = old!.canvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, old!.canvas.width, old!.canvas.height);
@@ -571,7 +571,7 @@ export class TextureCache {
       this.log(`drawString slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径）`);
       return;
     }
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
     // ★画布是物理像素（逻辑×res）⇒ 先把坐标系缩到逻辑尺寸，之后一切坐标/字号都按逻辑值给
     ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0);
@@ -673,7 +673,7 @@ export class TextureCache {
       this.log(`fillSlotRect slot=${slot} (${x},${y},${w}x${h}) 被夹空 ⇒ 不画（引擎 sub_4A4C70 的 *v5 >= v5[2] 早退）`);
       return;
     }
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
     ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0); // 逻辑坐标（同 drawString）
     ctx.globalAlpha = Math.max(0, Math.min(255, alpha)) / 255;
@@ -750,7 +750,7 @@ export class TextureCache {
   getSlotPixels(slot: number): { w: number; h: number; rgba: Uint8Array } | null {
     const cs = this.#canvasSlots.get(slot);
     if (!cs) return null;
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return null;
     const img = ctx.getImageData(0, 0, cs.canvas.width, cs.canvas.height);
     // 画布是物理像素（逻辑 × res）；这里按逻辑尺寸**逐点取样**（DPR=1 时就是原样），
@@ -806,7 +806,7 @@ export class TextureCache {
       this.log(`blitSlotToSlot ${srcSlot}→${dstSlot} 被忽略：矩形退化 src=[${raw.src}] dst=[${raw.dst}]`);
       return false;
     }
-    const ctx = dstCs.canvas.getContext('2d');
+    const ctx = dstCs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return false;
     // 画布是物理像素（逻辑 × res）⇒ 用 1:1 变换、各边自己乘 res（源与目标的 res 可能不同）
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -846,14 +846,14 @@ export class TextureCache {
       this.log(`setSlotPixels slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径）`);
       return false;
     }
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return false;
     const img = new ImageData(new Uint8ClampedArray(rgba), w, h);
     // 物理像素铺满（DPR 缩放由画布自身的 resolution 承担，与 create-texture/draw-string 同口径）
     const tmp = document.createElement('canvas');
     tmp.width = w;
     tmp.height = h;
-    tmp.getContext('2d')?.putImageData(img, 0, 0);
+    tmp.getContext('2d', { willReadFrequently: true })?.putImageData(img, 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cs.canvas.width, cs.canvas.height);
     ctx.imageSmoothingEnabled = false; // 缩略图按原尺寸铺（不放大、不插值）
@@ -878,7 +878,7 @@ export class TextureCache {
       this.log(`captureCanvasIntoSlot slot=${slot} 被忽略：该槽没有 create-texture 出来的表面`);
       return false;
     }
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cs.canvas.width, cs.canvas.height);
@@ -913,7 +913,7 @@ export class TextureCache {
       this.log(`composeIntoSlot slot=${slot} 被忽略：该槽没有 create-texture 出来的表面`);
       return false;
     }
-    const ctx = cs.canvas.getContext('2d');
+    const ctx = cs.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return false;
     ctx.setTransform(cs.res, 0, 0, cs.res, 0, 0);
     ctx.globalAlpha = 1;

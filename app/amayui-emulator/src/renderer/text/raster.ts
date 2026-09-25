@@ -28,6 +28,48 @@ import {
   type TextFrame,
 } from '../../text/layout.js';
 
+/**
+ * **可复用的临时图层**（性能修复；起因：存档页 80→90 一帧卡 1.5s）。
+ *
+ * 原先每处都 `document.createElement('canvas')` —— 最坏的一处是 `drawGlyphPassesOnSurface`：
+ * 它**每个字形（严格说每个绘制遍）建一张新画布**。实测该屏一帧内 190 次直绘、每次 1~4 遍
+ * ⇒ 数百次"建画布 + `getContext` + 回读"，而建画布/建上下文本身就要 ~1ms 量级。
+ *
+ * 两件事一起做：
+ *  1. **按像素尺寸缓存并复用**画布（用前 `clearRect` 回到"全透明"——图层的语义本来就是每次从零开始）；
+ *  2. ★`willReadFrequently: true`：这些图层**每次都要 `getImageData`** 取覆盖率。不给这个提示时
+ *     Chromium 把 2D 画布留在 GPU 上，每次回读都要一次 GPU→CPU 同步 —— 这正是 6~7ms/次的主因。
+ *
+ * ★为什么对中间图层绝对安全：它们从不交给 Pixi 当纹理源（只在本模块里画→读），
+ *   所以"留在 CPU 侧"没有代价；会付出代价的是**槽画布**（要上传 GPU），那条另案处理。
+ */
+const scratchCanvases = new Map<string, HTMLCanvasElement>();
+
+/** 缓存上限（直绘的包围盒尺寸可以千奇百怪，不许无限长胖）。 */
+const MAX_SCRATCH_CANVASES = 32;
+
+/** 取一张**已清空**的临时图层上下文（尺寸以物理像素计）。`document` 不存在 ⇒ null。 */
+function scratchCtx(w: number, h: number): CanvasRenderingContext2D | null {
+  if (typeof document === 'undefined') return null;
+  const pw = Math.max(1, Math.ceil(w));
+  const ph = Math.max(1, Math.ceil(h));
+  const key = `${pw}x${ph}`;
+  let canvas = scratchCanvases.get(key);
+  if (!canvas) {
+    if (scratchCanvases.size >= MAX_SCRATCH_CANVASES) scratchCanvases.clear();
+    canvas = document.createElement('canvas');
+    canvas.width = pw;
+    canvas.height = ph;
+    scratchCanvases.set(key, canvas);
+  }
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.clearRect(0, 0, pw, ph);
+  return ctx;
+}
+
 /** 逐档描边（引擎 `Font+1372` → `sub_455ED0` 的 `a8`）。 */
 function drawGlyph(
   ctx: CanvasRenderingContext2D,
@@ -149,17 +191,17 @@ export function drawAliasedLayer(
   cut = 128,
 ): number {
   if (typeof document === 'undefined') return 0; // 非浏览器宿主：不该走到这里
-  const layer = document.createElement('canvas');
-  layer.width = Math.max(1, Math.ceil(physW));
-  layer.height = Math.max(1, Math.ceil(physH));
-  const lctx = layer.getContext('2d');
+  const w = Math.max(1, Math.ceil(physW));
+  const h = Math.max(1, Math.ceil(physH));
+  // ★复用图层（原先每调用建一张）：语义是"每次从全透明开始" ⇒ 复用前已 `clearRect`。
+  const lctx = scratchCtx(w, h);
   if (!lctx) return 0;
   lctx.setTransform(res, 0, 0, res, 0, 0);
   draw(lctx);
-  const changed = thresholdAlpha(lctx, layer.width, layer.height, cut);
+  const changed = thresholdAlpha(lctx, w, h, cut);
   target.save();
   target.setTransform(1, 0, 0, 1, 0, 0); // 图层按物理像素 1:1 贴回
-  target.drawImage(layer, 0, 0);
+  target.drawImage(lctx.canvas, 0, 0);
   target.restore();
   return changed;
 }
@@ -272,13 +314,15 @@ export function drawGlyphPassesOnSurface(
   const d = dst.data;
   let written = 0;
 
+  // ★**一张图层用到最后**（原先**每遍都新建**一张画布 —— 这是那次 1.5s 卡顿的主要来源之一）。
+  //   每遍开始前 `clearRect`，所以"每遍从全透明开始"这条语义与原先逐字相同。
+  const lc = scratchCtx(cw, chh);
+  if (!lc) return 0;
+
   for (const pass of opts.passes) {
     // 这一遍的**覆盖率**：单独画一张透明图层取它的 alpha（图层里只有这一个字形/颜色）
-    const layer = document.createElement('canvas');
-    layer.width = cw;
-    layer.height = chh;
-    const lc = layer.getContext('2d');
-    if (!lc) continue;
+    lc.setTransform(1, 0, 0, 1, 0, 0);
+    lc.clearRect(0, 0, cw, chh);
     lc.setTransform(res, 0, 0, res, -px, -py); // 用逻辑坐标画
     lc.font = opts.font;
     lc.textAlign = 'left';
@@ -317,7 +361,7 @@ export function rasterFrame(frame: TextFrame, revealed: number, res = 1): HTMLCa
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(w * res);
   canvas.height = Math.ceil(h * res);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return canvas;
   ctx.setTransform(res, 0, 0, res, 0, 0);
 

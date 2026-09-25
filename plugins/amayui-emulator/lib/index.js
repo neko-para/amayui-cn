@@ -39,9 +39,30 @@
 import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
+import { createRequire } from 'node:module'
+import { createExecutor, scanRegistry } from './tools.js'
+
+/**
+ * `defineTool` **延迟加载**（不是顶层 `import`）。
+ *
+ * 为什么：本包是**工作区插件**（以 junction 挂在 profile 的 `node_modules/@amayui/` 下），
+ * `@deepseek-ai/dsh-tools` 只在**profile 的** node_modules 里 —— 从仓库根直接
+ * `node plugins/amayui-emulator/smoke.mjs` 时**解析不到**它。而离线冒烟（`smoke.mjs`）
+ * 正是从仓库根跑的，顶层 import 会让**整份冒烟**在解析阶段就 `ERR_MODULE_NOT_FOUND`。
+ * 延迟到"真的要注册工具"那一刻（且只在 `ctx.tools` 存在时），面板/代理那两条主路径
+ * 就与工具面解耦了 —— 这也让 `smoke.mjs` 能在假 ctx 下走完。
+ */
+function loadDefineTool() {
+  const require_ = createRequire(import.meta.url)
+  const mod = require_('@deepseek-ai/dsh-tools')
+  return mod.defineTool
+}
 
 export const name = 'amayui-emulator'
-export const inject = ['fs', 'webServer']
+// ★`tools` 在 `inject` 里：**工具面**必须等工具服务挂上才能注册（与 uimap 同一个坑）。
+//   `webServer` 在 `inject` 里：**GUI 面板**的每实例反向代理要等 web 服务挂上；
+//   少了它，路由会被**静默跳过**（`ctx.get('webServer')` 在 apply 时是 undefined）。
+export const inject = ['fs', 'webServer', 'tools']
 
 /** Emulator web host 的路径前缀（与 `lib/client.js` 里的 iframe src 必须是同一个）。 */
 const PREFIX = '/dsh-emulator'
@@ -345,5 +366,182 @@ export function apply(ctx) {
 
   ctx.effect(() => webServer.register({ kind: 'prefix', path: PREFIX, handler }))
 
-  // ★本插件**不持有任何子进程** ⇒ 没有需要清理的卸载钩子（纯观察，T-0136 的设计）。
+  // ★GUI 面板**不持有任何子进程** ⇒ 没有需要清理的卸载钩子（纯观察，T-0136 的设计）。
+  //   （agent tool 那一半的 `start` 是另一回事：见下面 `spawned` 的注释。）
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // agent tool：`amayui_emulator`（`tickets/T-0181`）—— 把"每次现场写一个 .mjs 去驱动
+  // emulator"收敛成一次工具调用。实现全在 `lib/tools.js`（纯逻辑、可离线自测）。
+  //
+  // 为什么放在这一个包里、而不是新建插件：**命令面只有一条**（`POST <instance>/api/debug-query`）。
+  // 那个实例端口、注册表布局、"活"的判据（pid + 20s 心跳）都已经在本文件里实现了；
+  // 另开一个包就得再抄一遍这些口径（两处真源 = 之后必然漂移的债）。这里只多两件事：
+  // 工具注册 + 本进程起的实例的进程句柄。
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * **本进程**起的实例（只用于"我自己起的那个"的收尾）。
+   *
+   * ★它与"纯观察"不冲突：面板（`lib/client.js`）依然没有任何启动/停止；`start`/`stop` 是
+   *   **agent 显式要求**的，句柄也只覆盖这一条来源。别人的实例（人开的、别的终端开的）
+   *   一律只读 —— `stop` 要先在注册表里看见它、再显式 `force` 才动，见 `lib/tools.js`。
+   */
+  const spawned = new Map()
+
+  // ★`ctx.tools` 在**离线冒烟**里是不存在的（`smoke.mjs` 用假 ctx）⇒ 这里要能优雅降级：
+  //   工具面挂了就照常注册，没有工具面（或注入没生效）就只打一条日志、**不能让插件装载失败**
+  //   —— 面板（`lib/client.js`）与反向代理是这个包的主职责，不该被工具面拖下水。
+  if (ctx.tools && typeof ctx.tools.register === 'function') {
+    let defineTool = null
+    try {
+      defineTool = loadDefineTool()
+    } catch (err) {
+      console.error(`[emudbg] ✗ 加载 @deepseek-ai/dsh-tools 失败（${err && err.message}）⇒ tool 未注册；面板与代理不受影响`)
+    }
+    if (defineTool) ctx.tools.register(defineTool({
+    name: 'amayui_emulator',
+    description:
+      '驱动《天結いキャッスルマイスター》emulator 的调试实例（起停 / 发调试命令 / 抓帧落盘 / 注入输入 / 计时器 / 等条件），' +
+      '取代「每次临时写一个 .mjs 脚本去 fetch debug-query」的做法。' +
+      'action=instances 列活实例（id/port/pid/bin/frames/gate/心跳龄，读 .tmp 文件注册表，跨终端可见）；' +
+      'action=start 以**受管后台进程**起一个实例（--attach-headless + 静音 + --idle-sec，返回真实端口；没有无头页时 debug-query 必然 503，故缺省开）；' +
+      'action=stop 收掉实例（只收本进程起的；别人的要 force=true）；' +
+      'action=query 发任意调试命令（run/global/frame/slot/barrier/snapshot/restore/focus…），回执行 + **往返毫秒**；' +
+      'action=capture 抓帧 → **PNG 落盘 .tmp/emudbg/**，只回 {path,bytes,width,height}（base64 绝不回传，避免烧上下文）；' +
+      'action=input 注入 click/move/leave/press/release/wheel/key（click 缺省**合成悬停**：菜单类界面必须先悬停再点，实测不悬停点不动）；' +
+      'action=profile 是 profile on/off/reset/report [minMs]/watch/slow 的封装（归因卡顿用）；' +
+      'action=wait 等 bin/gate/frames/global 到某个条件（带超时，替代 sleep + 反复 frame 猜）。' +
+      '调试命令表见 app/amayui-emulator/src/vm/debugCommand.ts；坐标是引擎虚拟 1280×720。',
+    parameters: {
+      action: {
+        type: 'string',
+        required: true,
+        description: 'instances | start | stop | query | capture | input | profile | wait',
+      },
+      instance: {
+        type: 'string',
+        description: '实例 id（.tmp/instances/<id>）。start 时可省略（自动生成）；其余动作省略则要求"恰好一个活实例"。',
+      },
+      command: { type: 'string', description: 'query：一条调试命令原文，如 "frame"、"global 12721e"、"run"。' },
+      commands: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'query：一组命令（逐条量往返毫秒），比连续调用省一轮模型往返。',
+      },
+      kind: { type: 'string', description: 'input：click | move | leave | press | release | wheel | key' },
+      x: { type: 'integer', description: 'input：虚拟坐标 x（0..1280）。' },
+      y: { type: 'integer', description: 'input：虚拟坐标 y（0..720）。' },
+      button: { type: 'string', description: 'input：left（缺省）| right。' },
+      delta: { type: 'integer', description: 'input.kind=wheel：滚轮量（一格 ±120，负 = 下滚）。' },
+      vk: { type: 'integer', description: 'input.kind=key：Windows 虚拟键码（38=↑、13=Enter）。' },
+      hover: {
+        type: 'boolean',
+        description: 'input.kind=click：先合成一次悬停（移到旁边再移到目标，等 hover_wait_ms）再点。缺省 true —— 菜单类界面不悬停点不动。',
+      },
+      hover_wait_ms: { type: 'integer', description: 'input：合成悬停后等多久再点（缺省 250）。' },
+      settle_ms: { type: 'integer', description: 'input：整条动作做完后再等多久（缺省 0；配合 capture 时可设 300~1500）。' },
+      keyup: { type: 'boolean', description: 'input.kind=key：是否自动补一条 keyup（缺省 true；长按场景设 false）。' },
+      port: { type: 'integer', description: 'start：--port（缺省 0 = OS 分配，真实端口从注册表读回）。' },
+      idle_sec: { type: 'integer', description: 'start：--idle-sec（缺省 0 = 关掉闲置自停，agent 用的实例不该自己消失）。' },
+      headless: { type: 'boolean', description: 'start：是否 --attach-headless（缺省 true；关掉则 agent 发命令必然 503）。' },
+      out: { type: 'string', description: 'capture：落盘文件名（相对 .tmp/emudbg/，缺省 <id>-<MMDD-HHMMSS>.png）。' },
+      sub: { type: 'string', description: 'profile：on | off | reset | report | watch | slow' },
+      min_ms: { type: 'integer', description: 'profile report：只列累计 ≥ 该毫秒的指令（归因卡顿的常用档位 20）。' },
+      watch: { type: 'string', description: 'profile sub=watch：on | off' },
+      slow_ms: { type: 'integer', description: 'profile sub=slow：慢帧阈值毫秒。' },
+      until: {
+        type: 'object',
+        additionalProperties: true,
+        description:
+          'wait：条件对象（可多个，全部成立才算达成）。bin（正则，如 "TITLE"）、gate（"free"/"waiting"）、frames_above / frames_below / frames_change（整数）、global（正则，配 global_idx 打在该全局槽那一行上）。',
+      },
+      global_idx: { type: 'string', description: 'wait：要顺带读的全局 int 下标（十六进制口径，如 12721e），配合 until.global 匹配。' },
+      timeout_ms: { type: 'integer', description: '本动作超时（wait 缺省 30000；query/capture 缺省 30000）。' },
+      poll_ms: { type: 'integer', description: 'wait：轮询间隔（缺省 200）。' },
+      wait_ms: { type: 'integer', description: 'start：等注册表出现活记录的上限（缺省 20000）。' },
+      grace_ms: { type: 'integer', description: 'stop：SIGTERM 后等多久再强杀进程树（缺省 8000）。' },
+      force: { type: 'boolean', description: 'stop：收掉**不是本进程起的**实例时必须显式给 true。' },
+      include_dead: { type: 'boolean', description: 'instances：连"记录在但 pid/心跳已过期"的也列出来（live=false）。' },
+    },
+    output: {
+      schema: {
+        type: 'object',
+        additionalProperties: true,
+        properties: {
+          ok: { type: 'boolean', required: true },
+          action: { type: 'string', required: true },
+          instance: { type: 'string' },
+          elapsedMs: { type: 'integer' },
+          note: { type: 'string' },
+          path: { type: 'string' },
+          bytes: { type: 'integer' },
+          width: { type: 'integer' },
+          height: { type: 'integer' },
+          instances: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          results: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          lines: { type: 'array', items: { type: 'string' } },
+          satisfied: { type: 'boolean' },
+        },
+      },
+      render: (args, value) => [{ type: 'text', text: renderToolResult(value) }],
+    },
+    // 起实例要等 tsx 冷启 + 无头页；wait 自带 timeout_ms ⇒ 给足上限，别让框架先掐。
+    timeoutMs: 300000,
+    execute: createExecutor({
+      getRoot: () => workspaceRoot(),
+      spawned,
+      toolLog: (line) => {
+        try {
+          console.error(line)
+        } catch {
+          /* 日志失败不影响工具 */
+        }
+      },
+    }),
+    }))
+  } else {
+    console.error('[emudbg] ✗ ctx.tools 不在（工具服务没挂上）⇒ agent tool `amayui_emulator` **未注册**；面板与代理不受影响')
+  }
+
+  // 启动时把已有实例打一条（agent 一进来就能从日志看到现场；失败不影响装载）。
+  try {
+    const { instances } = scanRegistry(workspaceRoot(), true)
+    if (instances.length) console.error(`[emudbg] 活实例 ${instances.length} 个：${instances.map((i) => `${i.id}:${i.port}`).join(', ')}`)
+  } catch {
+    /* 注册表还没建 = 正常 */
+  }
 }
+
+/**
+ * 工具回执的**人读**渲染（模型看到的是同一份 output 对象，这里只决定卡片正文）。
+ * 意在"一眼看出发生了什么 + 那条证据"：往返毫秒、PNG 路径与尺寸、超时的条件差在哪。
+ */
+function renderToolResult(v) {
+  if (!v || typeof v !== 'object') return '（空回执）'
+  const head = `amayui_emulator ${v.action}${v.instance ? ` <${v.instance}>` : ''}${v.ok === false ? ' · 未达成' : ''}`
+  const body = []
+  if (v.action === 'instances') {
+    for (const i of v.instances || []) {
+      body.push(`  ${i.live ? '●' : '○'} ${i.id} port=${i.port} pid=${i.pid} bin=${i.bin || '?'} frames=${i.frames ?? '?'} gate=${i.gate || '?'} 心跳 ${Math.round(i.heartbeatAgeMs / 1000)}s 前`)
+    }
+  } else if (v.action === 'query') {
+    for (const r of v.results || []) {
+      body.push(`  $ ${r.cmd}   [HTTP ${r.status} · ${r.roundTripMs}ms]`)
+      for (const l of (r.lines || []).slice(0, 12)) body.push(`      ${l}`)
+    }
+  } else if (v.action === 'capture') {
+    body.push(`  PNG → ${v.path}（${v.bytes}B，${v.width}×${v.height}；capture 往返 ${v.pngRoundTripMs}ms）`)
+  } else if (v.action === 'input') {
+    for (const c of v.commands || []) body.push(`  $ ${c.cmd}   [${c.roundTripMs}ms] ${c.ok ? '' : '✗ '}${c.line || ''}`)
+  } else if (v.action === 'wait') {
+    for (const c of v.checks || []) body.push(`  ${c.pass ? '✓' : '✗'} ${c.k}: 期望 ${c.want}，实得 ${c.got}`)
+  } else if (v.action === 'profile') {
+    body.push(`  $ ${v.cmd}   [HTTP ${v.status} · ${v.roundTripMs}ms]`)
+    for (const l of (v.lines || []).slice(0, 20)) body.push(`      ${l}`)
+  } else if (v.action === 'start' || v.action === 'stop') {
+    body.push(`  ${v.note || ''}`)
+  }
+  body.push(`  ⏱ ${v.elapsedMs ?? 0}ms${v.note && v.action !== 'start' && v.action !== 'stop' ? ` · ${v.note}` : ''}`)
+  return [head, ...body].join('\n')
+}
+

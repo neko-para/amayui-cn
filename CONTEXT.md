@@ -32,7 +32,7 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 ## 3. 台账现状（快照 · 2026-09-25 第 70 轮"清理剩余内容"收口后实测）
 
 ```
-票据 177 张：✅done 167  ⬜open 5  🔜doing 3  🚫dropped 2  ⛔blocked 0
+票据 178 张：✅done 168  ⬜open 5  🔜doing 3  🚫dropped 2  ⛔blocked 0
   优先级 P0 8 / P1 68 / P2 63 / P3 38
   ★tickets.js --validate ✅ 177 张 / 0 条行号漂移警告（刷新工具 = `.agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js --any --write`；
   ★全库 1003 条被锚证据保持全额：漂移 0 / 失效锚点 0 / 缺 `line` 0）
@@ -94,6 +94,12 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
   `note`(数组，逗号切碎事故残留)、`capability`/`evidence`(重复且 `live2d-mesh-batches` 的 `evidence:"E4"` 与权威 `E3` **矛盾**) 全删、沿革落 `journal`。
 
 ## 4. 未完成票据（8 张 = doing 3 + open 5）
+
+★**性能这一维现在有工具了**（`T-0180` 落地）：调试命令 `profile`（帧看门狗默认开 + `profile on` 按 opcode 计时 +
+`report` 归因），入口在 `src/vm/profile.ts`。★它的**第一条战果**：存档页 80→90 一帧 1552ms → 308ms
+（`0x204`/`0x205` 直绘每遍新建画布 + `getImageData` 走 GPU 同步回读 ⇒ 复用图层 + `willReadFrequently`）。
+★仍未收口：那一步剩下的 308~654ms **不在 opcode 里**（一帧 50 步、每条 0ms 却工作 654ms ⇒ 在帧循环的宿主阶段
+`advanceModel`/`present`/纹理上传），另有一个 10000 步/4.5s 的独立帧。
 
 | 票 | 状态 | 现状 |
 |---|---|---|
