@@ -96,10 +96,16 @@ export function renderStatus(s) {
   L.push('');
 
   // ③ 沿革
-  const rounds = [...new Set(s.journal.filter((e) => e.round !== null).map((e) => e.round))].sort((a, b) => a - b);
+  // ★`round` 是标签不是编号：编号型按数值升序、文字标签另列（混在一起排会把标签排成乱序，
+  //   且 `a-b` 对字符串是 NaN —— 此前本页渲染出的"轮次 4 5 6 7 8 9 47 T-0148 实施轮（P1） …"就是这么来的）。
+  const roundSet = [...new Set(s.journal.filter((e) => e.round !== null).map((e) => e.round))];
+  const numRounds = roundSet.filter((r) => typeof r === 'number').sort((a, b) => a - b);
+  const labelRounds = roundSet.filter((r) => typeof r === 'string').sort();
+  const roundsText = [numRounds.join(' '), labelRounds.length ? `标签：${labelRounds.join(' · ')}` : '']
+    .filter(Boolean).join(' ／ ');
   L.push('## 3. 沿革');
   L.push('');
-  L.push(`\`analysis/journal.jsonl\`：**${s.journal.length}** 条 / 轮次 ${rounds.join(' ')}。`);
+  L.push(`\`analysis/journal.jsonl\`：**${s.journal.length}** 条 / 轮次 ${roundsText}。`);
   L.push('');
   const last = s.journal[s.journal.length - 1];
   L.push(`最近一条：**${last.title}**（\`${last.source}\`，票 ${last.tickets.join(' ') || '—'}）`);

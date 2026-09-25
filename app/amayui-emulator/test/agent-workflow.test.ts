@@ -23,6 +23,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -303,6 +304,362 @@ test('三个台账工具都认得 --recount / --set-json / --anchors-in（不因
         assert.ok(!r.stderr.includes('is not a function'), `${name} ${flag} 不应崩溃：${r.stderr}`);
       }
     }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// (a2) 提升进技能的"台账写入口"工具（原先只活在 .tmp/settle/ 的临时区）
+// ---------------------------------------------------------------------------
+//
+// 为什么这些也要守卫：它们是**唯一**会改"条目级"真源的程序（`ledger.js` 改四/六份 analysis/*.json，
+// `fix-evidence-lines.js` 改上百张票据的 `evidence[].line`），而它们的正确性靠的是"两阶段 + 恰好命中
+// 一条 + 写盘后回读"。临时区里的脚本没人守，退化后只会以"数据被改坏"的形式暴露。
+
+const LEDGER = path.join(ENGINE_SCRIPTS, 'ledger.js');
+const GAPS = path.join(ENGINE_SCRIPTS, 'gaps.js');
+const FIX_LINES = path.join(TICKET_SCRIPTS, 'fix-evidence-lines.js');
+const GAPS_JSON = path.join(REPO, 'analysis', 'opcode-gaps.json');
+const hash = (f: string): string =>
+  createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+
+test('★ledger.js：默认 dry-run 不落盘；--write 才写；回读复核通过', () => {
+  const root = sandbox('ledger-basic');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    const gp = path.join(root, 'analysis', 'opcode-gaps.json');
+    fs.copyFileSync(GAPS_JSON, gp);
+    // 挑一个**在册且有 missing[]** 的 partial 条目 —— 这正是"给在册条目追加 missing"的场景。
+    const doc = json(gp);
+    const target = doc.entries.find((e: any) => e.disposition === 'partial' && (e.missing ?? []).length > 0);
+    assert.ok(target, '夹具前提：opcode-gaps.json 里应有带 missing[] 的 partial 条目');
+    const before = (target.missing ?? []).length;
+    const plan = path.join(root, 'plan.json');
+    fs.writeFileSync(
+      plan,
+      JSON.stringify({
+        ops: [{
+          file: 'analysis/opcode-gaps.json',
+          match: { opcode: target.opcode },
+          add: { missing: [{ what: '★守卫夹具：追加一条不走"抄旧条目"路径', ticket: 'T-0179', raw: '1-2' }] },
+        }],
+      }),
+    );
+
+    const dryHash = hash(gp);
+    const dry = run(LEDGER, ['--root', root, '--plan', plan]);
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.match(dry.stdout, /dry-run/, '缺省必须告诉你是 dry-run');
+    assert.equal(hash(gp), dryHash, '★dry-run 必须逐字节不动台账');
+    assert.equal((json(gp).entries.find((e: any) => e.opcode === target.opcode).missing ?? []).length, before);
+
+    const w = run(LEDGER, ['--root', root, '--plan', plan, '--write']);
+    assert.equal(w.status, 0, w.stderr);
+    const after = json(gp).entries.find((e: any) => e.opcode === target.opcode).missing;
+    assert.equal(after.length, before + 1, '★add 必须是 append（旧条目一条都不能少）');
+    assert.ok(after.some((m: any) => String(m.what).includes('守卫夹具')), '新条目要真在数组里');
+    assert.match(w.stdout, /回读复核 1 处通过/, `写盘后必须回读复核：${w.stdout}`);
+
+    // `--check` = 显式 dry-run（与 --write 互斥）——别让它退化成被静默忽略的开关
+    const chkHash = hash(gp);
+    const chk = run(LEDGER, ['--root', root, '--plan', plan, '--check']);
+    assert.equal(chk.status, 0, chk.stderr);
+    assert.equal(hash(gp), chkHash, '--check 必须不落盘');
+    const both = run(LEDGER, ['--root', root, '--plan', plan, '--check', '--write']);
+    assert.equal(both.status, 2, '--check 与 --write 必须互斥');
+    assert.equal(hash(gp), chkHash, '互斥报错时也不许落盘');
+
+    // 再跑一次：同一条会被 append 第二次（add 不幂等 —— 文档已写明"计划只能应用一次"）
+    const again = run(LEDGER, ['--root', root, '--plan', plan, '--write']);
+    assert.equal(again.status, 0, again.stderr);
+    assert.equal(json(gp).entries.find((e: any) => e.opcode === target.opcode).missing.length, before + 2);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('★ledger.js：match 必须恰好命中 1 条；counts 不许直写；patches 的 old 必须恰好 1 次', () => {
+  const root = sandbox('ledger-guards');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    fs.copyFileSync(GAPS_JSON, path.join(root, 'analysis', 'opcode-gaps.json'));
+    const gp = path.join(root, 'analysis', 'opcode-gaps.json');
+    const gpHash = hash(gp);
+    // ★名字故意不叫那两个字母的短名 —— `test/harness-convergence.test.ts` 的棘轮按**正则扫全文**
+    //   （连注释也算），会把自造 fixture 工厂判成"新抄的 mk 变体"；基线只许收缩，不许为它登记例外。
+    const writePlanFile = (name: string, obj: unknown): string => {
+      const p = path.join(root, name);
+      fs.writeFileSync(p, JSON.stringify(obj));
+      return p;
+    };
+
+    // ① match 命中 0 条 ⇒ 拒绝（且整个计划都不落盘）
+    const miss = run(LEDGER, ['--root', root, '--plan', writePlanFile('m0.json', { ops: [{ file: 'analysis/opcode-gaps.json', match: { opcode: 99999 }, set: { note: 'x' } }] }), '--write']);
+    assert.notEqual(miss.status, 0, '命中 0 条必须非零退出');
+    assert.match(miss.stderr, /命中 0 条/);
+
+    // ② 条目手术指向非台账（源码/文档）⇒ 拒绝并指路 patches
+    const notLedger = run(LEDGER, ['--root', root, '--plan', writePlanFile('m1.json', { ops: [{ file: 'src/SN0000.txt', match: { id: 'x' }, set: { note: 'y' } }] })]);
+    assert.notEqual(notLedger.status, 0);
+    assert.ok(notLedger.stderr.includes('不是可做条目手术的台账') && notLedger.stderr.includes('patches'), notLedger.stderr);
+
+    // ③ counts 是派生物 ⇒ 拒绝直写，并点名各自的唯一口径入口
+    const counts = run(LEDGER, ['--root', root, '--plan', writePlanFile('m2.json', { topLevel: { 'analysis/opcode-gaps.json': { 'counts.byDisposition.partial': 1 } } })]);
+    assert.notEqual(counts.status, 0, 'counts 不许直写');
+    assert.ok(counts.stderr.includes('gaps.js --recount'), `要指路到唯一口径：${counts.stderr}`);
+
+    // ④ 上面三次都必须**一个字节都没写**
+    assert.equal(hash(gp), gpHash, '被拒的计划不许留下半成品');
+
+    // ④b 合法的 topLevel（非 counts）要能写进去，并被回读复核 ——
+    //     这条钉住一个真实存在过的 bug：topLevel 的复核路径曾被当成"条目选择器"去 JSON.parse。
+    const top = run(LEDGER, ['--root', root, '--plan', writePlanFile('m5.json', { topLevel: { 'analysis/opcode-gaps.json': { '_doc': '★守卫夹具：topLevel 探针' } } }), '--write']);
+    assert.equal(top.status, 0, top.stderr);
+    assert.match(top.stdout, /回读复核 1 处通过/, top.stdout);
+    assert.equal(json(gp)._doc, '★守卫夹具：topLevel 探针');
+
+    // ⑤ patches：非 JSON 目标也能改，但 old 必须恰好 1 次
+    const txt = path.join(root, 'probe.txt');
+    fs.writeFileSync(txt, 'AAA unique-token BBB');
+    const okPatch = run(LEDGER, ['--root', root, '--plan', writePlanFile('m3.json', { patches: { 'probe.txt': [{ old: 'unique-token', new: 'REPLACED' }] } }), '--write']);
+    assert.equal(okPatch.status, 0, okPatch.stderr);
+    assert.equal(fs.readFileSync(txt, 'utf8'), 'AAA REPLACED BBB', 'patches 要真的换掉');
+    const dup = run(LEDGER, ['--root', root, '--plan', writePlanFile('m4.json', { patches: { 'probe.txt': [{ old: 'A', new: 'Z' }] } })]);
+    assert.notEqual(dup.status, 0, 'old 出现多次必须拒绝');
+    assert.equal(fs.readFileSync(txt, 'utf8'), 'AAA REPLACED BBB', '被拒的 patches 不许半途改掉文件');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('★gaps.js：--missing 给 raw 键；--stale 认陈旧候选；--recount 委托生成器且**不重写口径**', () => {
+  // ---- ① --missing / --stale 走真实台账（只读）----
+  const miss = run(GAPS, ['--missing', '0x82']);
+  assert.equal(miss.status, 0, miss.stderr);
+  assert.match(miss.stdout, /missing\[\]/, miss.stdout);
+  assert.match(miss.stdout, /raw=/, `--missing 必须给出 raw 键（ledger.js 的 mutate 靠它定位）：${miss.stdout.slice(0, 300)}`);
+
+  const stale = run(GAPS, ['--stale']);
+  assert.equal(stale.status, 0, stale.stderr);
+  assert.match(stale.stdout, /陈旧候选/, stale.stdout);
+  assert.match(stale.stdout, /三态过滤/, '报告里要写清三级处置，否则读者不知道"候选"该怎么裁');
+
+  // ---- ② --recount 的机制在沙箱里验（不碰真实台账）：它**调用生成器**、然后回读文件打 diff ----
+  const root = sandbox('gaps-recount');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'analysis', 'opcode-gaps.json'),
+      JSON.stringify({
+        counts: { entries: 99, byDisposition: { partial: 999 } },
+        entries: [
+          { opcode: 1, mnemonic: 'i1', disposition: 'partial', note: 'x', missing: [{ what: 'a', ticket: 'T-0179', raw: '1-2' }] },
+          { opcode: 2, mnemonic: 'i2', disposition: 'partial', note: 'y', missing: [{ what: 'b', ticket: 'T-0179', raw: '3-4' }] },
+        ],
+      }, null, 2) + '\n',
+    );
+    // 口径桩：只做"按 entries 重算并写回"——用来证明 gaps.js 是**委托**而不是自带第二份算法。
+    fs.writeFileSync(
+      path.join(root, 'scripts', 'build-opcode-gaps.mjs'),
+      [
+        "import * as fs from 'node:fs';",
+        "import * as path from 'node:path';",
+        'export function buildGapReport(root, opts = {}) {',
+        "  const p = path.join(root, 'analysis', 'opcode-gaps.json');",
+        "  const doc = JSON.parse(fs.readFileSync(p, 'utf8'));",
+        '  const byDisposition = {};',
+        '  for (const e of doc.entries) byDisposition[e.disposition] = (byDisposition[e.disposition] ?? 0) + 1;',
+        '  if (opts.syncCounts) {',
+        '    doc.counts = { entries: doc.entries.length, byDisposition };',
+        "    fs.writeFileSync(p, JSON.stringify(doc, null, 2) + '\\n');",
+        '  }',
+        '  return { report: {}, problems: [] };',
+        '}',
+        '',
+      ].join('\n'),
+    );
+    const rec = run(GAPS, ['--root', root, '--recount']);
+    assert.equal(rec.status, 0, rec.stderr);
+    assert.match(rec.stdout, /counts\.byDisposition\.partial: 999 → 2/, `应打出委托人算出的 diff：${rec.stdout}`);
+    assert.match(rec.stdout, /唯一口径/, rec.stdout);
+    assert.equal(json(path.join(root, 'analysis', 'opcode-gaps.json')).counts.byDisposition.partial, 2);
+
+    // 生成器缺失 ⇒ 响亮失败（不许静默当成功）
+    const noGen = sandbox('gaps-nogen');
+    try {
+      fs.mkdirSync(path.join(noGen, 'analysis'), { recursive: true });
+      fs.copyFileSync(GAPS_JSON, path.join(noGen, 'analysis', 'opcode-gaps.json'));
+      const r = run(GAPS, ['--root', noGen, '--recount']);
+      assert.notEqual(r.status, 0, '没有生成器时必须非零退出（口径不在本工具里）');
+      assert.ok(r.stderr.includes('找不到生成器'), r.stderr);
+    } finally {
+      fs.rmSync(noGen, { recursive: true, force: true });
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('★tickets.js --edit-plan：免转义批量改单，且**两阶段**（状态校验不过 ⇒ 字段也不落盘）', () => {
+  const root = sandbox('edit-plan');
+  try {
+    const mkTicket = (id: string): void => {
+      const dir = path.join(root, 'tickets', id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'ticket.json'),
+        JSON.stringify({
+          id, type: 'tooling', status: 'open', priority: 'P2', area: 'tooling',
+          title: '夹具', why: '夹具', acceptance: ['夹具'],
+          history: [{ at: '2026-01-01', kind: 'created', what: '创建' }],
+        }, null, 2) + '\n',
+      );
+    };
+    mkTicket('T-0001');
+    mkTicket('T-0002');
+    const testDir = path.join(root, 'app', 'amayui-emulator', 'test');
+    fs.mkdirSync(testDir, { recursive: true });
+    fs.writeFileSync(path.join(testDir, 'probe.test.ts'), '// probe\n');
+
+    // ---- ① 结果状态 done 的前置校验不过 ⇒ 整份计划不落盘（连 sets 都不写）----
+    const bad = path.join(root, 'bad.json');
+    fs.writeFileSync(bad, JSON.stringify({
+      id: 'T-0001',
+      sets: [['tests', ['app/amayui-emulator/test/nope.test.ts']]],
+      status: 'done',
+    }));
+    const rb = run(TICKETS, ['--root', root, '--edit-plan', bad]);
+    assert.notEqual(rb.status, 0, '守卫不存在的票不许置 done');
+    assert.match(rb.stderr, /整份计划都不落盘/, rb.stderr);
+    const t1 = json(path.join(root, 'tickets', 'T-0001', 'ticket.json'));
+    assert.equal(t1.status, 'open', '状态不许变');
+    assert.equal(t1.tests, undefined, '★两阶段：字段也不许留下半成品');
+
+    // ---- ② 通过 ⇒ sets 与 status 都落盘 ----
+    const good = path.join(root, 'good.json');
+    fs.writeFileSync(good, JSON.stringify({
+      id: 'T-0002',
+      sets: [['tests', ['app/amayui-emulator/test/probe.test.ts']], ['doneWhy', '文档/分析票口径：夹具。']],
+      status: 'done',
+      note: '守卫夹具',
+    }));
+    const rg = run(TICKETS, ['--root', root, '--edit-plan', good]);
+    assert.equal(rg.status, 0, rg.stderr);
+    const t2 = json(path.join(root, 'tickets', 'T-0002', 'ticket.json'));
+    assert.equal(t2.status, 'done');
+    assert.deepEqual(t2.tests, ['app/amayui-emulator/test/probe.test.ts']);
+    assert.ok(t2.history.length >= 2, '给了 note ⇒ 应记 history');
+
+    // ---- ③ 直接 --set-status done 也被同一套前置校验拦住 ----
+    const direct = run(TICKETS, ['--root', root, '--set-status', 'T-0001', 'done']);
+    assert.notEqual(direct.status, 0, '--set-status done 必须有前置校验');
+    assert.equal(json(path.join(root, 'tickets', 'T-0001', 'ticket.json')).status, 'open');
+
+    // ---- ④ 沙箱全量自检应通过（说明上面的写入没造出非法票）----
+    const v = run(TICKETS, ['--root', root, '--validate']);
+    assert.equal(v.status, 0, v.stdout + v.stderr);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('★fix-evidence-lines.js：dry-run 不写盘；--write 只改 line 不改 anchor；--check 只对漂移/失效报警', () => {
+  const root = sandbox('fix-lines');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'tickets', 'T-0001'), { recursive: true });
+    // 锚点在第 3 行；票据记的是 999（漂移），另有一条锚点已不存在。
+    fs.writeFileSync(path.join(root, 'analysis', 'fields.json'), 'a\nb\nANCHOR-OK\nc\n');
+    const tp = path.join(root, 'tickets', 'T-0001', 'ticket.json');
+    fs.writeFileSync(tp, JSON.stringify({
+      id: 'T-0001', type: 'tooling', status: 'open', priority: 'P2', area: 'tooling',
+      title: '夹具', why: '夹具', acceptance: ['夹具'],
+      evidence: [
+        { file: 'analysis/fields.json', anchor: 'ANCHOR-OK', line: 999, note: '漂移' },
+        { file: 'analysis/fields.json', anchor: 'ANCHOR-GONE', line: 1, note: '失效' },
+      ],
+      history: [{ at: '2026-01-01', kind: 'created', what: '创建' }],
+    }, null, 2) + '\n');
+
+    const before = fs.readFileSync(tp, 'utf8');
+    const dry = run(FIX_LINES, ['--root', root, '--check']);
+    assert.notEqual(dry.status, 0, '--check 在"有漂移 + 有失效锚点"时必须非零退出');
+    assert.match(dry.stdout, /漂移\*\* 1 条/, dry.stdout);
+    assert.match(dry.stdout, /ANCHOR-GONE/, '失效锚点要点名');
+    assert.ok(dry.stdout.includes('需人判 retarget') || dry.stdout.includes('retarget'), '失效锚点要交人判，不许静默改锚点');
+    assert.equal(fs.readFileSync(tp, 'utf8'), before, '--check 不许写盘');
+
+    const plainDry = run(FIX_LINES, ['--root', root]);
+    assert.equal(fs.readFileSync(tp, 'utf8'), before, '缺省 dry-run 不许写盘');
+    assert.match(plainDry.stdout, /dry-run/, plainDry.stdout);
+
+    const w = run(FIX_LINES, ['--root', root, '--write']);
+    assert.equal(w.status, 0, w.stderr);
+    const after = json(tp);
+    assert.equal(after.evidence[0].line, 3, '漂移的行号要按锚点重新定位');
+    assert.equal(after.evidence[0].anchor, 'ANCHOR-OK', '★锚点串一个字都不许改');
+    assert.equal(after.evidence[1].line, 1, '失效锚点的旧行号原样保留（人判之后再动）');
+    assert.equal(after.evidence[1].anchor, 'ANCHOR-GONE');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// (a3) 行号工具的第二条规则：**多命中且原本没写 `line` ⇒ 不猜**
+// ---------------------------------------------------------------------------
+//
+// 为什么值得一条守卫：同一段锚点串可能落在**语义不同的两处**（实测：审计报告 §4.1 的 finding 表
+// 与 §4.6 的"被复核订正"表里各有一份同样的句子，指称并不相同）⇒ 工具替人"取最早一次"就是把
+// 猜出来的值写进真源。规则改成"唯一命中才自动补；多命中列成待人选，要填就用 `--pick` 显式指定"。
+
+test('★fix-evidence-lines.js：多命中 + 无旧 line ⇒ 不猜（列待人选）；--pick 才落盘；指错行要响亮失败', () => {
+  const root = sandbox('fix-lines-pick');
+  try {
+    fs.mkdirSync(path.join(root, 'analysis'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'tickets', 'T-0001'), { recursive: true });
+    // 锚点出现两次（第 3 行与第 7 行）——模拟"同一句话在两节里各一份"。
+    fs.writeFileSync(path.join(root, 'analysis', 'fields.json'), 'a\nb\nDUP-ANCHOR\nc\nd\ne\nDUP-ANCHOR\nf\n');
+    const tp = path.join(root, 'tickets', 'T-0001', 'ticket.json');
+    fs.writeFileSync(tp, JSON.stringify({
+      id: 'T-0001', type: 'tooling', status: 'open', priority: 'P2', area: 'tooling',
+      title: '夹具', why: '夹具', acceptance: ['夹具'],
+      evidence: [{ file: 'analysis/fields.json', anchor: 'DUP-ANCHOR', note: '两处同句' }],
+      history: [{ at: '2026-01-01', kind: 'created', what: '创建' }],
+    }, null, 2) + '\n');
+
+    // ① dry-run：不猜、不写盘，列成待人选
+    const dry = run(FIX_LINES, ['--root', root]);
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.match(dry.stdout, /待人选.*1 条/, dry.stdout);
+    // 候选行必须逐条打出来（沙箱里没有 markdown 标题，所以是"（无标题）"）
+    assert.match(dry.stdout, /3 行\s+（无标题）/, dry.stdout);
+    assert.match(dry.stdout, /7 行\s+（无标题）/, dry.stdout);
+    assert.equal(json(tp).evidence[0].line, undefined, '多命中且无旧 line 时不许写猜测值');
+
+    // ② --write 也**不**猜（这是关键：不会"顺手"填一个）
+    const w = run(FIX_LINES, ['--root', root, '--write']);
+    assert.equal(w.status, 0, w.stderr);
+    assert.equal(json(tp).evidence[0].line, undefined, '--write 在无人指定时也不许填');
+
+    // ③ --pick 指到**不含锚点**的行 ⇒ 拒绝 + 响亮失败 + 不改文件
+    const before = fs.readFileSync(tp, 'utf8');
+    const bad = run(FIX_LINES, ['--root', root, '--pick', 'T-0001:0=4', '--write']);
+    assert.notEqual(bad.status, 0, '指错行的 --pick 必须非零退出');
+    assert.match(bad.stdout, /不含.*锚点/, bad.stdout);
+    assert.equal(fs.readFileSync(tp, 'utf8'), before, '被拒的 pick 不许动文件');
+
+    // ④ --pick 指到含锚点的那一行 ⇒ 落盘
+    const ok = run(FIX_LINES, ['--root', root, '--pick', 'T-0001:0=7', '--write']);
+    assert.equal(ok.status, 0, ok.stderr);
+    assert.equal(json(tp).evidence[0].line, 7, '--pick 指定的行要落盘');
+
+    // ⑤ 未被使用的 --pick（下标/票号写错）也要响亮失败
+    const unused = run(FIX_LINES, ['--root', root, '--pick', 'T-0001:9=3']);
+    assert.notEqual(unused.status, 0, '用不上的 --pick 必须非零退出');
+    assert.match(unused.stdout, /未被使用/, unused.stdout);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

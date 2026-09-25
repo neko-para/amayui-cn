@@ -88,6 +88,12 @@ node .agents/skills/amayui-ticket-ledger/scripts/tickets.js --add '{
 - `id` 不用写（自动 `--next-id`）；`type/status/priority` 缺省 = `req/open/P2`，`history` 自动加"创建"。
 - **`acceptance` 必须想清楚再填**：它是"何时算做完"的唯一判据，也是以后 `done` 的凭据。
 - `evidence` 至少给一条（bug 给现象证据，需求给动机依据）；**锚点选稳定串**（函数名/opcode 串/`kind: 'tick'`）。
+- ★**结构化字段（`tests`/`evidence`/`acceptance`）走计划文件**，别在命令行拼 JSON：
+  ```bash
+  node …tickets.js --edit-plan .tmp/t0176-plan.json     # {id, sets:[[点路径,值]], status?, note?}
+  ```
+  `--edit-plan` 是**免 shell 转义**的批量改单（历史上靠 `.tmp/settle/tickets-edit.mjs` 包装器，现已收进工具本体）；
+  它是**两阶段**的：若计划里的 `status=done` 过不了前置校验，`sets` 也**一条都不落盘**（不留半成品）。
 
 ### 3.2 调查 / 设计 / 变更记录（多文档、多次）
 ```bash
@@ -108,7 +114,9 @@ node …tickets.js --set-status T-0016 doing   --note "开工"
 node …tickets.js --set-status T-0016 blocked --note "等 T-0007（headless 输入源）"
 node …tickets.js --set-status T-0016 done    --note "守卫 + E4 见 changes.md"
 ```
-- `done` 之前**先**把 `tests[]` 填上（`--edit … --set-json 'tests=[…]'`），否则 `--validate` 会红。
+- `done` 之前**先**把 `tests[]` 填上（`--edit … --set-json 'tests=[…]'` 或 `--edit-plan`），否则 `--validate` 会红。
+  ★**写入口有前置校验**（2026-09 起）：`--set-status … done` 会在**写盘前**核对"`tests[]` 存在且守卫**用例**真实存在，或 `doneWhy` 非空"，
+  不满足就**拒绝并保持原状态**（exit 2）—— 状态流转不可逆，不该等事后 `--validate` 才发现。
 - `blocked` 时把 `blockedBy` 填上（`--edit … --set-json 'blockedBy=["T-0007"]'`），`--graph` 才能画出依赖。
 
 ### 3.4 收尾（三连）
@@ -127,6 +135,29 @@ node …tickets.js --graph              # blockedBy 依赖树
 node …tickets.js --show T-0002        # 单票（含 14 条工单那种清单）
 node …tickets.js --list --area emulator/frame-loop
 ```
+
+### 3.6 证据行号维保（`fix-evidence-lines.js`）
+
+`evidence[].anchor` 是 ABI，`line` 只是**缓存**：代码重构 / 换反编译版本 / 翻译 reflow 后行号会整片漂移。
+```bash
+node .agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js            # dry-run：只报要改哪些
+node …fix-evidence-lines.js --any                                                 # 范围扩到全部被锚文件（缺省只修 analysis/）
+node …fix-evidence-lines.js --write                                               # 真的写回
+node …fix-evidence-lines.js --any --check                                         # 收尾闸门：有漂移/失效锚点 ⇒ exit 1
+node …fix-evidence-lines.js --any --pick T-0168:3=478 --write                     # ★多命中且无旧行号时，显式指定取哪一行
+```
+- ★**它只改 `line`，绝不改 `anchor`**：串真的没了 ⇒ **只报告**（retarget 是人判的事，见 §5.3）；也**不删** `evidence`。
+- ★**取行规则分两类**（"猜"与"不猜"的界线）：
+  - **有旧 `line`（漂移）** ⇒ 多命中时优先 `"id": "<anchor>"` 的定义行，否则取**离旧行号最近**的一次（有旧行号当基准，这是有依据的）；
+  - **没有旧 `line`（补全）** ⇒ **唯一命中**才自动补；**多命中一律不猜**，列成「待人选」（每条候选行 + 所属小节），
+    要填就用 `--pick <T-xxxx>:<evidence 下标>=<行号>` 显式指定。
+    ★为什么不能猜：同一条锚点串可能落在**语义不同的两处** —— 实测审计报告 §4.1 的 finding 表与 §4.6 的
+    「被复核**订正**的条目」表里各有一份同样的句子，指称并不相同（一个按 finding 编号、一个按批次名）。
+    留空**无害**：守卫只认"锚点在不在文件里"，`line` 只是 ±40 的提示。
+- 多命中的取法是**确定**的：优先 `"id": "<anchor>"` 的定义行，否则取离原行号最近的一次（会打印理由）。
+- ★`--pick` 指到**不含锚点**的行、或 `--pick` 没被用上（下标/票号写错）⇒ **响亮失败**（exit 1），不许静默咽下。
+- ★`--check` 的判据只有**真漂移**与**失效锚点**；"历史证据本来就没写 `line`"算**补全**、不算失败
+  （否则这个闸门在"早期证据没记行号"的库上永远是红的，就没人看了）。
 
 ---
 
@@ -167,6 +198,9 @@ node …tickets.js --list --area emulator/frame-loop
    - ★**必须带这一句**：*"即使你加载了 `amayui-*-analysis` / `amayui-ticket-ledger` 等技能，也**跳过**它们的「读完必须更新台账/文档」步骤 —— 本次是只读分析，结论用报告交回。"*
      （实测：不写这句，子代理会在"技能要求落库"与"分析只读"之间自行取舍，结果不可预期 —— 它加载了 `amayui-script-analysis` 后只能靠自觉跳过台账更新。）
 2. **IMPLEMENTATION**：给**路径所有权清单**（可写白名单 + 明确禁写 `analysis/`、`tickets/`、`docs-new/`）+ **必须保留的字面串**（= 锚点，见 5.3）+ 退出判据（`npm run verify` 全绿 + 实测 E4）。
+   - ★**验收项「实现即删条目」**：子代理**无权**写 `analysis/`，所以它必须在报告里逐条列出"本轮实现/推翻后应当**删掉或改写**的 `missing[]`"，格式 = `opcode` + `raw` 键 + 一句 why（`raw` 是唯一定位键；先 `gaps.js --missing <opcode>` 取它）。
+     这条是拿事故换来的：已 **3 次**出现"实现了却漏删对应 `missing`"（第 52/64/69 轮），主 agent 每次手工补删。
+     ⇒ **交付物不是"能实现"，而是"实现 + 条目已消"**；owner 结算前跑 `gaps.js --stale` 兜底核验（它把 `what` 自述「已实现/不适用」的条目列出来）。
 3. **LEDGER-OWNER**：整份台账独占；结算时自己 `build-*.mjs` + `--validate` + 对应守卫测试，并在报告里给**原始数字**。
 
 ### 5.3 锚点是跨 agent 的 ABI
@@ -188,7 +222,7 @@ node .agents/skills/amayui-engine-analysis/scripts/scripts.js --anchors-in <文�
 | 症状 | 真因 | 正确动作 |
 |---|---|---|
 | `evidence 锚点已消失` / `anchor 不在 lines 内` | 被锚文件被改（或被翻译 reflow / 换反编译版本） | retarget 到同义新串；**不要**删 evidence / 删条目 |
-| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | `--recount`（见 5.5）后重跑 `build-*.mjs` |
+| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | 按台账跑它的**唯一口径**：`capabilities.js --recount` / `scripts.js --recount` / `gaps.js --recount`（缺口台账）/ `node scripts/build-tickets.mjs`（票据看板）⇒ 再重跑 `build-*.mjs` |
 | `--set` 写进去的值变成了数组 | 值里有 **ASCII 逗号**（`--set` 按逗号切分）—— 本会话踩过两次 | 改用 `--set-json '<json>'` |
 | `guards 指向的测试不存在` | 测试被改名/删除 | 先补测试再写回 `guards` |
 

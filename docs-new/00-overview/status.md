@@ -51,9 +51,9 @@ generated_by: scripts/build-status.mjs
 
 ## 3. 沿革
 
-`analysis/journal.jsonl`：**45** 条 / 轮次 4 5 6 7 8 9 47 T-0148 实施轮（P1） T-0148 实施轮（滚轮/回想链追查）。
+`analysis/journal.jsonl`：**47** 条 / 轮次 4 5 6 7 8 9 47 ／ 标签：T-0148 实施轮（P1） · T-0148 实施轮（滚轮/回想链追查）。
 
-最近一条：**ADV 滚轮链查清：默认滚轮 = 菜单导航（不是回想）；回想入口 = 键位 bit8 → call-script 31；最后一环 = 0x1D1 未实现**（`tickets/T-0168/changes.md`，票 T-0167 T-0168 T-0169）
+最近一条：**票据证据行号补全：全库 1003 条被锚证据的 line 归零，同时把工具改成"多命中不猜"**（`tickets/（26 张票的 ticket.json）+ .agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js`，票 T-0112 T-0148 T-0153 T-0168 T-0173 T-0174）
 
 > `node scripts/journal.js --tail 5` / `--round N` / `--ticket T-xxxx` / `--lessons`。
 > **沿革不在任何生成物里**（本页只引用最后一条的标题，不展开正文）。

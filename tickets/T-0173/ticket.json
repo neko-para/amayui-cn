@@ -18,7 +18,8 @@
     {
       "file": "app/amayui-emulator/dead-writes.baseline.json",
       "anchor": "Engine.callFlag",
-      "note": "★改指（2026-09-25）：本票把这两条从 known 移除后，它们只出现在 _removed 记档里（逐条写清为何删 + 引擎侧同格是活字段 + 活建模是 dispatchSavedCur/dispatchSavedFlags + 守卫）—— 原锚点（known 里的登记项）已不存在，按「锚点是 ABI ⇒ 只改指不删」retarget"
+      "note": "★改指（2026-09-25）：本票把这两条从 known 移除后，它们只出现在 _removed 记档里（逐条写清为何删 + 引擎侧同格是活字段 + 活建模是 dispatchSavedCur/dispatchSavedFlags + 守卫）—— 原锚点（known 里的登记项）已不存在，按「锚点是 ABI ⇒ 只改指不删」retarget",
+      "line": 43
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",

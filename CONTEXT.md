@@ -11,6 +11,8 @@
 | 开票 / 改票 / 收尾 | 技能 **`amayui-ticket-ledger`**（存储模型、状态流转、收尾三连、并行纪律） |
 | 读引擎 / 落三层数据层 | 技能 **`amayui-engine-analysis`**（第一层 functions/fields、第二层 capabilities、第三层 scripts） |
 | 分析 `src/*.txt` 脚本 | 技能 **`amayui-script-analysis`**（先读文档 → 读脚本 → 落 `analysis/scripts.json` → `build-scripts.mjs` → `docs-new/05-scripts/`） |
+| 改台账**条目**（结构化/多条一起改） | `ledger.js --plan`（计划文件驱动、默认 dry-run；见 §7.17）——不要手改 JSON、不要"整段 old 串替换" |
+| 看某条指令**还缺什么**（缺口全文/明细） | `gaps.js --show <opcode>` / `--missing <opcode>` / `--stale`（体检）/ `--recount`（口径唯一） |
 | 起/驱动调试实例（agent 自足） | 技能 **`amayui-remote-debug`**（`--attach-headless` + `debug-query` 的 move/click/wheel/key/capture/frame/global） |
 | 文档模型（真源/生成物/沿革） | `docs-new/00-overview/authority.md` 附录 **A1–A6** |
 | 证据等级 **E0–E4** | `docs-new/03-engine/engine-capabilities.md` 头部 + 台账 schema 的 `evidenceEnum` |
@@ -30,7 +32,10 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 ```
 票据 177 张：✅done 163  ⬜open 9  🔜doing 3  🚫dropped 2  ⛔blocked 0
   优先级 P0 8 / P1 68 / P2 63 / P3 38
-  ★tickets.js --validate ✅ 177 张 / 0 条行号漂移警告（刷新工具 = .tmp/settle/fix-lines.mjs --any）
+  ★tickets.js --validate ✅ 177 张 / 0 条行号漂移警告（刷新工具 = `.agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js --any --write`；
+  ★**全库 1003 条被锚证据已补全**：漂移 0 / 失效锚点 0 / 缺 `line` 0 —— 补了 39 条（26 张票；
+  29 条唯一命中自动补 + 10 条**多命中**由 `--pick` 显式指定，含审计报告 §4.1 / §4.6 两份同句的指称区分），
+  且逐票复核"除 `evidence[].line` 外语义差异 = 0 处"）
 能力台账 144 条：已核验 79 / 已建模未核验 5 / 部分 30 / 缺失 6 / n/a 24
 缺口台账 182 条：partial 80（**104 条 missing[]，承接票统一 = `T-0179`**）/ implemented 66 / deferred 22 / 有据 no-op 9 / unimplemented 5 / unjustified 0
 第一层：functions.json 620 条 / fields.json 393 条（fields 按 scope 分组、组内 offset 升序）
@@ -56,9 +61,24 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 - **非 `T-0179` 的尾巴（小体量）**：`T-0148`（§5.2 剩余面）、`T-0091`（转场渲染 `[4]` 槽 + E4 路径）、`T-0019`（msgwin 拆分，与 `T-0179` 串行）、
   `T-0122`/`T-0142`（工具）、`T-0146`（3 条基线红的登记票）；主序列外：`T-0051`/`T-0067`/`T-0088`/`T-0118`（外部条件）与 `T-0103`（用户点名最后做）。
 - **粗估**：按每波 2 个 subagent、每波关 5–15 条的经验，**再 6–10 波（≈5–8 轮）**可把"能做的"做完；其余长尾会以 ② 判词 + 重开条件形式长期挂着。
-- **工具债（三处，下一波先补）**：① `ledger-set.mjs` 不能给**在册条目追加** `missing`（只能 `set.missing` 搬运，易漏抄）；
-  ② 它够不到**顶层 `counts`**（需另写刷新脚本，已有 `.tmp/settle/apply-counts-68.mjs`）；③ 已 **3 次**出现"subagent 实现了却漏删对应 `missing`"
-  （第 52/64/69 轮），主 agent 每次手工补删 ⇒ **应把"实现即删条目"写进派发模板的验收项**。
+- **工具债（2026-09-25 工具评估轮已清，见 §7.17）**：原三处 ① `ledger-set.mjs` 不能给**在册条目追加** `missing`；
+  ② 够不到**顶层 `counts`**（靠一次性的 `.tmp/settle/apply-counts-68.mjs` 手写第二份口径）；③ 已 **3 次**出现
+  "subagent 实现了却漏删对应 `missing`"（第 52/64/69 轮）⇒ 现状：① 由 **`ledger.js`** 的 `add`（数组即 append）
+  + `mutate.deleteRaw/rewriteRaw` 覆盖；② 由 **`gaps.js --recount`** 覆盖（**直接调用** `build-opcode-gaps.mjs`
+  的 `tallyDispositions`，口径唯一，不再有第二份算法）；③ 已写进三个技能的 IMPLEMENTATION 派发模板验收项，
+  并配 **`gaps.js --stale`** 机械兜底（把 `what` 自述「已实现/不适用」的 `missing[]` 列出来）。
+  ★**残余的只有"人的自觉"那一半**：`--stale` 是**候选清单**（沿革话术如「已由第 N 轮…」也会命中），
+  裁决仍要按三态过滤逐条做。
+- **本轮新增/变更的工具**（全部在 `.agents/skills/*/scripts/`，带 `agent-workflow.test.ts` 守卫）：
+  `ledger.js`（新：条目级手术 + 默认 dry-run + 写盘后回读复核）、`gaps.js`（加 `--missing/--stale/--recount/--root`）、
+  `tickets.js`（加 `--edit-plan` 两阶段批量改单 + `done` 写盘前前置校验）、
+  `fix-evidence-lines.js`（新：从 `.tmp/settle/fix-lines.mjs` 提升）、`report.js`（加 `--check-fields-order`）。
+- **顺带修掉两处"没人守"的漂移**（`journal` 与 `fields` 排序）：
+  `report.js --check-fields-order` 补上 fields 排序不变式（原先只有 `.tmp/settle/check-fields-order.mjs` 这个孤儿脚本）；
+  沿革侧：`journal.js` 的 `--validate` **实测 exit 1**（两条真实条目用了未登记的 `kind: impl-status`，`round` 写成标签字符串
+  —— 而它的文件头一直声称"守卫 `test/journal.test.ts` 走同一套规则"，**那个文件当时不存在**）；
+  `status.md` 的"轮次"行因此渲染成乱序（`a - b` 对字符串是 NaN）。现修：`journal.js` 放宽 `round` 为「整数｜标签｜null」、
+  补 `impl-status`，`build-status.mjs` 把编号与标签**分组**渲染，并新增真守卫 `app/amayui-emulator/test/journal.test.ts`。
 
 ## 4. 未完成票据（12 张 = doing 3 + open 9）
 
@@ -87,7 +107,10 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 ```
 判据（项目自带）:  cd app/amayui-emulator && npm run verify
                    = npm run typecheck && typecheck:test && test:all && check:dead-writes
-实测（2026-09-25 T-0179 第 69 轮，P 波 `0x100` 近似删除 + O 波记录驱动链 P2/P3 守卫与口径）: tests 1669 / pass 1664 / fail 3 / skipped 2  ⇒ exit 1
+实测（2026-09-25 **工具评估轮** + **票据证据行号补全轮**：新增 `ledger.js` / `fix-evidence-lines.js` / `journal.test.ts`
+      + `gaps.js`/`tickets.js`/`report.js`/`journal.js`/`build-status.mjs` 扩能与修补 + 6 条工具守卫）: tests 1678 / pass 1673 / fail 3 / skipped 2  ⇒ exit 1
+  （同一轮里 typecheck / typecheck:test 均 exit 0；五份生成物 `--check` 全绿；`check:dead-writes`「★ 无新增死写」；
+    四份台账 `--validate` 全绿；★因为 `test:all` 有 3 条基线红，`&&` 链会**跳过** `check:dead-writes` ⇒ 要单独跑一次）
 ★3 条 fail 逐条都是既有基线（票 T-0146），不是新红：
    · engine-slot   ★E4：本机真槽全部解出…（SAVE70/71 storedDwords）
    · save-slot     E4：真存档槽的头 → 0x1A0 的六个 u16…（真槽 format 0 !== 3）
@@ -96,6 +119,11 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 其它判据: 四份台账 --validate（tickets / capabilities / scripts / opcode-gaps）
           五份生成物 --check（opcode-table / opcode-gaps / doc-index / status / tickets）
           死写 check:dead-writes（基线 11，只许收缩）
+          工具守卫 test/agent-workflow.test.ts（三个台账 CLI + 新工具 ledger.js/gaps.js --recount/--stale/
+          tickets.js --edit-plan/fix-evidence-lines.js + 三个 SKILL.md 共享协议节同源）
+          + test/journal.test.ts（沿革结构与票号回链；`--root` 沙箱；`round` 三种形态 + 非法值必须响亮失败）
+          ★`harness-convergence` 棘轮按**正则扫全文**（连注释也算）：测试里别出现 `function mk(`、
+          `const mk = `、`function mkEngine(`、`function makeCtx(` 这四种写法（基线只许收缩，不许登记例外）
    ★capabilities 与 scripts 两个生成器**不支持 --check**（无参数即重生成、幂等）
    ★凡动了 docs-new/ 页面 ⇒ 补跑 node scripts/build-doc-index.mjs；凡台账计数变了 ⇒ 补跑 node scripts/build-status.mjs
 备用入口（不依赖 node_modules/.bin）: node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
@@ -135,14 +163,23 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 11. **新建测试文件首行必须是分类头** `/** @tier T? @kind ? @subsystem ? */`，且**档位要与机械可见的资产依赖一致**（声明 `T1` 就必须 import `NodeFileSource`/`resolveResourceDir` 一类，否则 R2 判红；本会话踩过三次）。`@kind` 的合法值只有 **core / ratchet / tool** —— 写成别的（如 `regression`）会让 pragma 解析成 `null`，`test/run.ts` 直接抛 `TypeError: Cannot read properties of null (reading 'tier')`，**整档测试都跑不了**。**不许**新建自造 `mk()`/`mkEngine()`/`makeCtx()` 变体（用 `test/harness.ts` 的工厂），**不许**改 `test/harness-convergence.baseline.json`（只许收缩）。
 12. **大文件拆分/重构的操作纪律**（`T-0019` 一次失败尝试换来的）：① 先把**原文件留 barrel** 并把 re-export 补齐，再搬实现，**每次落盘立刻 `npm run typecheck`**（不要把树留在坏态 —— 半成品的语法错会让**所有** `node --import tsx` 停摆，阻塞同波所有单元）；② 被切开的 JSDoc 块要在两端各自补回 `/**` 与 `*/`（本次真实发生：同一段注释被切在 `handlers/` 与 `vm/` 两个文件里）；③ 声明归属按 barrel 的 import 走（本次 `defaultWinGeom` 被留在错的文件里）。
 13. **esbuild（tsx 的转译器）不接受 JSDoc 里相邻的加粗数字**：`raw **18978**/**18982**` 报 `Unexpected "**"` 且行列号指向**下一行**（极易误判成代码错）⇒ 相邻强调之间留空格。
-14. **写台账文本别用 ASCII 双引号**（用「」）—— JSON 串会被提前闭合；`ledger-set.mjs` 的"写盘前 `JSON.parse`"能拦住，但白跑一趟。
-15. **文件行尾**：一律 LF；**绝不**用 `Set-Content`/`Out-File` 写源文件。台账写盘只用 `.tmp/settle/ledger-set.mjs`（两阶段、`match` 恰好命中 1 条、`add` 不幂等 ⇒ 计划只能应用一次）；`analysis/scripts.json` 用技能里的 `scripts.js`。
+14. **写台账文本别用 ASCII 双引号**（用「」）—— JSON 串会被提前闭合；`ledger.js` 的"写盘前 `JSON.parse` + 写盘后回读复核"能拦住，但白跑一趟。
+15. **文件行尾**：一律 LF；**绝不**用 `Set-Content`/`Out-File` 写源文件。台账写盘只用技能里的常驻工具（`ledger.js --plan [--write]`：两阶段、`match` 恰好命中 1 条、`add` 不幂等 ⇒ 计划只能应用一次）；`analysis/scripts.json` 也可用 `scripts.js`。
 16. **改台账必须按条目边界定位**（先按 `opcode`/`id`/`addr`/`offset` 精确 `match`），**永远不要用"下一条匹配"**（本会话误翻过处置位）。
-17. 可复用工具（`.tmp/settle/`）：`ledger-set.mjs`（按键路径改写 + `mutate` 按 `raw` 删改 `missing[]` + `appendEntries`）、`apply.mjs`（整串替换）、`fix-lines.mjs --any`（刷票据 `evidence.line`）、`close-wave.mjs`（自检式收票）、`check-fields-order.mjs`（fields 按 scope 组内升序）、`tickets-edit.mjs`（免 shell 转义调用 `tickets.js --edit --set-json`）。
+17. **常驻工具**（`.agents/skills/*/scripts/`，有守卫；★不再放 `.tmp/`）：
+    `ledger.js`（计划文件驱动的条目手术：`set`/`add`（数组即 append）/`unset`/`mutate`（按 `raw` 删改 `missing[]`）/`topLevel`/`patches`；**默认 dry-run**，`--write` 才落盘；拒绝写 `counts`）、
+    `gaps.js`（缺口台账：`--show` 全文 / `--missing <opcode>` 逐条缺口 / `--stale` 陈旧候选 / `--recount` 单一口径重算）、
+    `fix-evidence-lines.js`（刷票据 `evidence.line`：默认 dry-run，`--any` 扩范围，`--check` 收尾闸门）、
+    `tickets.js`（`--edit-plan` 免转义批量改单 + `done` 写盘前前置校验）、`report.js --check-fields-order`（fields 按 scope 组内升序）。
+    `.tmp/settle/` 现在**只放一次性波次产物**（`plan-*.json` / `gen-plan-*.mjs` / `report-*.md` / `verify-*.log` / `close-wave.mjs` 这类**当轮专用**的自检式收票脚本）。
 18. ★★**裁决 `missing[]`（`T-0179` 的 141 条）必用"三态过滤"**（第 52–54 轮踩出来的，三次都命中不同态）：
    ① **可补的真缺口** —— 引擎那条分支的处理对象在 emulator 里**存在**（字段/表/宿主缝/发布载荷），只差接线；
    ② **结构性不适用** —— 处理对象根本不存在（72B 文本记录向量、GDI 离屏表面、D3D 设备状态/重建、平坦地址）⇒ 把 `what` 重写成「为什么 + 重开条件」，**不要假实现**（例：`0x82` 的 `op3 & 1` 记录级过滤 —— 实测 `src/renderer/**` 对 `textItems` 0 引用）；
    ③ **早已补上但没回台** —— `what` 自述「已实现/已删/现按…」⇒ 复核代码/守卫后**删条目**（第 52/53 轮删掉 `0x147`/`0x060`/`0x142`/`0x82` 共 4 条）。
+   ★**③ 现在是机械可查的**：`node .agents/skills/amayui-engine-analysis/scripts/gaps.js --stale` 把"自述已实现/不适用"的
+   `missing[]` 连 `opcode`+`raw`+`票` 一起列出来（**候选清单**：`已由第 N 轮…` 这类沿革话术也会命中，逐条人判）。
+   ★**实现即删条目**已写进三个技能的 IMPLEMENTATION 派发模板验收项（子代理无权写 `analysis/` ⇒ 它必须回报告里
+   列出待删的 `opcode`+`raw`，由 owner 用 `ledger.js --plan` 落库；结算前 owner 跑 `--stale` 兜底）。
    ★补充判据：**若"补上"在当前语料/状态机下不产生任何可观测差异**（写的是恒 0 的格、或没有读者的写 ⇒ 死写闸门会亮），
    那它属于②而不是①。实例：`0x071` 的 `Engine[122496] = 0` 三出口 —— 该格在 emulator 里是 `MsgWinState.alt`
    （读者 `src/vm/msgwin.ts:781`、清零点 `:679/:884/:894`），但**从来没有被置 1 的写点** ⇒ 在 `0x71` 里补三次清零

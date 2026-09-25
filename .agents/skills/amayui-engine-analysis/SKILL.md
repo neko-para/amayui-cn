@@ -45,7 +45,9 @@ analysis/fields.json                   # 数据层·第一层：字段/偏移模
 analysis/functions.json                # 数据层·第一层：函数结论（用途/状态/签名覆盖）
 analysis/engine-capabilities.json      # 数据层·第二层：常态能力台账（持续行为 + emulator 现状判定）
 analysis/scripts.json                  # 数据层·第三层：脚本台账（每个读过的 src/*.txt 的结构/槽/不变量/缺口）
+analysis/opcode-gaps.json              # 缺口台账（审计轨，**不是**三层之一）：每条指令的处置 + `missing[]`（见 §2.6）
 docs-new/03-engine/engine-capabilities.md  # 第二层的人可读渲染产物（由 scripts/build-capabilities.mjs 生成，勿手改）
+docs-new/03-engine/opcode-gaps.md      # 缺口台账的人可读渲染产物（由 scripts/build-opcode-gaps.mjs 生成，勿手改；只渲染一句话）
 docs-new/05-scripts/README.md          # 第三层的人可读渲染产物（索引 + 覆盖率；由 scripts/build-scripts.mjs 生成，勿手改）
 docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上，生成物）
 ```
@@ -54,12 +56,15 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 
 | 工具 | 作用 |
 |---|---|
-| `scripts/report.js` | 第一层：查询 + 增删改（`--summary/--index/--find/--addr/--op/--field`、`--func-add/edit/rm`、`--field-add/edit/rm`） |
+| `scripts/report.js` | 第一层：查询 + 增删改（`--summary/--index/--find/--addr/--op/--field`、`--func-add/edit/rm`、`--field-add/edit/rm`、`--check-fields-order`） |
 | `scripts/sort-fields.js` | 第一层：`fields.json` 按 scope+偏移重排 |
-| `scripts/capabilities.js` | **第二层：查询 + 增删改 + 离线自检**（`--summary/--index/--attention/--find/--id/--validate`、`--add/edit/rm`） |
-| `scripts/scripts.js` | **第三层：查询 + 增删改 + 离线自检**（`--summary/--index/--coverage/--find/--id/--validate`、`--add/edit/rm`） |
+| `scripts/capabilities.js` | **第二层：查询 + 增删改 + 离线自检**（`--summary/--index/--attention/--find/--id/--validate`、`--add/edit/rm`、`--recount`） |
+| `scripts/scripts.js` | **第三层：查询 + 增删改 + 离线自检**（`--summary/--index/--coverage/--find/--id/--validate`、`--add/edit/rm`、`--recount`） |
+| `scripts/ledger.js` | ★**通用写入口（条目级手术）**：按计划文件做 `set`/`add`（数组即 append）/`unset`/`mutate`（按 `raw` 删改 `missing[]`）/`topLevel`/`patches`（整串替换）。**默认 dry-run**，`--write` 才落盘；两阶段 + 恰好命中 1 条 + 写盘后回读复核。改不了 `counts`（那是派生物，指路 `--recount`） |
+| `scripts/gaps.js` | **缺口台账：查询 + 体检 + `counts` 重算**（`--show/--list/--missing/--stale/--disposition/--ticket/--search/--recount`；口径唯一 = `build-opcode-gaps.mjs`） |
 | `../../scripts/build-capabilities.mjs` | **第二层：把台账渲染成 md**（改完 JSON 必须重跑，否则守卫测试会因 md 不同步而失败） |
 | `../../scripts/build-scripts.mjs` | **第三层：把脚本台账渲染成 md**（同上，生成 `docs-new/05-scripts/`） |
+| `../../scripts/build-opcode-gaps.mjs` | **缺口台账：渲染 md + 回填 `counts`（写模式）/ `--check`（CI）** |
 
 - 原始 dump 目录只读；分析结论一律在 `analysis/*.json`，**不在反编译源码里写注释**。
 - 反编译源码是**输入/视图**；数据层是**事实来源**。
@@ -219,6 +224,26 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - **STUB**：桩/simplified（no-op / 安全桩）。
 - **UNKNOWN**：未读/无表征（缺省）。
 
+### 2.6 缺口台账（`analysis/opcode-gaps.json`，**审计轨**——不是三层之一）
+
+为什么单列且强调"不是三层之一"：它回答的是「**这条指令相对引擎体还缺什么**」，是**审计/处置**的账，
+不是"是什么/一直在做什么/脚本长什么样"。混进三层会让"三层各自唯一增长处"的纪律失效。
+
+- **真源** `analysis/opcode-gaps.json`；**生成物** `docs-new/03-engine/opcode-gaps.md`（只渲染 `note` 裁到 120 字的一句话）。
+- **口径唯一**：`counts` 由 `scripts/build-opcode-gaps.mjs` 的 `tallyDispositions()` 重算（写模式回填、`--check` 报漂移）；
+  `gaps.js --recount` 是它的便捷入口（**直接调用**生成器，不另写第二份算法）。
+- **处置枚举**：`unimplemented` / `engine-internal`（有据 no-op）/ `engine-internal-unjustified` / `implemented` /
+  `deferred` / `partial`。★`implemented` 只回答"注册了没有"；**"还缺分支/消费端/写者"一律 `partial` + `missing[]`**
+  （不许把"还缺东西"藏在 `implemented` 里）。
+- **`missing[]` 的每条**：`{ what, ticket, raw }`；`raw` 只允许**单段**行号（`^\d+(-\d+)?$`），是删改时的**唯一定位键**；
+  `ticket` 必须指向**真实存在**的票（守卫会查，悬空即红）；`what` 有最小长度（一句话写清缺哪条分支）。
+- **守卫**：`app/amayui-emulator/test/opcode-gaps.test.ts`（覆盖 + 处置纪律 + md 最新性）+ `npm run gaps:check`。
+- **改它**：条目手术走 `ledger.js --plan`（★`missing[]` 追加用 `add`，**不要**手抄已有条目再 `set` —— 抄写就是漏抄的来源）；
+  逐条裁决用 `gaps.js --missing <opcode>` 看明细、`gaps.js --stale` 找"自述已实现/不适用"的陈旧候选。
+- ★**三态过滤**（裁决 `missing[]` 的固定动作，见 `CONTEXT.md` §8.18）：① 真缺口 ⇒ 补实现；② 结构性不适用 ⇒
+  把 `what` 重写成「为什么 + 重开条件」，**不假实现**；③ 早已补上没回台 ⇒ 复核代码/守卫后**删条目**。
+  补充判据：**若"补上"在当前语料下不产生任何可观测差异**（写恒 0 的格 / 没有读者的写），那属于 ② 而不是 ①。
+
 ---
 
 ## 3. 分析流程
@@ -327,6 +352,30 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
   生成器会顺带删掉已不在数据层里的旧页面）。
 - **收尾必跑**：`cd app/amayui-emulator && npx tsx --test test/script-ledger.test.ts`。
 
+### `scripts/ledger.js` —— ★**条目级写入口**（计划文件驱动；默认 dry-run）
+> 为什么它存在：`--edit/--add` 适合"改一个字段"，但**条目级手术**（给在册条目 append 一条 `missing[]`、
+> 按 `raw` 删一条、整体替换一个结构化数组）在命令行上很难写对（ASCII 逗号/引号会被吞）。本工具把它变成**文件**。
+- **用法**：`node ledger.js --plan <plan.json> [--root <dir>] [--write] [--json]` —— **不加 `--write` 一律不落盘**。
+- **计划里的五种动作**：
+  - `ops[]`：`match`（**必须恰好命中 1 条**）+ `set`（点路径整体替换）/ `add`（★数组即 **append**，字段不存在则插入，非数组则整体替换）/
+    `unset`（删字段）/ `mutate`（`{ "<数组字段>": { deleteRaw: [...], rewriteRaw: [{raw, what, newRaw?}] } }` —— `missing[]` 专用）。
+  - `topLevel`：顶层字段；★`counts.*` **被拒绝**（派生物，各台账有唯一口径，见 §2.6 与 §4 的 `--recount`）。
+  - `appendEntries` + `appendKeys`：往条目数组追加整条（去重键缺省按既有条目的自然键推断：opcode/addr/offset/id）。
+  - `patches`：**整串替换**（`old` 必须恰好出现 1 次），可指向源码/文档（非 JSON）——这是"改被锚定文件"的安全姿势。
+- **纪律**：两阶段（任一 `match` 不唯一就整体拒绝）、写盘后**回读复核**每个点路径、拒绝 CRLF、原子写。
+- **它不做的**：不改 `counts`（指路 `capabilities.js/scripts.js/gaps.js --recount`）；不做语义判断（那是分析的事）。
+- 守卫：`app/amayui-emulator/test/agent-workflow.test.ts`（dry-run 不落盘 / append 不丢旧条目 / 命中数守卫 / counts 拒写 / patches 唯一性）。
+
+### `scripts/gaps.js` —— 缺口台账：查询 + 体检 + `counts` 重算
+- **查询**：`--list` · `--show <0x..|mnemonic>`（**全文**：体证 + 逐轮沿革）· `--missing <0x..>`（`missing[]` 逐条 + `raw` 键 + 承接票）·
+  `--disposition <d>` · `--ticket T-xxxx` · `--search <串>`。
+- **体检**：`--stale` —— 列出 `what` 自述「已实现 / 已补 / 已删 / 不再需要 / 现按 …」的 `missing[]` 候选（**三级处置**见 §2.6）。
+  ★它是**候选清单**不是判决：`已由第 N 轮…`/`现按…处理` 这类沿革话术也会命中，逐条人判。**实现完必须回来跑它**（见 §8.2 的验收项）。
+- **重算**：`--recount` —— 直接调用 `scripts/build-opcode-gaps.mjs` 的 `buildGapReport(root, {syncCounts:true})`
+  （★**口径唯一**：本工具不重写第二份算法），打 before/after diff；与 counts 无关的问题会照实报出并非零退出。
+- **写条目**：走 `ledger.js --plan`（见上）；渲染 md 走 `node scripts/build-opcode-gaps.mjs`。
+- 守卫：`test/opcode-gaps.test.ts`（覆盖 + 处置纪律 + md 最新性）+ `agent-workflow.test.ts`。
+
 ### 建议的读取姿势（AI/人）
 数据层是**存储**，直接读原始 JSON 冗长。
 - 第一层：先 `report.js --index --sort addr` 导航，`--find/--addr/--op` 精查，`--summary` 看进度；新增/修改用 `--func-add/--func-edit`。
@@ -334,6 +383,9 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
   新增/修改用 `--add/--edit`，改完 `build-capabilities.mjs` + `--validate`。
 - 第三层：先 `scripts.js --index` 看读过哪些脚本，`--id CONFIG1` 精查某个脚本的结构与坑；
   **动手读某个 `src/*.txt` 之前先 `--id`** —— 已读过就别重读。改完 `build-scripts.mjs` + `--validate`。
+- 缺口台账：先 `gaps.js`（处置分布）→ `--ticket T-0179` 收窄到承接票 → `--missing <opcode>` 看逐条缺口 →
+  `--show <opcode>` 看全文 → 裁决后 `ledger.js` 落库 → `build-opcode-gaps.mjs` + `gaps.js --stale` 复核。
+- **改条目**（任何一层）：能用 `--edit/--add` 就用它；**结构化/多条一起改**用 `ledger.js --plan`（先 dry-run 看 diff）。
 - **盘点某个子系统的功能面**时：三层一起看 —— `report.js --find <子系统名>` 找相关 handler，
   `capabilities.js --subsystem <子系统>` 找相关持续行为，`scripts.js --find <子系统名>` 找用到它的脚本。
 
@@ -351,8 +403,18 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - **不许用 `n/a-known` 掩盖缺口**：必须写 `why:`，且 `capabilities.js --validate` / 守卫测试会拒收。
   （第三层的对应纪律：`gaps` 或 `notes` 必须说话，`status` 不许虚高。）
 - **不许空口声称守卫**：`evidence` 写 E2/E3 就必须给出真实存在的 `guard` 测试文件。
-- **md 是产物**：`docs-new/03-engine/engine-capabilities.md`（`build-capabilities.mjs`）与
-  `docs-new/05-scripts/*.md`（`build-scripts.mjs`）都是生成物，**勿手改**。
+- **md 是产物**：`docs-new/03-engine/engine-capabilities.md`（`build-capabilities.mjs`）、
+  `docs-new/03-engine/opcode-gaps.md`（`build-opcode-gaps.mjs`）与 `docs-new/05-scripts/*.md`（`build-scripts.mjs`）
+  都是生成物，**勿手改**。
+- ★**`counts` 是派生物，口径只有一个**：它由各台账自己的重算入口回填（`capabilities.js/scripts.js/gaps.js --recount`、
+  票据看板走 `build-tickets.mjs`）。**不许手写 counts**（历史实测过一次"声明 25/6，实际 31/0"且无人发现）；
+  `ledger.js` 会直接**拒绝**写 `counts.*` 并指路。
+- ★**`missing[]` 的删改按 `raw` 键做**：追加用 `ledger.js --plan` 的 `add`（**不要**手抄已有条目再整段 `set`）；
+  删/改写用 `mutate.deleteRaw` / `mutate.rewriteRaw`。改完跑 `build-opcode-gaps.mjs`（回填 counts + 刷 md）
+  与 `gaps.js --stale`（找"实现了却漏删"的陈旧条目）。
+- ★**工具不许留在 `.tmp/`**：`.tmp/` 是 gitignore 的临时区。会被下一波复用的工具必须落在
+  `.agents/skills/*/scripts/`（本工程当下的常驻工具：`report.js` / `sort-fields.js` / `capabilities.js` /
+  `scripts.js` / `ledger.js` / `gaps.js` / `brief.js` / `tickets.js` / `fix-evidence-lines.js`）。
 - **不写镜像 / 不写 libclang/AST 文本改写**；渲染只做纯数据报表，不依赖任何反编译器/特定工具。
 - **结论带证据**：`evidence` 以 raw 行区间（第一/二层）或 `src/*.txt` 行区间（第三层）为主。
 - **AGE 助记符不可靠**（`exit`≠程序退出、`ret`≠跨脚本返回），以**读反编译体为准**；**严禁读取/参考 emulator**（产物，非信息源）；凡 `推测`/未读体一律标 `partial`。
@@ -426,6 +488,9 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
    - ★**必须带这一句**：*"即使你加载了 `amayui-*-analysis` / `amayui-ticket-ledger` 等技能，也**跳过**它们的「读完必须更新台账/文档」步骤 —— 本次是只读分析，结论用报告交回。"*
      （实测：不写这句，子代理会在"技能要求落库"与"分析只读"之间自行取舍，结果不可预期 —— 它加载了 `amayui-script-analysis` 后只能靠自觉跳过台账更新。）
 2. **IMPLEMENTATION**：给**路径所有权清单**（可写白名单 + 明确禁写 `analysis/`、`tickets/`、`docs-new/`）+ **必须保留的字面串**（= 锚点，见 8.3）+ 退出判据（`npm run verify` 全绿 + 实测 E4）。
+   - ★**验收项「实现即删条目」**：子代理**无权**写 `analysis/`，所以它必须在报告里逐条列出"本轮实现/推翻后应当**删掉或改写**的 `missing[]`"，格式 = `opcode` + `raw` 键 + 一句 why（`raw` 是唯一定位键；先 `gaps.js --missing <opcode>` 取它）。
+     这条是拿事故换来的：已 **3 次**出现"实现了却漏删对应 `missing`"（第 52/64/69 轮），主 agent 每次手工补删。
+     ⇒ **交付物不是"能实现"，而是"实现 + 条目已消"**；owner 结算前跑 `gaps.js --stale` 兜底核验（它把 `what` 自述「已实现/不适用」的条目列出来）。
 3. **LEDGER-OWNER**：整份台账独占；结算时自己 `build-*.mjs` + `--validate` + 对应守卫测试，并在报告里给**原始数字**。
 
 ### 8.3 锚点是跨 agent 的 ABI
@@ -447,7 +512,7 @@ node .agents/skills/amayui-engine-analysis/scripts/scripts.js --anchors-in <文�
 | 症状 | 真因 | 正确动作 |
 |---|---|---|
 | `evidence 锚点已消失` / `anchor 不在 lines 内` | 被锚文件被改（或被翻译 reflow / 换反编译版本） | retarget 到同义新串；**不要**删 evidence / 删条目 |
-| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | `--recount`（见 8.5）后重跑 `build-*.mjs` |
+| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | 按台账跑它的**唯一口径**：`capabilities.js --recount` / `scripts.js --recount` / `gaps.js --recount`（缺口台账）/ `node scripts/build-tickets.mjs`（票据看板）⇒ 再重跑 `build-*.mjs` |
 | `--set` 写进去的值变成了数组 | 值里有 **ASCII 逗号**（`--set` 按逗号切分）—— 本会话踩过两次 | 改用 `--set-json '<json>'` |
 | `guards 指向的测试不存在` | 测试被改名/删除 | 先补测试再写回 `guards` |
 

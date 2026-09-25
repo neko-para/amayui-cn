@@ -81,6 +81,9 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 | 注册表分两张 | `OPS`（VM 核心）与 `NATIVE_OPS`（子系统）；测试里取 handler 要 `OPS.get(op) ?? NATIVE_OPS.get(op)` |
 | 缺口台账 | `node scripts/build-opcode-gaps.mjs`（写模式，回填 counts）/ `--check`（CI，漂移 exit 1）；真源 `analysis/opcode-gaps.json` |
 | ★缺口**全文**（md 只给一句话） | `node .agents/skills/amayui-engine-analysis/scripts/gaps.js [--show 0x140｜--list｜--disposition deferred｜--ticket T-0093]` |
+| ★缺口**逐条明细 / 体检 / 重算** | `gaps.js --missing <opcode>`（每条 `what`+`raw` 键+承接票）· `--stale`（`what` 自述"已实现/不适用"的陈旧候选 ⇒ ③ 类该删条目）· `--recount`（**唯一口径**：直接调用生成器的 `tallyDispositions`） |
+| ★改台账**条目**（结构化/多条） | `node .agents/skills/amayui-engine-analysis/scripts/ledger.js --plan <plan.json> [--write]`（默认 **dry-run**；`match` 恰好命中 1 条；`add` 数组即 append；`mutate` 按 `raw` 删改 `missing[]`；`patches` 整串替换；★拒绝写 `counts`） |
+| ★刷票据证据行号 | `node .agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js [--any] [--write｜--check]`（只改 `line`，**不改 anchor**） |
 | ★opcode 映射真源 | `analysis/opcodes.json`（★2026-09 从 `opcode-table.md` 迁出）；重建 `node scripts/build-opcode-table.mjs` + `node scripts/asm/build-opcodes.js` |
 | ★沿革（会话级） | `node scripts/journal.js [--tail 5｜--round 9｜--ticket T-0102｜--lessons｜--validate]`；真源 `analysis/journal.jsonl`（**永不渲染**） |
 | ★文档索引 / 当前状态 | `node scripts/build-doc-index.mjs` → `00-overview/index.md`；`node scripts/build-status.mjs` → `00-overview/status.md`（都是生成物） |

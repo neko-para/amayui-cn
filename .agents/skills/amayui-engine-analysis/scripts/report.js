@@ -9,6 +9,7 @@
  *   node report.js --find <子串>                  # 按 addr/raw_name/semantic_name/op/purpose 模糊查
  *   node report.js --addr <0x..> | --op <0x..>   # 精确查单个函数
  *   node report.js --field                       # 字段清单
+ *   node report.js --check-fields-order          # 只读不变式检查：scope 分组 + 组内 offset 升序（坏了 exit 1）
  *
  * 写入模式（增删改；functions.json 外科手术式单块编辑，**不翻新其它条目**；fields.json 写后按 scope+offset 重排）：
  *   node report.js --func-add  '<json>'          # 新增函数（json 或 k=v …）
@@ -269,6 +270,26 @@ else if (opt.field) {
   printFunctions(funcs, { where: (fn) => re.test(String(fn[field])), detail: true });
 } else if (opt.index) {
   printFunctions(funcs, { sort: typeof opt.sort === 'string' ? opt.sort : 'addr', group: typeof opt.group === 'string' ? opt.group : '' });
+} else if (opt['check-fields-order']) {
+  // ★`fields.json` 的不变式：**按 scope 分组、组内 offset 升序**（工具写入口会自动重排，
+  //   但"直接编辑 JSON"绕过了它 ⇒ 排序漂移没有别的东西看得见）。这条只读检查就是那个缺口。
+  const num = (s) => (/^0x/i.test(s) ? parseInt(s, 16) : Number(s));
+  const groups = new Map();
+  for (const f of fields) {
+    const g = groups.get(f.scope) ?? [];
+    g.push(f);
+    groups.set(f.scope, g);
+  }
+  let bad = 0;
+  for (const [scope, g] of groups) {
+    let breaks = 0;
+    for (let i = 1; i < g.length; i++) if (!(num(g[i - 1].offset) <= num(g[i].offset))) breaks++;
+    console.log(`  ${scope.padEnd(28)} ${String(g.length).padStart(4)} 条   组内断点 ${breaks}`);
+    bad += breaks;
+  }
+  console.log(`总条数 ${fields.length} · 作用域 ${groups.size} 个 · 组内断点合计 ${bad}`);
+  console.log(bad === 0 ? '✅ fields.json 排序不变式成立（scope 分组 + 组内 offset 升序）' : '✗ 排序已被破坏 —— 跑 `report.js --field-edit <键> --set <同一值>` 或 sort-fields.js 重排');
+  if (bad !== 0) process.exit(1);
 } else {
   console.log('# 字段/偏移模型');
   printSummary(fields, funcs);

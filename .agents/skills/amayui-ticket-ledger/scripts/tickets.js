@@ -26,11 +26,15 @@
  * 查询：`--list [--status S --area A --type T --priority P --open]` · `--show <ID>` · `--stats` · `--next-id`
  *       `--anchors-in <文件>`（谁锚在这个文件上 —— 改被锚文件前先跑它；只读）
  * 写入：`--add '<json>'` · `--add-file <path>` · `--edit <ID> --set k=v | --set-json k=<json>`
+ *       `--edit-plan <plan.json>`（批量改单，**免 shell 转义**：`{id, sets:[[点路径,值]], status?, note?}`）
  *       `--set-status <ID> <status> [--note '…']` · `--note <ID> --file changes.md --text '…'` · `--rm <ID> --yes`
  *       `--recount`（重算账目并打 diff；票源 `ticket.json` 不含 `counts` 字段，见实现注释）
  * 自检：`--validate`（= `app/amayui-emulator/test/ticket-ledger.test.ts` 的同一套规则）
  *
- * ★值里带 ASCII 逗号/引号请用 `--set-json k=<json>`（值按 JSON 解析，失败会点名 key 并非零退出）。
+ * ★值里带 ASCII 逗号/引号请用 `--set-json k=<json>`（值按 JSON 解析，失败会点名 key 并非零退出）；
+ *   值是多行结构（`evidence`/`tests`/`acceptance`）或经 PowerShell 传会掉引号时，用 `--edit-plan <file>`。
+ * ★`--set-status … done` 有**前置校验**（与 `validate()` 的 done 分支同源：tests[] 存在且守卫用例真实存在，
+ *   或 doneWhy 非空）—— 状态流转不可逆，所以在**写盘前**就拒绝，而不是等事后 `--validate` 红。
  *
  * ## 硬性约定（`--validate` 会替你查）
  * 1. 文件夹名 = `T-\d{4}`，且必须与 `ticket.json.id` 一致；`tickets/` 下不许有野文件夹；
@@ -58,7 +62,7 @@ const VALUE_FLAGS = new Set([
   '--add', '--add-file', '--edit', '--set', '--set-json', '--anchors-in',
   '--note', '--file', '--text', '--root', '--rm', '--show',
   // ★带值的子命令（漏一个就会退化成布尔 ⇒ `id=true` 让 path.join 抛错，2026-09 实测踩到）
-  '--set-status',
+  '--set-status', '--edit-plan',
 ]);
 
 function parseOpt(argv) {
@@ -503,6 +507,26 @@ function cmdEdit() {
   console.log(`✅ 改单 ${id}（${changed.join(', ')}）${typeof opt.note === 'string' ? '' : '（未给 --note ⇒ 不记 history）'}`);
 }
 
+/**
+ * **done 前置校验**：把 `validate()` 里"done 必须带守卫"那条规则抽出来，供 `--set-status` 与
+ * `--edit-plan` 在**写盘之前**使用。规则与 `validate()` 的 done 分支**同源**：
+ * `tests[]` 存在且每个守卫**用例**真实存在，**或** `doneWhy` 非空。
+ * 返回问题数组（空 = 可置 done）。
+ */
+function donePreflight(t) {
+  const why = [];
+  const tests = Array.isArray(t.tests) ? t.tests : [];
+  const doneWhy = typeof t.doneWhy === 'string' ? t.doneWhy.trim() : '';
+  if (tests.length === 0 && doneWhy.length === 0) {
+    why.push('没有 tests[]、也没有 doneWhy（代码票给 tests，文档/分析票给 doneWhy）');
+  }
+  for (const g of tests) {
+    const bad = checkGuard(root, g);
+    if (bad) why.push(`tests 指向的守卫不存在：${g}（${bad}）`);
+  }
+  return why;
+}
+
 function cmdSetStatus() {
   const id = opt['set-status'];
   const t = readTicket(id);
@@ -517,12 +541,113 @@ function cmdSetStatus() {
     process.exitCode = 2;
     return;
   }
+  // ★**done 前置校验**：把 `--validate` 里"done 必须带守卫"那条规则**提前到写盘之前**。
+  //   为什么要在写入口拦：`--validate` 是事后离线自检，`--set-status … done` 却是一条**不可逆的
+  //   状态流转**（票一旦 done 就会脱离待办池）；等它红了再回滚比直接拒绝贵得多。
+  if (status === 'done') {
+    const why = donePreflight(t);
+    if (why.length) {
+      console.error(`✗ 拒绝把 ${id} 置为 done —— 前置校验未过（先补齐，再改状态）：`);
+      for (const w of why) console.error(`   - ${w}`);
+      console.error(`   补法：--edit ${id} --set-json 'tests=["app/amayui-emulator/test/x.test.ts"]'（或写 doneWhy），`);
+      console.error('   然后重跑本命令；想绕过只看现状可跑 --validate 看全量差异。');
+      process.exitCode = 2;
+      return;
+    }
+  }
   const from = t.status;
   t.status = status;
   if (status === 'dropped' && typeof opt.note === 'string' && !t.droppedWhy) t.droppedWhy = opt.note;
   t.history = [...(t.history ?? []), { at: today(), kind: 'status', what: `${from} → ${status}${typeof opt.note === 'string' ? ` —— ${opt.note}` : ''}` }];
   writeTicket(t);
   console.log(`✅ ${id}: ${from} → ${status}`);
+}
+
+/**
+ * `--edit-plan <plan.json>`：**免 shell 转义的批量改单**（把历史上那个 `.tmp/settle/tickets-edit.mjs`
+ * 包装器收进工具本体）。
+ *
+ * 为什么需要它：`--set-json 'evidence=[{…}]'` 的值是 JSON（含 ASCII 引号、逗号、括号），经 PowerShell
+ * 变量传给 native exe 时引号会被再加工（实测踩到「值不是合法 JSON」）。计划文件走**文件**而不是命令行，
+ * 彻底绕开转义；且本模式在**同一进程**内应用（不再 spawn 子进程）。
+ *
+ * plan.json 形状：
+ * {
+ *   "id": "T-0176",
+ *   "sets": [ ["tests", ["app/amayui-emulator/test/x.test.ts"]], ["doneWhy", "…"] ],
+ *   "status": "done",          // 可选，最后施加
+ *   "note": "…"                // 可选（有它才记 history）
+ * }
+ */
+function cmdEditPlan() {
+  const rel = opt['edit-plan'];
+  // ★计划文件按 **CWD → --root** 的顺序找：调用者最自然的写法是「相对当前目录」，
+  //   而 --root 是给工具找**台账数据**用的 —— 两者混在一起会把路径拼成 `<root>/<root>/plan.json`。
+  const candidates = [path.resolve(rel), path.resolve(root, rel)];
+  const abs = candidates.find((p) => fs.existsSync(p));
+  let plan;
+  if (!abs) {
+    console.error(`✗ --edit-plan 找不到计划文件：${rel}（找过 ${candidates.join(' · ')}）`);
+    process.exitCode = 2;
+    return;
+  }
+  try {
+    plan = JSON.parse(fs.readFileSync(abs, 'utf8'));
+  } catch (err) {
+    console.error(`✗ --edit-plan 读不了/不是 JSON：${abs} —— ${err.message}`);
+    process.exitCode = 2;
+    return;
+  }
+  if (!plan.id) {
+    console.error('✗ 计划缺 id');
+    process.exitCode = 2;
+    return;
+  }
+  const sets = Array.isArray(plan.sets) ? plan.sets : [];
+  if (!sets.length && !plan.status) {
+    console.error('⚠ 计划里既没有 sets 也没有 status ⇒ 什么都没做');
+    return;
+  }
+  // ★**两阶段**（与 ledger.js 同纪律）：先把 sets 施加到**内存里的克隆**上，用结果跑一遍
+  //   done 前置校验；过了才真正落盘。否则会出现"tests 写进去了、status 被拒"的半成品状态。
+  if (plan.status === 'done') {
+    const cur = readTicket(plan.id);
+    if (cur.error) {
+      console.error(`✗ ${plan.id}：${cur.error}`);
+      process.exitCode = 1;
+      return;
+    }
+    const probe = clone(cur);
+    for (const pair of sets) setPath(probe, pair[0], pair[1]);
+    const why = donePreflight(probe);
+    if (why.length) {
+      console.error(`✗ 拒绝按计划改 ${plan.id} —— 结果状态 done 的前置校验未过（★整份计划都不落盘）：`);
+      for (const w of why) console.error(`   - ${w}`);
+      console.error('   （这是刻意的两阶段：不许留下"字段改了、状态没改"的半成品）');
+      process.exitCode = 2;
+      return;
+    }
+  }
+  if (sets.length) {
+    opt.edit = plan.id;
+    for (const pair of sets) {
+      if (!Array.isArray(pair) || pair.length !== 2) {
+        console.error(`✗ sets 的每一项必须是 [点路径, 值]：${JSON.stringify(pair)}`);
+        process.exitCode = 2;
+        return;
+      }
+      opt.setJson.push(`${pair[0]}=${JSON.stringify(pair[1])}`);
+    }
+    if (typeof plan.note === 'string') opt.note = plan.note;
+    cmdEdit();
+    if (process.exitCode) return;
+  }
+  if (plan.status) {
+    opt['set-status'] = plan.id;
+    pos.unshift(plan.status);
+    if (typeof opt.note !== 'string' && typeof plan.note === 'string') opt.note = plan.note;
+    cmdSetStatus();
+  }
 }
 
 /** 往过程文档追加一条（`changes.md` 用它记"第 N 次变更"）。 */
@@ -656,6 +781,8 @@ if (opt.validate) {
   cmdAnchorsIn(opt['anchors-in']);
 } else if (opt.add !== undefined || opt['add-file'] !== undefined) {
   cmdAdd();
+} else if (opt['edit-plan'] !== undefined) {
+  cmdEditPlan();
 } else if (opt.edit !== undefined) {
   cmdEdit();
 } else if (opt['set-status'] !== undefined) {

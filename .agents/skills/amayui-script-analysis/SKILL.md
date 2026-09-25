@@ -221,7 +221,9 @@ node scripts/asm/cli.js -e sjis -a src/XXX.txt      # 重汇编（改脚本后�
 | 工具 | 作用 | 备注 |
 |---|---|---|
 | `.agents/skills/amayui-script-analysis/scripts/brief.js` | **本技能独有**：开工前一页纸（台账 + 文档落点 + 真源骨架 + 调用关系 + 收尾命令） | 只读；未登记时退出码 1 并给 `--add` 命令 |
-| `.agents/skills/amayui-engine-analysis/scripts/scripts.js` | 第三层台账：查询 + 增删改 + 自检（`--summary/--index/--coverage/--find/--id/--validate`、`--add/--edit/--rm`） | **不另起一份**，避免两份漂移 |
+| `.agents/skills/amayui-engine-analysis/scripts/scripts.js` | 第三层台账：查询 + 增删改 + 自检（`--summary/--index/--coverage/--find/--id/--validate`、`--add/--edit/--rm`、`--recount`） | **不另起一份**，避免两份漂移 |
+| `.agents/skills/amayui-engine-analysis/scripts/ledger.js` | 条目级手术（`layout`/`slots` 整段替换、按计划文件做 `set/add/unset/mutate`）；★默认 dry-run，`--write` 才落盘 | 结构化数组/多条一起改时**优于** `--set`；改 `counts` 会被拒 |
+| `.agents/skills/amayui-engine-analysis/scripts/gaps.js` | 缺口台账全文/明细（`--show` / `--missing` / `--stale` / `--recount`） | 脚本里遇到的"未实现/近似"最终落在缺口台账，用它取全文 |
 | `scripts/build-scripts.mjs` | 把台账渲染成 `docs-new/05-scripts/` | 仓库根；生成物勿手改 |
 | `scripts/build-callgraph.mjs` | 重建 `output/callgraph.json`（谁 call 谁） | `entry` 的证据来源 |
 | `scripts/asm/cli.js` | 反汇编 / 重汇编（`-d` / `-a`，`-e sjis`） | 指令集 = `scripts/asm/opcodes.json` |
@@ -309,6 +311,9 @@ node scripts/asm/cli.js -e sjis -a src/XXX.txt      # 重汇编（改脚本后�
    - ★**必须带这一句**：*"即使你加载了 `amayui-*-analysis` / `amayui-ticket-ledger` 等技能，也**跳过**它们的「读完必须更新台账/文档」步骤 —— 本次是只读分析，结论用报告交回。"*
      （实测：不写这句，子代理会在"技能要求落库"与"分析只读"之间自行取舍，结果不可预期 —— 它加载了 `amayui-script-analysis` 后只能靠自觉跳过台账更新。）
 2. **IMPLEMENTATION**：给**路径所有权清单**（可写白名单 + 明确禁写 `analysis/`、`tickets/`、`docs-new/`）+ **必须保留的字面串**（= 锚点，见 9.3）+ 退出判据（`npm run verify` 全绿 + 实测 E4）。
+   - ★**验收项「实现即删条目」**：子代理**无权**写 `analysis/`，所以它必须在报告里逐条列出"本轮实现/推翻后应当**删掉或改写**的 `missing[]`"，格式 = `opcode` + `raw` 键 + 一句 why（`raw` 是唯一定位键；先 `gaps.js --missing <opcode>` 取它）。
+     这条是拿事故换来的：已 **3 次**出现"实现了却漏删对应 `missing`"（第 52/64/69 轮），主 agent 每次手工补删。
+     ⇒ **交付物不是"能实现"，而是"实现 + 条目已消"**；owner 结算前跑 `gaps.js --stale` 兜底核验（它把 `what` 自述「已实现/不适用」的条目列出来）。
 3. **LEDGER-OWNER**：整份台账独占；结算时自己 `build-*.mjs` + `--validate` + 对应守卫测试，并在报告里给**原始数字**。
 
 ### 9.3 锚点是跨 agent 的 ABI
@@ -330,7 +335,7 @@ node .agents/skills/amayui-engine-analysis/scripts/scripts.js --anchors-in <文�
 | 症状 | 真因 | 正确动作 |
 |---|---|---|
 | `evidence 锚点已消失` / `anchor 不在 lines 内` | 被锚文件被改（或被翻译 reflow / 换反编译版本） | retarget 到同义新串；**不要**删 evidence / 删条目 |
-| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | `--recount`（见 9.5）后重跑 `build-*.mjs` |
+| `counts.<k> 应为 N`、`md 的统计行与数据层不一致` | **直接改过 JSON**（绕过工具）⇒ `counts` 陈旧、md 也旧 | 按台账跑它的**唯一口径**：`capabilities.js --recount` / `scripts.js --recount` / `gaps.js --recount`（缺口台账）/ `node scripts/build-tickets.mjs`（票据看板）⇒ 再重跑 `build-*.mjs` |
 | `--set` 写进去的值变成了数组 | 值里有 **ASCII 逗号**（`--set` 按逗号切分）—— 本会话踩过两次 | 改用 `--set-json '<json>'` |
 | `guards 指向的测试不存在` | 测试被改名/删除 | 先补测试再写回 `guards` |
 
