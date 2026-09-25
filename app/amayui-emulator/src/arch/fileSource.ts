@@ -101,6 +101,14 @@ export interface FileSource {
    * **不实现 = 读档链路不可用**（`op1` 恒为 1 = 「打不开」）。
    */
   readSaveSlot?(slot: number): Promise<Uint8Array | null>;
+  /**
+   * 读一个槽的**前 N 字节**（`0x1A0` 读槽头用；缺省 292 = `SAVE_HEADER_BYTES`）。
+   *
+   * 引擎在这一格是 `CreateFileA` + `ReadFile(..., 0x124)`（**固定 292 字节**，raw 45115），
+   * 从不读整份文件。**不实现 = 退回 `readSaveSlot` 的整份读**（行为同修前，但慢 20~40 倍：
+   * LOAD 画面一帧问 120 次 ⇒ 实测 4.8s，见 `overlay.ts` 的 `readPrefix`）。
+   */
+  readSaveSlotHead?(slot: number, maxBytes?: number): Promise<Uint8Array | null>;
   /** 写一个槽（**只写 overlay**，与 `writeSaveData` 同纪律）。调用方 = `0x19E`（存档）。 */
   writeSaveSlot?(slot: number, data: Uint8Array): Promise<void> | void;
   /** 删一个槽的 `.DAT` 与 `.STH`（`0x1AB`）。返回是否删掉了 `.DAT`（engine 的 `op1` = 0/1/2 由调用方合成）。 */

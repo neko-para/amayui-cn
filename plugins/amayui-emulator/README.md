@@ -219,7 +219,9 @@ web 形态下 **VM 跑在页面里** ⇒ 没有渲染页附着的实例，`/heal
 curl -s -X POST http://127.0.0.1:3080/dsh-emulator/dbg-a/api/debug-query \
      -H 'content-type: application/json' -d '{"args":["move 640 360"]}'
 curl -s -X POST http://127.0.0.1:3080/dsh-emulator/dbg-a/api/debug-query \
-     -H 'content-type: application/json' -d '{"args":["capture"]}' | jq -r .png | base64 -d > /tmp/a.png
+     -H 'content-type: application/json' -d '{"args":["capture"]}'
+# → {"ok":true,"path":"capture-….png","dir":"<绝对路径>",…}：PNG 已由宿主写盘（`<dir>/<path>`），
+#   回执里**没有** base64（`T-0180` ②；旧宿主才回 `png` 字段）。
 ```
 
 缺省**关**（起一个 Electron 渲染进程是要付代价的）。也可用 `AMAYUI_ATTACH_HEADLESS=1`。

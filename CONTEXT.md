@@ -100,6 +100,9 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 （`0x204`/`0x205` 直绘每遍新建画布 + `getImageData` 走 GPU 同步回读 ⇒ 复用图层 + `willReadFrequently`）。
 ★仍未收口：那一步剩下的 308~654ms **不在 opcode 里**（一帧 50 步、每条 0ms 却工作 654ms ⇒ 在帧循环的宿主阶段
 `advanceModel`/`present`/纹理上传），另有一个 10000 步/4.5s 的独立帧。
+★**同一张票还收了两条传输层优化**（`changes.md` §8/§9）：`0x1A0` 只读槽头（那帧 `0x1a0`×120 **4758→1278ms**）；
+① 读取路径去掉 `number[]` 中间层（`Array.from` 3.7MB = 131ms/+89.7MB ⇒ `Uint8Array` 直传两条腿）；
+② `capture` 的 PNG 改由**宿主直接落盘**（回执体 2,389,044 字符 → **237 字符**，`debug-query` 里不再有 base64）。
 
 | 票 | 状态 | 现状 |
 |---|---|---|

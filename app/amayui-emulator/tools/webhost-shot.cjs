@@ -106,8 +106,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     console.log(`[webshot] agent 'move 640 360' → HTTP ${mv.status} ${JSON.stringify(mv.json && mv.json.lines)}`);
     if (!mv.json || mv.json.ok !== true) console.log('[webshot] ✗ move 没成功（agent 控制面不通）');
     const cap = await dq('capture');
-    if (cap.json && typeof cap.json.png === 'string') {
-      const buf = Buffer.from(cap.json.png, 'base64');
+    // ★`tickets/T-0180` ②：新形状是**宿主已落盘**（回执 `{path,dir}`，没有 base64）⇒ 读回文件；
+    //   只有旧宿主才回 `png`（base64）。
+    let buf = null;
+    if (cap.json && typeof cap.json.path === 'string' && typeof cap.json.dir === 'string') {
+      buf = fs.readFileSync(path.isAbsolute(cap.json.path) ? cap.json.path : path.join(cap.json.dir, cap.json.path));
+    } else if (cap.json && typeof cap.json.png === 'string') {
+      buf = Buffer.from(cap.json.png, 'base64');
+    }
+    if (buf) {
       const f2 = path.join(OUT, 'web-agent-capture.png');
       fs.writeFileSync(f2, buf);
       const w = buf.readUInt32BE(16);

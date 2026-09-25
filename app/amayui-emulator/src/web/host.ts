@@ -755,15 +755,24 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
     const s = (i: number): string => String(args[i] ?? '');
     switch (method) {
       case 'read-script': {
+        // ★`tickets/T-0180` ①：`r.data` 已经是 `Uint8Array` ⇒ 直接进信封（0 拷贝），
+        //   不再"先摊成数组再复制回 typed array"（对 3.7MB 的资源实测 131ms / +89.7MB 堆）。
         const r = await app.readScript(n(0));
-        return r ? sendBin(res, [Uint8Array.from(r.data)], { index: r.index, name: r.name }) : sendBin(res, []);
+        return r ? sendBin(res, [r.data], { index: r.index, name: r.name }) : sendBin(res, []);
       }
       case 'read-script-by-name': {
         const r = await app.readScriptByName(s(0));
-        return r ? sendBin(res, [Uint8Array.from(r.data)], { index: r.index, name: r.name }) : sendBin(res, []);
+        return r ? sendBin(res, [r.data], { index: r.index, name: r.name }) : sendBin(res, []);
       }
       case 'read-file':
-        return sendBin(res, [Uint8Array.from(await app.readFile(s(0)))]);
+        return sendBin(res, [await app.readFile(s(0))]);
+      case 'write-debug-artifact': {
+        // ★`tickets/T-0180` ②：`capture` 的 PNG **不再走 JSON 的 base64 字段** —— 渲染页把它按
+        //   `application/octet-stream`（单段信封）POST 上来，宿主写盘，回执只带路径/字节数/尺寸。
+        //   名字与落点校验都在 `HostService.writeDebugArtifact` 里（渲染进程给的名字当不可信输入）。
+        const r = await app.writeDebugArtifact(s(0), payload ?? new Uint8Array(0));
+        return sendJson(res, 200, r ?? { error: 'debug artifact 被拒或写失败' });
+      }
       case 'append-packs':
         return sendJson(res, 200, await app.appendPackNumbers());
       case 'read-config-ini':
@@ -784,6 +793,11 @@ export function createWebHost(opts: WebHostOptions): WebHost & { listen(): Promi
         return sendBin(res, await app.readSaveDataBoth());
       case 'read-save-slot': {
         const b = await app.readSaveSlot(n(0));
+        return sendBin(res, b ? [b] : []);
+      }
+      case 'read-save-slot-head': {
+        // `0x1A0` 槽头：只回前 292 字节（`n(1) || undefined` ⇒ 用服务端缺省）。
+        const b = await app.readSaveSlotHead(n(0), n(1) || undefined);
         return sendBin(res, b ? [b] : []);
       }
       case 'write-save-slot':

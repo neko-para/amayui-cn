@@ -58,6 +58,14 @@ export function registerFileIpc(): void {
   // 读任意文件（原始字节）
   ipcMain.handle('read-file', async (_e, p: string) => await host().readFile(p));
 
+  /**
+   * **落一份调试取证产物**（`capture` 的 PNG；`tickets/T-0180` ②）。
+   * ★名字当**不可信输入**校验（渲染进程给的）——在 `HostService.writeDebugArtifact` 里（纯文件名白名单）。
+   */
+  ipcMain.handle('write-debug-artifact', async (_e, name: string, data: Uint8Array) =>
+    await host().writeDebugArtifact(name, data),
+  );
+
   // 已装载的扩展包包号（升序）。渲染侧 0x143(i143) 用它派发各包的 $n$AUTORUN.BIN。
   // 扫描+注册在 NodeFileSource 内完成（扫资源根 *.AAI、按文件头 @264 的包号），与引擎 sub_455750 同口径。
   ipcMain.handle('append-packs', async () => await host().appendPackNumbers());
@@ -101,6 +109,10 @@ export function registerFileIpc(): void {
   // ★写/删**只碰 overlay**（真游戏那份槽一个字节都不动）；读 overlay → base（⇒ 能直接读玩家的真存档槽）。
   //   槽号合法性（整数 + 0..999）与文件落点都在服务侧（`HostService`）校验。
   ipcMain.handle('read-save-slot', async (_e, slot: number) => await host().readSaveSlot(slot));
+  /** 读槽头（只前 N 字节，缺省 292）：`0x1A0` 在 LOAD 画面一帧问 120 次（`tickets/T-0180`）。 */
+  ipcMain.handle('read-save-slot-head', async (_e, slot: number, maxBytes?: number) =>
+    await host().readSaveSlotHead(slot, maxBytes),
+  );
   ipcMain.handle('write-save-slot', async (_e, slot: number, data: Uint8Array) => await host().writeSaveSlot(slot, data));
   ipcMain.handle('delete-save-slot', async (_e, slot: number) => await host().deleteSaveSlot(slot));
   ipcMain.handle('copy-save-slot', async (_e, from: number, to: number) => await host().copySaveSlot(from, to));

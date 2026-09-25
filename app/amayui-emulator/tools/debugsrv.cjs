@@ -266,11 +266,31 @@ async function screenshotWholeWindow(name) {
   return `screencap ${out} (${width}x${height})  内容区=${cw}x${ch}  管线=主进程 capturePage（只作目视，非点击基准）`;
 }
 
-/** 向渲染窗要一帧（**B′：`FrameHost.capture`** = 页面内 `renderer.extract` 读回）—— `shot` / `capture` 共用这一步。 */
+/**
+ * 向渲染窗要一帧（**B′：`FrameHost.capture`** = 页面内 `renderer.extract` 读回）—— `shot` / `capture` 共用这一步。
+ *
+ * ★`tickets/T-0180` ② 之后渲染窗**不再把 PNG 塞进 JSON 回执**（base64 一份 2.38MB / UTF-16 ≈4.5MB）：
+ *   它把字节走二进制腿交给**宿主**落盘，回执只带 `{path, dir, bytes}` ⇒ 这里直接**读回那个文件**
+ *   （主进程有 fs，本来就要落盘的）。`png`（base64）只在**旧宿主/旧 preload** 时才出现，那时按老路解码。
+ */
 async function rendererCapturePng() {
   const r = await sendDebugQuery('capture');
+  if (r?.ok === false) {
+    throw new Error(String(r?.lines?.[0] ?? '渲染窗没给出 PNG'));
+  }
+  // ① 新形状：宿主已落盘 ⇒ 读回那份
+  if (typeof r?.path === 'string' && typeof r?.dir === 'string' && r.path !== '') {
+    const abs = path.isAbsolute(r.path) ? r.path : path.join(r.dir, r.path);
+    try {
+      const buf = fs.readFileSync(abs);
+      if (buf.length > 0) return buf;
+    } catch (err) {
+      throw new Error(`渲染窗报到 ${abs}，但读不回来：${err.message}`);
+    }
+  }
+  // ② 旧形状（回退）：回执里还是 base64
   const b64 = r?.png;
-  if (r?.ok === false || typeof b64 !== 'string' || b64 === '') {
+  if (typeof b64 !== 'string' || b64 === '') {
     throw new Error(String(r?.lines?.[0] ?? '渲染窗没给出 PNG'));
   }
   return Buffer.from(b64, 'base64');
@@ -369,7 +389,8 @@ async function handle(sock, msg) {
   //   读回），因此它抓的是 **Pixi 舞台**（无 HTML 覆盖层），与 `screencap` 的整窗 `capturePage()` 是两条路。
   //   ★给了路径就**由本进程落盘**（渲染进程没有 fs；与 `save`/`load` 同一条理由）——
   //   于是"要哪条管线"与"存哪"两件事都显式，且回执直接报字节数/图像尺寸（不必再手工解 base64）。
-  //   ★无路径 ⇒ 逐字保持既有语义（base64 在回执的 `png` 字段里），落盘是**加法**不是替换。
+  //   ★无路径 ⇒ 原样转发渲染窗的回执（`tickets/T-0180` ② 起里面是 `{path,dir,bytes}`：宿主已经落盘，
+  //     回执里**没有** base64；旧宿主才回 `png` 字段 —— 两种都原样透传，不去解释）。
   //   ★与 `shot` 的关系：`shot <名字>` 就是"这条管线 + 固定落点 `<root>/.tmp/dbg-<名字>.png`"。
   if (head === 'capture') {
     const file = text.slice(head.length).trim();

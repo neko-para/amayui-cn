@@ -598,24 +598,55 @@ export function createExecutor(deps) {
   }
 
   // ── action=capture ────────────────────────────────────────────────────────
+  /**
+   * 抓一帧 → **PNG 落盘**，回执只带路径/字节数/尺寸。
+   *
+   * ★`tickets/T-0180` ②后：**宿主已经把 PNG 写进 `<repo>/.tmp/emudbg/`**（渲染页经二进制腿上送，
+   *   回执里只有 `path`/`bytes`）⇒ 这里只读回文件量个尺寸，**不再 base64 解码**。
+   *   回执里仍有 `png`（base64）只可能是**旧宿主/旧 preload**（没有那条通道时的回退）——那时按老路走。
+   */
   async function doCapture(args, rec) {
     const root = getRoot()
     const t0 = Date.now()
     const { status, ms, body } = await postDebugQuery(rec.port, 'capture', intIn(args.timeout_ms, 'timeout_ms', 1000, 120000, DEFAULT_TIMEOUT_MS))
-    if (!body || !body.png) {
-      throw new Error(`capture 没拿到 png（HTTP ${status}，用时 ${ms}ms）：${(body && (body.lines || []).join(' | ')) || '(空回执)'}`)
+    const hostRel = body && typeof body.path === 'string' ? body.path : ''
+    if (!hostRel && !(body && body.png)) {
+      throw new Error(`capture 没拿到 png/path（HTTP ${status}，用时 ${ms}ms）：${(body && (body.lines || []).join(' | ')) || '(空回执)'}`)
     }
-    const buf = Buffer.from(String(body.png), 'base64')
-    // ★base64 只在本函数里存在；写入磁盘后立刻丢掉（绝不放回工具回执 —— 一张 1280×720 ≈ 1.8MB）。
+    // ① 新路：宿主已落盘 ⇒ 只读回那份（量尺寸/搬名），**不碰 base64**。
+    //    `dir` 是宿主报的**绝对**产物目录（具名实例落实例根下）⇒ 用 `dir` 拼绝对路径最稳；
+    //    没有 `dir`（旧宿主）时才退回"相对仓库根"的老口径。
+    // ② 旧路（回退）：回执里还是 base64 ⇒ 就地解码后写盘（行为与 T-0180 之前逐字一致）
+    let abs
+    let buf
+    if (hostRel) {
+      const dir = body && typeof body.dir === 'string' ? body.dir : ''
+      abs = path.isAbsolute(hostRel) ? hostRel : dir ? path.join(dir, hostRel) : path.join(root, hostRel)
+      buf = fs.readFileSync(abs)
+    } else {
+      buf = Buffer.from(String(body.png), 'base64')
+      const outDir = path.join(root, '.tmp', 'emudbg')
+      fs.mkdirSync(outDir, { recursive: true })
+      const name = String(args.out || '').trim() || `${rec.id}-${stamp()}.png`
+      if (name.includes('..')) throw new Error('out 不能包含 ..')
+      abs = path.isAbsolute(name) ? name : path.join(outDir, name)
+      fs.writeFileSync(abs, buf)
+    }
+    // `out` 指定了别的名字 ⇒ 把宿主写的那份**搬过去**（不重复写一份；`renameSync` 不复制字节）
+    const want = String(args.out || '').trim()
+    if (want) {
+      if (want.includes('..')) throw new Error('out 不能包含 ..')
+      const outDir = path.join(root, '.tmp', 'emudbg')
+      const target = path.isAbsolute(want) ? want : path.join(outDir, want)
+      if (path.resolve(target) !== path.resolve(abs)) {
+        fs.mkdirSync(path.dirname(target), { recursive: true })
+        fs.renameSync(abs, target)
+        abs = target
+      }
+    }
     const size = pngSize(buf)
-    const outDir = path.join(root, '.tmp', 'emudbg')
-    fs.mkdirSync(outDir, { recursive: true })
-    const name = String(args.out || '').trim() || `${rec.id}-${stamp()}.png`
-    if (name.includes('..')) throw new Error('out 不能包含 ..')
-    const abs = path.isAbsolute(name) ? name : path.join(outDir, name)
-    fs.writeFileSync(abs, buf)
     const rel = path.relative(root, abs).split(path.sep).join('/')
-    log(`capture ${rec.id} → ${rel} ${buf.length}B ${size ? `${size.width}x${size.height}` : '?'} rtt=${ms}ms`)
+    log(`capture ${rec.id} → ${rel} ${buf.length}B ${size ? `${size.width}x${size.height}` : '?'} rtt=${ms}ms${hostRel ? '（宿主直写）' : '（回退 base64）'}`)
     return {
       ok: true,
       action: 'capture',
@@ -625,9 +656,10 @@ export function createExecutor(deps) {
       bytes: buf.length,
       width: size ? size.width : null,
       height: size ? size.height : null,
+      hostWrote: Boolean(hostRel),
       pngRoundTripMs: ms,
       elapsedMs: Date.now() - t0,
-      note: `PNG 已落盘（base64 未回传）。看画面用 read_image('${rel}')。`,
+      note: `PNG 已落盘（回执不含图像数据）。看画面用 read_image('${rel}')。`,
     }
   }
 

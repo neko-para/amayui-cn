@@ -20,8 +20,9 @@
  *                                                   #   → .tmp/dbg-<名字>.png（回执写明管线 + 内容区尺寸）
  * node tools/dbg.cjs screencap 名字                 # 旧的整窗那条（主进程 capturePage，随窗口几何；只作目视）
  * node tools/dbg.cjs capture [路径]                 # 同 `shot` 那条管线，但路径任选（相对路径按**仓库根**）；
- *                                                   #   给了路径 ⇒ 直接落盘（回执报字节数/图像尺寸）；
- *                                                   #   不给 ⇒ 只回 base64（在回执的 png 字段）
+ *                                                   #   给了路径 ⇒ 搬/写到那里（回执报字节数/图像尺寸）；
+ *                                                   #   不给 ⇒ 只回宿主落盘的那份的路径（`T-0180` ② 起
+ *                                                   #   回执里**没有** base64；旧宿主才回 `png` 字段）
  * node tools/dbg.cjs save .tmp/x.snap.json          # ★引擎态快照落盘（`tickets/T-0122`）
  * node tools/dbg.cjs load .tmp/x.snap.json          # ★把该快照灌回去（回执里逐条列出"没恢复的量"）
  * node tools/dbg.cjs snapshot                       # 只取快照 JSON（不落盘；`restore <base64>` 是它的逆）

@@ -24,9 +24,9 @@ node --import tsx src/web/host.ts --instance dbg-a --port 0 --attach-headless --
 B=http://127.0.0.1:3080/dsh-emulator/dbg-a/api/debug-query
 curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["frame"]}'    # 找 ←cur 那一行
 
-# ③ 抓一帧看画面
-curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["capture"]}' \
-  | python -c "import sys,json,base64;open('/tmp/shot.png','wb').write(base64.b64decode(json.load(sys.stdin)['png']))"
+# ③ 抓一帧看画面（★2026-09-25 起 **宿主直接落盘**：回执里没有图像数据）
+curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["capture"]}'   # → {path,dir,bytes,width,height}
+#    图 = <dir>/<path>（`dir` 是绝对路径；缺省实例 = <repo>/.tmp/emudbg）
 
 # ④ 点一下（虚拟坐标 1280×720）
 curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["click 807 621"]}'
@@ -122,7 +122,7 @@ curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["<命令>"]}
 | `wheel` | `wheel <±120> [x y]` | 滚轮；`-120` = 下滚一格。给了坐标会顺带移光标 |
 | `key` | `key <vk>` | 键**按下**（Windows 虚拟键码，如 `38`=↑、`13`=Enter） |
 | `keyup` | `keyup <vk>` | 键**释放**（长按要成对发） |
-| `capture` | `capture` | 抓一帧 → 结果带 `png`（base64）。**只认裸命令** |
+| `capture` | `capture` | 抓一帧 → 结果带 `path`/`dir`/`bytes`（**PNG 已由宿主落盘，回执里没有图像数据**）。**只认裸命令** |
 | `focus` | `focus auto\|on\|off` | 宿主焦点模式（无参 = `auto`）。`on` = 调试器显式接管 |
 | `help` / `?` | | 命令帮助；**非法参数不会抛错**，而是当查询回报一句"用法…" |
 | **查询** | `global <下标> [count]` / `local <下标>` / `frame [下标\|all]` / `flocal <帧> <下标>` | 读 VM 真值（见 §4.2） |
@@ -170,16 +170,17 @@ node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --list     # 只�
 ### 4.1 抓帧 + 看图
 
 ```bash
-curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["capture"]}' > /tmp/cap.json
-python - <<'PY'
-import json, base64
-d = json.load(open('/tmp/cap.json'))
-open('/tmp/shot.png','wb').write(base64.b64decode(d['png']))
-print('png chars =', len(d['png']))
-PY
+curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["capture"]}'
+# → {"ok":true,"path":"capture-20260925-131502-1234.png","dir":"<abs>/.tmp/emudbg","bytes":1712345,…}
 ```
 
-* 图是**引擎虚拟视口 1280×720**（与窗口大小无关）。落盘后直接用看图工具/`read_image` 打开。
+* ★**PNG 由宿主直接写盘**（`tickets/T-0180` ②）：渲染页把字节按 `application/octet-stream` 上送给宿主，
+  宿主落到 `layout.debugArtifactDir`（缺省实例 = `<repo>/.tmp/emudbg`，具名实例 = `<实例根>/emudbg`），
+  回执只带 `path`/`dir`/`bytes` ⇒ 那条 JSON 腿**不再搬 2.38MB 的 base64**
+  （旧宿主/旧 preload 没有那条通道时**仍会**回退成 `png`（base64）字段 —— 看到它就是宿主太旧）。
+* 图是**引擎虚拟视口 1280×720**（与窗口大小无关）。落盘后直接用看图工具/`read_image` 打开 `<dir>/<path>`。
+* **DSH 插件**（`amayui_emulator` 的 `action=capture`）还会读回那份量尺寸，返回 `{path,bytes,width,height}`；
+  传 `out` 可改名（宿主那份会被**搬**过去，不重复写）。
 * 走的是页面内读回（`FrameHost.capture` → Pixi stage canvas），**不是** Electron 的 `capturePage()`。
 * **命令名叫 `capture`，不叫 `shot`**：`shot` 被 `tools/debugsrv.cjs` 在**主进程**截获（走 `capturePage()`），
   对 `debug-query` 发 `shot` 永远收不到（`debugCommand.ts:147-149` 的注释就是记这个坑的）。
@@ -249,7 +250,7 @@ curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["frame"]}'  
 curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["capture"]}' > /tmp/title.json
 ```
 
-**期望观察**：`frame` 的 `←cur` 是 `TITLE.BIN`；解出的 PNG 是 **1280×720** 的标题画面
+**期望观察**：`frame` 的 `←cur` 是 `TITLE.BIN`；宿主落盘的 PNG 是 **1280×720** 的标题画面
 （实测约 1.7MB，内容 = 「天結いキャッスルマイスター」标题 + Game Start / Load Data /
 Eushully-chan Room / Option / Quit）。
 

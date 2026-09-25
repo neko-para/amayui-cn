@@ -636,6 +636,20 @@ function cmdEditPlan() {
         process.exitCode = 2;
         return;
       }
+      /**
+       * ★**拦住"索引写法"**（`acceptance[8]`）：`setPath` 只认 `.` 分隔的**键路径**，
+       *   下标语法会被当成**字面键**写进票里 —— 不报错、`--plan` 还显示成功，静默产出
+       *   `"acceptance[8]": "…"` 这种废键（本工具自己踩过：写完 `--validate` 仍是"通过"）。
+       *   ⇒ 要改数组就整份给（`acceptance=<json 数组>`），别用下标。
+       */
+      if (/[[\]]/.test(pair[0])) {
+        console.error(
+          `✗ sets 的点路径不许带下标：${JSON.stringify(pair[0])}（下标会被当成字面键静默写进票里；` +
+            `要改数组请整份给值，如 acceptance=<json 数组>）`,
+        );
+        process.exitCode = 2;
+        return;
+      }
       opt.setJson.push(`${pair[0]}=${JSON.stringify(pair[1])}`);
     }
     if (typeof plan.note === 'string') opt.note = plan.note;

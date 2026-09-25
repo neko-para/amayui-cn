@@ -103,6 +103,41 @@ export class OverlayDir {
     return null;
   }
 
+  /**
+   * **部分读**：只要前 `maxBytes` 字节（overlay → base；都没有 ⇒ null）。命中/优先级语义与 `read` 相同。
+   *
+   * 为什么要有它（实测数字）：引擎的槽头读（`sub_438120`，raw 45115）是
+   * `ReadFile(hFile, Buffer, 0x124)` —— **固定读 292 字节**；而 `0x1A0` 在 LOAD 画面
+   * **一帧内会被问 100~120 次**。走整份 `read()` 时一个 1~1.5MB 的真存档要
+   * 84~117ms/次（读盘 + 过桥搬运 1MB）⇒ 一帧 **4.8s**（实测帧 #2503 = 4832ms，其中
+   * `0x1a0` ×120 = 4758ms）—— 这就是用户看到的"切页卡 4 秒"。
+   * 只读前 292 字节后，成本回到"一次往返"的地板价（~5ms）。
+   *
+   * ★文件比 `maxBytes` 短时返回**读到的那么多**（不补齐）：调用方的判据是
+   *   "必须恰好 292 字节"（引擎 `NumberOfBytesRead == 292`），补齐会把坏文件伪装成好文件。
+   */
+  async readPrefix(rel: string, maxBytes: number): Promise<OverlayHit | null> {
+    for (const [side, p] of [
+      ['overlay', this.overlayFile(rel)],
+      ['base', this.baseFile(rel)],
+    ] as [OverlaySide, string][]) {
+      let fh: fs.FileHandle | null = null;
+      try {
+        fh = await fs.open(p, 'r');
+        const buf = Buffer.allocUnsafe(maxBytes);
+        const { bytesRead } = await fh.read(buf, 0, maxBytes, 0);
+        this.#log?.(`${rel} -> ${p} (${side}, 前 ${bytesRead}/${maxBytes} 字节)`);
+        return { data: new Uint8Array(buf.buffer, buf.byteOffset, bytesRead), path: p, side };
+      } catch {
+        /* 试下一侧 */
+      } finally {
+        await fh?.close().catch(() => undefined);
+      }
+    }
+    this.#log?.(`${rel}: overlay/base 都没有`);
+    return null;
+  }
+
   /** 文本读（INI 用）。 */
   async readText(rel: string): Promise<OverlayTextHit | null> {
     const hit = await this.read(rel);

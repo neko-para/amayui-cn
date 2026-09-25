@@ -140,8 +140,21 @@ function envelope(bytes) {
     const mv = await dq('obs-a', 'move 640 360');
     ok(mv.status === 200 && mv.json && mv.json.ok === true, `agent move 经插件路由 → HTTP ${mv.status}`, JSON.stringify(mv.json && mv.json.lines));
     const cap = await dq('obs-a', 'capture');
-    if (cap.json && typeof cap.json.png === 'string') {
-      const buf = Buffer.from(cap.json.png, 'base64');
+    // ★`tickets/T-0180` ②：新形状 = 宿主已落盘（回执 `{path,dir}`，没有 base64）；旧宿主才回 `png`。
+    const capBuf =
+      cap.json && typeof cap.json.path === 'string' && typeof cap.json.dir === 'string'
+        ? (() => {
+            try {
+              return fs.readFileSync(path.isAbsolute(cap.json.path) ? cap.json.path : path.join(cap.json.dir, cap.json.path));
+            } catch {
+              return null;
+            }
+          })()
+        : cap.json && typeof cap.json.png === 'string'
+          ? Buffer.from(cap.json.png, 'base64')
+          : null;
+    if (capBuf) {
+      const buf = capBuf;
       const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
       fs.writeFileSync(path.join(OUT, 'observer-agent-capture.png'), buf);
       ok(w === 1280 && h === 720 && buf.length > 200000, `agent capture 经插件路由 → ${buf.length}B ${w}×${h}`);

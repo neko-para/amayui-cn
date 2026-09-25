@@ -23,6 +23,7 @@ import {
   type SlotFrameState,
   type SlotStateBlock,
 } from '../../save/saveSlot.js';
+import { SAVE_HEADER_BYTES } from '../../save/saveData.js';
 import { decodeEngineSlot, resolveSlotRetStack, type EngineSlotPayload } from '../engineSlot.js';
 import { decodeEngineDrawItem } from '../engineDrawItem.js';
 import { restoreAdvState, snapshotAdvState } from '../advState.js';
@@ -759,7 +760,14 @@ const op_slot_read_header: OpHandler = async (c) => {
     p.setInt(1, 1); // 打不开（宿主没有该能力 ⇒ 与"文件不存在"同码）
     return;
   }
-  const bytes = await fs.readSaveSlot(slot);
+  // ★**只读头**（`tickets/T-0180`）：引擎在这一格是 `CreateFileA` + `ReadFile(..., 0x124)` ——
+  //   **固定读 292 字节**（`sub_438120`，raw 45115），从不动整份文件。
+  //   而这条指令在 LOAD 画面**一帧内会被问 100~120 次**：走整份读时一个 1~1.5MB 的真存档要
+  //   84~117ms/次 ⇒ 实测一帧 **4.8s**（帧 #2503：`0x1a0` ×120 = 4758ms）= 用户看到的"切页卡 4 秒"。
+  //   宿主没有 `readSaveSlotHead` 这条缝（旧 preload/旧宿主）时退回整份读 —— 行为同修前。
+  const bytes = fs.readSaveSlotHead
+    ? await fs.readSaveSlotHead(slot, SAVE_HEADER_BYTES)
+    : await fs.readSaveSlot(slot);
   if (!bytes) {
     p.setInt(1, 1);
     return;

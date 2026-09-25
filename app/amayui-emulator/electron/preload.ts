@@ -10,12 +10,17 @@ import type { ControlStatus } from '../src/renderer/ipcProtocol.js';
 
 contextBridge.exposeInMainWorld('api', {
   // ---- 资源读取（渲染窗）----
-  /** 按 call-script 索引读一个脚本（返回 {index,name,data:number[]} | null）。 */
+  /** 按 call-script 索引读一个脚本（返回 {index,name,data:Uint8Array} | null）。 */
   readScript: (index: number) => ipcRenderer.invoke('read-script', index),
-  /** 按文件名读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；返回 {index,name,data:number[]} | null）。 */
+  /** 按文件名读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；返回 {index,name,data:Uint8Array} | null）。 */
   readScriptByName: (name: string) => ipcRenderer.invoke('read-script-by-name', name),
-  /** 读任意文件原始字节（number[]）。 */
+  /** 读任意文件原始字节（Uint8Array；结构化克隆直接搬 typed array，不先转 number[] —— `tickets/T-0180`）。 */
   readFile: (path: string) => ipcRenderer.invoke('read-file', path),
+  /**
+   * **落一份调试取证产物**（`capture` 的 PNG）：字节经结构化克隆交给主进程写盘，回执只带路径
+   * ⇒ 回执那条 JSON 腿不再搬 base64（`tickets/T-0180` ②）。旧 preload 没有它时渲染侧回退 base64。
+   */
+  writeDebugArtifact: (name: string, data: Uint8Array) => ipcRenderer.invoke('write-debug-artifact', name, data),
   /** 已装载的扩展包包号（升序；主进程扫 *.AAI 后按文件头 @264 注册的结果），供 0x143 派发 $n$AUTORUN。 */
   appendPacks: () => ipcRenderer.invoke('append-packs'),
   /** 读引擎配置 SYS4REG.INI 文本（未找到返回 null）。 */
@@ -52,6 +57,9 @@ contextBridge.exposeInMainWorld('api', {
   // ---- 存档槽（`tickets/T-0018`）：`0x19E` 存 / `0x1A1` 读 / `0x1A0` 读头 / `0x1AB` 删 / `0x1AC` 复制 / `0x1AE`·`0x1AF` `.STH` ----
   /** 读一个存档槽 `SAVE\SAVE%2.2d.DAT` 的整份字节（overlay → base；没有返回 null）。 */
   readSaveSlot: (slot: number): Promise<Uint8Array | null> => ipcRenderer.invoke('read-save-slot', slot),
+  /** 读槽头：只取前 N 字节（缺省 292）。`0x1A0` 一帧问 120 次 ⇒ 不许读整份 `.DAT`（`tickets/T-0180`）。 */
+  readSaveSlotHead: (slot: number, maxBytes?: number): Promise<Uint8Array | null> =>
+    ipcRenderer.invoke('read-save-slot-head', slot, maxBytes),
   /** 写一个存档槽（主进程**只写 overlay**）。 */
   writeSaveSlot: (slot: number, data: Uint8Array): Promise<void> => ipcRenderer.invoke('write-save-slot', slot, data),
   /** 删槽的 `.DAT` + `.STH`（只删 overlay）。 */

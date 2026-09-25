@@ -24,6 +24,7 @@ import { INI_FILE, SAVE_DAT_REL, type SystemPaths } from './systemPaths.js';
 import { parseIni } from '../engineConfig.js';
 import { unionUsedFileIds } from '../save/saveData.js';
 import { slotRelPath, slotThumbRelPath } from '../save/saveSlot.js';
+import { SAVE_HEADER_BYTES } from '../save/saveData.js';
 
 export interface NodeFileSourceOptions {
   /** 资源根目录（含 `SYS4INI.BIN`、`*.ALF` 归档、松散 `.BIN` 脚本）。默认见 `resolveResourceDir`。 */
@@ -196,6 +197,17 @@ export class NodeFileSource implements FileSource {
   /** 读一个槽的整份字节（overlay → base；都没有 ⇒ null）。 */
   async readSaveSlot(slot: number): Promise<Uint8Array | null> {
     const hit = await this.readSystemFile(slotRelPath(slot));
+    return hit ? hit.data : null;
+  }
+
+  /**
+   * 读一个槽的**前 N 字节**（`0x1A0` 的槽头；引擎固定读 292，见 `sub_438120` raw 45115）。
+   *
+   * ★为什么不复用 `readSaveSlot`：那个读整份 1~1.5MB 的 `.DAT`，而调用方只要前 292 字节；
+   *   LOAD 画面一帧会问 100~120 次 ⇒ 实测一帧 4.8s（`0x1a0` ×120 = 4758ms）。
+   */
+  async readSaveSlotHead(slot: number, maxBytes = SAVE_HEADER_BYTES): Promise<Uint8Array | null> {
+    const hit = this.#overlay ? await this.#overlay.readPrefix(slotRelPath(slot), maxBytes) : null;
     return hit ? hit.data : null;
   }
 

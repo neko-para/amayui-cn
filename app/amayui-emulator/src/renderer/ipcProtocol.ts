@@ -11,10 +11,21 @@
 declare global {
   interface Window {
     api: {
-      readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null>;
+      /**
+       * 按 call-script 索引读一个脚本（原始字节 + 文件名）。
+       * ★`data` 是 `Uint8Array`（**不是** `number[]`）：结构化克隆与 web 信封两条腿都直接搬 typed array，
+       *   先转成 `number[]` 只是白白放大（3.7MB 资源实测 131ms / +89.7MB 堆；`tickets/T-0180`）。
+       */
+      readScript(index: number): Promise<{ index: number; name: string; data: Uint8Array } | null>;
       /** 按**文件名**读一个脚本（读档时装 `CALLBACK_LOAD.BIN` 用；旧 preload 没有它时按缺口降级）。 */
-      readScriptByName?(name: string): Promise<{ index: number; name: string; data: number[] } | null>;
-      readFile(path: string): Promise<number[]>;
+      readScriptByName?(name: string): Promise<{ index: number; name: string; data: Uint8Array } | null>;
+      readFile(path: string): Promise<Uint8Array>;
+      /**
+       * **落一份调试取证产物**（`capture` 的 PNG；`tickets/T-0180` ②）：名字是纯文件名（宿主侧白名单校验），
+       * 字节走**二进制腿**（web = octet-stream POST / Electron = 结构化克隆），回执只有路径/字节数。
+       * 旧 preload 没有它 ⇒ 渲染侧回退成把 base64 放进 `debug-query` 回执的 `png` 字段（原行为，只是更胖）。
+       */
+      writeDebugArtifact?(name: string, data: Uint8Array): Promise<{ path: string; dir: string; bytes: number } | null>;
       /**
        * **已装载的扩展包包号（升序）** —— 主进程扫资源根下的 `*.AAI`、按文件头 @264 的包号注册后的结果。
        * 渲染侧的 `0x143`（`i143`）用它派发各包的 `$n$AUTORUN.BIN`；旧 preload 没有此通道时按「未装扩展包」降级。
@@ -68,6 +79,11 @@ declare global {
        * ★主进程只读、渲染侧只解头/状态块；真游戏那份槽永远不被改写。
        */
       readSaveSlot?(slot: number): Promise<Uint8Array | null>;
+      /**
+       * 读一个槽的**前 N 字节**（`0x1A0` 槽头；缺省 292）。
+       * **不实现 = 渲染侧退回 `readSaveSlot` 的整份读**（`tickets/T-0180` 实测：LOAD 画面一帧 120 次 ⇒ 4.8s）。
+       */
+      readSaveSlotHead?(slot: number, maxBytes?: number): Promise<Uint8Array | null>;
       /** 写一个存档槽（**只写 overlay**）。 */
       writeSaveSlot?(slot: number, data: Uint8Array): Promise<void>;
       /** 删一个槽的 `.DAT` + `.STH`（只删 overlay，base 那份不动 ⇒ 引擎语义下"删了又继承回来"）。 */

@@ -58,6 +58,12 @@ export interface Appender {
   write(text: string): void;
 }
 
+/**
+ * 调试取证产物（`writeDebugArtifact`）允许的文件名形状：**纯文件名 + 白名单扩展名**。
+ * ★`capture` 的字节来自渲染进程 ⇒ 名字也要当**不可信输入**校验：`../` 会写到 `.tmp/emudbg` 之外。
+ */
+export const ARTIFACT_NAME_RE = /^[A-Za-z0-9._-]{1,80}\.(png|json|txt|bin)$/;
+
 /** 一个 gzip 追加器（`close()` 会结束 gzip 流并等它 flush 到磁盘）。 */
 export interface GzAppender extends Appender {
   close(): Promise<void>;
@@ -197,6 +203,39 @@ export class HostService {
     await this.replay.close();
   }
 
+  /**
+   * **落一份调试取证产物**（`capture` 的 PNG 走这里）：把字节**直接写到磁盘**，
+   * 回执只带相对路径 ⇒ 那条 JSON 腿不再搬 1.8MB 的 base64（`tickets/T-0180`）。
+   *
+   * 为什么值得单开一条通道（而不是继续用 `debug-query` 的 `png` 字段）：实测一份 1280×720 的
+   * PNG base64 长 2.38MB（UTF-16 后 ≈4.5MB），`JSON.stringify` 3.6ms + `JSON.parse` 1.7ms
+   * + 解码 0.6ms，而 base64 本身就是 33% 的膨胀；上行那条腿（`application/octet-stream` POST）
+   * 本来就能搬二进制（`write-save-slot` 已经这么干）。
+   *
+   * @param name 产物文件名（**必须**是纯文件名：含路径分隔符/`..`/空 ⇒ 直接拒绝，不落盘）
+   * @param data 原始字节
+   * @returns 落点（`path` = **相对本实例产物目录**的文件名 —— 与"宿主写的就是 `<dir>/<name>`"这条
+   *   不变量自洽；`dir` = 该目录的绝对路径）；拒绝或写失败 ⇒ `null`（调用方回退 base64）
+   */
+  async writeDebugArtifact(name: string, data: Uint8Array): Promise<{ path: string; dir: string; bytes: number } | null> {
+    if (!ARTIFACT_NAME_RE.test(name)) {
+      console.log(`[main] debug artifact 拒绝非法名 ${JSON.stringify(name)}（只允许纯文件名）`);
+      return null;
+    }
+    if (!data || data.length === 0) return null;
+    const dir = this.layout.debugArtifactDir;
+    const target = path.join(dir, name);
+    try {
+      await fs.promises.mkdir(dir, { recursive: true });
+      await fs.promises.writeFile(target, data);
+    } catch (err) {
+      console.log(`[main] debug artifact 写失败 ${target}: ${(err as Error).message}`);
+      return null;
+    }
+    console.log(`[main] debug artifact <- ${target} (${data.length} bytes)`);
+    return { path: name, dir, bytes: data.length };
+  }
+
   /** 启动摘要：写清这次的 base/overlay 是哪两份目录、资源根/资源版本各是什么。 */
   logSystemPaths(): void {
     console.log(`[main] system dir (base) -> ${this.layout.baseDir}`);
@@ -207,26 +246,31 @@ export class HostService {
   // ---- 资源（只读） ------------------------------------------------------
 
   /** 读脚本（call-script 索引 -> 原始字节 + 文件名）。 */
-  async readScript(index: number): Promise<{ index: number; name: string; data: number[] } | null> {
+  async readScript(index: number): Promise<{ index: number; name: string; data: Uint8Array } | null> {
     const r = await this.#fileSource.readScript(index);
     if (!r) return null;
-    return { index: r.index, name: r.name, data: Array.from(r.data) };
+    return { index: r.index, name: r.name, data: r.data };
   }
 
   /**
    * 按**文件名**读一个脚本（读档时要按名装载 `CALLBACK_LOAD.BIN`，见 `tickets/T-0072`）。
    * 与 `readScript` 同一条读取路径，只是用名字换统一 id（引擎 `sub_455000(FileDB, name)`）。
    */
-  async readScriptByName(name: string): Promise<{ index: number; name: string; data: number[] } | null> {
+  async readScriptByName(name: string): Promise<{ index: number; name: string; data: Uint8Array } | null> {
     const r = await this.#fileSource.readScriptByName(name);
     if (!r) return null;
-    return { index: r.index, name: r.name, data: Array.from(r.data) };
+    return { index: r.index, name: r.name, data: r.data };
   }
 
-  /** 读任意文件（原始字节；路径原样透传 —— 与重构前 `read-file` 通道同口径）。 */
-  async readFile(p: string): Promise<number[]> {
-    const b = await this.#fileSource.readFile(p);
-    return Array.from(b);
+  /**
+   * 读任意文件（原始字节；路径原样透传 —— 与重构前 `read-file` 通道同口径）。
+   *
+   * ★这里返回的 `Uint8Array` **原样透传**给两条传输腿（web 的二进制响应体 / Electron 结构化克隆），
+   *   绝不先转成 `number[]`：`Array.from` 对 3.7MB 的资源实测 **131ms / +89.7MB 堆**（`T-0180`），
+   *   而两条腿本来就能直接搬二进制（`envelope.ts` 的 0 拷贝 `subarray` / 结构化克隆的 typed array）。
+   */
+  async readFile(p: string): Promise<Uint8Array> {
+    return await this.#fileSource.readFile(p);
   }
 
   /**
@@ -385,6 +429,19 @@ export class HostService {
     if (!b) return null;
     console.log(`[main] save slot ${slot} -> ${b.length} bytes`);
     return Buffer.from(b); // Buffer 经 IPC 到达渲染进程即 Uint8Array
+  }
+
+  /**
+   * 读一个槽的**前 N 字节**（`0x1A0` 槽头；缺省 292）。
+   *
+   * ★**刻意不打日志**：LOAD 画面一帧会问 100~120 次，`readSaveSlot` 那句
+   *   `[main] save slot N -> …` 在这个频率下会把日志刷爆（那是给人看的诊断面）。
+   * ★口径与 `readSaveSlot` 完全一致（只读、只读 overlay→base、`#slotOk` 同一道门）。
+   */
+  async readSaveSlotHead(slot: number, maxBytes?: number): Promise<Buffer | null> {
+    if (!this.#slotOk(slot)) return null;
+    const b = await this.#fileSource.readSaveSlotHead?.(slot, maxBytes);
+    return b ? Buffer.from(b) : null;
   }
 
   /** 写一个存档槽（**只写 overlay**；成功 ⇒ null，与重构前 `write-save-slot` 同形状）。 */

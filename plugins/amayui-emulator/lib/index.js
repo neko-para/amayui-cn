@@ -407,7 +407,7 @@ export function apply(ctx) {
       'action=start 以**受管后台进程**起一个实例（--attach-headless + 静音 + --idle-sec，返回真实端口；没有无头页时 debug-query 必然 503，故缺省开）；' +
       'action=stop 收掉实例（只收本进程起的；别人的要 force=true）；' +
       'action=query 发任意调试命令（run/global/frame/slot/barrier/snapshot/restore/focus…），回执行 + **往返毫秒**；' +
-      'action=capture 抓帧 → **PNG 落盘 .tmp/emudbg/**，只回 {path,bytes,width,height}（base64 绝不回传，避免烧上下文）；' +
+      'action=capture 抓帧 → **宿主直写 .tmp/emudbg/**（PNG 走二进制腿上送，回执里没有图像数据），只回 {path,bytes,width,height}；' +
       'action=input 注入 click/move/leave/press/release/wheel/key（click 缺省**合成悬停**：菜单类界面必须先悬停再点，实测不悬停点不动）；' +
       'action=profile 是 profile on/off/reset/report [minMs]/watch/slow 的封装（归因卡顿用）；' +
       'action=wait 等 bin/gate/frames/global 到某个条件（带超时，替代 sleep + 反复 frame 猜）。' +

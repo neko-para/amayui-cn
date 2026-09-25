@@ -15,7 +15,6 @@ export class IpcFileSource implements FileSource {
     const a = await window.api.readFile(p);
     return new Uint8Array(a);
   }
-
   async readScript(index: number): Promise<ScriptBytes | null> {
     const r = await window.api.readScript(index);
     if (!r) return null;
@@ -82,6 +81,16 @@ export class IpcFileSource implements FileSource {
   /** 读一个槽的整份字节（overlay → base；没有返回 null）。 */
   async readSaveSlot(slot: number): Promise<Uint8Array | null> {
     const r = await window.api.readSaveSlot?.(slot);
+    return r ? new Uint8Array(r) : null;
+  }
+
+  /**
+   * 读一个槽的**前 N 字节**（`0x1A0` 槽头）。
+   * ★旧 preload 没这条通道时返回 null ⇒ 调用方退回整份读（行为同修前，只是慢：
+   *   `tickets/T-0180` 实测 LOAD 画面一帧 120 次整份读 = 4.8s）。
+   */
+  async readSaveSlotHead(slot: number, maxBytes?: number): Promise<Uint8Array | null> {
+    const r = await window.api.readSaveSlotHead?.(slot, maxBytes);
     return r ? new Uint8Array(r) : null;
   }
 

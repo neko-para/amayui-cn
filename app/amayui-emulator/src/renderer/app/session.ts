@@ -317,14 +317,30 @@ export class RendererSession {
           //   人类看的帧流与 agent 的取证因此是同一条路径。
           //   ★命令名是 `capture` 而不是 `shot`：后者被 `tools/debugsrv.cjs` 在主进程截获。
           const png = await capturePng(this.#frameHost());
-          result = png
-            ? {
-                query: raw,
-                ok: true,
-                lines: [`capture: ${png.length}B PNG（base64 在 png 字段）`],
-                png: bytesToBase64(png),
-              }
-            : { query: raw, ok: false, lines: ['capture：当前宿主没有 capture 能力（headless 没有像素）'] };
+          if (png) {
+            // ★`tickets/T-0180` ②：PNG **不塞进这条 JSON 回执** —— 交给宿主的二进制腿写盘，回执只带路径。
+            //   实测 base64 那份：2.38MB 字符串（UTF-16 ≈4.5MB）+ stringify 3.6ms + parse 1.7ms + 解码 0.6ms，
+            //   而且 base64 本身就是 33% 膨胀；这条回执本来还要过一次 SSE/JSON 配对。
+            //   ★旧 preload / 旧宿主没有这条通道时**回退**原行为（base64 进 `png` 字段）——那时回执胖但没有错。
+            const artifact = await this.#writeDebugArtifact(png);
+            result = artifact
+              ? {
+                  query: raw,
+                  ok: true,
+                  lines: [`capture: ${png.length}B PNG → ${artifact.path}（base64 未回传）`],
+                  path: artifact.path,
+                  dir: artifact.dir,
+                  bytes: artifact.bytes,
+                }
+              : {
+                  query: raw,
+                  ok: true,
+                  lines: [`capture: ${png.length}B PNG（宿主不能落盘 ⇒ base64 在 png 字段）`],
+                  png: bytesToBase64(png),
+                };
+          } else {
+            result = { query: raw, ok: false, lines: ['capture：当前宿主没有 capture 能力（headless 没有像素）'] };
+          }
         } else if (act && (act.a === 'snapshot' || act.a === 'restore')) {
           // ★`tickets/T-0122`：**只在帧边界做**。命令到达时落在指令边界（不是帧边界）⇒ 先等一帧末，
           //   再走同步的 `#applyDebugAction`（这样"取/灌"两个动作都在确定的帧边界上发生）。
@@ -1085,6 +1101,30 @@ export class RendererSession {
       this.#perfMs = nowMs;
       this.#lastStatusSend = nowMs;
       this.notifyStatus();
+    }
+  }
+
+  /**
+   * 把 `capture` 的 PNG 交给宿主落盘（`tickets/T-0180` ②）。返回 `null` = **本宿主没有这条能力**
+   * （旧 preload / 旧宿主）⇒ 调用方回退成 base64 进回执（原行为）。
+   *
+   * ★为什么名字带时间戳而不是让宿主自己起名：一次会话里连抓几帧要**互不覆盖**，而"第几帧"只有
+   *   这一侧知道；宿主只做"纯文件名白名单 + 落盘"（渲染进程给的字符串一律当不可信输入）。
+   */
+  async #writeDebugArtifact(png: Uint8Array): Promise<{ path: string; dir: string; bytes: number } | null> {
+    const fn = window.api?.writeDebugArtifact;
+    if (!fn) return null;
+    const d = new Date();
+    const p2 = (v: number): string => String(v).padStart(2, '0');
+    // ★名字里**同时**有时间戳与步数：同一秒内连抓两帧也不会互相覆盖（步数单调）。
+    const name = `capture-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}-${this.#steps}.png`;
+    try {
+      return await fn(name, png);
+    } catch (err) {
+      // ★通道在、但宿主那边抛了（旧宿主不认这个方法名 / 写盘 IO 错）⇒ 走回退：抓到的帧**不能丢**，
+      //   否则"抓帧失败"看起来像"这台宿主没有像素"。回退代价是回执胖一点，比丢帧好。
+      this.#traceLog.line(`[capture] 宿主落盘失败（${(err as Error).message}）⇒ 回退 base64 回执`);
+      return null;
     }
   }
 }

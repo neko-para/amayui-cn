@@ -203,6 +203,21 @@ function pngInfo(buf) {
 
     // ② 取帧：capture 是渲染窗里的 `capturePng(host)`（页面内 extract.canvas，**不是** capturePage）。
     //    页面还没跑到能出图之前 `shot` 会失败 ⇒ 重试（首帧还要等脚本跑到 TITLE）。
+    // ★`tickets/T-0180` ②：`capture` 的回执现在**不带 base64** —— PNG 由宿主直接落盘，回执只带
+    //   `{path,dir,bytes}`（旧宿主才回 `png`）。两种形状都在这里读回字节。
+    const readCaptureBytes = (r) => {
+      if (r && typeof r.path === 'string' && typeof r.dir === 'string' && r.path !== '') {
+        const abs = path.isAbsolute(r.path) ? r.path : path.join(r.dir, r.path);
+        try {
+          const b = fs.readFileSync(abs);
+          return b.length > 0 ? b : null;
+        } catch {
+          return null;
+        }
+      }
+      if (r && typeof r.png === 'string' && r.png.length > 0) return Buffer.from(r.png, 'base64');
+      return null;
+    };
     const frames = [];
     for (let i = 0; i < SHOTS; i++) {
       let r = null;
@@ -213,15 +228,15 @@ function pngInfo(buf) {
         } catch (err) {
           r = { ok: false, lines: [String(err.message)] };
         }
-        if (r && r.ok !== false && typeof r.png === 'string' && r.png.length > 0) break;
+        if (r && r.ok !== false && readCaptureBytes(r)) break;
         if (Date.now() - t0 > BOOT_TIMEOUT_MS) break;
         await sleep(2000);
       }
-      if (!r || r.ok === false || typeof r.png !== 'string') {
+      const buf = r && r.ok !== false ? readCaptureBytes(r) : null;
+      if (!buf) {
         console.log(`[bprime] ✗ 第 ${i + 1} 帧取不到：${JSON.stringify(r && r.lines)}`);
         continue;
       }
-      const buf = Buffer.from(r.png, 'base64');
       const info = pngInfo(buf);
       const file = path.join(OUT_DIR, `shot-${i + 1}.png`);
       fs.writeFileSync(file, buf);

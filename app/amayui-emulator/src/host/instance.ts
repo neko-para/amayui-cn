@@ -56,6 +56,15 @@ export interface InstanceLayout {
   tracePath: string;
   /** 回放轨迹（`append-replay-line`，gzip）。 */
   replayPath: string;
+  /**
+   * **调试取证落点**（`writeDebugArtifact`：`capture` 的 PNG、将来的其它抓帧产物）。
+   *
+   * ★为什么单独一项而不是复用 `root`：`capture` 的消费方是**仓库侧的工具**（DSH 插件
+   *   `plugins/amayui-emulator/lib/tools.js` 固定读 `<repo>/.tmp/emudbg/`），所以默认实例
+   *   必须落在 `<repo>/.tmp/emudbg`；具名实例落在 `<root>/emudbg`（实例自带、互不串）。
+   *   路径不跟着 `logPath` 走（那个对具名实例在 `<root>/log/` 下，与插件的约定不一致）。
+   */
+  debugArtifactDir: string;
 }
 
 /** `instanceLayout` 的入参。 */
@@ -111,6 +120,9 @@ export function instanceLayout(opts: InstanceOptions): InstanceLayout {
       logPath: path.join(tmpDir, 'amayui-emulator.log'),
       tracePath: path.join(tmpDir, 'scene-trace.jsonl'),
       replayPath: env.AMAYUI_REPLAY_PATH || path.join(tmpDir, 'replay-trace.jsonl.gz'),
+      // ★与插件（`plugins/amayui-emulator/lib/tools.js` 的 `.tmp/emudbg`）**同一处**：capture 的 PNG
+      //   由宿主直接写这里，回执只带相对路径 ⇒ 那条 JSON 腿不再搬 1.8MB 的 base64。
+      debugArtifactDir: path.join(tmpDir, 'emudbg'),
     };
   }
 
@@ -127,6 +139,10 @@ export function instanceLayout(opts: InstanceOptions): InstanceLayout {
     logPath: path.join(logDir, 'amayui-emulator.log'),
     tracePath: path.join(logDir, 'scene-trace.jsonl'),
     replayPath: env.AMAYUI_REPLAY_PATH || path.join(logDir, 'replay-trace.jsonl.gz'),
+    // ★具名实例：产物落在**实例自己的**根下（与 base/overlay/log 同一份隔离）；默认实例见上。
+    //   自定义 `root` 时落 `<root>/emudbg`，`writeDebugArtifact` 回的是**相对该目录**的文件名
+    //   ⇒ "宿主写 `<dir>/<name>`、消息里的路径由 <dir> 拼出"这条不变量两种实例都成立。
+    debugArtifactDir: path.join(root, 'emudbg'),
   };
 }
 

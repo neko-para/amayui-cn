@@ -67,6 +67,17 @@ test('E3：TITLE → Load Data → SAVE.BIN，路径上零未实现 opcode 且�
     slotReads.push(slot);
     return origRead(slot);
   };
+  // ★`tickets/T-0180`：`0x1A0`（列表逐槽读头）自本轮起走 **`readSaveSlotHead`（只读 292 字节）**
+  //   ⇒ 探针必须**两条都挂**，否则"列表确实读了真槽"这条判据会因为换了缝而**假红**
+  //   （它本来要判的是"读了真槽"，不是"经哪个方法读"）。`0x1A1`/`0x19F`（读档）仍走整份读。
+  const slotHeadReads: number[] = [];
+  const origReadHead = src.readSaveSlotHead.bind(src);
+  src.readSaveSlotHead = async (slot: number, maxBytes?: number) => {
+    slotHeadReads.push(slot);
+    return origReadHead(slot, maxBytes);
+  };
+  /** 两条缝合起来看（判据是"读了哪些槽"，与用哪条缝无关）。 */
+  const allSlotReads = (): number[] => [...slotReads, ...slotHeadReads];
   src.writeSaveSlot = async (slot: number) => void slotWrites.push(`write:${slot}`);
   src.deleteSaveSlot = async (slot: number) => {
     slotWrites.push(`delete:${slot}`);
@@ -175,19 +186,20 @@ test('E3：TITLE → Load Data → SAVE.BIN，路径上零未实现 opcode 且�
   );
   assert.equal(titleHover, 1, `TITLE 悬停应命中第 1 项（Load Data），实际 ${titleHover}（轨迹 ${trail.slice(0, 8).join(',')}）`);
   assert.ok(reachedSave, `点「Load Data」应进入存档界面脚本；实际轨迹尾部 ${trail.slice(-6).join(',')}`);
-  assert.ok(slotReads.length > 0, '存档列表应经 fileSource 读真槽（`0x1A0`/`0x1A1`）');
+  assert.ok(allSlotReads().length > 0, '存档列表应经 fileSource 读真槽（`0x1A0` 读头 / `0x1A1` 读档）');
+  assert.ok(slotHeadReads.length > 0, '★列表的逐槽读头必须走 `readSaveSlotHead`（`T-0180`：只读 292 字节，别读整份 1MB）');
   // ★槽号范围 0..999 是这条链路的实测结论：`SAVE.BIN` 的列表**逐槽读 0..999**（点进列表后 120 次读、
   //   去重后正好覆盖 0..999）⇒ 引擎侧没有"只接受两位"的限制（`%2.2d` 只补位不截断）。
-  for (const s of slotReads) assert.ok(Number.isInteger(s) && s >= 0 && s <= 999, `槽号应合法：${s}`);
+  for (const s of allSlotReads()) assert.ok(Number.isInteger(s) && s >= 0 && s <= 999, `槽号应合法：${s}`);
   assert.ok(
-    slotReads.includes(0) && slotReads.some((s) => s >= 900),
-    `应扫到列表两端（0 与 ≥900），实际 ${slotReads.length} 次读、最大 ${Math.max(...slotReads)}`,
+    allSlotReads().includes(0) && allSlotReads().some((s) => s >= 900),
+    `应扫到列表两端（0 与 ≥900），实际 ${allSlotReads().length} 次读、最大 ${Math.max(...allSlotReads())}`,
   );
   // ★只读不写：列表界面不得写/删/复制任何槽
   assert.deepEqual(slotWrites, [], '存档列表界面不应写任何槽（本测试不注入 onSaveDataChanged）');
 
   // 真槽能被解头 ⇒ 0x1A0 的字段来源是活的（E4 口径：年月日时分秒 = 文件 mtime）
-  const first = slotReads.find((s) => s >= 0) ?? -1;
+  const first = allSlotReads().find((s) => s >= 0) ?? -1;
   const bytes = first >= 0 ? await origRead(first) : null;
   if (bytes) {
     const h = parseSlotHeader(bytes);

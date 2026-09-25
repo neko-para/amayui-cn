@@ -245,6 +245,20 @@ export class WebBridge {
         return { index: Number(meta.index ?? -1), name: String(meta.name ?? name), data: bytes } as never;
       },
       readFile: async (p: string) => (await bridge.#bin('read-file', p)).bytes as never,
+      /**
+       * **落一份调试取证产物**（`capture` 的 PNG；`tickets/T-0180` ②）：字节走 `application/octet-stream`
+       * POST（单段信封，与 `writeSaveSlot` 同一条腿），回执是 JSON（路径/字节数）—— 那条 JSON 腿因此
+       * 不必再搬 ~2.4MB 的 base64。宿主拒绝（非法名/写失败）⇒ 返回 `null`，调用方回退 base64。
+       */
+      writeDebugArtifact: async (name: string, data: Uint8Array) => {
+        const r = (await bridge.#sendBytes('write-debug-artifact', data, name)) as
+          | { path?: unknown; dir?: unknown; bytes?: unknown }
+          | null;
+        // ★宿主**拒绝**（非法名/写失败）时回的是 `{error}`，不是抛错 ⇒ 这里收窄成 `null`
+        //   （声明的语义就是"落不了盘"），调用方据此回退 base64 —— 抓到的帧不能因为落盘失败就丢。
+        if (!r || typeof r.path !== 'string' || typeof r.dir !== 'string') return null;
+        return { path: r.path, dir: r.dir, bytes: Number(r.bytes ?? data.length) };
+      },
       appendPacks: async () => (await bridge.#json('append-packs')) as number[],
       readConfigIni: async () => (await bridge.#json('read-config-ini')) as never,
       saveConfigIni: async (text: string) => (await bridge.#json('save-config-ini', text)) as never,
@@ -259,6 +273,8 @@ export class WebBridge {
         return r.parts;
       },
       readSaveSlot: async (slot: number) => (await bridge.#bin('read-save-slot', slot)).bytes,
+      // `0x1A0` 槽头：只搬前 292 字节（整份 `.DAT` 有 1~1.5MB，而 LOAD 画面一帧问 120 次 ⇒ 4.8s）
+      readSaveSlotHead: async (slot: number) => (await bridge.#bin('read-save-slot-head', slot)).bytes,
       writeSaveSlot: async (slot: number, data: Uint8Array) => {
         await bridge.#sendBytes('write-save-slot', data, slot);
       },
