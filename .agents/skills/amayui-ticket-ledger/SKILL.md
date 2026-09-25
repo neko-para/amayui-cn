@@ -73,6 +73,9 @@ tickets/
    给了 `line` 而 anchor 不在 ±40 行内 ⇒ 只 `⚠`；
 7. `blockedBy`/`links.tickets` 不悬空、不成环；`history` 至少一条。
 
+★**跨子工程的通行纪律**（踩过的坑）在 `docs-new/00-overview/lessons.md` —— 与本技能最相关的是
+**#17 锚点是跨 agent 的 ABI**、**#20 派子代理的三件套**、**#22 台账/票面写入口只认"恰好一条"**（动手改票前扫一遍）。
+
 ---
 
 ## 3. 动作流程

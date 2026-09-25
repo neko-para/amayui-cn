@@ -59,7 +59,7 @@ cd app/amayui-emulator && npm run shot -- --load 79 --name mycase --page 870,900
 
 ## 2. 纪律
 
-> **纪律清单只有一份**：`docs-new/00-overview/lessons.md`（20 条，全部来自实测事故）。开工前读一遍。
+> **纪律清单只有一份**：`docs-new/00-overview/lessons.md`（全部来自实测事故，**别在这里记条数** —— 它会增长）。开工前读一遍。
 
 
 ## 3. 历史与状态在哪

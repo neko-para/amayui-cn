@@ -143,44 +143,4 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 | Web 产物 | 改 `src/vm/**`、`src/renderer/**` 后必须 `npm run build:electron`（重建 `dist/web/renderer.js`）并**刷新页面**才生效 |
 | 日志 / 临时产物 | `.tmp/amayui-emulator.log`、`.tmp/instances/<id>/…`；**`shot`/`record`/用户实例共用 log+overlay** ⇒ 同时只跑一个 |
 | 工具链 | `node_modules/.bin` 已修复（2026-09-25）⇒ `npm run typecheck/typecheck:test/test/test:all/verify/check:dead-writes` 全可用 |
-| 已知坑 | 渲染进程**没有** `process.env`（`renderer/**` 里读它会把窗口打白）；`tools/shot.cjs --load` 会回写槽、载入列表记住上次光标（用 `--row`）；**本资源树没有 `CALLBACK_TEXT.BIN`**（见 §8.1）；`app/amayui-inspector/**` 读的是**真进程**的引擎地址，与 emulator 侧字段增删无关 ⇒ **不要跟着删** |
-
-## 8. 可复用结论与坑（不在任何技能里的）
-
-**引擎侧硬事实**
-1. **`CALLBACK_TEXT.BIN` 这个名字**：引擎硬编码常量（raw 4344 的 `aCallbackTextBi`，`.lst` = `.data:0051F1F8`），5 处 `sub_411560(Engine, 该常量)`（raw 20044/20065/20351/28852/28905）。**本树没有该文件**：索引 **25080** 条（`SYS4INI.BIN` 21109 + 5 个扩展包 `APPEND0{1..5}.AAI` 3971）里 0 命中 ⇒ `sub_455000` 返回 −1 ⇒ `sub_40FC90` 体首早退 ⇒ 该跳是 **no-op（真机同）**。别再去资源里找它，也别为它建模 `sub_411590`（`0x100000` 自旋输入泵）。
-2. **滚轮**：引擎**没有**「滚轮 ⇒ HISTORY」内链。`HISTORY.BIN` 全语料唯一入口 = **`call-script 31`**；ADV 用 `0x97` 把位号绑到离屏热点（`src/SN0000.txt:94-114`，位 8 → `label_00002f84` → `call-script 31`）。默认位号 3 ⇒ 上滚 = 派发 ← 键 = 打开侧边栏并把光标定位到第一个按钮。键命中（`sub_403D70`，调用点 raw 20242）**发生在回看块（raw 20341-20363）之前** ⇒ 即使把位号配成 8，"滚轮⇒回看游标"在产品路径上仍不可达。
-3. **`0x1D1` 不是"回想页渲染器"**，而是 `0x82` 的**孪生**（「GDI 重画窗 op1 的第 op2 条 72B 文本项记录」；`sub_4675A0` raw 80524-80532 与 `sub_466000` raw 79319+ 逐句同形；语料唯一静态调用点 `src/HISTORY.txt:1314`，运行时会反复命中）。
-4. **`jcc` 的签名**是 `jcc <cond> <真支> <假支>`，`-1` = 该支**落下句** ⇒ `src/TITLE.txt:527` 的 `jcc (global-int a9d0) ffffffff label_00002058` = **`a9d0 == 0`（默认）走 Live2D**、`!= 0` 走静态贴图回落。
-5. **`sleep`(`0xC8`) 有两种语义**：`n >= 10` 进"帧节流计时器"支（`sub_4218D0` raw 30304）；`n < 10` 走 raw 30311 的 `Sleep(n)`（同一次派发内的进程级硬阻塞）。语料 385 处、其中 `n < 10` **50 处**。
-6. **Live2D 装载的失败语义**（`sub_478640`/`sub_4A19F0`/`sub_4A1970`）：`0x34E` 在**实例槽里没有模型**时会抛（`sub_4A19F0` 原样返回 `sub_478640` 的结果）；`0x345` **只在"文件取不到"时抛**（`sub_4A1970` 把 `sub_478370` 的返回值丢了）⇒ 同族四条里只有它这么窄。**单脚本跑 TITLE 必须先补 `SETL2DMOC` 的前置**（`i341 4f9e 0` + 三条 `i345`，即位 `src/TITLE.txt:533-554` 的效果）。
-7. **`0x5D888`/`0x5D88C`** 是**派发现场保存格**（`sub_40FB60` 存 raw 18978/18982、`sub_41A820` 的 `caller == -10` 分支读回 raw 25663-25666），**不是**"控制流目标深度寄存器"；emulator 用 `Engine.dispatchSavedCur/dispatchSavedFlags` 建模。
-8. **`Engine[92340]` ≡ `Scene+46528`**（Scene = Engine+322832）：0x24E 写整格（raw 32965），另有整格清零 raw 12782 / 130430；bit0 = 主循环 `0x400` 放行块的附加条件（语料 `i24e 10001` **413/422** ⇒ 近全部语料被挡）、bit1 = 单帧推进复位块旁路、bit2 = `+720 bit0` 豁免判据、bit16 = `sub_407E20` 门。**两个位互为反相，引用时必须一起引**。
-9. **`Engine[51848]`** = **虚拟显示器 A 的鼠标游标**（`Engine+21976+4*7468`，界 = `_this[23008]`），不是"选择/列表框游标"。
-10. **反编译器每个函数前有一行原型声明**（如 raw 410 的 `sub_41A0E0` 原型 vs raw 25215 的定义）⇒ 用 `indexOf('void __thiscall sub_X')` 切函数体会切到"从原型到文件尾"；请按 `//----- (地址) -----` 头切。★同类陷阱：**面板对象（`Engine+5494`）的方法收的是「面板指针」、体内一律用字节偏移** —— `*(_DWORD *)(_this + 29856) = 1` 就是 `Engine[12958]`（`5494 + 29856/4`）；按 `_this[12958]` 直查会误判「没有任何写点」（`sub_404020` raw 10016-10028 是反例）。
-
-**工程侧坑**
-11. **新建测试文件首行必须是分类头** `/** @tier T? @kind ? @subsystem ? */`，且**档位要与机械可见的资产依赖一致**（声明 `T1` 就必须 import `NodeFileSource`/`resolveResourceDir` 一类，否则 R2 判红；本会话踩过三次）。`@kind` 的合法值只有 **core / ratchet / tool** —— 写成别的（如 `regression`）会让 pragma 解析成 `null`，`test/run.ts` 直接抛 `TypeError: Cannot read properties of null (reading 'tier')`，**整档测试都跑不了**。**不许**新建自造 `mk()`/`mkEngine()`/`makeCtx()` 变体（用 `test/harness.ts` 的工厂），**不许**改 `test/harness-convergence.baseline.json`（只许收缩）。
-12. **大文件拆分/重构的操作纪律**（`T-0019` 一次失败尝试换来的）：① 先把**原文件留 barrel** 并把 re-export 补齐，再搬实现，**每次落盘立刻 `npm run typecheck`**（不要把树留在坏态 —— 半成品的语法错会让**所有** `node --import tsx` 停摆，阻塞同波所有单元）；② 被切开的 JSDoc 块要在两端各自补回 `/**` 与 `*/`（本次真实发生：同一段注释被切在 `handlers/` 与 `vm/` 两个文件里）；③ 声明归属按 barrel 的 import 走（本次 `defaultWinGeom` 被留在错的文件里）。
-13. **esbuild（tsx 的转译器）不接受 JSDoc 里相邻的加粗数字**：`raw **18978**/**18982**` 报 `Unexpected "**"` 且行列号指向**下一行**（极易误判成代码错）⇒ 相邻强调之间留空格。
-14. **写台账文本别用 ASCII 双引号**（用「」）—— JSON 串会被提前闭合；`ledger.js` 的"写盘前 `JSON.parse` + 写盘后回读复核"能拦住，但白跑一趟。
-15. **文件行尾**：一律 LF；**绝不**用 `Set-Content`/`Out-File` 写源文件。台账写盘只用技能里的常驻工具（`ledger.js --plan [--write]`：两阶段、`match` 恰好命中 1 条、`add` 不幂等 ⇒ 计划只能应用一次）；`analysis/scripts.json` 也可用 `scripts.js`。
-16. **改台账必须按条目边界定位**（先按 `opcode`/`id`/`addr`/`offset` 精确 `match`），**永远不要用"下一条匹配"**（本会话误翻过处置位）。
-17. **常驻工具**（`.agents/skills/*/scripts/`，有守卫；★不再放 `.tmp/`）：
-    `ledger.js`（计划文件驱动的条目手术：`set`/`add`（数组即 append）/`unset`/`mutate`（按 `raw` 删改 `missing[]`）/`topLevel`/`patches`；**默认 dry-run**，`--write` 才落盘；拒绝写 `counts`）、
-    `gaps.js`（缺口台账：`--show` 全文 / `--missing <opcode>` 逐条缺口 / `--stale` 陈旧候选 / `--recount` 单一口径重算）、
-    `fix-evidence-lines.js`（刷票据 `evidence.line`：默认 dry-run，`--any` 扩范围，`--check` 收尾闸门）、
-    `tickets.js`（`--edit-plan` 免转义批量改单 + `done` 写盘前前置校验）、`report.js --check-fields-order`（fields 按 scope 组内升序）。
-    `.tmp/settle/` 现在**只放一次性波次产物**（`plan-*.json` / `gen-plan-*.mjs` / `report-*.md` / `verify-*.log` / `close-wave.mjs` 这类**当轮专用**的自检式收票脚本）。
-18. ★★**裁决 `missing[]`（`T-0179` 的 141 条）必用"三态过滤"**（第 52–54 轮踩出来的，三次都命中不同态）：
-   ① **可补的真缺口** —— 引擎那条分支的处理对象在 emulator 里**存在**（字段/表/宿主缝/发布载荷），只差接线；
-   ② **结构性不适用** —— 处理对象根本不存在（72B 文本记录向量、GDI 离屏表面、D3D 设备状态/重建、平坦地址）⇒ 把 `what` 重写成「为什么 + 重开条件」，**不要假实现**（例：`0x82` 的 `op3 & 1` 记录级过滤 —— 实测 `src/renderer/**` 对 `textItems` 0 引用）；
-   ③ **早已补上但没回台** —— `what` 自述「已实现/已删/现按…」⇒ 复核代码/守卫后**删条目**（第 52/53 轮删掉 `0x147`/`0x060`/`0x142`/`0x82` 共 4 条）。
-   ★**③ 现在是机械可查的**：`node .agents/skills/amayui-engine-analysis/scripts/gaps.js --stale` 把"自述已实现/不适用"的
-   `missing[]` 连 `opcode`+`raw`+`票` 一起列出来（**候选清单**：`已由第 N 轮…` 这类沿革话术也会命中，逐条人判）。
-   ★**实现即删条目**已写进三个技能的 IMPLEMENTATION 派发模板验收项（子代理无权写 `analysis/` ⇒ 它必须回报告里
-   列出待删的 `opcode`+`raw`，由 owner 用 `ledger.js --plan` 落库；结算前 owner 跑 `--stale` 兜底）。
-   ★补充判据：**若"补上"在当前语料/状态机下不产生任何可观测差异**（写的是恒 0 的格、或没有读者的写 ⇒ 死写闸门会亮），
-   那它属于②而不是①。实例：`0x071` 的 `Engine[122496] = 0` 三出口 —— 该格在 emulator 里是 `MsgWinState.alt`
-   （读者 `src/vm/msgwin.ts:781`、清零点 `:679/:884/:894`），但**从来没有被置 1 的写点** ⇒ 在 `0x71` 里补三次清零
-   今天不产生任何行为差异（属"登记性缺口"，等真正会置 1 的那条路径建模后一并接）。
+| 已知坑 | 渲染进程**没有** `process.env`（`renderer/**` 里读它会把窗口打白）；`tools/shot.cjs --load` 会回写槽、载入列表记住上次光标（用 `--row`）；**本资源树没有 `CALLBACK_TEXT.BIN`**（见 `docs-new/03-engine/input-system.md` 的 CALLBACK_TEXT 条）；`app/amayui-inspector/**` 读的是**真进程**的引擎地址，与 emulator 侧字段增删无关 ⇒ **不要跟着删** |

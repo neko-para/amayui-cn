@@ -230,7 +230,26 @@ T0 用例 **799 → 797**（删掉 `option-font-speed-menu` 里 2 条被 `adv-ms
 
 1. **写文件**，首行加声明：`/** @tier T? @kind ? @subsystem ? */`
    - 需要 `install/`·`raw/`·真存档槽 ⇒ `T1`；纯合成/纯函数/读 `analysis/*.json` ⇒ `T0`。
+   - ★`@kind` 的**合法值只有 `core` / `ratchet` / `tool`**（`test/orgRules.ts` 的 `KINDS`）。
+     写成别的（如 `regression`）会让 pragma 解析成 `null` ⇒ `test/run.ts` 直接抛
+     `TypeError: Cannot read properties of null (reading 'tier')`，**整档测试都跑不了**（不是"这一个文件红"）。
+   - ★**档位要与机械可见的资产依赖一致**：声明 `T0` 就不得 import 语料装载器 / 不得出现资源目录字符串字面量
+     （R2 判红）；声明 `T1` 就必须真有资产证据。
 2. **跑** `npm run test:org` —— 若档位填错（例如声明 T0 却 import 了 `loadScriptData`），它会当场红并告诉你改什么。
 3. **跑** `npm test`（快档）与 `npm run test:corpus`（若你写了 T1）。
 
 ★缺资产时**必须**用 `t.skip()`（回调记得接 `t`），**不许** `console.warn` + 裸 `return` —— R3 会红。
+
+### 10.1 ★自造 fixture 工厂 / 帧循环：棘轮只许收缩
+
+**用 `test/harness.ts` 的工厂**（`mkEngine`/`instr`/`im`/`loc`/`str`），**不要**在新测试里再抄一份
+`mk()` / `mkEngine()` / `makeCtx()` 变体，也不要自造帧循环（走 `src/frame/loop.ts` 的共享驱动）。
+
+- 守卫：`test/harness-convergence.test.ts`；基线 `test/harness-convergence.baseline.json`（**只许收缩**）；
+  扫描口径的唯一实现在 `test/harnessScan.ts`。
+- ★**基线的用法是"收缩"，不是"登记例外"**：确属"差异是真实需求"才可加进基线并在文件头写清为什么；
+  能用 harness 的就改 —— 存量 42 个文件是既成事实，**不是新写一份的理由**。
+- ★**扫描口径是"正则扫全文"**（`test/harnessScan.ts` 的四条模式），**注释里出现同样会命中**：
+  实测把一个新测试的注释写成"名字故意不叫 `const mk = `"就被判成"新抄的变体"。
+  要提这件事就写"自造 fixture 工厂"，**别把源码形态原样抄进注释**。
+- 收缩入口：`node --import tsx test/run.ts --shrink-harness`（把已消失的条目从基线里摘掉）。

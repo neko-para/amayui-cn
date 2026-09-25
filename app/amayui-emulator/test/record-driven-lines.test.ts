@@ -867,7 +867,7 @@ test(
       assert.ok(
         known,
         `★只有一种已知差异形态（切窗：模型 1 行空串 / 记录 ≥ 2 行非空），实得 win=${r.win} start=${r.start} ` +
-          `模型 ${JSON.stringify(r.model)} 记录 ${JSON.stringify(r.lines)} ⇒ 若这是新形态，请按 CONTEXT.md §8 第 18 条登记新缺口后再动本断言`,
+          `模型 ${JSON.stringify(r.model)} 记录 ${JSON.stringify(r.lines)} ⇒ 若这是新形态，请按「三态过滤」（权威条目 = docs-new/00-overview/lessons.md）登记新缺口后再动本断言`,
       );
       assert.deepEqual(
         r.filt,

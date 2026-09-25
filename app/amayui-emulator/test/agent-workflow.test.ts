@@ -428,6 +428,18 @@ test('★ledger.js：match 必须恰好命中 1 条；counts 不许直写；patc
     const dup = run(LEDGER, ['--root', root, '--plan', writePlanFile('m4.json', { patches: { 'probe.txt': [{ old: 'A', new: 'Z' }] } })]);
     assert.notEqual(dup.status, 0, 'old 出现多次必须拒绝');
     assert.equal(fs.readFileSync(txt, 'utf8'), 'AAA REPLACED BBB', '被拒的 patches 不许半途改掉文件');
+
+    // ⑤b `count`：重复短语要**声明**出现几次并全部替换（用于台账里成片出现的同一指针/措辞）
+    const rep = path.join(root, 'rep.txt');
+    fs.writeFileSync(rep, 'P1 P2 P3');
+    const counted = run(LEDGER, ['--root', root, '--plan', writePlanFile('m6.json', { patches: { 'rep.txt': [{ old: 'P', new: 'Q', count: 3 }] } }), '--write']);
+    assert.equal(counted.status, 0, counted.stderr);
+    assert.equal(fs.readFileSync(rep, 'utf8'), 'Q1 Q2 Q3', 'count 模式要**全部**换掉');
+    // 声明的次数与实际不符 ⇒ 拒绝（防"以为改了 3 处、其实只改了 1 处"）
+    const wrongCount = run(LEDGER, ['--root', root, '--plan', writePlanFile('m7.json', { patches: { 'rep.txt': [{ old: 'Q', new: 'R', count: 1 }] } }), '--write']);
+    assert.notEqual(wrongCount.status, 0, 'count 与实际不符必须拒绝');
+    assert.match(wrongCount.stderr, /应为 1/);
+    assert.equal(fs.readFileSync(rep, 'utf8'), 'Q1 Q2 Q3', '被拒的 count 替换不许动文件');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

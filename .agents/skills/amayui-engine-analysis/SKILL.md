@@ -240,7 +240,7 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - **守卫**：`app/amayui-emulator/test/opcode-gaps.test.ts`（覆盖 + 处置纪律 + md 最新性）+ `npm run gaps:check`。
 - **改它**：条目手术走 `ledger.js --plan`（★`missing[]` 追加用 `add`，**不要**手抄已有条目再 `set` —— 抄写就是漏抄的来源）；
   逐条裁决用 `gaps.js --missing <opcode>` 看明细、`gaps.js --stale` 找"自述已实现/不适用"的陈旧候选。
-- ★**三态过滤**（裁决 `missing[]` 的固定动作，见 `CONTEXT.md` §8.18）：① 真缺口 ⇒ 补实现；② 结构性不适用 ⇒
+- ★**三态过滤**（裁决 `missing[]` 的固定动作，权威条目 = `docs-new/00-overview/lessons.md` 的「三态过滤」）：① 真缺口 ⇒ 补实现；② 结构性不适用 ⇒
   把 `what` 重写成「为什么 + 重开条件」，**不假实现**；③ 早已补上没回台 ⇒ 复核代码/守卫后**删条目**。
   补充判据：**若"补上"在当前语料下不产生任何可观测差异**（写恒 0 的格 / 没有读者的写），那属于 ② 而不是 ①。
 
@@ -265,15 +265,22 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 1. **定位**：从 `docs-new/03-engine/opcode-table.md` 或 func-list 里定位 `sub_XXXXXX`。
 2. **先查 `fields.json`**：把函数体内的偏移**按表解码**（`0x5d880→cur_script`、`0x78 步长→帧下标`、`0x5d8b4→local_int`）。表里没有的偏移，先标 `tentative`，分析确证后再改 `confirmed`。
 3. **读 raw handler 体**，理解语义（子行为：它先做什么、分支、调用什么）。
+   ★**切函数体按 `//----- (地址) -----` 头切**，不要用 `indexOf('void __thiscall sub_X')`：
+   反编译器在**每个函数定义之前**还会先给一行**原型声明**（例：raw 410 的 `sub_41A0E0` 原型 vs raw 25215 的定义）
+   ⇒ 这样切会得到"从**原型**到文件尾"（把后面所有函数都卷进来），而错误看起来只是"这个函数好长"。
 4. **只依据 raw 读体**：分析只用 `engine/…_utf8.c` 直接读出的内容。**不读取/参考 emulator**（它是产物，由分析结果实现，方向相反）。
-5. **写回数据**（**只在一处增长**）：
+5. **★偏移的"基址"必须先确认是哪个对象**：反编译里 `_this` 并不总是 `Engine*` ——
+   **面板对象（`Engine+5494`）的方法收的是「面板指针」、体内一律用字节偏移**
+   （例：`*(_DWORD *)(_this + 29856) = 1` 其实是 `Engine[12958]`，因为 `5494 + 29856/4 = 12958`）。
+   按 `_this[12958]` 直查会得出"**没有任何写点**"的错误结论（`sub_404020` raw 10016-10028 是反例）。
+6. **写回数据**（**只在一处增长**）：
    - 新增/复核字段 → `fields.json`（带 `evidence` + `status`）。
    - 函数结论 → `functions.json`（`purpose`/`status`/`signature_override`/`sub_behaviors`/`unmodeled`/`evidence`）。
    - 若发现的是**持续行为 / 标志生命周期 / 每帧步骤** → 按 §2.3 追加一条 `engine-capabilities.json` 条目
      （用 `capabilities.js --add`），并给出 `whySilent` 与 `emulator` 判定。
    - 若是在**某个脚本里**看到的用法（真实用例、惯用法）→ 把它记到那个脚本的第三层条目（`layout`/`gotchas`/`links`），
      别把它塞进函数条目里。
-6. **渲染 + 自检**：
+7. **渲染 + 自检**：
    - 第一层无需渲染；
    - 第二层改完必须 `node scripts/build-capabilities.mjs`，再 `capabilities.js --validate`；
    - 第三层改完必须 `node scripts/build-scripts.mjs`，再 `scripts.js --validate`；
@@ -412,6 +419,8 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 - ★**`missing[]` 的删改按 `raw` 键做**：追加用 `ledger.js --plan` 的 `add`（**不要**手抄已有条目再整段 `set`）；
   删/改写用 `mutate.deleteRaw` / `mutate.rewriteRaw`。改完跑 `build-opcode-gaps.mjs`（回填 counts + 刷 md）
   与 `gaps.js --stale`（找"实现了却漏删"的陈旧条目）。
+- ★**定位条目永远用精确 `match`（`opcode`/`id`/`addr`/`offset`），永远不要用"下一条匹配"** ——
+  实测按"下一条"改错过一条处置位；`ledger.js` 已把这条钉成硬规则（命中 ≠1 条就**整体拒绝**、一个字都不写）。
 - ★**工具不许留在 `.tmp/`**：`.tmp/` 是 gitignore 的临时区。会被下一波复用的工具必须落在
   `.agents/skills/*/scripts/`（本工程当下的常驻工具：`report.js` / `sort-fields.js` / `capabilities.js` /
   `scripts.js` / `ledger.js` / `gaps.js` / `brief.js` / `tickets.js` / `fix-evidence-lines.js`）。
@@ -456,6 +465,8 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 
 ## 7. 其它
 - 参考（若有）：`docs-new/03-engine/*`（引擎主题）、`docs-new/05-scripts/*`（脚本台账渲染物）。（emulator 是产物，分析时禁止读取。）
+- ★**跨子工程的通行纪律（踩过的坑）在 `docs-new/00-overview/lessons.md`** —— 读反编译的切体法、
+  编辑/行尾纪律、台账写入口的"恰好一条"、`.tmp/` 不许放常驻工具等都在那里（都是实测事故换来的，动手前扫一遍）。
 - 本技能只描述**数据驱动的分析方案**；具体子系统（输入/渲染/版权页）结论若写入 `docs-new`，需与本数据层行号证据一致。
 - 三层的守卫测试都在 `app/amayui-emulator/test/`：`capability-ledger.test.ts`（第二层）、`script-ledger.test.ts`（第三层）；
   改完数据层记得 `build-*.mjs` 重生成 md，否则守卫的"md 与数据层同步"一项会红。

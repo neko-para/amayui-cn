@@ -71,6 +71,7 @@ node .agents/skills/amayui-script-analysis/scripts/brief.js --list        # 已�
 | 5 | `docs-new/02-data/*.md` | 脚本引用的业务数据表（掉落/技能/地图/单位/存档/控制流） | 把业务数据地址当成引擎内部结构 |
 | 6 | `output/callgraph.json`（`node scripts/build-callgraph.mjs`） | 「谁 call 它 / 它 call 谁」= `entry` 的证据 | `entry` 只能靠猜 |
 | 7 | `docs-new/00-overview/{authority,conventions}.md` | 权威判定（`src/*.txt` 是翻译唯一权威）+ 三层数据分层纪律 | 把结论写进错的层 |
+| 7b | ★`docs-new/00-overview/lessons.md` | **跨子工程的通行纪律**（踩过的坑：切函数体、行尾/编辑纪律、台账写入口"恰好一条"、锚点是 ABI…） | 把已经踩过的坑再踩一遍（每条都是实测事故换来的） |
 | 8 | `docs-new/04-app/*`（结论要落到 emulator 时） | 重写侧现状/重构计划/未决项 | 重复劳动，或与既有约定冲突 |
 
 ### 1.3 该读哪篇引擎主题文档（`docs-new/03-engine/`）

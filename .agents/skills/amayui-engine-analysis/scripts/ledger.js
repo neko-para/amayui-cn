@@ -32,7 +32,7 @@
  *   "appendKeys":    { "analysis/functions.json": "addr" },           // 覆盖去重键（缺省按既有条目自然键推断）
  *   "topLevel":      { "analysis/opcode-gaps.json": { "dispositions.partial": "…" } },  // 顶层字段（★counts 除外）
  *   "patches":       { "src/vm/opcodes.ts": [ { "old": "…", "new": "…" } ] }           // 整串替换：old 必须恰好 1 次
- * }
+ * }                                                                                    // （重复短语加 "count": N ⇒ 恰好 N 次且**全部**替换）
  *
  * `add` 的语义（★这是本工具最容易用错的一处）：
  *   - 值（点路径末端）**已是数组** ⇒ **append**（这正是"给在册条目的 `missing[]` 追加一条"的用法，
@@ -392,18 +392,24 @@ for (const [relRaw, sets] of Object.entries(plan.topLevel ?? {})) {
   }
 }
 
-// ---- patches：整串替换（old 必须恰好 1 次） ----
+// ---- patches：整串替换（`old` 必须恰好 1 次；给了 `count` 则必须恰好 count 次并**全部**替换） ----
 for (const [relRaw, list] of Object.entries(plan.patches ?? {})) {
   const rel = rawRel(relRaw);
   let text;
   try { text = readText(rel); } catch (err) { problems.push(`patches ${rel}：${err.message}`); continue; }
   for (const [i, p] of list.entries()) {
     const n = text.split(p.old).length - 1;
-    if (n !== 1) {
-      problems.push(`patches ${rel}[${i}]：old 出现 ${n} 次（必须恰好 1 次）：${JSON.stringify(String(p.old).slice(0, 70))}`);
+    const want = typeof p.count === 'number' ? p.count : 1;
+    if (n !== want) {
+      problems.push(
+        `patches ${rel}[${i}]：old 出现 ${n} 次（应为 ${want}${typeof p.count === 'number' ? '（计划声明的 count）' : ''}）：` +
+        JSON.stringify(String(p.old).slice(0, 70)),
+      );
       continue;
     }
-    text = text.replace(p.old, () => p.new);
+    // 用 split/join 而不是 replace：`count` 模式下要**全部**换掉，且 $& 之类不会被当替换模式解释。
+    text = text.split(p.old).join(p.new);
+    if (want > 1) notes.push(`   · patches ${rel}: 定点替换 ${want} 处 «${String(p.old).slice(0, 40)}»`);
   }
   staged.set(rel, text);
 }

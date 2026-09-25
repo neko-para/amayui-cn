@@ -129,7 +129,7 @@ cd app/amayui-emulator && node --import tsx --test test/opcode-gaps.test.ts
 2. **关掉** ⇒ 引当前代码行/raw 证明已落地或前提被取代 ⇒ 删该条 `missing`；整条 `missing[]` 清空时把 `disposition` 升 `implemented`。
 3. **保留** ⇒ 写明「为什么不现在做 + 重开条件」，`raw` 保持单段、`ticket` 保持 `T-0179`（或另开 live 票）。
 
-★★**开工前先用"三态过滤"给每条打标**（第 52–54 轮的结论，详见 `CONTEXT.md` §8 第 18 条）：
+★★**开工前先用"三态过滤"给每条打标**（第 52–54 轮的结论；权威条目 = `docs-new/00-overview/lessons.md` 的「三态过滤」）：
 ① **可补的真缺口**（处理对象在 emulator 里存在，只差接线）⇒ 走第 1 条；
 ② **结构性不适用**（72B 记录向量 / GDI 表面 / D3D 设备状态 / 平坦地址等处理对象**在 emulator 里不存在**）⇒ 走第 3 条，
 把 `what` 重写成「为什么不存在 + 重开条件」，**不要假实现**；★补充判据：**"补上"在当前语料/状态机下不产生可观测差异

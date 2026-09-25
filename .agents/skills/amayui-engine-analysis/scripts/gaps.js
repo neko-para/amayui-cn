@@ -28,7 +28,7 @@
  * ★`--stale` 的存在理由（第 52/64/69 轮踩过三次）：子代理"实现了"却漏删对应的 `missing[]` ⇒
  * 台账里留下"自述已实现/已不适用"的陈旧条目，主 agent 每次手工补删。这一条是**机械可查**的：
  * 把 `missing[].what` 里出现「已实现 / 已补上 / 已删 / 不再需要 / 现按 …」的条目列出来，人再逐条裁决。
- * 三级处置见 `CONTEXT.md` §8.18（①可补的真缺口 / ②结构性不适用 / ③早已补上没回台）。
+ * 三级处置见 `docs-new/00-overview/lessons.md` 的「三态过滤」条（①可补的真缺口 / ②结构性不适用 / ③早已补上没回台）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -118,7 +118,7 @@ if (has('--stale')) {
   }
   const strongN = rows.filter((r) => r.level === '强').length;
   console.log(`missing[] 陈旧候选：${rows.length} 条（强 ${strongN} / 弱 ${rows.length - strongN}）· 全部 ${all.length} 条登记项`);
-  console.log('★判据（CONTEXT §8.18 的三态过滤）：③ 早已补上没回台 ⇒ 复核代码/守卫后**删条目**；');
+  console.log('★判据（三态过滤，见 `docs-new/00-overview/lessons.md`）：③ 早已补上没回台 ⇒ 复核代码/守卫后**删条目**；');
   console.log('  ② 结构性不适用 ⇒ 把 what 重写成「为什么 + 重开条件」；① 真缺口 ⇒ 补实现。**不许**用沉默掩盖缺口。\n');
   for (const r of rows) {
     console.log(`${r.level} ${hex(r.e.opcode).padEnd(6)} ${(r.e.mnemonic || '').padEnd(9)} disp=${(r.e.disposition || '').padEnd(15)} raw=${(r.m.raw || '?').padEnd(16)} 票=${r.m.ticket || '—'}  词=「${r.tok}」`);
