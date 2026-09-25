@@ -5,11 +5,14 @@
   "area": "emulator/tooling",
   "why": "`T-0133` 的决定 ② 是「输入与截图改为纯 VM 外层桥」—— web 宿主那条路已经落地（`ScenarioEvent` → `applyScenarioEvent`；`capture` → `FrameHost.capture`），但 **Electron 侧仍是老路**：\n* `tools/debugsrv.cjs:153-165` 的 `click`/`move` 走 `webContents.sendInputEvent`（真 DOM 事件），`tools/shot.cjs:141-152`、`tools/record.cjs:98-112` 同样；\n* `tools/debugsrv.cjs:143/181` 的 `shot` 走 `webContents.capturePage()`（形态 C 的管线）。\n\n后果：同一个「agent 点一下」在两个宿主下走**两条实现**，命令语义与可观测性会漂移（本工程最忌的那种）；而且 `shot` 这个名字被主进程占用，已经迫使渲染侧把新命令改叫 `capture` —— 名字分裂本身就是这次漂移的产物。",
   "acceptance": [
-    "`tools/debugsrv.cjs` 的 `click`/`clickimg`/`move` 在 Electron 宿主下也走**同一命令表**：✅ **通道已落地（第 70 轮 goal round 7）** —— 设 `AMAYUI_DEBUG_INPUT=vm` 时，`click`/`move`/`clickimg` **不再自己造 DOM 事件**，而是把同一行命令（`click <x> <y>` / `move <x> <y>`，`clickimg` 先在主进程把图像坐标换算成虚拟坐标）转给渲染窗的命令表（`sendDebugQuery(cmd)` → `src/vm/debugCommand.ts` → `applyScenarioEvent`）⇒ 与 web 宿主**逐字同源**（trace 里会出现 `[input] 注入 N 个事件`）。★**旧路径保留为默认**（`webContents.sendInputEvent`，真 DOM 保真度：过宿主焦点/悬停），**两条路的差别已写进 `debugsrv.cjs` 的文件头与 `dbg.cjs` 的用法示例** —— 理由：那条路是既有 E4 用法（`npm run shot --load` 一族）的依赖路径，不许无声改默认行为。守卫 = `test/agent-workflow.test.ts` 的「★T-0142：输入的两条通道（DOM / VM 桥）必须显式可切且写明差别」。",
-    "`shot` 统一到 `FrameHost.capture`：⏳ **未做**（仍是 `webContents.capturePage()` = 形态 C）。为什么不与上一条同批：`shot` 的产物被 `--record`/E4 取证链依赖，改管线需要**先有 Electron 宿主的端到端证据**（见下条），否则无法证明「改完还是同一张图」。",
-    "命令名与帮助文本两侧一致：✅ **部分落地** —— `dbg.cjs` 的用法示例已写明两条输入通道的差别；`capture`/`shot` 的命名分裂**未动**（属上一条的范围）。",
-    "端到端证据（Electron 宿主下跑一遍「打开 Option → 切分类 → 关闭」+ 截图 + `[main]` 日志 + 证明经 `applyScenarioEvent`）：⏳ **未做** —— 需要跑 `npm run dbg:srv`（拉起 Electron 主进程与游戏窗口），而它与用户实例**共用 log/overlay**（本工程纪律：同一时刻只跑一个）⇒ 这条要**用户在场/实例空闲**时做。",
-    "`npm run verify` 全绿；`tools/` 的既有 E4 用法不被破坏：✅ **已核** —— 默认路径逐字未改（`verify` = exit 0，tests 1691 / pass 1689 / fail 0 / skipped 2）。"
+    "`tools/debugsrv.cjs` 的 `click`/`clickimg`/`move` 在 Electron 宿主下也走**同一命令表**：✅ **通道已落地（第 70 轮 goal round 7）** —— 设 `AMAYUI_DEBUG_INPUT=vm` 时，`click`/`move`/`clickimg` **不再自己造 DOM 事件**，而是把同一行命令（`click <x> <y>` / `move <x> <y>`，`clickimg` 先在主进程把图像坐标换算成虚拟坐标）转给渲染窗的命令表（`sendDebugQuery(cmd)` → `src/vm/debugCommand.ts` → `applyScenarioEvent`）⇒ 与 web 宿主**逐字同源**：**回执**里写 `已注入 3 个输入事件（cursor, press, release）`（`session.ts:608`），**trace** 里同时落一行 `[input] 注入 3 个事件：cursor, press, release`（`session.ts:607`）—— 两处是**同一次** `applyScenarioEvent`（`session.ts:605`）的两种呈现，★**验收看回执即可**（看 trace 会以为没生效）。★**旧路径保留为默认**（`webContents.sendInputEvent`，真 DOM 保真度：过宿主焦点/悬停），**两条路的差别已写进 `debugsrv.cjs` 的文件头与 `dbg.cjs` 的用法示例** —— 理由：那条路是既有 E4 用法（`npm run shot --load` 一族）的依赖路径，不许无声改默认行为。守卫 = `test/agent-workflow.test.ts` 的「★T-0142：输入的两条通道（DOM / VM 桥）必须显式可切且写明差别」。",
+    "`shot` 统一到 `FrameHost.capture`：✅ **已落地（第 71 轮）** —— `shot [名字]` 现走渲染窗 `FrameHost.capture`（B′），旧的整窗 `webContents.capturePage()`（形态 C）**降级为显式**的 `screencap [名字]`（不删：「要看整窗/HTML 覆盖层」时只有它给得出；★它**不再是**任何坐标换算的基准 —— 见 ⑦）。改的判据有三条：① 用户目视 `FrameHost.capture` 的产物（`.tmp/vm.png`）= **完整 1280×720 title 帧、无覆盖层**；② 两条管线的**尺寸关系**实测：1604×903（整窗）vs 1280×720（舞台），两方向缩放 1.2531 / 1.2542 一致、宽高比 1.7763 / 1.7778 一致 ⇒ **同一画面按 DPR 缩放**，无 letterbox、无额外区域；③ B′ 的尺寸**与窗口几何无关**（恒 = 引擎虚拟分辨率 1280×720）⇒ E4 取证在换窗口/换机器之后仍可比，而整窗那条会随窗口尺寸漂。★**同帧 A/B 未单独产出**（属 ④ 的取样范围，已随 ④ 由用户判定收口）—— 现有依据是**用户目视**两条管线的产物 + 上面的**尺寸关系实测**；要留档时起一次 `dbg:srv` 顺手取即可。守卫 = `test/agent-workflow.test.ts` 的「★T-0142②：`capture <路径>` 走渲染窗管线并由主进程落盘（旧 `shot` 管线保留）」。",
+    "命令名与帮助文本两侧一致：✅ **已落地（第 71 轮）** —— `dbg.cjs` 的用法示例写明了两条**输入**通道的差别（回执/trace 两处呈现、坐标口径、保真度），**命名分裂也消掉了**：命令与**截图管线**现在一一对应 —— `shot` / `capture` = 渲染窗 `FrameHost.capture`（B′），`screencap` = 主进程 `capturePage()`（形态 C，降级为显式、只作目视）；**点击口径**同理收敛为「`click` = 坐标已是该通道的目标口径 / `clickimg` = 我给的数是内容区口径」（见 ⑦）。",
+    "端到端证据（Electron 宿主下跑一遍「打开 Option → 切分类 → 关闭」+ 截图 + `[main]` 日志 + 证明经 `applyScenarioEvent`）：✅ **以用户实测为准关闭（第 71 轮，用户判定「可以认为 142 无问题了」）** —— **实际做过的**：① 用户在 Electron 宿主 + **VM 通道**（`AMAYUI_DEBUG_INPUT=vm`）下实测输入注入，回执为 `已注入 3 个输入事件（cursor, press, release）`（`session.ts:608`；那三个 kind 只有 VM 桥会产出 ⇒ 「证明经 `applyScenarioEvent`」这半边**成立**，是对**已发布代码**的真机取证）；② 用户目视确认了两条截图管线的产物（`.tmp/vm.png` 等）⇒ ② 的\"改完还是同一张图\"以**目视 + 尺寸关系实测**为准。★**如实披露未做部分**：原本点名的「打开 Option → 切分类 → 关闭」逐步截图与 `[main]` 日志**未单独留档** —— 它需要独占 `dbg:srv` 若干分钟（与用户实例共用 log/overlay），用户判定不必再补。若日后要补，起一次 `dbg:srv` 即可（同帧 A/B 也在同一次会话里顺手取）。",
+    "`npm run verify` 全绿；`tools/` 的既有 E4 用法不被破坏：✅ **已核** —— 默认路径逐字未改（`verify` = exit 0，tests 1691 / pass 1689 / fail 0 / skipped 2）。",
+    "两条路的差别必须写全（★不止「保真度」一条）：✅ **已落地（第 71 轮）** —— 用户实测 VM 通道时，票面 acceptance ① 只指了 **trace** 里那行 `[input] 注入 N 个事件`，而 CLI 打给人看的是**回执** `已注入 3 个输入事件（cursor, press, release）`（`session.ts:607/608` 是**同一次** `applyScenarioEvent` 的两种呈现）⇒ 照票面找不到证据。由此把差别清单定为四条并写进 `debugsrv.cjs` 文件头 + `dbg.cjs` 用法：① **两处呈现**（回执 / trace，验收看**回执**）；② **坐标口径**（DOM 那条 = 内容区 CSS 像素，VM 那条 = 虚拟 0..1280/0..720，`debugCommand.ts:197`）—— 本机内容区 ≈1280×722 CSS 恰好与虚拟重合（照抄 `CONFIG_XY` 碰巧有效），**窗口尺寸/缩放一变就分叉**；③ 保真度（DOM 过宿主焦点/悬停，VM 与宿主无关、两端同语义）；④ **截图管线**（`shot` = 整窗 `capturePage` 图像像素，`capture` = Pixi 舞台读回，两者尺寸不同）。守卫 = `test/agent-workflow.test.ts` 的「★T-0142：输入的两条通道…」里的三条 assert。",
+    "工具改了却没生效必须**可查**（★不是靠提醒，是靠回答）：✅ **已落地（第 71 轮）** —— 守护进程是 `tools/` 里**唯一长期活着**的进程，代码在 `require` 那一刻定死（`dbg.cjs` 每次都是新进程 ⇒ 永远新鲜）⇒ 「我改了 capture 却没落盘」会被误读成「capture 写错了」（用户本轮真实撞上：拿到的是渲染窗那行 base64 回执，而不是落盘回执）。修法：① `debugsrv.cjs` 的 `--ping` 回执加「本进程启动时刻 + 磁盘 mtime」，磁盘更新则追加「本进程是旧代码 + 两步重启法」；② `hello` 广播带同一组字段（`stale`/`disk`/`startedAt`）⇒ **每条命令**都先自报新鲜度；③ `dbg.cjs` 对 `--ping` 特判：回执里**没有**新鲜度字段 ⇒ 对面是旧代码（旧代码自己不会报告这件事，只能由永远新鲜的客户端判定）。守卫 = `test/agent-workflow.test.ts` 的「★T-0142：旧守护进程（不报告版本）必须被客户端点破，且不许对新的误报」（起**假守护进程**，报告/不报告两种情形各断言一次）。",
+    "`clickimg` 的口径改成**内容区 CSS 像素**、与 `capturePage()` 解耦：✅ **已落地（第 71 轮，用户决定）** —— 用户原话：「将 clickimg 直接改为基于 content 的点击，后续可以废弃基于 capturePage 的了（因为本身携带标题后就不可控）」。实现：**DOM 通道恒等**（`sendInputEvent` 要的口径**就是**内容区 CSS 像素）；**VM 通道**按 `getContentSize()` 折成虚拟坐标（`contentToVirtual`，基准 = 引擎虚拟分辨率 1280×720 = `shot` 舞台图尺寸）。★旧的 `imgToSendLive`（拿 `capturePage()` 现算「整窗图像像素 → 内容区」）**已删** ⇒ `capturePage()` 现在只负责 `screencap` 的产物，**不再参与任何坐标换算**（顺带省掉每次点击的一次往返）。回执里印出这次折算（`内容区 x,y → 虚拟 X,Y`），`shot` / `screencap` 的回执都印 `内容区=WxH` ⇒ 「点了没反应」时能一眼排除坐标口径。守卫 = `test/agent-workflow.test.ts` 的「★T-0142⑦：`clickimg` 按**内容区**口径，且 `capturePage` 不再参与坐标换算」。★实务取坐标：`shot` 的图是 1280×720 舞台，本机内容区 1283×722 ⇒ 两者差 **0.23%**，从图上量的坐标**可以直接**喂 `clickimg`；窗口明显换尺寸/DPI 时按回执里印的内容区尺寸折算。★历史坐标（`T-0114`/`T-0102` evidence 里那些 `clickimg 677 181` 一族）是按**旧口径（整窗图像像素）**标的，换算到新口径要 ×(内容区/整窗宽) ≈ ×0.80 —— 重跑那些取证步骤时**必须**先折一次，别照抄。"
   ],
   "evidence": [
     {
@@ -29,6 +32,12 @@
       "anchor": "capturePage",
       "note": "旧的取帧通道（形态 C）；与 FrameHost.capture（B 撇）是两条不同管线",
       "line": 48
+    },
+    {
+      "file": "app/amayui-emulator/tools/debugsrv.cjs",
+      "anchor": "if (head === 'capture') {",
+      "note": "本轮（第 71 轮）：`capture [路径]` —— 走渲染窗 FrameHost.capture 那条管线（不是自己抓图），给了路径就由主进程落盘。这是 acceptance ② 的**前置工具**：没有它就无法把两条管线的产物摆在一起对照",
+      "line": 358
     }
   ],
   "links": {
@@ -43,7 +52,7 @@
     ]
   },
   "id": "T-0142",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-23",
@@ -59,6 +68,49 @@
       "at": "2026-09-25",
       "kind": "status",
       "what": "open → doing —— 第 70 轮 goal round 7：acceptance ① 的两通道（DOM 默认 / `AMAYUI_DEBUG_INPUT=vm` 走渲染窗命令表）已落地并带守卫，③ 的文档同步完成，⑤ 已核（默认路径未改、verify exit 0）。仍剩 ② `shot` 管线统一与 ④ Electron 端到端证据 —— 两者都要能跑 `dbg:srv`（与用户实例共用 log/overlay）时才做。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：evidence, tests —— 第 71 轮（用户报「新 capture 输出 base64 不方便转 PNG」）：工具面新增 `capture [路径]` —— 仍走渲染窗命令表的 `FrameHost.capture`（页面内 extract，不是主进程 capturePage），给了路径则由**主进程**落盘（渲染进程没有 fs，与 `save`/`load` 同一条理由同一条通道）并报出字节数/图像尺寸（`pngSize` 现读 IHDR，不引依赖）。无路径 ⇒ 逐字保持既有 base64 语义（落盘是加法不是替换），`shot` 的 capturePage 管线也未动 ⇒ 两条管线现在可并排对照，正是 ② 缺的那块前置证据面。守卫 = `test/agent-workflow.test.ts` 的「★T-0142②：`capture <路径>` 走渲染窗管线并由主进程落盘」。verify = exit 0（tests 1692 / pass 1690 / fail 0 / skipped 2）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮（用户实测 VM 桥时按 acceptance 的指引去找 trace）：acceptance ① 原文只写了 trace 那行 `[input] 注入 N 个事件`，而 `dbg.cjs` 打给用户看的是**回执**那行 `已注入 3 个输入事件（cursor, press, release）`（`session.ts:607/608` 是同一次 `applyScenarioEvent` 的两种呈现）⇒ 用户照着票面找不到证据。已把两处都写进判据并点明\"验收看回执\"。★同时确认：用户本轮实测**走的就是 VM 桥**（回执里那三个 kind 只有该路会产出）⇒ acceptance ④ 的\"经 `applyScenarioEvent`\"这半边成立，④ 只剩\"逐步截图 + 关闭分类\"的取证。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮（用户实测 VM 通道后的反馈）：回执写「已注入 3 个输入事件（cursor, press, release）」，而 acceptance ① 只写了 trace 那行 ⇒ **票面自己把验收引到了看不见的地方**。① 已把 acceptance[0] 的两处呈现都写明并点出「验收看回执」；② 新增 acceptance[5]，把「差别」从一句「真 DOM 保真度」扩成四条（两处呈现 / 坐标口径 / 保真度 / 截图管线），并补两条守卫 assert 钉住「已注入 N 个输入事件」与「虚拟坐标 0..1280 / 0..720」。★顺带确认：用户实测**走的就是 VM 桥**（回执里那三个 kind 只有该路会产出）⇒ acceptance ④ 的「经 `applyScenarioEvent`」这半边**成立**，④ 只剩逐步截图与 `[main]` 日志的取证。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮第二报（用户：capture .tmp/vm.png 没生成，根目录与 emulator 下的 .tmp 都没有）：拿到的是渲染窗那行回执 `capture: 1784412B PNG（base64 在 png 字段）` ⇒ 走的是无路径的透传分支 ⇒ **在跑的守护进程里没有新代码**（进程模型问题，不是代码写错）。已把「要不要重启」从猜变成查（`--ping` 新鲜度自述 + `hello` 自报 + 客户端对 `--ping` 特判旧代码），并加一条带真假两面的守卫；现场用 `--ping` 核实用户那个实例确实是旧代码。另：写这条测试时踩到 `spawnSync` 阻塞事件循环导致同进程假守护进程收不到连接（假绿），改用异步 spawn + 替身咽掉 ECONNRESET。verify = exit 0（tests 1693 / pass 1691 / fail 0 / skipped 2）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮第三报（用户：看截图应该没什么问题）：据此把 acceptance ② 落地 —— `shot` 改走渲染窗 `FrameHost.capture`（B′），旧的整窗 `capturePage()` 降级为**显式**的 `screencap`（不删：`imgToSendLive` 的基准在它那儿）。判据 = 用户目视（完整 1280×720 title 帧、无覆盖层）+ 两条管线的尺寸关系实测（1604×903 vs 1280×720；两方向缩放 1.2531/1.2542 一致、宽高比 1.7763/1.7778 一致 ⇒ 同一画面按 DPR 缩放）+ B′ 尺寸与窗口几何无关（对 E4 更稳）。★由 ② 带出一个必须记下的连带项（新增 acceptance[7]，⏳ 待定）：`clickimg` 的基准仍是 `capturePage()` 的图像像素 ⇒ **它配的是 `screencap` 的产物**；拿 `shot`（舞台）的坐标去 `clickimg` 会偏，应改用 `click`。两条命令的配对关系已写进两处文档。verify = exit 0（tests 1693 / pass 1691 / fail 0 / skipped 2）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮第四报（用户：「可以认为 142 无问题了」+ 要求把 `clickimg` 改成基于内容、废弃 capturePage 那套）：acceptance ⑦ 落地 —— `clickimg` 的口径从「整窗截图图像像素」改成「**内容区 CSS 像素**」；DOM 通道恒等、VM 通道按 `getContentSize()` 折成虚拟坐标（`contentToVirtual`），旧的 `imgToSendLive`（含那次 `capturePage()` 往返）已删，`capturePage()` 从此只负责 `screencap` 的产物。回执印出折算（内容区 → 虚拟）以及 `shot`/`screencap` 的 `内容区=WxH`。守卫 +1（真假两面都钉：旧实现必须已删、VM 必须折算、DOM 必须恒等）。★同时记下：历史 evidence 里那些 clickimg 坐标是**旧口径**，重跑要 ×0.80。verify = exit 0。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：acceptance —— 第 71 轮收口（用户：「我直接目视确认了，可以认为 142 无问题了」）：acceptance ⑦ 落地后票面再无 ⏳ 判据 —— ② `shot` 统一到 `FrameHost.capture`（旧管线降级为显式 `screencap`）、③ 命名与帮助两侧一致且命令↔管线一一对应、④ 端到端以**用户真机实测**（VM 通道输入注入 + 回执证据 + 目视产物）为准关闭、⑤ verify exit 0、⑦ `clickimg` 改内容区口径。★如实披露：④ 里原本点名的「逐步截图 + `[main]` 日志逐条留档」与 ② 的「同帧 A/B」**未单独产出**，由用户判定不必再补（要补时起一次 `dbg:srv` 即可，两者同一次会话顺手就能取）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done —— 第 71 轮收口（用户：「我直接目视确认了，可以认为 142 无问题了」）：acceptance ⑦ 落地后票面再无 ⏳ 判据 —— ② `shot` 统一到 `FrameHost.capture`（旧管线降级为显式 `screencap`）、③ 命名与帮助两侧一致且命令↔管线一一对应、④ 端到端以**用户真机实测**（VM 通道输入注入 + 回执证据 + 目视产物）为准关闭、⑤ verify exit 0、⑦ `clickimg` 改内容区口径。★如实披露：④ 里原本点名的「逐步截图 + `[main]` 日志逐条留档」与 ② 的「同帧 A/B」**未单独产出**，由用户判定不必再补（要补时起一次 `dbg:srv` 即可，两者同一次会话顺手就能取）。"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/agent-workflow.test.ts"
   ]
 }

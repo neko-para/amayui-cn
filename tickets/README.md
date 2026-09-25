@@ -7,17 +7,16 @@
 
 ## 概览
 
-共 **177** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **5** · ✅ done **166** · 🚫 dropped **2**（P0 8 / P1 68）
+共 **177** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **5** · ✅ done **167** · 🚫 dropped **2**（P0 8 / P1 68）
 
 按域：`emulator/render` 26 · `emulator/vm` 17 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1
 
-## 🔜 doing（4）
+## 🔜 doing（3）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0148`](./T-0148/ticket.json) | P1 | analysis | `analysis/emulator/vm` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目 | 4 | — | `notes.md` `changes-coverage.md` `quote-gone-adjudication.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
-| [`T-0142`](./T-0142/ticket.json) | P2 | refactor | `emulator/tooling` | 把 Electron 侧的 agent 调试通道也收敛到 VM 外层桥（debugsrv 的 sendInputEvent → ScenarioEvent、s… | 5 | — | — | — |
 | [`T-0179`](./T-0179/ticket.json) | P2 | refactor | `analysis/analysis/emulator/vm` | 缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件） | 5 | — | `notes.md` `changes-round70.md` `changes-t0179.md` | — |
 
 ## ⬜ open（5）
@@ -30,7 +29,7 @@
 | [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 4 | — | `notes.md` evidence/(5) | — |
 | [`T-0118`](./T-0118/ticket.json) | P3 | analysis | `analysis/emulator/verify` | darwin 预置通用二进制的 **x86_64 slice 未实跑**（本机无 Rosetta）：到 Intel Mac / 装了 Rosetta 的机器上… | 5 | — | `notes.md` | — |
 
-## ✅ done（166）
+## ✅ done（167）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -153,6 +152,7 @@
 | [`T-0133`](./T-0133/ticket.json) | P2 | analysis | `emulator/hosts` | 可行性评估：把 emulator 渲染面桥接进 DSH Web GUI，作为**调试观察宿主**（同源 iframe + HTTP/WS 宿主） | 14 | — | `notes.md` | — |
 | [`T-0137`](./T-0137/ticket.json) | P2 | req | `emulator/hosts` | 面板形态：常驻浮窗（PiP，默认收成小胶囊）+ 保留模态作放大 | 9 | `plugins/amayui-emulator/smoke-client.mjs#全部通过` `plugins/amayui-emulator/smoke.mjs#全部通过` | `notes.md` `changes.md` evidence/(4) | — |
 | [`T-0141`](./T-0141/ticket.json) | P2 | analysis | `analysis/emulator/verify` | 待核：web 宿主下点 CONFIG 左侧分类 (120,206) 没有切到 CONFIG2（反而整条重引导回 TITLE） | 5 | — | `notes.md` `changes.md` evidence/(2) | — |
+| [`T-0142`](./T-0142/ticket.json) | P2 | refactor | `emulator/tooling` | 把 Electron 侧的 agent 调试通道也收敛到 VM 外层桥（debugsrv 的 sendInputEvent → ScenarioEvent、s… | 8 | `app/amayui-emulator/test/agent-workflow.test.ts` | `changes.md` | — |
 | [`T-0145`](./T-0145/ticket.json) | P2 | docs | `docs/05-scripts` | 文档/注释与体不符三处：`global 3f90` 门极性读反（NOVEL.md/SYSTEM4.md）+ T-0090 的旁注依据 + 留帧注释自相矛盾 | 5 | — | `notes.md` `changes.md` | — |
 | [`T-0150`](./T-0150/ticket.json) | P2 | refactor | `emulator/test` | 死写闸门（闸门 C）覆盖面从 Item/MeshObj 扩到 Engine/SceneState 等模型 | 2 | `app/amayui-emulator/test/no-dead-writes.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0154`](./T-0154/ticket.json) | P2 | bug | `emulator/render` | 指令实现缺口修复批：场景状态 / 转场 / 混合（25 条：P1 0 / P2 11 / P3 14） | 3 | `app/amayui-emulator/test/scene-t0154-scene-state.test.ts` `app/amayui-emulator/test/scene-t0154-mesh-transition.test.ts` `app/amayui-emulator/test/op-22a-22f-scene-world.test.ts` | `changes-c154.md` | — |

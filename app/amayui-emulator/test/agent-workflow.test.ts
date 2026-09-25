@@ -22,9 +22,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
+import * as net from 'node:net';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -755,10 +756,137 @@ test('★T-0142：输入的两条通道（DOM / VM 桥）必须显式可切且�
   assert.match(srv, /sendDebugQuery\(cmd\)/, '① VM 那条必须**经渲染窗的命令表**（不是自己造事件）');
   assert.match(srv, /head === 'move' \? `move \$\{x\} \$\{y\}` : `click \$\{x\} \$\{y\}`/, '① 转的必须是同一条命令文本');
   assert.match(srv, /真 DOM 保真度/, '① 两条路的差别要写在文件头（票面点名"在帮助里说明差异"）');
+  // ★两条路的差别**不止**保真度这一条：用户第 71 轮实测时照票面去找 `[input] 注入 …` 却没找到
+  //   （那是 **trace** 那行，回执写的是"已注入 N 个输入事件"）⇒ 判据里两处都要写。
+  assert.match(srv, /已注入 N 个输入事件/, '① 回执那处呈现也要写（验收看的是回执，不是 trace）');
+  assert.match(srv, /虚拟坐标 0\.\.1280 \/ 0\.\.720/, '① 坐标口径的差别也要写（DOM=内容区 CSS 像素，VM=虚拟坐标）');
   // 旧路必须**还在**（默认路径）——删了它等于无声迁移既有 E4 用法
   assert.match(srv, /webContents\.sendInputEvent/, '① 旧路（DOM）必须保留为默认/可选路径');
   const cli = fs.readFileSync(DBG_CLI, 'utf8');
   assert.match(cli, /AMAYUI_DEBUG_INPUT/, '③ `dbg.cjs` 的用法示例要同步说明这条开关');
+});
+
+// (a5) `T-0142` acceptance ②：`capture` 那条管线**直接落盘**（调用方不必自己解 base64）
+//
+// 为什么守：`capture` 的结果里 PNG 是 base64（命令是按行传的），而要拿它跟 `shot` 的整窗图做对照
+// 就必须先落盘。渲染进程**没有 fs**（`src/vm/engineSnapshot.ts` 连一处文件 IO 都没有，有源码棘轮守着）
+// ⇒ 落盘只能发生在主进程，且**不能**顺手把 `capture` 改成主进程自己抓图（那就退回形态 C，正是本票要收敛的漂移）。
+test('★T-0142②：`capture <路径>` 走渲染窗管线并由主进程落盘（旧 `shot` 管线保留）', () => {
+  const srv = fs.readFileSync(DEBUGSRV, 'utf8');
+  assert.match(srv, /if \(head === 'capture'\)/, '② 主进程要认识 `capture`');
+  assert.match(srv, /sendDebugQuery\('capture'\)/, '② 必须把裸命令转给渲染窗命令表（FrameHost.capture），不是自己抓图');
+  assert.match(srv, /fs\.writeFileSync\(abs, buf\)/, '② 给路径 ⇒ 由主进程落盘（渲染进程没有 fs）');
+  assert.match(srv, /pngSize\(buf\)/, '② 回执要报图像尺寸（两条管线最易被忽略的差异就是尺寸）');
+  assert.match(srv, /path\.join\(ROOT, file\)/, '② 相对路径按**仓库根**解析（要能和 `shot` 的产物摆进同一个 .tmp/）');
+  // ★acceptance ② 本体：`shot` 已从"整窗 capturePage"换成"渲染窗 FrameHost.capture"，
+  //   旧管线**不删**而是降级为显式的 `screencap`（现在只用来看整窗/覆盖层）。
+  assert.match(srv, /head === 'shot' \? await screenshotStage\(name\) : await screenshotWholeWindow\(name\)/, '② `shot` 必须走渲染窗那条、`screencap` 才是旧的整窗那条');
+  assert.match(srv, /async function screenshotStage[\s\S]{0,700}rendererCapturePng\(\)/, '② `shot` 那条必须经 `sendDebugQuery` 的 capture 命令（不许自己 capturePage）');
+  assert.match(srv, /async function screenshotWholeWindow[\s\S]{0,700}capturePage\(\)/, '② 旧管线必须还在（降级为显式 `screencap`，不许无声删掉）');
+  // 无路径时必须逐字保持既有语义（base64 仍在 png 字段里）——落盘是加法，不是替换
+  assert.match(srv, /\{ id, \.\.\.r \}/, '② 无路径那条分支要把渲染窗的原始回执原样透传');
+  const cli = fs.readFileSync(DBG_CLI, 'utf8');
+  assert.match(cli, /capture \[路径\]/, '③ `dbg.cjs` 的用法示例要写清 `capture` 可带路径');
+  assert.match(cli, /screencap 名字/, '③ `dbg.cjs` 的用法示例要写清旧管线被显式保留成 `screencap`');
+});
+
+// (a7) `T-0142` acceptance ⑦：`clickimg` 的口径 = **内容区 CSS 像素**，与 `capturePage()` 解耦
+//
+// 为什么守：从前 `clickimg` 的基准是"整窗截图图像像素"，得靠一次 `capturePage()` 现算比例 ⇒
+// 基准随窗口尺寸/DPI 漂（用户的原话：「本身携带标题后就不可控」），而且平白多一次往返。
+// 用户 2026-09-25 决定改成内容区口径。这条守卫钉"旧实现真的删了 + 两边分支都对"：
+//   DOM 分支必须是**恒等**（`sendInputEvent` 要的口径就是内容区 CSS 像素）；
+//   VM 分支必须**折算**（渲染窗只认虚拟坐标）。
+test('★T-0142⑦：`clickimg` 按**内容区**口径，且 `capturePage` 不再参与坐标换算', () => {
+  const srv = fs.readFileSync(DEBUGSRV, 'utf8');
+  assert.doesNotMatch(srv, /imgToSendLive/, '⑦ 「整窗图像像素现算」那套必须已经删掉');
+  assert.match(srv, /function contentToVirtual\(x, y\)/, '⑦ 要有「内容区 → 虚拟坐标」的折算');
+  assert.match(srv, /const STAGE_W = 1280;/, '⑦ 折算基准 = 引擎虚拟分辨率（也就是 `shot` 舞台图的尺寸）');
+  assert.match(srv, /const mapped = contentToVirtual\(n\[0\], n\[1\]\)/, '⑦ VM 分支必须真的折算');
+  assert.match(srv, /DOM 通道恒等/, '⑦ DOM 分支必须明确是恒等（别两边都折算 ⇒ 会点偏）');
+  // 折算只在虚拟坐标那一侧需要；`getContentSize()` 是唯一的几何来源（不再有 capturePage 往返）
+  assert.match(srv, /const \[cw, ch\] = w\.getContentSize\(\)/, '⑦ 几何只来自 `getContentSize()`');
+  const cli = fs.readFileSync(DBG_CLI, 'utf8');
+  assert.match(cli, /内容区 CSS 像素/, '③ `dbg.cjs` 的用法示例要写明 `clickimg` 的新口径');
+});
+
+// (a6) `T-0142`：守护进程是**唯一长期活着的**进程 —— "改了代码没生效"必须能被**查**出来
+//
+// 为什么守：`tools/*.cjs` 在 `require` 那一刻定死，改磁盘上的文件**不影响**已在跑的守护进程
+// （而 `tools/dbg.cjs` 每次都是新进程，所以永远是新的）⇒ "我改了 capture 但它没落盘"会被误读成
+// "capture 写错了"。用户第 71 轮就真撞上了这一条。
+// 两种情形都要钉住：对面**报告**新鲜度 ⇒ 不许吭声（防误报）；对面**不报告** ⇒ 必须点破并给出重启两步。
+test('★T-0142：旧守护进程（不报告版本）必须被客户端点破，且不许对新的误报', async () => {
+  const DBG = path.join(REPO, 'app', 'amayui-emulator', 'tools', 'dbg.cjs');
+  const EMU = path.join(REPO, 'app', 'amayui-emulator');
+
+  /** 起一个**假守护进程**：按 `fresh` 决定 ping 回执里有没有那条新鲜度自述（= 新旧代码的判别特征）。 */
+  const startFake = (fresh: boolean): Promise<{ port: number; stop: () => void }> =>
+    new Promise((resolve) => {
+      /** ★子进程收工/被结束时，对面这条连接会拿到 ECONNRESET —— 替身必须**咽掉**它，
+       *  否则 `net.Socket` 的 'error' 在**本测试进程**里是未处理事件 ⇒ 整条测试报 ECONNRESET。 */
+      const sockets = new Set<net.Socket>();
+      const srv = net.createServer((sock) => {
+        sockets.add(sock);
+        sock.on('error', () => {
+          /* 见上：替身不因对面断开而炸 */
+        });
+        sock.on('close', () => sockets.delete(sock));
+        sock.on('data', (chunk) => {
+          for (const line of String(chunk).split('\n')) {
+            if (!line.trim()) continue;
+            const msg = JSON.parse(line) as { id: number; op?: string };
+            sock.write(`${JSON.stringify({ event: 'hello', text: 'fake', game: true })}\n`);
+            if (msg.op === 'ping') {
+              const lines = ['pong', 'game=true'];
+              if (fresh) lines.push('守护进程起于 2026-01-01T00:00:00.000Z；磁盘上的 tools/debugsrv.cjs 改于 2026-01-01T00:00:00.000Z');
+              sock.write(`${JSON.stringify({ id: msg.id, ok: true, lines })}\n`);
+            }
+          }
+        });
+      });
+      srv.listen(0, '127.0.0.1', () => {
+        const addr = srv.address();
+        const port = addr && typeof addr === 'object' ? addr.port : 0;
+        resolve({
+          port,
+          stop: () => {
+            for (const s of sockets) s.destroy();
+            srv.close();
+          },
+        });
+      });
+    });
+
+  const ping = (port: number): Promise<string> =>
+    // ★必须**异步** spawn：假守护进程就跑在本测试进程里，而 `spawnSync` 会**阻塞事件循环**
+    //   ⇒ 本进程收不到子进程的连接、也就发不出 hello/pong（第一版就是这么假绿的：子进程什么都收不到、
+    //   默默退出，断言只看到空输出）。这也是本工程"测试替身与被测进程同进程"时的通用坑。
+    new Promise((resolve) => {
+      const p = spawn(process.execPath, [DBG, '--ping'], {
+        env: { ...process.env, AMAYUI_DEBUG_PORT: String(port) },
+      });
+      let out = '';
+      p.stdout?.on('data', (d) => (out += String(d)));
+      p.stderr?.on('data', (d) => (out += String(d)));
+      p.on('close', () => resolve(out));
+    });
+
+  const oldDaemon = await startFake(false);
+  try {
+    const out = await ping(oldDaemon.port);
+    assert.match(out, /旧代码/, '对面不报告版本 ⇒ 必须点破"它跑的是旧代码"');
+    assert.match(out, /--quit/, '还要给重启的两步（否则用户不知道怎么办）');
+  } finally {
+    oldDaemon.stop();
+  }
+
+  const newDaemon = await startFake(true);
+  try {
+    assert.doesNotMatch(await ping(newDaemon.port), /旧代码/, '对面报告了新鲜度 ⇒ 不许误报');
+  } finally {
+    newDaemon.stop();
+  }
 });
 
 // ---------------------------------------------------------------------------

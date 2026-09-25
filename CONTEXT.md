@@ -32,7 +32,7 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 ## 3. 台账现状（快照 · 2026-09-25 第 70 轮"清理剩余内容"收口后实测）
 
 ```
-票据 177 张：✅done 166  ⬜open 5  🔜doing 4  🚫dropped 2  ⛔blocked 0
+票据 177 张：✅done 167  ⬜open 5  🔜doing 3  🚫dropped 2  ⛔blocked 0
   优先级 P0 8 / P1 68 / P2 63 / P3 38
   ★tickets.js --validate ✅ 177 张 / 0 条行号漂移警告（刷新工具 = `.agents/skills/amayui-ticket-ledger/scripts/fix-evidence-lines.js --any --write`；
   ★全库 1003 条被锚证据保持全额：漂移 0 / 失效锚点 0 / 缺 `line` 0）
@@ -93,7 +93,7 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
   ★并清了能力台账的**顶层杂键**（`capabilities.js --validate` 只查 `emulator.note`，顶层杂键一律漏检）：
   `note`(数组，逗号切碎事故残留)、`capability`/`evidence`(重复且 `live2d-mesh-batches` 的 `evidence:"E4"` 与权威 `E3` **矛盾**) 全删、沿革落 `journal`。
 
-## 4. 未完成票据（9 张 = doing 4 + open 5）
+## 4. 未完成票据（8 张 = doing 3 + open 5）
 
 | 票 | 状态 | 现状 |
 |---|---|---|
@@ -102,7 +102,7 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 | `T-0067` 存档页闪一帧 | doing | 阻塞：需要一次干净窗口/用户 trace（`shot` 与用户实例共用 log/overlay） |
 | `T-0019` 拆 msgwin 两个大文件 | open | 分节边界见 `docs-new/04-app/emulator-refactor-plan.md` §1。★一次尝试已在半成品状态被停止并回滚（产出归档 `.tmp/t0019-split-wip/`），并因此新增两条硬要求（barrel 先补齐再搬、每次落盘先 typecheck）——见票内 notes；`T-0175` 的 ② 淡入色窗接线也交接给了它。★`T-0179` 里 msgwin 族的缺口必须与它**串行** |
 | `T-0122` 内存快照/恢复 | ✅done | ★**第 70 轮 goal round 4–6 收口**：`src/vm/engineSnapshot.ts`（自描述 JSON + 版本头 + `SNAPSHOT_EXCLUDED` **9 条**带 `why` + `restore` 逐条告警）、**8 条 E2 守卫** + **1 条 E3 真语料守卫**（`test/engine-snapshot-e3.test.ts`）、**帧边界门**（超时响亮失败；红→绿 7/8→8/8）、`dbg.cjs save/load`。★E3 实测逼出一条真结论并按纪律登记：分叉面**只有"依赖场景动画态的派生量"**（不是漏字段）⇒ `SNAPSHOT_EXCLUDED` 第 9 条 + 两条重开条件。见 `tickets/T-0122/changes.md` |
-| `T-0142` Electron 调试通道收敛 | doing | ★**判定订正**：它**不是**"纯外部条件"（我先前判快了）—— acceptance ①（输入的**两条通道显式可切**：默认 `sendInputEvent`（真 DOM 保真度）/ `AMAYUI_DEBUG_INPUT=vm` ⇒ 转渲染窗命令表 = 与 web 宿主同源）**已落地并带守卫**（`test/agent-workflow.test.ts` 的「★T-0142」），③ 文档同步与 ⑤「默认路径未改」已核。**仍剩**：② `shot` 统一到 `FrameHost.capture`、④ Electron 端到端证据 —— 两者都要能跑 `npm run dbg:srv`（与用户实例**共用 log/overlay**）时才做 |
+| `T-0142` Electron 调试通道收敛 | ✅done | ★**第 71 轮收口（用户现场实测 + 目视）**：② `shot` 统一到 `FrameHost.capture`（B′，恒 1280×720；旧的整窗 `capturePage()` 降级为**显式** `screencap`）、③ 命令与管线**一一对应**（命名分裂消掉）、④ 端到端以用户真机实测为准（VM 通道回执 `已注入 3 个输入事件（cursor, press, release）` = 经 `applyScenarioEvent`；目视确认两条管线产物）、⑦ `clickimg` 口径改成**内容区 CSS 像素**（DOM 恒等 / VM 按 `getContentSize()` 折算）⇒ `capturePage()` 与点击坐标**解耦**、`imgToSendLive` 已删。★如实披露：④ 的「逐步截图 + `[main]` 日志逐条留档」与 ② 的「同帧 A/B」未单独产出，用户判定不必再补。另新增：守护进程**代码新鲜度**自述（`--ping`/`hello` 报启动时刻+磁盘 mtime；旧代码会被客户端点破）—— 起因是"改了 `tools/*.cjs` 却没重启"被误读成代码写错 |
 | `T-0088` / `T-0118` / `T-0051` | open | 需外部条件：真人点选 AGERC / Intel Mac 跑 x86_64 slice / E4 真机核验 5 项 |
 | `T-0103` | open | 章节切换演出不一致 —— ★用户明确"最后再处理" |
 
@@ -111,6 +111,11 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 ④ 可达路径复现（读档 78 → 点 4 次 → `cat=0` 交叉淡化）并把 9 张截图归档 `tickets/T-0091/evidence/`、
 ①③⑤⑥ 复核确认已有实现。★如实披露：④ 那组截图是"路径可达"的**可视证据**，
 **不是**像素级真机对照 ⇒ 能力条目 `clock-read-transition-window` 的 `evidence` 保持 **E3** 不变。
+
+★**第 71 轮关掉的**：`T-0142`（Electron 调试通道收敛）—— 见上表；它的收口依据是**用户真机实测**
+（VM 通道输入注入的回执证据）+ 用户目视两条截图管线的产物，而不是我跑出来的端到端脚本；
+★因此它同时**如实披露**了两项未单独产出的取样（逐步截图 / 同帧 A/B），用户判定不必再补。
+（本轮还顺带落地：`shot` → `FrameHost.capture`、`clickimg` → 内容区口径、守护进程代码新鲜度自述。）
 
 ## 5. 后续计划
 

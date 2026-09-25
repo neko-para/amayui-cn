@@ -39,21 +39,68 @@
  *
  * ★**两条输入通道（`tickets/T-0142` 的 acceptance ①）**：设 `AMAYUI_DEBUG_INPUT=vm` 时，`click`/`move`/
  * `clickimg` **不再自己造 DOM 事件**，而是把同一行命令转给渲染窗的**命令表**
- * （`src/vm/debugCommand.ts` → `applyScenarioEvent`）—— 与 **web 宿主逐字同源**，trace 里会出现
- * `[input] 注入 N 个事件`。差别：DOM 那条有"真 DOM 保真度"（过宿主焦点/悬停），VM 那条与宿主无关
- * （两端同语义、可断言）。**默认仍是 DOM 那条**（不许无声改既有 E4 用法 `npm run shot --load` 的依赖路径）。
+ * （`src/vm/debugCommand.ts` → `applyScenarioEvent`）—— 与 **web 宿主逐字同源**。
+ *
+ * **两条路的差别**（★不止"真 DOM 保真度"这一条）：
+ *  1. **同一件事的两处呈现**：VM 那条在**回执**里写 `已注入 N 个输入事件（cursor, press, release）`
+ *     （`session.ts:608`），同时在 **trace** 里落一行 `[input] 注入 N 个事件：…`（`session.ts:607`）；
+ *     DOM 那条只回 `click x,y`（没有"注入了几个事件"这回事）。★**验收看回执**，别只翻 trace。
+ *  2. **坐标口径不同**（★最容易被"碰巧能跑"掩盖）：DOM 那条的数交给 `sendInputEvent`
+ *     ⇒ 是**内容区 CSS 像素**（`shot.cjs` 的 `CONFIG_XY` 就是这么标的）；VM 那条由渲染窗的命令表解析
+ *     ⇒ 是**虚拟坐标 0..1280 / 0..720**（`debugCommand.ts:197`）。本机内容区 ≈1280×722 CSS
+ *     （截图 1600×902 ÷ DPR 1.25）⇒ 两套数**数值重合**、照抄 `CONFIG_XY` 碰巧也对；
+ *     **窗口尺寸/缩放一变就分叉**（那时 VM 通道要按 1280×720 折算，或改用 `clickimg` —— 它声明
+ *     "我给的数是**内容区**口径"，由本脚本按通道折算，见文件头「坐标口径」那节）。
+ *  3. **保真度**：DOM 那条过宿主焦点/悬停（真 DOM 事件），VM 那条与宿主无关（两端同语义、可断言）。
+ *
+ * **默认仍是 DOM 那条**（不许无声改既有 E4 用法 `npm run shot --load` 的依赖路径）。
  *
  * ```
- * click <x> <y>        在游戏窗口里点一下（输入坐标 = `shot.cjs` 里 CONFIG_XY 那一套）
+ * click <x> <y>        在游戏窗口里点一下（坐标**已经是该通道的目标口径**：DOM=内容区 CSS 像素、VM=虚拟坐标）
  * clickn <x> <y> [次数] [间隔ms]   连点 N 下（默认 1 下、300ms 间隔）—— ADV 一页一次点击时用
- * clickimg <x> <y>     同上，但坐标是**截图图像坐标**（按当前窗口几何现算，见 `imgToSendLive`）
+ * clickimg <x> <y>     同上，但坐标**声明为内容区 CSS 像素**（`click` 相对 `clickimg` 的差别就在这句话）：
+ *                      DOM 通道**恒等**；VM 通道按 `getContentSize()` 折成虚拟坐标（`contentToVirtual`）
  * move <x> <y>         只移动光标（复核悬停门控）
- * shot [名字]          远程截图 → `<仓库根>/.tmp/dbg-<名字>.png`（并报出内容区尺寸）
+ * shot [名字]          远程截图 → `<仓库根>/.tmp/dbg-<名字>.png`。**默认走渲染窗那条**（B′，见下表）
+ * screencap [名字]     同上但走**旧的整窗那条**（主进程 `capturePage()`，形态 C）；★产物只作**目视/看覆盖层**
+ * capture [路径]       渲染窗那条（B′），但路径任选；给了路径 ⇒ 直接落盘，不给 ⇒ 只回 base64
+ *                      ★相对路径按**仓库根**解析（`capture .tmp/x.png` ⇒ `<仓库根>/.tmp/x.png`，
+ *                        与 `shot` 的产物同目录；`save`/`load` 仍是 cwd 口径）；回执里报**绝对路径**。
  * ```
  *
- * ⚠ **输入坐标 ≠ 图像坐标**：`sendInputEvent` 收**内容区 CSS 像素**，`capturePage()` 给**图像像素**，
- * 两者比例随窗口尺寸/缩放变。菜单类常量（`CONFIG_XY` 等）是**输入坐标**（`shot.cjs` 一直这么用），
- * 存档列表的行是**图像坐标** ⇒ 前者用 `click`、后者用 `clickimg`。
+ * ## 两条截图管线（`tickets/T-0133` §B.4.4 的 B′ vs 形态 C；`tickets/T-0142` acceptance ②）
+ * | 命令 | 管线 | 产物形态 | 尺寸 | 有没有 HTML 覆盖层 |
+ * |---|---|---|---|---|
+ * | `shot` / `capture` | 渲染窗 `FrameHost.capture`（B′，`renderer.extract.canvas`） | **Pixi 舞台**读回 | 恒 **1280×720**（引擎虚拟分辨率） | 无 |
+ * | `screencap` | 主进程 `webContents.capturePage()`（形态 C） | **整窗**图像像素 | 随窗口几何（本机实测 1604×903 ≈ 舞台 × DPR 1.25） | 有 |
+ *
+ * ★**为什么 `shot` 的默认改成了 B′**（`tickets/T-0142` acceptance ②）：两条管线抓的是**同一画面**，
+ *   差别只是分辨率（实测：两个方向的缩放 1.2531/1.2542 一致、宽高比 1.7763/1.7778 一致 ⇒ 无 letterbox、
+ *   无额外区域；见 `tickets/T-0142/changes.md`）—— 而 B′ 的尺寸**与窗口几何无关**（恒 1280×720），
+ *   E4 取证在换窗口/换机器之后仍然可比。整窗那条降级为**显式**的 `screencap`（不删：要看"整窗/覆盖层"
+ *   时只有它给得出）；★它**不再是任何坐标换算的基准**（见下一条）。
+ *
+ * ★**坐标口径：`clickimg` 的输入 = 内容区 CSS 像素**（`tickets/T-0142` acceptance ⑦，2026-09-25 定）。
+ *   从前它是"整窗截图图像像素"，得靠一次 `capturePage()` 现算比例 —— 用户的原话是
+ *   「本身携带标题后就不可控」：基准随窗口尺寸/DPI 漂，还平白多一次往返。现在改成：
+ *     * **DOM 通道**：`sendInputEvent` 要的**就是**内容区 CSS 像素 ⇒ **恒等**（连 `getContentSize()` 都不用）；
+ *     * **VM 通道**：按 `getContentSize()` 折成虚拟坐标（`contentToVirtual`，1280×720）。
+ *   ⇒ **`capturePage()` 与点击坐标彻底解耦**（它现在只负责 `screencap` 的产物）。
+ *   实务上怎么取坐标：`shot` 的图是 1280×720 舞台，本机内容区 1283×722 ⇒ 两者差 0.23%，
+ *   **从 `shot` 图上量的坐标可以直接喂 `clickimg`**；窗口明显换尺寸/DPI 时按回执里印的
+ *   `内容区=WxH`（`shot`/`screencap` 都印）折算。
+ *
+ * ★为什么 `capture` 的落盘在主进程：渲染进程**没有 fs**（`src/vm/engineSnapshot.ts` 自己也一处文件 IO
+ *   都没有，有源码棘轮守着）⇒ 主进程是唯一同时"够得到渲染窗的答案"又"够得到磁盘"的地方（与
+ *   `tickets/T-0122` 的 `save`/`load` 同一条理由）。
+ * ★`capture` 无路径时**逐字保持既有语义**（base64 在回执的 `png` 字段里）——落盘是**加法**，不是替换。
+ *
+ * ⚠ **三种坐标别混**（这是本脚本最容易点错的地方）：
+ *   1. **内容区 CSS 像素** —— `clickimg` 的口径，也是 DOM 通道 `sendInputEvent` 的口径；
+ *   2. **虚拟坐标 0..1280 / 0..720** —— VM 通道命令表的口径，也**等于** `shot` 舞台图的像素坐标；
+ *   3. **整窗图像像素**（`screencap` 的产物，= 内容区 × DPR）—— **只用于目视**，不再是任何点击的输入。
+ *   本机三者数值接近（1283×722 / 1280×720 / 1604×903，前两者差 0.23%）⇒ 照抄旧例常常"碰巧能跑"，
+ *   **窗口尺寸或 DPI 一变就会分叉** ⇒ 拿不准就看回执里印的折算。
  * ★别照抄 `shot.cjs` 的 `toSend` 常数（`(x+28.4)/0.955`）：那是另一台机器/另一个窗口尺寸标出来的，
  * 2026-09-23 本机实测对不上。
  *
@@ -82,6 +129,25 @@ app.commandLine.appendSwitch('no-sandbox');
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.AMAYUI_DEBUG_PORT || 39427);
+
+/**
+ * 本进程的**代码新鲜度**自述（`--ping` 回执里给出来）。
+ *
+ * 为什么要有它：本守护进程是**唯一长期活着的**进程 —— `tools/*.cjs` 在 `require` 那一刻定死，
+ * 改了磁盘上的文件**不会**影响已经在跑的它（`tools/dbg.cjs` 每次都是新进程，所以永远是新的）。
+ * 于是"我改了代码但它没生效"会被误读成"代码写错了"。这里把两个时间点都印出来，
+ * 让"要不要重启"从**猜**变成**查**：磁盘 mtime > 启动时刻 ⇒ 本进程是旧代码。
+ */
+const SRV_START_MS = Date.now();
+const STARTED_AT = new Date(SRV_START_MS).toISOString();
+function srvFreshness() {
+  try {
+    const st = fs.statSync(__filename);
+    return { disk: st.mtime.toISOString(), stale: st.mtimeMs > SRV_START_MS + 1 };
+  } catch {
+    return { disk: '（读不到 tools/debugsrv.cjs 的 mtime）', stale: false };
+  }
+}
 
 // ★**默认静音**（`tickets/T-0102` 的实测要求）：调试守护进程是"无人值守地跑几分钟"的形态，
 //   出声只会带来设备/自动播放策略/时间抖动这些**与被测逻辑无关**的噪声（而且会吵到人）。
@@ -131,25 +197,27 @@ async function waitGameWin(timeoutMs = 120000) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** 引擎**虚拟分辨率**（= 渲染窗命令表的坐标口径 = `shot` 舞台图的尺寸：见文件头「两条截图管线」）。 */
+const STAGE_W = 1280;
+const STAGE_H = 720;
+
 /**
- * **按当前窗口几何现算**图像坐标 → 输入坐标。
+ * **内容区 CSS 像素 → 引擎虚拟坐标（1280×720）**。
  *
- * 为什么不写死常数：`capturePage()` 给的是图像像素，而 `sendInputEvent` 收的是**窗口内容区的 CSS 像素**
- * ⇒ 两者的比例随窗口尺寸/缩放变（本机实测内容区 ≠ 截图尺寸）。每次点击现取一次几何，
- * 比"在另一台机器上标出来的常数"可靠。
- *
+ * ★`tickets/T-0142` acceptance ⑦（用户 2026-09-25 的决定）：`clickimg` 的输入口径从
+ *   「整窗截图图像像素」改成「**内容区 CSS 像素**」—— 换算只用 `getContentSize()`，
+ *   **不再调 `capturePage()`**。理由：那次 `capturePage()` 既是一次多余往返，又让基准随窗口尺寸/DPI
+ *   漂（用户的原话：「本身携带标题后就不可控」）。
+ * ★DOM 通道**不需要这一步**：`sendInputEvent` 要的口径**就是**内容区 CSS 像素 ⇒ 恒等。
  * ★`tools/shot.cjs` 里那份 `toSend`（`(x+28.4)/0.955`）是**当时那台机器、那个窗口尺寸**标出来的
- * （DPR + 标题栏偏移揉在一起）；2026-09-23 本机实测它对不上（点存档列表的行没有反应）⇒
- * 这里**不沿用常数**，改成按需换算。
+ *   （DPR + 标题栏偏移揉在一起）；2026-09-23 本机实测它对不上（点存档列表的行没有反应）⇒ 不沿用。
  */
-async function imgToSendLive(ix, iy) {
+function contentToVirtual(x, y) {
   const w = windows.game;
   if (!w || w.isDestroyed()) return null;
   const [cw, ch] = w.getContentSize();
-  const img = await w.webContents.capturePage();
-  const { width, height } = img.getSize();
-  if (!width || !height) return null;
-  return [Math.round((ix * cw) / width), Math.round((iy * ch) / height)];
+  if (!cw || !ch) return null;
+  return [Math.round((x * STAGE_W) / cw), Math.round((y * STAGE_H) / ch)];
 }
 
 /** 移动光标（不按键）—— 悬停类门控（`i12e` 的 labelA/labelB）要用它。 */
@@ -179,7 +247,14 @@ async function clickAt(x, y) {
  * 存档列表会记住上次的页/光标 ⇒ 只靠坐标猜会点错槽而看不出来）。名字不许带路径分隔符
  * （与 `shot.cjs` 的 `--name` 同一条理由：产物目录固定）。
  */
-async function screenshot(name) {
+/**
+ * **远程截图（形态 C：主进程 `capturePage()` = 整窗图像像素）** —— 现在只由**显式**的 `screencap` 用。
+ *
+ * `tickets/T-0142` acceptance ②：`shot` 已改走渲染窗那条（B′，见 `screenshotStage`）。旧管线降级为
+ * **显式选择**而不是删掉 —— 现在它只用来看**整窗/HTML 覆盖层**（★**不再**参与任何坐标换算，
+ * 见文件头「坐标口径」那节：`clickimg` 已改成内容区口径，与 `capturePage()` 解耦）。
+ */
+async function screenshotWholeWindow(name) {
   const w = windows.game;
   if (!w || w.isDestroyed()) return '没有游戏窗口（未截图）';
   const safe = String(name || 'dbg').replace(/[^A-Za-z0-9_.-]/g, '_');
@@ -188,7 +263,60 @@ async function screenshot(name) {
   fs.writeFileSync(out, img.toPNG());
   const { width, height } = img.getSize();
   const [cw, ch] = w.getContentSize();
-  return `shot ${out} (${width}x${height})  内容区=${cw}x${ch}  ← clickimg 的换算基准`;
+  return `screencap ${out} (${width}x${height})  内容区=${cw}x${ch}  管线=主进程 capturePage（只作目视，非点击基准）`;
+}
+
+/** 向渲染窗要一帧（**B′：`FrameHost.capture`** = 页面内 `renderer.extract` 读回）—— `shot` / `capture` 共用这一步。 */
+async function rendererCapturePng() {
+  const r = await sendDebugQuery('capture');
+  const b64 = r?.png;
+  if (r?.ok === false || typeof b64 !== 'string' || b64 === '') {
+    throw new Error(String(r?.lines?.[0] ?? '渲染窗没给出 PNG'));
+  }
+  return Buffer.from(b64, 'base64');
+}
+
+/** 落盘（目录不存在就建）—— 主进程是唯一有 fs 的那一侧。 */
+function writePng(abs, buf) {
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, buf);
+}
+
+/**
+ * **远程截图（B′：渲染窗 `FrameHost.capture`）** —— `shot` 的默认做法（`tickets/T-0142` acceptance ②）。
+ *
+ * 换管线的理由（实测口径，见 `tickets/T-0142/changes.md`）：
+ *  1. 两条管线抓的是**同一画面**，差别只是分辨率 —— 整窗那条约等于舞台 × DPR
+ *     （1604×903 vs 1280×720，两个方向的缩放 1.2531/1.2542 一致、宽高比 1.7763/1.7778 一致）；
+ *  2. 舞台那条的尺寸**与窗口几何无关**（恒 1280×720 = 引擎虚拟分辨率）⇒ E4 取证在换窗口/换机器后
+ *     仍然可比，而整窗那条会随窗口尺寸/缩放漂；
+ *  3. 代价 = 丢掉 HTML 覆盖层 —— 本 app 的覆盖层为空（游戏窗的内容区就是画布），要看它用 `screencap`。
+ */
+async function screenshotStage(name) {
+  const safe = String(name || 'dbg').replace(/[^A-Za-z0-9_.-]/g, '_');
+  const out = path.join(ROOT, '.tmp', `dbg-${safe}.png`);
+  const buf = await rendererCapturePng();
+  writePng(out, buf);
+  const dim = pngSize(buf);
+  // ★回执里同时印出**内容区尺寸**：`clickimg` 的口径是内容区 CSS 像素（acceptance ⑦），
+  //   而图是 1280×720 舞台 —— 两者不等时（换窗口/DPI）这就是那个折算系数，省得再开别的命令问。
+  const w = windows.game;
+  const cs = w && !w.isDestroyed() ? w.getContentSize() : null;
+  return (
+    `shot ${out} (${dim ? `${dim[0]}x${dim[1]}` : '尺寸未知'})` +
+    `  内容区=${cs ? `${cs[0]}x${cs[1]}` : '（无窗口）'}` +
+    `  管线=渲染窗 FrameHost.capture（舞台=虚拟分辨率）`
+  );
+}
+
+/**
+ * 从 PNG 字节里读 IHDR 的宽高（**不引依赖**：签名 8 字节 + 长度 4 + `IHDR` 4 ⇒ 宽在 16、高在 20）。
+ * 为什么报告它：`capture` 与 `shot` 是两条管线，最容易被忽略的差异就是**尺寸不同**
+ * （一个是整窗图像像素、一个是 Pixi 舞台读回）——把它印在回执里，E4 取证时不必再开图工具。
+ */
+function pngSize(buf) {
+  if (buf.length < 24 || buf.readUInt32BE(0) !== 0x89504e47) return null;
+  return [buf.readUInt32BE(16), buf.readUInt32BE(20)];
 }
 
 /**
@@ -202,7 +330,13 @@ async function screenshot(name) {
 async function handle(sock, msg) {
   const id = msg.id;
   if (msg.op === 'ping') {
-    send(sock, { id, ok: true, lines: ['pong', `game=${windows.hasGame()}`] });
+    const f = srvFreshness();
+    const lines = ['pong', `game=${windows.hasGame()}`, `守护进程起于 ${STARTED_AT}；磁盘上的 tools/debugsrv.cjs 改于 ${f.disk}`];
+    if (f.stale) {
+      lines.push('★★ 磁盘上的 tools/debugsrv.cjs 比本进程新 ⇒ 本进程跑的是**旧代码**（改了工具行为看不到效果就是这里）');
+      lines.push('   ⇒ 重启守护进程才会生效：`node tools/dbg.cjs --quit` 后重跑 `npm run dbg:srv`（tools/*.cjs 不参与编译）');
+    }
+    send(sock, { id, ok: true, lines });
     return;
   }
   if (msg.op === 'quit') {
@@ -218,12 +352,50 @@ async function handle(sock, msg) {
 
   const head = text.split(/\s+/)[0].toLowerCase();
   // ---- 输入驱动 / 截图（主进程侧，不经过渲染窗；见文件头「输入驱动」节）----
+  // ★`tickets/T-0142` acceptance ②：`shot` 现走**渲染窗那条**（B′），`screencap` 保留旧的整窗那条 ——
+  //   两条管线由**命令名**区分（不再有"同一个名字两套语义"）。
   if (head === 'shot' || head === 'screencap') {
+    const name = text.split(/\s+/)[1];
     try {
-      send(sock, { id, ok: true, lines: [await screenshot(text.split(/\s+/)[1])] });
+      const line = head === 'shot' ? await screenshotStage(name) : await screenshotWholeWindow(name);
+      send(sock, { id, ok: true, lines: [line] });
     } catch (err) {
-      send(sock, { id, ok: false, lines: [`shot 失败：${err.message}`] });
+      send(sock, { id, ok: false, lines: [`${head} 失败：${err.message}`] });
     }
+    return;
+  }
+  // ★**另一条截图管线**（`tickets/T-0142` acceptance ② / `T-0133` §B.4.4 的 B′）：本命令**不**在本进程
+  //   抓图，而是把裸命令 `capture` 转给渲染窗的命令表（`FrameHost.capture` = 页面内 `renderer.extract`
+  //   读回），因此它抓的是 **Pixi 舞台**（无 HTML 覆盖层），与 `screencap` 的整窗 `capturePage()` 是两条路。
+  //   ★给了路径就**由本进程落盘**（渲染进程没有 fs；与 `save`/`load` 同一条理由）——
+  //   于是"要哪条管线"与"存哪"两件事都显式，且回执直接报字节数/图像尺寸（不必再手工解 base64）。
+  //   ★无路径 ⇒ 逐字保持既有语义（base64 在回执的 `png` 字段里），落盘是**加法**不是替换。
+  //   ★与 `shot` 的关系：`shot <名字>` 就是"这条管线 + 固定落点 `<root>/.tmp/dbg-<名字>.png`"。
+  if (head === 'capture') {
+    const file = text.slice(head.length).trim();
+    if (file === '') {
+      const r = await sendDebugQuery('capture');
+      send(sock, { id, ...r });
+      return;
+    }
+    let buf;
+    try {
+      buf = await rendererCapturePng();
+    } catch (err) {
+      send(sock, { id, ok: false, lines: [`capture：${err.message}`] });
+      return;
+    }
+    // ★相对路径按**仓库根**（`ROOT`）解析，与 `shot` 的产物落点（`<root>/.tmp/dbg-*.png`）同一口径 ——
+    //   两条管线的图要能摆在一起对照，先得"写 `.tmp/x.png` 就都写进同一个 `.tmp/`"。
+    //   （★与 `save`/`load` 的 cwd 口径**不同**：那两条是既有行为，本轮不动它；回执里一律报**绝对路径**。）
+    const abs = path.isAbsolute(file) ? file : path.join(ROOT, file);
+    writePng(abs, buf);
+    const dim = pngSize(buf);
+    send(sock, {
+      id,
+      ok: true,
+      lines: [`capture → ${abs}（${buf.length} 字节${dim ? `，${dim[0]}x${dim[1]}` : ''}；管线 = 渲染窗 FrameHost.capture）`],
+    });
     return;
   }
   if (head === 'click' || head === 'tap' || head === 'clickimg' || head === 'move' || head === 'clickn') {
@@ -241,11 +413,12 @@ async function handle(sock, msg) {
     //   而它是**既有 E4 用法（`npm run shot --load` 一族）依赖**的路径 ⇒ 不许无声改默认行为。
     //   两条路的差别写在 `tools/dbg.cjs` 的用法头与 `debugsrv.cjs` 的文件头里。
     if (String(process.env.AMAYUI_DEBUG_INPUT ?? '').toLowerCase() === 'vm' && head !== 'clickn') {
-      // `clickimg` 的坐标是**截图图像坐标**，得先在主进程换算成虚拟坐标（渲染窗只认 1280×720 虚拟坐标）。
+      // ★`clickimg` 的坐标是**内容区 CSS 像素**（acceptance ⑦ 改的口径）⇒ 渲染窗只认虚拟坐标，
+      //   所以这里折算一次；`click`/`move` 则按"坐标已是该通道的目标口径"**原样透传**。
       let x = n[0];
       let y = n[1];
       if (head === 'clickimg') {
-        const mapped = await imgToSendLive(n[0], n[1]);
+        const mapped = contentToVirtual(n[0], n[1]);
         if (!mapped) {
           send(sock, { id, ok: false, lines: ['没有游戏窗口（输入未发送）'] });
           return;
@@ -254,7 +427,9 @@ async function handle(sock, msg) {
       }
       const cmd = head === 'move' ? `move ${x} ${y}` : `click ${x} ${y}`;
       const r = await sendDebugQuery(cmd);
-      send(sock, { id, ...r });
+      // 回执里带上这次折算（"点了没反应"时第一件要排除的事就是坐标口径）
+      const extra = head === 'clickimg' ? [`（内容区 ${n[0]},${n[1]} → 虚拟 ${x},${y}）`] : [];
+      send(sock, { id, ...r, lines: [...(r?.lines ?? []), ...extra] });
       return;
     }
     if (head === 'clickn') {
@@ -275,13 +450,9 @@ async function handle(sock, msg) {
       return;
     }
     if (head === 'clickimg') {
-      const mapped = await imgToSendLive(n[0], n[1]);
-      if (!mapped) {
-        send(sock, { id, ok: false, lines: ['没有游戏窗口（输入未发送）'] });
-        return;
-      }
-      const [x, y] = mapped;
-      send(sock, { id, ok: true, lines: [`${await clickAt(x, y)}（图像坐标 ${n[0]},${n[1]} → 输入坐标 ${x},${y}）`] });
+      // ★口径 = **内容区 CSS 像素**，而 `sendInputEvent` 要的**正是**它 ⇒ **恒等**（不再有 capturePage 往返）。
+      const [x, y] = [n[0], n[1]];
+      send(sock, { id, ok: true, lines: [`${await clickAt(x, y)}（内容区坐标 ${n[0]},${n[1]}；DOM 通道恒等）`] });
       return;
     }
     const [x, y] = [n[0], n[1]];
@@ -372,7 +543,7 @@ async function handle(sock, msg) {
     });
     sock.on('close', () => clients.delete(sock));
     sock.on('error', () => clients.delete(sock));
-    send(sock, { event: 'hello', text: 'amayui debug server', game: windows.hasGame() });
+    send(sock, { event: 'hello', text: 'amayui debug server', game: windows.hasGame(), ...srvFreshness(), startedAt: STARTED_AT });
   });
 
   server.on('error', (err) => {
