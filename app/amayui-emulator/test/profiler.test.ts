@@ -187,3 +187,119 @@ test('`opName` 用十六进制（日志里比十进制好认）', () => {
   assert.equal(opName(0x1af), '0x1af');
   assert.equal(opName(0), '0x0');
 });
+
+// ---------------------------------------------------------------------------
+// 宿主阶段（`tickets/T-0180` §10）：回答"steps 很少、每条指令 0ms、却工作几百 ms"
+// ---------------------------------------------------------------------------
+
+test('★宿主阶段：按名字累计、降序、最坏值；同名多次要合并计数', () => {
+  const { p, at } = harness();
+  /** 跑一个"阶段"：起点 `at(a)`、**终点在回调体内** `at(b)`（真实时钟就是这样走的）。 */
+  const stage = (name: string, a: number, b: number): void => {
+    at(a);
+    p.stageSync(name, () => at(b));
+  };
+  p.setSlowThresholdMs(1); // 本帧只有几 ms ⇒ 阈值调低才会进慢帧记录（阶段本身照记）
+  at(1000);
+  p.beginFrame(0);
+  stage('advanceModel', 1000, 1002); // 2ms
+  stage('present', 1002, 1006); // 4ms
+  at(1007);
+  const f = p.endFrame(0, 0);
+  assert.ok(f, '阈值 1ms 时这一帧要进慢帧记录（否则看不到本帧分解）');
+  assert.deepEqual(
+    f!.stages.map((s) => s.name),
+    ['present', 'advanceModel'],
+    '本帧阶段必须按耗时降序（present 4ms > advanceModel 2ms）',
+  );
+  assert.equal(f!.stages[0]!.ms, 4);
+
+  const st = p.stageStats();
+  assert.equal(st[0]!.name, 'present');
+  assert.equal(st[0]!.count, 1);
+  assert.equal(st[0]!.maxMs, 4);
+  assert.equal(st[1]!.name, 'advanceModel');
+  assert.equal(st[1]!.totalMs, 2);
+  // ★**累计优先**：0.5ms 的单次调用也不许被滤掉（一帧里调 166 次就是 83ms）
+  at(2000);
+  p.beginFrame(1);
+  for (let i = 0; i < 4; i++) stage('tiny', 2000 + i, 2000 + i + 0.5);
+  at(2010);
+  const g = p.endFrame(1, 0);
+  assert.ok(g, '这一帧里 4×0.5ms 的 tiny 已经 ≥ 1ms ⇒ 也要进记录');
+  assert.deepEqual(g!.stages, [{ name: 'tiny', ms: 2, n: 4 }], '单次 0.5ms 不许被"单次太小"滤掉');
+  assert.equal(p.stageStats().find((s) => s.name === 'tiny')!.count, 4, '同名多次要合并计数');
+});
+
+test('★`stage()` 不许吞异常，也不许改变返回值（诊断工具不许把引擎搞坏）', async () => {
+  const { p, at } = harness();
+  at(1000);
+  p.beginFrame(0);
+  at(1005);
+  const v = await p.stage('x', () => 42);
+  assert.equal(v, 42, '返回值必须原样透出');
+  at(1010);
+  await assert.rejects(
+    () =>
+      p.stage('x', () => {
+        throw new Error('boom');
+      }),
+    /boom/,
+    '阶段里的异常必须原样冒出来（否则帧循环的错会被计时器吃掉）',
+  );
+  // 抛错的那一次**也要记时**（否则"慢阶段恰好抛错"会消失）
+  assert.equal(p.stageStats()[0]!.count, 2);
+});
+
+test('★关掉看门狗 ⇒ 阶段不记账，但函数照常执行（关诊断不许改行为）', () => {
+  const { p } = harness();
+  p.setWatchEnabled(false);
+  let ran = 0;
+  const v = p.stageSync('never', () => {
+    ran++;
+    return 'ok';
+  });
+  assert.equal(ran, 1, '关着也必须执行');
+  assert.equal(v, 'ok');
+  assert.deepEqual(p.stageStats(), [], '关着不许记账');
+  assert.deepEqual(p.slowFrames(), [], '关着不许记慢帧');
+});
+
+test('★计数与阶段分开：`count()` 只报规模（时间分不出"项很多"与"某一项贵"）', () => {
+  const { p, at } = harness();
+  at(1000);
+  p.beginFrame(0);
+  p.count('sprite.new', 166);
+  p.count('sprite.new', 4);
+  p.count('mesh.new');
+  at(1001);
+  const f = p.endFrame(0, 0);
+  assert.equal(f, null, '没有阶段/超阈值时 endFrame 返回 null');
+  p.setSlowThresholdMs(1);
+  at(2000);
+  p.beginFrame(1);
+  p.count('sprite.new', 7);
+  at(2050);
+  const g = p.endFrame(1, 0);
+  assert.ok(g);
+  assert.deepEqual(g!.counters, [{ name: 'sprite.new', n: 7 }]);
+});
+
+test('★源码棘轮：宿主阶段真的接在帧循环与合成上（少一处就少一维归因）', () => {
+  const loop = fs.readFileSync(path.join(EMU, 'src', 'frame', 'loop.ts'), 'utf8');
+  assert.match(loop, /profiler\.stage\('advanceModel'/, '`advanceModel` 要单独计时（它是"不在 opcode 里"的头号嫌疑）');
+  assert.match(loop, /profiler\.stage\('present'/, '`present` 同上');
+  assert.match(loop, /profiler\.stage\('audio\/tick'/, '音频帧泵也是宿主阶段');
+
+  const backend = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'pixiBackend.ts'), 'utf8');
+  // ★必须是**同步**版：`advanceModel`/`present` 内部插 `await` 会把合成拆帧。
+  // ★标签用 `/` 不用 `.` / `:`：`config-keys.test.ts` 会把 `foo.bar` 形状的**字符串字面量**当配置键查
+  //   （实测：`advance:scAdvance` 也被那条棘轮拦下过）。
+  assert.match(backend, /profiler\.stageSync\('advance\/scAdvance'/, '模型推进要细分');
+  assert.match(backend, /profiler\.stageSync\('present\/presenter'/, '合成要细分到 presenter');
+  assert.doesNotMatch(backend, /await profiler\.stage\('present\//, '合成内部的细分**不许**用异步版（时序会变）');
+
+  const presenter = fs.readFileSync(path.join(EMU, 'src', 'renderer', 'pixi', 'presenter.ts'), 'utf8');
+  assert.match(presenter, /profiler\.stageSync\('presenter\/buildItem'/, '每项的固定成本要量出来');
+  assert.match(presenter, /profiler\.count\('sprite\.item'/, '规模（项数）与时间要分开记');
+});

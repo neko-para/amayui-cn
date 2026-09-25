@@ -7,9 +7,9 @@
 
 ## 概览
 
-共 **178** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **5** · ✅ done **168** · 🚫 dropped **2**（P0 8 / P1 69）
+共 **179** 张：🔜 doing **3** · ⛔ blocked **0** · ⬜ open **6** · ✅ done **168** · 🚫 dropped **2**（P0 9 / P1 69）
 
-按域：`emulator/render` 27 · `emulator/vm` 17 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1
+按域：`emulator/render` 28 · `emulator/vm` 17 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tooling` 5 · `emulator/msgwin` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/tools` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `analysis/engine-capabilities` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1
 
 ## 🔜 doing（3）
 
@@ -19,10 +19,11 @@
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0179`](./T-0179/ticket.json) | P2 | refactor | `analysis/analysis/emulator/vm` | 缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件） | 5 | — | `notes.md` `changes-round70.md` `changes-t0179.md` | — |
 
-## ⬜ open（5）
+## ⬜ open（6）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
+| [`T-0181`](./T-0181/ticket.json) | P0 | bug | `emulator/render` | DSH web 形态页面 JS 堆涨到 1.7~1.9GB 后 OOM 崩溃（同一游戏状态下 Electron 形态只有 104MB） | 5 | `app/amayui-emulator/test/mem-accounting-t0181.test.ts` | `changes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | `notes.md` | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
@@ -108,7 +109,7 @@
 | [`T-0166`](./T-0166/ticket.json) | P1 | docs | `docs/analysis/engine-capabilities` | 能力台账同步：75 条"描述过期 / overreach / guard 名不副实"逐条订正 | 3 | — | `changes.md` `changes-c166-blink.md` `changes-c166.md` | — |
 | [`T-0167`](./T-0167/ticket.json) | P1 | req | `emulator/frame-loop` | 能力台账缺口：27 条"引擎有、emulator 缺的持续行为"逐条落地或登记 | 3 | `app/amayui-emulator/test/frame-render-gate.test.ts` `app/amayui-emulator/test/headless-needs-render.test.ts` `app/amayui-emulator/test/scene-freeze-46676-gate.test.ts` `app/amayui-emulator/test/op-222-scene-commit.test.ts` `app/amayui-emulator/test/scene-3d-effect-level.test.ts` `app/amayui-emulator/test/scene-3d-weather.test.ts` `app/amayui-emulator/test/gfx-prim-mesh-consumers.test.ts` `app/amayui-emulator/test/adv-right-click-cancel-route.test.ts` `app/amayui-emulator/test/msgwin-backlog-wheel.test.ts` `app/amayui-emulator/test/wheel-as-key.test.ts` `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/char-reveal.test.ts` `app/amayui-emulator/test/op-1f5-dequeue.test.ts` `app/amayui-emulator/test/capability-ledger.test.ts` `app/amayui-emulator/test/t0167-audio-device-fail.test.ts` `app/amayui-emulator/test/t0167-blend-env-frozen.test.ts` `app/amayui-emulator/test/t0167-frame-loop-gaps.test.ts` | `notes.md` `changes.md` `changes-c167.md` | — |
 | [`T-0170`](./T-0170/ticket.json) | P1 | bug | `emulator/vm` | 实现 0x1D1（`0x82` 的孪生：GDI 重画窗 op1 的第 op2 条文本项记录，`sub_4675A0`）：让 HISTORY.BIN 不再硬停 | 6 | `app/amayui-emulator/test/recall-page-0x1d1.test.ts` `app/amayui-emulator/test/op-1d0-1d1-text-metrics.test.ts` | `changes.md` | — |
-| [`T-0180`](./T-0180/ticket.json) | P1 | bug | `emulator/render` | 文本直绘（0x204/0x205）每次调用新建画布 + GPU 回读 ⇒ 存档页切换一帧卡 1.5s（真机瞬时） | 7 | `app/amayui-emulator/test/text-raster-perf.test.ts` `app/amayui-emulator/test/profiler.test.ts` `app/amayui-emulator/test/binary-legs-t0180.test.ts` | `changes.md` | — |
+| [`T-0180`](./T-0180/ticket.json) | P1 | bug | `emulator/render` | 文本直绘（0x204/0x205）每次调用新建画布 + GPU 回读 ⇒ 存档页切换一帧卡 1.5s（真机瞬时） | 8 | `app/amayui-emulator/test/text-raster-perf.test.ts` `app/amayui-emulator/test/profiler.test.ts` `app/amayui-emulator/test/binary-legs-t0180.test.ts` | `changes.md` | — |
 | [`T-0009`](./T-0009/ticket.json) | P2 | bug | `emulator/render` | 动画"完成"判据不自洽：scAnimationsDone 只看颜色窗 + 0x400 门读上一帧时钟 | 3 | `app/amayui-emulator/test/frame-loop.test.ts` | `notes.md` | — |
 | [`T-0010`](./T-0010/ticket.json) | P2 | bug | `emulator/frame-loop` | report.ts 完全没有 0x400 / SLEEP_GATE 分支（置上后永不清、sleep 永不满足） | 2 | `app/amayui-emulator/test/scene-report.test.ts` | `notes.md` `changes.md` | T-0001 |
 | [`T-0012`](./T-0012/ticket.json) | P2 | bug | `emulator/frame-loop` | run.ts 的帧循环：时钟只在一个分支前进、逐字分支顺序相反、缺 CharGrid/advActive | 2 | `app/amayui-emulator/test/run-cli-loop.test.ts` | `notes.md` `changes.md` | T-0001 |

@@ -34,6 +34,8 @@ import { scTransitionMarkedHandles, type TransitionRenderItem } from '../scene/t
 import type { TextureCache } from './textureCache.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
 import { VIEW_H, VIEW_W } from '../viewport.js';
+// ★`tickets/T-0180` §10：合成阶段计时（"300~650ms 花在哪"）。
+import { profiler } from '../../vm/profile.js';
 
 /**
  * 抽象混合档 → Pixi 的 `BLEND_MODES`（`tickets/T-0017`）。
@@ -171,7 +173,9 @@ export class ScenePresenter {
     this.#lastPresentMs = clock;
 
     // 0) 逐帧驱动：推进所有 draw-item 的 5 个动画窗（窗末 work ← target；全窗结束清动画位）。
-    for (const it of scene.drawItems.values()) advanceWindows(it, clock);
+    profiler.stageSync('presenter/advanceWindows', () => {
+      for (const it of scene.drawItems.values()) advanceWindows(it, clock);
+    });
 
     this.#logSummary(scene, clock, waitFlags);
 
@@ -185,7 +189,10 @@ export class ScenePresenter {
     //   （win 8 的文本项 id = `SYSTEM4.txt:69 i213 8 19a28 1f4` = 0x19a28 = 105000，见 `layerOfFrame`）。
     //   键相同者按 item → text → mesh 排（引擎三路归并的等键次序；语料里等键极罕见）。
     let drawn = 0;
-    const items = [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle);
+    // ★`tickets/T-0180` §10：排序也是"按规模增长"的一段（几千项时 `sort` 不是免费的）⇒ 单独记账。
+    const items = profiler.stageSync('presenter/sortItems', () =>
+      [...scene.drawItems.values()].sort((a, b) => a.layer - b.layer || a.handle - b.handle),
+    );
     const texts = [...textSprites].sort((a, b) => a.layer - b.layer || a.win - b.win);
     const meshes = [...scene.meshes.values()].sort((a, b) => a.handle - b.handle);
     // ★D3（`tickets/T-0091`）：**本帧被转场占用（画进 scratch 36/37）的项不进屏幕 pass** ——
@@ -198,8 +205,11 @@ export class ScenePresenter {
     const skipped = (key: number): boolean => marked.has(key);
     const drawItem = (it: Item, blendMode: BlendState): void => {
       if (skipped(it.handle)) return;
-      const spr = this.itemSprite(scene, it, clock, blendMode);
+      // ★`tickets/T-0180` §10：把"每一项都很小的固定成本"累计出来（每帧每项新建一个 Texture +
+      //   Sprite；166 项/帧时只有集中计时才看得出它值不值得优化）。
+      const spr = profiler.stageSync('presenter/buildItem', () => this.itemSprite(scene, it, clock, blendMode));
       if (!spr) return;
+      profiler.count('sprite.new');
       this.drawRoot.addChild(spr);
       drawn++;
     };
@@ -216,6 +226,7 @@ export class ScenePresenter {
     //   旧实现把**每个** mesh 画成 `width=VIEW_W; tint=0x000000` 的全屏不透明黑，且忽略
     //   RGB（永远黑），于是 SN0000 序章被"50% 黑幕"涂成整屏黑（背景与首文案一起消失）。
     const drawMesh = (m: typeof meshes[number], blendMode: BlendState): void => {
+      profiler.count('mesh.new');
       if ((m.flags & 1) === 0 || m.verts.length < 3) return; // 无几何 ⇒ 引擎不画
       // ★D3：mesh 表（`Scene+1064`）同样被打 `|0x10000`（raw 135772/135995/136301…）⇒ 也要排除
       if (skipped(m.handle)) return;
@@ -415,7 +426,15 @@ export class ScenePresenter {
       env,
       scene.render4.sceneBlend,
     );
-    for (let i = 0; i < entries.length; i++) entries[i]!.draw(modes[i]!);
+    // ★`tickets/T-0180` §10：把"画"这一段单独记账，并**数出规模**（多少个 Sprite / mesh / 批次）。
+    //   光有时间分不出"项很多"与"某一项特别贵"；计数才能把时间归到规模上。
+    profiler.count('sprite.item', items.length);
+    profiler.count('sprite.text', texts.length);
+    profiler.count('mesh.entry', meshes.length);
+    profiler.count('l2d.batch', l2dBatchList.length);
+    profiler.stageSync('presenter/draw', () => {
+      for (let i = 0; i < entries.length; i++) entries[i]!.draw(modes[i]!);
+    });
 
     // ★回收本帧没出现的 L2D 缓存（节点被撤/网格隐藏）。`Mesh.destroy` **不**销毁 geometry
     //   ⇒ 显式 `destroy(true)` 释放顶点/索引缓冲（否则只能等 Pixi 的 GCManagedHash 慢慢回收）。

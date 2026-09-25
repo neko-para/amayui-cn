@@ -248,6 +248,75 @@ POST 给宿主 → 宿主 `HostService.writeDebugArtifact` 写盘 → 回执只�
 `npm run verify` = **exit 0**（tests **1712** / pass 1710 / fail 0 / skipped 2；`check:dead-writes` 无新增死写）。
 比上一轮多的 5 条就是 `test/binary-legs-t0180.test.ts`。
 
+## 10. 「绘制 texture 的优化」实测：**它不该做**（先把钱花在哪量清楚）
+
+### 为什么先量
+
+`T-0180` 判据 4 留了一条**只知道存在、不知道是谁**的开销：一类帧 `steps` 很少、**每条指令 0ms**、
+却工作几百 ms ⇒ 时间在**宿主阶段**。当时的猜测里有"纹理上传/逐项新建 Sprite"这一族。
+⇒ 先给 `profiler` 加**宿主阶段计时**，把那一桶拆开，再决定改什么（**不许靠猜**）。
+
+新增（`src/vm/profile.ts`）：`stage(name, fn)`（异步）/ `stageSync(name, fn)`（同步）/
+`count(name, n)`（规模计数）/ `stageStats()`；慢帧记录与报告都带上阶段分解。
+接线：`frame/loop.ts`（`advanceModel` / `present` / `audio.tick`）、`pixiBackend.ts`
+（`advance:scAdvance` / `advance:transitionTick` / `advance:l2dTick` / `advance:commitRange` /
+`present:textLayer` / `present:cellSprites` / `present:presenter` / `present:transitions` / `present:gc`）、
+`pixi/presenter.ts`（`presenter.advanceWindows` / `presenter.sortItems` / `presenter.draw` /
+`presenter.buildItem` + `sprite.item`/`sprite.new`/`mesh.*`/`l2d.batch` 计数）。
+
+★**修掉一个自己引入的观测错误**（值得记）：第一版按"单次 < 0.05ms 不记账"过滤 ⇒
+`presenter.buildItem` 单次只有 0.004~0.10ms，于是它**整个从报告里消失**，而它一帧要跑 165 次。
+⇒ 改成**一律累加、只在报告里按累计值过滤**；守卫里钉了这条（"4×0.5ms 不许被滤掉"）。
+
+### 实测：最重的界面（SAVE/LOAD，165 项/帧）上，绘制纹理这条路整条只有 ~2.5ms
+
+实例 `perf5`（`--attach-headless`）、TITLE → Load Data → 翻页，`profile report`：
+
+| 阶段 | 次数 | 合计 | 均 | 最坏 |
+|---|---|---|---|---|
+| `present` | 778 | 1941.3ms | **2.50ms** | 13.7ms |
+| `present:presenter` | 778 | 1903.4ms | 2.45ms | 13.7ms |
+| `presenter.draw` | 778 | 1013.0ms | **1.30ms** | 8.4ms |
+| `presenter.buildItem`（逐项 `cropSprite`：新 `Rectangle`+`Texture`+`Sprite`） | 128767 | 529.0ms | 0.004ms/项 | 7.4ms |
+| `advanceModel` | 778 | 67.0ms | 0.09ms | 0.3ms |
+| `advance:l2dTick` | 778 | 31.0ms | 0.04ms | 0.2ms |
+
+规模（同期计数）：`sprite.item=165~166`、`sprite.new=138~139`、`l2d.batch=60`、`mesh.entry=1`。
+
+⇒ 在这台机上，**一整帧的合成只占 2.5ms / 16.7ms（15%）**，其中：
+* "逐项新建 Sprite+Texture"（最像"重复绘制纹理"的那条）= **0.68ms/帧**；
+* 真正画（`#buildItemSprite` 求值 + `addChild`）= **1.30ms/帧**；
+* 剩下 ~1.2ms 在 `present` 内部但不在我们记账的细目里（Pixi 自己的渲染管线/rAF ticker）。
+
+### 结论与决定
+
+* **微优化**（Sprite/Texture 池化）上限 = 0.68ms/帧 = **4% 预算**，却要动"每帧重建 drawRoot"
+  这条核心路径 ⇒ **不做**（收益/风险不成比例）。
+* **预渲染静态背景**（MDN 那条"repeated objects → offscreen canvas"）：本界面 165 项里确实有一大批
+  静态项，但收益最多也就上面那 1.3ms 的一部分 ⇒ **不做**，除非有人报"这个界面在真机上明显更顺"。
+* 真正贵的是**另一件事**：翻页那一帧的 `0xa0` 等指令（`steps 10000`、单帧 1.4~4.3s）——
+  那是每帧步数上限（10000）触顶的批次帧，按用户决定**不改**这条语义。
+* ★**慢帧记录的 gap 侧**也顺带看清了：LOAD 画面上大量 `工作 3~6ms · 距上帧 89~176ms` 的帧 ——
+  那是**门在等**（`steps 50` 就停），不是我们算得慢。这正是判据 4 那句"看门狗措辞不够准"的实例。
+
+⇒ 如实结论：**"绘制 texture 的优化"在本工程没有值得做的余量**；本轮把"钱花在哪"从推测变成了数字，
+并把这套分解固化进 `profile`（以后任何一个"这里卡"的问题都能先问它，而不是先改代码）。
+
+### 收口（第 10 节）
+
+`npm run verify` = **exit 0**（tests **1717** / pass 1715 / fail 0 / skipped 2；`check:dead-writes` 无新增死写）。
+
+顺手被两条既有棘轮拦下、并各自修正（都是**真信号**，不是把它们放宽）：
+* `test/config-keys.test.ts`：阶段标签原本写成 `advance:scAdvance` / `present:textLayer` ⇒ 被"每个配置键
+  字面量必须在权威键表里"拦下。**改成 `/`**（`advance/scAdvance`）—— 那条棘轮的意图是对的（手打配置键
+  拼错只会恒读 fallback），不该为我的标签开口子。
+* `test/t0157-frame-loop.test.ts` 的次序判据（门 → `advanceModel` → `present`）：锚点是**字面串**
+  `host.advanceModel?.(nowMs,`，被 `profiler.stage('advanceModel', …)` 包住之后就不匹配了
+  ⇒ 把锚点改成 `profiler.stage('advanceModel'` / `profiler.stage('present'`（**次序语义没变**，
+  判据本身仍钉着"门在最前"）。
+
+
+
 
 
 

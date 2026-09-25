@@ -259,6 +259,75 @@ export class TextureCache {
     return this.slotTex.size;
   }
 
+  /**
+   * **仍有"槽节点"的槽数**（`0x20F`/`0x236` 惰性建的对象；`releaseMovieSlots` 会清）。
+   * ★与 `slotCount` 的区别：那个是"绑定了纹理的槽"，这个是"引擎眼里存在对象的槽"——
+   * 两者不等（注册了对象但还没绑图的槽在前者里看不见）。诊断内存时两个都要看。
+   */
+  get slotNodeCount(): number {
+    return this.#slotNodes.size;
+  }
+
+  /**
+   * **本缓存到底留了多少像素**（`tickets/T-0181`：页面 OOM 的评估）。
+   *
+   * 为什么需要它：这两张表（`#imgCache` / `#canvasSlots`）**只增不减** —— 游戏跑过的每一张图、
+   * 建过的每一个程序化表面都留在这里。想知道"是不是它们把堆吃满了"，就必须能报出**项数 + 像素数**
+   * （而不是靠猜"300MB 大概是 Pixi 的 ImageSource"）。
+   *
+   * ★两张表分开报：`#imgCache` 是**文件图**（AGF 解码后的 RGBA，靠 `imgid` 复用）、
+   *   `#canvasSlots` 是**程序化表面**（`0x1F8`/`0x204` 画的，靠槽号复用）。它们的释放语义不同
+   *   （前者引擎永不释放，后者随 `release-texture` 走），混成一个数就分不出该动哪一边。
+   *
+   * @param reachableSlots 当前**还被场景引用**的槽号（可选）—— 用来把"活着"与"只留在缓存里"分开。
+   *   ★这正是判"能不能回收"的判据：没有人引用的条目仍然占着内存。
+   */
+  stats(reachableSlots?: Iterable<number>): {
+    img: { count: number; pixels: number };
+    canvas: { count: number; pixels: number; reachable: number; reachablePixels: number };
+    inflight: number;
+    pendingDestroy: number;
+  } {
+    let imgPixels = 0;
+    for (const tex of this.#imgCache.values()) imgPixels += sourcePixels(tex);
+    let canvasPixels = 0;
+    let reachable = 0;
+    let reachablePixels = 0;
+    const want = reachableSlots ? new Set(reachableSlots) : null;
+    for (const [slot, cs] of this.#canvasSlots) {
+      // 画布本身按 DPR 放大过（`canvasPixelSize`）⇒ 用逻辑尺寸 × res 算，不用 canvas.width
+      // （两者本该相等，但 res 是"我们以为的"，canvas.width 是"实际的" ⇒ 取实际的更诚实）。
+      const px = cs.canvas.width * cs.canvas.height;
+      canvasPixels += px;
+      if (want?.has(slot)) {
+        reachable++;
+        reachablePixels += px;
+      }
+    }
+    return {
+      img: { count: this.#imgCache.size, pixels: imgPixels },
+      canvas: { count: this.#canvasSlots.size, pixels: canvasPixels, reachable, reachablePixels },
+      inflight: this.#inflight.size,
+      pendingDestroy: this.#pendingDestroy.size,
+    };
+  }
+
+  /**
+   * **已载入文件的键**（`imgid` 升序；诊断/单测用）。
+   * 与 `stats()` 配对：想知道"是谁在占"就得看得见键，而不只是总数。
+   */
+  imgIds(): number[] {
+    return [...this.#imgCache.keys()].sort((a, b) => a - b);
+  }
+
+  /** 某张已载入图的源尺寸（没载入 ⇒ null）。 */
+  imgSize(imgid: number): { w: number; h: number } | null {
+    const tex = this.#imgCache.get(imgid);
+    if (!tex) return null;
+    const s = tex.source as unknown as { width?: number; height?: number };
+    return { w: s.width ?? 0, h: s.height ?? 0 };
+  }
+
   /** 仍在载入的图像数（帧屏障用，见 `waitIdle`）。 */
   get pendingCount(): number {
     return this.#inflight.size;
@@ -1007,6 +1076,21 @@ async function rgbaToTexture(w: number, h: number, data: Uint8Array): Promise<Te
   const imageData = new ImageData(clamped, w, h);
   const bmp = await createImageBitmap(imageData);
   return Texture.from(bmp);
+}
+
+/**
+ * 一张纹理的源有多少像素（**诊断用**，`stats()` 里累加）。
+ *
+ * ★为什么要走鸭子类型而不是 `tex.source.width`：Pixi v8 的源类型不止一种
+ *   （`ImageSource` = `ImageBitmap`、`CanvasSource` = `HTMLCanvasElement`、
+ *   `BufferImageSource` = `{width,height,data}`）。只读 `width/height` 对三者都成立，
+ *   但**必须防 `undefined`** —— 报一个 NaN 进合计会让整份诊断失去意义（宁可为 0）。
+ */
+function sourcePixels(tex: Texture): number {
+  const s = tex.source as unknown as { width?: number; height?: number };
+  const w = typeof s.width === 'number' && Number.isFinite(s.width) ? s.width : 0;
+  const h = typeof s.height === 'number' && Number.isFinite(s.height) ? s.height : 0;
+  return Math.max(0, w * h);
 }
 
 

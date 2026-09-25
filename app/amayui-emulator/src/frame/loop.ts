@@ -552,7 +552,10 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     // ★音频帧泵（D5）：**每完整帧恰好一次**，且**先于**合成 —— 引擎 raw 20645-20646 就在 present 段里，
     //   产品路径的 `session.#present()`（texturesIdle → audio tick → present）也是这个次序。
     //   撞脚本尾/退出/重置的那一帧**不算完整帧** ⇒ 不发（与 session 的 `break outer` 一致）。
-    if (audioPolicy !== 'never') host.audio?.({ kind: 'tick', nowMs, advActive: e.advActive });
+    if (audioPolicy !== 'never') {
+      // ★`tickets/T-0180` §10：音频帧泵也是"宿主阶段"（一帧一次，但它内部要老化通道/跑队列）。
+      await profiler.stage('audio/tick', () => host.audio?.({ kind: 'tick', nowMs, advActive: e.advActive }));
+    }
     if (opt.present !== 'never') {
       // ★★**帧提交门**（引擎主循环 raw 20740-20761；`tickets/T-0167` 的 §4.2 #3/#6/#7）：
       //   门内 ④ 的帧时钟写在这里落地 —— 修前 `engineValues` 的 `clock`/`clockPrev` **只**由
@@ -570,7 +573,9 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       // ★`{ freeze: e.sceneFreeze }`（`tickets/T-0091` 的 G1）：引擎 `Scene+46512` 在**本帧绘制期**
       //   就把所有窗算结束（raw 117449 / 133517 / 134941）⇒ 冻结必须随"推进模型"一起传进宿主，
       //   否则窗按墙钟跑完（画面差异 + `needsRender` 多亮若干帧）。清冻结在下面（引擎帧末 136842/137183）。
-      host.advanceModel?.(nowMs, { freeze: e.sceneFreeze });
+      //   ★`tickets/T-0180` §10：这一句与下面的 `present` 是**实测那 300~650ms 的嫌疑犯**
+      //   （指令计时显示 0ms ⇒ 花在宿主阶段）⇒ 各自单独记账。
+      await profiler.stage('advanceModel', () => host.advanceModel?.(nowMs, { freeze: e.sceneFreeze }));
       // ★**池挂起位**（`Scene+46516`，`tickets/T-0024`）：引擎每遍绘制开头清零（raw 130427-130428）、
       //   绘制期"还有元素在动"时置位（raw 117843-117844 / 133528 / 134944）⇒ 帧**开头**的门读到的是
       //   **上一遍绘制**的结果。宿主交出的是"本遍是否还有窗在跑"（`scPoolPending`），
@@ -581,7 +586,7 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       //   跳过的只是"画"这一步（`tickets/T-0003`）。
       const wantPresent = opt.present === 'needsRender' ? (host.needsRender?.() ?? true) : true;
       // ★`await`：Electron 的合成前屏障（等本帧新绑定的纹理 IPC 到位）必须在 `present` 之前完成。
-      if (wantPresent) await host.present?.();
+      if (wantPresent) await profiler.stage('present', () => host.present?.());
     }
     // ★逐帧对外表现（`tickets/T-0003` 验收 4）：模型已推进之后取一份冻结的 digest。
     //   只有"观察者明确要 digest"（`wantsDigest`）且宿主交得出场景模型时才构建 —— 构建一次要跑

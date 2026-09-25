@@ -651,6 +651,37 @@ export class RendererSession {
         }
         return ['profile：未知子命令'];
       }
+      case 'mem': {
+        // ★`tickets/T-0181`：用户实测两次 `out of memory`（接入 DSH 之后）⇒ 先给一个**只读**的内存账。
+        //   报"项数 + **像素数**"而不是只报项数：一条 AGF 可以是 16×16 也可以是 1280×720，
+        //   光说"缓存了 200 张"说明不了任何事（这正是本轮要避免的含糊结论）。
+        const m = this.#pixi.memStats();
+        const mb = (n: number): string => (n / 1048576).toFixed(1);
+        const rgba = (px: number): string => `${mb(px * 4)}MB`;
+        const lines: string[] = [];
+        if (m.jsHeap) {
+          lines.push(
+            `JS 堆：used ${mb(m.jsHeap.used)}MB / total ${mb(m.jsHeap.total)}MB` +
+              (m.jsHeap.limit > 0 ? ` / limit ${mb(m.jsHeap.limit)}MB（占上限 ${((m.jsHeap.used / m.jsHeap.limit) * 100).toFixed(1)}%）` : ''),
+          );
+        } else {
+          lines.push('JS 堆：读不到（非 Chromium 环境 ⇒ 没有 `performance.memory`）');
+        }
+        lines.push(
+          `纹理缓存·文件图：${m.texImg.count} 张 / ${m.texImg.pixels} 像素（≈ ${rgba(m.texImg.pixels)} RGBA）`,
+        );
+        lines.push(
+          `纹理缓存·槽表面：${m.texCanvas.count} 个 / ${m.texCanvas.pixels} 像素（≈ ${rgba(m.texCanvas.pixels)}）` +
+            `，其中仍被绘制项引用 ${m.texCanvas.reachable} 个 / ${m.texCanvas.reachablePixels} 像素`,
+        );
+        lines.push(
+          `槽账：绑定纹理 ${m.slotTex} 槽 · 有槽对象 ${m.slots} 个 · 在途载入 img=${m.inflight} l2d=${m.l2dInflight}` +
+            ` · L2D 已载图 ${m.l2dTex} · 待销毁 ${m.pendingDestroy}`,
+        );
+        lines.push(`本帧绘制对象：${m.live} 个（drawRoot 子节点数）`);
+        this.#traceLog.line(`[mem] ${lines.join(' · ')}`);
+        return lines;
+      }
       case 'snapshot': {
         // ★`tickets/T-0122`：引擎态快照。**只读**（`captureEngineSnapshot` 不改任何状态）。
         //   场景态经 `sceneForSnapshot`（只读引用）传入 —— 快照要覆盖 `render4` 那两格。

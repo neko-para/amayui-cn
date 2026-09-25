@@ -57,7 +57,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "回写丢弃",
       "note": "本批修复点：bind 的异步回写判据（槽表面世代 + 绑定未变）。守卫 `test/texture-bind-race.test.ts`（5 条，判别力已机械证明）。★用户复验：白底仍在 ⇒ 这条不是那次白底的原因（保留）。★**轮 9 追加**：同一文件新增**到货通知 `onReady`**（纹理确实落进该槽时调用；被丢弃的回写不调用），`pixiBackend.ts` 传入 `() => #markDirty()` ⇒ **迟到的图像会让下一帧重新合成 ⇒ 白占位块最多存活一帧**；守卫 +2 条（迟到到货必须通知 / 丢弃不得通知，撤销 `onReady` ⇒ 1 fail，还原 sha256 一致 ⇒ 7/7）。机制取证全文见 `tickets/T-0102/white-report.md`。",
-      "line": 360
+      "line": 464
     },
     {
       "file": "src/CONFIG.txt",
@@ -87,7 +87,7 @@
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "getTextureSize slot=",
       "note": "★唯一判决点的另一半（探针实测真 `TextureCache`，`.tmp/t0102w/probe-slot-size.mts`）：**第一遍** `bind` 异步 ⇒ `size()` = 0×0 / `resolve` 无纹理；载入落地后才真值；**第二遍**同一 `bind` 命中 `#imgCache` ⇒ **同步**命中 ⇒ `size` 与 `draw-texture` 当帧正确。⇒ 「开合侧边栏才对」= 它把同一条 `set-texture` 又发了一次（引擎 `set-texture` 同步，所以引擎第一次就对）。",
-      "line": 697
+      "line": 805
     },
     {
       "file": "src/CONFIG.txt",

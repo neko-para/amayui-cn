@@ -163,6 +163,11 @@ const NON_BRIDGE = {
     'digestHostCounters',
     'digestState',
     'drainTextureSizeLog',
+    // ★`memStats`（`tickets/T-0181` 页面 OOM 的评估）：**调试器只读访问器**，与 `sceneForSnapshot`
+    //   同类 —— 调用方是会话的 `mem` 命令（`session.ts`），报"谁留住了内存"（JS 堆 + 纹理缓存的
+    //   项数/像素数）。没有一条 opcode 调它；入桥会把"调试器的眼睛"混进操作数面
+    //   （而且 headless 侧根本没有纹理/画布，它刻意不实现）。清单按**字典序**写。
+    'memStats',
     'resolveItemTexture',
     // ★`sceneFrozen` / `setSceneFrozen`（审计 §4.2 #24 `scene-render-freeze-46676`）：**实测/回归注入缝**，
     //   与 `setSceneRotationRad` 同类 —— `Scene+46676` 在反编译里**零写点**（105 处读、0 处写），

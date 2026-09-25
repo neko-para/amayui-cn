@@ -127,6 +127,8 @@ import type { MsgWinInput } from '../text/layout.js';
 import { fontFailures } from './text/fontLoader.js';
 import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
+// ★`tickets/T-0180` §10：`advanceModel`/`present` 内部阶段计时（那一类"steps 很少却工作几百 ms"的帧）。
+import { profiler } from '../vm/profile.js';
 import type { RenderStatus } from './renderStatus.js';
 
 /**
@@ -1532,7 +1534,7 @@ export class PixiBackend implements NativeBridge {
     //   而 `present` 会被 `needsRender` 跳过（窗恰好结束的那一帧 `pending` 已为假）⇒ 那一帧的
     //   收尾就永远不会发生，两宿主的 digest 会分叉 —— 正是 G3 要抓的东西。
     //   ★`freeze`（`T-0091` G1）：本帧所有 A 层窗当帧收尾（raw 117449 / 133517）。
-    scAdvance(this.scene, nowMs, freeze);
+    profiler.stageSync('advance/scAdvance', () => scAdvance(this.scene, nowMs, freeze));
     // ★转场窗（`tickets/T-0084`）：与 headless 共用 `scene/transition.ts` 一份推进器
     //   （锁存起点 / 推进 t·off / 到点杀记录 / 一遍绘完清空整表 —— 引擎 `sub_4B06D0` +
     //   帧函数 raw 136840-136841）。放在 `scAdvance` 之后、本帧 `present` 之前：
@@ -1544,11 +1546,13 @@ export class PixiBackend implements NativeBridge {
     //     两个都与 headless 宿主同一份形参（探针在 `scAdvance` 之后求值，与引擎同序）。
     //   ★D2（`tickets/T-0091`）：**把 tick 的 `render` 快照存下来**给本帧 `present()` 用 ——
     //     到期帧按引擎会**同帧清表**（`active` 为空 ⇒ 清），重查表就再也拿不到 `t=1` 的终帧。
-    const tick = scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending());
+    const tick = profiler.stageSync('advance/transitionTick', () =>
+      scTransitionTick(this.scene, nowMs, freeze, () => this.poolPending()),
+    );
     this.#pendingTransitionRender = tick.render;
     // ★Live2D 动作推进：与 headless 共用 `scL2dTick`（只在"这一帧真要画的节点"上推进；
     //   引擎里推进与出画是同一次调用，见能力条目 `live2d-node-draw-advance`，T-0054）。
-    const drawn = scL2dTick(this.scene, nowMs);
+    const drawn = profiler.stageSync('advance/l2dTick', () => scL2dTick(this.scene, nowMs));
     if (drawn.length > 0) this.#l2dDrawnKeys = drawn;
     // ★★**3D 层提交的帧级部分**（审计 §4.2 #19）：清脏位 / 世界矩阵复位 / `0x222` 排队区间的
     //   逐 key 天气节点判据 / bit0 分派 / `sub_453540` 按墙钟推进（审计 §4.2 #18/#21）——
@@ -1556,7 +1560,7 @@ export class PixiBackend implements NativeBridge {
     //   ★**位置要紧**：它在下面的 `poolPending()` 探针之上（提交末尾会清 `46516`，而探针读的
     //   正是"这一遍绘制期有没有东西在动"）。
     scWeatherSetClock(this.scene, nowMs);
-    scSceneCommitRange(this.scene, nowMs);
+    profiler.stageSync('advance/commitRange', () => scSceneCommitRange(this.scene, nowMs));
     // ★★**池挂起位 `Scene+46516` 的场景侧锁存**（审计 §4.2 #2）：引擎在每遍绘制末尾按
     //   `46512|46516` 置 `46508`（raw 136718-136719）⇒ 下一次 `needsRender()` 必须看得到它。
     //   探针与引擎同序取（所有推进之后），`freeze` 时按引擎"冻结 ⇒ 窗立即收尾 ⇒ 不置位"处理。
@@ -1565,7 +1569,6 @@ export class PixiBackend implements NativeBridge {
     //   推进模型 → 屏障 → 合成）就能在同一帧里等到它们 ⇒ 与引擎 `0x345` 的同步装载同观感。
     this.#ensureL2dTextures();
   }
-
   /**
    * **把真实系统光标挪到「引擎虚拟坐标 `(x, y)`」处**（`NativeBridge.setSystemCursor`；引擎 `0x10A`）。
    *
@@ -1618,6 +1621,50 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
+   * **页面内存账**（`tickets/T-0181`：用户实测两次 OOM 的评估入口；`mem` 调试命令的宿主侧）。
+   *
+   * 只读、不做任何清理。报的是"**谁留住了内存**"：
+   *  - `jsHeap`：`performance.memory`（Chromium 才有；`--attach-headless` 起的是 Electron ⇒ 有）；
+   *  - `texImg` / `texCanvas`：纹理缓存里的**图数 + 像素数**（→ `×4` 就是留在 JS 堆里的 RGBA 字节）；
+   *    `texCanvas.reachable` = 其中**仍被场景槽引用**的那部分（其余是"只在缓存里、没人用"）；
+   *  - `slotTex` / `slots`：槽→纹理绑定数与**仍有节点的槽数**（后者含注册后未绑图的）；
+   *  - `live`：本帧画出来的 Sprite 数（每帧那个数，用来判断"项数"这一维）。
+   *
+   * ★为什么"像素数"比"条目数"重要：一条 AGF 可以是 16×16 也可以是 1280×720 ⇒ 光说"缓存了 200 张"
+   *   完全说明不了内存（这正是本轮要避免的那种含糊结论）。
+   */
+  memStats(): {
+    jsHeap: { used: number; total: number; limit: number } | null;
+    texImg: { count: number; pixels: number };
+    texCanvas: { count: number; pixels: number; reachable: number; reachablePixels: number };
+    inflight: number;
+    pendingDestroy: number;
+    slotTex: number;
+    slots: number;
+    l2dTex: number;
+    l2dInflight: number;
+    live: number;
+  } {
+    // 当前被绘制项引用的槽号（"reachable" 的判据；只读遍历）
+    const reachableSlots = new Set<number>();
+    for (const it of this.scene.drawItems.values()) reachableSlots.add(it.tex ?? 0);
+    const t = this.textures.stats(reachableSlots);
+    return {
+      jsHeap: readJsHeap(),
+      texImg: t.img,
+      texCanvas: t.canvas,
+      inflight: t.inflight,
+      pendingDestroy: t.pendingDestroy,
+      slotTex: this.textures.slotCount,
+      slots: this.textures.slotNodeCount,
+      l2dTex: this.#l2dTextures.loadedCount,
+      l2dInflight: this.#l2dTextures.pendingCount,
+      // 本帧画进 `drawRoot` 的 Sprite/Container 数（每帧重建 ⇒ 这个数就是"本帧画了多少个对象"）
+      live: this.drawRoot.children.length,
+    };
+  }
+
+  /**
    * 合成一帧。
    * @param nowMs 本帧时钟（引擎 `nowMs`）；给了就用它（**单一时间域**，D1），否则用驱动注入的值，
    *   都没有才退回"墙钟 - 起点"（旧调用点/测试）
@@ -1644,18 +1691,21 @@ export class PixiBackend implements NativeBridge {
     this.#clockInjected = false; // 已消费本帧注入的时钟
     this.#rangeCache.clear(); // 转场的子集离屏合成按帧缓存（见 #rangeCache）
     // 消息窗文本：先按内容版本号重建纹理，再与 draw-item 按同一 layer 归并合成
-    const textSprites = this.textLayer.sync(this.scene);
+    // ★`tickets/T-0180` §10：`present` 内部各阶段分别记账（"300~650ms 花在哪"只能靠这个分出来）。
+    const textSprites = profiler.stageSync('present/textLayer', () => this.textLayer.sync(this.scene));
     // ★字格图标（▼「点击继续」）：引擎把精灵表的第 k 格**直接 blit 到屏幕**（`sub_45A940`），
     //   所以它画在最上层（层序给一个大值）。见 `MsgCellFrame`。
-    const cellSprites = this.#cellSprites();
-    this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites], this.#pendingTransitionRender);
+    const cellSprites = profiler.stageSync('present/cellSprites', () => this.#cellSprites());
+    profiler.stageSync('present/presenter', () =>
+      this.presenter.present(this.scene, this.clockMs, waitFlags, [...textSprites, ...cellSprites], this.#pendingTransitionRender),
+    );
     // ★转场：把"旧帧 → 新帧"的合成结果画进记录 `[4]` 指定的那个**离屏槽**（引擎 `sub_4B06D0` 的
     //   `sub_4A50C0(_this, v384[4])` + `Clear` + 条带/淡入淡出，raw 136174 / 134937 / 135824）。
     //   放在 `presenter.present` 之后：此刻 stage 上就是本帧合成结果 = 引擎的"新"屏幕层。
-    if (transPending) this.#compositeTransitions();
+    if (transPending) profiler.stageSync('present/transitions', () => this.#compositeTransitions());
     // ★舞台已换成新纹理 ⇒ 现在才是销毁旧纹理的安全时刻（否则 ticker 会去画已销毁的纹理 →
     //   WebGL 批次损坏 → 整屏只剩背景色，且此后不再恢复；见 TextureCache.collectGarbage 的说明）
-    const gc = this.textures.collectGarbage();
+    const gc = profiler.stageSync('present/gc', () => this.textures.collectGarbage());
     if (gc > 0) this.#pushLog(`[texture] 延迟销毁旧纹理 ${gc} 张`);
     this.sceneDirty = false; // present 已消费本次"脏"标记
     // ★同时消费**池挂起位**（`Scene+46516`）：引擎每一遍绘制开头把它清 0（raw 130427-130428），
@@ -1828,4 +1878,22 @@ function installD3DBlendModes(app: Application): void {
   if (!map) return; // 非 WebGL 后端（未来 WebGPU）⇒ 保持内置档，presenter 的名字会静默回落 normal
   map['d3d-opaque'] = [ONE, ZERO];
   map['d3d-rev-subtract'] = [ONE, ONE, ONE, ONE, FUNC_REVERSE_SUBTRACT, FUNC_REVERSE_SUBTRACT];
+}
+
+/**
+ * **读 Chromium 的 JS 堆账**（`tickets/T-0181` 的 `mem` 命令用）。没有该 API（非 Chromium）⇒ `null`。
+ *
+ * ★为什么不用 `performance.memory` 之外的东西：它给的是**渲染进程自己的 JS 堆**，
+ *   而"页面 OOM"崩的就是这个堆 ⇒ 它就是那个判据的**直接观测量**（不需要 devtools 挂上去）。
+ *   `usedJSHeapSize` 包含纹理源（`ImageSource` 的 RGBA 就在 JS 堆里，除非走了别的后端）。
+ */
+function readJsHeap(): { used: number; total: number; limit: number } | null {
+  const m = (performance as unknown as { memory?: { usedJSHeapSize?: number; totalJSHeapSize?: number; jsHeapSizeLimit?: number } })
+    .memory;
+  if (!m || typeof m.usedJSHeapSize !== 'number') return null;
+  return {
+    used: m.usedJSHeapSize,
+    total: m.totalJSHeapSize ?? 0,
+    limit: m.jsHeapSizeLimit ?? 0,
+  };
 }

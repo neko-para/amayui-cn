@@ -48,7 +48,26 @@ export interface SlowFrame {
   steps: number;
   /** 本帧最慢的几条指令（只在指令计时开着时有值）。 */
   top: { op: number; name: string; count: number; ms: number }[];
+  /** 本帧**宿主阶段**耗时（`stage()` 记账；降序）——「不在 opcode 里」的那部分就是从这里看。 */
+  stages: { name: string; ms: number; n: number }[];
+  /** 本帧的**计数器**（`count()`；如 `sprite.new` / `mesh.new` / `tex.upload`）。 */
+  counters: { name: string; n: number }[];
 }
+
+/** 一个宿主阶段的累计统计（跨帧）。 */
+export interface StageStat {
+  name: string;
+  count: number;
+  totalMs: number;
+  maxMs: number;
+}
+
+/**
+ * 一条慢帧前**至少**要占多少工作耗时，才值得把阶段分解打进日志行（毫秒）。
+ * 为什么不是"只要慢就印"：帧看门狗连 `gapMs` 超阈值也报（那是等帧，不是我们慢），
+ * 而阶段分解只对"占住主线程"有意义 —— 否则每次 sleep 门都会刷一行没用的分解。
+ */
+const STAGE_LOG_MIN_MS = 50;
 
 /** 最多留几条慢帧明细（其余只计数 —— 长卡顿不许把内存/日志刷爆）。 */
 export const MAX_SLOW_FRAMES = 40;
@@ -83,6 +102,13 @@ export class Profiler {
   #slowSeen = 0;
   /** 日志出口已经抛过错了（只报一次，避免刷屏）。 */
   #logFailed = false;
+
+  /** 跨帧的阶段累计（`stage()`）。 */
+  #stageStats = new Map<string, StageStat>();
+  /** 本帧的阶段累计（每次 `beginFrame` 清空）。 */
+  #frameStages: Map<string, { ms: number; n: number }> | null = new Map();
+  /** 本帧的计数器（`count()`；每次 `beginFrame` 清空）。 */
+  #frameCounters: Map<string, number> | null = new Map();
 
   get opEnabled(): boolean {
     return this.#opOn;
@@ -129,6 +155,9 @@ export class Profiler {
     this.#slow = [];
     this.#slowSeen = 0;
     this.#frameOps = null;
+    this.#stageStats.clear();
+    this.#frameStages = new Map();
+    this.#frameCounters = new Map();
   }
 
   // -------------------------------------------------------------------------
@@ -144,6 +173,8 @@ export class Profiler {
     this.#frameStart = t;
     this.#stepsAtFrameStart = steps;
     if (this.#opOn) this.#frameOps = new Map();
+    this.#frameStages = new Map();
+    this.#frameCounters = new Map();
   }
 
   /**
@@ -164,9 +195,11 @@ export class Profiler {
           .slice(0, 5)
       : [];
     if (this.#opOn) this.#frameOps = null;
+    const stages = this.#frameStageList();
+    const counters = this.#frameCounterList();
     if (!slow) return null;
 
-    const rec: SlowFrame = { frame, workMs, gapMs, steps: frameSteps, top };
+    const rec: SlowFrame = { frame, workMs, gapMs, steps: frameSteps, top, stages, counters };
     this.#slowSeen++;
     if (this.#slow.length < MAX_SLOW_FRAMES) this.#slow.push(rec);
 
@@ -176,11 +209,18 @@ export class Profiler {
         ? `★本帧**占住主线程** ${workMs.toFixed(0)}ms`
         : `★距上一帧隔了 ${gapMs.toFixed(0)}ms 而本帧只干了 ${workMs.toFixed(0)}ms ⇒ **宿主没给帧**（rAF 被节流/后台？）`;
     const tops = top.length ? ` · 最慢指令 ${top.map((o) => `${opName(o.op)}×${o.count} ${o.ms.toFixed(1)}ms`).join(' ')}` : '';
+    // ★阶段分解只在"真的占住主线程"时印（`STAGE_LOG_MIN_MS`）：`gapMs` 超阈值那类帧是"等帧"，
+    //   印分解只会每次 sleep 门刷一行没用的东西。
+    const stg =
+      workMs >= STAGE_LOG_MIN_MS && stages.length
+        ? ` · 宿主阶段 ${stages.slice(0, 6).map((s) => `${s.name} ${s.ms.toFixed(0)}ms×${s.n}`).join(' ')}` +
+          (counters.length ? ` · 计数 ${counters.slice(0, 4).map((c) => `${c.name}=${c.n}`).join(' ')}` : '')
+        : '';
     // ★**诊断绝不许把引擎搞坏**：日志出口是宿主给的，它自己可能还没准备好
     //   （实测：headless 链路工具里 `HeadlessScene.logs` 尚未初始化 ⇒ 一次 `push` 就把整条帧循环打断，
     //   28 条 E3/CONFIG1 测试全红）。这里咽掉并把原因说一次 —— 宁可少一行诊断，不可少一帧。
     try {
-      this.#log?.(`[perf] 帧 #${frame}：${kind}（steps ${frameSteps}）${tops}`);
+      this.#log?.(`[perf] 帧 #${frame}：${kind}（steps ${frameSteps}）${tops}${stg}`);
     } catch (err) {
       if (!this.#logFailed) {
         this.#logFailed = true;
@@ -232,6 +272,100 @@ export class Profiler {
     return [...this.#stats.values()].sort((a, b) => b.totalMs - a.totalMs);
   }
 
+  // -------------------------------------------------------------------------
+  // 宿主阶段（`tickets/T-0180` §10）
+  // -------------------------------------------------------------------------
+
+  /**
+   * **给一个宿主阶段计时**（同步；返回回调的返回值）。
+   *
+   * ★为什么需要它：指令计时只能解释"opcode 里花的时间"。实测里有一整类帧是
+   * **`steps` 很少、每条指令 0ms、却工作几百 ms**（`T-0180` 判据 4）—— 那段时间全在宿主阶段
+   * （`advanceModel` / `present` / 纹理上传）。不把这段拆开，"慢"就只能靠猜。
+   *
+   * ★开着才计时（`#watchOn`），但**始终会调用 `fn`** —— 关掉看门狗不许改变行为，只是不记账。
+   * 逐次调用（不是打点/收尾对）是为了让它能包住 `await`、能嵌套、且**异常安全**（`finally`）。
+   */
+  async stage<T>(name: string, fn: () => T | Promise<T>): Promise<T> {
+    if (!this.#watchOn) return await fn();
+    const t0 = this.#clock();
+    try {
+      return await fn();
+    } finally {
+      this.#addStage(name, this.#clock() - t0);
+    }
+  }
+
+  /**
+   * **同步版 `stage()`**（pixi 宿主 `advanceModel`/`present` 里那些阶段不能变成 `await`：
+   * 它们在同一次同步调用里跑，插进微任务会把合成拆成两帧；见 `PixiBackend.present` 的时序注释）。
+   */
+  stageSync<T>(name: string, fn: () => T): T {
+    if (!this.#watchOn) return fn();
+    const t0 = this.#clock();
+    try {
+      return fn();
+    } finally {
+      this.#addStage(name, this.#clock() - t0);
+    }
+  }
+  /**
+   * ★**不许按单次调用过滤**（本模块第一版就是这么写的，被守卫逮住了）：`presenter.buildItem`
+   * 单次只有 **0.10ms**，而一帧要建 **166 项** ⇒ 过滤掉"小于 0.05ms 的单次"看起来无伤，实则把
+   * 一个**每帧 17ms** 的开销藏了起来。⇒ 记账一律累加，只在**报告**里按累计值过滤（那时尺度对）。
+   */
+  #addStage(name: string, ms: number): void {
+    const f = this.#frameStages;
+    if (f) {
+      const e = f.get(name);
+      if (e) {
+        e.ms += ms;
+        e.n++;
+      } else f.set(name, { ms, n: 1 });
+    }
+    let s = this.#stageStats.get(name);
+    if (!s) {
+      s = { name, count: 0, totalMs: 0, maxMs: 0 };
+      this.#stageStats.set(name, s);
+    }
+    s.count++;
+    s.totalMs += ms;
+    if (ms > s.maxMs) s.maxMs = ms;
+  }
+
+  /**
+   * **本帧计数**（同步、零成本的一条 `Map` 自增）—— 与 `stage()` 配对用。
+   *
+   * 为什么需要：`present` 里"花了 300ms"可能是"项很多"也可能是"某一项特别贵"，光看时间分不出。
+   * 计数（新建了几个 Sprite / 画了几个 mesh / 传了几张纹理）才能把时间归到**规模**上。
+   */
+  count(name: string, n = 1): void {
+    const f = this.#frameCounters;
+    if (f) f.set(name, (f.get(name) ?? 0) + n);
+  }
+
+  stageStats(): StageStat[] {
+    return [...this.#stageStats.values()].sort((a, b) => b.totalMs - a.totalMs);
+  }
+
+  /** 本帧阶段的降序快照（`endFrame` 记账用；没有则空数组）。
+   *  ★这里才做"单次 0.05ms 以下不列"的过滤（记的时候一律累加，见 `#addStage` 的说明）——
+   *  一帧里同名的多次会先合并，所以只有**累计**也不值一提的阶段才被滤掉。 */
+  #frameStageList(): { name: string; ms: number; n: number }[] {
+    const f = this.#frameStages;
+    if (!f || f.size === 0) return [];
+    return [...f.entries()]
+      .map(([name, v]) => ({ name, ms: v.ms, n: v.n }))
+      .filter((s) => s.ms >= 0.05)
+      .sort((a, b) => b.ms - a.ms);
+  }
+
+  #frameCounterList(): { name: string; n: number }[] {
+    const f = this.#frameCounters;
+    if (!f || f.size === 0) return [];
+    return [...f.entries()].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n);
+  }
+
   /** 已记录的慢帧（最多 `MAX_SLOW_FRAMES` 条）。 */
   slowFrames(): readonly SlowFrame[] {
     return this.#slow;
@@ -268,7 +402,27 @@ export class Profiler {
       for (const r of this.#slow.slice(-8)) {
         const tops = r.top.length ? ` · 最慢 ${r.top.map((o) => `${opName(o.op)}×${o.count} ${o.ms.toFixed(0)}ms`).join(' ')}` : '';
         lines.push(`    帧 #${r.frame}：工作 ${r.workMs.toFixed(0)}ms · 距上帧 ${r.gapMs.toFixed(0)}ms · steps ${r.steps}${tops}`);
+        if (r.stages.length) {
+          lines.push(`      ↳ 宿主阶段 ${r.stages.map((s) => `${s.name} ${s.ms.toFixed(0)}ms×${s.n}`).join(' ')}`);
+        }
+        if (r.counters.length) {
+          lines.push(`      ↳ 计数 ${r.counters.map((c) => `${c.name}=${c.n}`).join(' ')}`);
+        }
       }
+    }
+    // ★阶段累计（跨帧）：这是"这个界面整体上把时间花在哪"的答案，比单帧明细更能定位类别。
+    const st = this.stageStats().filter((s) => s.totalMs >= minMs);
+    if (st.length === 0) {
+      lines.push('  （没有累计 ≥ 阈值的宿主阶段）');
+    } else {
+      lines.push('  宿主阶段                 次数     合计ms    最坏ms   均ms');
+      for (const s of st.slice(0, 15)) {
+        lines.push(
+          `  ${s.name.padEnd(22)} ${String(s.count).padStart(6)} ${s.totalMs.toFixed(1).padStart(10)} ` +
+            `${s.maxMs.toFixed(1).padStart(9)} ${(s.totalMs / s.count).toFixed(2).padStart(7)}`,
+        );
+      }
+      if (st.length > 15) lines.push(`  …另有 ${st.length - 15} 个阶段（都在 ${minMs}ms 以上）`);
     }
     if (!this.#watchOn && this.#slowSeen === 0) {
       lines.push('  ★看门狗关着时不会有慢帧记录（`profile watch on` 打开；它默认就是开的）');

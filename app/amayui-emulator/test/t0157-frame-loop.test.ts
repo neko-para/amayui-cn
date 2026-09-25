@@ -450,8 +450,10 @@ test('★P2 frame-render-gate：`frameRenderGate` 复刻 raw 20740-20761（DrawM
 
 test('★P2 frame-render-gate：驱动里门在 `advanceModel`/`present` **之前**（raw 20758 早于 20766+）', () => {
   const gate = lineOf('frame/loop.ts', 'const renderGate = frameRenderGate(');
-  const model = lineOf('frame/loop.ts', 'host.advanceModel?.(nowMs,');
-  const present = lineOf('frame/loop.ts', 'if (wantPresent) await host.present?.();');
+  // ★锚点跟着 `tickets/T-0180` §10 的**宿主阶段计时**改：两句现在都包在 `profiler.stage(...)` 里
+  //   （名字进报告用），但**次序语义没变**（本测试判的就是次序，所以锚点必须跟着代码走而不是反过来）。
+  const model = lineOf('frame/loop.ts', 'profiler.stage(\'advanceModel\'');
+  const present = lineOf('frame/loop.ts', 'profiler.stage(\'present\'');
   assert.ok(gate > 0 && model > 0 && present > 0, '三个锚点都必须在场');
   assert.ok(gate < model && model <= present, `门(${gate}) → advanceModel(${model}) → present(${present}) 的次序`);
 });

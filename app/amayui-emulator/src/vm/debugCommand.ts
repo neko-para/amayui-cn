@@ -78,6 +78,13 @@ export type DebugAction =
    * 无参 = `report`（最常问的那一个）。
    */
   | { a: 'profile'; cmd: 'on' | 'off' | 'reset' | 'report' | 'watch-on' | 'watch-off' | 'slow'; minMs?: number; slowMs?: number }
+  /**
+   * **页面内存账**（`tickets/T-0181`）：无参 ⇒ 报一次当前占用（JS 堆 + 纹理缓存项数/像素数 + 槽账）。
+   *
+   * 起因 = 用户实测**两次 `out of memory` 崩溃**（接入 DSH 之后），且 500MB 时采样到
+   * Pixi 的 `ImageSource` 占 300MB+。本命令只**读**、不清理 —— 先能测，才谈得上治。
+   */
+  | { a: 'mem' }
   /** 其它输入一律当查询（`runQuery`）；这样"查一个值"不需要任何前缀。 */
   | { a: 'query'; text: string };
 
@@ -118,6 +125,7 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '  focus [auto|on|off]   宿主焦点模式（缺省 auto）：auto=跟随真实 DOM 焦点；',
   '                        on/off=调试器显式接管（off 立即释放全部按住态并忽略后续 DOM 焦点事件）',
   '  capture               抓一帧当前画面（页面内 extract；PNG 见结果的 png 字段）',
+  '  mem                   页面内存账（JS 堆 + 纹理缓存的项数/像素数 + 槽账；只读，不清理）',
   '  snapshot              导出一份**引擎态**快照（JSON；池/帧链/槽/门/文本项/路由）',
   '  restore <base64>      灌回一份引擎态快照（base64 里是 snapshot 输出的 UTF-8 JSON）',
   '  move <x> <y>          注入光标移动到虚拟坐标（1280×720；触发引擎的命中测试/悬停）',
@@ -210,6 +218,12 @@ export function parseDebugCommand(raw: string): DebugAction | null {
       return badRestore('restore：base64 解不开（参数应当是 snapshot 输出的 base64 形式）');
     }
     return { a: 'restore', json };
+  }
+
+  // `mem`（`tickets/T-0181`）：只认裸命令（报一次当前占用）。参数一律当查询回报（不抛错、不崩）。
+  if (cmd === 'mem') {
+    if (parts[1] !== undefined) return { a: 'query', text: `mem：不吃参数（收到「${parts[1]}」）` };
+    return { a: 'mem' };
   }
 
   // ---- 输入注入（`tickets/T-0135`；解析出来的就是 `ScenarioEvent` 的形状）----
