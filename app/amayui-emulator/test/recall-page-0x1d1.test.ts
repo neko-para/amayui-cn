@@ -31,7 +31,7 @@
  * | ② | 越界门：`op2` 非法 ⇒ 记录/窗对象/发布**全都不动** | raw 80529 |
  * | ③ | 记录切片：分类 + **连续正文记录拼成一行** + 三条出口 + 发布 | raw 80664-81014 / 80731-80752 |
  * | ④ | `op3 & 0x40` 不清表面、`op3 & 0x30` 移除注音区间 | raw 80591 / 80607 |
- * | ⑤ | `op3 & 2` 覆写颜色、**并在收尾恢复**（★与 `0x82` 的分叉） | raw 80629-80634 / **81470-81473** |
+ * | ⑤ | `op3 & 2` 覆写颜色、**并在收尾恢复**（孪生两条同一条不变量：`0x1D1` raw 81470-81473 / `0x82` raw 80239-80262） | raw 80629-80634 / **81470-81473** |
  * | ⑥ | 语音图标只在 `op3 & 8` 下贴，且按通道去重 | raw 80678-80699 |
  * | ⑦ | 操作数纪律：五格全读、一格不写 | raw 29365-29369 |
  * | ⑧ | E3 端到端：滚轮（`set:wheelkeyup=8`）派发 `call-script 31` ⇒ `HISTORY.BIN`，且 `0x1D1` 真的产出正文页 | `src/HISTORY.txt:1314` |
@@ -332,7 +332,7 @@ test('④ 区间：`op3 & 0x40` 保留 `win+104/+108`；不带则清；`op3 & 0x
 });
 
 // ---------------------------------------------------------------------------
-// ⑤ 颜色覆写 + **恢复**（★与 0x82 的分叉）
+// ⑤ 颜色覆写 + **恢复**（孪生两条同一条不变量；`0x82` raw 80239-80262 / `0x1D1` raw 81470-81473）
 // ---------------------------------------------------------------------------
 
 test('⑤ `op3 & 2` ⇒ 发布出去的是覆写色，且**调用后全局字段恢复**（raw 80629-80634 / 81470-81473）', async () => {
@@ -349,27 +349,38 @@ test('⑤ `op3 & 2` ⇒ 发布出去的是覆写色，且**调用后全局字段
   assert.equal(
     e.engineValues.get(ENGINE_FIELD.colorFill),
     undefined,
-    '★收尾**恢复**全局填充色（raw 81470-81471）—— 这是 `sub_4675A0` 与 `sub_466000` 的分叉点',
+    '★收尾**恢复**全局填充色（raw 81470-81471）—— 覆写色是临时的',
   );
   assert.equal(e.engineValues.get(ENGINE_FIELD.colorOutline), undefined, '★同理恢复描边色（raw 81472-81473）');
 });
 
-/** 脚本 RGB → 引擎字段（COLORREF）的换算：与 `handlers/msgwin.ts` 的 `bgrToRgb` 同一口径。 */
-function bgr(v: number): number {
-  return ((v & 0xff) << 16) | (((v >> 8) & 0xff) << 8) | ((v >> 16) & 0xff);
-}
-
-test('⑤b 分叉对照：同一个场景下 `0x82` **不**恢复（`sub_466000` 里没有那一对写）', async () => {
+test('⑤b 孪生对照：同一个场景下 `0x82` 也恢复（`sub_466000` raw 80239-80262 有那一对写）', async () => {
+  // 前两格**预置**成别的颜色 ⇒ 直接验"恢复成调用前的值"（不是"清空"）
   const e = mkEngine([
     ...PAGE_SCRIPT,
     instr(0x82, [im(1), im(0), im(REPAINT_SET_COLORS | REPAINT_KEEP_SURFACE), im(0xff0000), im(0x00ff00)]),
   ]);
+  e.engineValues.set(ENGINE_FIELD.colorFill, 0x112233);
+  e.engineValues.set(ENGINE_FIELD.colorOutline, 0x445566);
   await runOps(e, PAGE_SCRIPT.length + 1);
   assert.equal(
     e.engineValues.get(ENGINE_FIELD.colorFill),
-    bgr(0xff0000),
-    '★`0x82` 把覆写**留下**（既有登记行为）；`0x1D1` 恢复 ⇒ 两条不能再被当成同一条',
+    0x112233,
+    '★`0x82` 收尾恢复成**调用前**的填充色（raw 80258 的 guard `v145 != v138 || v158`）',
   );
+  assert.equal(
+    e.engineValues.get(ENGINE_FIELD.colorOutline),
+    0x445566,
+    '★`0x82` 同样恢复描边色（raw 80241）—— 两条孪生在这件事上一致',
+  );
+
+  // 未预置时（= 调用前那两格为空）⇒ 恢复 = 删除该格，而不是留下 0 或覆写色
+  const e2 = mkEngine([
+    ...PAGE_SCRIPT,
+    instr(0x82, [im(1), im(0), im(REPAINT_SET_COLORS | REPAINT_KEEP_SURFACE), im(0xff0000), im(0x00ff00)]),
+  ]);
+  await runOps(e2, PAGE_SCRIPT.length + 1);
+  assert.equal(e2.engineValues.get(ENGINE_FIELD.colorFill), undefined, '★未预置 ⇒ 恢复 = 删掉该格（不留覆写色）');
 });
 
 // ---------------------------------------------------------------------------

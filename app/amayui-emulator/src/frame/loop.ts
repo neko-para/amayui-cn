@@ -368,6 +368,11 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     opt.onFrameStart?.(nowMs, frames, e);
     obs?.onFrameStart?.(obsMid());
 
+    // ★**主循环 `0x4000000` 臂**（引擎 raw 20859-20881；`tickets/T-0175` ⑬ / `T-0169`）：
+    //   「重显示（回看）模式下玩家一有输入 ⇒ 退出重显示 + 回到备用游标 + 写
+    //   `redisplayMode`/`redisplayReturn`/`redisplayScriptId` 三格」。它在引擎里**早于**字格泵
+    //   （raw 20887）与闸门/显示态各泵，且**不受** ADV/等待位门控 ⇒ 放在帧首、无条件。
+    e.serviceRedisplayExit();
     if (services.winReveal) e.serviceWinReveal(nowMs);
     if (services.charGrid) e.serviceCharGrid(nowMs);
 
@@ -403,16 +408,22 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
       // 引擎 raw 21158-21161：ADV 分支每帧 `sub_411900(...)` 之后紧跟 `sub_407EA0(pool)` ——
       // 置强制冻结并清等待计时器（`tickets/T-0024`）。★放在 `serviceAdv()` 之后与引擎同序。
       e.skipWaitGate();
-      if (opt.advErrors === 'swallow') {
-        // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
-        try {
-          await dispatch();
-        } catch {
-          /* 吞掉：与 `gameStartChain`/`config1Chain` 的 `catch {}` 一致 */
+      // ★★**本帧「恰好一条指令」的唯一例外**（引擎 raw 20133-20136）：`set:CancelMesSkipOnClick`
+      //   取值 **2** 且取消消息键走完 2→0 那一帧时，`sub_411900` **整帧 return** —— 3 槽交付
+      //   （raw 20144-20160）与那条指令（raw 20161-20165）都不做。`serviceAdv()` 用
+      //   `advFrameAborted` 把这件事交出来（`tickets/T-0169` 判据②的「按体补齐」）。
+      if (!e.advFrameAborted) {
+        if (opt.advErrors === 'swallow') {
+          // 两份 chain 的现状：ADV 分支的任何异常都按"本帧无进展"处理（含 NotImplementedOp 的 throw 策略）
+          try {
+            await dispatch();
+          } catch {
+            /* 吞掉：与 `gameStartChain`/`config1Chain` 的 `catch {}` 一致 */
+          }
+        } else {
+          const r = await dispatch();
+          if (r !== 'ok') stop = r;
         }
-      } else {
-        const r = await dispatch();
-        if (r !== 'ok') stop = r;
       }
     } else if (gates.sleep !== 'ignore' && (e.waitFlags & SLEEP_GATE) !== 0) {
       opt.onGate?.('sleep', e);
@@ -448,6 +459,37 @@ export async function runFrameLoop(e: Engine, host: FrameHost, opt: FrameLoopOpt
     } else if (e.textRevealing) {
       opt.onGate?.('text-reveal', e);
       obs?.onGate?.({ ...obsMid(), branch: 'text-reveal' });
+      // ★★**T-0169 判据②的结论：这条分支与等待泵的互斥是**忠实的**，不拆**（2026-09 读体复核；
+      //   该结论同时落在 `analysis/engine-capabilities.json` 的 `text-reveal-pump-409400` /
+      //   `adv-perframe-dispatch` 与 `tickets/T-0169/changes-reveal.md` §1-①）。
+      //
+      // 1) **起点是归属错**：本分支（`serviceRevealAdvanceInput` + `serviceTextReveal`）对应的
+      //    **不是** `sub_411900`，而是 `sub_409400`（引擎主循环 raw 21176-21181 的
+      //    `if ((v35 & 0x20000000) != 0) { sub_409400(_this); … }` 那一臂）；`sub_411900` 的对口
+      //    是上面的 **adv 分支**（`serviceAdv()` + 恰好 `dispatch()` 一条，raw 20161-20165）；
+      //    `sub_411BC0`（等待泵）的对口是下面的 **advance 分支**（`serviceAdvanceWait()`）。
+      //    三者不是一件事，所以"逐字帧没跑等待泵"这个框架本身错位。
+      // 2) **为什么互斥是等价的**：引擎主循环尾部（raw 21176-21228）是 if/else-if/else 链，
+      //    每轮**只**走一臂：`0x20000000`（逐字泵）→ `v35 >= 0` 的 `1`/`0x20`/`0x10000000`/`0x800000`
+      //    各臂 → `LABEL_215`（派发 1 条）→ 最后 `else`（`v35 < 0` = bit31 ⇒ `sub_411BC0` + `Sleep(2)`）。
+      //    ⇒ **逐字位为 1 时等待泵那一臂根本到不了**（不是"先后"而是"互斥"）。
+      // 3) **而且逐字位在整段显现期间一直为 1**：`sub_409400` 只在四种收尾路径上清 `0x20000000`
+      //    —— ① 0x300 闸门路径且无按节拍泵的窗（raw 13892）；② 输入出口清（raw 13919/13940，随后
+      //    自旋贴完）；③ 贴完当前窗（raw 13964）；④ 上面 serviceTextReveal 补的 `Engine[388212]` 闩锁支。
+      //    ⇒ 引擎在"逐字还没显完"的每一轮都走逐字臂，**不派发脚本指令、也不跑等待泵**。
+      //    emulator 的这条分支正好只做引擎在那一臂里做的事（输入出口 + 推一个字）⇒ 外观等价。
+      // 4) **键命中/悬停/滚轮回看不在这一臂里**：它们在 `sub_411BC0`（raw 20242 键命中 / 20324 悬停 /
+      //    20341 滚轮回看）——引擎逐字期间同样**不处理**它们（`sub_409400` 只认左键 / AdvanceMesOnWheel
+      //    的滚轮下键 / 滚轮累加器 < 0，见 `serviceRevealAdvanceInput`）⇒ 推迟到显现结束是忠实的，
+      //    不是缺陷。
+      // 5) **怎么证伪**（三条任一成立则本条结论错）：① 若 raw 21176-21228 不是 if/else-if 链而是
+      //    顺序段（逐字臂之后仍会落到 `sub_411BC0`）；② 若 `0x20000000` 在显现未完成时会被清掉
+      //    （除上面四条外的第五个清零点）；③ 若 `serviceTextReveal`/`serviceRevealAdvanceInput` 少了
+      //    `sub_409400` 里某一支会改状态的东西（现登记的两条已补齐：`Engine[388212]` 闩锁支 +
+      //    `set:DrawMode` 的 `skipWaitGate`）。
+      // 6) **"显示态每轮一条指令"这一半是覆盖的**：adv 分支（`advFrame: true`）每帧恰好派发一条
+      //    （raw 21158-21165）——唯一例外是 `set:CancelMesSkipOnClick == 2` 的整帧早退
+      //    （raw 20133-20136，见上面 `advFrameAborted`）。
       // ★引擎 `sub_409400` 的**输入出口**（raw 13931-13946）：逐字还没显完时点击 ⇒ 立刻把整页贴完
       //   （**不推进页面**）。★必须在 `serviceTextReveal` **之前**：引擎在同一函数里先看输入、再贴一个字。
       //   修前这条路径整个缺失 ⇒ 逐字期间的点击既不贴完、也不被消费，等文字自然显完后被等待泵当成"推进"

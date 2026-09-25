@@ -21,7 +21,7 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "set:BlankExtentMode == 1",
-      "line": 2290,
+      "line": 2531,
       "note": "0x205 的 cy 口径：mode==1 时被逐字量宽覆盖（raw 12232-12235）；现经 text/layout.ts 的 numberCellExtent 表达。★行号 1456→1502（轮 7 的 T-0094 在 msgwin.ts 加 52 行）→**1526**（轮 8 的 T-0095 又加约 24 行）；串本身未变"
     },
     {
@@ -45,13 +45,13 @@
     {
       "file": "app/amayui-emulator/src/text/layout.ts",
       "anchor": "export function blankAdvance",
-      "line": 356,
+      "line": 466,
       "note": "门与公式的落点（BlankExtent/blankAdvance/numberCellExtent；无可度量时显式回退）"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "function blankExtentOf",
-      "line": 361,
+      "line": 550,
       "note": "VM 侧唯一读取点（emitWin 逐次读配置 ⇒ 排版输入带 blankExtent）"
     },
     {

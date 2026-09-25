@@ -34,7 +34,13 @@ import { im, instr, loc } from './harness.js';
  */
 class RecordingTexture extends StubNative {
   readonly float: [number, number][] = [];
+  /** `0x246` 的子对象参数（`tickets/T-0175` 的 ③ 拆缝后的**新名** `setTextureObjectSubParam`）。 */
   readonly param: [number, number][] = [];
+  /** 颜色（`0x1F9`/`0x249` 的 op3，拆缝后的 `setTextureObjectColor`）—— 与 `param` **分表记**：
+   *  拆缝的全部意义就是"宿主侧能分辨这两种载荷"，所以录制端也必须分开。 */
+  readonly color: [number, number][] = [];
+  /** `setTextureObjectParam`（**旧名**）的调用次数 —— 迁移期不许被生产路径走到（见 T-0175 的 ③）。 */
+  legacyParamCalls = 0;
   readonly bind: [number, number][] = [];
   nodeSize: ((slot: number) => { present: boolean; w: number; h: number } | undefined) | undefined;
 
@@ -42,13 +48,25 @@ class RecordingTexture extends StubNative {
     super(() => {});
   }
 
-  /** ★不加 `override`：`setTextureObjectFloat` / `setTextureObjectParam` 是 `NativeBridge` 的**可选**缝，
+  /** ★不加 `override`：`setTextureObjectFloat` / `setTextureObjectSubParam` 是 `NativeBridge` 的**可选**缝，
    * `StubNative` 刻意不实现它们（"宿主没实现该缝"这一态本身要能被测到）。 */
   setTextureObjectFloat(slot: number, value: number): void {
     this.float.push([slot, value]);
   }
 
+  /** `0x246`（raw 32696-32697 的 `÷100`）—— 拆缝后的**子对象参数**缝。 */
+  setTextureObjectSubParam(slot: number, value: number): void {
+    this.param.push([slot, value]);
+  }
+
+  /** 颜色载荷（`0x1F9` raw 31226-31230 / `0x249` raw 32750-32755）—— 拆缝后的**颜色**缝。 */
+  setTextureObjectColor(slot: number, argb: number): void {
+    this.color.push([slot, argb]);
+  }
+
+  /** 旧名（语义混用）—— 只在"宿主只实现了旧名"的回退支里会被调到。 */
   setTextureObjectParam(slot: number, value: number): void {
+    this.legacyParamCalls++;
     this.param.push([slot, value]);
   }
 
@@ -258,6 +276,10 @@ test('★0x246：下发给宿主的是 `op2 / 100`（`dbl_5201F0` = 100.0，raw 
     '★`(double)result / dbl_5201F0`（raw 32696-32697）⇒ 250/100 = 2.5；' +
       '★它与 `0x245` 的 ÷1000 **不是同一个常量**（raw 4393 vs 4430），不许合并',
   );
+  // ★`tickets/T-0175` 的 ③ 拆缝的机械证明：本 opcode 只走**子对象参数**缝，不许碰到颜色缝；
+  //   旧名（语义混用）也**不许**被生产路径走到（它只在"宿主只实现旧名"的回退支里）。
+  assert.deepEqual(native.color, [], '0x246 与颜色无关 ⇒ 颜色缝一格都不许被写');
+  assert.equal(native.legacyParamCalls, 0, '★拆缝后生产路径必须调新名，不许直连旧名 setTextureObjectParam');
 });
 
 test('★两个缩放常量各自独立：同一个 op2 在 0x245/0x246 上得到不同的宿主值', () => {
@@ -270,4 +292,5 @@ test('★两个缩放常量各自独立：同一个 op2 在 0x245/0x246 上得�
   step(0x246, [im(7), im(1000)]);
   assert.deepEqual(native.float, [[7, 1]], '÷1000 ⇒ 1');
   assert.deepEqual(native.param, [[7, 10]], '÷100 ⇒ 10（若两族被合并成同一个常量，这里必红）');
+  assert.equal(native.legacyParamCalls, 0, '两条都走各自的新缝 ⇒ 旧名 0 次');
 });

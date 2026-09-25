@@ -30,6 +30,20 @@ state: live
 
 `src/SETL2DMOC.txt`（及 `$1$`–`$5$` 变体）就是这张对照表：按 `f8c46` 分支，先 `i341 <moc> (global-int f8c47)`，再若干个 `i345 <纹理> (global-int f8c47) <纹理号>`（`src/SETL2DMOC.txt:6-27`）。
 
+**上游还有一张表**（「角色 → 资产 id」）：INFOEN 的角色资料页与 BTL 的战斗立绘都不是硬编码 id，而是查一张
+**3 dword 行距**的全局表 —— `global-int 527d8c`（角色号 → `.MOC` 文件 id）与 `global-int 528944`
+（角色号 → `.MTN` 文件 id，同构、错开 250 行）：
+
+```
+src/INFOEN.txt:1568   lookup-array-2d (local-ptr 1) (global-int 527d8c) (local-int 13c7) 3 0
+src/INFOEN.txt:1590   lookup-array-2d (local-ptr 1) (global-int 528944) (local-int 13c7) 3 0
+```
+
+这张表的写入方是 **`src/EBINIT.txt` + `src/$1$EBINIT.txt` … `$5$EBINIT.txt`**（逐角色字面写
+`mov (global-int 527d8c + 3*c) <统一文件 id>`），覆盖角色号 **1..998**；`c` 是 **1-based 角色号**。
+⇒ `idx` 超界（例：INFOEN 走到 `5063`）读出来就是 0，脚本走静态贴图回落，**这是数据事实**。
+完整口径（表结构、写点清单、下游衔接、守卫）见 `../02-data/character-l2d-tables.md`（`tickets/T-0107`）。
+
 ---
 
 ## 2. 引擎接线：10 槽 + 76 字节实例 + 572 字节立绘节点
@@ -137,6 +151,12 @@ Scene+1096   572 字节「立绘 / 变换节点」表（与 DrawItem / MeshEntry
              └ sub_478330 装模型：sub_4BD0A0(bytes,len) → 实例+0；把设备写进 model 的 ModelContext+144
         （失败 ⇒ 0x341 handler 抛 "L2Dモデルファイル %s の読み込みに失敗しました"，raw 34488）
   0x345 ─▶ sub_4A1970 ─▶ sub_478370：D3DXCreateTextureFromFileInMemory → 实例+36+4*纹理号 → sub_4BD070(model, 号, tex)
+             └ ★**只在本族唯一那条失败路上抛**：`sub_427CF0` 的 `if (v4 != 1)`（raw 34542-34551）组
+               「L2Dテクスチャファイル %s の読み込みに失敗しました」（raw 34548）；而 `sub_4A1970` 在
+               `ReadFile` **成功**时无条件 `return 1`（raw 121712-121714）⇒ `sub_478370` 的
+               「槽里没模型 / 解码失败」两个 0 **被丢掉** ⇒ 那两种情形引擎**不抛**（纹理格留空）。
+               对照 `0x34E`（下面那条）原样返回 ⇒ 同族四条里**只有 0x345 这么窄**
+               （`tickets/T-0178` 是这条口径在 emulator 侧的落地记录）
   0x34E ─▶ sub_4A19F0 ─▶ sub_478640：sub_4BE490 解析 .MTN → 动作槽 +4/+8
              ├ ★门 `if (!*_this) return 0`（raw 92817；`_this` = `Scene[13953+实例槽]`）⇒ **实例槽里还没
              │  模型**时直接 0 ⇒ sub_4A19F0 返回 0 ⇒ handler 落到**读文件失败那条同一个抛点**

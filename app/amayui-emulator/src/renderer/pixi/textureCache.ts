@@ -110,6 +110,30 @@ export const BARRIER_POLL_MS = 64;
  */
 export type CreateTextureDecision = 'reuse-clear' | 'replace' | 'fresh';
 
+/**
+ * **画布/纹理工厂**（`tickets/T-0175` 的 ⑤ 后半，出处 `tickets/T-0166` §4-②）。
+ *
+ * ## 为什么需要注入点
+ *
+ * 「换尺寸/释放 ⇒ 旧纹理进 `DestroyQueue`」这条接线**只在有 DOM 的环境里走得到**：
+ * `create()` 的建画布那一步要 `document.createElement`，Node 里 `typeof document === 'undefined'`
+ * ⇒ `#canvasSlots` 永远是空的 ⇒ `decision` 永远是 `fresh` ⇒ **`push` 进 `DestroyQueue` 的那一行
+ * 在任何测试里都是死角**（`test/texture-lifecycle.test.ts` 只测了 `DestroyQueue` 自己的语义，
+ * 与"`create` 真的会入队"之间那段接线没有断言）。
+ *
+ * 抽出 `decideCreateTexture` 解决了**决策**那一半；这里补上**接线**那一半：把"建 DOM 画布"换成
+ * 可注入的工厂，于是 Node 测试能真的跑 `create(slot, 旧尺寸)` → `create(slot, 新尺寸)`，
+ * 并断言 `pendingDestroyCount === 1`（同尺寸复用 ⇒ 不增）。
+ *
+ * ★**生产行为不变**：`PixiBackend` 不传这个参数 ⇒ 走原来的 `typeof document` 分支，
+ * 逐字与修前相同（这就是"可选缝"的语义：不实现 ⇒ 不抛、不变行为）。
+ */
+export interface CanvasFactory {
+  /** 建一张画布（生产 = `document.createElement('canvas')`）。 */
+  createElement(tag: 'canvas'): HTMLCanvasElement;
+  /** 把画布包成 Pixi 纹理（生产 = `new Texture({ source: new CanvasSource(...) })`）。 */
+  createTexture(canvas: HTMLCanvasElement, resolution: number): Texture;
+}
 export function decideCreateTexture(opts: {
   /** 该槽现有画布表面的尺寸（没有则 `null`）。 */
   had: { w: number; h: number; res: number } | null;
@@ -191,7 +215,18 @@ export class TextureCache {
   constructor(
     private readonly log: (msg: string) => void,
     private readonly onReady?: () => void,
+    /**
+     * **画布/纹理工厂**（可注入；见 {@link CanvasFactory}）——省略时用 DOM（生产路径）。
+     * ★注入它**只影响"能不能在 Node 里跑通建画布那一步"**，不改变任何决策（决策在
+     * `decideCreateTexture` 的纯函数里，`hasDom` 由本工厂是否可用推出）。
+     */
+    private readonly canvasFactory?: CanvasFactory,
   ) {}
+
+  /** 本宿主能不能建画布（生产 = 有 `document`；测试 = 注入了假工厂）。 */
+  #hasCanvasFactory(): boolean {
+    return this.canvasFactory !== undefined || typeof document !== 'undefined';
+  }
 
   /** 光栅化用的设备像素比（与消息窗路径同一口径：上限 2，非浏览器环境为 1）。 */
   static #dpr(): number {
@@ -415,7 +450,7 @@ export class TextureCache {
       w,
       h,
       res,
-      hasDom: typeof document !== 'undefined',
+      hasDom: this.#hasCanvasFactory(),
     });
     if (decision === 'reuse-clear') {
       // 同尺寸同 DPR ⇒ 复用：清空（= 引擎的新空表面，之前直绘的字随之消失）。清空要用物理尺寸。
@@ -437,13 +472,17 @@ export class TextureCache {
       this.#pendingDestroy.push(old!.tex);
       this.#canvasSlots.delete(slot);
     }
-    if (typeof document !== 'undefined' && w > 0 && h > 0) {
+    if (this.#hasCanvasFactory() && w > 0 && h > 0) {
       const { cw: pw, ch: ph } = canvasPixelSize(cw, ch, res);
-      const canvas = document.createElement('canvas');
+      const canvas =
+        this.canvasFactory?.createElement('canvas') ??
+        (document.createElement('canvas') as HTMLCanvasElement);
       canvas.width = pw;
       canvas.height = ph; // 全透明（引擎新表面未初始化 ⇒ 不遮挡下层素材）
       // ★resolution: res —— 画布物理尺寸是 逻辑×res，不告诉 Pixi 就会被按 1:1 逻辑像素显示（放大/偏移）
-      const tex = new Texture({ source: new CanvasSource({ resource: canvas, resolution: res }) });
+      const tex =
+        this.canvasFactory?.createTexture(canvas, res) ??
+        new Texture({ source: new CanvasSource({ resource: canvas, resolution: res }) });
       this.#canvasSlots.set(slot, { canvas, tex, w: cw, h: ch, res });
       this.slotTex.set(slot, tex);
     }
@@ -795,15 +834,20 @@ export class TextureCache {
   /**
    * **把像素写进一个纹理槽**（`0x1AF` 读 `.STH` 缩略图；`tickets/T-0036`）。
    * 只对 `create-texture` 出来的槽生效（引擎那条链也是"该槽的 surface"）；槽不存在就忽略。
+   *
+   * @returns **像素是否真的落地**（`tickets/T-0175` 的 ⑤ 前半，出处 `T-0159` §4.3）：
+   *   `false` = 该槽没有 `create-texture` 出来的表面 —— 引擎在同情形下 `sub_40BF20`/`sub_49E9D0`
+   *   已经失败 ⇒ `0x1AF` 写 `op1 = 2`。修前本方法返回 `void`、调用方**无条件**写 `op1 = 0`
+   *   ⇒「脚本拿到成功、画面却空」（P3 `missing-consumer`）。
    */
-  setSlotPixels(slot: number, w: number, h: number, rgba: Uint8Array): void {
+  setSlotPixels(slot: number, w: number, h: number, rgba: Uint8Array): boolean {
     const cs = this.#canvasSlots.get(slot);
     if (!cs) {
       this.log(`setSlotPixels slot=${slot} 被忽略：该槽没有 create-texture 出来的表面（引擎同口径）`);
-      return;
+      return false;
     }
     const ctx = cs.canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return false;
     const img = new ImageData(new Uint8ClampedArray(rgba), w, h);
     // 物理像素铺满（DPR 缩放由画布自身的 resolution 承担，与 create-texture/draw-string 同口径）
     const tmp = document.createElement('canvas');
@@ -816,6 +860,7 @@ export class TextureCache {
     ctx.drawImage(tmp, 0, 0, w, h, 0, 0, cs.canvas.width, cs.canvas.height);
     cs.tex.source.update();
     this.log(`setSlotPixels slot=${slot} ${w}x${h}（.STH 缩略图 → 纹理槽）`);
+    return true;
   }
 
   /**

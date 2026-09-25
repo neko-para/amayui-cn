@@ -111,6 +111,8 @@ test('memcpy 拷贝 n 个元素；copy-local-array 填字面数组（含 ENC）'
   // ★方向口径（`tickets/T-0162` 读体订正）：引擎 0x1B0 是 `memcpy(dest = addr(op2), src = addr(op1), 4*op3)`
   //   （raw 37991-37995）—— 本用例两个指针指向同一处，所以断言在两种口径下都成立；用不同地址区分方向的
   //   新守卫见 `test/operand-memcpy-direction.test.ts`。
+  //   ★本行**与体一致**（`tickets/T-0175` 的 ⑪ 复核）：`ptr0 = op1 = src`、`ptr1 = op2 = dest` ——
+  //   两者**不是**同一格，方向写反过一版（旧注释把 ptr0 写成 dest）；这里保持"op1 = src"。
   const lea = OPS.get(0x63)!;
   lea({ ...c, instr: mk(0x63, [0xc, 0], [0x3, 10]).instr });
   lea({ ...c, instr: mk(0x63, [0xc, 1], [0x3, 10]).instr });

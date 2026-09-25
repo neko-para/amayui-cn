@@ -238,7 +238,11 @@ test('0x216：op1 = 纹理槽绑定的 imgid（= Scene[5*slot+466]，由 0x1F9 �
   const { e, run } = mk();
   const f = e.curScript();
   run(0x216, [lInt(1), im(0x2e)]);
-  assert.equal(readIntOperand(e, f, instr(0x216, [lInt(1), im(0x2e)]), 1), 0, '未绑定的槽 ⇒ 0');
+  assert.equal(
+    readIntOperand(e, f, instr(0x216, [lInt(1), im(0x2e)]), 1),
+    -1,
+    '★未绑定的槽 ⇒ −1（`sub_499BC0` raw 116348 把 1000 格逐格初始化成 −1；不是 0）',
+  );
   e.texSlots.set(0x2e, 0x18a9c);
   run(0x216, [lInt(1), im(0x2e)]);
   assert.equal(readIntOperand(e, f, instr(0x216, [lInt(1), im(0x2e)]), 1), 0x18a9c);

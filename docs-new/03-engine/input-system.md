@@ -502,3 +502,34 @@ E3 实测 `revealRestarts = 2` → 修后 0）。常态行为条目见 `engine-c
 - 受限态补充（供后续核对，别当普遍结论）：进 HISTORY 后 4000 帧、VM 45 步/帧的探针里，`0x1D1` 是**唯一**的
   "未实现 opcode"；同链另有 7 条 `partial`、2 条 engine-internal 与 2 类宿主丢弃（`0x1F9` 的
   `setTextureObjectParam`、`0x308` 的 unhandled）。
+
+## 16. 「滚轮上滚在 ADV 里做什么」——默认是**打开侧边栏**，不是回看（`tickets/T-0168`）
+
+判据全部在体里读过、并用**真语料 E3** 实测过（守卫 `app/amayui-emulator/test/t0168-wheel-adv-input.test.ts`，5 例）：
+
+```text
+默认 set:WheelKeyUp = 3（= ← 键的掩码位）
+WM_MOUSEWHEEL(0x20A) 「当按键」分支：Engine[699208] |= 1 << 3        （WndProc case 0x20A，raw 141560-141606）
+  → 等待泵第一出口 sub_403D70（raw 9847-9863，调用点 raw 20242）
+      · ADV 用 0x97 绑好的路由表里命中 src/SN0000.txt:88 那一项（位 3 → label 0x2c40）
+      → 派发 label_00002c40（src/SN0000.txt:770）→ call label_00000e78 摆出 22 个侧栏按钮
+      → label_00002fc0 把光标定位到第一个可选中按钮
+```
+
+- ⇒ **「上滚 = 打开侧边栏并停在第一个按钮」是引擎默认行为**（`set:WheelKeyUp = 3`），不是 emulator 的分叉。
+- **回看（`HISTORY.BIN`）要先把位号配成 8**：`src/SN0000.txt:106` 把位 8 绑给 `label_00002f84`，它的体里
+  才是 `call-script 31 // HISTORY`。引擎里**没有**"滚轮 ⇒ HISTORY"的内链。
+- ★**次序事实**：键位命中（`sub_403D70`，raw 20242）发生在回看块（`sub_411BC0` raw 20341-20363）**之前**，
+  而 ADV 把位 0/1/2/3/7/8 都绑给了路由项 ⇒ 即便把位 8 配上，"滚轮 ⇒ 回看游标"那一支在产品路径上**仍不可达**
+  （实测 `textRewind = 0`、`effect_flags & 0x100000 == 0`）。回看块本身还被 `effect_flags & 0x40000000` 门控。
+- **`sub_411590`（`0x100000` 自旋里的输入泵）不建模**（有据登记）：① 产品路径进不去（该位两个置位端都属于回看，
+  ADV 里恒 0）；② 照抄会把门条件变成永不终止（唯一清位点在它自己体内 raw 20041/20061，且要等
+  `CALLBACK_TEXT.BIN` 跑完 ⇒ 5ms 一圈死循环）；③ 它的可观测后果各有落点。重开条件写在
+  `tickets/T-0168/changes-wheel.md` §3.3。
+- **`sub_411560(Engine, "CALLBACK_TEXT.BIN")` 在本树是 no-op**：索引 **25080** 条（base `SYS4INI.BIN` 21109 +
+  5 个扩展包 `APPEND0{1..5}.AAI` 3971）里 `*TEXT*` **0 命中** ⇒ `sub_455000`（raw 67400-67439）返回 -1 ⇒
+  `sub_40FC90`（raw 19019-19027）体首 `if (a2 != -1)` 早退 ⇒ **真机与 emulator 都不会弹「回想/回看」画面**。
+- ★**`i24e` 的两个位互为反相、不能只引一半**（`tickets/T-0157`）：语料 `/i24e` 共 **422** 处，取值分布
+  `0x10001` **413** / `0` 3 / `1` 3 / `0x10003` 3。`0x10001` 的 **bit1 = 0** 而 **bit0 = 1** ⇒
+  「bit1 = 0 ⇒ 真机走到 raw 13923 支」成立的同时，raw 21114 的 `0x400` **动画等待门在近全部语料上被挡住**
+  （引擎只 `break`：不清池计时器、不重提交、不清 `effect_flags & 0x400`）。引这一格时必须两个位一起引。

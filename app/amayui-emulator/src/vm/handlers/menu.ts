@@ -13,7 +13,7 @@
 import type { OpHandler, StepCtx } from '../step.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { readIntOperand, readStringOperand } from '../operand.js';
-import { labelPos } from './shared.js';
+import { branchTarget, branchTargetError } from './shared.js';
 import type { OpTable } from './shared.js';
 
 /**
@@ -86,12 +86,12 @@ const op_menu_bind: OpHandler = (c) => {
  * raw 35756  _this[30*cur + 95805] = 0;              // ⇒ 派发器不再前进（ip 由本条定死）
  * ```
  *
- * ★**"目标不在 labelMap ⇒ 不跳"这条分支是 emulator 自加的**（审计 P3 `0xa3` `missing-branch`）：
- * 引擎命中/未命中都**无条件** `ip = ip_base + 4*目标`。但引擎那一步在目标不是指令边界时是**野跳**
- * （真机跑到指令中间/映像外），而 emulator 的 ip 是**指令下标**、没有"地址"可野跳 ⇒
- * 保留"什么都不做"（与 `Engine.#cancelRoute` 的 `engine.ts:1329-1334` 同一口径的**已登记偏差**），
- * 并补一条 `c.log` 让这件事**不再静默**。重开条件：若将来要把"脚本与其菜单表不一致"当硬错误，
- * 这里应改成抛错（那需要先确认真机表现）。
+ * ★**"目标不在 labelMap ⇒ 不跳"这条分支原先是 emulator 自加的**（审计 P3 `0xa3` `missing-branch`）：
+ * 引擎命中/未命中都**无条件** `ip = ip_base + 4*目标`。`T-0179` 本轮把它收窄成与 `0x8C`/`0x8F`/`0xA0`
+ * 同一个口径：目标走**两级解析**（`branchTarget` = `labelMap` → `script.dwordToInstr`，
+ * 见 `handlers/shared.ts`）—— 表值/回退值是**合法 dword 偏移**但不是标签时**照引擎跳**；
+ * 只有**两级都查不到**（目标越出脚本）才抛 `branchTargetError`（引擎此处是野跳：真机跑到指令中间
+ * 或映像外，宿主侧只能报错）。
  */
 const op_menu_dispatch: OpHandler = (c) => {
   const plan = planFor(c);
@@ -99,15 +99,8 @@ const op_menu_dispatch: OpHandler = (c) => {
   const fallback = (plan.int(2) ?? 0);
   const hit = c.e.menuMap.get(key);
   const target = hit ?? fallback;
-  const p = labelPos(c.frame, target);
-  if (p === null) {
-    c.log(
-      `0xA3 菜单派发：${hit === undefined ? '未命中 ⇒ 回退 label' : '命中表值'} ` +
-        `0x${(target >>> 0).toString(16)} 不在本帧 labelMap（引擎 raw 35752/35754 是**无条件** ` +
-        `ip = ip_base + 4*目标 ⇒ 野跳；emulator 的 ip 是下标、无处野跳 ⇒ 什么都不做）`,
-    );
-    return;
-  }
+  const p = branchTarget(c.frame, target);
+  if (p === null) throw branchTargetError('0xA3 菜单派发', target);
   c.jump(p);
 };
 

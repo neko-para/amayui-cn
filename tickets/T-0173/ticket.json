@@ -3,24 +3,40 @@
   "type": "refactor",
   "priority": "P3",
   "area": "emulator/vm",
-  "why": "T-0150 把死写闸门从 Item/MeshObj 扩到 Engine/SceneState 等模型后，扩面暴露出 14 条存量死写，其中两条是**纯冗余字段**：Engine.callFlag 与 Engine.callLink 只有声明（src/vm/engine.ts:263-264）与复位（src/vm/handlers/control.ts:508-509），**全仓 0 读者**（引擎侧对应的量另有真源）。它们不是近似、也不缺消费者，就是可以删掉的镜像字段 ⇒ 删掉比在基线里长期挂「reason」更干净（基线是给真缺口用的）。",
+  "why": "T-0150 把死写闸门从 Item/MeshObj 扩到 Engine/SceneState 等模型后，扩面暴露出 14 条存量死写，其中两条是**纯冗余字段**：Engine.callFlag 与 Engine.callLink 只有声明（src/vm/engine.ts:263-264）与复位（src/vm/handlers/control.ts:508-509），**全仓 0 读者**（引擎侧对应的量另有真源）。它们不是近似、也不缺消费者，就是可以删掉的镜像字段 ⇒ 删掉比在基线里长期挂「reason」更干净（基线是给真缺口用的）。\n\n★2026-09-25 读体复核（本票做的，订正 T-0150 那条 reason 的一半）：emulator 侧确实 0 读者（判据成立 ⇒ **删**），但**引擎侧那两格不是死格** —— 0x5D888/0x5D88C 由 sub_40FB60 存（raw 18978/18982）、由 sub_41A820 的 caller == -10 分支读回（raw 25663-25666，还原派发前的 cur 与 effect_flags）；emulator 早已用 Engine.dispatchSavedCur / Engine.dispatchSavedFlags 建模同一条通路（control.ts 的 dispatchNextRequest 存、-10 分支还原）⇒ 删掉的是**重复表示**，不是能力。全文 tickets/T-0173/changes-t0173.md §1。",
   "acceptance": [
     "删掉 Engine.callFlag / Engine.callLink 两个字段与它们的写点（src/vm/handlers/control.ts:508-509 的两处复位），并确认没有别的文件引用（grep 全仓）",
     "从 app/amayui-emulator/dead-writes.baseline.json 的 known 里移除这两条（基线只许收缩），reason/tickets 字段一并清掉",
     "守卫：npm run check:dead-writes（基线/当前/无新增）+ node --import tsx --test test/no-dead-writes.test.ts 全绿；npm run typecheck / typecheck:test 绿",
     "若发现某条其实有读者（例如经由动态下标或 native 回调），如实写进 changes.md 并把字段留下 + 改登记理由（不许为了删而删）"
   ],
+  "tests": [
+    "app/amayui-emulator/test/no-dead-writes.test.ts",
+    "app/amayui-emulator/test/op-6-05-step-slot.test.ts#T-0173"
+  ],
   "evidence": [
     {
       "file": "app/amayui-emulator/dead-writes.baseline.json",
-      "anchor": "callFlag",
-      "note": "T-0150 扩面后登记的存量死写之一（reason/tickets 字段见该条）"
+      "anchor": "Engine.callFlag",
+      "note": "★改指（2026-09-25）：本票把这两条从 known 移除后，它们只出现在 _removed 记档里（逐条写清为何删 + 引擎侧同格是活字段 + 活建模是 dispatchSavedCur/dispatchSavedFlags + 守卫）—— 原锚点（known 里的登记项）已不存在，按「锚点是 ABI ⇒ 只改指不删」retarget"
     },
     {
       "file": "app/amayui-emulator/src/vm/engine.ts",
-      "anchor": "callFlag",
-      "note": "字段声明；写点在 src/vm/handlers/control.ts:508-509",
-      "line": 264
+      "anchor": "★`tickets/T-0173`：这里原有 `callLink`",
+      "note": "删字段后留下的同址注释（说明两格已删、引擎侧同格是活字段、活建模在 dispatchSaved*）；原锚点 `callFlag`（字段声明行）已随字段删除，按棘轮纪律改指",
+      "line": 271
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "anchor": "这里原有两行复位",
+      "note": "exit-script(0x9) 复位写点（实测行号 557-558，票面写的 508-509 是漂移后的旧号）原地留下的 T-0173 注释",
+      "line": 557
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "v6 = 15 * *(_DWORD *)(_this + 383112);",
+      "line": 25663,
+      "note": "引擎侧读点（判据④的复核依据）：sub_41A820 的 caller == -10 分支读回 callLink(383112) 还原 cur；raw 25666 同行族读回 callFlag(383116)"
     }
   ],
   "links": {
@@ -28,13 +44,19 @@
       "T-0150"
     ]
   },
-  "status": "open",
+  "status": "done",
+  "doneWhy": "两格字段与它们的写点已删（engine.ts 声明+初始化 2 行、control.ts 的 exit-script 复位 2 行），全仓 grep 确认 0 引用（唯一非写点 test/op-6-05-step-slot.test.ts 的 vmState 快照已按纪律 retarget，其余格逐格比对未放宽）；dead-writes.baseline.json 的 known 13 → 11、reason/tickets 各去 2 条、_removed 补 2 条记档。实测：check:dead-writes = 基线 11 / 当前 11 / ★无新增（扫描 142 文件、字段 157 → 155）、exit 0；no-dead-writes.test.ts + op-6-05-step-slot.test.ts 共 12/12 绿；tsconfig.json 与 tsconfig.test.json 均 exit 0。红→绿：先只加测试（字段尚在）⇒ 该文件 4 pass / 1 fail（`Engine.callLink 应已删除`），删字段+收缩基线后 6/6。★判据④的读体复核结论：emulator 侧 0 读者（删），但引擎侧 0x5D888/0x5D88C 是**活字段**（sub_40FB60 存 raw 18978/18982、sub_41A820 的 -10 分支读回 raw 25663-25666），emulator 的真建模是 Engine.dispatchSavedCur / dispatchSavedFlags ⇒ 删的是重复表示、不是能力；据此订正 T-0150 那条 reason 的「引擎侧调用链确实没有对应的第三格」。全文 tickets/T-0173/changes-t0173.md。",
   "id": "T-0173",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done：删两格字段 + 收缩死写基线 13→11 + retarget 一处测试快照并新增 T-0173 守卫（含反面向断言）；读体复核订正了 T-0150 那条 reason 的一半（引擎侧同格是活字段，真建模是 dispatchSavedCur/dispatchSavedFlags）"
     }
   ]
 }

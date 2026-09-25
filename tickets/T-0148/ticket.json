@@ -7,7 +7,8 @@
   "acceptance": [
     "汇总报告存在且可复算：`docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md`（§3 覆盖账 + §4 findings 全表 + §4.4 推翻清单 + §4.5 复核补漏 + §5 处置）",
     "raw 证据齐备：`raw/impl-audit-findings.json`、`raw/findings-final.json`、`raw/opcode-verdicts.json`（364 条各一行裁决）、`raw/cap-verdicts.json`（54 条）、`raw/verify-verdicts.json`（27 组复核）、`raw/handler-crosscheck.json`（派发表交叉核对 0 不一致）",
-    "按修复批次开出的子票全部存在并回链本报告（§5.1 的批次 ↔ tickets/）"
+    "按修复批次开出的子票全部存在并回链本报告（§5.1 的批次 ↔ tickets/）",
+    "★**审计遗留覆盖账**（2026-09-25 生成，`tickets/T-0148/changes-coverage.md`）：383 条 finding 的处置对账（P0 1 / P1 48 / P2 140 / P3 194；verdicts 一致 210 / 有缺口 159 / 描述过期 27 / 有据豁免 22）＋ **仍挂未完成票的 finding 只有 4 条**（`T-0091`×3、`T-0103`×1）＋ **80 个\"审计点名但不在缺口台账\"的 opcode 清单** ＋ **36 条 `tracked-open`/`unclassified` 分诊表**（8 条只是台账措辞过期、28 条是候选真缺口）。⇒ 本票的剩余面收敛为三批：① 80 个 opcode 的\"登记 or 写明为什么不登记\"裁决批；② 28 条候选真缺口的逐条读体批；③ `T-0091`/`T-0103` 那 4 条（外部条件/用户点名最后做）。"
   ],
   "evidence": [
     {

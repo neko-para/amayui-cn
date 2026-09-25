@@ -224,8 +224,14 @@ export interface NativeBridge {
    * 引擎那条链是 `sub_40BF20(Engine+1978, op3, -1, handle, size)`（raw 16072）→
    * `sub_43E9F0`（raw 49926，ddReadBmp）把 BMP 解进该槽的 dd 表面。宿主把 `rgba`（顶行在前）铺进
    * 该槽的画布即可；该槽不存在（没先 `create-texture`）⇒ 宿主可忽略（引擎那条 `&&` 门也直接返回）。
+   *
+   * @returns **内容是否真的落地**（`tickets/T-0175` 的 ⑤ 前半，出处 `T-0159` §4.3）：
+   *   `false` = 该槽没有 surface —— 引擎同情形下 `sub_40BF20`/`sub_49E9D0` **已经失败**
+   *   ⇒ `0x1AF` 应写 `op1 = 2`。修前签名是 `void`、handler **无条件**写 `op1 = 0`
+   *   ⇒「脚本拿到成功、画面却空」（P3 `missing-consumer`）。返回 `undefined`（宿主不实现该缝）
+   *   ⇒ handler **保持旧行为**（写 0），不把"没有该缝"误判成"解入失败"。
    */
-  setSlotPixels?(slot: number, w: number, h: number, rgba: Uint8Array): void;
+  setSlotPixels?(slot: number, w: number, h: number, rgba: Uint8Array): boolean | void;
   /** 0x1FD（sub_422FD0 → `sub_4AC5F0`）：**立即缩放**（无动画窗）。op2/3/4 = sx/sy/sz（**÷100**，`dbl_5201F0`）。
    *  引擎写 `DrawItem+0x68 = 1`（用世界矩阵）与 `+0x6C`（缩放 work 矩阵）。 */
   setScale?(handle: number, sx: number, sy: number, sz: number): void;
@@ -274,8 +280,34 @@ export interface NativeBridge {
   /**
    * 0x246（sub_425250：`obj+1044` 子对象的 `vtable+56`，参数 = `op2 ÷ 100`）与
    * 0x249（sub_425310：绑定时的颜色 `op3`）：**纹理对象/槽的参数下发**。宿主可选实现。
+   *
+   * @deprecated **两种语义混在一条缝上**（`tickets/T-0175` 的 ③ 拆开，出处 `tickets/T-0163` §7-1）：
+   *  - `0x246` 写的是 CTexture **子对象**的 vtable+56（`obj+1044`，raw 32696-32697 的 `÷100`）；
+   *  - `0x1F9`/`0x249` 写的是**颜色**（`Scene[5*slot+467]`，raw 32750-32757 的 ARGB）。
+   *
+   * 两者在宿主侧**无法分辨**（同一个 `(slot, value)` 签名）—— 宿主拿到 `0x100` 时不可能知道它是
+   * "子对象参数 1.0"还是"颜色 alpha=1"。新代码请用拆分后的 {@link setTextureObjectColor}
+   * （颜色）与 {@link setTextureObjectSubParam}（子对象参数）；本方法**保留**只为兼容
+   * 已经实现它的宿主（目前没有）与既有守卫，两条拆缝的缺省实现都转发到它。
    */
   setTextureObjectParam?(slot: number, value: number): void;
+  /**
+   * **纹理槽颜色**（`0x1F9` raw 31232 与 `0x249` raw 32750-32757 的 `op3`）——
+   * 引擎把它写进 `Scene[5*slot + 467]`（`sub_4A3800` 的第 6 参那条链的 `v7[467] = a5`）。
+   *
+   * `value` 已是**归一化 ARGB**（`handlers/gfx-texture.ts` 的 `normalizeTextureColor`：负值也下发 0、
+   * 正值补 `0xFF000000`）。宿主可选实现；不实现 ⇒ 调用方行为不变（`?.` 语义），缺口进闸门 A。
+   */
+  setTextureObjectColor?(slot: number, argb: number): void;
+  /**
+   * **纹理对象子对象参数**（`0x246`：`Engine[op1+94672]` 的 `obj[+1084] == 0` 时
+   * `(**(obj+1044))+56(op2 / dbl_5201F0)`，raw 32680-32700；`dbl_5201F0 = 100.0` raw 4430）。
+   *
+   * `value` 已 **÷100**（与 `setTextureObjectFloat` 的 ÷1000 **不是**同一个常量，不许合并）。
+   * ★引擎还有两道门（"该槽有 CTexture 对象"与"类型标记 `== 0`"）emulator **都没建**
+   * （另一半是 `setTextureObjectFloat` 的同族缺口）——宿主不实现本缝时调用方行为不变。
+   */
+  setTextureObjectSubParam?(slot: number, value: number): void;
   /**
    * **`0x23F` 的槽对象表查询**（`Engine[slot + 94672]`，字节 `4*slot + 378688`；
    * `sub_4307B0` raw 40019-40030）—— `tickets/T-0153` 的 VM 半边接线缝。
@@ -413,6 +445,31 @@ export interface NativeBridge {
   msgWinClear?(win: number): void;
   /** 全部清空（`op_exit_script` 的 `msgwin.reset()`）。 */
   msgWinClearAll?(): void;
+
+  // ---- 存档槽（`0x19E`/`0x1AE`；`tickets/T-0159` 留的结构化可选缝，`T-0175` 的 ③ 进桥）----
+  /**
+   * **`0x19E` 的覆盖确认框**（引擎 `sub_42D980` raw 38309-38313 的
+   * `sub_406650(hwnd, …, MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2 = 0x34)`）。
+   *
+   * 返回 `false` = 玩家选了「否」（`IDNO = 7`）⇒ `saveSlotFromEngine` 写 `op1 = 1` 且
+   * **原文件一个字节不动**（raw 38314-38316 的 `CloseHandle` + `sub_42B4B0(_this, 1, 1)`）。
+   *
+   * ★**可选缝语义**（本项目纪律，见 `T-0164` 的 `hasSlotTexture`）：宿主不实现 ⇒
+   * 调用方 `=== false` 不成立 ⇒ **恒按"玩家点了是"**（与修前逐字相同的退化），
+   * 并由闸门 A 记一条可数缺口 —— **不许**替宿主编一个"假确认"或"假拒绝"。
+   * ★引擎的默认按钮是**「否」**（`0x34` 的低字节 = `MB_DEFBUTTON2`）⇒ 真机上"玩家直接回车"
+   * 是拒绝；emulator 无对话框时选择"继续写"是**反向的退化**，已在 `SLOT_GAPS` 与
+   * `save/saveSlot.ts` 的说明里如实登记（这正是本条缝要闭的缺口）。
+   */
+  confirmSlotOverwrite?(slot: number): boolean;
+  /**
+   * **写侧失败的提示/记录**（引擎 `sub_40A4C0(_this, hwnd, aE, 5)` raw 38320 的等价缝）。
+   *
+   * `message` 带引擎那条文案的语义（`aE` = 「セーブデータの保存に失敗しました。…」raw 4331）。
+   * ★宿主不实现 ⇒ 调用方只留一条 `native.log`（`saveSlotFromEngine` 的 C 类缺口）——
+   * 这是"可选缝语义"允许的退化，不是静默：缺口进闸门 A。
+   */
+  slotWriteFailed?(slot: number, message: string): void;
 
   /**
    * **把系统的真实光标挪到「引擎虚拟坐标 `(x, y)`」对应的屏幕位置**（引擎 `0x10A` 的宿主侧动作）。

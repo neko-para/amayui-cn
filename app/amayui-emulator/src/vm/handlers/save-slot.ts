@@ -968,7 +968,20 @@ const op_slot_thumb_read: OpHandler = async (c) => {
   }
   const bmp = decodeBmp(bytes);
   if (bmp) {
-    c.native.setSlotPixels?.(texSlot, bmp.width, bmp.height, bmp.rgba);
+    // ★**"解出来了"与"装进去了"是两件事**（`tickets/T-0175` 的 ⑤ 前半）：引擎那条链是
+    //   `sub_40BF20(Engine+1978, op3, …)` → `sub_43E9F0`（ddReadBmp）**把 BMP 解进该槽的 surface**，
+    //   该槽没有 surface ⇒ 这一跳**已经失败** ⇒ 结果码走 2（raw 38584-38592 的 `v7 = 0` 那档）。
+    //   修前这里无条件 `op1 = 0` ⇒「脚本拿到成功、画面却空」（`T-0159` §4.3 的 P3 missing-consumer）。
+    //   ★宿主**不实现该缝**（返回 `undefined`）⇒ 保持旧行为（写 0）：不许把"没有该缝"误判成"解入失败"。
+    const landed = c.native.setSlotPixels?.(texSlot, bmp.width, bmp.height, bmp.rgba);
+    if (landed === false) {
+      c.native.log(
+        `[slot-thumb] 缩略图解出但该纹理槽没有表面（槽 ${texSlot}，create-texture 没跑过？）⇒ op1 = 2` +
+          '（引擎 sub_40BF20/sub_43E9F0 在该格已经失败；见 tickets/T-0175 的 ⑤）',
+      );
+      plan.setInt(1, 2);
+      return;
+    }
     plan.setInt(1, 0);
     return;
   }

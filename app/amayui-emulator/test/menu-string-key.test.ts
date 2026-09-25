@@ -78,11 +78,14 @@ test('★P3 0xa2/0xa3：**字符串键与数值键是两个键空间**（语料 
   assert.equal(e.menuMap.size, 1, '半角口径下 "0"（字符串键）与 "0"（数值键）落同一格');
 });
 
-test('★P3 0xa3 missing-branch：目标不在 labelMap ⇒ **不静默**（引擎是无条件野跳，emulator 登记为偏差 + 记日志）', () => {
+test('★P3 0xa3 missing-branch：目标两级都查不到 ⇒ **抛**（引擎是无条件野跳；修前只记日志、静默顺序执行）', () => {
   const e = mkEngine([]);
-  const { ctx, logs } = run(e, 0xa3, [im(9), im(0x7df)]);
-  assert.equal(ctx._nextIp, null, '行为不变：ip 是下标、无处野跳 ⇒ 什么都不做（既有 `test/menu.test.ts:50-53` 钉住）');
-  assert.equal(logs.length, 1, '★但必须**留下诊断**（修前完全静默）');
-  assert.match(logs[0]!, /0x7df/, '日志里给出目标');
-  assert.match(logs[0]!, /labelMap/, '日志里说明原因');
+  // ★2026-09-25（`T-0179` 本轮）：修前这里是「`c.log` 一句 + 什么都不做」，与引擎 raw 35752/35754 的
+  //   `ip = ip_base + 4*目标` 分叉。现在与 `0x8C`/`0x8F`/`0xA0` 同口径：先走 `script.dwordToInstr` 回落
+  //   （见 `test/menu-dispatch-target.test.ts`），**两级都查不到**（目标越出脚本）才抛宿主护栏。
+  assert.throws(
+    () => run(e, 0xa3, [im(9), im(0x7df)]),
+    /越出脚本/,
+    '★两级都查不到 ⇒ 报"越出脚本"（既不是静默顺序执行，也不是野跳）',
+  );
 });

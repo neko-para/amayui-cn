@@ -21,13 +21,13 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "if (!e.config) {",
-      "line": 137,
+      "line": 220,
       "note": "SetConfig 等价物会**按需**造空注册表 ⇒ 技术上具备\"首次生成\"的条件"
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "e.onConfigChanged?.(e.config);",
-      "line": 153,
+      "line": 236,
       "note": "写注册表后通知宿主（当前无 INI ⇒ 通知落空）"
     },
     {
@@ -70,7 +70,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "setConfigValue(c.e, CFG.messageMessageSpeed, v);",
       "note": "我们的 0x1B5 确实写了注册表（内存）⇒ 缺的只是落盘那一步（T-0057 R1 改为经 `CFG.messageMessageSpeed` 常量引用，语义不变）",
-      "line": 1902
+      "line": 2143
     },
     {
       "file": "src/INITREGMES.txt",

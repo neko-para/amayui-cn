@@ -15,7 +15,7 @@ generated_by: scripts/build-doc-index.mjs
 > ★**读文档前先看 `state`**：`live` 才是现行结论；`record` 是**一次性取证的历史快照**（结论已落台账，
 > 只作票据证据锚点用）；`generated` 一律勿手改，改真源后重跑生成器。
 
-共 **110** 份：📋 流程 18 · ⚙️ 生成物 42 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 16；按 state：live 94 · consumed 16
+共 **112** 份：📋 流程 19 · ⚙️ 生成物 43 · 📖 叙述 29 · 🔁 会话 2 · 🧭 索引 3 · 🗄 历史记录 16；按 state：live 96 · consumed 16
 
 ## `00-overview/`（7）
 
@@ -40,10 +40,11 @@ generated_by: scripts/build-doc-index.mjs
 | [`01-translation/publish-status.md`](./../01-translation/publish-status.md) | 📋 流程 | ✅ | — | 01-translation · 发布 / 补丁 / 进度 |
 | [`01-translation/ui-images.md`](./../01-translation/ui-images.md) | 📋 流程 | ✅ | — | 01-translation · 界面图片汉化（AGF / AGERC） |
 
-## `02-data/`（7）
+## `02-data/`（8）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
+| [`02-data/character-l2d-tables.md`](./../02-data/character-l2d-tables.md) | 📋 流程 | ✅ | — | 02-data · 角色 → L2D 资产 id 表（.MOC / .MTN） |
 | [`02-data/drops.md`](./../02-data/drops.md) | 📋 流程 | ✅ | — | 02-data · 掉落数据（item / rate / 随机池 / 调用链） |
 | [`02-data/extraction.md`](./../02-data/extraction.md) | 📋 流程 | ✅ | — | 02-data · 数据提取口径（以 amayui-toolkit metadata 为准） |
 | [`02-data/items-recipes.md`](./../02-data/items-recipes.md) | 📋 流程 | ✅ | — | 02-data · 物品 / 建筑 / 配方 |
@@ -98,7 +99,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`04-app/test-organization.md`](./../04-app/test-organization.md) | 📖 叙述 | ✅ | — | 04-app · 测试分类与组织（测试法） |
 | [`04-app/toolkit.md`](./../04-app/toolkit.md) | 📖 叙述 | ✅ | — | 04-app · amayui-toolkit |
 
-## `05-scripts/`（37）
+## `05-scripts/`（38）
 
 | 文档 | kind | state | 真源 / 生成器 | 标题 |
 |---|---|---|---|---|
@@ -113,6 +114,7 @@ generated_by: scripts/build-doc-index.mjs
 | [`05-scripts/CONFIG1.md`](./../05-scripts/CONFIG1.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · CONFIG1 |
 | [`05-scripts/CONFIG2.md`](./../05-scripts/CONFIG2.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · CONFIG2 |
 | [`05-scripts/CVINIT.md`](./../05-scripts/CVINIT.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · CVINIT |
+| [`05-scripts/EBINIT.md`](./../05-scripts/EBINIT.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · EBINIT |
 | [`05-scripts/GAMESTART.md`](./../05-scripts/GAMESTART.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · GAMESTART |
 | [`05-scripts/HISTORY.md`](./../05-scripts/HISTORY.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · HISTORY |
 | [`05-scripts/INIT2.md`](./../05-scripts/INIT2.md) | ⚙️ 生成物 | ✅ | `scripts/build-scripts.mjs` | 脚本台账 · INIT2 |

@@ -90,7 +90,9 @@ test('E3：列表里的缩略图（0x1AF）真的被解进纹理槽了（320×18
   const orig = scene.setSlotPixels.bind(scene);
   scene.setSlotPixels = (slot: number, w: number, h: number, rgba: Uint8Array) => {
     thumbs.push({ slot, w, h, bytes: rgba.length });
-    orig(slot, w, h, rgba);
+    // ★`tickets/T-0175` 的 ⑤ 前半：返回值必须**透传**（`boolean` = 该槽有没有 surface）；
+    //   丢掉它会让 `0x1AF` 把这次调用当成"宿主不实现该缝"，从而不再按真实存在性写结果码。
+    return orig(slot, w, h, rgba);
   };
   const e = new Engine(scene, input);
   e.fileSource = src;

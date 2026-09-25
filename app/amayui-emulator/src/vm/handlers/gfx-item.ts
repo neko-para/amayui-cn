@@ -70,16 +70,21 @@ const op_get_draw_texture_slot: OpHandler = (c) => {
  * 引擎：`v2 = op2`（槽号）→ `op1 = Engine[5 * v2 + 81174]`。
  * ★这个下标就是 `Scene[5 * slot + 466]`（`Engine+80708` = Scene 基址）——
  * 即 `set-texture`（0x1F9）写的**唯一槽↔图像绑定表**（`docs/10-texture-slot-to-agf-file.md`）。
- * 槽从未绑定过时该格为 0（引擎不初始化，是 bss 0）。
- * emulator 侧同一张表 = `Engine.texSlots`（`0x1F9` 写、`0x1FA` 清）。
+ * ★槽从未绑定过时引擎答 **−1**：建 Scene 的 `sub_499BC0`（raw 116333-116352）先 `memset` 再按步长 5
+ * 把 1000 格的 imgid **逐格写成 −1**（raw 116348），随后把同一份表 `memcpy` 到 `_this + 5466`（raw 116353）
+ * ⇒ **−1 是「该格没有 imgid」的正式值**（不是未初始化）。`0x1FA`（raw 119594）、`0x249`（raw 123377）、
+ * `0x1F8`（raw 122847）也都往这一格写 −1 ⇒ emulator 的 `Engine.texSlots` 缺省必须答 −1
+ * （`0x1F9` 写 imgid、其余三条写 −1）。
  *
  * 语料：`src/SN0000.txt:3128 i216 (global-int a9ba) (global-int f801f)` —— 把"当前立绘用的槽"
- * 换成 imgid 存起来，供后续 `i2ff`（按 imgid 播语音/取资源）用。
+ * 换成 imgid 存起来，供后续 `i2ff`（按 imgid 播语音/取资源）用。★**紧跟 `jcc`**（`:3129` /
+ * `:3698` 的 `ne … (global-int f8006)`）：答 0 与答 −1 会走**不同的分支** ⇒ 该格是**有观测差**的。
  */
 const op_get_slot_imgid: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(2) ?? 0);
-  plan.setInt(1, c.e.texSlots.get(slot) ?? 0);
+  // ★raw 116348：未绑定的槽在引擎里是 −1（不是 0）—— 缺省值照引擎给 −1。
+  plan.setInt(1, c.e.texSlots.get(slot) ?? -1);
 };
 
 /**

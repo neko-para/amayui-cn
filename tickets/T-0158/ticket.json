@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0158",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -43,6 +43,11 @@
       "at": "2026-09-24",
       "kind": "scope",
       "what": "改字段：doneWhy —— T-0158 第 2 次变更（订正）：守卫 4 个新测试文件共 20 例（红 20/3/17 → 绿 20/20/0）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done —— 2026-09-25 主 agent 收口（E 波期间）：changes-c158.md §1 的 13 条（P2 4 / P3 9）全部给出结论（已修 / 只登记 / 前提被推翻 / 交接），守卫 4 个新测试文件共 20 例红→绿（20/3/17 → 20/20/0），台账由 Scribe D 落库。判据③「npm run verify 全绿」按本机口径 = **不新增红**（只剩 3 条 T-0146 基线）⇒ 置 done。守卫复核 61/61 绿（含本票 4 个文件）。★交接项已写进 changes-c158.md（0x308 → stubs.ts、0x94 的 sub_4B8D50 只登记）。"
     }
   ],
   "doneWhy": "本票**执行中（留 doing）**：P2 九行已逐条给结论 —— 已修 6 条（0x91 missing-consumer / 0x91 missing-branch / 0x92 missing-branch / 0x92 missing-consumer / 0x101 / scene-norender-mode 台账订正片段）、部分 1 条（0x100：长度槽=handler 决定 ip 是否前进 已实现，扫描游标复位近似保留）、只登记 1 条（0x94 的 onCursorMove 门，落点 src/vm/engine.ts 归 B1）、复核后已修 1 条（0x10c，T-0163）。P3 十八条：已修 8、复核后已修 4（0x10c write-out / 0x97 consumer / 0x10d / 0x2e5）、前提被推翻 1（0x97 missing-branch）、如实登记或交接 5（0x108 / 0x2fc / 0x308 / 0xa3 missing-branch / 0xa2 missing-diagnostic）。守卫 20 例：红 20/3/17 → 绿 20/20/0（另 3 例为两端都绿的回归锁）；相邻既有守卫 157/156/1（唯一红是 T-0160 的 0x34e，已实测与本票无关）。未 done 的原因：acceptance 3（npm run verify 全绿）在本机不可达（无 node_modules/.bin）且当前存在跨 agent 红；另有 4 条交接项落点在别人文件里（engine.ts / stubs.ts / frame/loop.ts / test/op-a5.test.ts）。台账可照抄片段见 tickets/T-0158/changes-c158.md。",

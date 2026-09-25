@@ -1,0 +1,76 @@
+{
+  "title": "`0x345`（装 L2D 纹理）的失败支未按体抛错：**读文件失败** ⇒ 应抛 `ShowMessageError`（语料 437 处，与 `0x34E` 故意不对称）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/live2d",
+  "why": "`T-0160` 把 `0x341`/`0x34E` 的失败改成按引擎抛 `ShowMessageError`，但**同一族的 `0x345` 当时被留下**（它的 changes 里写的理由是「怕打断现有 e2e 链」），`T-0175` 的 acceptance ⑧ 又把它挂成待办。\n\n读体（本次逐行核）后可以定死口径，而且它**比 `0x341`/`0x34E` 窄**：\n\n```text\nsub_427CF0（0x345 handler，raw 34519-34553）\n  v4 = sub_4A1970(Scene, res, op1, hFile, dwBytes, op2, op3);   // raw 34540\n  if ( v4 != 1 ) { … 组「L2Dテクスチャファイル %s の読み込みに失敗しました」（raw 34548）\n                   _CxxThrowException(Command_ShowMessage_Exception)（异常码 65543，raw 34550-34551） }\nsub_4A1970（raw 121703-121721）\n  if ( ReadFile(...) ) { sub_478370(...); GlobalFree(v9); **return 1**; }   // raw 121712-121714\n  else                 { GlobalFree(v9); **return 0**; }\n            ★`sub_478370`（raw 92567-92575：`!_this` ⇒ 0、`D3DXCreateTextureFromFileInMemory < 0` ⇒ 0）\n              的返回值**被丢掉了** ⇒ 「槽里没有模型」「图解码失败」在引擎里**不抛**。\n对照 0x34E：`sub_4A19F0`（raw 121724-121743）**原样 return** `sub_478640` 的结果 ⇒ 那条「实例槽里没模型」**会抛**。\n```\n\n修前 emulator 的 `bindTextureToSlot` 在「文件取不到」时只写一条 log 并 `return false` ⇒ 引擎里会让脚本**停下来并弹错误串**的那条路被静默吞掉。★同时要防**反向**错误：把「槽里没模型」也变成硬错误（引擎在这里是安静留空、纹理格不出画）。",
+  "acceptance": [
+    "`src/live2d/assetLoader.ts` 的 `bindTextureToSlot` 增加可选 `onFail?: (f: L2dLoadFailure) => void`，在**文件取不到**时上报（引擎串 + 文件 id/名 + 细节含 raw 锚点）。",
+    "`src/vm/handlers/live2d.ts` 的 `op_l2d_bind_texture` 把 `onFail` 变成 `throw new ShowMessageError(f.engineText, c.instr.opcode, f.detail)` —— 与 `0x341`/`0x34E` 同一条纪律（走既有通路，不新造机制）。",
+    "**只在这一条路上抛**：「纹理文件在、实例槽里没有模型」必须**不抛**（体证 = raw 121712-121714 丢弃 `sub_478370` 的返回值），且纹理绑定照记；「解码失败」由渲染宿主负责解码 ⇒ 不在本 handler 抛。",
+    "守卫 `app/amayui-emulator/test/l2d-texture-load-failure.test.ts`（3 例）：① 文件取不到 ⇒ `ShowMessageError`，`engineText === 'L2Dテクスチャファイル 0x7ffff0 の読み込みに失敗しました'`、`opcode === 0x345`；② 真纹理 id（0x4f9f）+ 空槽 ⇒ 不抛、`model === null`、`textures.get(0) === 0x4f9f`；③ **对照** 0x34E（真 TITLE.MTN + 空槽）⇒ 抛（把「同族两条不对称」钉住）。",
+    "红→绿有据：把 handler 的 `onFail` 交回点临时摘掉（脚本 `.tmp/settle/t0178-redgreen.mjs`，只在 `.tmp/` 留备份、不碰 git）⇒ **2/3 过、1 红**（`Missing expected rejection`），恢复 ⇒ **3/3**。",
+    "不打断既有 L2D 链：`live2d-t0160` / `live2d-chain` / `live2d-enabled-flag` / `live2d-blink` / `live2d-moc` / `live2d-render` **33/33 绿**；`npm run typecheck` exit 0。",
+    "收尾三连：`scripts/build-tickets.mjs` 重生成看板、`tickets.js --validate` ✅、`test/ticket-ledger.test.ts` 绿；并把 `T-0175` 的 acceptance ⑧ 标注为「已由本票做掉」。"
+  ],
+  "links": {
+    "tickets": [
+      "T-0160",
+      "T-0175",
+      "T-0176"
+    ],
+    "docs": [
+      "docs-new/03-engine/live2d.md"
+    ]
+  },
+  "id": "T-0178",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-25",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done —— 2026-09-25 主 agent 亲自做掉（E 波并行期间，文件与 4 个单元互斥）：读 `sub_427CF0`/`sub_4A1970`/`sub_478370` 三条体定死口径 ⇒ 只给「文件取不到」加抛错，并在守卫里同时钉住反向（槽空不抛）。红→绿证据见 doneWhy 与 `.tmp/settle/t0178-redgreen.mjs`。"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/l2d-texture-load-failure.test.ts"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "L2Dテクスチャファイル %s の読み込みに失敗しました",
+      "line": 34548,
+      "note": "0x345 唯一的抛点：组串 + `_CxxThrowException(Command_ShowMessage_Exception)`（异常码 65543，raw 34550-34551）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "    sub_478370((_DWORD ***)_this[a6 + 13953], *(_DWORD *)(_this[465] + 1040), a3, (int)v9, v7, a7);",
+      "line": 121712,
+      "note": "`sub_4A1970` 在 ReadFile 成功后**无条件 return 1**：`sub_478370` 的返回值被丢掉 ⇒ 「槽里没模型」「解码失败」引擎不抛（与 0x34E 的不对称就在这里）"
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "bool __thiscall sub_478370(_DWORD ***_this, int a2, int a3, int a4, int a5, int a6)",
+      "line": 92567,
+      "note": "真正落槽的那一层：`!_this` ⇒ 0、`D3DXCreateTextureFromFileInMemory < 0` ⇒ 0（两个 0 都被 `sub_4A1970` 丢弃）"
+    },
+    {
+      "file": "app/amayui-emulator/src/live2d/assetLoader.ts",
+      "anchor": "★失败语义（`tickets/T-0178`，读体定死）",
+      "note": "修复点之一：`bindTextureToSlot` 的 `onFail`（文件取不到才上报）",
+      "line": 129
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/live2d.ts",
+      "anchor": "★但**只在本族唯一那条失败路上抛**",
+      "note": "修复点之二：`op_l2d_bind_texture` 把 `onFail` 变成 `ShowMessageError`（与 0x341/0x34E 同一条通路）",
+      "line": 341
+    }
+  ],
+  "doneWhy": "按体把 `0x345` 的失败语义定死并落地：**只有**「纹理文件取不到」这一条要抛（引擎 `sub_427CF0` raw 34542-34551 组「L2Dテクスチャファイル %s の読み込みに失敗しました」+ `_CxxThrowException`），而「槽里没有模型」「图解码失败」引擎**不抛**（`sub_4A1970` raw 121712-121714 把 `sub_478370` 的返回值丢掉了）——与本族 `0x34E`（`sub_4A19F0` raw 121734 原样返回 ⇒ 槽空会抛）**故意不对称**。改动：`src/live2d/assetLoader.ts` 的 `bindTextureToSlot` 加可选 `onFail`（含 raw 锚点的 detail 与函数头部的失败语义说明），`src/vm/handlers/live2d.ts` 的 `op_l2d_bind_texture` 把 `onFail` 变成 `throw new ShowMessageError`；`0x341`/`0x34E` 的既有行为一字未动。守卫 `test/l2d-texture-load-failure.test.ts` 3 例（文件取不到 ⇒ 抛；真纹理 + 空槽 ⇒ 不抛且绑定照记；对照 0x34E ⇒ 抛）。红→绿：摘掉 handler 的 `onFail` 交回点 ⇒ **2/3 过 / 1 红**（`Missing expected rejection`），恢复 ⇒ **3/3**。回归：6 个 L2D 测试文件 **33/33 绿**、`npm run typecheck` exit 0。★这条原本挂在本会话的 `T-0175` acceptance ⑧（「要么做掉 + 守卫，要么写明为什么不做」）⇒ 做掉了。"
+}

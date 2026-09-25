@@ -21,11 +21,11 @@ generated_by: scripts/build-capabilities.mjs
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `modeled-verified` | 79 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 4 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
 | `partial` | 30 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 6 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **143** | 需要关注（非 n/a 且非已核验）= **40** |
+| **合计** | **144** | 需要关注（非 n/a 且非已核验）= **41** |
 
 ## 按子系统
 
@@ -34,6 +34,7 @@ generated_by: scripts/build-capabilities.mjs
 | 3D | 17 | 1 |
 | AGERC | 1 | 0 |
 | Live2D | 7 | 1 |
+| ScriptContext | 1 | 0 |
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
 | 帧循环 | 19 | 5 |
@@ -63,7 +64,7 @@ generated_by: scripts/build-capabilities.mjs
 | `scene-flag-46528-bits` | 帧循环 | Scene+46528 bit1/bit2 冻结豁免 | ✅ 已核验 | E2 · `test/wait-gate-timer.test.ts` |
 | `scene-norender-mode` | 渲染 | Engine+167990 = display:ScreenMode 镜像（窗口/全屏模式；非 0 时跳过一批窗口同步门） | 🟠 部分 | E1 · `test/engine-config.test.ts` |
 | `3d-effect-level-gate` | 3D | Scene+46668 3D 特效等级 | ➖ n/a | E1 |
-| `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ✅ 已核验 | E3 · `test/scene-freeze-46676-gate.test.ts` |
+| `scene-render-freeze-46676` | 渲染 | Scene+46676 3D/文字渲染冻结总闸 | ✅ 已核验 | E3 · `test/t0167-blend-env-frozen.test.ts#BlendEnv.sceneFrozen` |
 | `engine-main-window-hwnd` | 渲染 | Engine+387924 主窗口 HWND（别名 FileSource） | ➖ n/a | E1 |
 | `filesource-script-load` | 资源 | 脚本装载把主窗口 HWND 当资源来源传入 | ➖ n/a | E1 · `test/boot.test.ts` |
 | `scene-draw-total-gate-1056` | 渲染 | Scene+1056 转场记录表条数（不是主绘制总门） | ✅ 已核验 | E2 · `test/scene-t0154-scene-state.test.ts` |
@@ -78,10 +79,10 @@ generated_by: scripts/build-capabilities.mjs
 | `transition-table-flush` | 转场 | 转场表帧尾收尾（sub_4A9BE0） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts#T-0091 G2` |
 | `lazy-effect-200-201-release` | 3D | 2D/3D effect 槽（46480 起 5 槽）的批量释放 | ➖ n/a | E1 |
 | `renderer-state-reset-each-frame` | 渲染 | 渲染态重置（sub_498B60） | ➖ n/a | E1 |
-| `audio-device-init` | 声音 | DirectSound 设备/对象重建 | 🟠 部分 | E2 · `test/audio-engine.test.ts` |
+| `audio-device-init` | 声音 | DirectSound 设备/对象重建 | 🟠 部分 | E2 · `test/t0167-audio-device-fail.test.ts#设备创建失败` |
 | `movie-object-lifecycle` | 帧循环 | 电影对象帧内生命周期 | ❌ 缺失 | E0 |
 | `scene-drawtable-flush-and-dirty` | 渲染 | 清空绘制节点并置脏（opcode 侧） | ✅ 已核验 | E2 · `test/l2d-clear-on-container-ops.test.ts` |
-| `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ✅ 已核验 | E3 · `test/append-packs.test.ts` |
+| `script-queue-dispatch` | 帧循环 | 脚本派发队列出队 | ✅ 已核验 | E3 · `test/op-1f5-dequeue.test.ts` |
 | `script-frame-refresh-opcode-20c` | 帧循环 | opcode 0x20C 脚本帧刷新并提交 | ✅ 已核验 | E2 · `test/engine-config.test.ts` |
 | `live2d-slot-probe` | Live2D | Live2D 10 槽探测（强制重画理由之一） | ✅ 已核验 | E3 · `test/l2d-render-pending.test.ts` |
 | `vertex-buffer-lock-scale` | 渲染 | 顶点缓冲 Lock/Unlock + 视口缩放改写 | ❌ 缺失 | E0 |
@@ -101,7 +102,7 @@ generated_by: scripts/build-capabilities.mjs
 | `lazy-vram-query-64` | 资源 | 显存容量查询惰性缓存（64 位 QWORD） | ➖ n/a | E1 |
 | `lazy-movie-object` | 帧循环 | 电影对象按显示模式创建 | ❌ 缺失 | E0 |
 | `lazy-movie-dll` | AGERC | 惰性模块加载 = AGERC 模块接口（0x14B/0x14C/0x14D；**不是**影片解码库） | ✅ 已核验 | E2 · `test/op-a4-a6.test.ts` |
-| `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | ❌ 缺失 | E0 |
+| `lazy-movie-texture-slot` | 资源 | 电影纹理槽（每索引）惰性创建 | ❌ 缺失 | E1 |
 | `lazy-gdi-font-set` | 消息窗 | 消息窗字体句柄组的重建（主套 CreateFontIndirectA ×10 / 注音套 ×4）——含字形度量面与两张 lfEscapement=1800 竖排面 | 🟠 部分 | E2 · `test/text-font-rebuild-set.test.ts` |
 | `lazy-script-operand-hashmap-node` | 资源 | 脚本 VM 操作数 HashMap 节点惰性分配 | 🟡 已建模未核验 | E1 |
 | `lazy-transition-map-node` | 转场 | 过渡表节点惰性插入（表头 eager） | ✅ 已核验 | E2 · `test/sc-transition-window.test.ts` |
@@ -190,6 +191,7 @@ generated_by: scripts/build-capabilities.mjs
 | `backlog-drawn-row-recording` | 消息窗 | 已画文本行的记账（`sub_45F090`：每画一段正文就往 Font+3364 补一条**带串**的 72B 记录）与它的消费端 `0x1D1` | 🟠 部分 | E3 · `test/recall-page-0x1d1.test.ts#记录切片` |
 | `queue-int-family-reset-on-exit-script` | 帧循环 | exit-script 的整体复位把 Queue_int / Stack_int 两族容器逐个**重建为空容器** | ✅ 已核验 | E2 · `test/t0156-control-frame.test.ts#整体复位重建 Queue_int 族` |
 | `script-request-queue-drain-dispatch` | 帧循环 | 脚本请求队列只在三处被放行（0x1F5 停靠结束 / 0x7C 列表收尾 / 0x2 的 -10 恢复臂） | 🟠 部分 | E2 · `test/op-1f5-dequeue.test.ts#停靠期间入队的请求在清停靠标志那一刻被派发` |
+| `script-global-int-pool-from-sys4ini` | ScriptContext | 脚本全局 int 池（boot 时从 SYS4INI.BIN 的池块装载） | 🟡 已建模未核验 | E3 · `test/t0107-infoen-real-id.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -236,7 +238,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：DSOUND.DLL 缺失时 `DirectSoundCreate` 取不到，所有播放调用变成空操作，无报错
 - **引擎**：sub_406CE0, sub_4B5C50, sub_4B5CF0, sub_4B6A60, sub_4B6940, sub_4B69B0 @ raw 12011-139110
 - **读的字段**：Engine+18664
-- **emulator 现状**：部分实现：AudioContext 懒创建 + resume（first gesture 兜底）已落地；引擎的「设备丢失 → 重建 → 按 SE[1212+ch] 重载 10 通道」（sub_4B5090）与 DirectSound 错误重试未实现。★engine.fns / engine.raw 覆盖 raw 12011-139110：初始化真身 = sub_406CE0（raw 12011，按…
+- **emulator 现状**：已实现：① WebAudio 宿主（`AudioContext` 懒创建 + resume + 首次手势兜底）；② ★设备创建失败档（审计 §4.2 #35 的 `missing-behavior`）：`#ensureCtx` 接住建 `AudioContext` 的异常 ⇒ 置 `deviceFailed`/`deviceError`（`info()` 可查）、留引擎同文的失败串（raw 138…
 
 ### `movie-object-lifecycle`（absent）
 
@@ -290,7 +292,7 @@ generated_by: scripts/build-capabilities.mjs
 - **缺失时为什么静默**：多个调用点（32245 / 32528 / 32600 / 32877）共享同型守卫；失败按空槽处理，无日志
 - **引擎**：sub_489040 @ raw 31627-31630
 - **读的字段**：Engine+378688
-- **emulator 现状**：影片未实现
+- **emulator 现状**：未建模（why：`0x20F` 的 handler 在 `src/vm/handlers/gfx-misc.ts`，本票文件范围外；且 `Engine+4*i+378688` 是 VM 侧 `Engine` 的对象表 —— emulator 的宿主缝只拿得到意图、没有可绑的对象）。体核实（raw 31625-31649）：槽空 ⇒ `operator new(0x480)` + `sub_4890…
 
 ### `lazy-gdi-font-set`（partial）
 

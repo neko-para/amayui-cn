@@ -18,7 +18,8 @@
  *
  * ## 本守卫锁的事（红了的含义）
  *  1. **静态表是真实现**（`handlerKind === 'implemented'`）—— 谁把它退回 `STUB_NATIVE_OPS` 就红；
- *  2. `op3 & 2` ⇒ 全局填充/描边色被**覆盖**成 `op4`/`op5`（BGR→RGB，与 `0x76`/`0x77` 同口径）；
+ *  2. `op3 & 2` ⇒ 全局填充/描边色被**覆盖**成 `op4`/`op5`（BGR→RGB，与 `0x76`/`0x77` 同口径）
+ *     —— 覆写是**临时**的（发布点上可见），收尾按 raw 80239-80262 恢复成调用前的值；
  *  3. `op3` 无 bit1 ⇒ **不动颜色**（引擎只在 `a4 & 2` 时才写那两格）；
  *  4. **越界门**：记录表里没有第 `op2` 条 ⇒ **连颜色都不改**（引擎 raw 79502 的门在这两件事之前）；
  *  5. 该窗被**重新发布**一次（宿主收到 `msgWinSync`）—— 这是"已排版的旧颜色文本被刷新"的唯一通路，
@@ -32,6 +33,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { BinArg } from '../src/script/bin.js';
+import type { MsgWinInput } from '../src/text/layout.js';
 import { StubNative } from '../src/vm/native.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
@@ -88,20 +90,36 @@ test('★T-0104 ②：`op3 & 2` ⇒ 用 `op4`/`op5` 覆盖全局填充/描边色
   // f807b = 0xb690ff ⇒ BGR 读入 = R=ff,G=90,B=b6 ⇒ 0xff90b6
   setGlobal(e, 0xf807b, 0xb690ff);
   setGlobal(e, 0xf807c, 0x000000);
+  // 覆写色是**本次重画**用的色：在发布点（`emitWin` → `msgWinSync`）读一次全局字段
+  const atPublish: (number | undefined)[] = [];
+  const origSync = e.native.msgWinSync!.bind(e.native);
+  e.native.msgWinSync = (w: number, input: MsgWinInput): void => {
+    atPublish.push(e.engineValues.get(ENGINE_FIELD.colorFill));
+    origSync(w, input);
+  };
 
   await stepOnce(e);
 
-  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0xff90b6, '★填充色 = BGR(f807b)');
-  assert.equal(e.engineValues.get(ENGINE_FIELD.colorOutline), 0x000000, '★描边色 = BGR(f807c)');
+  assert.deepEqual(atPublish, [0xff90b6], '★发布点上填充色 = BGR(f807b)（描边同口径，见 ③）');
+  // ★收尾恢复（raw 80239-80262）：两条重画体的覆写色都是**临时**的，不许留在全局字段上
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0x112233, '★收尾恢复：全局填充色回到调用前的值');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorOutline), 0x445566, '★收尾恢复：全局描边色回到调用前的值');
 });
 
 test('T-0104 ③：`op3` 不带 bit1 ⇒ 一个颜色都不动（引擎只在 `a4 & 2` 时写那两格）', async () => {
   const e = mkEngine([instr(0x82, [loc(5), loc(6), im(0), im(0xff0000), im(0x00ff00)])], 'CONFIG.BIN');
   e.textItems.records.push({ win: 0, v20: 0, v24: 0, v32: 0, flags: 0 } as never);
   e.engineValues.set(ENGINE_FIELD.colorFill, 0x112233);
+  const atPublish: (number | undefined)[] = [];
+  const origSync = e.native.msgWinSync!.bind(e.native);
+  e.native.msgWinSync = (w: number, input: MsgWinInput): void => {
+    atPublish.push(e.engineValues.get(ENGINE_FIELD.colorFill));
+    origSync(w, input);
+  };
 
   await stepOnce(e);
 
+  assert.deepEqual(atPublish, [0x112233], '不带 bit1 ⇒ 连发布点上都是原值（引擎 `v158 = a4 & 2` 恒 0）');
   assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0x112233, '不带 bit1 ⇒ 不得改色');
 });
 

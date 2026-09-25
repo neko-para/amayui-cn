@@ -34,6 +34,10 @@ export interface WebAudioHostInfo {
   streamEnabled: boolean;
   /** 流式回退次数（`<audio>` 失败 → 解码重播）。 */
   streamFallbacks: number;
+  /** ★设备创建失败过（引擎 `Engine[5010] = 1` 的等价观测位；见 `#ensureCtx` 与台账 `audio-device-init`）。 */
+  deviceFailed: boolean;
+  /** 设备创建失败的原因（宿主 message；未失败则 `null`）。 */
+  deviceError: string | null;
 }
 
 /** `AudioResource` → IPC 参数（数字 = 统一文件 id；字符串 = 文件名）。 */
@@ -83,9 +87,19 @@ export class WebAudioHost implements AudioHost {
   #gestureHooked = false;
   /** 静音模式（可在选项装载后由 `setSilent(true)` 打开 —— 见 `boot.ts` 的装配顺序）。 */
   #silent: boolean;
+  /**
+   * ★**设备创建失败档**（引擎 `sub_406CE0` raw 12028-12036 的等价物，`tickets/T-0167`）：
+   * 建 `AudioContext` 抛错（设备被独占/没有输出设备/未授权）后**粘住** —— 此后 `play`/`decode`/`streamUrl`
+   * 一律早退（= 引擎失败后所有通道调用早退），绝不把异常抛进帧循环。
+   */
+  #deviceFailed = false;
+  /** 失败原因（宿主自己的 message；`info()` 可查，用于 E4 归因）。 */
+  #deviceError: string | null = null;
   /** 静音句柄的起播时刻表（`positionSec` 用；key = 句柄序号）。 */
   #silentSeq = 0;
   #silentPlays = 0;
+  /** 设备失败档下的"起播记账"次数（诊断日志节流用；与 `#silentPlays` 分开计，别看混）。 */
+  #deviceFailedPlays = 0;
 
   constructor(opts: WebAudioHostOptions = {}) {
     this.#opts = opts;
@@ -123,6 +137,10 @@ export class WebAudioHost implements AudioHost {
   get silentPlayCount(): number {
     return this.#silentPlays;
   }
+  /** 诊断用：设备创建是否失败过（引擎 `Engine[5010] = 1` 的等价观测位，raw 12035）。 */
+  get deviceFailed(): boolean {
+    return this.#deviceFailed;
+  }
 
   /**
    * **自检**：流式协议是否真的可用（CSP / CORS / scheme 注册任一环节不对，`<audio>` 只会给一句
@@ -149,18 +167,44 @@ export class WebAudioHost implements AudioHost {
   info(): WebAudioHostInfo {
     return {
       contextState: this.#silent ? 'silent' : (this.#ctx?.state ?? 'none'),
-      streamEnabled: !this.#silent && this.#streamBase.length > 0,
+      streamEnabled: !this.#silent && !this.#deviceFailed && this.#streamBase.length > 0,
       streamFallbacks: this.#streamFallbacks,
+      deviceFailed: this.#deviceFailed,
+      deviceError: this.#deviceError,
     };
   }
 
-  /** 懒创建 AudioContext（首次真正要出声时才建，避免"打开就创建"的启动副作用）。★静音模式**永不建**。 */
-  #ensureCtx(): AudioContext {
+  /**
+   * 懒创建 AudioContext（首次真正要出声时才建，避免"打开就创建"的启动副作用）。★静音模式**永不建**。
+   *
+   * ★★**设备创建失败 ⇒ 静默降级（不抛）**（引擎 `sub_406CE0` raw 12028-12036 的宿主侧等价物）：
+   * 引擎在 `DirectSoundCreate` 失败时打一条串（raw 138463 `"ERROR dsCreat:オブジェクトの生成に失敗しました． %s\r\n"`）
+   * → 弹 `MessageBoxA` → 清 `effect_flags` bit24 → 玩家点 OK 时把 `sound:Sound` 写 0 → **此后通道调用早退**。
+   * emulator 修前是"直接抛"—— 那是引擎里不存在的硬失败（异常会一路抛进 `AudioEngine`/帧循环）。
+   *
+   * @returns `null` = 设备不可用（调用方必须早退成"没有声音"，**不是**抛异常）。
+   *          弹窗/清 `effect_flags` bit24/写回 `sound:Sound` 三件在 emulator 无落点（无宿主对话框缝、
+   *          那两个写点分别在 `src/vm/engine.ts` 与配置层）⇒ 已登记在台账 `audio-device-init`。
+   */
+  #ensureCtx(): AudioContext | null {
     if (this.#silent) {
       throw new Error('静音模式（audio.enabled=false）不得创建 AudioContext：调用点应先查 `this.#silent`');
     }
     if (this.#ctx) return this.#ctx;
-    const ctx = this.#opts.createContext ? this.#opts.createContext() : new AudioContext();
+    if (this.#deviceFailed) return null; // 失败档粘住：不再重试（引擎失败后通道一律早退）
+    let ctx: AudioContext;
+    try {
+      ctx = this.#opts.createContext ? this.#opts.createContext() : new AudioContext();
+    } catch (err) {
+      this.#deviceFailed = true;
+      this.#deviceError = (err as Error).message;
+      this.#log(`[audio] ERROR dsCreat:オブジェクトの生成に失敗しました． ${this.#deviceError}`);
+      this.#log(
+        '[audio] **设备创建失败档**：此后 play/decode/streamUrl 一律早退（不抛、静默降级）' +
+          ' —— 引擎 raw 12028-12036 的等价物；引擎侧的弹窗 / 清 effect_flags bit24 / 写回 sound:Sound 三件无宿主落点',
+      );
+      return null;
+    }
     this.#ctx = ctx;
     if (!this.#gestureHooked && typeof window !== 'undefined') {
       this.#gestureHooked = true;
@@ -175,7 +219,9 @@ export class WebAudioHost implements AudioHost {
 
   resume(): void {
     if (this.#silent) return; // 静音模式没有 context 要恢复
-    void this.#ensureCtx().resume().catch(() => undefined);
+    const ctx = this.#ensureCtx();
+    if (!ctx) return; // 设备失败档：没有 context 可恢复（引擎同样早退）
+    void ctx.resume().catch(() => undefined);
   }
 
   // ==================== 取字节 / 解码 ====================
@@ -213,6 +259,7 @@ export class WebAudioHost implements AudioHost {
       return { id, durationSec: dur, bytes: bytes.length };
     }
     const ctx = this.#ensureCtx();
+    if (!ctx) return null; // ★设备失败档：早退（等价于"这次解码没成功"），不抛
     // decodeAudioData 会**转移**传入的 ArrayBuffer ⇒ 传一份独立拷贝，别把调用方的字节吃掉
     const copy = bytes.slice();
     try {
@@ -242,6 +289,18 @@ export class WebAudioHost implements AudioHost {
       return new SilentPlayback(clip.durationSec, opts);
     }
     const ctx = this.#ensureCtx();
+    // ★设备失败档：不抛、回记账句柄（引擎失败后通道调用早退，但**引擎自己的通道状态机照跑**
+    //   ⇒ 句柄必须仍然可调/可停/可问位置，否则引擎侧状态会与真宿主分叉）。
+    if (!ctx) {
+      this.#deviceFailedPlays++;
+      if (this.#deviceFailedPlays <= 3) {
+        this.#log(
+          `[audio] （设备失败）起播记账 clip=${clip.id} 时长=${clip.durationSec.toFixed(2)}s gain=${opts.gain} ` +
+            `loop=${opts.loop} pan=${opts.pan}${this.#deviceFailedPlays === 3 ? ' …（后续同类日志省略）' : ''}`,
+        );
+      }
+      return new SilentPlayback(clip.durationSec, opts);
+    }
     const web = clip as WebClip;
     const src = ctx.createBufferSource();
     src.buffer = web.handle;
@@ -258,6 +317,8 @@ export class WebAudioHost implements AudioHost {
 
   streamUrl(res: AudioResource): string | undefined {
     if (this.#silent) return undefined; // 静音模式不假装能流式 ⇒ 引擎退回 load+decode+play（引擎侧同一结局）
+    // ★设备失败档：同一口径（引擎失败后**所有**通道早退；`<audio>` 是 emulator 替 DirectSound 的那条传输）
+    if (this.#deviceFailed) return undefined;
     if (!this.#streamBase) return undefined;
     if (this.#streamOk === false) return undefined; // 探测失败 ⇒ 不假装能流式
     return resToUrl(this.#streamBase, res);
@@ -268,6 +329,12 @@ export class WebAudioHost implements AudioHost {
     if (this.#silent) {
       this.#silentPlays++;
       this.#log(`[audio] （静音）流式起播被忽略 ${url}`);
+      return new SilentPlayback(0, opts);
+    }
+    // ★设备失败档：同 `play()` —— 记账句柄，绝不抛（`streamUrl` 已返回 undefined，这里是防御性兜底）
+    if (this.#deviceFailed) {
+      this.#deviceFailedPlays++;
+      this.#log(`[audio] （设备失败）流式起播被忽略 ${url}`);
       return new SilentPlayback(0, opts);
     }
     const el = new Audio();

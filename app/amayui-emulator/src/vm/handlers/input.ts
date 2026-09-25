@@ -195,8 +195,13 @@ const op_input_reset: OpHandler = (c) => {
  * （那是 emulator 自造的旁路）。掩码位语义（raw 91521-91524 与 25042）：`0..6` = 可配置键
  * （`sub_4770A0` 经 `_this[1176+VK]`）、`4/5` = 鼠标左/右（`sub_477150`）、`4+i` = 手柄按钮 i。
  *
- * ★扫描游标（`Engine[cur+122287]`）：emulator 用"消费边沿"近似"每个位只派发一次"
- * （`consumeEdges()`），因为刷子不保持 `Engine[699208]` 的持久掩码。
+ * ★★扫描游标（`Engine[cur+122287]`）**照体持久保留**（`tickets/T-0179` 第 69 轮删掉了近似）：
+ * 引擎里它只由 `0xFF`（raw 25005）复位，本条自己推进（raw 25038 `result[... + 122287] = v6 + 1`
+ * 并把返回点压到本指令 ⇒ `ret` 回到本条**继续扫下一个置位**）。语料实证：`i0ff` 与 `i100`
+ * **53 处 / 53 处成对相邻**（逐文件复核 `^i0ff` 的下一行非空指令**全部**是 `^i100`）⇒ 脚本每趟
+ * 自己复位，游标不会跨趟残留 ⇒ 不需要"掩码变了就重扫"的近似，**同时按多个键在一个 handler 运行
+ * 里逐个派发**也才成立（近似会在掩码任一成分被 `consumeEdges()` 清掉时把游标拉回 0 ⇒ 只见最低位
+ * 重复派发、UI 行选择器的长按连发被吃掉）。
  *
  * ★★**掩码为空时派发"默认键"**（`tickets/T-0046`）★★ —— 引擎 raw 25050-25062 的 `else` 分支
  * **不是"无输入就落回"**：它取 `v4 = _this[517]`（= `SetKeyTotal`，见 0xFE）当**下标**，
@@ -218,7 +223,12 @@ const op_input_dispatch: OpHandler = (c) => {
   const mask = e.input.flushHeld();
   // SetKeyTotal（0xFE 写 `Engine[517]`；引擎默认值 7 = Input 构造 `sub_477DD0` raw 92385 的 `_this[259]=7`）
   const keyTotal = e.engineValues.get(ENGINE_FIELD.setKeyTotal) ?? 7;
-  /** 压返回点（dword 偏移 = 指令的 `index`，缺映射时退化为 0，与旧实现同口径）：掩码分支压**本指令**、默认键分支压**下一条**。 */
+  /**
+   * 压返回点（dword 偏移 = 指令的 `index`，缺映射时退化为 0，与旧实现同口径）：掩码分支压**本指令**、默认键分支压**下一条**。
+   * ★前半句照体：返回点是**本指令**（不加 1）⇒ handler 的 `ret` 回到本条**继续扫下一个按键位**
+   * （游标只由 `0xFF` 复位，见上方 `scanCursor` 说明；`test/op-a5.test.ts` 的
+   * 「★同一掩码下一次 handler 运行里逐个派发」钉着这条）。
+   */
   const pushReturn = (plusOne: boolean): void => {
     const idx = c.frame.script?.instructions[c.frame.ip]?.index ?? 0;
     c.frame.retStack.push(idx + (plusOne ? 1 : 0));
@@ -227,17 +237,6 @@ const op_input_dispatch: OpHandler = (c) => {
     // ★掩码分支（raw 25029-25048）：从**扫描游标**开始找最低置位；派发后游标 = b+1，
     //   压的返回点是**本指令**（无 +1）⇒ handler 的 `ret` 会回到 0x100 继续扫下一个键。
     let b = e.engineValues.get(ENGINE_FIELD.keyScanCursor + cur) ?? 0;
-    // ★emulator 近似：引擎的游标复位在帧泵 `sub_4780D0`（每帧重建掩码）里，emulator 没有对应钩子；
-    //   这里用「**掩码变了 ⇒ 新一轮扫描**」近似（同一掩码状态下仍按引擎语义连续派发多个键）。
-    //   ★已知偏差（本票 P2 `0x100` 复核）：引擎里 `cur+122287` 的**唯一**复位点是 `0xFF`（raw 25005）；
-    //   删掉这条近似才能让"同时按多个键 ⇒ 逐个派发"成立（近似会在掩码任一成分被
-    //   `consumeEdges()` 清掉时把游标拉回 0 ⇒ 只见最低位重复）。删它会让
-    //   `test/op-a5.test.ts:161/169`（三次不同掩码、中间无 `0xFF`）变红 —— 那份守卫不在本票的
-    //   可写文件集里，故**保留近似 + 登记**（见 changes-c158.md 的"别人该接"）。
-    if (e.keyScanLastMask !== mask) {
-      e.keyScanLastMask = mask;
-      b = 0;
-    }
     if (b >= keyTotal) {
       c.frame.operandCount = 1; // 引擎 raw 25024 的 `95805 = 1` 未被改写 ⇒ ip 前进 1 dword
       return;
@@ -512,14 +511,12 @@ const op_set_mouse_pos: OpHandler = (c) => {
  * `Engine[1690+k] ≡ Input[1432+k]`、`Engine[1434+VK] ≡ Input[1176+VK]`）⇒ 写的是两张运行期表：
  * `Input[1432+键码]` = **键码→VK**、`Input[1176+VK]` = **VK→掩码位**（见 `src/vm/input.ts` 文件头）。
  *
- * ★**修前是什么**（审计 §4.1，`tickets/T-0163`）：本条在 `ENGINE_INTERNAL_OPS` 里当**纯 no-op**
- * （`handlers/stubs.ts` 的 0x10c 块），豁免理由写的是"宿主键盘也不进掩码 ⇒ 写入无消费者"。
- * 该理由在 `T-0052`（键盘→掩码位 0..6）落地后**已过期**，但 `T-0052` 交付的是**冻结常量**
- * `DEFAULT_VK_TO_BIT`（只由 `pressKey`/`releaseKey` 直查、无任何运行期改写口）⇒ 本条的两处写入
- * 在 emulator 里**仍然零消费者**（P2 `missing-consumer`），`> 0x1F` 的越界实参也被静默吞掉
- * （P3 `missing-branch`）。实机后果（语料 `src/SYSTEM4.txt:87-97` 共 11 处 `i10c`，全绑 **mask 位 4**）：
- * `i10c 4 2c`（键码 0x2c→VK 90='Z'）/ `i10c 4 1c`（键码 0x1c→VK 13=RETURN）里**只有 Enter 生效**
- * （它本来就在默认表里），**Z 键永远不触发确认位**（键位设置界面的选择同理全部无效）。
+ * **本条是脚本驱动的键位重映射的写端**：两处写入都落进**运行期**的两张表
+ * （`Input[1432+键码]` = 键码→VK、`Input[1176+VK]` = VK→掩码位，raw 30632），因此 `pressKey`/`releaseKey`
+ * 之后查到的掩码位**随之改变**（`T-0052` 的 `DEFAULT_VK_TO_BIT` 只是初值表，不再是唯一来源）。
+ * 实机后果（语料 `src/SYSTEM4.txt:87-97` 共 11 处 `i10c`，全绑 **mask 位 4**）：
+ * `i10c 4 1c`（键码 0x1c→VK 13=RETURN，本来就在默认表里）与 `i10c 4 2c`（键码 0x2c→VK 90='Z'）
+ * **都生效** ⇒ Z 键同样能触发确认位。
  *
  * 三条行为要点（都按体）：
  *  ① 读 **op1 = 位号、op2 = 键码**（顺带一提：同族的 `0x107`/`0x10B` 顺序彼此相反，

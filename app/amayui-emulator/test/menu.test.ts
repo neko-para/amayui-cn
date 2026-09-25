@@ -47,14 +47,15 @@ test('0xA1/0xA2/0xA3 菜单派发：reset/bind/dispatch', () => {
   OPS.get(0xa3)!(c2);
   assert.equal(c2._nextIp, 4, '0xA3 key="-1" 应跳到 label 0x452 的指令 index');
 
-  // 0xA3：未命中 → 回退 op2(0x7df)；该回退 label 不在 labelMap → 不跳
+  // ★2026-09-25（`T-0179`，审计 P3 `0xA3` `missing-branch`）：**"无映射 ⇒ 不跳"是 emulator 自加的**，
+  //   引擎 raw 35752/35754 命中与未命中都**无条件** `ip = ip_base + 4*目标`。现改为两级解析
+  //   （`labelMap` → `script.dwordToInstr`，见 `test/menu-dispatch-target.test.ts`），只有**两级都查不到**
+  //   （目标越出脚本；这里是裸 `Frame`、没有 script）才抛宿主护栏。
   const c3 = step(0xa3, [im(9), im(0x7df)]);
-  OPS.get(0xa3)!(c3);
-  assert.equal(c3._nextIp, null, '0xA3 未命中且回退 label 无映射 → 不跳');
+  assert.throws(() => OPS.get(0xa3)!(c3), /越出脚本/, '0xA3 未命中且回退位不是本帧合法偏移 ⇒ 报"越出脚本"');
 
-  // 复位后再 dispatch：空表 → 走回退
+  // 复位后再 dispatch：空表 → 走回退（同上：回退位 0x7df 越出脚本 ⇒ 抛）
   OPS.get(0xa1)!(step(0xa1, []));
   const c4 = step(0xa3, [im(0), im(0x7df)]);
-  OPS.get(0xa3)!(c4);
-  assert.equal(c4._nextIp, null, '复位后 0xA3 key="0" 走回退(label 0x7df 无映射)→ 不跳');
+  assert.throws(() => OPS.get(0xa3)!(c4), /越出脚本/, '复位后 0xA3 key="0" 走回退位 ⇒ 同样越出脚本');
 });

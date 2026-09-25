@@ -55,7 +55,16 @@ function script(opcode: number, args: { type: number; raw: number }[]): ScriptBi
 
 test('0x142：把 op1 写进引擎字段 `_this[174812]`（构造/复位默认 1，脚本可控）', async () => {
   const e = new Engine(new StubNative(() => {}));
-  assert.equal(e.engineValues.get(174812), undefined, '默认不占位（引擎构造/复位置 1 由 op 语义给出）');
+  // ★`tickets/T-0169`（承接 `T-0175` ①）**前提被取代**：本行原断言「默认不占位（引擎构造/复位置 1 由
+  //   op 语义给出）」= 把当时**未建模**的缺口钉住了。体里那一格的构造（`sub_415640` raw 22591）与整体复位
+  //   （`sub_40DF10` raw 17961）都是 `*(_DWORD *)(_this + 699248) = 1;` ⇒ 现在按体种进 `engineValues`
+  //   （`src/vm/engine.ts` 的初值表 + `handlers/control.ts` 的 `op_exit_script`）。retarget 后这条**变强**：
+  //   钉的是"值必须是 1"，而不是"键不存在"。既有 `i142 0/1` 的两条断言一字未动。
+  assert.equal(
+    e.engineValues.get(174812),
+    1,
+    '★raw 22591/17961：构造/复位初值 = 1（`tickets/T-0169` 落地；原断言"默认不占位"是未建模时的缺口）',
+  );
 
   for (const v of [0, 1]) {
     loadScriptIntoFrame(e.curScript(), script(0x142, [{ type: T_GLOBAL_INT, raw: 0x100 }]), 'TEST.BIN');

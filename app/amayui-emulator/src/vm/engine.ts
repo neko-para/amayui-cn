@@ -52,6 +52,15 @@ export const ADV_ACTIVE = 0x8000000;
 export const CHAR_REVEAL_ACTIVE = 0x40000000;
 
 /**
+ * `effect_flags` 的 **0x4000000 = 「重显示（回看）模式」**（引擎 `Engine[122452]` 的模式位）。
+ *
+ * 置位端：`0x199`（`sub_418FC0` raw 24510 的 `122452 = effect_flags | 0x6000000`）、等待泵的右键
+ * 取消路由（raw 20369）、主循环 `0x4000000` 臂自己（raw 20870-20872，写的是 `| 0x2000000`）。
+ * 清零端：`0x7C`（`sub_41AB80` raw 25811 `mode = 0`）与主循环 `0x4000000` 臂（raw 20866）。
+ */
+export const REDISPLAY_MODE = 0x4000000;
+
+/**
  * **自动翻页计时器对象**（引擎 `Engine+430180` = `_this[107545]` 起 7 个 dword 的计时器块；
  * `t[2]` = 周期序号、`t[4]` = 停表、`t[5]` = 起点 `timeGetTime()`、`t[6]` = 周期 ms）。
  *
@@ -63,6 +72,25 @@ const AUTO_MESSAGE_TIMER = 107545;
 
 /** 引擎 `Engine[122501]`（= `Input`… 不，是设备）：语音 3 路里是否有正忙（`sub_404CB0`；emulator 恒 0，见 audio 侧缺口）。 */
 const FIELD_VOICE_BUSY = 122501;
+
+/**
+ * **引擎 `Engine[97053]`**（= 字节 388212）：`sub_409400` 的「**上一次的贴完整页出口已经消费过这一页**」闩锁。
+ *
+ * 全库只有 5 处引用（`grep 97053|388212` 实测）：
+ *  - **写 1** = `raw 13941`（逐字期间点击/滚轮 ⇒ `Engine[388212] = 1`，见 `serviceRevealAdvanceInput`）；
+ *  - **读** = `raw 13917`（泵的 `else if` 支：清 `0x20000000` + 再自旋贴完当前窗，见 `serviceTextReveal`）；
+ *  - **写 0** = `raw 28557`（`0x72 wait-for-input` `sub_41EEF0` 的共存消息段）、`raw 17973`（整体复位
+ *    `sub_40DF10`）、`raw 22604`（构造 `sub_415640`）。
+ *  ★**`0x6E show-text`（`sub_41EB20`）不清它**（`raw 28320-28386` 无此写点）—— 这一点是本格的关键：
+ *  同一句里 `0x196 display-furigana` 续写（`raw 29093` 置 `0x20000000`）时它仍在 ⇒ 泵走这一支。
+ *  emulator 的初值 0 由 `engineValues` 的稀疏语义天然成立（构造写 0 无需显式落），
+ *  复位那一半落在 `handlers/control.ts` 的 `op_exit_script`（`sub_40DF10` 的等价物）。
+ *
+ * ★**导出理由**（`tickets/T-0169`）：`handlers/control.ts` 的复位点要用它，而 `engine-field-ids.test.ts`
+ *  的棘轮禁止 `src/vm/**` 出现裸数字键。规范位置是 `engineFieldIds.ts`，但本单元的硬边界不含该文件
+ *  ⇒ 常量暂住这里（**别人该接**：搬进 `engineFieldIds.ts` 的 `ENGINE_FIELD.revealInputConsumed`）。
+ */
+export const FIELD_REVEAL_INPUT_CONSUMED = 97053;
 
 /** 某脚本帧的局部变量池（按操作数类型分池）。用 Map 避免索引越界假设。 */
 export class LocalPools {
@@ -268,9 +296,13 @@ export class Engine {
   input: InputManager;
 
   // 控制流目标深度寄存器（-1/-10/-11 哨兵）
+  // ★`tickets/T-0173`：这里原有 `callLink`(引擎 0x5D888=383112) / `callFlag`(0x5D88C=383116) 两格镜像，
+  //   已删 —— 它们只有声明与本 class 的初始化、全仓 0 个生产读者（`callRet` 才是活的那一格）。
+  //   ★引擎侧那两格**不是**死格：`sub_40FB60` 存（raw 18978/18982）、`sub_41A820` 的 `caller == -10`
+  //   分支读回（raw 25663-25666）；只是 emulator 早已用 `dispatchSavedCur` / `dispatchSavedFlags`
+  //   （见下方"脚本请求派发"一节）建模同一条通路 ⇒ 删掉的是重复表示，不是能力。守卫：
+  //   `test/op-6-05-step-slot.test.ts` 的 `T-0173` 用例（含反向断言：活的那对不许删）。
   callRet = -1;
-  callLink = -1;
-  callFlag = 0;
 
   // ---------------------------------------------------------------------------
   // 脚本请求派发（引擎：dispatch_queue@0x796DC / dispatch_in_progress@byte 497400 / 派发帧 37）
@@ -333,6 +365,12 @@ export class Engine {
     // （Input 对象 = `Engine + 258` ⇒ Input[259] = Engine[517]）。它同时是 **0x100 在掩码为空时的
     // "默认键"槽下标**（`tickets/T-0046`）——开机后 `SYSTEM4.txt:86` 的 `i0fe c` 会把它改成 12。
     [517, 7],
+    // ★`scriptEngineFlag`（`_this[174812]` = 字节 699248）：**构造初值 = 1**。
+    //   体证：构造 `sub_415640` raw 22591 `*(_DWORD *)(_this + 699248) = 1;`；整块复位 `sub_40DF10`
+    //   raw 17961 同形（emulator 的复位落点见 `handlers/control.ts` 的 `op_exit_script`，本票 T-0169）。
+    //   写者只有 `0x142`（`sub_422930` raw 31026），读者只有导出查询 `sub_4765C0`（raw 91057-91061，
+    //   工程内零调用）⇒ 不种这一格时「`i142 1` 之前读到 0」与引擎相反（`tickets/T-0175` ① / `T-0161` §5）。
+    [ENGINE_FIELD.scriptEngineFlag, 1],
   ]);
 
   /**
@@ -538,14 +576,6 @@ export class Engine {
    * 读体：`sub_425D20` raw 33156-33185（`result[468]/[469]` 与 `result[5468]/[5469]` 两处同写）。
    */
   texSlotFlags = new Map<number, number>();
-  /**
-   * **emulator 侧的按键扫描近似**（`0x100` 用）：上一次派发时的输入掩码。
-   *
-   * 引擎的扫描游标（`Engine[cur+122287]`）由**帧泵** `sub_4780D0` 每帧复位；emulator 没有那个钩子，
-   * 于是用「掩码变了 ⇒ 新一轮扫描」近似（同一掩码状态下仍按引擎语义连续派发多个键）。
-   * ★这是 emulator 记账，不是引擎字段（引擎里没有这一格）。
-   */
-  keyScanLastMask = 0;
 
   /**
    * **AGERC 模块状态**（`0x14B`/`0x14C`/`0x14D` 的模型；**不加载任何原生库**）。
@@ -683,7 +713,9 @@ export class Engine {
    *
    * 调用点：① 玩家在门等待期间按了键/点了鼠标/滚轮（主循环 raw 21113-21135，门控 = `Config("System:EffectSkip…")`）；
    * ② ADV 分支每帧（raw 21161）。
-   * ★未建模：raw 12793 的 `(Scene+46528) & 2` 门 —— 该格无置位点（见 `gatePending` 的说明）。
+   * ★未建模：raw 12793 的 `(Scene+46528) & 2` 门 —— 该格的**唯一写者是 `0x24E`**
+   *   （`sub_4258C0` raw 32965，`T-0167` 读体核实），而语料里的实际取值 `i24e 10001`（= `0x2711`，422 处）
+   *   **bit1 = 0** ⇒ 这道 bit1 门在本语料里永不通过（见 `gatePending` 的说明）。
    */
   skipWaitGate(): void {
     this.sceneFreeze = true;
@@ -767,8 +799,15 @@ export class Engine {
     // ★引擎 `sub_4B8D50`（raw 140825-140836，WM_MOUSEMOVE）：只在**鼠标移动**时做命中测试。
     //   等待泵 / 主循环里**没有** `sub_403C50` ⇒ 不能每帧重算（否则"表重登记后立刻重新命中"
     //   会让悬停反复触发，见规格 §E2）。
+    //   ★★命中测试的**门**（raw 140827）：`if ( _this[12958] || _this[12957] )` —— 面板对象基址
+    //   `Engine+5494`（dword）⇒ `12958` = panelA`[7464]`（`fillPending`）、`12957` = panelA`[7463]`
+    //   （`shown`）。两者皆 0 = 面板关闭期（`i093` 之后、下一次显示之前）⇒ 引擎**不重算游标**。
+    //   修前无条件命中测试 ⇒ 关闭期鼠标一移就把游标按新位置重算，`sub_403E70` 的悬停比较基准
+    //   与引擎分叉（审计 `0x94` ② `missing-branch`，`tickets/T-0179`）。
     this.input.onCursorMove = (x, y) => {
-      this.routes.hitTest(x, y);
+      const p = this.routes;
+      if (p.fillPending === 0 && p.shown === 0) return;
+      p.hitTest(x, y);
     };
   }
 
@@ -781,36 +820,88 @@ export class Engine {
   // ---------------------------------------------------------------------------
 
   /**
-   * **ADV 每帧服务**（引擎 `sub_411900` raw 20096-20233 的等价物）。
+   * **本帧被「取消消息键」早退吃掉**（引擎 `sub_411900` raw 20133-20136 的 `return`）。
    *
-   * 引擎在 `effect_flags & 0x8000000` 分支里每帧做四件事：
-   *  1. 刷输入掩码（`sub_4780D0`/`sub_477280`），并在「跳读中」时合成掩码位 `0x40`；
-   *  2. 跑「取消消息键」三态机（`122370`: 0→1→2，松开时清 ADV + 复位 `ReadTextSkip`）；
-   *  3. **未显示完判定**：`!122455 && !122496 && !(mask & 0x40)` ⇒ 清 `0x8000000`；
-   *  4. 之后**派发恰好 1 条**脚本指令（`_this[opcode+168999]`）—— 由调用方执行。
+   * 只有 `GetConfig("set:CancelMesSkipOnClick") == 2` 时可达：那一帧引擎连 3 槽消息交付（raw 20144-20160）
+   * 与「恰好 1 条指令」（raw 20161-20165）都**不做**。帧驱动（`src/frame/loop.ts` 的 adv 分支）据此
+   * 跳过本帧那一条 —— 这是「显示态每轮恰好一条指令」在体里**唯一**的例外（`tickets/T-0169` 判据②）。
+   * 每次 `serviceAdv()` 开头清零，所以它只对本帧有效。
+   */
+  advFrameAborted = false;
+
+  /**
+   * **ADV 每帧服务**（引擎 `sub_411900` raw 20096-20202 的等价物）。
+   *
+   * 引擎在 `effect_flags & 0x8000000` 分支里每帧做四件事（raw 行序）：
+   *  1. 刷输入掩码：`sub_4780D0(Engine+258, Engine+174802)`（**实时刷**）→ `if (Engine[1415]) mask |= 0x40`
+   *     → `sub_477280`（把掩码写回那一格）——raw 20110-20114；
+   *  2. 跑「取消消息键」三态机（`Engine[122370]`: 0→1→2，**raw 20115-20143**，见下）；
+   *  3. **3 槽消息交付**（raw 20144-20160：门 `!122455 && !122496 && !(mask & 0x40)` ⇒ 清 `0x8000000`
+   *     并对 `122505+i`（3 槽）逐个 `sub_4BB840` 后清零）—— emulator 的等价物在**宿主**
+   *     （`AudioEngine.voiceDefer` + `tick(nowMs, advActive)` 的 ADV 退出冲刷，见 `0xFA` 的说明）；
+   *  4. 之后**派发恰好 1 条**脚本指令（`_this[opcode+168999]`，raw 20161-20165）—— 由调用方执行
+   *     （`src/frame/loop.ts` 的 adv 分支，`advFrame: true`）。
+   *
+   * ## 取消消息键三态机（raw 20115-20143 逐字；极性按体，**不是**审计说的那样）
+   * ```c
+   * if ( GetConfig("set:CancelMesSkipOnClick") ) {                  // raw 20115（键名 raw 4346 `aSetCancelmessk[25]`）
+   *   if ( (*v2 & 0x10) != 0 ) {                                   // 掩码 bit4 = 鼠标左（按下）
+   *     v3 = _this[122370] == 1;
+   *     *v2 &= ~0x10u;                                             // ★raw 20120：**消费掉这一位**
+   *     if ( v3 ) _this[122370] = 2;                                // 1 ⇒ 2（只有 1 才升 2）
+   *   } else if ( _this[122370] == 2 ) {                            // 松开且已到 2
+   *     _this[122370] = 0;                                          // 2 ⇒ 0
+   *     sub_4053C0(_this);                                          // ★raw 20127 = eatAllInput
+   *     _this[174801] &= ~0x8000000u;                               // 清 ADV
+   *     _this[1415] = 0;  _this[97050] = 0;                         // 跳读镜像 / ReadTextSkip 运行期镜像
+   *     SetConfig("message:ReadTextSkip", 0);                       // raw 20132（串 = raw 4277 `aMessageReadtex`）
+   *     if ( GetConfig("set:CancelMesSkipOnClick") == 2 ) {         // raw 20133
+   *       sub_411560(_this, "CALLBACK_SETTING.BIN");                // raw 20135（本资源树无该文件 ⇒ 空转）
+   *       return;                                                   // ★raw 20136：**整帧早退** —— 连 3 槽交付
+   *     }                                                           //   与「那一条指令」都不做
+   *   } else { _this[122370] = 1; }                                 // ★raw 20141：位为 0 的那一帧走 0 ⇒ 1
+   * }
+   * ```
+   * ⇒ **极性**：`0→1` 发生在**该位为 0** 的那一帧（`else` 分支）、按下只驱动 `1→2`、`2→0` 那一帧才
+   * 清 ADV 并复位 ReadTextSkip。`2026-09` 的审计 finding（`T-0161` §5 row 14 的 `overreach`）说这条
+   * 极性在 emulator 里是错的 —— **按体不成立**（本实现的三个分支与 raw 20115-20143 逐个同形）；
+   * 真缺的是 raw 20120 的位消费、raw 20127 的 `eatAllInput` 与 raw 20133-20136 的 `== 2` 早退，
+   * 本票（`T-0169`）已补齐（见上面 `advFrameAborted` 与下面的实现）。
    *
    * 返回 `true` = 本帧应派发 1 条指令（等价于引擎该分支的行为）。
    */
   serviceAdv(): boolean {
     const im = this.input;
     const m = this.msgwin;
+    this.advFrameAborted = false;
     // ★ADV 分支用**实时刷**（引擎 sub_411900 raw 20111 的 `sub_4780D0`）：含鼠标左右键的**按住态**
-    //   （set:CancelMessageKey 三态机就靠它判「已松开」）。**不要**换成 flushPending（T-0027）。
+    //   （set:CancelMesSkipOnClick 三态机就靠它判「已松开」）。**不要**换成 flushPending（T-0027）。
     const mask = im.flushHeld();
     const skipBit = m.skipMirror !== 0;
 
-    // 取消消息键三态机（引擎门控：GetConfig("set:CancelMessageKey")）
+    // 取消消息键三态机（引擎门控：GetConfig("set:CancelMesSkipOnClick")，raw 20115）
     if (this.config && cfgInt(this.config, CFG.setCancelMesSkipOnClick, 0) !== 0) {
       const bit = 0x10; // 掩码 bit4 = 鼠标左键
       if ((mask & bit) !== 0) {
         const was1 = m.cancelStage === 1;
+        // ★raw 20120 `*v2 &= ~0x10u`：按下那一帧就把这一位从**掩码格**（= `input.inputMask`）里拿掉。
+        im.inputMask = (im.inputMask & ~bit) | 0;
         if (was1) m.cancelStage = 2;
       } else if (m.cancelStage === 2) {
         m.cancelStage = 0;
+        // ★raw 20127 `sub_4053C0(_this)` = 把这次输入整份吃掉（刷掩码 + 按钮保持位 + 掩码清 0）。
+        this.eatAllInput();
         this.effectFlags &= ~ADV_ACTIVE;
-        m.skipMirror = 0;
+        m.skipMirror = 0; // `Engine[1415] = 0`
         m.skipMode = 0;
-        m.readTextSkip = 0;
+        m.readTextSkip = 0; // `Engine[97050] = 0`（= SetConfig("message:ReadTextSkip", 0)，raw 20132）
+        // ★raw 20133-20136：键值 **== 2** 时引擎整帧 `return` —— 3 槽交付（raw 20144-20160）与
+        //   「恰好 1 条指令」（raw 20161-20165）**都不做**。emulator 用 `advFrameAborted` 把这件事
+        //   交给帧驱动（`src/frame/loop.ts` 的 adv 分支据此跳过本帧的那一条）。
+        if (cfgInt(this.config, CFG.setCancelMesSkipOnClick, 0) === 2) {
+          this.advFrameAborted = true;
+          return false;
+        }
       } else {
         m.cancelStage = 1;
       }
@@ -878,6 +969,12 @@ export class Engine {
     const cur = this.msgwin.resolveWin(this.msgwin.lastArg);
     this.msgwin.finishReveal(cur);
     this.#publishReveal(cur);
+    // ★raw 13941 `Engine[388212] = 1`（= `_this[97053]`）：**跨帧闩锁** —— 「上一次的点击已经把这一页
+    //   贴完了，但泵可能又被武装（`0x196` 在一句中间续写文本 ⇒ 置 `0x20000000`，而 `0x6E` **不**清这一格）
+    //   ⇒ 下一次泵调用见它就走 raw 13917-13930 的 `else if (Engine[388212])` 支：清 `0x20000000` +
+    //   **再自旋贴完当前窗**（不动 bit31、不动 bit30）。见下面 `serviceTextReveal` 的读取端。
+    //   （清零点 = `0x72` 的 raw 28557、整体复位 raw 17973、构造 raw 22604 —— 见常量说明。）
+    this.engineValues.set(FIELD_REVEAL_INPUT_CONSUMED, 1);
     im.consumeEdges(); // 引擎 `*v6 = 0`：这次点击不再留给等待泵（否则下一帧会顺带推进一页）
     // 引擎 raw 13910-13915：DrawMode == 1 时顺带把等待门计时器清零 + 置强制冻结
     // （`Scene+369360 & 2` 那一格全工程无置位点，恒为 0 ⇒ 条件只剩 DrawMode）。
@@ -897,6 +994,32 @@ export class Engine {
    */
   serviceTextReveal(nowMs: number): boolean {
     const speed = messageSpeedOf(this);
+    // ★★**`Engine[388212]` 闩锁支**（引擎 `sub_409400` raw 13917-13930，`tickets/T-0169` 补齐；
+    //   此前的登记见 `analysis/engine-capabilities.json` 的 `frame-render-gate-mainloop` note ③）：
+    //   ```c
+    //   else if ( *(_DWORD *)(_this + 388212) )        // 上一帧的"贴完整页"出口留下的闩锁
+    //   { *(_DWORD *)(_this + 699204) &= ~0x20000000u; // 清"逐字泵在跑"位
+    //     while ( !sub_45BE20(_this + 85296, *(_DWORD *)(_this + 489484)) ) ;   // ★再自旋贴完当前窗
+    //     result = 1;
+    //     if ( *(_DWORD *)(_this + 667856) == 1 && (*(_BYTE *)(_this + 369360) & 2) == 0 )
+    //       { *(_DWORD *)(_this + 369344) = 1; result = 0;                       // = skipWaitGate()
+    //         *(_DWORD *)(_this + 369352) = 0; *(_DWORD *)(_this + 369356) = 0; } }
+    //   ```
+    //   `result` 只被 raw 21178 的调用点**丢弃**（主循环不看返回值）⇒ 两支的差别在 emulator 侧不可观测，
+    //   这里只落**会改状态的那两件**：清闩锁 + 一次把当前窗贴完（`finishReveal` 等价自旋）。
+    //   ★次序：这一支在闸门窗循环（raw 13835-13888）**之后**、输入分支（raw 13931 起）**之前**
+    //   ⇒ 与 `serviceWinReveal` 的相对次序由调用方保证（帧驱动先 `serviceWinReveal`）。
+    if ((this.engineValues.get(FIELD_REVEAL_INPUT_CONSUMED) ?? 0) !== 0) {
+      this.engineValues.set(FIELD_REVEAL_INPUT_CONSUMED, 0); // raw 13919 的前置：只走一次
+      const w = this.msgwin.resolveWin(this.msgwin.lastArg);
+      this.msgwin.finishReveal(w); // raw 13920 的 `while (!sub_45BE20(...))` 自旋
+      this.#publishReveal(w);
+      this.msgwin.showing = 0;
+      // raw 13923：`set:DrawMode == 1`（且 `Scene+369360` bit1 == 0，该位全工程无置位点）⇒
+      // 置强制冻结 + 清等待计时器（= `skipWaitGate`）；随包 INI `DrawMode=0` ⇒ 本机通常不触发。
+      if (this.config && cfgInt(this.config, CFG.setDrawMode, 0) === 1) this.skipWaitGate();
+      return this.msgwin.isRevealing();
+    }
     // ★引擎每帧只泵**当前窗**（ADV 支：raw 13907/13920/13944/13962 都只把 `Engine[122371]` 交给
     //   `sub_45BE20`；`0x300` 闸门窗由 `serviceWinReveal` 那条支路单独负责，raw 13834-13888）
     //   ⇒ 只推进/发布当前窗。修前 `tickReveal` 会推进并发布**所有** `reveal` 条目（含上一屏残留）
@@ -1049,6 +1172,75 @@ export class Engine {
       }
     }
     return active;
+  }
+
+  /**
+   * **主循环的 `0x4000000` 臂**（引擎 raw 20859-20881；`tickets/T-0175` ⑬ 的第 2 条主循环写者，
+   * `tickets/T-0169` 落地）——「**重显示（回看）模式下玩家一有输入 ⇒ 退出重显示、回到备用游标**」。
+   *
+   * ```c
+   * v25 = _this[174801];                                    // 20859
+   * if ( (v25 & 0x4000000) == 0 ) break;                    // 20860：不在重显示模式 ⇒ 本臂不跑
+   * sub_478090(_this + 1032, _this + 699208);               // 20862：★**消费刷**（吸挂起事件）
+   * if ( *(_DWORD *)(_this + 699208) )                      // 20863：这一帧真的收到了输入
+   * { *(_DWORD *)(_this + 699208) = 0;                      // 20865：掩码格清零
+   *   _this[174801] &= ~0x4000000u;                         // 20866：退出重显示模式
+   *   v26 = _this[95776];                                   // 20867：当前帧号
+   *   if ( *(_DWORD *)(_this + 4 * v26 + 489648) != -1 )    // 20868：★**备用**回退游标（`122412+cur`，`0x7B` 的 op2）
+   *   { v27 = _this[174801] | 0x2000000;                    // 20870
+   *     _this[174801] = v27;  _this[489808] = v27;          // 20871-20872：模式字 = flags | 0x2000000
+   *     _this[174801] = 0;                                  // 20873：清整个 effect_flags
+   *     _this[489812] = sub_4051E0(_this, v26);             // 20874：= (ip − ip_base) >> 2 = **当前 dword 偏移**
+   *     _this[430712] = frame[95796];                        // 20876：★脚本身份（与 0x199/右键取消同一格）
+   *     frame[95782] = frame[95781] + 4 * alt;              // 20877：★ip 改写到备用游标
+   *     frame[95805] = 0; } }                                // 20878：步长槽归零（本臂不改写 ip 之外的推进）
+   * ```
+   *
+   * ## 与另两条「退出重显示」写者的分工（三格 = `redisplayMode` / `redisplayReturn` / `redisplayScriptId`）
+   * | 写者 | 位置 | 游标 | emulator |
+   * |---|---|---|---|
+   * | raw 13997-14008 | `sub_409700`（主循环 `0x10000000` 臂） | **主**（`122372+cur`） | **未落**：`0x10000000` 的唯二置位端是 `0x8E`/`0x95`（panelB，语料 **0** 处）⇒ 该臂在语料上不可达，属已登记的 panelB 缺口（`handlers/panel.ts`） |
+   * | raw 20365-20374 | `sub_411BC0`（等待泵右键） | **主**（`489488+4*cur` ≡ `122372+cur`） | `#cancelRoute()`（已落；★它的**取值来源**是 emulator 的 `input.mouseJump`，而体里读的是 `rewindMainBase[cur]` —— 口径差已写进 `tickets/T-0169/changes-reveal.md` 的「别人该接」） |
+   * | raw 20859-20881 | 主循环 `0x4000000` 臂 | **备用**（`122412+cur`） | **本函数**（`T-0169` 落） |
+   *
+   * ★三处写的都是**同一批引擎格**，所以 `0x7C`（`local-ret`）对三条路天然成立（它只认
+   * `mode & 0x2000000` + `redisplayScriptId` 的深度校验 + `redisplayReturn` 的落点）。
+   * ★`frame[95805] = 0`（raw 20878）在 emulator 侧**没有对应物**：那格是「下一条指令的步长」，
+   * 而 emulator 的每条 handler 自己写自己的 arity ⇒ 无事可做（如实登记，不编一个写点）。
+   *
+   * @returns `true` = 本帧消费了一次输入并退出了重显示模式（含"备用游标为 -1 / 表项不是指令边界"
+   *          这两种只清门不改 ip 的情形 —— 引擎在 raw 20865-20866 就已经改了状态）；`false` = 本臂没跑。
+   *          调用点 = `src/frame/loop.ts` 的帧首（引擎里这一臂在逐字/字格泵**之前**）。
+   */
+  serviceRedisplayExit(): boolean {
+    if ((this.effectFlags & REDISPLAY_MODE) === 0) return false; // raw 20860
+    const im = this.input;
+    const mask = im.flushPending(); // raw 20862 `sub_478090`（消费刷：只吃挂起事件）
+    im.consumeEdges(); // ★消费刷的语义（读后即清；引擎那一份由 sub_478090 吸走）
+    if (mask === 0) return false; // raw 20863
+    im.inputMask = 0; // raw 20865 `_this[699208] = 0`
+    this.effectFlags = (this.effectFlags & ~REDISPLAY_MODE) | 0; // raw 20866
+    const f = this.curScript();
+    const alt = this.engineValues.get(ENGINE_FIELD.rewindAltBase + this.cur) ?? -1;
+    if (alt === -1 || alt === 0xffffffff) return false; // raw 20868（★它**只**挡 ip 改写；门上一步已清）
+    const saved = this.effectFlags;
+    this.engineValues.set(ENGINE_FIELD.redisplayMode, (saved | 0x2000000) | 0); // raw 20870-20872
+    this.effectFlags = 0; // raw 20873
+    const atIp = f.script?.instructions[f.ip];
+    const curIdx = f.curDwordOffset >= 0 ? f.curDwordOffset : (atIp?.index ?? 0);
+    this.engineValues.set(ENGINE_FIELD.redisplayReturn, curIdx); // raw 20874（`sub_4051E0` = (ip-ip_base)>>2）
+    this.engineValues.set(ENGINE_FIELD.redisplayScriptId, f.scriptId); // raw 20876（= `frame[95796]`）
+    const target = f.script?.dwordToInstr?.[alt];
+    if (target === undefined) {
+      // ★已知口径差（与 `#cancelRoute` 同一口径）：引擎 raw 20877 是**无条件** `ip = ip_base + 4*alt`，
+      //   表项不是指令边界时就野跳（真机跑飞）。emulator 的 ip 是指令下标、没有地址可野跳 ⇒
+      //   只改上面三格与门，不动控制流，并把这件事记在 `lastDispatch` 里（不编一个目标）。
+      this.lastDispatch = { label: alt, kind: 'redisplay-exit-miss' };
+      return true;
+    }
+    f.ip = target; // raw 20877
+    this.lastDispatch = { label: alt, kind: 'redisplay-exit' };
+    return true;
   }
 
   /**
@@ -1327,6 +1519,16 @@ export class Engine {
    * ⇒ emulator 直接 `frame.ip = p`，与 `0x199`（`jumpToDword`）同一条"自行定 ip"的口径。
    * `stepOnce` 之后照常从新 ip 继续派发。
    *
+   * ★**本路由的「表项」取值来源与体不符（已知口径差，`tickets/T-0169` 复核，登记不擅改）**：
+   * 体 raw 20367 读的是 `_this + 4*v6 + 489488` ⇒ 绝对下标 **`122372 + cur`** = `ENGINE_FIELD.rewindMainBase`
+   * （`0x7B` `sub_41F530` raw 28729 的 **op1** 写的就是它）；而 `0xCC`（`mouse-callback`）写的是
+   * `_this[107664]`（raw 30322，字节 430656）—— 那是**另一格**，读者是 `0xCD`（raw 25851
+   * `v4 = *(_DWORD *)(_this + 430656)`）。本函数目前取 `input.mouseJump`（= `0xCC` 的 `107664`）。
+   * ⇒ 差别：脚本只跑 `i0cc` 而不跑 `i07b` 时，引擎这里读到 -1（**直接 return、什么都不做**），
+   * 而本函数会把 `0xCC` 的目标派发出去。**本票不改行为**（`test/adv-right-click-cancel-route.test.ts`
+   * 的 8 例按现口径钉着，属 `T-0167`/`T-0168` 的文件）⇒ 修法与判据写进
+   * `tickets/T-0169/changes-reveal.md` 的「别人该接」#1。
+   *
    * @returns `true` = 本帧有注册的 mouseJump label 且已被派发；`false` = 未注册（**什么都不变**）。
    */
   #cancelRoute(): boolean {
@@ -1373,6 +1575,8 @@ export class Engine {
     const cfg = this.config;
     const wheelUp = cfg ? cfgInt(cfg, CFG.setWheelKeyUp, 0) : 0;
     const wheelDown = cfg ? cfgInt(cfg, CFG.setWheelKeyDown, 0) : 0;
+    // ★`& 31` 只是**文档化**：x86 的 `shl cl` 与 JS 的 `<<` 都取模 32（`i10c` 已把位号钳进 [0,31]，
+    //   而默认位号是 3/1 ⇒ 这条差别在**当前语料上不可观测**；`T-0168` 复核结论 = 保持现状 + 写明）。
     const wheelBits = ((1 << (wheelUp & 31)) | (1 << (wheelDown & 31))) >>> 0;
     if ((mask & wheelBits) === 0) return false; // 滚轮键没按 ⇒ 不丢
     // `Engine[388220]` 有符号 < 0（= `i1bb 0` 写的 0x80000000）⇒ 不丢（照常悬停）
@@ -1425,9 +1629,13 @@ export class Engine {
    *   `handlers/save-slot.ts:379`），**没有**"装载回调脚本并立刻把控制交给它"的机制。
    *   ⇒ 本节只落**游标 + `489816` + `0x100000` + 消费输入**这四件事（引擎体里 `sub_459770` 前后、
    *   `LABEL_21` 里可独立观测的部分）；**`CALLBACK_TEXT.BIN` 那一跳不假装**。
-   *   可观测后果：真机上滚轮回看会弹出「回想/回看」画面，emulator 里只回拨游标（页表/记录表已动，
-   *   `0x1D0` 与 `HISTORY.txt` 那条链仍读得到）。**重开条件** = 有了"按名装载 + 立即派发回调脚本"
-   *   的口（即把 `sub_411560`/`sub_40FC90` 建模）时，在这里补 `#runNamedCallback('CALLBACK_TEXT.BIN')`。
+   *   可观测后果：`sub_411560('CALLBACK_TEXT.BIN')` 那一跳在**本资源树是 no-op**（索引 25080 条里 0 命中 ——
+   *   base 21109 + 5 个扩展包 3971，`T-0168` 加严实测；`sub_455000` raw 67400-67439 返回 -1 ⇒
+   *   `sub_40FC90` raw 19019-19027 体首早退）⇒ **真机与 emulator 都不会弹「回想/回看」画面**；
+   *   要让那个画面出现，只能靠**路由键把位号 8 派发给 `call-script 31 // HISTORY`**
+   *   （`src/SN0000.txt:106`；默认位号 3 ⇒ 上滚 = 派发 ← 键 = 打开侧边栏，那是引擎行为、不是本节的缺口）。
+   *   **重开条件** = 有了"按名装载 + 立即派发回调脚本"的口（即把 `sub_411560`/`sub_40FC90` 建模）时，
+   *   在这里补 `#runNamedCallback('CALLBACK_TEXT.BIN')`。
    *
    * @returns `true` = 本帧被这次滚轮回看消费掉（调用方不要再走悬停）。
    */

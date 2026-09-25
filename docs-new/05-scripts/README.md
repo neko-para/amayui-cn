@@ -20,14 +20,14 @@ generated_by: scripts/build-scripts.mjs
 
 ## 覆盖率
 
-`src/*.txt` 共 **941** 个，其中**已登记 36** 个（不是"已全部读过"，是"读过并落库"）：
+`src/*.txt` 共 **941** 个，其中**已登记 37** 个（不是"已全部读过"，是"读过并落库"）：
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
 | `analyzed` | 10 | 结构 + 关键路径都读过并落库（未读到的部分写在 notes） |
-| `partial` | 24 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
+| `partial` | 25 | 只读了用到的部分（layout 里逐条列出的就是读过的范围） |
 | `stub` | 2 | 只登记『它是谁 / 谁调它』，正文未读 |
-| **合计** | **36** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
+| **合计** | **37** | 分母 941（`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --coverage` 列出未登记项） |
 
 > **不要求凑数登记**：没读过的脚本不要建条目（宁可空着）；读了一部分就写 `partial`，
 > 并在 `layout` 里只列**真正读过的行区间** —— 守卫会核对每个锚点确实出现在它声明的区间内。
@@ -47,6 +47,7 @@ generated_by: scripts/build-scripts.mjs
 | [`CONFIG1`](./CONFIG1.md) | `CONFIG1.BIN` | 设置界面的**分类页主体**（本地化后的「系统设定」等页）：左侧分类列表 + 中部设置行（背景带 / 数值贴片 / 帮助图标 / 按 kind 的控件族）+… | 17 | 12 | ✅ 已分析 | `test/config1-chain.test.ts` `test/draw-string.test.ts` `test/draw-item-scale.test.ts` `test/text-style-snapshot.test.ts` |
 | [`CONFIG2`](./CONFIG2.md) | `CONFIG2.BIN` | 设置界面的**「角色设定」页**（左侧第 5 个分类）：9 个角色位（CV 名牌 + 説明文字）+ 詳細変更/on/OFF/▶ 控件 + 左侧分类 + 滚动… | 7 | 7 | 🟠 部分 | `test/text-style-snapshot.test.ts` |
 | [`CVINIT`](./CVINIT.md) | `CVINIT.BIN` | 逐角色「配音/配色/名字」表的初始化：把游戏内建的默认值写进 `14a8f1 + n` 等一组并行全局表，并写角色名串。 | 2 | 4 | 🟠 部分 | — |
+| [`EBINIT`](./EBINIT.md) | `EBINIT.BIN` | **两张「角色号 → L2D 资产」统一文件 id 表的唯一写入方**：`global-int 527d8c + 3c` = 角色 c 的 `.MOC` 文… | 3 | 2 | 🟠 部分 | `test/t0107-l2d-asset-id-table.test.ts` `test/t0107-infoen-real-id.test.ts` |
 | [`GAMESTART`](./GAMESTART.md) | `GAMESTART.BIN` | 「Game Start」之后的新游戏配置界面（基本设定/引继设定/周回プレイ设定）+ 三个按钮：**ゲーム開始 / 戻る / 初期化**。 | 11 | 6 | 🟠 部分 | `test/game-start-chain.test.ts` |
 | [`HISTORY`](./HISTORY.md) | `HISTORY.BIN` | 回想（历史）画面：把 ADV 已经压进引擎记录表 `Font+3364` 的页按 5 行一屏列出来，逐行取字段画页码/图标/说话人名，**正文由 `i1d1… | 9 | 12 | 🟠 部分 | `test/recall-page-0x1d1.test.ts` `test/op-1d0-page-index.test.ts` |
 | [`INIT2`](./INIT2.md) | `INIT2.BIN` | **本体数据表总装载**：依次 call-script 40 张本体 INIT 表（SCINIT/CTINIT/…/BTANINIT2），再把一大批脚本 i… | 4 | 3 | 🟠 部分 | — |

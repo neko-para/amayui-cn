@@ -129,7 +129,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "BYTE2(a5)",
       "note": "★判据 4 的**引擎依据**（`bgrToRgb` 的注释引了同一行，raw 79666）：引擎写入端 `Font+1360 = BYTE2(a5) + ((BYTE1(a5) + ((u8)a5 << 8)) << 8)` —— 输入按 **COLORREF（0x00BBGGRR）** 读、写成 `0xRRGGBB`。emulator 的 `bgrToRgb` 与它**逐位等价** ⇒ 「橘↔青」这类 R/B 互换**不可能**来自通道顺序（同一次交换作用全表；白/暖白那几条近似中性、交换前后几乎无差 ⇒ 正文看着正常而角色名一眼偏，与用户描述一致）。",
-      "line": 118
+      "line": 201
     },
     {
       "file": "app/amayui-emulator/test/text-style-snapshot.test.ts",
@@ -213,7 +213,7 @@
       "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
       "anchor": "fill: hex6(bgrToRgb(v(21664, 0xffffff))),",
       "note": "修复点：取用侧把 COLORREF 字段翻回 RGB（唯一文本样式来源，消息窗与 0x204 都走它）",
-      "line": 228
+      "line": 311
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",

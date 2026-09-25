@@ -19,11 +19,22 @@ export type WinPhase = 'none' | 'before' | 'active' | 'after';
  * - `before` ：已锁存但仍在 delay 期 ⇒ 保持 `work`/`from`；
  * - `active` ：窗内 ⇒ `t = (clock − start − delay) / dur`（**无 clamp**；窗口条件已保证 0<t<1）；
  * - `after`  ：窗已结束（含 `dur = 0` 的"配置过但零时长"）⇒ 调用方做一次性收尾（`work ← target`）。
+ *   ★例外：**颜色窗（`W_COLOR`）的 `dur <= 0` 归 `none`** —— 引擎 raw 117443-117444 的
+ *     `if (v13 > 0)` 让整块颜色逻辑不跑（见下方代码处的详细引文）。
  */
 export function winPhase(it: Item, idx: number, clock: number): { phase: WinPhase; t: number } {
   const w = it.wins[idx]!;
   if (!w.set) return { phase: 'none', t: 0 };
   if (it.animStart === 0) it.animStart = clock; // ★首帧锁存（引擎 raw 117438）
+  // ★**颜色窗（`0x202`）不是无条件跑的**：引擎 `sub_49AA30` raw 117443-117444 的
+  //   `v13 = *((_DWORD *)a2 + 19); if ( v13 > 0 )` 是整块的入口门（`+0x4C` = 本窗 dur）
+  //   —— `dur <= 0` 时引擎**完全不碰颜色**（`+0x60` 工作色 / `+0x64` TO 都留原值，
+  //   也不做窗末收尾 `+0x60 ← +0x64`），且这一帧 `v115` 保持 0 ⇒ 末尾照清 `flags & ~2`
+  //   （raw 117833-117837）。⇒ 这里返回 `none`（该窗不参与）**而不是** `after`
+  //   （`after` 会让 `advanceWindows` 触发 `freezeWindow` 的 `from ← to`）。
+  // ★与其余 4 个窗**有意分叉**：本窗的门有 raw 逐字依据；其余窗同型门（raw 117487 等）
+  //   尚未逐条核，改动它们超出本票范围（见 `tickets/T-0179`）。
+  if (idx === W_COLOR && w.dur <= 0) return { phase: 'none', t: 0 };
   const s = it.animStart + w.delay;
   if (clock < s) return { phase: 'before', t: 0 };
   if (w.dur <= 0) return { phase: 'after', t: 1 };

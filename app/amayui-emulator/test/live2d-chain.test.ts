@@ -232,12 +232,16 @@ test('Live2D：0x341/0x344/0x345/0x34E 在真语料上走完整 VM 派发（hand
  * - 资产真身（`NodeFileSource.readById` 实测）：`0x4c8e → BM750A.MOC`、**`0x4c8f → BM750A.MTN`**、
  *   `0x4f9a → BM750A01.PNG`、`0x4f9b → BM750A02.PNG`。
  *
- * ## ★仍然开着的那一格（写清楚，别把本守卫当"INFOEN 全链已复现"）
- * INFOEN 的两个 id **来自全局表**（`lookup-array-2d (global-int 527d8c)` 取 MOC、`(global-int 528944)`
- * 取 MTN）。实测（`.tmp/infoen-l2d-table-probe.mts`，跑完 boot 链到 TITLE）：那两个**持有槽的值是 0**，
- * 而语料里**没有任何脚本写它们**（`708ab6` 那张表则由 `INIT2.txt:115 mov (global-int 708ab6) 522d` 设置）
- * ⇒ 表由引擎侧填（来源未定位）。所以本守卫跑的是"**id 已知**之后的 INFOEN 序列 + SETL2DMOC 映射"，
- * 「角色 → id」这一步仍缺输入；登记在 `T-0054` 的 notes §「轮 14」。
+ * ## ★`T-0107` 已定位（这一格不再"开着"）
+ * INFOEN 的两个 id 来自全局表（`lookup-array-2d (global-int 527d8c)` 取 MOC、`(global-int 528944)` 取 MTN）。
+ * **写入方 = 游戏脚本自己**：`src/EBINIT.txt`（本体 235 处）+ `src/$1$EBINIT.txt`…`$5$EBINIT.txt`（扩展包 109 处）
+ * 逐角色**字面写**「基址 + `3c`」那一格（`idx` = 1-based 角色号、行距 3 dword，覆盖 1..998；344 角色两表成对），
+ * 例：`src/EBINIT.txt:115 mov (global-int 527d8f) 4087`（`BM001A.MOC`）/ `:116 mov (global-int 528947) 4088`（`BM001A.MTN`）。
+ * ★**别用「表基址 token 被写没有」判断表有没有数据** —— 基址那格永远 0 写点（`T-0107` 正是踩了这条险些误判降级）。
+ * 早前探针读到 0 的根因：它读的是**表基址本身**（角色 0 那格），而 INFOEN 角色页实际走到的 `idx = 0x13c7 = 5063`
+ * **超出写入覆盖 1..998** ⇒ 表里恒 0 ⇒ 走静态贴图回落（**数据事实，非 emulator 缺陷**）。
+ * ⇒ 本守卫跑的是"**id 已知**后的 INFOEN 序列 + SETL2DMOC 映射"；「角色 → id」这一档的可取范围见
+ * `docs-new/02-data/character-l2d-tables.md` 与 `test/t0107-infoen-real-id.test.ts`（角色 1 能取到真 id 并真装进实例槽）。
  */
 test('★T-0054：INFOEN 支路的 L2D 装载序列在真资产上跑通（BM750A.MOC/MTN + 两张 PNG）', async (t) => {
   const root = findResourceRoot();

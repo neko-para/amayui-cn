@@ -46,6 +46,14 @@ const WHY: Record<string, string> = {
     '该纹理槽有没有 CTexture 对象（0x20F play-movie 的输入前提）：不实现 ⇒ 返回 undefined ⇒ 0x20F 不据此抛错（与修前同）——引擎在该格为空时抛 "テクスチャが確保されていません"',
   clearMeshSlots: '清 D3DX 网格层级槽：不实现 ⇒ 旧网格残留，无报错',
   clearSlotRecords: '清两张 1000×2 记录表：不实现 ⇒ 记录表残留，无报错',
+  setTextureObjectFloat:
+    '纹理对象的浮点参数（0x245，op2÷1000 后写 CTexture 的尺寸格）：不实现 ⇒ 只落 VM 字段、画面不受影响——引擎那一步会改该对象的尺寸 ⇒ 0x23F 一族的答案会偏',
+  setTextureObjectColor:
+    '纹理槽颜色（0x1F9 的 op3 / 0x249 的 op3 ⇒ Scene[5*slot+467]）：不实现 ⇒ 该槽的着色/透明信息丢失 ⇒ 用颜色的那批图元按无色画（0x249 语料 20 处无报错）',
+  setTextureObjectSubParam:
+    '纹理对象的子对象参数（0x246，op2÷100 交给 obj[+1084]==0 的子对象 vtable+56）：不实现 ⇒ 该对象的内部状态不变（0x246 语料 0 处，无报错）',
+  setTextureObjectParam:
+    '（旧名，语义混用：颜色与子对象参数共用一条）不实现 ⇒ 与上面两条同；新代码请用拆开后的 setTextureObjectColor / setTextureObjectSubParam',
   snapshotPresent: '取场景呈现态快照（读档要还原画面）：不实现 ⇒ 读档后画面停在上一屏（引擎靠存档里的绘制记录重放）',
   restorePresent: '还原场景呈现态快照：不实现 ⇒ 读档后画面停在上一屏（见 snapshotPresent）',
   setRenderState: '渲染状态下发（设备状态 #22）：不实现 ⇒ 混合/裁剪等状态不生效，无报错',
@@ -68,6 +76,12 @@ const WHY: Record<string, string> = {
   poolPending: '池挂起位（Scene+46516）：不实现 ⇒ 驱动按"池不挂起"处理（门只等 0x238 计时器）',
   frameTick: '帧刷新泵：不实现 ⇒ 动画/转场不推进',
   startFrameLoop: '帧循环启动：不实现 ⇒ 无每帧驱动',
+  // ★`tickets/T-0175` 的 ③（出处 `tickets/T-0159` §4.1）：两条存档槽缝从"结构化可选"变成**桥声明面**。
+  //   没进本表之前，宿主不实现它们时 `?.` 是真正的静默（连闸门 A 都记不到）—— 那正是 T-0159 报的缺口。
+  confirmSlotOverwrite:
+    '覆盖确认框（0x19E 的 MB_YESNO，引擎默认按钮是「否」）：不实现 ⇒ 调用方 `=== false` 不成立 ⇒ **恒按"玩家点了是"**（槽头不合法时也照写）—— 与真机默认按钮相反，无报错',
+  slotWriteFailed:
+    '写侧失败的提示/记录（引擎 sub_40A4C0 raw 38320）：不实现 ⇒ 只剩一条日志，玩家看不到「保存失败」的原因（引擎在该支也不抛 ⇒ 控制流不受影响）',
 };
 
 /** 把实参串成一行短文本（截断，避免刷屏；只用于人看）。 */
@@ -158,6 +172,11 @@ export const BRIDGE_METHODS = [
   'clearDrawContainer',
   'clearMeshSlots',
   'clearSlotRecords',
+  // ★`tickets/T-0175` 的 ③（出处 `tickets/T-0159` §4.1）：两条存档槽缝进桥。
+  //   进来之后"宿主没实现"会经 `withNativeTap` 记成可数缺口（见 `WHY`），
+  //   而**两个真宿主的实现面没有变**（都不实现 ⇒ 与修前行为逐字相同，仍恒按"是"/只剩日志）。
+  'confirmSlotOverwrite',
+  'slotWriteFailed',
   'snapshotPresent',
   'restorePresent',
   'restoreDrawItems',
@@ -224,6 +243,11 @@ export const BRIDGE_METHODS = [
   'sceneCommitRange', // 0x222：3D 层区间提交（P1 §4.2 #19；落点 = renderer/scene/commit.ts 的 enqueueSceneCommitNodes）
   'setRenderTarget',
   'setTextureObjectFloat',
+  // ★`tickets/T-0175` 的 ③（出处 `tickets/T-0163` §7-1）：`setTextureObjectParam` 原先**一条缝两种语义**
+  //   （`0x246` = 子对象 vtable 参数、`0x1F9`/`0x249` = 颜色 ARGB）⇒ 拆成两条。旧名仍在表里
+  //   （兼容/守卫），两条新缝是生产路径实际调用的那两条。
+  'setTextureObjectColor',
+  'setTextureObjectSubParam',
   'setTextureObjectParam',
   // ★`slotNodeSize`（`tickets/T-0153` 的 `0x23F` VM 半边）：`op_get_slot_size` 现在真的调它
   //   （从前它只是两个宿主的"自造方法"，见 `test/native-tap.test.ts` 的 `NON_BRIDGE` 变更记录）。

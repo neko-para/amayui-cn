@@ -19,8 +19,8 @@
     },
     {
       "file": "app/amayui-emulator/src/vm/handlers/gfx-texture.ts",
-      "anchor": "c.native.setTextureObjectParam?.(slot, normalizeTextureColor(color));",
-      "line": 99,
+      "anchor": "emitTextureColor(c.native, slot, normalizeTextureColor(color));",
+      "line": 134,
       "note": "T-0086 修复后：op3 走与 0x1F9 共用的 normalizeTextureColor（负值⇒0 也下发、域内正值强置 A=0xFF）"
     },
     {
@@ -70,5 +70,9 @@
   "tests": [
     "app/amayui-emulator/test/op-underun-fixups.test.ts",
     "app/amayui-emulator/test/op-a2-a3.test.ts"
-  ]
+  ],
+  "evidence[1]": {
+    "anchor": "emitTextureColor(c.native, slot, normalizeTextureColor(color));",
+    "line": 134
+  }
 }

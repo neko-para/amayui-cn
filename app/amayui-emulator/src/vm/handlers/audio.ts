@@ -26,7 +26,7 @@
  * | `0x2C0` / `0x2F5` | 语音排队（带延迟、指定通道） | `voice-queue` |
  * | `0x2F6` | 复位语音通道 | `voice-reset` |
  * | `0x2F7` / `0x2FF` / `0x302` | 状态位 / 音量因子预备 / 音量因子生效 | `voice-flag` / `voice-factor-prepare` / `voice-factor-apply` |
- * | `0x2F8` | **设语音通道 pan**（±10000） | `voice-pan` |
+ * | `0x2F8` | **设设备通道 pan**（±10000；op1 = pan、op2 = 设备通道 0..14） | `voice-pan` |
  * | `0xC6` | 设音量（0..4 类别，并写 `sound:VolumeN`） | `volume` |
  * | `0xC5` / `0xC7` | 读音量 / 读开关 | 已在 `config-read.ts`（真实现） |
  *
@@ -42,6 +42,7 @@ import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ADV_ACTIVE } from '../engine.js';
 import type { Engine } from '../engine.js';
 import { pushVoiceRecord } from './text-items.js';
+import { SE_CHANNELS } from '../../audio/audioEngine.js';
 import type { AudioIntent, AudioBus } from '../../audio/audioEngine.js';
 import { setConfigValue } from './msgwin.js';
 import { cfgEquals, cfgInt } from '../../engineConfig.js';
@@ -784,24 +785,38 @@ const op_voice_flag: OpHandlerLike = (c) => {
 };
 
 /**
- * `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。
+ * `0x2F8`：设设备通道 **pan**（±10000，0 = 中央）。
  *
- * 引擎 `sub_4268D0`（raw 33606 起）：把 op2 交给 `sub_4B6940(设备, ch, pan)` 时，
- * 写的是**设备通道格** `_this[a2 + 375]`（byte 1548 + 4·ch；`sub_4B6940` 内部同一格，
- * 见 raw 139063-139089 的 `a2 >= 15` 值域门）—— 审计 P3 `0x2f8 missing-operand-io`（票 `T-0152`）。
- * 本工程把那一格的等价物落进 `engineValues` 的 `voicePanBase + ch`
- * （前者 = 引擎字段面可复核，后者 = 宿主通道对象上的 `v.pan` 负责发声）。
+ * 引擎 `sub_4268D0`（raw 33705-33715）逐字：
+ * ```c
+ * _this[30 * _this[95776] + 95805] = 5;          // arity 槽 ⇒ argc 2
+ * v4 = sub_41BF50(_this, 2);                     // ★第 2 操作数 = 通道号
+ * v2 = sub_41BF50(_this, 1);                     // ★第 1 操作数 = pan
+ * return sub_4B6940(_this + 4666, v2 + 12, v4);  // sub_4B6940(设备, 通道 + 12, pan)
+ * ```
+ * ⇒ **op1 = pan、op2 = 通道**（`sub_4B6940` 的形参是 `(设备, a2 = 通道, a3 = pan)`，
+ * 见 raw 139064；调用点传的是 `v2 + 12` = 通道，`v4` = pan）。语料旁证：全库 `i2f8` **14642 处**，
+ * 第 2 操作数**全是 0**（`0 0` 14244 / `2 0` 213 / `1 0` 185）—— 第 1 操作数取遍 0/1/2（±10000 域内的
+ * "归中"值），第 2 操作数恒 0（设备通道 0 = 语音 ch0 的 `0 + 12`）⇒ 与「op1 = 通道」的读法互斥。
+ * 每场开头还成组出现 `i2f8 0 0` / `i2f8 1 0` / `i2f8 2 0`（三个通道各归中一次）。
  *
- * ★钳制是**对称 ±10000**（`sub_4B6940` 的两半），与 `audioEngine.clampPan` 同口径。
+ * 引擎写的是**设备通道格** `设备[a2 + 375]`（byte 1548 + 4·ch，raw 139080），值域门只有
+ * `a2 < 15`（raw 139068）⇒ 通道 **0..14** 全合法；本工程把那一格的等价物落进 `engineValues`
+ * 的 `voicePanBase + ch`（= 375 + ch，逐格对应），宿主侧由 `audioEngine.voicePan` 落到
+ * 语音/SE 通道对象上负责发声。
+ *
+ * ★钳制是**对称 ±10000**（`sub_4B6940` 的两半，raw 139071-139079），与 `audioEngine.clampPan` 同口径。
  */
 const op_voice_pan: OpHandlerLike = (c) => {
   const p = planFor(c);
-  const ch = (p.int(1) ?? 0);
-  const pan = (p.int(2) ?? 0);
-  c.e.engineValues.set(
-    ENGINE_FIELD.voicePanBase + ch,
-    pan < -10000 ? -10000 : pan > 10000 ? 10000 : Math.round(pan),
-  );
+  const panRaw = (p.int(1) ?? 0);
+  const ch = (p.int(2) ?? 0);
+  // ★剪辑与值域门都照 `sub_4B6940`：**先钳后判**（raw 139070-139079 的钳制在前、raw 139068 的门在外），
+  //   钳制不改变 ch ⇒ 两处都写钳制值（`sub_4B6940` 里下发与字段写用的是同一个 `v5`）。
+  const pan = panRaw < -10000 ? -10000 : panRaw > 10000 ? 10000 : Math.round(panRaw);
+  // ★设备层的值域门（raw 139068 `a2 < 15`）：越界时引擎**一个字段都不写**、只把错误串写进日志缓冲
+  //   ⇒ 这里也**不写 `voicePanBase + ch`**（否则会造出引擎没有的越界字段写）。
+  if (ch >= 0 && ch < SE_CHANNELS) c.e.engineValues.set(ENGINE_FIELD.voicePanBase + ch, pan);
   emit(c, { kind: 'voice-pan', ch, pan });
 };
 

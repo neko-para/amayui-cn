@@ -20,6 +20,8 @@
  * frame [下标]              列帧栈；给下标则展开该帧（脚本/ip/caller/局部量条数）
  * flocal <帧> <下标>        读写不出帧时，直接指定帧读它的局部量
  * slot <槽号>               读纹理槽绑定（VM 台账 + 宿主已就绪纹理，两者分开报以免混淆）
+ * l2d <槽号>                Live2D 槽运行态（模型/纹理数/当前动作）
+ * barrier                   纹理帧屏障②运行账（0x1F9/0x249 之后 await 了几次）
  * run                       当前运行态（cur / 脚本 / ip / 等待门 / 错误）
  * help                      命令帮助
  * ```
@@ -56,6 +58,7 @@ export const DEBUG_QUERY_HELP: string[] = [
   '  flocal <帧> <下标>      指定帧的 local int 槽',
   '  slot <槽号>             纹理槽绑定（VM 台账 / 宿主纹理 分开报）',
   '  l2d <槽号>              Live2D 槽运行态（模型/纹理数/当前动作；需要宿主查询）',
+  '  barrier                 纹理帧屏障②运行账（0x1F9/0x249 之后 await 了几次；需要宿主查询）',
   '  run                     当前运行态（cur / 脚本 / ip / 门 / 错误）',
   '  help                    本帮助',
   '★全部只读；下标按**十六进制**输入（与 src/*.txt 的字面量口径一致），也接受 0x 前缀。',
@@ -91,6 +94,12 @@ export interface DebugQueryHost {
   slot?: (slot: number) => string | null;
   /** Live2D 槽的运行态（模型 id / 纹理数 / 当前动作）；返回 `null` = 该槽没有立绘。 */
   l2d?: (slot: number) => string | null;
+  /**
+   * **纹理帧屏障②的运行账**（`tickets/T-0175` 的 ⑦，出处 `tickets/T-0166` §4-③）：
+   * "`0x1F9`/`0x249` 之后 await 宿主 `texturesIdle`"这件事在渲染会话里，VM 看不到
+   * （`StepTrace` 不带操作数值）⇒ 走注入的回调，与 `slot`/`l2d` 同一套。
+   */
+  barrier?: () => string;
 }
 
 export function runQuery(engine: Engine, text: string, host?: DebugQueryHost | null): DebugQueryResult {
@@ -248,6 +257,15 @@ export function runQuery(engine: Engine, text: string, host?: DebugQueryHost | n
         ok: true,
         lines: [`l2d 槽 0x${slot.toString(16)}（= ${slot}）`, `  ${info ?? '（该槽没有立绘实例）'}`],
       };
+    }
+
+    case 'barrier': {
+      // ★`tickets/T-0175` 的 ⑦（出处 `tickets/T-0166` §4-③）：**纹理帧屏障②**的可观测面。
+      //   修前这一面完全问不到 —— `slot` 只答宿主槽状态，问不出"0x1F9 之后到底有没有 await 过"。
+      if (!host?.barrier) {
+        return { query, ok: false, lines: ['barrier：本次调用未注入宿主查询（屏障账在渲染会话里，不在 VM 里）'] };
+      }
+      return { query, ok: true, lines: [`纹理帧屏障②（0x1F9/0x249 之后 await 宿主 texturesIdle）`, `  ${host.barrier()}`] };
     }
 
     case 'run': {

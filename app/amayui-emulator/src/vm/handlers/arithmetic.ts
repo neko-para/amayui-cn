@@ -22,6 +22,24 @@ function planOfArith(c: StepCtx): PlannedOperands {
   return p;
 }
 
+/**
+ * **C 库 `fmod` 的等价物**（`0x2D4`；`tickets/T-0179` 的 D 波实现）。
+ *
+ * 引擎体 `sub_430BD0`（raw 40162-40173）逐字只有一句算术：`v4 = fmod(v5, v3);`（raw 40171；
+ * `v5`/`v3` 都是 `sub_41C300(_this, n)` 读出的 **float**）⇒ 结果**符号跟随除数**：
+ * `fmod(-7.5, 2) = -0.5`（不是 `-1.5`）。
+ *
+ * JS 的 `%` 是「符号跟随**被除数**」（`-7.5 % 2 = -1.5`）⇒ 直接用它只在被除数非负时同值。
+ * 这里按 `l - r * trunc(l / r)` 复现 C 的 `fmod`：
+ *  - `r = 0` ⇒ `l / r = ±Infinity` ⇒ `trunc` 不变、`r * Infinity = NaN` ⇒ 结果 **NaN**
+ *    （与体里"无分支、无错误串"一致；既有守卫 `test/t0164-misc-batch.test.ts:311` 钉着这一格）；
+ *  - `|l| = Infinity` 或 `l` 为 NaN ⇒ 结果同样是 NaN（glibc/MSVCRT 的 `fmod` 同）；
+ *  - `trunc` 而不是 `floor`：`fmod` 的商向**零**截断（`fmod(-7.5, 2) = -0.5` 而不是 `0.5`）。
+ */
+function cFmod(l: number, r: number): number {
+  return l - r * Math.trunc(l / r);
+}
+
 function binOp(apply: (l: number, r: number) => number): OpHandler {
   return (c) => {
     const p = planOfArith(c);
@@ -209,7 +227,7 @@ const op_random: OpHandler = (c) => {
   const r = crtRand();
   const mod = p.int(2) ?? 0;
   if (mod === 0) {
-    // ★raw 37729：先落一次 `op1 = 0`
+    // ★raw 37729：先落一次 `op1 = 0`（守卫 `test/op-060-random-mod-zero.test.ts` 钉住这一格）
     p.setInt(1, 0);
     throw new Error('random: 模数为 0（引擎 raw 37729 先写 op1=0 再抛 Command_ShowMessage）');
   }
@@ -259,7 +277,9 @@ export const ARITHMETIC_OPS: OpTable = [
   [0x2d1, floatBinOp((l, r) => l - r)], // fsub
   [0x2d2, floatBinOp((l, r) => l * r)], // fmul
   [0x2d3, floatBinOp((l, r) => l / r)], // fdiv
-  [0x2d4, floatBinOp((l, r) => l % r)], // fmod（C 语义：`fmod(x, 0)` = **NaN**，无分支无错误串）
+  // fmod（C 语义：结果符号**跟随除数**、`fmod(x, 0)` = **NaN**，无分支无错误串）——
+  //   ★修前写的是 `l % r`（JS 的 `%` 符号跟随**被除数**）⇒ 负被除数时与体不等价（raw 40171）。
+  [0x2d4, floatBinOp(cFmod)],
   [0x2d5, op_fmov], // 浮点 mov（op1 = op2）
   [0x2d6, op_int_to_float], // int→float（op1 = (float)op2）
   [0x191, op_fabs], // ★fabs：op1 = |op2|（浮点；语料 13 处，此前零注册 ⇒ 命中即硬停；T-0076 的 B3）

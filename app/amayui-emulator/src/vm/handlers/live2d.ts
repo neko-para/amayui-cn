@@ -333,7 +333,15 @@ const op_l2d_load_model: OpHandler = async (c) => {
   }
 };
 
-/** `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。同上：无宿主缝。 */
+/**
+ * `0x345` 装纹理（`op1` = 纹理文件 id、`op2` = 实例槽、`op3` = 模型内纹理号）。同上：无宿主缝。
+ *
+ * ★**失败 = 抛 `ShowMessageError`**（`tickets/T-0178`）：引擎 `sub_427CF0` raw 34542-34551 组
+ * 「L2Dテクスチャファイル %s の読み込みに失敗しました」+ `_CxxThrowException(异常码 65543)`。
+ * ★但**只在本族唯一那条失败路上抛** —— 读文件失败（`sub_4A1970` raw 121710 的 `ReadFile` 失败 ⇒
+ * `return 0`）；「槽里没有模型」与「图解码失败」引擎**不抛**（raw 121712-121714 把 `sub_478370` 的返回值
+ * 丢掉了）⇒ 这里也只把"取不到文件"交给 `onFail`，与 `0x34E` 的口径**故意不同**。
+ */
 const op_l2d_bind_texture: OpHandler = async (c) => {
   const plan = planFor(c);
   const id = (plan.int(1) ?? 0);
@@ -342,7 +350,11 @@ const op_l2d_bind_texture: OpHandler = async (c) => {
   // 槽表先在 VM 层落库（"模型内纹理号 → 文件 id"这层语义与图像解码无关）
   l2dBindTexture(c.e, slot, id, texNo);
   const src = assetSource(c);
-  if (src) await bindTextureToSlot(src, c.e, id, slot, texNo, (m) => c.native.log(m));
+  if (src) {
+    await bindTextureToSlot(src, c.e, id, slot, texNo, (m) => c.native.log(m), (f: L2dLoadFailure) => {
+      throw new ShowMessageError(f.engineText, c.instr.opcode, f.detail);
+    });
+  }
 };
 
 /**

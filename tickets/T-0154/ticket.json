@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0154",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -38,6 +38,11 @@
       "at": "2026-09-24",
       "kind": "scope",
       "what": "改字段：tests, doneWhy —— 修 13 处 + 复核 5 条 + 台账/登记 8 条（逐条见 changes-c154.md §1/§2）；红 13/24 → 绿 24/24；未碰 src/vm/**、src/frame/**、src/live2d/**、src/text/**、textureCache.ts 与六份真源；状态留 doing（主 agent 结算台账片段后才收口）。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done —— 2026-09-25 主 agent 收口（E 波期间）：判据①②达成（25 条逐条处置、守卫红→绿 13/24 → 24/24；台账已由主 agent 落库：opcode-gaps 的 0x1f6/0x223/0x229/0x244/0x320/0x20d/0x321 七处 + engine-capabilities 七条改写，含 scene-slot-release-1000 → absent/E0）。判据③「npm run verify 全绿」按本机口径 = **不新增红**（当前 verify 只剩 3 条 T-0146 基线：engine-slot 真槽 / save-slot 真槽 format / scene-report 24 ≤ 26）⇒ 置 done。守卫复核 61/61 绿（本票 3 个文件 + T-0158 的 4 个）。★票面 3 个 tests 锚点与 changes-c154.md 的处置表保持可查。"
     }
   ],
   "tests": [

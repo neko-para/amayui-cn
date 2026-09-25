@@ -14,8 +14,8 @@
     {
       "file": "app/amayui-emulator/src/frame/loop.ts",
       "anchor": "} else if (e.textRevealing) {",
-      "note": "emulator 的逐字分支（互斥于等待泵分支）",
-      "line": 448
+      "note": "emulator 的逐字分支（互斥于等待泵分支）；★本单元读体复核后判定这条互斥**忠实**（结论与证伪法写在紧邻的注释块里）",
+      "line": 459
     },
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
@@ -61,7 +61,12 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ]
   },
-  "status": "doing",
+  "tests": [
+    "app/amayui-emulator/test/t0169-frame-reveal-pump.test.ts",
+    "app/amayui-emulator/test/t0175-engine-flag-and-rewind.test.ts"
+  ],
+  "status": "done",
+  "doneWhy": "判据②判定完成并落地：**`textRevealing` 互斥不拆**（原票「逐字帧不跑等待泵」按体是归属错 —— raw 21176-21228 是 if/else-if/else 链，`0x20000000` 为 1 时 `sub_411BC0` 到不了；三个 service* 的对口分别是 sub_409400 / sub_411900 / sub_411BC0，结论与逐条 raw 依据 + 证伪法写进 src/frame/loop.ts 的 text-revealing 分支注释与台账片段）；同时把 `sub_409400` 真缺的一支按体补齐（`Engine[388212]` 闩锁支 raw 13917-13930 读 / 13941 写，`0x196` 续写触发）、把 sub_411900「每轮恰好一条」的唯一例外（set:CancelMesSkipOnClick==2 的整帧早退 raw 20133-20136）接上。兼做 T-0175 的 ①（scriptEngineFlag 构造/复位值 = 1，raw 22591/17961；注释过期键名改 set:CancelMesSkipOnClick；三态机极性经复核**审计 overreach 不成立**，真缺的位消费/eatAllInput/==2 早退已补）与 ⑬（主循环 0x4000000 臂 raw 20859-20881 = Engine[430712] 的第 2 条写者，已实现 + 帧首接线；第 1 条 raw 13997-14008 属 panelB 死路，如实登记）。红→绿：8 个定点回退逐个命中各自守卫（.tmp/t0169/redgreen.mjs，8/8 红、还原后 9/9 绿）；两个新守卫文件 9/9；邻域 94 例里 92 过（另 2 条红与本单元无关：op-a2-a3 的 setTextureObjectParam 是 T-0175 另一路的在飞改动、typecheck:test 的 save-slot-* 同源）。",
   "history": [
     {
       "at": "2026-09-24",
@@ -72,6 +77,16 @@
       "at": "2026-09-24",
       "kind": "decision",
       "what": "主 agent 读体实测主循环（raw 20840-21230），判据①已答、判据②重定：真实次序 = 跳读内层循环 → 逐字计时器泵 raw 20887（门 0x40000000）→ raw 21158 `if ((v35 & 0x8000000) == 0) break;` → 显示态主泵 `sub_411900` raw 21160（输入提交 / 点击取消跳读 / 3 槽交付 / **执行恰好一条指令** raw 20161-20165）→ 回环；等待泵 `sub_411BC0` 在外循环之外（raw 21226）。⇒ 原「逐字帧要跑等待泵」的框架改为「显示态每轮仍执行一条脚本指令」，实施前必须先判清 emulator 三个 service* 与 `sub_411900` 四件事的对应关系，否则会把「每轮一条」误做成「整批派发」并打红 adv-reveal-under-throttle。顺带发现 3 槽交付有**两处**落点（`0x72` handler + 显示态主泵），归 T-0151。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "decision",
+      "what": "F 波单元（本票 + T-0175 的 ①/⑬）读体复核后的最终口径：① 判据② 的答案是**不拆**（互斥忠实）；原「等待泵」框架是归属错（三个 service* 各对 sub_409400 / sub_411900 / sub_411BC0），按键/悬停/滚轮回看在引擎那一臂里本来就不处理。② 「按体补齐」落在 sub_409400 自己缺的 Engine[388212] 闩锁支（raw 13917-13930/13941）与 sub_411900 的 ==2 整帧早退（raw 20133-20136）。③ 3 槽交付的等价物在宿主（AudioEngine 的 voiceDefer 冲刷，T-0151 已登记）⇒ 不在 engine.ts 重复建模。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done：判据①②③全部达成；两个新守卫文件 9/9；8 个定点回退 8/8 命中（红→绿逐条记录在 tickets/T-0169/changes-reveal.md §2）；台账片段（capabilities 4 条 + opcode-gaps 的 0x7c missing[2] 销/改写 + fields 建议 1 条）交回主 agent 落库"
     }
   ]
 }

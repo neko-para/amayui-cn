@@ -15,6 +15,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { OPS, NATIVE_OPS, ENGINE_INTERNAL_OPS } from '../src/vm/ops.js';
 import { StubNative } from '../src/vm/native.js';
 import { PANEL_BASE } from '../src/vm/handlers/panel.js';
+import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { dec, enc } from '../src/vm/bits.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
 import type { NativeBridge } from '../src/vm/native.js';
@@ -158,6 +159,13 @@ test('0xFB + 0x100：跳转表按**输入掩码位**索引（= op1，不偏移�
   e.input.buttons = 2; // 右键按住 ⇒ flush 出 bit5
   e.input.mouseJump = 0x999; // 注册了 mouse-callback 也不该被 0x100 用
   f.retStack.length = 0;
+  // ★★断言 retarget 的理由（原地写清）：`0x100` 的扫描游标**照体持久保留**（`Engine[cur+122287]`，
+  //    唯一复位端 = `0xFF` raw 25005；本条自己只推进，raw 25038）。上一条断言那次派发已把游标推到
+  //    **8**（bit7 ⇒ b+1）⇒ 掩码换成 bit5 后引擎**不会**回到 0 重扫（8 > 5）。
+  //    引擎里"下一个键"本来就发生在**同一趟扫描**（`ret` 回到 `0x100` 继续扫），跨趟一律由脚本的
+  //    `i0ff` 复位 —— 语料实测 `i0ff` 与 `i100` **53/53 成对相邻**。故这里补一次 `run(0xff)`
+  //    复刻真机的趟边界，而不是依赖已删掉的"掩码变了就重扫"近似。
+  run(0xff);
   assert.equal(runCtx(0x100, [])._nextIp, 5, '掩码 bit5 ⇒ joyJump[5]（不是 mouseJump、也不是 joyJump[b-4]）');
   assert.equal(e.input.mouseJump, 0x999, '0x100 不消费（也不读）mouseJump');
   // ★用户报 #1 的回归锁：鼠标**左键**（掩码位 4）必须走 `joyJump[4]`，**不能**走 `joyJump[0]`。
@@ -165,12 +173,53 @@ test('0xFB + 0x100：跳转表按**输入掩码位**索引（= op1，不偏移�
   e.input.consumeEdges();
   e.input.buttons = 1; // 左键按住 ⇒ flush 出 bit4
   f.retStack.length = 0;
+  run(0xff); // 同上：bit5 那次已把游标推到 6 ⇒ 不复位的话 bit4 扫不到
   assert.equal(
     runCtx(0x100, [])._nextIp,
     6,
     '掩码 bit4（鼠标左）⇒ joyJump[4] 的目标 0x522；若跳到 0x533 说明又退回 `4+op1` 的错索引',
   );
   void run;
+});
+
+test('★0x100：扫描游标跨派发持久保留（唯一复位端 = 0xFF）—— 同一掩码下一次 handler 运行里逐个派发', () => {
+  const { e, run } = mk();
+  const f = e.curScript();
+  e.engineValues.set(517, 12); // SetKeyTotal（真机由 `SYSTEM4.txt:86` 的 `i0fe c` 置 12）
+  f.labelMap.set(0x500, 2); // 掩码位 7
+  f.labelMap.set(0x522, 3); // 掩码位 5
+  /** 直接调 handler 取回 `StepCtx`（`jump()` 只写 `ctx._nextIp`；`frame.ip` 由 `stepOnce` 落）。 */
+  const runCtx = (op: number, args: BinArg[]): { _nextIp: number | null } => {
+    const h = OPS.get(op);
+    assert.ok(h, `0x${op.toString(16)} 应已实现`);
+    const ctx = makeCtx(e, f, instr(op, args), e.native, () => {});
+    h!(ctx);
+    return ctx;
+  };
+  const cursor = (): number => e.engineValues.get(ENGINE_FIELD.keyScanCursor + e.cur) ?? 0;
+  run(0xfb, [im(7), im(0x500)]); // 掩码位 7（手柄按钮 3）
+  run(0xfb, [im(5), im(0x522)]); // 掩码位 5（手柄按钮 1）
+  e.input.pressJoy(1); // 按钮 1 ⇒ 掩码位 4+1 = 5
+  e.input.pressJoy(3); // 按钮 3 ⇒ 掩码位 4+3 = 7
+  assert.equal(e.input.flushHeld(), 0xa0, '前提：一张掩码里同时有 bit5 与 bit7');
+  assert.equal(cursor(), 0, '游标初值 0（本用例没跑过 `0xFF`）');
+  // 第 1 次：从 0 扫到**最低**置位 bit5 ⇒ 派发 + 游标推进到 6（raw 25038）
+  assert.equal(runCtx(0x100, [])._nextIp, 3, 'bit5 ⇒ joyJump[5] 的目标');
+  assert.equal(cursor(), 6, '★raw 25038：游标 = b + 1（持久保留）');
+  // 第 2 次：**掩码一个字都没变**，仍从 6 起扫 ⇒ 命中 bit7（= 引擎"一次执行逐个派发"）
+  assert.equal(
+    runCtx(0x100, [])._nextIp,
+    2,
+    '★同一掩码、同一次运行内继续扫 ⇒ bit7 也要派发（近似在时这里会回到 0 ⇒ 只见 bit5 重复派发）',
+  );
+  assert.equal(cursor(), 8, '游标继续推进到 8');
+  // 第 3 次：掩码仍是 0xA0，但游标已越过两个置位 ⇒ 撞上界 ⇒ 不派发、**且不动游标**
+  assert.equal(runCtx(0x100, [])._nextIp, null, '游标 ≥ 掩码最高位 ⇒ 本轮派发结束（等 `0xFF` 复位）');
+  assert.equal(cursor(), 8, '早退支不写游标（raw 25029-25037 的循环因上界退出）');
+  // `0xFF`（raw 25005）复位 ⇒ 同一张掩码重新从 0 派发（脚本每趟自己复位）
+  run(0xff);
+  assert.equal(cursor(), 0, '★唯一复位端：`0xFF` 把逐帧扫描游标归零');
+  assert.equal(runCtx(0x100, [])._nextIp, 3, '复位后同一张掩码又从 bit5 开始');
 });
 
 test('A5 0xD9：清 effect_flags & 0x1000（派发中时同清 95779）', () => {

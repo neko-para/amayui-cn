@@ -22,7 +22,7 @@
     ]
   },
   "id": "T-0157",
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
@@ -33,6 +33,20 @@
       "at": "2026-09-24",
       "kind": "status",
       "what": "open → doing —— P1 0x1f5 已修（三层门 + dispatchNextRequest 导出 + 停靠闸 + setDispatching 接上 124350 的 5 个写点）；守卫 test/op-1f5-dequeue.test.ts 6 例（红 1/6、写点回潮 0/6 → 绿 6/6）。残余：0x7C 的 raw 25816-25822 收尾（P2，下一轮）"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "doing → done —— P1 0x1f5 复核后已修（三层门 + 清停靠 + 放行队列，dispatchNextRequest 唯一实现）；P2 0x7c/0xc8/0xae + cap frame-render-gate-mainloop/clock-write-clock-freeze 复核后已修（前三条由 T-0156、后两条由 T-0166/T-0167 落地）；P3 0x7c 的 387940 无写者 ⇒ 如实登记不接线、另两条写者在 src/vm/engine.ts（本票禁改）⇒ 登记 + 别人该接。新增 15 例守卫 test/t0157-frame-loop.test.ts（红→绿用 8 步定点回退证明判别力）+ changes-frame.md（逐条表/台账片段/别人该接）。全量 228 文件 tests 1575 / fail 3 = 3 条基线红（T-0146），本票新增红 0。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "done → done —— 复核后收口（同前一条 history 的结论）。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/t0157-frame-loop.test.ts"
+  ],
+  "doneWhy": "本批 12 条读体后**没有一条需要新写行为代码**：P1 `0x1f5`（三层门 + 清停靠 + 放行队列）与 P2 `0x7c`（深度校验无条件）/`0xc8`（两支分离，边界 9/10）/`0xae`（sv1=1 ⇒ sv2 必须 20）已由 `T-0156` 按体落地；P2 cap `frame-render-gate-mainloop`/`clock-write-clock-freeze` 已由 `T-0166`/`T-0167` 落地；P3 里 `0x7c missing-consumer`（`387940` 全反编译只有构造清零 + 本指令的读写共 3 处引用 ⇒ **无写者、门恒假**）与另两条 `0x7c missing-writer`（主循环 raw 13997-14008 的 `effect_flags & 0x20` 臂、raw 20870-20877 的 `0x4000000` 臂 —— 落点在 `src/vm/engine.ts`，本票硬边界禁改）**如实登记**、不许编消费者。⇒ 本票产物 = 一个 15 例仓库级守卫 `app/amayui-emulator/test/t0157-frame-loop.test.ts`（`@tier T0 @kind core @subsystem frame`）+ 判别力证明 `.tmp/t0157/mutate-red.mjs`（**8 次定点回退**，每步都让指定用例转红、复原后回绿；★第 1 步最初没红，暴露了\"在全文而非函数体切片上判依据\"的判别力不足，已修）。逐条处置表 + 台账待应用片段见 `tickets/T-0157/changes-frame.md`。★判据①②：做到（12 条逐条结论 + P1 有能失败的守卫）。★判据③ `npm run verify`：按 CONTEXT §6 的「不新增红」口径 —— `node --import tsx test/run.ts all` = **228 文件 / tests 1575 / pass 1570 / fail 3 / skipped 2**，3 条红逐条 = 已知基线（`T-0146`：`engine-slot` SAVE70/71 `storedDwords`、`save-slot` 真槽 `format`、`scene-report` 可绘制项 24 ≤ 缺纹理项 26），**本票新增红 0**（本票贡献 +1 文件 / +15 例，全绿）；`tsc -p tsconfig{,.test,.control,.electron}.json --noEmit` 四个 exit 0；`deadWrites` 无新增（基线 13）；`test/organization.test.ts` + `test/harness-convergence.test.ts` **10/10 绿**（首行档位在父 agent 点名后由 T1 改回**诚实的 T0** —— 本文件只用合成指令与 `mkEngine`，没有真资产依赖）。★与报告/台账不符的 5 处已写进 `changes-frame.md` §6（最要紧一条：`i24e 10001` 里 bit0 = 1 ⇒ raw 21114 的`0x400` 动画等待门在近全部语料里被挡住，而报告只用同一个值论证 bit1 = 0）。"
 }

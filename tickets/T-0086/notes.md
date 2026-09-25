@@ -3,3 +3,7 @@
 ## 从 ticket.json 的 `notes` 字段迁入（2026-09 文档模型）
 
 ★由 `ALLOW_UNDERRUN` 清尾（2026-09 B3）派生：同一天里 0x1f9 的同一处漏读被修好，0x249 经复核确认同病。未逐行读到：`sub_4A3800`（Scene+322832 纹理载入）函数体，颜色参最终如何被纹理对象消费未确证 —— 本票只要求与引擎**调用点**口径一致，不要求复刻纹理对象内部。
+
+## 2026-09-25
+
+改字段：evidence[1] 锚点 retarget（T-0175 的 3 拆缝）：setTextureObjectParam 拆成 setTextureObjectColor/setTextureObjectSubParam，旧串消失 ⇒ 改指同义新串 emitTextureColor(c.native, slot, normalizeTextureColor(color));（gfx-texture.ts:134，同一处归一化调用，语义未变）。

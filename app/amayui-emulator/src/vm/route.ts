@@ -105,7 +105,10 @@ const ENGINE_CLOSE_PENDING = ENGINE_FIELD.panelClosePending;
  */
 export class RoutePanel {
   readonly entries: RouteEntry[] = [];
-  /** `[7468]`：命中游标（-1 = 未命中）。由 `hitTest` 写。 */
+  /** `[7468]`：命中游标（-1 = 未命中）。由 `hitTest` 写。
+   *  ★`tickets/T-0179` D 波：`moveCursorByKey`（= `sub_403DD0` raw 9865-9915 的方向/翻页键子步）
+   *  也写它 —— 这条支此前**完全没建模**（`0x147` 的 `missing`），而它的消费者在 emulator 里都在
+   *  （`commitClickAndReset`/`currentLabelClick`/`nextHoverLabel` 全读 `cursor`）。 */
   cursor = -1;
   /** `[959]`：已派发过「进入」的项（`sub_403E70` 的两段式状态的另一半）。 */
   hover = -1;
@@ -114,7 +117,13 @@ export class RoutePanel {
   /** `[7461]`：**登记这张表时的脚本身份 token**（= 那一刻 `frames[cur][95796]`）。 */
   ownerScriptId = -1;
 
-  /** `[7464]` 待填充标记（`0x94` 经 `sub_404020` 写；emulator 未建模填充的视觉语义，见规格 §G5）。 */
+  /**
+   * `[7464]` 待填充标记（`0x94` 经 `sub_404020` 写；emulator 未建模填充的视觉语义，见规格 §G5）。
+   *
+   * ★**读者**：`Engine` 构造里那个 WM_MOUSEMOVE 钩子的门（引擎 raw 140827 的
+   * `if ( _this[12958] || _this[12957] )`，`12958 = 5494 + 7464`）—— 本格是 `||` 的左半。
+   * 修前这一格只有写点 ⇒ 命中测试的门只剩 `shown` 一半（审计 `0x94` ②）。
+   */
   #fillPending = 0;
   /** `[7465]` 是否已做过命中测试（`0x94`/`sub_404020` 读它决定"首次按鼠标重做命中测试"）。 */
   #hitDone = 0;
@@ -259,6 +268,60 @@ export class RoutePanel {
       }
     }
     return -1;
+  }
+
+  /**
+   * `sub_403DD0`（raw 9865-9915）：**按输入掩码把游标移动子步走一遍**（引擎 `sub_4098E0` 的第二步，
+   * raw 14065 调它）——`tickets/T-0179` D 波实现（原`missing` 记在 `0x147` raw 9866-9915）。
+   *
+   * 体的逐位语义（`*a2` = 掩码，命中即清掉对应位）：
+   * | 位 | 含义 | 条件 | 结果 |
+   * |---|---|---|---|
+   * | bit0 | 上 | 无条件（钳到 0） | `--[7468]`，`< 0 ⇒ 0`；清 bit0 |
+   * | bit2 | 下 | `[7468] < [258] - 1` | `++[7468]`；清 bit2 |
+   * | bit3 | 左翻页 | **`[960] != 0`** 且 `[7468] >= [960]` | `-= [960]`；清 bit3 |
+   * | bit1 | 右翻页 | **`[960] != 0`** 且 `[7468] < [258] - [960]` | `+= [960]`；清 bit1 |
+   *
+   * ★**bit0/bit2 不受 `[960]` 非零门控**（体里那两段在 `v5 = _this[960]; if (v5)` **之前**，
+   * raw 9876-9890 vs 9891-9913）；左/右翻页才在门里 —— 照抄这个次序。
+   * ★**顺序也是体的顺序**：上 ⇒ 下 ⇒ 左 ⇒ 右（同一次调用里四个 `if` 依次判，掩码同时置位时逐条施加）。
+   * ★`[258]` = 条目数（`entries.length`，见 `count`）⇒ `[7468]` 的上下界用的都是**当前表**。
+   *
+   * @returns 本次真正移动过的位数（调用方可据此只清那些位；引擎同口径）。
+   */
+  moveCursorByKey(mask: number): number {
+    let moved = 0;
+    const n = this.entries.length;
+    if ((mask & 1) !== 0) {
+      const v = this.cursor - 1;
+      this.cursor = v < 0 ? 0 : v; // raw 9878-9879：`--[7468]`，`< 0 ⇒ 0`（钳位而不是拒绝）
+      moved |= 1;
+    }
+    if ((mask & 4) !== 0) {
+      const v = this.cursor;
+      if (v < n - 1) {
+        this.cursor = v + 1; // raw 9884-9889：只有还能下移才动（到位就不动、也不清位）
+        moved |= 4;
+      }
+    }
+    const step = this.pageStep;
+    if (step !== 0) {
+      if ((mask & 8) !== 0) {
+        const v = this.cursor;
+        if (v >= step) {
+          this.cursor = v - step;
+          moved |= 8;
+        }
+      }
+      if ((mask & 2) !== 0) {
+        const v = this.cursor;
+        if (v < n - step) {
+          this.cursor = v + step;
+          moved |= 2;
+        }
+      }
+    }
+    return moved;
   }
 
   /**

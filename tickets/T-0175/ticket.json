@@ -7,18 +7,19 @@
   "acceptance": [
     "逐条核实现状并给出处置：**已落地（引当前代码行）** / **本轮做掉（带命名守卫 + 红→绿）** / **如实登记为不做（写明为什么 + 重新评估条件）**；不得留空、不得含糊过关。",
     "① `src/vm/engine.ts`（出处 `tickets/T-0161/changes-c161.md` §5）：`scriptEngineFlag`(`_this[699248]`/`174812`) 的**构造初值与复位值都是 1**（raw 22591 / 17961）而 emulator 未建模；`engine.ts:793` 附近的注释键名过期；cancel-message 三态机极性（raw 20119-20126）。★注意 `engine.ts` 现归 `T-0156`（D 波在跑）⇒ 等它交回或与之串行。",
-    "② 消息窗每行的**淡入色窗接线**（出处 `T-0161` §5 + `T-0151` §7）：`engineConfig.ts` 已按体读到时长/门（`MessageSpeed*MessageFade/100` 整数除法、两字段 >0，raw 72336-72348），但 `src/vm/handlers/msgwin.ts` + `src/renderer/drawitem/animWindow.ts` 的接线未做 ⇒ 文字仍然瞬现。★`msgwin.ts` 现归 `T-0154` 之外（T-0154 只拿 `renderer/scene/**` 与 `drawitem/**`）⇒ 两文件分属不同 owner 时先串行化。",
+    "② 消息窗每行的**淡入色窗接线**（出处 `T-0161` §5 + `T-0151` §7）：`engineConfig.ts` 已按体读到时长/门（`MessageSpeed*MessageFade/100` 整数除法、两字段 >0，raw 72336-72348），但 `src/vm/handlers/msgwin.ts` + `src/renderer/drawitem/animWindow.ts` 的接线未做 ⇒ 文字仍然瞬现。★`msgwin.ts` 现归 `T-0154` 之外（T-0154 只拿 `renderer/scene/**` 与 `drawitem/**`）⇒ 两文件分属不同 owner 时先串行化。 ★**已交接给 `T-0019`**（2026-09-25）：该条必须改 `src/vm/handlers/msgwin.ts`，而本波 `T-0019` 的拆分单元在半成品状态下被停止并回滚（产出归档 `.tmp/t0019-split-wip/`）⇒ 接线与拆分一并由 `T-0019` 的后续接手者做，本票不再持有。",
     "③ **宿主媒体/触摸/呈现缝**（出处 `T-0159` §4.1 + `T-0161` §5 + `T-0153` §6）：`src/vm/native.ts` + `src/vm/nativeTap.ts` 的 `BRIDGE_METHODS` 需要新增 `confirmSlotOverwrite` / `slotWriteFailed`（`T-0159` 已留结构化可选缝，宿主未实现 ⇒ 真宿主上仍是「恒按玩家点是」+「只有日志」）；`0x25b` 的图像加载 + `_CxxThrowException`（raw 33215-33219）与 `0x25a`/`0x25b` 的 `sub_4A5470` + `92377` 镜像需要的宿主媒体缝；`setTextureObjectFloat`/`setTextureObjectParam`（0x245/0x246/0x1F9 三条共用一条缝 ⇒ **需拆缝**，颜色与对象参数两种语义冲突）。",
     "④ `src/arch/nodeFileSource.ts` 的 `copySaveSlot`（出处 `T-0159` §4.2）：`if (d) writeSaveSlot(...)` ⇒ **源槽只有 `.STH`** 时漏复制 `.DAT`。",
     "⑤ `src/renderer/pixi/textureCache.ts`（出处 `T-0159` §4.3 + `T-0166` §4-②）：`setSlotPixels` 静默忽略而 handler 无条件 `op1=0`；另「换尺寸/释放 ⇒ 旧纹理入 `DestroyQueue`」这条接线**不可测**（无断言）⇒ 要么抽成可测纯函数、要么在测试里注入假 canvas 工厂（判据：`create(slot,新尺寸) ⇒ pendingDestroyCount===1`，同尺寸复用 ⇒ 不增）。",
     "⑥ `src/live2d/**`（出处 `T-0166` §4-①）：实例 `+16` EyeBlinkMotion 与 `+23` 眨眼门控未建模（引擎 `sub_4783D0` raw 92578-92615 的 `+23` 分支；`src/live2d/` 现全库无 blink 符号）。判据：装载后按 `$fps` 推进眨眼 + `src/live2d/` 出现 blink 符号。",
     "⑦ `src/renderer/app/session.ts` 屏障②与 `src/renderer/pixi/presenter.ts` 四路同键次序（出处 `T-0166` §4-③/④）：让 `0x1F9` 后的 `#awaitTextureBound` **可观测**（记进 trace/DebugQuery；判据 = 派发一次 ⇒ 观测到屏障被 await）；造「同 layer 的 item+text+mesh+L2D」用例断言可见次序 = item→text→mesh→L2D（raw 135560-135614；判据 = 反转 `order` 必红）。",
-    "⑧ `src/live2d/assetLoader.ts:142`（出处 `T-0160` §4）：`0x345` 的**失败支也抛错**未做（语料 437 处；怕打断现有 e2e 链）—— 要么做掉 + 守卫，要么写明为什么不做。",
+    "⑧ `src/live2d/assetLoader.ts:142`（出处 `T-0160` §4）：`0x345` 的**失败支也抛错**未做（语料 437 处；怕打断现有 e2e 链）—— ✅ **已由 T-0178 做掉**（按体定死：只有「文件取不到」抛，槽空/解码失败不抛；守卫 test/l2d-texture-load-failure.test.ts 3 例、红→绿 2/3→3/3）。",
     "⑨ `src/renderer/pixi/presenter.ts:291`（出处 `T-0160` §4）：Pixi 端把 `mulColor` 当 tint 下发（字节序无真机对照）⇒ 要么给出真机对照依据，要么如实登记。",
     "⑩ `0x137`/`0x30a` 的越界诊断（出处 `T-0163` §5）：引擎写错误缓冲 + `sub_4034D0` **非致命上报**（raw 30714-30718 等）；要做必须先给 `src/vm/operandPlan.ts` 声明计划（否则 `T-0082` 的覆盖账棘轮红）并把条目迁出白名单。",
     "⑪ `test/engine-field-store.test.ts:112-113` 的注释漂移（出处 `T-0161` §5）与 `test/ptr.test.ts:110-113` 把 ptr0 写成 dest/ptr1 写成 src 的注释错误（出处 `T-0162` §5，方向修正后注释与体相反）—— 改前跑 `tickets.js --anchors-in`。",
     "⑫ `src/vm/msgwin.ts:2386` 的 `toFullWidth` 与 `src/vm/operand.ts` 新增的 `toFullWidthNumber` 是**同一函数两份实现**（出处 `T-0162` §5）⇒ 建议 export 一份、另一处 import。",
-    "收尾三连：`scripts/build-tickets.mjs` 重生成看板、`tickets.js --validate` ✅、`test/ticket-ledger.test.ts` 绿。"
+    "收尾三连：`scripts/build-tickets.mjs` 重生成看板、`tickets.js --validate` ✅、`test/ticket-ledger.test.ts` 绿。",
+    "⑬ `src/vm/engine.ts`：`_this[107678]`（= `Engine[430712]`）的两条**主循环写者**未落 —— raw 13997-14008 的 `effect_flags & 0x20` 臂（`rewindMainBase[cur] != -1` 时写 `122452/122453/107678` 并把 ip 回退）与 raw 20870-20877 的 `0x4000000` 臂；emulator 只落了三处写者里的 `#cancelRoute()`（`engine.ts:1338` = raw 20372）。出处 = `tickets/T-0157/changes-frame.md` §4「别人该接」#1 与 `analysis/opcode-gaps.json` 的 `0x7c`（opcode 124）`missing[2]`（2026-09-25 主 agent 补登记，承接票挂本票）。"
   ],
   "links": {
     "tickets": [
@@ -40,12 +41,24 @@
     ]
   },
   "id": "T-0175",
-  "status": "open",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done —— 2026-09-25 主 agent 收口（F 波）：15 条 acceptance 全部有唯一处置（逐条见 tickets/T-0175/changes-f.md §1）。本轮做掉 ③（宿主缝）/⑤（setSlotPixels 三态 + DestroyQueue 可测化）/⑦（屏障可观测 + 四路同键次序）/⑪（注释）；①⑬ 由 T-0169 做掉、② 交接给 T-0019（msgwin 拆分单元被停止并回滚，接线随拆分一起做）；④⑥⑧⑫ 原地已落地；③ 的 0x25b/0x25a、⑨ mulColor→tint、⑩ 越界诊断如实登记不做（各带重开条件）。★台账：主 agent 亲自落库 —— opcode-gaps 的 0x7c missing 归零并升 implemented、新登记 0x34f/0x1af（各 1 条 missing，按 partial 口径）、fields 新增 Engine[97053] 逐字泵闩锁、engine-capabilities 4 条 note+journal 追加。判绿：typecheck/typecheck:test exit 0、test:all 1609/1604 过/3 红全基线、dead-writes 无新增、tickets --validate 0 ✗。"
     }
-  ]
+  ],
+  "tests": [
+    "app/amayui-emulator/test/texture-destroy-wiring.test.ts",
+    "app/amayui-emulator/test/texture-barrier-observable.test.ts",
+    "app/amayui-emulator/test/presenter-merge-order.test.ts",
+    "app/amayui-emulator/test/native-seams-t0175.test.ts"
+  ],
+  "doneWhy": "15 条 acceptance 全部有唯一处置（`tickets/T-0175/changes-f.md` 逐条表）：**本轮做掉** = ③ 宿主缝（四条进 `BRIDGE_METHODS`、`setTextureObjectParam` 拆成 `Color`/`SubParam`）、⑤ 两条（`setSlotPixels` 改 `boolean | void` 两宿主同口径回答\"该槽有没有 surface\" + `0x1AF` 在 `landed===false` 时写 `op1=2`；`textureCache` 加可注入 `CanvasFactory` 让\"换尺寸 ⇒ 旧纹理入 DestroyQueue\"可测）、⑦ 两条（新增 `renderer/app/textureBarrier.ts` + `debugQuery` 的 `barrier` 查询让 `0x1F9` 后的屏障可观测；四路同键次序用例 `presenter-merge-order`）、⑪ 两处注释、`T-0086` 的证据锚点改指；**别人的** = ① 与 ⑬（`T-0169`，已 done；`0x7C` 的 `missing[]` 已由主 agent 归零、disposition 升 `implemented`）、② （交接给 `T-0019`）；**已原地落地** = ④ `copySaveSlot`（票面前提已被取代）、⑥ 眨眼（`T-0166`）、⑧ `0x345` 失败支（`T-0178`）、⑫ `toFullWidth` 去重；**如实登记不做（含重开条件）** = ③ 的 `0x25b`/`0x25a` 媒体缝（语料 0 处 + 需 `engine.ts` 的 `92377` 写者 + 两宿主对称实现）、⑨ `mulColor → tint`（缺真机对照；两条重开条件写在 `presenter.ts` 的 `l2dBatchList` 注释里）、⑩ `0x137`/`0x30a` 越界诊断（四件事必须一起做，含不属本单元范围的 `opcode-operands` 白名单迁移）。判绿：`npm run typecheck` / `typecheck:test` exit 0；`test:all` = 1609 / 1604 过 / **3 红全是 `T-0146` 基线**；`check:dead-writes` 基线 11 无新增；`tickets.js --validate` 0 ✗；新守卫 4 文件 18 例全绿（红→绿两处变异实测：注掉 `#pendingDestroy.push` ⇒ 4/6 红；四路 `order` 反转 ⇒ 2/4 红）。★9 条与出处结论不符的新事实见 `changes-f.md` §6（最要紧：`presenter` 从不读 `mulColor` ⇒ 真问题是\"无渲染消费者\"而非\"字节序\"；`setSlotPixels` 的修法可以一次做完、不必先动跨宿主签名）。"
 }

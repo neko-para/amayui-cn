@@ -41,7 +41,7 @@
  * 按需（`0xB4` 装载 → `sub_4B6570` 绑 / `0xB6` 释放）建的；语音经 `Engine+21032` 那层走
  * `sub_4BB840` → `sub_4B6020(设备, ch+12, …)` ⇒ **12/13/14 归语音**，10/11 是**备用直通**格。
  * ⇒ 越界判据是**两段**：`ch > 14` 报 `dsPlaySound(%d)`（raw 138599-138604）、`ch` 合法但**该通道
- * 没有缓冲**报 `dsPlay(%d)`（raw 138605-138612）。本工程只建模第一段（第二段见 `sePlay` 的说明）。
+ * 没有缓冲**报 `dsPlay(%d)`（raw 138605-138612）。**两段都已建模**（第二段见 `sePlay` 的说明）。
  */
 export const SE_CHANNELS = 15;
 /** 语音逻辑通道数（设备 12..14）。 */
@@ -386,11 +386,16 @@ export class AudioEngine {
    * ★**值域 = 0..14**（审计 P2，票 `T-0152` 的 `0xb5`）：引擎 `sub_4B6020` 的门是 `if ( a2 > 0xE )`
    * （raw 138599）⇒ 10..14 也在值域内（12..14 是语音的设备通道，见 `SE_CHANNELS` 的说明）。
    *
-   * ★**没有建模的第二段**（同一函数 raw 138605-138612）：值域内但**该通道没有缓冲**时引擎报的是
-   * 另一条错误串 `dsPlay(%d)` 并**不起播**。本工程不建这一半，因为它会与「装载未完成 ⇒ 挂起」
-   * 这条**刻意的异步近似**打架：`0xB4` 的 `loadedId` 是**同步**写的，"已排队等装载"与"从未装载"
-   * 在本实现里无法区分（`src/vm/handlers/audio.ts` 文件头第 33-35 行记了这条取舍）。
-   * 判据留在**通道号**这一半（可由脚本直接触发），第二段登记在 `tickets/T-0152/changes-audio.md`。
+   * ★**第二段（2026-09-25 落实，T-0179）**：同一函数 raw 138605-138612 —— 值域内但**该通道没有缓冲**
+   * 时引擎报另一条错误串 `dsPlay(%d)` 并 `return 0`（**不起播**）；引擎的 `0xB4`（`sub_4B4F60`）
+   * **只建缓冲绑通道**，所以"先 `0xB5`、后 `0xB4`"在真机上是**没有声音**的。
+   *
+   * 关键：`loadedId` 是**同步**写的（见 `seLoad`），它足以把两种「没有 clip」分开 —— 旧注释说
+   * "在本实现里无法区分"是错的：
+   *  - `loadedId === 0`：**从未装载** = 引擎那个"通道没有缓冲"格 ⇒ 拒绝起播 + 记 `dsPlay(ch)`；
+   *  - `loadedId !== 0`：**装载已在途**（引擎里不存在这个时刻：它同步装载）⇒ 挂起，装载完自动起播
+   *    （本实现刻意的异步近似）。
+   * 判据的另一半（`ch > 0xE`）留在 `#seChannel`（raw 138599 的 `a2 > 0xE` ⇒ `dsPlaySound`）。
    */
   sePlay(ch: number, loop: boolean): void {
     const c = this.#seChannel(ch, 'se-play');
@@ -398,6 +403,15 @@ export class AudioEngine {
     if (!this.#enabled.se) return;
     c.delay = null;
     if (!c.clip) {
+      // ★`loadedId === 0` ⇒ 从未装载（引擎 `sub_4B6020` raw 138605-138612 的 `dsPlay(%d)` 格）：
+      //   报错串 + `return 0`，且**后续装载不补播**（引擎 0xB4 只装载）。守卫
+      //   `test/audio-engine.test.ts` 的「通道从未装载 ⇒ 拒绝起播」。
+      if (c.loadedId === 0) {
+        this.#log(
+          `[audio] SE ch${ch} 起播被拒：该通道没有缓冲（引擎 sub_4B6020 raw 138605-138612 报 dsPlay(${ch}) 并 return 0）`,
+        );
+        return;
+      }
       c.pending = { loop };
       return;
     }
@@ -493,12 +507,25 @@ export class AudioEngine {
     v.preparedFactor = null;
   }
 
-  /** `0x2F8`：设语音通道 **pan**（±10000，0 = 中央）。 */
+  /**
+   * `0x2F8`：设设备通道 **pan**（±10000，0 = 中央）。
+   *
+   * ★实参是**设备通道号**（引擎 `sub_4268D0` raw 33714 的 `v4` = `0x2F8` 的**第 2 操作数**，
+   * 经 `sub_4B6940(设备, v2 + 12, v4)` 落 `设备[通道 + 375]`）：**12/13/14 ↔ 语音 `#voice[0..2]`**、
+   * **0..11 ↔ `#se`**（`0x2F8` 对它们是一条**值域内**的引擎指令 —— `sub_4B6940` 的门只是 `a2 < 15`，
+   * raw 139068；设备 10/11 在本工程里是**没有缓冲的备用格** ⇒ 只存值、无声可设）。
+   * 值域外（< 0 或 ≥ 15）与设备层同口径：报一条错、什么都不做（raw 139085-139087）。
+   */
   voicePan(ch: number, pan: number): void {
-    const v = this.#voiceChannel(ch, 'voice-pan');
-    if (!v) return;
-    v.pan = clampPan(pan);
-    v.playback?.setPan(gainPan(v.pan));
+    const v = clampPan(pan);
+    const target = this.#devicePanTarget(ch, 'voice-pan');
+    if (!target) return;
+    if (target.kind === 'se') {
+      target.channel.pan = v;
+      return;
+    }
+    target.channel.pan = v;
+    target.channel.playback?.setPan(gainPan(v));
   }
 
   /** `0x2F7`：置通道状态位（引擎 `Engine[21315+ch] = 1`）。 */
@@ -934,14 +961,41 @@ export class AudioEngine {
   }
 
   /**
+   * `0x2F8` 的**设备通道号** → 宿主通道对象（设备 0..14 全覆盖，与引擎 `sub_4B6940` 的值域门同口径）。
+   *
+   * 两张宿主表的编号口径**不同**（本工程内部约定，不是引擎的）：
+   *  - `#se[i]` = 设备通道 `i`（`SE_CHANNELS` = 15 ⇒ 设备 0..14 一一对应）；
+   *  - `#voice[i]` = 设备通道 `12 + i`（`VOICE_CHANNEL_BASE`；只 3 格 = 设备 12..14）。
+   * ⇒ 设备 12..14 → 语音、0..11 → SE、其余 → 报一条错（引擎 raw 139085-139087 的错串分支）。
+   */
+  #devicePanTarget(ch: number, what: string): { kind: 'se'; channel: SeChannel } | { kind: 'voice'; channel: VoiceChannel } | null {
+    if (ch < 0 || ch >= SE_CHANNELS) {
+      this.#log(`[audio] ${what}：设备通道越界 ${ch}（引擎 sub_4B6940 raw 139068 的 a2 < 15 ⇒ 报错分支）`);
+      return null;
+    }
+    if (ch >= VOICE_CHANNEL_BASE) {
+      const channel = this.#voice[ch - VOICE_CHANNEL_BASE];
+      if (channel) return { kind: 'voice', channel };
+      this.#log(`[audio] ${what}：设备通道 ${ch} 没有对应的语音通道对象（本实现只建模 3 格）`);
+      return null;
+    }
+    const channel = this.#se[ch];
+    if (channel) return { kind: 'se', channel };
+    return null;
+  }
+
+  /**
    * 语音逻辑通道（0..2 ↔ 设备 12..14）。
    *
    * ★**越界处置 = 有据豁免，不是缺口**（审计 P3 `0x2f6 missing-consumer` / `0x2f8 missing-branch`，
-   * 票 `T-0152`）：引擎那一侧 `Engine[ch + 21315]` / `Sound[ch + 375]` 是**无门直接下标**
-   * （raw 33676-33704 / 139063-139089；值域门只在下游设备层 `a2 >= 15`）⇒ ch = 3..14 时引擎会
+   * 票 `T-0152`）：引擎那一侧 `Engine[ch + 21315]` 是**无门直接下标**
+   * （raw 33676-33704；值域门只在下游设备层 `a2 >= 15`）⇒ ch = 3..14 时引擎会
    * **写坏相邻字段**（`[21315+3]` 已是别的槽）。本工程用独立的 `#voice[3]` 建模语音、**不复制这种
-   * 越界写坏** ⇒ 越界只记日志、不动作。语料实测 `0x2F6` 的 op1 只有 0..2（86687 处）、
-   * `0x2F8` 只有 `0/1/2 0`（14644 处）⇒ 现实不可见。
+   * 越界写坏** ⇒ 越界只记日志、不动作。语料实测 `0x2F6` 的 op1 只有 0..2（86651 处）、
+   * `0x2F8` 的通道位（第 2 操作数）只有 `0`（14642 处）⇒ 现实不可见。
+   *
+   * ★**`0x2F8` 是例外**：它走的是**设备通道号**（引擎 `sub_4B6940(设备, 12 + 语音通道, value)`），
+   * 合法域 0..14（raw 139068）—— 12/13/14 折回本方法的 0..2、0..11 归 `#se`（见 `voicePan`）。
    */
   #voiceChannel(ch: number, what: string): VoiceChannel | null {
     if (ch >= 0 && ch < this.#voice.length) return this.#voice[ch]!;

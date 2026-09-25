@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AudioEngine, VOLUME_MAX } from '../src/audio/audioEngine.js';
+import { AudioEngine, VOLUME_MAX, VOICE_CHANNEL_BASE } from '../src/audio/audioEngine.js';
 import { FakeAudioHost } from './fakeAudioHost.js';
 
 /** 造一个「引擎 + 假宿主」；`durations` 可指定每个 id 的时长（秒）。 */
@@ -54,14 +54,44 @@ test('0xBA 起播带循环标志（与 0xB5 的唯一差别）', async () => {
   assert.equal(host.plays.at(-1)!.opts.loop, true);
 });
 
-test('起播先于装载完成 ⇒ 装载完自动起播（不丢音）', async () => {
+test('起播先于装载**完成** ⇒ 装载完自动起播（不丢音）', async () => {
   const { host, eng } = mk();
-  eng.sePlay(3, false); // 先起播（引擎里脚本总是先 0xB4 再 0xB5，这里防御乱序）
+  eng.seLoad(46, 3); // 装载已在途（loadedId 同步写、clip 还没到）
+  eng.sePlay(3, false); // i0b5 3
   assert.equal(host.plays.length, 0, '还没有 clip ⇒ 不能起播');
-  eng.seLoad(46, 3);
   await eng.idle();
   assert.equal(host.plays.length, 1, '装载完成后自动起播');
   assert.equal(host.plays[0]!.id, 46);
+});
+
+/**
+ * ★**值域内但该通道从未装载 ⇒ 拒绝起播**（引擎 `sub_4B6020` raw 138605-138612）。
+ *
+ * ```c
+ * if ( !*(_DWORD *)(_this + 1032) || (v5 = *(_DWORD **)(_this + 4 * a2 + 1620)) == 0 )
+ * { wsprintfA(_this + 8, aDsplayD, a2); sub_4034D0(...); return 0; }   // ← dsPlay(%d) 且不起播
+ * ```
+ * 引擎的 `0xB4`（`sub_4B4F60`）**只建缓冲绑通道**、不播 ⇒「先 `0xB5`、后 `0xB4`」在真机上没有声音，
+ * 所以这里的"拒绝"**不是**「挂起」的另一种写法（挂起会在装载完成时补播）。
+ * 旧实现在 `!c.clip` 时一律挂起 ⇒ 后续装载会把这一枪补出来（与体相反）。
+ *
+ * 判据的同族另一半（`ch > 0xE` ⇒ `dsPlaySound(%d)`，raw 138599）见 `t0152-audio-p2.test.ts`。
+ */
+test('0xB5/0xBA：通道从未装载 ⇒ 拒绝起播并报 dsPlay（引擎 raw 138605-138612）', async () => {
+  const { host, eng, logs } = mk();
+  eng.sePlay(5, false); // i0b5 5：通道 5 从未 0xB4 过
+  assert.equal(host.plays.length, 0, '没有缓冲 ⇒ 不起播');
+  eng.seLoad(46, 5); // 之后才装载 —— 引擎的 0xB4 只装载、不补播
+  await eng.idle();
+  assert.equal(host.plays.length, 0, '★拒绝不是「挂起」：后续装载不补播（引擎同格 return 0）');
+  assert.match(logs.join('\n'), /dsPlay/, '引擎在同一格报 `dsPlay(%d)`（raw 138608）');
+
+  // 对照：装载**已在途**时的 0xB5 仍走挂起（同一分支的另一半，异步近似不变）
+  const second = mk();
+  second.eng.seLoad(46, 6);
+  second.eng.sePlay(6, false);
+  await second.eng.idle();
+  assert.equal(second.host.plays.length, 1, '装载在途 ⇒ 装载完自动起播（不丢音）');
 });
 
 /**
@@ -145,9 +175,12 @@ test('非循环 SE 播完自动腾出通道（时长到期）', async () => {
 test('通道越界只记日志、不抛（引擎报 dsPlaySound 分支）', () => {
   const { eng, logs } = mk();
   eng.sePlay(99, false);
+  // ★`0x2F8` 的实参是**设备通道号**（引擎 `sub_4B6940` 的门是 `a2 < 15`，raw 139068）：
+  //   0..14 全在值域内（12/13/14 折回语音、0..11 落 SE），只有 ≥ 15 才进引擎的报错分支。
   eng.voicePan(7, 0);
-  assert.ok(logs.some((l) => l.includes('SE 通道越界')), `应有越界日志：${logs.join(' | ')}`);
-  assert.ok(logs.some((l) => l.includes('语音通道越界')));
+  assert.equal(logs.filter((l) => l.includes('越界')).length, 1, `设备 7 在值域内 ⇒ 只有 SE 99 那一条越界：${logs.join(' | ')}`);
+  eng.voicePan(15, 0);
+  assert.ok(logs.some((l) => l.includes('设备通道越界 15')), `设备 ≥ 15 ⇒ 报错分支：${logs.join(' | ')}`);
 });
 
 // ==================== 语音：0xC4 / 0x1BD / 0x2F4 / 0x2C0 / 0x2F5 / 0x2F6 / 0x2F7 / 0x2F8 / 0x2FF / 0x302 ====================
@@ -219,7 +252,7 @@ test('★0x2F8 的 pan 与排队 op2 无关：排队起播沿用通道当前 pan
   // 引擎 sub_4BBAB0 的第 5 实参 = 设备[387+ch]（该语音通道当前 pan 槽），不是排队时写的 op2
   // ⇒ 排队起播的 pan 应该等于 0x2F8 设过的值。
   const { host, eng } = mk();
-  eng.voicePan(0, -VOLUME_MAX); // i2f8 0 -2710（全左）
+  eng.voicePan(VOICE_CHANNEL_BASE + 0, -VOLUME_MAX); // `i2f8 -2710 c`（op1 = pan 全左、op2 = 设备通道 12）
   eng.voiceQueue(0, 322, 3, 0);
   eng.tick(1000, false);
   await eng.idle();
@@ -232,12 +265,13 @@ test('0x2F8 设语音通道 pan（±10000 → -1..+1；0 = 中央）', async () 
   await eng.idle();
   const p = host.plays.at(-1)!;
   assert.equal(p.pan, 0, '缺省中央');
-  eng.voicePan(0, -VOLUME_MAX); // i2f8 0 -2710（全左）
+  eng.voicePan(VOICE_CHANNEL_BASE + 0, -VOLUME_MAX); // `i2f8 -2710 c`（op1 = pan 全左、op2 = 设备通道 12）
   assert.equal(p.pan, -1);
-  eng.voicePan(0, 5000);
+  eng.voicePan(VOICE_CHANNEL_BASE + 0, 5000);
   assert.equal(p.pan, 0.5);
-  eng.voicePan(0, 999999); // 钳制（引擎对称钳制 ±10000）
+  eng.voicePan(VOICE_CHANNEL_BASE + 0, 999999); // 钳制（引擎对称钳制 ±10000）
   assert.equal(p.pan, 1);
+  assert.equal(eng.debug().voice[0]!.pan, 10000, '★宿主落点与引擎字段面同值（钳制后的 ±10000）');
 });
 
 test('0x2FF 只是预备、0x302 才生效并改增益（每通道音量因子）', async () => {

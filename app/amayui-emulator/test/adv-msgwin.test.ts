@@ -525,6 +525,10 @@ test('★悬停不得推进页面：wait-for-input 挂起时 pickHoverLabel 只�
   f.labelMap.set(0xaa, 3);
   f.labelMap.set(0xbb, 5);
   OPS.get(0x090)!(makeCtx(e, f, instr(0x090, [im(0), im(0), im(100), im(100), im(0xaa), im(0xbb), im(0xcc)]), e.native, () => {}));
+  // ★真 ADV 流程里 `i090`/`i072` 之前一定先 `i094`/`i091` 把面板显示出来 —— 引擎的 WM_MOUSEMOVE
+  //   命中测试有门（raw 140827：`if ( _this[12958] || _this[12957] )` = `panelA[7464] || panelA[7463]`）
+  //   ⇒ 门关时移动鼠标**不**重算游标（`[7468]`），`pickHoverLabel` 自然给不出 label。本用例补上这一步。
+  OPS.get(0x094)!(makeCtx(e, f, instr(0x094, []), e.native, () => {}));
   OPS.get(0x072)!(makeCtx(e, f, instr(0x072, [im(0)]), e.native, () => {}));
   const ipBefore = f.ip;
   e.input.setCursor(50, 50); // 鼠标移动 ⇒ 命中测试（引擎 sub_4B8D50）

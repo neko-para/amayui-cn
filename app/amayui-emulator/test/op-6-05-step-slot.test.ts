@@ -32,8 +32,12 @@ function vmState(e: Engine): Record<string, unknown> {
   return {
     cur: e.cur,
     callRet: e.callRet,
-    callLink: e.callLink,
-    callFlag: e.callFlag,
+    // ★`tickets/T-0173`：这里原来还有 `callLink: e.callLink` / `callFlag: e.callFlag` 两格 ——
+    //   那两格是 `Engine.callLink`(0x5D888) / `Engine.callFlag`(0x5D88C) 的**零读者镜像**，
+    //   与 `callRet` 不同：没有任何生产路径读它们，`vmState()` 也从未对它们取过不同的值
+    //   （两格在整个用例里恒为初值）⇒ `T-0173` 删字段时一并从快照里去掉（**不是**放宽断言：
+    //   快照剩下的每一格仍逐格比对，「除 ip 之外一格都不许动」这条判据一字未改）。引擎侧那两格
+    //   的活模型见下方 `T-0173` 用例（`Engine.dispatchSavedCur` / `Engine.dispatchSavedFlags`）。
     effectFlags: e.effectFlags,
     awaitingAdvance: e.awaitingAdvance,
     globalsInt: [...e.globals.int.entries()],
@@ -70,4 +74,32 @@ test('op-6-05：两条的**行为**逐字相同（引擎体的同一性 ⇒ 不�
   const a = await run(0x1a8);
   const b = await run(0xaf);
   assert.deepEqual(b, a, '两条对 VM 的影响完全相同（含 ip）');
+});
+
+/**
+ * ★**`tickets/T-0173`：`Engine.callLink` / `Engine.callFlag` 两个零读者镜像字段已删**。
+ *
+ * 读体复核（`engine/天结_unpacked.exe_utf8.c`，逐条见 `tickets/T-0173/changes-t0173.md` §1）：
+ * emulator 那两格过去只被声明（`engine.ts` 的 `callLink = -1` / `callFlag = 0`）与 `exit-script`
+ * 复位（`control.ts`），**全仓 0 个生产读者**（`grep -rn 'callLink\|callFlag' app/amayui-emulator/src`
+ * 只剩注释）⇒ 属"多余状态"，删掉比在死写基线里长期挂 `reason` 干净。
+ *
+ * ★**引擎侧并不是没有对应格**（这才是本条要钉的第二件事，防止下一个人又把它们当"引擎也没有"）：
+ * `0x5D888`/`0x5D88C` 是引擎的**活字段**，在 `sub_40FB60` 存（raw **18978** 与 **18982**）、在
+ * `sub_41A820` 的 `caller == -10` 分支读回（raw **25663-25666**）；只是 emulator 早已用**另外两个名字**
+ * 建模同一条通路 —— `Engine.dispatchSavedCur` / `Engine.dispatchSavedFlags`（`control.ts` 的
+ * `dispatchNextRequest` 存、`-10` 分支还原；守卫 `test/append-packs.test.ts:281/373`、
+ * `test/engine-fields-t0161.test.ts:115`）⇒ 删掉的是**重复表示**，不是能力。
+ */
+test('T-0173：Engine 上不再有零读者镜像字段 callLink/callFlag（同名格只留 dispatchSaved*）', () => {
+  const e = mkEngine([instr(0x101, [])]);
+  for (const dead of ['callLink', 'callFlag'] as const) {
+    assert.ok(
+      !Object.prototype.hasOwnProperty.call(e, dead),
+      `Engine.${dead} 应已删除（T-0173：零读者镜像；引擎的对应格由 dispatchSaved* 建模）`,
+    );
+  }
+  // 反面（防"顺手删多了"）：活的那对必须还在，且 -10 哨兵还原走的是它们。
+  assert.equal(e.dispatchSavedCur, -1, 'Engine.dispatchSavedCur 是 0x5D888(383112) 的活建模，不许删');
+  assert.equal(e.dispatchSavedFlags, 0, 'Engine.dispatchSavedFlags 是 0x5D88C(383116) 的活建模，不许删');
 });

@@ -319,14 +319,22 @@ export function makeDefaultItem(handle: number, layer = handle): Item {
  * （`sub_4ADFE0` 的 `*v21 |= 1`）才置 bit0；只被 `0x322/0x323` 碰过的条目在引擎里
  * 既不画也不报错 —— 早前 emulator 在这里置了 bit0，于是"只有颜色的空 mesh"被画成
  * 一整屏黑（正是 SN0000 黑屏的两个成因之一）。
+ *
+ * ★★**两格态色的初值是 `-1`（不透明白），不是 `0`（全透明）**：引擎的条目构造器
+ * `sub_49C9D0`（raw 118377-118398，`sub_4AAB80` raw 130093 调它）逐格写
+ * `a1[13] = -1; a1[14] = -1;` ⇒ `+52`(state0) 与 `+56`(state1) 都是 `0xFFFFFFFF`。
+ * 后果只在"**有几何但从未发过 `0x322`/`0x323`**"的 mesh 上可见：引擎按基础色
+ * （`mulArgb(base, -1) = base`）绘制，而 `state0 = 0` 会让 `calcDiffuse` 返回
+ * **全透明** ⇒ `presenter.drawMesh` 直接 `return`（整块不画）。
+ * 守卫：`test/scene-320-mesh-initial-state.test.ts`。
  */
 export function makeMesh(handle: number, layer: number): MeshObj {
   return {
     handle,
     layer,
     flags: 0,
-    state0: 0,
-    state1: 0,
+    state0: 0xffffffff >>> 0, // raw 118396：`a1[13] = -1`（不透明白）
+    state1: 0xffffffff >>> 0, // raw 118397：`a1[14] = -1`（同时是"无 TO"哨兵）
     anim: undefined,
     verts: [],
     baseColors: [],

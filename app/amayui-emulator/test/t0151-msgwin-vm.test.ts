@@ -28,7 +28,7 @@ import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { stepOnce } from '../src/vm/interpreter.js';
 import { MSGWIN_OPS, MSGWIN_TEXT_GAPS } from '../src/vm/handlers/msgwin.js';
 import { StubNative } from '../src/vm/native.js';
-import { im, instr, mkEngine, str } from './harness.js';
+import { im, instr, loc, mkEngine, str } from './harness.js';
 
 /** 记录 `c.log`（= `native.log`）的假件 —— 警告串断言用。 */
 class LoggingNative extends StubNative {
@@ -283,6 +283,65 @@ test('★0x82：op3 bit4/bit5（0x30）另移除 `win+276/+280`（raw 79649-7965
   await run(e, 1);
   assert.equal(o.f276, 0, 'raw 79652 的 `sub_4ABB60(…, win+276, win+280)`');
   assert.equal(o.f280, 0);
+});
+
+// ---------------------------------------------------------------------------
+// `0x82` 的颜色恢复端（raw 80239-80262）+ 覆写色进该窗快照（孪生 `0x1D1` 两项都有）
+// ---------------------------------------------------------------------------
+
+test('★0x82 颜色恢复（raw 80239-80262）：覆写色只在本次发布可见，收尾恢复成调用前的值 —— 不许泄漏到后续绘制', async () => {
+  const n = new SyncNative();
+  const seen: (number | undefined)[] = [];
+  // 载荷是在 `emitWin` 里发出的 ⇒ 在发布点读一次全局填充色 = "本次重画用的色"
+  const e = mkEngine([instr(0x82, [im(1), im(0), im(2), im(0xb690ff), im(0x000000)])], 'FAKE.BIN', n);
+  const origSync = n.msgWinSync.bind(n);
+  n.msgWinSync = (w: number, input: MsgWinInput): void => {
+    seen.push(e.engineValues.get(ENGINE_FIELD.colorFill));
+    origSync(w, input);
+  };
+  e.textItems.pushText(1, 0, 0); // 过越界门（raw 79502 的 `v8 > a3`）
+  e.engineValues.set(ENGINE_FIELD.colorFill, 0x112233);
+  e.engineValues.set(ENGINE_FIELD.colorOutline, 0x445566);
+
+  await run(e, 1);
+
+  assert.deepEqual(seen, [0xff90b6], '★发布点看到覆写色（`f807b` 的 BGR 读入 = 0xff90b6）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0x112233, '★收尾恢复填充色（raw 80256-80262 的 guard `v145 != v138 || v158`）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorOutline), 0x445566, '★收尾恢复描边色（raw 80239-80245 的 guard `v146 != v128 || v158`）');
+
+  // 不带 bit1 ⇒ 一个色都不动、也不进恢复块（raw 79663 `v158 = a4 & 2` 恒 0 且两格值未变）
+  const e2 = mkEngine([instr(0x82, [im(1), im(0), im(0), im(0xb690ff), im(0)])]);
+  e2.textItems.pushText(1, 0, 0);
+  e2.engineValues.set(ENGINE_FIELD.colorFill, 0x112233);
+  await run(e2, 1);
+  assert.equal(e2.engineValues.get(ENGINE_FIELD.colorFill), 0x112233, '无 bit1 ⇒ 不改色（也不触发恢复写）');
+});
+
+test('★0x82 覆写色进该窗快照：目标窗**已有**字体快照时，覆写色仍必须到得了载荷（孪生 `0x1D1` 的 `captureFontStyle`）', async () => {
+  const n = new SyncNative();
+  const e = mkEngine(
+    [instr(0x6e, [im(1), str('あ')]), instr(0x82, [im(1), im(0), im(2), im(0xb690ff), im(0x000000)])],
+    'FAKE.BIN',
+    n,
+  );
+  e.textItems.pushText(1, 0, 0); // 过越界门（raw 79502 的 `v8 > a3`）
+  e.engineValues.set(ENGINE_FIELD.colorFill, 0x112233);
+  await run(e, 1); // `0x6E` show-text ⇒ 该窗入队时就钉下了字体快照
+  // 目标窗**已有快照**（= 该窗的文本早已入队过）⇒ `styleOfWin` 只认 `slot.fontStyle`（:251）
+  const stale = e.msgwin.slot(1).fontStyle;
+  if (!stale) throw new Error('前提不成立：该窗应当已有字体快照');
+  assert.equal(stale.main.fill, '#332211', '前提：快照色 = 入队时刻的全局填充色（字段是 COLORREF ⇒ `hex6(bgrToRgb(0x112233))`）');
+
+  await run(e, 1); // `0x82` 带覆写色
+
+  const payload = n.last().input.style;
+  assert.equal(payload.main.fill, '#ff90b6', '★覆写色进载荷（`f807b` 的 BGR 读入）—— 不换快照就会停留在旧色 #332211');
+  assert.equal(payload.main.outline, '#000000', '描边同样（`f807c`）');
+  assert.equal(payload.ruby.fill, '#ff90b6', '注音与正文共用同一套 `Font+1360/+1364` ⇒ 同步');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0x112233, '全局字段仍被恢复（raw 80239-80262）');
+  // ★发布期的换色必须**还原**：引擎这一笔不留持久状态（收尾把全局两格写回调用前的值），
+  //   而 `config1-chain-advreturn-real.test.ts` 的探针要求 `i082` 那一刻该窗仍是"没有入队快照"。
+  assert.equal(e.msgwin.slot(1).fontStyle, stale, '★发布后快照还原成原对象（不留发布期的临时样式）');
 });
 
 // ---------------------------------------------------------------------------

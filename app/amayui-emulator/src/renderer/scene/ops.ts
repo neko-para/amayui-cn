@@ -906,7 +906,8 @@ export function scAdvance(s: SceneState, clock: number, freeze = false): void {
       if ((it.flags & 2) === 0) continue;
       // ★**`+720` bit0 = 豁免强制冻结**（`sub_49AA30` raw 117439-117442）：
       //   `v11 = (a2[180] & 1) == 0; v112 = Scene+46512; if (!v11 && (Scene+46528 & 4) == 0) v112 = 0;`
-      //   —— `46528` bit2 在本 exe **无写者**（恒 0，见 `T-0091` design §2.5）⇒ 判据就是 `+720` bit0。
+      //   —— `46528` bit2 在**当前语料**恒 0（唯一写者是 `0x24E`/`sub_4258C0` raw 32965，`T-0167` 核实；
+      //   语料 `i24e 10001` = `0x2711` ⇒ bit2 = 0）⇒ 判据就是 `+720` bit0。
       //   同一个格子也是"不置池挂起位"的判据（raw 117843-117844，见 `scPoolPending`）⇒
       //   序章 80 000 ms 慢推（`src/SN0000.txt:1043` 的 `i242 f8023 1`）**跳过等待门时不许被截断**。
       if ((it.entryParam & 1) !== 0) continue;

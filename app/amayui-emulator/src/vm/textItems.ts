@@ -676,6 +676,78 @@ export class TextItemTable {
     return start >= 0 && start < this.records.length;
   }
 
+  /**
+   * ★**守卫：页起点 == 该页首条正文记录的下标**（`T-0179` 波 K 落地）。
+   *
+   * 这条不变量的**引擎由来**：页 push 的 `+4` 写的就是 `records.length`（`sub_45D240` raw 73183-73184；
+   * 调用点 `0x70` raw 73186 / `0x71` raw 74271 / 读档 raw 74494），而两次 push 都紧接着置该窗组首标记
+   * （`0x71` raw 74275、`0x70` raw 73187）⇒ 该窗的**下一条**记录必然带 `flags&1`、且必然落在 `start` 上。
+   * 关键推论（也是本函数真正的判据）：**该页的 `start` 与下一页的 `start` 之间，不会出现该页本窗的记录**
+   * ——否则那条记录就"早于它所属的页起点"，两表就错位了。
+   *
+   * ★**它不是"页起点上的记录就是该页"**：记录表是**全窗共用**的一张，而页 push 也发生在「改窗几何」
+   * （`0x70`）与「消息开始」（`0x71`）两处，`i070` 一族会在**别的窗的消息进行中**也 push（写档/初始化时
+   * 把 1..9 号窗的几何连着设一遍 —— 真语料实测：51 条页里有 27 条相邻同 `start`、27 条空页）
+   * ⇒ `pages[i].start` 上完全可能坐着**别的窗**的记录。所以本守卫的口径是**按窗 + 按页区间**的，
+   * 不要求"起点那条属于本窗"。
+   *
+   * 它为什么值得单独有守卫：记录表与页表是**两张并列的表**（引擎 `Font+3364` / `Font+3380`），
+   * 4 个读者全都按「页起点 ⇒ 记录下标」直接索引 —— `0x1d0`（`sub_459860` raw 70664/70692 的越界门、
+   * raw 70666/70694 的掩码门）、`0x1d1`/`0x82`（`sub_4675A0` raw 80529 的门）、
+   * `0x1d3`/`0x1d4`/`0x2f3`（把该下标当扫描起点）、以及 `advState` 快照。两张表一旦错位，
+   * 症状**不是报错而是静默错页**（回想页画成上一页的正文，或"这条消息少了一句"）。
+   * **任何改记录粒度/清表/写档顺序的改动都先过这里**：今天零违规是「只往尾部 push + push 那一刻记账」
+   * 这条实现路径的**结果**，不是类型保证 —— 例如"把一条正文记录按排版行拆成多条"这种改动，
+   * 一旦拆点的记账时刻与页 push 错开，这里就会亮。
+   *
+   * 返回**违规**清单；空数组 = 不变量成立。
+   */
+  pageIndexGaps(): string[] {
+    const gaps: string[] = [];
+    for (let i = 0; i < this.pages.length; i++) {
+      const p = this.pages[i]!;
+      const start = p.start;
+      const next = this.pages[i + 1];
+      /** 下一条页起点（半开区间右端；末页到表尾）—— 就是"本页那一段"的边界。 */
+      const end = next ? next.start : this.records.length;
+      // 页起点**单调不减**：它写的是"push 那一刻的记录条数"，而记录只往尾部 push ⇒ 后 push 的页
+      // 起点不会更小。违反了说明两张表被**重排**过（换表/按窗过滤/写档装载顺序）。
+      if (next && next.start < start) {
+        gaps.push(
+          `页 ${i}（窗 ${p.win}）起点 ${start} 之后、页 ${i + 1}（窗 ${next.win}）起点 ${next.start} 却更小 —— ` +
+            `页起点必须单调不减（记录只往尾部 push）⇒ 两张表被重排过`,
+        );
+      }
+      if (next === undefined && start > this.records.length) {
+        gaps.push(
+          `末页（窗 ${p.win}）起点 ${start} 越过记录表尾（共 ${this.records.length} 条）—— 记起点的下标比记录表还新`,
+        );
+      }
+      /** 本页那一段里第一条属于本窗的记录（`-1` = 这一段里没有本窗的记录 ⇒ 本页是空页，合法）。 */
+      let first = -1;
+      for (let j = start; j < end; j++) {
+        if (this.records[j]!.win === p.win) {
+          first = j;
+          break;
+        }
+      }
+      if (first === -1) continue;
+      if (first !== start) {
+        gaps.push(
+          `页 ${i}（窗 ${p.win}）的首条正文在记录 ${first}，页起点却写 ${start} —— ` +
+            `页起点必须等于该页首条正文记录的下标（push 后置的组首位 raw 74275/73187 就落在它上面）`,
+        );
+        continue;
+      }
+      if ((this.records[first]!.flags & ITEM_GROUP_START) === 0) {
+        gaps.push(
+          `页 ${i}（窗 ${p.win}）起点 ${start} 上的记录没有组首位 —— 该页首条记录早于页起点，或 \`markGroupStart\` 那一步被搬走了`,
+        );
+      }
+    }
+    return gaps;
+  }
+
   /** 全量 teardown（`0x9 exit-script`）——含页表与双游标。 */
   reset(): void {
     this.clearBacklog();

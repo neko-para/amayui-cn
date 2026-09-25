@@ -43,6 +43,11 @@
       "at": "2026-09-24",
       "kind": "scope",
       "what": "改字段：tests —— 收尾补修：滚轮事件修前从不进输入掩码（引擎 WndProc 的两条路只实现了累加器那条）⇒ ADV 里所有滚轮键位判据恒假，用户实测滚轮无反应。已按体落地 wheelKeyBits/wheelKeyPolicy + 守卫 test/wheel-as-key.test.ts（9 例，含端到端）；台账 input-wheel-two-accumulators 与 docs-new/03-engine/input-system.md §15 同步。"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "scope",
+      "what": "改字段：tests, doneWhy —— P2 批次收口（六条）：① #35 audio-device-init 实现设备创建失败档（webAudioHost.ts：不抛、粘住、info().deviceFailed；守卫 test/t0167-audio-device-fail.test.ts）；② #65 scene-render-freeze-46676 把 BlendEnv 装配收成单点 src/renderer/scene/blendEnv.ts 并钉死（守卫 test/t0167-blend-env-frozen.test.ts）；③ #39/#44 按体登记（写端在 src/vm/handlers/**、对象表在 VM 侧 Engine，本单元禁改）+ 重开条件；④ §4.5 #16/#17 实时读体发现两条报告前提与体不符（92340 已建模、429752 只挡 20838 起）⇒ 前提订正 + 剩余缺口登记 + 缺口棘轮（守卫 test/t0167-frame-loop-gaps.test.ts）。台账 6 条（audio-device-init / scene-render-freeze-46676 / lazy-572b-node-map / lazy-movie-texture-slot / frame-render-gate-mainloop / scene-flag-46528-bits）已落库并重生成 engine-capabilities.md。"
     }
   ],
   "tests": [
@@ -59,6 +64,10 @@
     "app/amayui-emulator/test/adv-msgwin.test.ts",
     "app/amayui-emulator/test/char-reveal.test.ts",
     "app/amayui-emulator/test/op-1f5-dequeue.test.ts",
-    "app/amayui-emulator/test/capability-ledger.test.ts"
-  ]
+    "app/amayui-emulator/test/capability-ledger.test.ts",
+    "app/amayui-emulator/test/t0167-audio-device-fail.test.ts",
+    "app/amayui-emulator/test/t0167-blend-env-frozen.test.ts",
+    "app/amayui-emulator/test/t0167-frame-loop-gaps.test.ts"
+  ],
+  "doneWhy": "P2 批次（报告 §4.2 #35/#39/#44/#65 + §4.5 补漏 #16/#17）六条全部有唯一处置：2 条实现带命名守卫（audio-device-init 的设备创建失败档；scene-render-freeze-46676 的装配单点 blendEnvForScene）、2 条如实登记并写清 why 与重开条件（lazy-572b-node-map 保持 partial、lazy-movie-texture-slot 保持 absent）、2 条前提被体/代码部分推翻后登记剩余缺口（frame-render-gate-mainloop 的两条 missing-branch）。红→绿：0/3→3/3、1/2→2/2、1/2→2/2；capabilities --validate 绿（143 条）、doc-model 10/10、test:all 红集合 = 纯 T-0146 基线（不新增红）。逐条见 tickets/T-0167/changes-c167.md。"
 }

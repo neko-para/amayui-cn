@@ -30,7 +30,7 @@ import { makeCtx } from '../src/vm/step.js';
 import { NATIVE_OPS } from '../src/vm/ops.js';
 import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { parseIni } from '../src/engineConfig.js';
-import { AudioEngine, SE_CHANNELS, SE_ENABLE_RELEASE_CHANNELS } from '../src/audio/audioEngine.js';
+import { AudioEngine, SE_CHANNELS, SE_ENABLE_RELEASE_CHANNELS, VOICE_CHANNEL_BASE } from '../src/audio/audioEngine.js';
 import { FakeAudioHost } from './fakeAudioHost.js';
 import { im, instr, RecordingAudioNative } from './harness.js';
 import type { BinArg, BinInstruction } from '../src/script/bin.js';
@@ -349,15 +349,48 @@ test('★P2 0x2f7：置位 → 翻转协议 → 0x2F6 清位的往返（Engine[2
   assert.equal(e.engineValues.get(S), 0, '0x2F6 清 0（往返闭合）');
 });
 
-test('★P2 0x2f8：pan 的**设备格** `设备[375+ch]`（钳制后的值）落进引擎字段面', () => {
+test('★P2 0x2f8：**操作数读序 = op1 pan / op2 通道**（引擎 raw 33712-33714）—— 修前两格整体颠倒', () => {
   const { e, native, step } = rig();
-  step(0x2f8, [im(2), im(-5000)]);
+  step(0x2f8, [im(-5000), im(2)]); // op1 = pan(-5000)、op2 = 通道 2
   assert.deepEqual(native.last, { kind: 'voice-pan', ch: 2, pan: -5000 });
   assert.equal(e.engineValues.get(ENGINE_FIELD.voicePanBase + 2), -5000, 'Engine 字段面记下钳制后的 pan');
-  step(0x2f8, [im(0), im(999999)]); // 越界 ⇒ 对称钳到 +10000
+  step(0x2f8, [im(999999), im(0)]); // 越界 ⇒ 对称钳到 +10000
   assert.equal(e.engineValues.get(ENGINE_FIELD.voicePanBase), 10000, '★对称钳制（引擎 sub_4B6940 的两半）');
-  step(0x2f8, [im(1), im(-999999)]);
+  step(0x2f8, [im(-999999), im(1)]);
   assert.equal(e.engineValues.get(ENGINE_FIELD.voicePanBase + 1), -10000);
+  // 期望的**写入格**：op2 才是通道（修前把 op1 当通道 ⇒ 越界钳后的 pan 会落进 `+0` 而通道 0 没有写点）
+  const intents = native.intents.filter((i) => i.kind === 'voice-pan');
+  assert.deepEqual(intents, [
+    { kind: 'voice-pan', ch: 2, pan: -5000 },
+    { kind: 'voice-pan', ch: 0, pan: 10000 },
+    { kind: 'voice-pan', ch: 1, pan: -10000 },
+  ], '★三条意图的 (ch, pan) 必须与操作数位一一对应（修前是 (ch=-5000, pan=2) 这种倒置）');
+  // ★值域门在**设备层**（raw 139068）：`i2f8 500 15`（通道 15）⇒ 引擎一个字段都不写（只报错串）。
+  step(0x2f8, [im(500), im(15)]);
+  assert.equal(e.engineValues.get(ENGINE_FIELD.voicePanBase + 15), undefined, '通道 ≥ 15 ⇒ 不写越界字段格');
+});
+
+test('★P2 0x2f8：设备通道域 **0..14**（引擎门只有 `a2 < 15`）—— 12/13/14 折回语音、0..11 落 SE', () => {
+  const logs: string[] = [];
+  const host = new FakeAudioHost({ onLog: (m) => logs.push(m) });
+  const eng = new AudioEngine(host, { log: (m) => logs.push(m) });
+  eng.voicePan(VOICE_CHANNEL_BASE, -1000); // 设备 12 → 语音 ch0
+  assert.equal(eng.debug().voice[0]!.pan, -1000, '12..14 折回 `#voice[0..2]`');
+  assert.equal(eng.debug().se[0]!.pan, 0, '设备 12 **不**写 SE 通道 0（两张宿主表编号口径不同）');
+  eng.voicePan(VOICE_CHANNEL_BASE + 2, 1000);
+  assert.equal(eng.debug().voice[2]!.pan, 1000);
+  eng.voicePan(0, 500); // 设备 0..11 → `#se`
+  assert.equal(eng.debug().se[0]!.pan, 500, '0..11 落 SE 通道对象');
+  assert.equal(eng.debug().voice[0]!.pan, -1000, '设备 0 **不**动语音 ch0（两者是不同格）');
+  eng.voicePan(5, -500);
+  assert.ok(eng.debug().se[5]!.pan === -500, '设备 5 同样落 SE 通道对象');
+  assert.equal(
+    logs.filter((l) => l.includes('语音通道越界')).length,
+    0,
+    '★0..14 全在引擎的值域内 ⇒ 一条语音越界日志都不该有（修前 ch ≥ 3 走语音对象 ⇒ 报假越界）',
+  );
+  eng.voicePan(15, 0); // 引擎 raw 139068 的 `a2 < 15` 之外
+  assert.ok(logs.some((l) => l.includes('设备通道越界 15')), `设备 ≥ 15 ⇒ 报错分支：${logs.join(' | ')}`);
 });
 
 test('★P2 0x2ff：`Engine[21321+ch]` 是**原值直写**（不 clampVolume；同格可被 0x302 写成 0x10000）', () => {

@@ -1,0 +1,45 @@
+{
+  "title": "缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件）",
+  "type": "refactor",
+  "priority": "P2",
+  "area": "analysis/analysis/emulator/vm",
+  "why": "`analysis/opcode-gaps.json` 的 `partial` 处置位（`tickets/T-0149`）要求每条 `missing[]` 带 `{what, ticket, raw}`，其中 `ticket` 语义是**承接票**（schema 注释与校验器都这么写：`tickets/` 下必须真实存在）。\n\n2026-09-25 实测：**140/140 条 `missing[]` 的 `ticket` 全部指向已经 `done`（或 `dropped`）的票** —— A–F 波把各簇的票逐张关掉时，票内「如实登记」的缺口被留在了台账里，但**承接票随之关闭** ⇒ 这份登记账**没有任何 live owner**：既不会出现在看板的 doing/open 里，也不会被任何一轮的判绿口径盯住。\n\n分布（前 12）：`T-0151`×28 / `T-0152`×17 / `T-0155`×12 / `T-0153`×11 / `T-0156`×9 / `T-0154`×8 / `T-0162`×7 / `T-0164`×7 / `T-0163`×7 / `T-0159`×7 / `T-0158`×6 / `T-0170`×6。\n\n★这不是「台账写错」，而是**收票纪律的一个缺口**：单元把缺口如实登记后，票一关就没有下家。本票既修这个结构（给 140 条一个 live 承接票），也给它们一个可以逐条关单的容器。",
+  "acceptance": [
+    "**结构修复（本票开场即做）**：`analysis/opcode-gaps.json` 里所有 `partial` 条目的 `missing[].ticket` 批量改指本票 `T-0179`（live）；**原承接票不丢** —— 每个受影响条目的 `journal[]` 追加一条，逐条写明「原承接票 = T-0151/T-0152/…（出处）」，并在本票 `changes-t0179.md` 里给一张「0x… → 原票」的对照表。",
+    "**逐条裁决**（140 条，每条三选一，不许留空）：① **实现** ⇒ 命名守卫 + 红→绿证据（先跑出红），并删掉该条 `missing`；② **关掉** ⇒ 证明它已落地或前提被取代（引当前代码行/raw）⇒ 删该条 `missing`；整条 `missing[]` 清空时把 disposition 升 `implemented`；③ **保留** ⇒ 写明「为什么不现在做 + 重开条件」，`raw`/`ticket` 保持合法（单段 raw、票真实存在）。",
+    "台账棘轮全绿：`node scripts/build-opcode-gaps.mjs --check`（覆盖 + 处置纪律）、`node --import tsx --test test/opcode-gaps.test.ts`、四份 `--validate`（tickets / capabilities / scripts / opcode-gaps）、死写 `check:dead-writes`（基线 11 只许收缩）。",
+    "判绿口径不变：`npm run verify` 除 3 条 `T-0146` 基线外**不新增红**；本轮若动 `src/**`，每个改动都要有命名守卫与红→绿数字。",
+    "收尾三连：`node scripts/build-tickets.mjs`、`tickets.js --validate`（0 ✗）、`node --import tsx --test test/ticket-ledger.test.ts`。"
+  ],
+  "links": {
+    "tickets": [
+      "T-0148",
+      "T-0149",
+      "T-0151",
+      "T-0152",
+      "T-0153",
+      "T-0154",
+      "T-0155",
+      "T-0156",
+      "T-0158",
+      "T-0159",
+      "T-0162",
+      "T-0163",
+      "T-0164",
+      "T-0170"
+    ],
+    "docs": [
+      "docs-new/03-engine/opcode-gaps.md",
+      "CONTEXT.md"
+    ]
+  },
+  "id": "T-0179",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-25",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

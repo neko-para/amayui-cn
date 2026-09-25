@@ -47,6 +47,18 @@ export interface MsgSegment {
   ruby: [string, string][];
   /** 是否已断行（`end-text-line` 0x6F）。 */
   lineEnded: boolean;
+  /**
+   * ★**本段已经记进 `Font+3364` 记录表的字数**（`tickets/T-0179` 的 P1c）。
+   *
+   * 引擎按**显示行**记账（`sub_46BE30` 的逐字循环里 push，raw 83918-83942），同一段会被
+   * **多次** `show-text`/`display-furigana` 追加（`appendText` 把同一行的多段拼成一段）
+   * ⇒ 必须记住"这一段已经记到第几个字"，否则后一次入队会把前一次的显示行**再记一遍**
+   * （实测：记录里出现「『『迪爾-利菲娜『迪爾-利菲娜』…」这种重复片段）。
+   *
+   * 语义 = **该段已记账的前缀长度**；新字追加后仍然有效（前缀没变）。
+   * 省略 = 0（该段还没有记过账 —— 与"段刚建出来"同义）。
+   */
+  recordedChars?: number;
 }
 
 /** 一个文本槽（引擎 `Font + 1044 + 4*win` = `FontVWindow`；op1 为 0 时用默认窗）。 */
@@ -765,7 +777,7 @@ export class MsgWindow {
     // 引擎重画时字形连颜色一起进表面（`applyOverride` → `captureFontStyle` 会在调用方补上）；
     // 这里先清掉旧快照，避免上一页的颜色残留到本页。
     s.fontStyle = null;
-    for (const t of lines) s.segments.push({ text: t, ruby: [], lineEnded: true });
+    for (const t of lines) s.segments.push({ text: t, ruby: [], lineEnded: true, recordedChars: 0 });
     this.#bumpContent(win);
     // 引擎这一页是"已经画好的"⇒ 没有逐字显现过程（`sub_4675A0` 里没有显现游标推进）。
     this.reveal.delete(win);
@@ -781,7 +793,7 @@ export class MsgWindow {
       last.text += text;
       return;
     }
-    s.segments.push({ text, ruby: [], lineEnded: false });
+    s.segments.push({ text, ruby: [], lineEnded: false, recordedChars: 0 });
   }
 
   /**
@@ -796,7 +808,7 @@ export class MsgWindow {
     this.#bumpContent(this.resolveWin(i));
     let last = s.segments[s.segments.length - 1];
     if (!last || last.lineEnded) {
-      last = { text: '', ruby: [], lineEnded: false };
+      last = { text: '', ruby: [], lineEnded: false, recordedChars: 0 };
       s.segments.push(last);
     }
     last.text += base; // ★本文词也是文本

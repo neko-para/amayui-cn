@@ -84,7 +84,10 @@ test('E3：TITLE → Load Data → SAVE.BIN，路径上零未实现 opcode 且�
   const origSetSlotPixels = scene.setSlotPixels.bind(scene);
   scene.setSlotPixels = (slot: number, w: number, h: number, rgba: Uint8Array) => {
     thumbs.push({ slot, w, h, bytes: rgba.length });
-    origSetSlotPixels(slot, w, h, rgba);
+    // ★`tickets/T-0175` 的 ⑤ 前半：`setSlotPixels` 自本轮起返回 `boolean`（"像素是否真的落地"）
+    //   ⇒ 探针必须把它**透传**回去，否则 `0x1AF` 收到 `undefined`（= "宿主不实现该缝"那条分支）
+    //   就保持旧行为写 `op1 = 0` —— 探针就不再等价于宿主本身。
+    return origSetSlotPixels(slot, w, h, rgba);
   };
   const e = new Engine(scene, input);
   e.fileSource = src;

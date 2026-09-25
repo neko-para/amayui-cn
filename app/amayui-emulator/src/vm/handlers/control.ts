@@ -11,7 +11,7 @@ import type { OpHandler, StepCtx } from '../step.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { parseScriptBytes } from '../../script/bin.js';
 import type { Engine, Frame } from '../engine.js';
-import { labelPos } from './shared.js';
+import { branchTarget, branchTargetError } from './shared.js';
 
 /**
  * 取本族的**操作数计划视图**；缺计划 = 编程错误（`test/operand-plan.test.ts` 会核验本族每条都有计划）。
@@ -27,7 +27,7 @@ function planFor(c: StepCtx): PlannedOperands {
 import { loadScriptIntoFrame } from '../scriptFrame.js';
 import { resolveSlotRetStack } from '../engineSlot.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
-import { QUEUE_INT_SLOTS } from '../engine.js';
+import { FIELD_REVEAL_INPUT_CONSUMED, QUEUE_INT_SLOTS } from '../engine.js';
 import { ShowMessageError } from '../native.js';
 import { cfgInt } from '../../engineConfig.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
@@ -45,8 +45,10 @@ const op_jmp: OpHandler = (c) => {
   // 引擎 sub_4203D0：op1 经 readIntOperand 取值；op1==-1(0xFFFFFFFF) = 不跳（落下句），非错误。
   const t = (plan.int(1) ?? 0);
   if (t === -1) return;
-  const p = labelPos(c.frame, t);
-  if (p === null) throw new Error(`jmp: unknown label 0x${(t >>> 0).toString(16)}`);
+  // ★两级解析（`tickets/T-0179`）：引擎 raw 29397 是 `ip = ip_base + 4*目标`、**不校验** ⇒
+  //   labelMap 未命中时回落 `dwordToInstr`（旧实现抛 `jmp: unknown label` 是宿主自造硬错误）。
+  const p = branchTarget(c.frame, t);
+  if (p === null) throw branchTargetError('jmp', t);
   c.jump(p);
 };
 
@@ -63,8 +65,9 @@ const op_call: OpHandler = (c) => {
     c.frame.retStack.pop(); // 无目标，弹回（no-op）
     return;
   }
-  const p = labelPos(c.frame, a);
-  if (p === null) throw new Error(`call: unknown label 0x${(a >>> 0).toString(16)}`);
+  // ★两级解析（`tickets/T-0179`）：引擎 raw 29469 同样不校验目标。
+  const p = branchTarget(c.frame, a);
+  if (p === null) throw branchTargetError('call', a);
   c.jump(p);
 };
 
@@ -111,19 +114,30 @@ const op_jcc: OpHandler = (c) => {
     const t = plan.int(n) ?? -1;
     return t === -1 ? null : t;
   };
+  /**
+   * 目标解析（`tickets/T-0179` 起：**两级**）。
+   *
+   * 引擎 `sub_4209B0` raw 29620-29636 的落点是 `frame.ip = ip_base + 4 * v3` —— **对目标不做任何
+   * 校验或查找**，只有 `-1` 有特殊含义（落下句，raw 29624/29631）。两级解析与 `jmp`/`call` 共用
+   * （`shared.ts` 的 `branchTarget`：`labelMap` → 未命中回落 `script.dwordToInstr`）。
+   * ⇒ 非标签目标在引擎里**同样会跳**；只有当目标**越出脚本**（两级都查不到）时才抛 ——
+   * 引擎此时会把 ip 指到脚本缓冲区之外（宿主侧护栏）。
+   */
+  const resolveBranch = (t: number): number | null => branchTarget(c.frame, t);
+  const outOfRange = (which: string, t: number): Error => branchTargetError(`jcc ${which}`, t);
   if (cond !== 0) {
     const t = branchLab(2);
     if (t !== null) {
-      const p = labelPos(c.frame, t);
-      if (p === null) throw new Error(`jcc: unknown true label 0x${(t >>> 0).toString(16)}`);
+      const p = resolveBranch(t);
+      if (p === null) throw outOfRange('true', t);
       c.jump(p);
     }
     // t==null：真分支不跳 → 落到下一句（不设 jump）
   } else {
     const t = branchLab(3);
     if (t !== null) {
-      const p = labelPos(c.frame, t);
-      if (p === null) throw new Error(`jcc: unknown false label 0x${(t >>> 0).toString(16)}`);
+      const p = resolveBranch(t);
+      if (p === null) throw outOfRange('false', t);
       c.jump(p);
     }
     // t==null：假分支不跳 → 落到下一句
@@ -131,6 +145,28 @@ const op_jcc: OpHandler = (c) => {
 };
 
 // ---- ret (0x5)：同脚本子程序返回（弹返回栈跳回；空则 no-op 落到下一指令） ----
+/**
+ * `0x5`（`sub_41A9B0` raw 25704-25727）：先弹**帧内返回栈**（`frame.retStack`，raw 25711-25716），
+ * 顶 != -1 时再弹**全局「消息回调 effect_flags 保存栈」**（raw 25718-25723：`top = _this[107437]`、
+ * `result >= 0` 才 `v3 = base[top--]` 并 `_this[174801] = v3`）。
+ *
+ * ★**第二段（effect_flags 恢复）今天不落**，理由是"没有压入端"而不是"没找到"：
+ *  - 压入点全库**只有两处**（`grep 'sub_409D40('` 实测 7 命中，其中队列基址 = `_this + 429732` 的
+ *    只有 raw 20022 / 20082），**两处都在 `sub_411590`（定义 raw 19946）体内**；
+ *  - `sub_411590` 的**唯一**调用点是 raw 20884 —— 主循环在 `effect_flags & 0x100000`（跳读位）时的
+ *    `sub_411590(_this) + Sleep(5)` 自旋循环。而 `0x100000` 的唯一常态置位端是 raw 20350，
+ *    紧跟 raw 20351 就是 `sub_411560(_this, "CALLBACK_TEXT.BIN")`；
+ *  - emulator **没有** `sub_411560`/`sub_40FC90` 那条"按名装载回调脚本并立刻把控制交给它"的口
+ *    （见 `engine.ts` 的 `#textRewindWheel` 已知缺口：`CALLBACK_TEXT.BIN` 在本资源树 0 命中 ⇒ 真机
+ *    那一跳也是 no-op）⇒ 这个自旋循环在 emulator 里**没有对应现场**，插在别处（如 `#textRewindWheel`
+ *    的 `|= 0x100000` 之后）会把 `effectFlags` 的 bit20 立刻清掉，反而**制造**与引擎的分叉。
+ *  ⇒ **只补这里的 `pop` = 弹一本永远没人压过的栈 = 假实现**；**重开条件** = 先把
+ *    `sub_411560`（装载 + 立即派发回调脚本）建模，再按 raw 20022-20023 同序在那一跳补
+ *    `pushEffectFlags()` + `effectFlags &= 0x7FEFFFFF`，**同批**接回这里的 `pop`。
+ *  ★避免重复投入：raw 28868 / 28885 / 28938 三处 `sub_409D40` 收的是**另一个**队列对象
+ *    （`_this + 107433`，交叉脚本请求队列 = `dispatchSavedCur`/`dispatchSavedFlags` 那一格），
+ *    不是本栈的压入点；raw 30748 是 `0x138` 的 `Stack_int` 族。
+ */
 const op_ret: OpHandler = (c) => {
   const plan = planFor(c);
   const top = c.frame.retStack.pop();
@@ -554,9 +590,22 @@ const op_exit_script: OpHandler = async (c) => {
   c.e.stringTable.clear();
   c.e.cur = 0;
   c.e.callRet = -1;
-  c.e.callLink = -1;
-  c.e.callFlag = 0;
+  // ★`tickets/T-0173`：这里原有两行复位 `c.e.callLink = -1; c.e.callFlag = 0;`（引擎 0x5D888/0x5D88C
+  //   即 383112/383116 的镜像格），已随字段一并删除 —— 那两格零读者（`callRet` 才是活的），
+  //   而它们的**真值**（派发现场）由 `dispatchSavedCur`/`dispatchSavedFlags` 建模，见下面 `dispatchSavedCur = -1`。
   c.e.effectFlags = 0;
+  // ★`tickets/T-0169`（承接 `T-0175` ① 与 `T-0161` §5）：整体复位 `sub_40DF10` 把
+  //   `Engine[699248]`（= `_this[174812]`，`0x142` 写的那个「脚本引擎开关」）置 **1**
+  //   —— raw 17961 `*(_DWORD *)(_this + 699248) = 1;`（与构造 raw 22591 同值）。
+  //   构造初值在 `engine.ts` 的 `engineValues` 初值表里；**整体复位**的 emulator 等价物只有本函数
+  //   （`sub_40DF10` 的其余复位格 `logoEnabled`/`loadInProgress`/`storedCur` 也都写在这里）
+  //   ⇒ 本文件是必须改的那一处（`control.ts` 的改动理由按本单元硬边界写明）。
+  c.e.engineValues.set(ENGINE_FIELD.scriptEngineFlag, 1);
+  // ★raw 17973：整体复位 `sub_40DF10` 也把 `Engine[388212]`（字节；= `_this[97053]`）清 0 —— 那是逐字泵
+  //   `sub_409400` 的「贴完整页出口已消费过这一页」闩锁（写 1 = raw 13941、读 = raw 13917、构造清 0 =
+  //   raw 22604）。emulator 的落点 = `src/vm/engine.ts` 的 `FIELD_REVEAL_INPUT_CONSUMED`（`T-0169`）；
+  //   不落这一半的话，"exit-script → 新一局"的第一页会带着上一局的闩锁被一次贴完。
+  c.e.engineValues.set(FIELD_REVEAL_INPUT_CONSUMED, 0);
   // 引擎 exit-script 是整体复位（sub_428A60：释放 40 帧 + 清全局内存池 + 引擎复位）⇒ 派发队列与现场一并作废。
   c.e.scriptRequests.length = 0;
   // ★`tickets/T-0156`：整体复位 `sub_40DF10`（raw 18080-18109）把 `_this + 388252` 起的 **10** 个

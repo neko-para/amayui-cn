@@ -29,6 +29,7 @@ import { sceneAffine2DOf, sceneAffineRotation } from '../scene/ops.js';
 //   （emulator 的文本由 `textLayer` 画）⇒ 无纹理槽时不能当图元画成白块。见 `T-0102`。
 import { inMsgTextRange } from '../drawitem/msgTextRange.js';
 import { walkBlendSequence, type BlendEnv, type BlendState } from '../scene/blend.js';
+import { blendEnvForScene } from '../scene/blendEnv.js';
 import { scTransitionMarkedHandles, type TransitionRenderItem } from '../scene/transition.js';
 import type { TextureCache } from './textureCache.js';
 import { l2dBatches, type L2dMeshBatch } from '../../live2d/render.js';
@@ -287,6 +288,22 @@ export class ScenePresenter {
     //   `sub_4AAEC0` 的查表键，raw 135610 的 `a5`）。TITLE 的静态立绘是 `draw-texture 14 5`
     //   （键 = op1 = 0x14），L2D 支是 `i344 14 0` ⇒ **两条支路占同一个归并槽**（`src/TITLE.txt`）。
     //   等键次序：引擎里节点输给 item 与 mesh（raw 135586-135614 的三个分支）⇒ 这里 order=3。
+    //
+    // ★**`L2dMeshBatch.mulColor` 在本函数里没有消费者**（`tickets/T-0175` 的 ⑨，出处
+    //   `tickets/T-0160` §4 的"Pixi 合成端把 `mulColor` 当 tint"）：
+    //   - **票面前提已过期**：`T-0160` 写"目前不读 `b.mulColor`"——**今天仍然不读**，所以还不存在
+    //     "字节序下发错了"这个可见缺陷；`decodeL2dMulColor`（`live2d/runtime.ts` 的
+    //     `[BYTE2,BYTE1,BYTE0]/255`，依据 = `sub_4BD150` 的**实参序** raw 34813-34818）已经把三分量
+    //     解出来了（数据面就绪：`live2d/render.ts` 的 `mulColor`，快照与出画两个消费方都拿得到）。
+    //   - **为什么先不下发**：`0x34F` 的乘色在引擎里经 `sub_4BD3E0` 进 **SDK 的纹理混合**
+    //     （`*(1-a4)*现价 + a4*目标`，raw 143791-143801），而 Pixi 侧的等价物只有 `tint`
+    //     （逐通道乘法，**不含** SDK 那层插值/预乘语义）⇒ 直接映射会引入**没有真机对照**的可见色差
+    //     （分量 → tint 的字节序在真机上没有对照样本，做错就是"新引入的可见错"）。
+    //   - **重开条件（任一条成立就该做）**：① 拿到真机对照 —— 同 id 的 L2D 部件在真机截图与
+    //     `mulColor` 解码值能对上（从而定死 R/G/B 落位）；② 语料里出现**非恒等**乘色且画面差异可被
+    //     E4 截图复现（那时"不下发"本身成了可见缺陷，两害相权取有对照的那个）。
+    //   - 现状**不算静默**：字段在模型与快照里都可见（`live2d/render.ts` 的 `mulColor`），
+    //     缺口登记在 `analysis/opcode-gaps.json` 的 `0x34f` 条目。
     const l2dBatchList = scene.l2dHost ? l2dBatches(scene.l2dHost, this.viewW, this.viewH) : [];
     const drawL2d = (b: L2dMeshBatch, blendMode: BlendState): void => {
       if (b.vertexCount < 3 || b.triangleCount < 1) return;
@@ -392,14 +409,7 @@ export class ScenePresenter {
       ...l2dBatchList.map((b) => ({ key: b.key, order: 3 as const, kind: 'mesh' as const, blend: 0, draw: (mode: BlendState) => drawL2d(b, mode) })),
     ];
     entries.sort((a, b) => a.key - b.key || a.order - b.order);
-    const env: BlendEnv = {
-      renderTargetSlot: scene.render4.renderTargetSlot,
-      slotMode: (slot) => scene.render4.slotModes.get(slot),
-      // ★**`Scene+46676` 的生产侧接线**（审计 §4.2 #24 的 P2 `missing-consumer`）：
-      //   修前这个字段只有声明 + 一个纯函数判据 + 一条手搓 BlendEnv 的单测 ⇒ 生产里恒 `undefined`
-      //   （`!env.sceneFrozen` 永远为真，判据静默退化成"只看渲染目标槽"）。现在从共享模型来。
-      sceneFrozen: scene.frozen,
-    };
+    const env: BlendEnv = blendEnvForScene(scene);
     const modes = walkBlendSequence(
       entries.map((e) => ({ kind: e.kind, blend: e.blend })),
       env,
@@ -593,11 +603,7 @@ export class ScenePresenter {
     const items = [...scene.drawItems.values()]
       .filter((it) => handles.has(it.handle))
       .sort((a, b) => a.layer - b.layer || a.handle - b.handle);
-    const env: BlendEnv = {
-      renderTargetSlot: scene.render4.renderTargetSlot,
-      slotMode: (slot) => scene.render4.slotModes.get(slot),
-      sceneFrozen: scene.frozen, // ★同 `present()`：`Scene+46676` 的生产侧接线（审计 §4.2 #24）
-    };
+    const env: BlendEnv = blendEnvForScene(scene); // ★同 `present()`：`Scene+46676` 的生产侧接线（审计 §4.2 #65）
     const modes = walkBlendSequence(
       items.map((it) => ({ kind: 'item' as const, blend: it.blend })),
       env,

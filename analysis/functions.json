@@ -2150,39 +2150,54 @@
   {
     "addr": "0x42FEC0",
     "raw_name": "sub_42FEC0",
-    "semantic_name": "readGlobalSlot_42FEC0",
+    "semantic_name": "op_read_global_int_slot_42FEC0",
     "op": "0x148",
     "status": "ANALYZED",
-    "purpose": "读引擎全局时间阈值槽 _this[97058] 写回 op1（get）",
+    "purpose": "脚本全局 int 池取数（has-global-int 的读侧）：`result = pool[op1]` 写回 op1",
     "sub_behaviors": [
-      "设 frame.arity=3",
-      "writeIntOperand(1, _this[97058])"
-    ],
+        "设 frame.arity = 3 ⇒ argc 1",
+        "op1 = readIntOperand(1)（池 dword 下标）",
+        "返回 pool[op1]（pool 基址 = Engine[382976] ≡ Engine[95744]）"
+      ],
     "fields_used": [
-      "this->global_slot_97058"
-    ],
+        "this->global_int_pool_base_382976"
+      ],
     "unmodeled": [],
-    "evidence": "raw 39705-39708",
-    "notes": "0x149 的读侧；opcode-table 原标“仅映射”，实为已核对"
-  },
+    "evidence": "raw 39705-39709",
+    "notes": "0x149 的读侧。★语义订正（T-0107）：**不进脚本全局 int 池** —— 操作数是池 dword 下标，值就是 pool[op1]；引擎内部累加器是另一个槽 `Engine[97058]`（只有 0x148/0x149 这两条指令读写它），两者不可混。"
+  ,
+    "journal": [
+      {
+        "field": "purpose",
+        "what": "旧措辞写作「读引擎全局时间阈值槽 _this[97058] 写回 op1」——把**引擎内部累加器** `Engine[97058]` 当成了这条指令的数据面；实际数据面是脚本全局 int 池的 `pool[op1]`。"
+      }
+    ]
+},
   {
     "addr": "0x4229A0",
     "raw_name": "sub_4229A0",
-    "semantic_name": "writeGlobalSlot_4229A0",
+    "semantic_name": "op_write_global_int_slot_4229A0",
     "op": "0x149",
     "status": "ANALYZED",
-    "purpose": "把 op1 值写入引擎全局时间阈值槽 _this[97058]（set）",
+    "purpose": "脚本全局 int 池存数（set-global-int 的写侧）：`pool[op1] = op2`",
     "sub_behaviors": [
-      "设 frame.arity=3",
-      "_this[97058]=readIntOperand(op1)"
-    ],
+        "设 frame.arity = 3 ⇒ argc 1",
+        "pool[op1] = readIntOperand(op2)；写经 writeIntOperand_42B4B0（case 3：`*(Engine[382976] + 4*idx) = ENC(值)`）"
+      ],
     "fields_used": [
-      "this->global_slot_97058"
-    ],
+        "this->global_int_pool_base_382976"
+      ],
     "unmodeled": [],
-    "evidence": "raw 31045-31051",
-    "notes": "0x148 的写侧；SYSTEM4 line12 i149 3e8=1000"
-  },
+    "evidence": "raw 31045-31052",
+    "notes": "0x148 的写侧（`SYSTEM4` 的 `i149 3e8` = 往池下标 op1 写 1000）。★语义订正（T-0107）：**不进脚本全局 int 池** —— 同 0x148 的订正（引擎内部累加器 `Engine[97058]` 只由这两条指令使用，不是全局池）。"
+  ,
+    "journal": [
+      {
+        "field": "purpose",
+        "what": "旧措辞写作「把 op1 值写入引擎全局时间阈值槽 _this[97058]（set）」——同 0x148 的沿革：把内部累加器当成了数据面。"
+      }
+    ]
+},
   {
     "addr": "0x453870",
     "raw_name": "sub_453870",
@@ -2532,29 +2547,44 @@
     "raw_name": "sub_411590",
     "semantic_name": "msgCallbackDispatch_411590",
     "status": "PARTIAL",
-    "purpose": "消息/文本回调派发器（主循环 sub_412290 在 effect_flags&0x100000 时调用）。处理回调队列(_this+699260)，进入文本回调前：sub_409D40(_this+429732, effect_flags) 压栈保存当前 effect_flags、effect_flags&=0x7FEFFFFF、设帧 ip 到回调，sub_411560 派发（sub_455000 查回调表 + sub_40FC90 queueScript）。",
+    "purpose": "文本回调/跳读进行中的把门泵（唯一调用点 raw 20884：主循环在 `effect_flags & 0x100000` 时每轮 `sub_411590(_this)` + `Sleep(5)`）。每轮：① 三个**语音通道槽的待发队列**（7 dword/槽，基址 `_this+699260`，步进 28；第 5 参取 `*(int*)(_this + 20212 + 4*槽)`）逐槽消费 —— 队列非空且 `sub_404CB0(_this+84128)` 报通道空闲时取 handle，经 `sub_4BB840(_this+84128, 槽, handle, 0, 第5参)` 起播；② `sub_478090(_this+1032, _this+699208)` 刷输入掩码；③ 按掩码分支：`0x10`（左键）—— 显示器 A 表有效（`_this+51828`）且游标 `_this+51848` 在 `[0, _this+23008)` 内时 `sub_4083B0` + 压帧返回点 + 帧 ip 改到 label + `sub_409D40(_this+429732, effect_flags)` 压栈 + `effect_flags &= 0x7FEFFFFF`（左键未命中则 `sub_459770(Font, 0, 2)` + 清 `0x100000` + `489816 = 0`）；`0xA`（位 8 | 位 1）—— 位 8 ⇒ `sub_459770(Font, -1, 2)` + `489816 = -1`；否则 `sub_459770(Font, 1, 2)` 非 0 ⇒ `489816 = 1`，否则清 `0x100000` + `489816 = 0`；否则（悬停）—— 显示器 A 表有效时经 `sub_403E70(_this+21976)` 命中则做与左键命中支同一套。④ 两条终止支（左键未命中 / `0xA`）收尾调 `sub_411560(Engine, \"CALLBACK_TEXT.BIN\")`。",
     "signature_override": {
       "param0": "this(Engine*)"
     },
     "sub_behaviors": [
-      "遍历回调队列(_this+699260)",
-      "进入回调前压 effect_flags 到 Stack_int(0x68EA4)",
-      "effect_flags&=0x7FEFFFFF",
-      "设帧ip到回调目标",
-      "sub_411560 派发回调"
-    ],
+        "三个语音通道槽的待发队列逐槽消费（基址 _this+699260，28B/槽）",
+        "sub_4BB840 起播语音 handle（通道忙则不播）",
+        "sub_478090 刷输入掩码(_this+1032 → _this+699208)",
+        "按掩码分支：0x10 左键 / 0xA 位8|位1 / 否则悬停",
+        "命中显示器 A 的 label：压帧返回点 + 改帧 ip + sub_409D40 压 effect_flags 栈",
+        "左键未命中支与 0xA 支调 sub_411560(Engine, \"CALLBACK_TEXT.BIN\")（按名装载 + sub_40FC90 入队派发）"
+      ],
     "fields_used": [
-      "this->msg_cb_flag_stack(0x68EA4)",
-      "this->effect_flags(0xAAB44)",
-      "this->_this+699260(回调队列)"
-    ],
+        "this->effect_flags(0xAAB44)",
+        "this->input_state_mask(0xAAB48)",
+        "this->msg_cb_flag_stack(0x68EA4)",
+        "语音待发队列(_this+699260，3 槽 × 7 dword)",
+        "语音槽第 5 参(_this+20212+4*槽)",
+        "this->virtual_display_a(0x55D8) 条目数(+23008)",
+        "this->display_a_cursor(0xCA88 = +51848)",
+        "显示器 A 表有效标志(_this+51828)",
+        "回看游标(_this+489816)"
+      ],
     "unmodeled": [
-      "回调队列 _this+699260 语义",
-      "sub_455000 回调注册表"
-    ],
+        "语音待发队列 _this+699260 的 handle 数组（v3[-1] 指向）与入队路径",
+        "显示器 A 表(_this+51828/+51848/+23008) 的写入者",
+        "sub_455000 回调注册表（sub_411560 的按名装载）"
+      ],
     "evidence": "raw 19947-20093 (sub_411590)",
-    "notes": "ret(0x5) 弹回其压入的 effect_flags；0x100000 位是文本回调进行中标记。🔒 记录背景（待实现消息/文本回调系统时再改 emulator）：本函数/flag 栈属 ADV/文字窗子系统，当前不实现。"
-  },
+    "notes": "★`T-0168`（2026-09-25）读体结论：本函数**不建模**（why + 重开条件 = `tickets/T-0168/changes-wheel.md` §3.3）：① 产品路径进不去 —— `0x100000` 的置位端只有「回看」两支，而回看块（`sub_411BC0` raw 20341）被等待泵第一出口的键命中（`sub_403D70` raw 20242）挡死，真语料 ADV 实测该位恒 0；② 把门条件不终止 —— `0x100000` 的清位点 raw 20041/20061 在本函数自己体内，要等 `sub_411560` 派发的回调脚本跑完才可达，而本机 25080 条索引里没有 `CALLBACK_TEXT.BIN`（`sub_455000` 返回 −1 ⇒ `sub_40FC90` 的 `if (a2 != -1)` 整跳 no-op）；③ 其余可观测后果各有落点（语音起播 `voice_play_4BB840`、输入刷 `inputBrushPending_478090`、三种输入分支在 emulator 侧各有实现）。队列身份与另一张表 `Engine+497372`（下标 124343 = `0x796DC`）见 journal。原记录背景『待实现消息/文本回调系统时再改 emulator』保留。"
+  ,
+    "journal": [
+      {
+        "at": "2026-09-25（T-0168）",
+        "what": "★队列身份订正：本条原把 `_this+699260` 的三条 28B 记录记成「消息/文本回调派发队列」，体里是**三个语音通道槽的待发队列** —— 消费者是 `sub_4BB840`（raw 19990 调用；其体 raw 142512 抛 `VOICEファイル %s の読み込みに失敗しました`），而 `0x4BB840` 在 functions.json 里本就是 `voice_play_4BB840`。回调脚本队列是**另一张表** `Engine+497372`（下标 124343 = `0x796DC`，`queueScript_40FC90` 入队 / `dispatchQueuedScripts_40FB60` 派发）。功能分类不变：仍在 `effect_flags & 0x100000` 时被主循环调用、仍压/弹 effect_flags 保存栈。"
+      }
+    ]
+},
   {
     "addr": "0x41F790",
     "raw_name": "sub_41F790",
@@ -12172,4 +12202,26 @@
       ],
       "evidence": "raw 31605-31670",
       "notes": "emulator：`src/vm/handlers/gfx-misc.ts` 的 `op_play_movie`（三段：槽纹理门走可选宿主缝 `hasSlotTexture`、op3 位解码 `decodeMovieMode`、音源门 `movieAudioGate`），守卫 `test/t0164-misc-batch.test.ts`。缺口两条见 `analysis/opcode-gaps.json` 的 0x20F 条目 `missing[]`（装载失败支不可达、675972 无生产读者）。"
+    },
+    {
+      "addr": "0x4258C0",
+      "raw_name": "sub_4258C0",
+      "semantic_name": "op_24e_store_4258C0",
+      "op": "0x24E",
+      "status": "ANALYZED",
+      "purpose": "op 0x24E（argc 1）：入口先把本帧操作数记数槽 `_this[30*cur_script+95805]` 写成 3（= 2*argc+1），再把 `readIntOperand(_this, 1)` 整格写进 `_this[92340]` —— 该格被主循环与逐字泵当**位组**读（bit0 = 0x400 动画等待门放行块的附加条件、bit1 = 单帧推进复位块的旁路条件），不是不透明整数。",
+      "signature_override": {
+        "param0": "this(Engine*)"
+      },
+      "sub_behaviors": [
+        "帧操作数记数槽 _this[30*cur+95805] = 3（2*argc+1）",
+        "readIntOperand(1) → _this[92340]（整格覆写，无读改写）"
+      ],
+      "fields_used": [
+        "Engine.effect_skip_bits_92340(0x5A2D0)",
+        "frames[cur].operand_count(ScriptContext 0x74 = _this[30*cur+95805])"
+      ],
+      "unmodeled": [],
+      "evidence": "raw 32959-32967 (sub_4258C0)；opcode 侧 handler 见 analysis/opcodes.json 0x24E（argc 1）",
+      "notes": "全语料（src/*.txt，941 个文件）`i24e` 422 处、只有 4 种取值：`10001`（bit0）413 / `1` 3 / `0` 3 / `10003`（bit0+bit1）3 ⇒ bit0 在近全部语料上置位。该格的全部读者见字段条 `effect_skip_bits_92340`。"
     }]

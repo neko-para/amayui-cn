@@ -1057,7 +1057,7 @@
       "mnemonic": "",
       "handler": "sub_420740",
       "status": "已核对",
-      "semantics": "**消息面显示态开**：`Engine[12956]`（关闭已发生）非 0 ⇒ 只清 `12956`/`12958`；否则 `effect_flags = (flags & 0xF77FFFFF) \\| 0x800000` + `sub_404020(panelA, op1)`（首次显示时按当前鼠标做一次命中测试 + 写步长/待填充）。handler=sub_420740（raw 29522-29543）。★`0x800000` 的读取端是 `sub_4098E0`（raw 14055-14105：左键 → `sub_404120` = 取游标 labelC **并清整表**；否则派发 `[7467]` 回退 label）—— **emulator 未实现该通路**（`i091` 语料 0 处，已登记缺口）。emulator：`OPS` 的 `op_panel_show`。"
+      "semantics": "**消息面显示态开**：`Engine[12956]`（关闭已发生）非 0 ⇒ 只清 `12956`/`12958`（这一支**不写长度槽** ⇒ ip 照常前进）；否则 `effect_flags = (flags & 0xF77FFFFF) \\| 0x800000` + `sub_404020(panelA, op1)`（首次显示时按当前鼠标做一次命中测试 + 写步长/待填充），并把**本帧长度槽写 0**（raw 29540 ⇒ 派发器 `ip += 4*0` ⇒ ip 停在本条）。handler=sub_420740（raw 29522-29543）。★`0x800000` 的读取端是每轮泵 `sub_4098E0`（raw 14055-14105：左键 → `sub_404120` = 取游标 labelC **并清整表**、不压返回点；否则派发 `[7467]` 回退 label 并压返回点；悬停变化 ⇒ 派发 enter/leave）。emulator：`OPS` 的 `op_panel_show`（`c.jump(-1)` = 长度槽 0）+ `servicePanelDisplayState()`（= `sub_4098E0`），守卫 `test/panel-display-state.test.ts`（6 例）；台账 `analysis/opcode-gaps.json` 的 `0x91 = implemented`。"
     },
     {
       "opcode": 146,
@@ -1093,7 +1093,7 @@
       "mnemonic": "",
       "handler": "sub_419230",
       "status": "已核对",
-      "semantics": "**消息面显示态开**：`Engine[12957] = 1`；`sub_404020(面板, 10000)` —— 已初始化（`[7465]`）则置步长 `[960]=10000` + 待填充 `[7464]=1`，否则置初始化标记并**按当前鼠标坐标重做一次命中测试**（`GetCursorPos`→`sub_403C50`）。handler=sub_419230（raw 24604-24609）。★**这是命中测试的两个时机之一**（另一个是 WM_MOUSEMOVE 的 `sub_4B8D50` raw 140825-140836）；**等待泵里没有命中测试**。`i094` 语料 334 处。emulator：`op_message_surface_fill`（`Engine.routes.hitTest` + `RoutePanel.pageStep/fillPending`）。"
+      "semantics": "**消息面显示态开**：`Engine[12957] = 1`；`sub_404020(面板, 10000)` —— 已初始化（`[7465]`）则置步长 `[960]=10000` + 待填充 `[7464]=1`，否则置初始化标记并**按当前鼠标坐标重做一次命中测试**（`GetCursorPos` → `sub_403C50`；**无条件**：鼠标出窗也取全局坐标、命中失败即游标 -1）。handler=sub_419230（raw 24604-24609）。★**这是命中测试的两个时机之一**（另一个是 WM_MOUSEMOVE 的 `sub_4B8D50` raw 140825-140836，它**有门**：`if ( _this[12958] || _this[12957] )` —— 面板对象基址 `Engine+5494`，`sub_404020` 收的是面板指针且体内用**字节**偏移（`*(_DWORD *)(_this + 29856) = 1` ⇒ `[7464]`）⇒ `12958 = 5494 + 7464` = `fillPending`、`12957 = 5494 + 7463` = `shown`）；**等待泵里没有命中测试**。`i094` 语料 334 处。emulator：`op_message_surface_fill` + `Engine` 构造里的 WM_MOUSEMOVE 钩子按同一道门放行（关闭期不重算游标），守卫 `test/panel-display-state.test.ts`（无条件命中测试）＋ `test/panel-cursor-move-gate.test.ts`（4 例）；台账 `0x94 = implemented`。"
     },
     {
       "opcode": 149,
@@ -1148,7 +1148,7 @@
       "mnemonic": "menu-bind",
       "handler": "sub_434F10",
       "status": "已核对",
-      "semantics": "**登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind` key=String(DEC(op1))、value=DEC(op2) → `menuMap.set(key,value)`（**注意**：引擎 sub_41B640 读 string；TITLE 用菜单项序号(-1/0/1/2/3/4)为键，emulator 取 op1 的 DEC 值字符串化） 　★T-0162：本条读串走 `sub_41B640`（体 raw 26249-26360；本条体内调用点 raw 42915），其数值族 tag（0/1/3/4/6/9/10/12）的转串结果经 `sub_41A6C0`（raw 25539-25593；在 `sub_41B640` 体内的调用点 raw 26331/26347）做 ASCII→全角（本机 exe = 中文版 ⇒ GBK `0xA3xx`）⇒ 脚本给本条 int/float 操作数时得到的是全角串；`sub_41B640` 对数组 tag（`0x8003` 族）与 float 指针族 7/13 **无 case ⇒ 抛** `Command_Type_Exception`（raw 26355-26357）。**`0x1B2` 不在此列**（走 `sub_41B9B0`，体零处调 `sub_41A6C0` ⇒ 半角）。"
+      "semantics": "**登记菜单项 key→label**：读 op1(字符串键,sub_41B640)+op2(值,sub_41BF50) → `sub_434D00(_this+107679, key, &value)` 插入内存表。TITLE：`i0a2 (local40d) 44f / 0 452 / 1 481 / 2 4a3 / 3 52d / 4 540`。handler=sub_434F10（raw .c 42908）。emulator：`op_menu_bind`（`src/vm/handlers/menu.ts`）的 key 由 `keyOf` 取 —— **字符串族**（tag 2/5/8/11/14）走 `readStringOperand` 拿池里的原串，**数值族**走 `plan.int(1)` 得到半角十进制串（引擎那侧数值族经 `sub_41A6C0` 全角化 ⇒ 差一处口径，因登记与派发两侧同源而不可观测；见 `analysis/opcode-gaps.json` 的 `0xa2` partial 条目）；value=DEC(op2) → `menuMap.set(key,value)`。守卫 `test/menu-string-key.test.ts`。 　★T-0162：本条读串走 `sub_41B640`（体 raw 26249-26360；本条体内调用点 raw 42915），其数值族 tag（0/1/3/4/6/9/10/12）的转串结果经 `sub_41A6C0`（raw 25539-25593；在 `sub_41B640` 体内的调用点 raw 26331/26347）做 ASCII→全角（本机 exe = 中文版 ⇒ GBK `0xA3xx`）⇒ 脚本给本条 int/float 操作数时得到的是全角串；`sub_41B640` 对数组 tag（`0x8003` 族）与 float 指针族 7/13 **无 case ⇒ 抛** `Command_Type_Exception`（raw 26355-26357）。**`0x1B2` 不在此列**（走 `sub_41B9B0`，体零处调 `sub_41A6C0` ⇒ 半角）。"
     },
     {
       "opcode": 163,
@@ -1156,7 +1156,7 @@
       "mnemonic": "menu-dispatch",
       "handler": "sub_429830",
       "status": "已核对",
-      "semantics": "**按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)。handler=sub_429830（raw .c 35742）。emulator：`op_menu_dispatch` key=String(DEC(op1))，target=menuMap.get(key) ?? DEC(op2)，`labelPos(target)` 命中则 `jump` 　★T-0162：本条读串走 `sub_41B640`（体 raw 26249-26360；本条体内调用点 raw 35749），其数值族 tag（0/1/3/4/6/9/10/12）的转串结果经 `sub_41A6C0`（raw 25539-25593；在 `sub_41B640` 体内的调用点 raw 26331/26347）做 ASCII→全角（本机 exe = 中文版 ⇒ GBK `0xA3xx`）⇒ 脚本给本条 int/float 操作数时得到的是全角串；`sub_41B640` 对数组 tag（`0x8003` 族）与 float 指针族 7/13 **无 case ⇒ 抛** `Command_Type_Exception`（raw 26355-26357）。**`0x1B2` 不在此列**（走 `sub_41B9B0`，体零处调 `sub_41A6C0` ⇒ 半角）。"
+      "semantics": "**按 key 查表派发**：读 op1(字符串键,sub_41B640) → `sub_428E00(_this+107679, key)` 查；命中 `ip = str_table + 4*值`（跳转），未命中跳 op2(回退 label)，随后把**长度槽写 0**（raw 35756）。handler=sub_429830（raw .c 35742）。emulator：`op_menu_dispatch`（`src/vm/handlers/menu.ts`）的 key 由 `keyOf` 取（字符串族 tag 2/5/8/11/14 走 `readStringOperand` 取池原串、数值族走 `plan.int(1)`），target = `menuMap.get(key) ?? DEC(op2)`，再用 `branchTarget` 做**两级解析**（`frame.labelMap` → `script.dwordToInstr`）后 `c.jump`；只有两级都查不到（目标越出脚本）才抛 `branchTargetError` —— 引擎 raw 35752/35754 命中与未命中都**无条件** `ip = ip_base + 4*目标`（不校验目标）。守卫 `test/menu-dispatch-target.test.ts`（3 例）＋ `test/menu-string-key.test.ts`。 　★T-0162：本条读串走 `sub_41B640`（体 raw 26249-26360；本条体内调用点 raw 35749），其数值族 tag（0/1/3/4/6/9/10/12）的转串结果经 `sub_41A6C0`（raw 25539-25593；在 `sub_41B640` 体内的调用点 raw 26331/26347）做 ASCII→全角（本机 exe = 中文版 ⇒ GBK `0xA3xx`）⇒ 脚本给本条 int/float 操作数时得到的是全角串（emulator 的数值族键仍是半角，与登记侧同源 ⇒ 语料内不可观测，见 `analysis/opcode-gaps.json` 的 `0xa3` partial 条目）；`sub_41B640` 对数组 tag（`0x8003` 族）与 float 指针族 7/13 **无 case ⇒ 抛** `Command_Type_Exception`（raw 26355-26357）。**`0x1B2` 不在此列**（走 `sub_41B9B0`，体零处调 `sub_41A6C0` ⇒ 半角）。"
     },
     {
       "opcode": 170,

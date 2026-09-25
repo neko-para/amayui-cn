@@ -349,11 +349,20 @@ export class HeadlessScene implements NativeBridge {
 
   /**
    * `0x1AF` 读 `.STH` 缩略图：headless 只记尺寸（供 E3 断言"缩略图确实被解出并写进了该槽"），不存像素。
+   *
+   * @returns **是否成功**（`tickets/T-0175` 的 ⑤ 前半，与 `PixiBackend.setSlotPixels` **同口径**）：
+   *   headless 没有像素 ⇒ "记录"就是它的实现，但**该槽必须真的存在**
+   *   （`0x1F8` create-texture 建过的程序化槽，或已绑定文件图像的槽）。
+   *   否则返回 `false` ⇒ `0x1AF` 写 `op1 = 2`（= 引擎"表面不存在/解入失败"那一档）。
+   *   ★这条判据与 Pixi 侧**不同源但同义**：Pixi 问"有没有画布"，headless 问"这张表面表里有没有它"
+   *   —— 两者都不是自造的宽容，而是各自宿主里"该槽有没有 surface"的真实答案。
    */
-  setSlotPixels(slot: number, w: number, h: number, _rgba: Uint8Array): void {
+  setSlotPixels(slot: number, w: number, h: number, _rgba: Uint8Array): boolean {
+    const hadSurface = this.proceduralSlots.has(slot) || this.slotImgid.has(slot);
     this.slotSize.set(slot, { w, h });
     this.proceduralSlots.add(slot);
     this.note('setSlotPixels(.STH 缩略图 → 纹理槽，headless 只记尺寸)', `slot=${slot} ${w}x${h}`);
+    return hadSurface;
   }
 
   getTextureSize(slot: number): { w: number; h: number } {

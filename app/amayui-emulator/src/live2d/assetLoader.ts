@@ -124,10 +124,18 @@ export async function loadModelIntoSlot(
  *
  * 运行态只记"模型内纹理号 → 纹理文件 id"（`l2dBindTexture`）；**真正的图像解码由渲染宿主做**
  * （Pixi 侧按 id 取 PNG 建纹理，headless 侧只需要 id 就能出报告/snapshot）。
- * ⇒ 这里只验"文件在不在"（不在就记一条），不做解码。
+ * ⇒ 这里只验"文件在不在"（不在就记一条 + `onFail`），不做解码。
  *
- * ★与 `0x341/0x34E` 不同：引擎这条**不抛**（`sub_427CF0` raw 34542-34552 的失败支确实也组串 + 抛，
- * 但那是纹理 handler 自己的事；本函数只负责"验证 + 绑定"），调用方的口径见 `handlers/live2d.ts`。
+ * ## ★失败语义（`tickets/T-0178`，读体定死）
+ * 引擎 `sub_427CF0`（raw 34519-34553）**只有一条**抛点：`v4 = sub_4A1970(...)`、`if (v4 != 1)` ⇒
+ * 组「L2Dテクスチャファイル %s の読み込みに失敗しました」（raw 34548）+ `_CxxThrowException`
+ * （异常码 65543，raw 34550-34551）。而 `sub_4A1970`（raw 121703-121721）在 `ReadFile` **成功**时
+ * **无条件 `return 1`** —— 它把 `sub_478370`（真正落槽：`!_this` ⇒ 0、`D3DXCreateTextureFromFileInMemory < 0`
+ * ⇒ 0）的返回值**丢掉了**（raw 121712-121714）。
+ * ⇒ 与本族另两条**不对称**：
+ *  - **读文件失败**（句柄无效 / `ReadFile` 失败）⇒ `return 0` ⇒ **抛**；
+ *  - **槽里没有模型**、**图解码失败** ⇒ 引擎**不抛**（纹理格留空，节点按 raw 134320 的门控不出画）；
+ *  - 对照 `0x34E`（`sub_4A19F0` raw 121734 **原样返回** `sub_478640` 的结果）⇒ 那条"槽里没模型"**会抛**。
  */
 export async function bindTextureToSlot(
   src: Live2dAssetSource,
@@ -136,10 +144,17 @@ export async function bindTextureToSlot(
   slot: number,
   textureNo: number,
   log?: Live2dLoadLog,
+  onFail?: (f: L2dLoadFailure) => void,
 ): Promise<boolean> {
   const bytes = await src.loadById(fileId);
   if (!bytes) {
-    log?.(`[l2d] 0x345：纹理 id 0x${fileId.toString(16)} 取不到 ⇒ 槽 ${slot} 纹理 ${textureNo} 无图`);
+    const fileName = `0x${fileId.toString(16)}`;
+    log?.(`[l2d] 0x345：纹理 id ${fileName} 取不到 ⇒ 槽 ${slot} 纹理 ${textureNo} 无图`);
+    onFail?.({
+      engineText: l2dFailText(L2D_FAIL_TEXTURE, fileName),
+      fileName,
+      detail: `纹理文件 id ${fileName} 取不到（引擎 sub_4A1970 raw 121710 的 ReadFile 失败 ⇒ sub_427CF0 raw 34542 抛）`,
+    });
     return false;
   }
   l2dBindTexture(host, slot, fileId, textureNo);

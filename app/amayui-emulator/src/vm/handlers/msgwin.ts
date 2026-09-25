@@ -37,11 +37,13 @@ import {
   type FontSpec,
   type FontStyleSnapshot,
   type MsgCellFrame,
+  type MsgGeometrySnapshot,
+  type MsgWinInput,
   type MsgWinStyle,
 } from '../../text/layout.js';
 import { ENGINE_FONT_LIST, AGE_EXTEND_FACES, fontListIndex, resolveFace } from '../../text/fontSet.js';
 import { REVEAL_FRAME_MS, WINDOW_OBJECT_SLOTS } from '../msgwin.js';
-import { REPAINT_KEEP_SURFACE, REPAINT_RUBY_RANGE, REPAINT_SET_COLORS } from '../textItems.js';
+import { ITEM_ROW_LINE, REPAINT_KEEP_SURFACE, REPAINT_RUBY_RANGE, REPAINT_SET_COLORS } from '../textItems.js';
 import { operandsFor, type PlannedOperands } from '../operandPlan.js';
 import { ENGINE_FIELD } from '../engineFieldIds.js';
 import { CFG, registryDefault } from '../../configRegistry.js';
@@ -103,12 +105,93 @@ function recordGateOpen(e: Engine): boolean {
   return ((e.engineValues.get(ENGINE_FIELD.textBaseGate) ?? 0) | 0) >= 0;
 }
 
-/** 把刚入队的这一段正文记进 `Font+3364` 记录表（引擎 `sub_46BE30` → `sub_45F090`，门见上）。 */
+/**
+ * **排版断点处的换行记录**（`recordRenderedRow` 的行内断点专用）。
+ *
+ * 与 `op_end_text_line` 推的那一条**同一张记录表、同一个 `flags | 8`**，只是来源不同：
+ * 本条 = 引擎排版循环里的自动换行（`sub_46AF90` 在 `sub_46BE30` 的换行分支里被调，
+ * raw 83607-83718 / 主循环收尾 raw 84013-84016）；`0x6F` 那条 = 脚本显式 `end-text-line`。
+ *
+ * ★**同处只留一条**：一段的末行之后，自动换行与 `0x6F` 的收尾是**同一个边界**
+ *   （引擎两侧都把笔位推到下一行 ⇒ 不产生两条 `flags&8`；而 `repaintRange` 把每条
+ *   `flags&8` 都当"结束当前行"⇒ 两条相邻会在 `lines` 里多出一个空行）。
+ *   量在上面的判据：上一条记录已经是换行记录就什么都不做。
+ *   ★这是**有意**与"照抄引擎 push 次数"分叉的一点：引擎的记录表里 `flags&8` 不是拼行边界
+ *   （`sub_4675A0` 用记录自带的 `-16` y 排位，raw 80718-80724），而 emulator 的
+ *   `TextItemTable.repaintRange` 照 raw 80731-80752 的口径把它当行边界
+ *   ⇒ 两条相邻的 `flags&8` 在重写侧会多画一个空行。守卫见 `record-driven-lines.test.ts` 第 ② 节。
+ */
+function pushLayoutLineFeed(e: Engine, win: number): void {
+  const last = e.textItems.records[e.textItems.records.length - 1];
+  if (last && (last.flags & ITEM_ROW_LINE) !== 0) return;
+  e.textItems.pushLineFeed(win);
+}
+
+/**
+ * **把刚入队的这一段正文记进 `Font+3364` 记录表**（引擎 `sub_46BE30` → `sub_45F090`，门见上）。
+ *
+ * ## 粒度 = **一条显示行一条记录**（`tickets/T-0179` 的 P1c；体证见下）
+ *
+ * 引擎的记账点在 **`sub_46BE30` 的逐字循环内**（raw 83918-83942 的 `sub_4691A0` 由
+ * `sub_45F090`/`sub_45E7E0` push 进 72B 记录表），而这段循环**本身就是排版循环**
+ * （逐字 `GetTextExtentPoint32A` 量宽 raw 83596 + 越右边界即换行 raw 83601-83718）
+ * ⇒ 引擎一次 `i06e` 里排出的**每一行**各 push 一条正文记录。
+ *
+ * ## 增量口径（★这一段只记**没记过的那一截**）
+ *
+ * 引擎在同一行上的连续 `show-text` 是**逐次**排版的（每次只排这次给的那串），所以每次
+ * 入队只 push 这次新排出的行。重写侧的排版输入是**整窗累积的 segments** ⇒ 直接"把当前
+ * 段的行全记一遍"会把前几次已记过的行**再记一次**（实测症状：回想页正文出现
+ * 「『『迪爾-利菲娜『迪爾-利菲娜』…」这类重复片段）。
+ * 因此用 `MsgSegment.recordedChars`（本段已记账的前缀长度）跳过已经记过的部分：
+ * 只 push **起点 ≥ `recordedChars`** 的那些行，跨在前缀上的那一行只记它的**尾巴**。
+ *
+ * ## 行边界 = 排版说哪几行就哪几行（`layoutWindow` 是唯一真源）
+ *
+ * 本函数用**与发布点同一份**排版输入（`styleOfWin` + 该窗的 `segments`）重算一次，取
+ * `TextFrame.rows` 里**属于刚入队那一段**的显示行；行与行之间补一条 `pushLayoutLineFeed`。
+ * ⇒ 记录表的条数/行结构与模型逐字一致。
+ */
 function recordRenderedRow(e: Engine, slot: number, text: string): void {
   if (text === '') return; // 引擎对空串不产生可见行；记账也无意义（`sub_4691D0` 那条另有 `flags|8`）
   if (!recordGateOpen(e)) return; // raw 83941-83942：`Engine[97055] < 0` ⇒ 不记
+  const w = e.msgwin.resolveWin(slot);
+  const m = e.msgwin;
+  // ★入队时刻的窗几何在**上一行**（`captureFontStyle`，两个调用点紧邻本函数）已经钉进
+  //   `MsgSlot.fontStyle` ⇒ 这里的排版用的是当时的边界，而不是发布点的活几何。
+  const segments = m.slot(w).segments;
+  const seg = segments[segments.length - 1];
+  if (!seg) return;
+  const laid = layoutWindow(w, {
+    style: styleOfWin(e, w),
+    segments,
+    blankExtent: blankExtentOf(e),
+  });
+  // 已记账的前缀长度（见上文"增量口径"）。
+  const done = Math.max(0, Math.min(seg.recordedChars ?? 0, seg.text.length));
+  const rowTexts: string[] = [];
+  let cursor = 0; // 本段已在 `rows` 里走过的字数
+  for (let i = 0; i < laid.rows.length; i++) {
+    if (laid.rows[i]!.segment !== segments.length - 1) continue;
+    const t = laid.lines[i]?.text ?? '';
+    const startAt = cursor;
+    cursor += t.length;
+    if (cursor <= done) continue; // 这一行整条已经记过 ⇒ 跳过
+    rowTexts.push(startAt >= done ? t : t.slice(done - startAt));
+  }
+  if (rowTexts.length === 0) {
+    // 一个字都没排出来（空串 / 越下边界提前停）⇒ 沿用调用方的串兜底（与修前同口径）。
+    if (done < seg.text.length) rowTexts.push(seg.text.slice(done));
+    else return;
+  }
   const { fill, outline } = rowColors(e);
-  e.textItems.pushRenderedRow(e.msgwin.resolveWin(slot), text, fill, outline);
+  for (let k = 0; k < rowTexts.length; k++) {
+    // 顺序照 `sub_46AF90`：**先推进（封上一行）后画**。首行之前没有要封的行 ⇒ 不推。
+    if (k > 0) pushLayoutLineFeed(e, w);
+    e.textItems.pushRenderedRow(w, rowTexts[k]!, fill, outline);
+  }
+  // 记账游标推进到本段末尾（下一次入队从这里继续）。
+  seg.recordedChars = cursor;
 }
 
 /**
@@ -245,25 +328,26 @@ export function globalTextStyle(e: Engine): {
 export function styleOfWin(e: Engine, win: number, itemId?: number): MsgWinStyle {
   const m = e.msgwin;
   const g = m.geom(win);
-  // ★字体/颜色取**入队时的快照**（`MsgSlot.fontStyle`），几何取**实时**的窗字段。
+  // ★字体/颜色取**入队时的快照**（`MsgSlot.fontStyle`）。
   //   理由见 `FontStyleSnapshot`：引擎排版时就把颜色画进离屏表面，之后再改全局色不回溯；
   //   拿实时全局色会让 CONFIG2 逐行设的角色名颜色溢到已排好的 ADV 样例窗上（用户实测）。
-  const core = m.slot(win).fontStyle ?? globalFontSnapshot(e);
-  // ★文本块原点：引擎的排版例程先把 `buf[-20] = obj[28]`（= `0x79` 的文字起点）写进文本项缓冲头，
-  //   而 `0x7A`（`sub_45A910`）会**覆盖**这两个 dword；`sub_45A940` 贴字格/贴行时用的正是
-  //   `x = win+80 + buf[-20] + win+12`、`y = win+84 + buf[-16] + win+16`（raw 71352-71359、
-  //   写入端 raw 82684-82685 / 81545-81546）。SN0000 序章：`i079 8 8c 10`（140,16）之后
-  //   `i07a 8 8c 12c`（**140,300**）⇒ 真机文字块顶在 y≈300（实机截图对照）。
-  const o = m.object(win);
+  const snap = m.slot(win).fontStyle;
+  const core = snap ?? globalFontSnapshot(e, win);
+  // ★**几何也取入队时的快照**（`FontStyleSnapshot.geometry`，2026-09-25 补）：
+  //   引擎的断行发生在入队那一刻（`sub_46BE30` 的逐字循环），此后 `0x70`/`0x198`/`0x79`/`0x1C1`
+  //   改窗几何都**不重排**已排好的行 ⇒ 这里必须用当时的边界，否则"入队之后改几何"会把
+  //   已入队的正文静默重排（引擎不会）。没有快照（该窗还没有文本）时才回退到实时几何
+  //   —— 那一刻还没有"已排好的行"可言。
+  const geo = snap ? snap.geometry : liveGeometry(e, win);
   return {
-    x: g.x,
-    y: g.y,
-    w: g.w,
-    h: g.h,
-    originX: o.pre48Set ? o.pre48a : g.originX,
-    originY: o.pre48Set ? o.pre48b : g.originY,
-    wrapRight: g.wrapRight,
-    wrapBottom: g.wrapBottom,
+    x: geo.x,
+    y: geo.y,
+    w: geo.w,
+    h: geo.h,
+    originX: geo.originX,
+    originY: geo.originY,
+    wrapRight: geo.wrapRight,
+    wrapBottom: geo.wrapBottom,
     // 竖排是**全局**的（引擎 Font+235108；下标 80101，由 0x261 写）—— 同样按入队时刻钉住
     vertical: core.vertical,
     // 竖排 blit 内边距（Font+235112..+235124，0x260）—— 同为 Font 级，随快照发布（渲染侧有意忽略，见字段说明）
@@ -294,10 +378,10 @@ export function styleOfWin(e: Engine, win: number, itemId?: number): MsgWinStyle
 /**
  * **当前全局字体/颜色快照**（入队时钉住用；`styleOfWin` 在没有快照时也回退到它）。
  *
- * 与 `globalTextStyle` 的区别：这里把注音字体与竖排一起收进来，正好是"一次排版要用到的全部样式"，
- * 而几何（位置/尺寸/换行/对齐/层序）**不在**其中 —— 那些是逐窗字段，必须实时。
+ * 与 `globalTextStyle` 的区别：这里把注音字体、竖排与**窗几何**一起收进来，正好是"一次排版
+ * 要用到的全部输入"（引擎 `sub_46BE30` 排版时读的就是 `Font` 的样式字段 + 该窗的 `win+28..40`）。
  */
-function globalFontSnapshot(e: Engine): FontStyleSnapshot {
+function globalFontSnapshot(e: Engine, win: number): FontStyleSnapshot {
   const m = e.msgwin;
   const core = globalTextStyle(e);
   const resolvedRuby = resolveFace(m.font.rubyFace, e.resourceVersion);
@@ -320,19 +404,105 @@ function globalFontSnapshot(e: Engine): FontStyleSnapshot {
     vertical: ((e.engineValues.get(ENGINE_FIELD.verticalText) ?? (m.font.vertical ? 1 : 0)) & 1) !== 0,
     // 引擎 `Font+235112..+235124`（0x260 写）：Font 级，按入队时刻钉住（同 `vertical`）
     vPad: { ...m.font.vPad },
+    // ★窗几何：同样按入队时刻钉住（见 `FontStyleSnapshot.geometry`）—— 排版消费它、绘制不消费。
+    geometry: liveGeometry(e, win),
   };
 }
 
-/** 把当前全局样式钉进该窗（文本入队路径专用）。 */
-function captureFontStyle(e: Engine, i: number): void {
-  e.msgwin.setFontStyle(i, globalFontSnapshot(e));
+/**
+ * **该窗此刻的排版几何**（`FontStyleSnapshot.geometry` 的取值端；`0x70`/`0x198`/`0x79`/`0x7A`/`0x1C1` 写它）。
+ *
+ * ★文字起点的两级口径（与修前 `styleOfWin` 一致）：`0x7A`（`sub_45A910`）设过**文本块原点**
+ * （`MsgObject.pre48a/pre48b`）时以它为准，否则用 `0x79` 写的 `win+28/+32`
+ * （`sub_46BE30` 的 `sub_46AF90` 支把 `obj[28]/[32]` 写进文本项缓冲头，raw 82684-82685）。
+ * SN0000 序章：`i079 8 8c 10`（140,16）之后 `i07a 8 8c 12c`（**140,300**）⇒ 真机文字块顶在 y≈300。
+ */
+function liveGeometry(e: Engine, win: number): MsgGeometrySnapshot {
+  const g = e.msgwin.geom(win);
+  const o = e.msgwin.objectAt(win);
+  return {
+    x: g.x,
+    y: g.y,
+    w: g.w,
+    h: g.h,
+    originX: o?.pre48Set ? o.pre48a : g.originX,
+    originY: o?.pre48Set ? o.pre48b : g.originY,
+    wrapRight: g.wrapRight,
+    wrapBottom: g.wrapBottom,
+  };
 }
 
-/** 发布一个窗（文本或样式变化后调用；排版在共享层做，宿主只光栅化）。 */
-export function emitWin(e: Engine, win: number, itemId?: number): void {
-  const w = e.msgwin.resolveWin(win);
-  e.native.msgWinSync?.(w, {
-    style: styleOfWin(e, w, itemId),
+/** 把当前全局样式 + **本窗**几何钉进该窗（文本入队路径专用）。 */
+function captureFontStyle(e: Engine, i: number): void {
+  const w = e.msgwin.resolveWin(i);
+  e.msgwin.setFontStyle(w, globalFontSnapshot(e, w));
+}
+
+/**
+ * **重画期的覆写色入口**（`0x82` 的 `op3 & 2` 专用）：让**这一次发布**用覆写色，发布后不留任何持久状态。
+ *
+ * 引擎 `sub_466000` 的 `op3 & 2` 只动**颜色**两格（`Font+1360` 填充 / `Font+1364` 描边，
+ * raw 79664-79670），随后把字**当场**画进该窗的离屏表面（逐字 GDI）⇒ "这次重画用的是覆写色"。
+ * 重写侧唯一能让覆写色影响**这张载荷**的地方就是该窗的字体快照（`styleOfWin` 先取 `slot.fontStyle`，
+ * 见 :251）⇒ 目标窗**已有快照**时（= 该窗的文本早已入队过），不换掉它就等于覆写色到不了载荷。
+ *
+ * ★★**基线必须是"发布时刻的实时全局样式"（`globalFontSnapshot`），不是该窗的旧快照**：
+ *   引擎是用**当时的全局色**当场画字（`Font+1360/+1364` 就是它，`op3 & 2` 只是先把它改成
+ *   `op4/op5`）；而"入队快照"是 emulator 为了复现"全局色改动不回溯已排版的字形"（`T-0102` 判据 1）
+ *   造出来的**另一件事**。重画这一笔要的是前者 —— 实测判据：`config1-chain-advreturn-real.test.ts`
+ *   的「i082 用**重派生后的实时白**重画一次」（该窗那一刻没有入队快照；若拿旧快照会得到紫）。
+ *
+ * ★**不留下持久状态**：引擎这一笔不留任何持久状态（收尾把全局两格写回调用前的值），而探针
+ *   （`config1Chain` 的 `restyleByI082`）正是在 `msgWinSync` 回调里读 `slot.fontStyle` 来判断
+ *   "这一笔到底走了哪条取色路径"（`snapshot: false` = 实时色回退）—— 在**回调之前**就把样式算好、
+ *   全程**不动**该窗的 `slot.fontStyle`，两条判据才能同时成立（`emitWinWithColorOverride` 就是这条通路）。
+ *   对照孪生 `0x1D1`：它先 `setPageText`（清快照）再 `captureFontStyle`，重排出来的页**本来就要**
+ *   一份新快照、且它不在 `0x82` 的门上 ⇒ 不需要这一套。
+ *
+ * 形参口径与 `globalTextStyle` 一致：脚本 RGB → 字段（COLORREF）→ `hex6(bgrToRgb(字段))`。
+ *
+ * ★`base` = **调用方（`emitWinWithColorOverride`）已经从 `styleOfWin` 取好的基线快照**：
+ *   它带着该窗**入队时刻的几何**（`FontStyleSnapshot.geometry`）。不在这里现取实时样式，
+ *   是为了让"覆写色只换颜色"这件事在代码上是**显式**的 —— 否则实时快照的几何会在
+ *   `{...styleOfWin, ...applyOverrideColor}` 的展开顺序里把入队几何盖掉（既有的隐藏陷阱）。
+ */
+function applyOverrideColor(base: FontStyleSnapshot, fill: string, outline: string): FontStyleSnapshot {
+  return {
+    ...base,
+    main: { ...base.main, fill, outline },
+    // 注音与正文共用同一套 `Font+1360/+1364`（引擎只有一套）⇒ 同步
+    ruby: { ...base.ruby, fill, outline },
+  };
+}
+
+/** 从一份样式快照取回**它自己那几个字段**（`emitWinWithColorOverride` 用；见 `applyOverrideColor`）。 */
+function snapshotOf(style: MsgWinStyle): FontStyleSnapshot {
+  return {
+    main: style.main,
+    ruby: style.ruby,
+    outlineMode: style.outlineMode,
+    outlineDx: style.outlineDx,
+    outlineDy: style.outlineDy,
+    lineSpacing: style.lineSpacing,
+    vertical: style.vertical,
+    vPad: style.vPad,
+    geometry: {
+      x: style.x,
+      y: style.y,
+      w: style.w,
+      h: style.h,
+      originX: style.originX,
+      originY: style.originY,
+      wrapRight: style.wrapRight,
+      wrapBottom: style.wrapBottom,
+    },
+  };
+}
+
+/** 该窗的完整发布载荷（`emitWin` 与"覆写色只作用于本次发布"那条通路共用一份构造）。 */
+function winPayload(e: Engine, w: number, style: MsgWinStyle): MsgWinInput {
+  return {
+    style,
     segments: e.msgwin.slot(w).segments,
     revealed: e.msgwin.revealedOf(w), // -1 = 全部显示
     // ★两个 DrawItem 区间（`0x213` 写 `+104/+108`、`0x25D` 写 `+276/+280`）：渲染侧的
@@ -343,7 +513,26 @@ export function emitWin(e: Engine, win: number, itemId?: number): void {
     //   （raw 12230/85126/87272 … 全是 `GetConfig(..., aSetBlankextent) == 1`）⇒ 这里也逐次读，
     //   不在 Engine 上缓存（脚本 `0x1B5` 一族的写配置指令会改它）。
     blankExtent: blankExtentOf(e),
-  });
+  };
+}
+
+/**
+ * **覆写色只作用于本次发布**（`0x82` 的 `op3 & 2` 那一支；普通发布走 `emitWin`）。
+ *
+ * 顺序不可换：① 用"覆写色 + 实时全局样式"算好样式；② **不动**该窗的 `slot.fontStyle`
+ * （探针要看到真实状态）；③ 才发宿主回调。⇒ 覆写色进得了载荷，而该窗的持久快照一格未改。
+ */
+function emitWinWithColorOverride(e: Engine, win: number, itemId: number | undefined, fill: string, outline: string): void {
+  const w = e.msgwin.resolveWin(win);
+  const base = styleOfWin(e, w, itemId);
+  const style = { ...base, ...applyOverrideColor(snapshotOf(base), fill, outline) };
+  e.native.msgWinSync?.(w, winPayload(e, w, style));
+}
+
+/** 发布一个窗（文本或样式变化后调用；排版在共享层做，宿主只光栅化）。 */
+export function emitWin(e: Engine, win: number, itemId?: number): void {
+  const w = e.msgwin.resolveWin(win);
+  e.native.msgWinSync?.(w, winPayload(e, w, styleOfWin(e, w, itemId)));
 }
 
 /**
@@ -589,7 +778,10 @@ const op_show_text: OpHandler = (c) => {
   captureFontStyle(e, slot);
   if ((m.flags & 1) !== 0) {
     m.addRuby(slot, text, '');
-    m.flags |= 0x10000;
+    // ★与 `0x196` 同一道门：引擎这两条路（`sub_41EB20` 的入队支 / `sub_41FC20` 的第③路）都在
+    //   `sub_46BE30` 返回非 0（= 本行有内容）时才置 bit16（raw 28368/28374 一族与 raw 29105）⇒
+    //   空串入队**不置** bit16。`0x305` 的总门 `(flags & 0x10001) == 0x10001`（raw 26045）是它的读者。
+    if (text.length > 0) m.flags |= 0x10000;
     recordRenderedRow(e, slot, text); // ★`tickets/T-0170`：正文段落也要进 `Font+3364`
     return;
   }
@@ -642,7 +834,11 @@ const op_end_text_line: OpHandler = (c) => {
   //   ★2026-09（`T-0151`）：体里那条 push **有门** —— `sub_4691D0` raw 81549 的 `if ( a3 >= 0 )`
   //   （`a3` = `Engine[97055]`，由 `sub_41ECE0` raw 28395 传入）⇒ `i1bb 0` 期间不记换行记录。
   //   另一半（raw 82665 的 `if (v5[28] == 1)` = 窗对象 `+112` 专用路径）未建模，登记在缺口表里。
-  if (recordGateOpen(e)) e.textItems.pushLineFeed(e.msgwin.resolveWin(slot));
+  //   ★2026-09（`T-0179` P1c）：记账前先看**上一条记录是不是已经是换行记录** ——
+  //     排版断点（`recordRenderedRow` → `pushLayoutLineFeed`）与这一笔落在**同一个边界**上时
+  //     只留一条。引擎两侧都把笔位推到同一新行 ⇒ 不产生两条 `flags&8`；而 `repaintRange`
+  //     把每条 `flags&8` 都当"结束当前行"⇒ 两条相邻会在 `lines` 里多出一个空行。
+  if (recordGateOpen(e)) pushLayoutLineFeed(e, e.msgwin.resolveWin(slot));
   emitWin(e, slot);
 };
 
@@ -992,7 +1188,12 @@ const op_display_furigana: OpHandler = (c) => {
   e.msgwin.reveal.delete(e.msgwin.resolveWin(slot));
   emitWin(e, slot);
   // raw 29071 的外层门：bit0 置位（`0x304` 已开文本块）⇒ 走引擎第③路（raw 29104-29109）。
-  if ((e.msgwin.flags & 1) !== 0) e.msgwin.flags |= 0x10000; // raw 29108（bit16；读者见 raw 26045）
+  // ★bit16 的**门 = `sub_46BE30` 的返回值**（raw 29104-29105 的 `result = …; if (result)`）——
+  //   该返回值 = 「**本行有内容吗**」（`*a3 == 0` 时 raw 83493-83497 提前 `return 0`）。
+  //   ⇒ 本行文本为空串时**不得**置 bit16（`0x305` 的总门 `(flags & 0x10001) == 0x10001`，raw 26045，
+  //   会因此走 else 支只清 flags）。修前是"bit0 置位就无条件置 bit16"，比引擎多置一位。
+  const rubyLineHasContent = base.length > 0; // `sub_46BE30` 的返回值等价物
+  if ((e.msgwin.flags & 1) !== 0 && rubyLineHasContent) e.msgwin.flags |= 0x10000; // raw 29108（bit16；读者 raw 26045）
   e.msgwin.lastArg = slot; // raw 29077 / 29094 / 29109：`_this[489484] = op1`（= `msgwin.lastArg`）
   // ---- 第①②路（bit0 未置）的 MessageSpeed 节流半边（`T-0094`；raw 29075-29095）----
   // 与 `0x6E` 的 raw 28361-28382 **同形**，故照搬同一个机制：MessageSpeed==0 **或** ADV 位已置
@@ -1157,8 +1358,9 @@ const op_window_relayout: OpHandler = (c) => {
  * `f807b`/`f807c`，这一笔把**已经排好版的那条记录**按新颜色重画 ⇒ 与 T-0102 的"退出设置后
  * ADV 文字色不刷新"自洽）。
  *
- * emulator 等价物（与 `0x20A` 同一条发布通路）：**用 `op4`/`op5` 覆盖全局填充/描边色字段
- * （仅当 `op3 & 2`），再 `emitWin(op1)` 把该窗文本按新样式重新光栅化**。
+ * emulator 等价物（与 `0x20A` 同一条发布通路）：**只在 `op3 & 2` 时用 `op4`/`op5` 覆盖全局填充/描边色字段**，
+ * 让**这一次载荷**带上覆写色（`emitWinWithColorOverride`：只换本次载荷的样式、不动该窗的持久快照），
+ * 再把全局两格恢复成调用前的值**。
  *
  * ★**登记的近似（不是等价，别当等价用）**：① `op2` 只用于引擎那道越界门（emulator 的排版是
  * 「整窗从模型重排」，没有"从第 i 条记录起重画"的粒度）⇒ 门通过后重画的是整窗；
@@ -1171,6 +1373,8 @@ const op_window_relayout: OpHandler = (c) => {
  * ⑤ bit6 的语义订正：**不是**"起始记录下标后移"，而是 **DrawItem id 起点**后移
  *    （raw 79685-79688：`v45 = obj+104; v155 = v45; if (op3 & 0x40) v155 = obj+132 + v45;`）——
  *    影响的是本次绘制项的层序 id，`a3`（起始记录下标）不动。
+ * ⑥ 记录循环里**逐条**改全局色的那两写（raw 79738-79759，带 `&& !v158`）未建模 ⇒ 收尾那对恢复
+ *    （raw 80239-80262）只由覆写色那一支触发；两件事同一张登记（`missing[]` 的 raw 80239-80262）。
  */
 const op_gdi_repaint_window: OpHandler = (c) => {
   const e = c.e;
@@ -1199,13 +1403,41 @@ const op_gdi_repaint_window: OpHandler = (c) => {
     o.f276 = 0;
     o.f280 = 0;
   }
-  if ((mode & REPAINT_SET_COLORS) !== 0) {
-    e.engineValues.set(ENGINE_FIELD.colorFill, bgrToRgb(fill));
-    e.engineValues.set(ENGINE_FIELD.colorOutline, bgrToRgb(outline));
-  }
+  // ---- raw 79664-79670：`op3 & 2` ⇒ 覆写全局填充/描边色（与 0x76/0x77、`0x1D1` 同一对字段）----
+  //   ★进门先把调用前的两格存下来（= 引擎 raw 79509-79525 存进 `v138/v139` 那一步），收尾用。
+  const overrideColors = (mode & REPAINT_SET_COLORS) !== 0;
+  const savedFill = e.engineValues.get(ENGINE_FIELD.colorFill);
+  const savedOutline = e.engineValues.get(ENGINE_FIELD.colorOutline);
   // raw 79684-79688：`v155 = win+104; if (op3 & 0x40) v155 = win+132 + win+104;` —— 本次绘制项的
   //   **id 起点**（不动窗对象）⇒ 只影响这一次发布的层序。
-  emitWin(e, win, (mode & REPAINT_KEEP_SURFACE) !== 0 ? o.f104 + o.f132 : o.f104);
+  const itemId = (mode & REPAINT_KEEP_SURFACE) !== 0 ? o.f104 + o.f132 : o.f104;
+  if (overrideColors) {
+    // ★覆写色要**在这一次发布里可见**（孪生 `0x1D1` 靠 `captureFontStyle` 达到同一效果）：
+    //   引擎把这次重画的字形**连同覆写色一起画进该窗表面**，而重写侧的 `styleOfWin` 对已有快照的窗
+    //   只认 `slot.fontStyle`（:251）⇒ 不换样式，目标窗的文本早已入队过时覆写色**到不了载荷**。
+    //   `emitWinWithColorOverride` 只改"这一次载荷的样式"、**不动**该窗的持久快照（见其说明）。
+    e.engineValues.set(ENGINE_FIELD.colorFill, bgrToRgb(fill));
+    e.engineValues.set(ENGINE_FIELD.colorOutline, bgrToRgb(outline));
+    emitWinWithColorOverride(e, win, itemId, hex6(bgrToRgb(fill)), hex6(bgrToRgb(outline)));
+  } else {
+    emitWin(e, win, itemId);
+  }
+  // ★raw 80239-80262：**恢复端**。`sub_466000` 进门时把调用前的四格色值存进局部
+  //   （raw 79509-79525：`v139/v146` ← `+1364`、`v138/v145` ← `+1360`、另存 `+1368/+1372`），
+  //   收尾按**逐格 guard** 写回：`+1364` 的 guard 是 `if (v146 != v128 || v158)`（raw 80241）、
+  //   `+1360` 的是 `if (v145 != v138 || v158)`（raw 80258），`v158 = a4 & 2`（raw 79663）。
+  //   ⇒ 语义 = 「本次设过色（`op3 & 2`）或记录循环把该格改成了别的值 ⇒ 恢复成调用前的值」。
+  //   ★为什么必须恢复（不是记账）：记录循环**逐条**把记录自带的色值写进这两格
+  //   （raw 79738-79759：`if (v146 != v53 && !v158) Font+1364 = v53;` / `if (v145 != v55 && !v158) Font+1360 = v55;`
+  //   —— 注意两条都带 `&& !v158`，即"设色位开着时循环自己不改这两格"）⇒ 不恢复就会泄漏到后续入队的文本与其它窗。
+  //   重写侧的记录循环没有"逐条改全局色"这一步（登记的近似②）⇒ 今天的可观测差异只来自覆写色那一支，
+  //   但这条不变量必须在：它挡住的是"记录级色值进全局字段"这条路径将来落地时的泄漏。
+  if (overrideColors) {
+    if (savedFill === undefined) e.engineValues.delete(ENGINE_FIELD.colorFill);
+    else e.engineValues.set(ENGINE_FIELD.colorFill, savedFill);
+    if (savedOutline === undefined) e.engineValues.delete(ENGINE_FIELD.colorOutline);
+    else e.engineValues.set(ENGINE_FIELD.colorOutline, savedOutline);
+  }
 };
 
 /**
@@ -1223,8 +1455,11 @@ const op_gdi_repaint_window: OpHandler = (c) => {
  * | 记录循环 | 从 `op2` 起逐条重画 | 从 `op2` 起逐条重画（raw 80664-81014） |
  *
  * ## 与 `0x82` **分叉**的部分（每一条都有 raw）
- * 1. ★**颜色是临时的**：`sub_4675A0` 收尾把 `Font+1360/+1364` **恢复**（raw 81470-81473，门 = `op3 & 2`）；
- *    `sub_466000` 里没有这对恢复 ⇒ 本 handler 必须恢复、`0x82` **不**恢复。
+ * 1. **颜色是临时的**（两条都一样，**不是**分叉 —— 波 G 逐行读体所得）：两条重画体收尾都把
+ *    `Font+1360/+1364` 恢复成**调用前**的值：`sub_4675A0` raw 81470-81473（guard `v172[1]` 是个恒非空的局部
+ *    指针 ⇒ 实质无条件；它的记录循环在 `!(op3 & 2)` 时会逐条改这两格，所以必须恢复）、
+ *    `sub_466000` raw 80239-80262（guard 是**逐格**的「当前值 != 保存值 || `op3 & 2`」，并多恢复 `+1368/+1372`）。
+ *    ⇒ 两侧 handler **都按体恢复**（`op_gdi_repaint_window` 的恢复端在 :1252-1257，2026-09 补齐）。
  * 2. **记录分流**：`sub_4675A0` 分四类 —— 语音项（`op3 & 8` 才贴图标 ⇒ `sub_4BB840`，raw 80678-80699）、
  *    换行记录（记录 `flags & 8`，raw 80718-80724）、正文行（记录 `flags & 4`，把**连续**若干条的 `+44`
  *    串 `memcpy` 拼成一整行再逐字画，raw 80725-81014）、切页哨兵（记录 `flags & 2` 且 `!(op3&1)`，raw 80676）。
@@ -1245,7 +1480,8 @@ const op_gdi_repaint_window: OpHandler = (c) => {
  *  - 引擎把记录画进该窗的**离屏表面** `win+20`（`sub_45E870` raw 81197 + 逐字 GDI raw 81275-81417；
  *    `sub_4ACE50` 在本函数每次都传 `win+20` 当纹理）⇒ 重写侧没有"在该窗表面追加若干行"的粒度，
  *    改用 `setPageText(窗, 切片正文行)` + `emitWin(窗)`＝"整窗从模型重排"（与 `0x82` 同一条近似）。
- *  - 覆写色发布时用 `captureFontStyle` 钉进该窗（= "字形连颜色一起进表面"），随后恢复全局字段。
+ *  - 覆写色发布时钉进该窗的字体快照（= "字形连颜色一起进表面"），随后恢复全局字段；
+ *    `0x82` 靠 `emitWinWithColorOverride` 达到同一效果（它不清快照 ⇒ 只在**本次载荷**里换样式，不动持久快照）。
  *  - 专用路径（`win+112 == 1`）不建第二套渲染器 ⇒ 只把 `dedicatedPath` 记进结果，呈现通路相同。
  *  - `sub_404CB0(语音)` 没有宿主缝 ⇒ 恒 `false`（登记在 `missing[]`）。
  *  - 窗对象 `+112`（专用路径判定）与 `win[56]/[70]` 栏表未建模 ⇒ `dedicatedPath` 恒 `false`、
@@ -1299,11 +1535,16 @@ const op_recall_page_repaint: OpHandler = (c) => {
     e.msgwin.setPageText(win, page.lines);
     captureFontStyle(e, win); // 字形连颜色一起钉住（引擎把字画进离屏表面）
   }
+  // ★本 handler **不要**再去调 `0x82` 用的 `emitWinWithColorOverride`：上面 `setPageText` 已经把该窗快照清空、
+  //   `captureFontStyle` 随即用**当前全局**样式（含刚写进去的覆写色）整份重钉，覆写色已经在快照里了。
+  //   再套一层只会把颜色按 `hex6(bgrToRgb(...))` 多翻一次（实测把 `#ff0000` 变成 `#0000ff`，
+  //   `test/recall-page-0x1d1.test.ts` 的 ⑤ 直接红）。
+  //   `0x82` 那边不同：它**不清快照** ⇒ 只能"发布期临时换掉 + 发布后还原"。
   // ★raw 80656-80662（`0x82` 的同一段在 raw 79684-79688）：`v192 = obj+104; v190 = 0;
   //   if (op3 & 0x40) { v192 += obj+132; v190 = obj+132; }` —— 本次绘制项的 **id 起点**后移，
   //   并另有一格 `v190` = 行偏移（引擎用它给逐行 id 编号；重写侧没有逐行 id ⇒ 只发布前者）。
   emitWin(e, win, (mode & REPAINT_KEEP_SURFACE) !== 0 ? o.f104 + o.f132 : o.f104);
-  // ---- raw 81470-81473：颜色**恢复**（★与 `0x82` 的分叉点；`sub_466000` 没有这一对写）----
+  // ---- raw 81470-81473：颜色**恢复**（两侧同一条不变量：`0x82` 的恢复端在 raw 80239-80262）----
   if (override) {
     if (savedFill === undefined) e.engineValues.delete(ENGINE_FIELD.colorFill);
     else e.engineValues.set(ENGINE_FIELD.colorFill, savedFill);

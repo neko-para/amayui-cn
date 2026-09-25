@@ -125,6 +125,13 @@ function servicePanelDisplayState(c: StepCtx): boolean {
   const e = c.e;
   const mask = e.input.flushPending(); // raw 14064：消费刷（不含按住态）
   const panel = e.routes;
+  // ★**raw 14065 的 `sub_403DD0(_this + 5494, v2)` 有意不在此处调用**（`tickets/T-0179` D 波裁决）：
+  //   `RoutePanel.moveCursorByKey(mask)` 已按体建模（`src/vm/route.ts`，带命名守卫），但**接在这里是假的** ——
+  //   体里 `sub_4098E0` 的三条出口（点击 `sub_404120` / 回退 label / 悬停 `sub_403E70`）**没有一条**读按键
+  //   掩码（键命中 `sub_403D70` 只在等待泵 `sub_411BC0` raw 20242 里），所以把游标移动挂在本泵上今天
+  //   **零可观测差异**（移动过的游标只会被下一轮的 `sub_403E70` 当成悬停变化，而引擎里那一步也是这么发生的
+  //   —— 两侧都不是「按键派发」）。缺的是**消费端**：掩码里那些位在 `sub_4098E0` 里没有任何读者。
+  //   重开条件见 `analysis/opcode-gaps.json` 的 `0x93` 条（本泵的 `missing`）。
   const label = panel.nextHoverLabel(); // raw 14066：sub_403E70
   const clearState = (): void => {
     e.effectFlags &= ~0x800000; // raw 14079 / 14091 / 14102

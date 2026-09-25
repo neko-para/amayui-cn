@@ -1,8 +1,6 @@
 {
-  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但生产路径上没有任何消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。★每条基线项都必须在 reason 里写清『谁是它唯一的读者、为什么那不算消费者』，并在 tickets 里回链承接票（没有对应票就写 \"none\"，并在 reason 里说明）。★2026-09：`Item.blend`/`MeshObj.blend` 已在 tickets/T-0017 接上消费者（场景混合状态机），基线清空。★2026-09-25（T-0150 扩面）：扫描面从 `drawitem/model.ts` 的 `Item`/`MeshObj` 扩到 `Engine`/`SceneState`（含嵌套 `SceneState.render4`）/`SceneXform`/`TextFrame`，于是冒出一批存量死写 —— 逐条登记在下方 `known`，`tickets` 回链到 2026-09 审计的对应修复批。",
+  "_comment": "闸门 C（死写检测）的基线 ratchet：这里登记的是『已确认有写、但生产路径上没有任何消费者』的模型字段。新增死写会让 test/no-dead-writes.test.ts 失败 —— 逼你二选一：要么给它接上消费者，要么登记进这里并写清为什么。★每条基线项都必须在 reason 里写清『谁是它唯一的读者、为什么那不算消费者』，并在 tickets 里回链承接票（没有对应票就写 \"none\"，并在 reason 里说明）。★2026-09：`Item.blend`/`MeshObj.blend` 已在 tickets/T-0017 接上消费者（场景混合状态机），基线清空。★2026-09-25（T-0150 扩面）：扫描面从 `drawitem/model.ts` 的 `Item`/`MeshObj` 扩到 `Engine`/`SceneState`（含嵌套 `SceneState.render4`）/`SceneXform`/`TextFrame`，于是冒出一批存量死写 —— 逐条登记在下方 `known`，`tickets` 回链到 2026-09 审计的对应修复批。★2026-09-25（T-0173）：`Engine.callFlag`/`Engine.callLink` 两条**纯冗余**已从 known 移除并在 `_removed` 记档（这两格在 emulator 侧 0 读者；引擎侧同格是活字段，由 `dispatchSaved*` 建模）—— 基线只许收缩。",
   "known": [
-    "Engine.callFlag",
-    "Engine.callLink",
     "Engine.dispatching",
     "Engine.texSlotFlags",
     "SceneState.render4.commits",
@@ -16,8 +14,6 @@
     "SceneXform.maskB"
   ],
   "reason": {
-    "Engine.callFlag": "`0x3`/`0x2`（call-script / exit）族在 control.ts 里维护的『调用语义标志』：全仓**只有写点**（`engine.ts:264` 声明初始化 `= 0`、`control.ts:509` 在执行 `exit-script` 时复位），没有任何生产读者 —— 生产路径读的是 `Engine.callRet`（`control.ts` 多处）与 `ENGINE_FIELD.callRet`，这两格才是活的。★这不是扫描器认不出消费者：引擎侧调用链确实没有对应的第三格，属**真死写**（多余状态）。修法 = 在 `src/vm/**` 里删掉该字段与 `control.ts:509` 的复位（range 外，见 T-0150 报告）。",
-    "Engine.callLink": "同 `Engine.callFlag`：只有声明初始化（`engine.ts:263`）与 `exit-script` 复位（`control.ts:508`），**0 个生产读者**；测试仅把它放进 `vmState()` 快照做『一格都没动』的断言（`test/op-6-05-step-slot.test.ts:35`），那不是消费者。属**真死写**，修法 = 删字段（`src/vm/**`，range 外）。",
     "Engine.dispatching": "★**JS 侧镜像没有读者**：真值走 `ENGINE_FIELD.dispatchInProgress`（`_this[124350]`，raw 19024/24946/31556 三处读、25176/25187 两处写），emulator 侧的读点是 `engineValues.get(ENGINE_FIELD.dispatchInProgress)`（`handlers/frame.ts:110`、`handlers/engine-fields.ts:437`）—— `Engine.dispatching` 只被 `setDispatching()` 同步写（`control.ts:341`），生产路径**从不读它**。它唯一的读者是 `test/op-1f5-dequeue.test.ts`（断言 + 『赋值点只允许一个』的棘轮），属验证面而非消费面。★`control.ts:338` 的注释声称两个表示『不会各自漂移』，但漂移检测靠的是那条棘轮测试，不是消费者。属**真死写**，修法 = 删镜像字段、让棘轮测试改钉 `ENGINE_FIELD.dispatchInProgress`（`src/vm/**`，range 外）。",
     "Engine.texSlotFlags": "★审计 §5.2 `0x259` 的那一条（P3）：`0x258` 按 `bit0|bit1<<1` 写这张按槽标志表、`0x259` 整表复位（`handlers/gfx-state.ts:110` 的 `.set()`、`handlers/gfx-misc.ts:87` 的 `.clear()`）—— 全仓**没有任何生产读者**（渲染、装配、快照、读档都不含它；仅两处代码注释提到它）。引擎侧这对标志位却会随场景快照持久化（raw 17474）并在装载路径按 `flag_a == 1` 决定重建槽（raw 19877）⇒ emulator 里这次复位是空转、标志也活不过读档。属**真死写**（不是扫描器认不出：消费者确实不存在），修法 = 在装载/渲染路径接上（`0x259` 的复位语义要落到可读对象上），见 T-0102（已 done，现场已复核无可见症状）与该条审计 finding。",
     "SceneState.render4.entryParams": "审计 §4.2 `0x242`（A4 族）的记录项：`scene/ops.ts:1420` 把 `DrawItem+720` 的值记进这张台账，**只有记录没有消费者** —— 同族 finding 的原文就是『A4 记录型的几条写进 render4 后没有任何渲染消费者』。所有者 `0x242` 已在本条注释里自认『相邻对象 +504 的台账（宿主侧无该对象类型 ⇒ 只记）』⇒ 它是**有意保留的记录位**，等 572B 绘制项容器建起来才会有消费者（T-0154 的扩展点）。",
@@ -31,8 +27,6 @@
     "SceneXform.maskB": "同 `SceneXform.maskA`：`0x22D` 的 op2（引擎 `Scene[300]`）与 `0x22F` 的 op2（`Scene[302]`），`scene/ops.ts:1905/1934` 写入、无生产读者（唯一读者为 `scSnapshot` 与测试）。承接票 T-0154。"
   },
   "tickets": {
-    "Engine.callFlag": "none",
-    "Engine.callLink": "none",
     "Engine.dispatching": "T-0157",
     "Engine.texSlotFlags": "T-0154",
     "SceneState.render4.commits": "T-0154",
@@ -46,6 +40,8 @@
     "SceneXform.maskB": "T-0154"
   },
   "_removed": {
+    "Engine.callFlag": "★`T-0173` **删字段**（不是接消费者）：这是 emulator 侧 `Engine` 上的一个冗余镜像格，只有声明（`src/vm/engine.ts` 的 `callFlag = 0`）与 `exit-script` 的复位（`src/vm/handlers/control.ts`），全仓 **0 个生产读者**（`grep -rn 'callFlag' app/amayui-emulator/src` 只剩注释）—— 生产路径真正读的是 `Engine.callRet` / `ENGINE_FIELD.callRet`。★**读体复核（本票做的，订正 T-0150 那条 reason）**：引擎侧**有**对应格且是活字段 —— `0x5D88C`(=383116) 由 `sub_40FB60` 存（raw 18982，`*(_DWORD *)(_this + 383116) = v4`）、由 `sub_41A820` 的 `caller == -10` 分支读回（raw 25666，`v7 = *(_DWORD *)(_this + 383116) | _this[699204] & 0x4000`）⇒ 不是「引擎链路上不存在第三格」，而是 emulator 早已用 **`Engine.dispatchSavedFlags`**（`control.ts:422` 存 / `:413` 还原）建模同一条通路 ⇒ 删掉的是**重复表示**。守卫：`test/op-6-05-step-slot.test.ts` 的 `T-0173` 用例（并反向钉住 `dispatchSavedFlags` 不许删）。",
+    "Engine.callLink": "★`T-0173` **删字段**（同 `Engine.callFlag`）：声明（`src/vm/engine.ts` 的 `callLink = -1`）与 `exit-script` 复位（`src/vm/handlers/control.ts`）之外 **0 个生产读者**；`test/op-6-05-step-slot.test.ts` 的 `vmState()` 曾把它放进快照做『一格都没动』的比对，那不是消费者（该快照已按 T-0173 retarget，逐格比对本身未放宽）。★引擎侧对应格 `0x5D888`(=383112) 同样是**活字段**：`sub_40FB60` 存（raw 18978）、`sub_41A820` 的 `-10` 分支读回（raw 25663-25664）⇒ emulator 的真建模是 **`Engine.dispatchSavedCur`**（`control.ts:421` 存 / `:412` 还原、`:568` 复位；守卫 `test/append-packs.test.ts:281/373`）。",
     "Engine.l2dMotionCache": "★`T-0160`（live2d 批）**选『给它一个真读者』而不是删字段**（字段声明在 `src/vm/engine.ts`，属另一票的 range）：读者 = `src/live2d/assetLoader.ts` 的 `startMotionOnSlot` —— 装载 `.MTN` 时先 `host.l2dMotionCache.get(fileId)` 命中则复用已解析的动作对象（miss 才解析），写点仍是 `runtime.ts` 的 `l2dStartMotion`。★读文件本身**仍然每次无条件做**（引擎 `sub_428200`→`sub_4A19F0` raw 121732 的 `ReadFile`）⇒ 缓存只短路『解析』，不短路『读』（与 `0x341` 的 `mocCache` 同一纪律，见该票审计 row 280）。守卫：`test/live2d-t0160.test.ts` 的『同一 id 重装必须真读文件』与『0x352 预置』两条。",
     "Item.pivotZ": "pivot 的 z 分量：`itemPivotLocal` 现在会连同 z 一起换算（presenter 只消费 x/y），不再是『写了没人读』。",
     "Item.posZ": "描画位置的 z：同上，已由 `itemPivotLocal` 消费。",

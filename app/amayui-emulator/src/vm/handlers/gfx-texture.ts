@@ -19,6 +19,25 @@ function planFor(c: StepCtx): PlannedOperands {
   return p;
 }
 
+/**
+ * **纹理槽颜色下发**（`tickets/T-0175` 的 ③ 拆缝，出处 `tickets/T-0163` §7-1）。
+ *
+ * 拆缝前 `0x1F9`/`0x249` 的颜色与 `0x246` 的子对象参数**共用** `setTextureObjectParam` ——
+ * 宿主拿到同一个 `(slot, value)` 签名时**不可能分辨**"这是 ARGB 颜色还是子对象参数"，
+ * 所以引擎里两个完全不同的动作（写 `Scene[5*slot+467]` vs 调 `obj[+1044]` 的 vtable）在宿主侧被压成一个。
+ *
+ * 现在生产路径调 {@link NativeBridge.setTextureObjectColor}；为了让**已经实现旧名**的宿主
+ * （结构性类型 + 可选缝）不至于静默丢调用，这里保留一条**显式**回退。
+ * 回退是"迁移期"的，不是双写：两个都实现时只调新名。
+ */
+function emitTextureColor(native: StepCtx['native'], slot: number, argb: number): void {
+  if (native.setTextureObjectColor) {
+    native.setTextureObjectColor(slot, argb);
+    return;
+  }
+  native.setTextureObjectParam?.(slot, argb);
+}
+
 
 /**
  * **`0x1F9`/`0x249` 共用的纹理颜色归一化**（两处 raw 逐字相同，`tickets/T-0086`）。
@@ -88,11 +107,10 @@ const op_get_texture_size: OpHandler = (c) => {
  * _this[5 * a4 + 470] = 0;                     //   槽状态清 0
  * ```
  * ⇒ **`0x249` 把槽→imgid 记录写成 −1**（不是 imgid！），`0x1F9` 才写 imgid。
- * ★emulator 现状与本条的偏差（**如实登记，未修**）：本 handler 把 `texSlots` 写成 `imgid`，
- * 并走宿主的 `bindTexture`/`setTextureObjectParam`（与 `0x1F9` 同路）—— 即 `a6` 这一位在
- * `NativeBridge.bindTexture` 上没有对应参数（见 `changes-renderer.md` §1 ① 的"装载路径也建
- * DividedTexture"同族缺口）。要精确复刻需给宿主缝加"类/记录策略"参数（跨 renderer 半边），
- * 记在 `tickets/T-0153/changes-texvm.md` 的「待应用/耦合」节。
+ * ★`a6` 这一位**在 VM 侧就能复刻**（`T-0179` 第二波 E 的 ①）：记录格（`Engine.texSlots`，读者 `0x216`）
+ * 与「宿主侧该槽的图像绑定」是**两张表** —— 引擎写 −1 之后图像仍在该槽的表面表上
+ * （`Scene + 4*slot + 42456`，`0x208`/`0x1FB` 读那张）⇒ 只需把记录格写成 −1，
+ * `native.bindTexture(imgid, slot)` 照旧下发 imgid。守卫 `test/op-249-slot-record-minus-one.test.ts`。
  *
  * **emulator 取舍**：槽绑定 + 「已使用」标记 + `native.bindTexture` 与 `0x1F9` 一致；
  * 「文件不存在 ⇒ 抛 `画像ファイル %s の読み込みに失敗しました`」这条**归宿主**（`FileSource` 是异步接口，
@@ -106,13 +124,17 @@ const op_load_texture_by_id: OpHandler = (c) => {
   const imgid = (plan.int(1) ?? 0);
   const slot = (plan.int(2) ?? 0);
   const color = (plan.int(3) ?? 0);
-  e.texSlots.set(slot, imgid);
+  // ★raw 32757（`a6 = 1`）+ callee raw 123377：`if ( a6 ) v7[466] = -1;` —— 0x249 **不把 imgid 记进槽记录**。
+  //   `0x216`（`Engine[5*slot + 81174]`，raw 39891-39899）读的就是这一格，`sub_499BC0` 初始化也是 −1。
+  //   ★这不等于"该槽没有图像"：图像在**表面表**（`Scene + 4*slot + 42456`）上，由下面的
+  //   `native.bindTexture(imgid, slot)` 交给宿主 ⇒ 记录格与宿主绑定是两张表。
+  e.texSlots.set(slot, -1);
   // 语义事件（`tickets/T-0114`）：`imgid` 恒非负（未绑定用 undefined 表示、不发事件）
   e.emitDebugEvent('slot-bind', { slot, imgid });
   e.markFileUsed(imgid); // 引擎按 id 打开文件 ⇒ 写 FileDB 的「已使用」表（鉴赏解锁的判据）
   c.native.bindTexture?.(imgid, slot);
   // raw 32750-32757：读 op3 ⇒ 归一化 ⇒ 作 `color` 传 `sub_4A3800(..., color, 1)`（负值也是 0，不是跳过）
-  c.native.setTextureObjectParam?.(slot, normalizeTextureColor(color));
+  emitTextureColor(c.native, slot, normalizeTextureColor(color));
 };
 
 /**
@@ -129,6 +151,15 @@ const op_load_texture_by_id: OpHandler = (c) => {
 const op_texture_obj_float: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(1) ?? 0);
+  // ★引擎的门（raw 32663，`tickets/T-0179`）：`if (_this[op1 + 94672])` —— 该槽**没有 CTexture
+  //   对象**时不读 op2、什么都不做（返回值就是 op1）。宿主侧等价判据 = 可选缝 `hasSlotTexture`
+  //   （`tickets/T-0164` 为同一类门引入：`undefined` = 宿主不建模该缝 ⇒ **保持旧行为、不误跳**；
+  //   `false` = 确知没有对象 ⇒ 跳过；`true` ⇒ 照常下发）。
+  //   ★门必须在**读 op2 之前**判（引擎的 `sub_41BF50(_this, 2)` 在门之后）。
+  if (c.native.hasSlotTexture?.(slot) === false) {
+    c.log(`0x245：槽 ${slot} 没有纹理对象 ⇒ 按引擎门（raw 32663）不读 op2、不下发`);
+    return;
+  }
   const value = (plan.int(2) ?? 0);
   c.native.setTextureObjectFloat?.(slot, value / 1000);
 };
@@ -145,15 +176,23 @@ const op_texture_obj_float: OpHandler = (c) => {
  * ★**未建模的缺口（如实登记，未修）**：上面那两道门 emulator **都没有** ——
  *  (a) "对象存在"这一道：VM 侧没有 `Engine[slot+94672]` 的表（`0x236` 的 handler 尚未注册，
  *      见 `changes-texvm.md` 的待应用节）；②"类型标记 == 0"这一道：宿主缝只收 `(slot, value)`，
- *      拿不到 `obj[+1084]`，所以**无从判**。★另注：本缝与 `0x1F9`/`0x249` 的**颜色**载荷共用
- *      （同一个 `setTextureObjectParam`）—— 那是两个不同的引擎动作（颜色进 `Scene[5*slot+467]`，
- *      这里是子对象 vtable 调用），宿主侧无法分辨；已在报告里登记为与 renderer 半边的耦合点。
+ *      拿不到 `obj[+1084]`，所以**无从判**。★**拆缝已完成**（`tickets/T-0175` 的 ③，出处 `T-0163` §7-1）：
+ *      本 handler 现在调 `setTextureObjectSubParam`，颜色改走 `setTextureObjectColor` ⇒ 宿主侧从此能分辨
+ *      两种语义（修前 `setTextureObjectParam` 一条缝同时承载"颜色进 `Scene[5*slot+467]`"与"子对象
+ *      vtable 调用"）。上面那两道门与拆缝**无关**，仍未建模。
  */
 const op_texture_obj_param: OpHandler = (c) => {
   const plan = planFor(c);
   const slot = (plan.int(1) ?? 0);
+  // ★引擎的**第一道**门（raw 32681，`tickets/T-0179`）：`obj = _this[op1 + 94672]` 不存在 ⇒ 什么都不做。
+  //   与 `0x245` 同口径（可选缝 `hasSlotTexture`：`undefined` ⇒ 保持旧行为）。第二道门（`obj[+1084] == 0`
+  //   的类型标记）宿主缝拿不到该字段 ⇒ **仍未建模**（见本节注释与 `changes-texvm.md` 的待应用节）。
+  if (c.native.hasSlotTexture?.(slot) === false) {
+    c.log(`0x246：槽 ${slot} 没有纹理对象 ⇒ 按引擎门（raw 32681）不下发子对象参数`);
+    return;
+  }
   const value = (plan.int(2) ?? 0);
-  c.native.setTextureObjectParam?.(slot, value / 100);
+  c.native.setTextureObjectSubParam?.(slot, value / 100);
 };
 
 /**
@@ -300,7 +339,7 @@ const op_set_texture: OpHandler = (c) => {
   c.native.bindTexture?.(imgid, slot);
   // 引擎的颜色参（`op3 < 0 ⇒ 0` + A 通道强置 `0xFF` 的归一化，raw 31226-31230）—— 与 `0x249` 共用
   // `normalizeTextureColor`（两处 raw 逐字相同；`T-0086` 已把 `0x249` 的旧写法也并过来）。
-  c.native.setTextureObjectParam?.(slot, normalizeTextureColor(color)); // 颜色随绑定下发（宿主可选；见 native.ts 缝说明）
+  emitTextureColor(c.native, slot, normalizeTextureColor(color)); // 颜色随绑定下发（宿主可选；见 native.ts 的拆缝说明）
 };
 
 /** 0x1F7 detach-texture (sub_422BC0)：纹理/图形子系统方法。op1=handle、op2=count；count≤1 单参(删单)，count>1 双参(删 [handle,handle+count))。 */

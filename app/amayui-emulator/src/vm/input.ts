@@ -355,11 +355,14 @@ export class InputManager {
 
   /**
    * **光标移动钩子**（引擎 `sub_4B8D50` raw 140825-140836，WM_MOUSEMOVE 的处理体）：
-   * `if (panelA[7463] || panelA[7462]) sub_403C50(Engine+5494, x, y);`
+   * `if (panelA[7464] || panelA[7463]) sub_403C50(Engine+5494, x, y);`
    * `if (panelB[7464]) sub_403C50(Engine+12976, x, y);`
    *
    * ★这是**命中测试的唯一时机之一**（另一个是面板首次显示 `sub_404020`）；等待泵里没有命中测试。
-   * `Engine` 在构造函数里把它接到 `routes.hitTest`（emu 侧没有 panelB，只做 panelA）。
+   * `Engine` 在构造函数里把它接到 `routes.hitTest`（emu 侧没有 panelB，只做 panelA），并**在那里**
+   * 实现引擎的这道门（`fillPending || shown`；`Input` 看不到面板状态，故门不在本类里）。
+   * ★旧注把门写成 `panelA[7463] || panelA[7462]`：第二格差 2 —— `_this[12958] - 5494 = 7464`
+   * （= `fillPending`），不是 `[7462]`（= `closePending`）。
    */
   onCursorMove?: (x: number, y: number) => void;
 
@@ -655,10 +658,24 @@ export class InputManager {
     return m;
   }
 
+  /**
+   * **按位消费键盘挂起边沿**（`tickets/T-0179` D 波）：只清 `bits` 里置位的那些位。
+   *
+   * 为什么需要"按位"而不是整张清：引擎的方向键/翻页键子步 `sub_403DD0`（raw 9865-9915）在
+   * `sub_4098E0` 的泵里**逐个 `if` 处理并只清自己那一格**（`*a2 &= ~1u` / `~4u` / `~8u` / `~2u`，
+   * raw 9880/9888/9900/9910）——到位没动的位**不清**（mask 保持，给下一轮机会）。
+   * `consumeEdges()` 是"整张擦除"，语义更粗 ⇒ 面板泵改用这个。
+   *
+   * ★只覆盖 `keyEdge`（键盘按下沿）；鼠标位 4/5 与滚轮位由各自的路由消费（`0x100`/ADV 泵）。
+   * @param bits 本步真正移动过游标的掩码位（`RoutePanel.moveCursorByKey` 的返回值）。
+   */
+  consumeKeyBits(bits: number): void {
+    if (bits !== 0) this.keyEdge &= ~bits;
+  }
+
   /** 清除全部待消费的输入活动（poll-input / 已派发的输入）。
    *  保留当前按住态（buttons）与光标位置；仅清"新按下沿 + 移动标记"。 */
-  consumeEdges(): void {
-    this.mouseEdge = 0;
+  consumeEdges(): void {    this.mouseEdge = 0;
     this.joyEdge.length = 0;
     this.keyEdge = 0;
     this.mouseMoved = false;

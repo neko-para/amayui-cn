@@ -4,33 +4,51 @@
   "type": "bug",
   "priority": "P2",
   "area": "emulator/adv",
-  "why": "用户实测：① 期望「ADV 里滚轮上滚 → 回看（额外一层 BIN）」；② 实际「滚轮上滚会打开侧边栏并停在第一个按钮」；③ 本轮已修「滚轮事件从不进输入掩码」这一结构性缺口（wheelKeyBits/wheelKeyPolicy，守卫 test/wheel-as-key.test.ts），但滚轮在 ADV 里落到哪个消费者仍未收口。",
+  "why": "用户实测：① 期望「ADV 里滚轮上滚 → 回看（额外一层 BIN）」；② 实际「滚轮上滚会打开侧边栏并停在第一个按钮」；③ 上一轮已修「滚轮事件从不进输入掩码」这一结构性缺口（wheelKeyBits/wheelKeyPolicy，守卫 test/wheel-as-key.test.ts），但滚轮在 ADV 里落到哪个消费者仍未收口。\n\n★2026-09-25 收口结论（全文 tickets/T-0168/changes-wheel.md）：**默认 set:WheelKeyUp=3（= ← 键的掩码位）下，ADV 里滚轮上滚就是「按一下 ←」** —— WndProc 折成位 1<<3（raw 141604-141606），等待泵的**第一出口** sub_403D70（raw 20242）在 ADV 脚本用 0x97 绑好的路由表里命中 src/SN0000.txt:88 那一项，派发它的 labelC = label_00002c40（SN0000.txt:770）⇒ 该 label 调 call label_00000e78 摆出 22 个侧栏按钮（= 打开侧边栏）并按 label_00002fc0 把光标定位到第一个可选按钮 ⇒ **用户看到的「打开侧边栏并停在第一个按钮」是引擎默认行为，不是 emulator 分叉**（逐环节排查表见 changes-wheel.md §2.2，九项全部一致）。「回看（额外一层 BIN）」要先把 set:WheelKeyUp 配成 8（SN0000.txt:106 把位 8 绑给 label_00002f84 → call-script 31 // HISTORY），引擎里根本没有「滚轮 ⇒ HISTORY」的内链。\n\n判据③④同样收口：sub_411590 是「0x100000 把门泵」（每轮 = 三语音槽待发队列 sub_4BB840 + 刷输入 + 三支输入各一格 + 调 sub_411560），**不建模**（why + 三条重开条件见 §3.3）；sub_411560 的按名装载 + 立即派发**不实现**（CALLBACK_TEXT.BIN 在本机 base 21109 条 + 5 个扩展包 3971 条索引里都没有 ⇒ sub_455000 返回 -1、sub_40FC90 体首早退 ⇒ 整跳 no-op，真机同一结论）。",
   "acceptance": [
-    "把「滚轮上滚在 ADV 里到底该做什么」按引擎体定死：逐条给出 raw 锚点（WndProc 0x20A / sub_411BC0 20242+20341 / sub_411590 20000-20066 / 0x84 sub_41F790）与语料锚点（SN0000.txt:76-114 的键位表、SC0330.txt:466-505 的菜单派发）",
+    "把「滚轮上滚在 ADV 里到底该做什么」按引擎体定死：逐条给出 raw 锚点（WndProc 0x20A raw 141560-141606 / sub_403D70 raw 9847-9863 与调用点 20242 / sub_411BC0 回看块 raw 20341-20363 / sub_411590 raw 19947-20093 / 0x84 sub_41F790 raw 28829-28942）与语料锚点（src/SN0000.txt:76-114 键位表、:770 的 label 体、src/$1$SC0330.txt:466-505 菜单派发）",
     "侧边栏误开要么被证明是引擎行为（则更新用户可见说明与台账，不改代码），要么定位 emulator 侧的分叉并修掉（带命名守卫 + 红→绿）",
-    "回看（额外一层 BIN）路径：给出它在引擎里由谁开、emulator 缺哪一环；`sub_411590`（0x100000 自旋里的输入泵）是否必须建模要有明确结论",
-    "`sub_411560(Engine,name)` 的按名装载+立即派发若需要实现，落地并加守卫；不需要则在台账写 why（本轮已证：本机数据无 CALLBACK_TEXT.BIN，sub_455000 返回 -1、sub_40FC90 早退 ⇒ 真机同样 no-op）"
+    "回看（额外一层 BIN）路径：给出它在引擎里由谁开（call-script 31，src/$1$SC0330.txt:477-485）、emulator 缺哪一环；sub_411590（0x100000 自旋里的输入泵）是否必须建模要有明确结论",
+    "sub_411560(Engine,name) 的按名装载+立即派发若需要实现，落地并加守卫；不需要则在台账写 why"
   ],
   "evidence": [
     {
       "file": "engine/天结_unpacked.exe_utf8.c",
       "anchor": "case 0x20Au:",
-      "note": "WndProc 的 WM_MOUSEWHEEL：模式 `Engine[699204] & 0x90100000` ⇒ 掩码位（LABEL_147 的 `|= 1 << v19`），否则累加 Engine[7796]"
+      "note": "WndProc 的 WM_MOUSEWHEEL：模式 `Engine[699204] & 0x90100000` ⇒ 掩码位（LABEL_147 的 `|= 1 << v19`，raw 141604-141606），否则累加 Engine[7796]（raw 141580-141583）"
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i097 (local-int 0) (local-int 1) 1 1 3",
-      "note": "ADV 键位表：位 3 → label_00002c40（菜单光标/展开）⇒ `set:WheelKeyUp=3` 时滚轮上滚 ≡ ←"
+      "note": "ADV 键位表：位 3 → label_00002c40（:770，建/展开侧边栏）⇒ `set:WheelKeyUp=3` 时滚轮上滚 ≡ ←"
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "i090 (local-int 0) (local-int 1) 1 1 ffffffff ffffffff label_00002c40",
+      "note": "位 3 那一项的**登记**（labelC = label_00002c40）；紧接 :103 的 `i097 … 1 1 3` 才是绑位"
     },
     {
       "file": "src/$1$SC0330.txt",
-      "anchor": "call-script 31",
-      "note": "侧边栏菜单项 6 → `call-script 31 // HISTORY`（回想画面 = 额外一层 BIN），入口是 global f8019"
+      "anchor": "lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)",
+      "note": "侧边栏菜单项 6 → `call-script 31 // HISTORY`（:485）= 回看（额外一层 BIN）的**唯一**入口；入口游标 = global f8019（由 label_00002c40/label_00002fc0 维护）"
+    },
+    {
+      "file": "app/amayui-emulator/test/t0168-wheel-adv-input.test.ts",
+      "anchor": "★★② 默认配置下，一次滚轮上滚的派发",
+      "note": "真语料 E3 守卫（5 例）：默认位号 3 的实际派发 = {label:2817, kind:'key'}、textRewind=0、label 体执行后路由 +12 且 0x220 × 22",
+      "line": 211
+    },
+    {
+      "file": "tickets/T-0168/changes-wheel.md",
+      "anchor": "## §3 判据③：回看（额外一层 BIN）路径 + `sub_411590` 是否必须建模",
+      "note": "判据③④的结论与重开条件（sub_411590 不建模的三条 why、sub_411560 不实现的三条体证、CALLBACK_TEXT.BIN 在 25080 条索引里的实测缺失）"
     }
   ],
   "links": {
     "tickets": [
       "T-0167",
+      "T-0170",
+      "T-0171",
       "T-0109"
     ],
     "analysis": [
@@ -43,12 +61,21 @@
       "docs-new/03-engine/adv-text-rendering.md"
     ]
   },
-  "status": "open",
+  "status": "done",
+  "tests": [
+    "app/amayui-emulator/test/t0168-wheel-adv-input.test.ts"
+  ],
+  "doneWhy": "**四条判据全部有结论；本票没有代码级修复**（结论 = 现有行为是忠实的）。① 按体定死：默认 `set:WheelKeyUp=3` 时 ADV 里上滚 = 按键命中出口 `sub_403D70`（raw 20242，在回看块 raw 20341 **之前**）派发位 3 绑的 `label_00002c40` ⇒ **就是「打开侧边栏并停在第一个按钮」**；「回看」要配位 8（`SN0000.txt:106`）。② 定为**引擎行为、不改代码**：九项逐环节排查（模式判据/位号来源/缺省 3-1-−1-−1/进掩码口/刷子归属/第一出口/命中判据/位号值域/表次序）全部与引擎一致（`changes-wheel.md` §2.2），并把用户可见说明与台账待应用条目写好（§2.4/§5）。③ `HISTORY.BIN` 的唯一入口 = `call-script 31`（侧栏菜单 action 6），emulator 已能走通（`T-0170` 已实现 `0x1D1`）；`sub_411590` **不建模**（产品路径进不去 / 把门条件永不终止 / 可观测后果各有落点，三条重开条件 R1-R3 已写）。④ `sub_411560` 的按名装载+立即派发**不实现**（`CALLBACK_TEXT.BIN` 在 base 21109 + 5 个扩展包 3971 = **25080** 条索引里都没有 ⇒ `sub_455000` 返回 -1、`sub_40FC90` 体首早退；真机同一结论）。\n\n**红→绿/实测证据**：新增 `test/t0168-wheel-adv-input.test.ts`（`@tier T1`，5 例，真链路 TITLE→Game Start→GAMESTART→SN0000→ADV 等待态）→ **5/5 绿**（≈19.3 s）；全量 `node --import tsx test/run.ts all` → **tests 1575 / pass 1570 / fail 3 / skipped 2**，3 条红**全部是 `T-0146` 基线**（engine-slot 真槽 / save-slot 真槽 format / scene-report 24 ≤ 26）⇒ **本票新增红 0**、总例数 +5（1544→1575，另有 26 例来自同波次其它单元）。`tsc -p tsconfig.json/tsconfig.test.json --noEmit` 均 exit 0；`organization` + `harness-convergence` **10/10**。★附带订正一处台账与体不符：`functions.json` 的 `0x411590` 把 `_this+699260` 的三条 28B 记录写成「回调队列」，体里是**语音通道槽**（消费者 `sub_4BB840` raw 142489-142519，体含 `VOICEファイル %s の読み込みに失敗しました`）——待应用片段见 `changes-wheel.md` §5 ①（台账归主 agent，本票不写 `analysis/**`）。",
   "history": [
     {
       "at": "2026-09-24",
       "kind": "created",
       "what": "创建：滚轮上滚链的现状/缺口收口（本轮已修输入掩码那一段，其余待定）"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "status",
+      "what": "open → done（P2 实现单元）：① 判据①按体定死（默认位 3 = 键命中 ⇒ 打开侧边栏；回看要配位 8）；② 判据②定为**引擎行为、不改代码**（逐环节一致 + 真语料 E3 实测 {label:2817,kind:'key'}、textRewind=0、路由 +12、0x220 × 22）；③ 判据③ `sub_411590` **不建模**（why + 重开条件 R1-R3）、`HISTORY.BIN` 入口 = `call-script 31`；④ 判据④ `sub_411560` **不实现**（`CALLBACK_TEXT.BIN` 在 25080 条索引里实测缺失 ⇒ no-op）。新增守卫 `test/t0168-wheel-adv-input.test.ts` 5/5；全量只剩 3 条 `T-0146` 基线红。`tickets/T-0168/changes-wheel.md` 为交付说明（含台账待应用与「别人该接」）。"
     }
   ]
 }

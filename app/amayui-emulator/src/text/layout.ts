@@ -184,6 +184,42 @@ export interface FontStyleSnapshot {
   vertical: boolean;
   /** 竖排 blit 内边距（`Font+235112..+235124`，`0x260`）—— 同样是 Font 级，按入队时刻钉住（见 `MsgWinStyle.vPad`）。 */
   vPad: { x: number; y: number; dw: number; dh: number };
+  /**
+   * ★**入队时刻的窗几何**（`originX/originY`、`wrapRight/wrapBottom`、`w/h`、`x/y`）。
+   *
+   * 与上面那些字段同一条理由，只是对象从"字形参数"换成了"排版边界"：引擎的排版**发生在入队那一刻**
+   * （`show-text` 0x6E → `sub_46BE30` 逐字量宽 + 越右边界硬断，raw 83363-83997），此后
+   * 改窗几何的指令（`0x70` 写 `+12/+16/+20/+24/+36/+40`、`0x198` 写 `+12/+16`、
+   * `0x79` 写 `+28/+32`、`0x1C1` 写 `+36/+40`）**都不会回头重排已经排好的行**
+   * —— `sub_45D660`（raw 73132-73193）与 `sub_4563D0`（raw 68248-68261）体里一行排版调用都没有。
+   *
+   * ⇒ 重写侧每次发布都重算排版（`renderer/scene/ops.ts:1282`、`vm/engine.ts:1146/1758`），
+   * 若在这里取**实时**几何，"入队之后才改的几何"会静默重排已入队的正文（症状 = 一窗的字
+   * 在改窗尺寸/文字起点的那一帧整块换行/跳位），而引擎不会。
+   */
+  geometry: MsgGeometrySnapshot;
+}
+
+/**
+ * **入队时刻的窗几何快照**（`FontStyleSnapshot.geometry`）—— 只收**参与排版**的那几格。
+ *
+ * 不收 `align/alignWidth`/`background`/`itemId`：对齐与层序是**绘制期**的量
+ * （引擎 raw 69210-69225 的对齐在绘制落点上做、`win+104` 是 DrawItem id 起点），
+ * 它们不参与断行 ⇒ 照旧实时读（见 `styleOfWin`）。
+ */
+export interface MsgGeometrySnapshot {
+  /** 窗屏幕位置（引擎 `win+12`/`+16`，op `0x70` 的 op4/op5 / `0x198`）。 */
+  x: number;
+  y: number;
+  /** 窗尺寸（引擎 `win+20`/`+24`，op `0x70` 的 op2/op3）。 */
+  w: number;
+  h: number;
+  /** 文字起点（引擎 `win+28`/`+32`，op `0x79`；`0x7A` 设过文本块原点时以它为准）。 */
+  originX: number;
+  originY: number;
+  /** 换行右/下边界（引擎 `win+36`/`+40`，op `0x70` 初值 / `0x1C1` 覆盖）—— 断行的唯一判据。 */
+  wrapRight: number;
+  wrapBottom: number;
 }
 
 /** 排版输入（= 一个窗口的完整快照；VM 每次改动后交宿主重算）。 */
@@ -287,6 +323,20 @@ export interface TextFrame {
   win: number;
   style: MsgWinStyle;
   lines: TextLine[];
+  /**
+   * ★**段 → 显示行的来源**（与 `lines` 逐项对齐、长度恒相等）：
+   * `rows[i].segment` = 产出第 `i` 个显示行的那一段在 `MsgWinInput.segments` 里的下标。
+   *
+   * 为什么需要它：`lines[].text` 是**拼出来**的（一段的多个显示行在各行里各占一部分），
+   * 只看 `lines` 无法回答"这一段被断成了几行、断点在第几个显示行之后"——
+   * 而"按排版断点补换行记录"（`0x1D1`/`0x82` 的记录驱动重画）要的正是这个。
+   * 引擎的对应物是逐行 push 的 120B 文本记录（`sub_46BE30` 的换行分支 raw 83607-83718
+   * 每换一行 push 一条）+ `sub_46AF90` 在那一刻推进行号，两者在入队时刻一一对应。
+   *
+   * 不变量：**同一个段的显示行一定是连续的**（排版按段顺序推进，段边界处收尾当前行
+   * ⇒ 一段的行不会与别的段交错）。判据见 `rowFeedBoundaries`。
+   */
+  rows: TextRow[];
   /** 全部字形数（= 逐字显现的最大计数）。 */
   glyphCount: number;
   /** 本帧实际画出的字形数（= `revealed` 截断到 `glyphCount`；`0..glyphCount`）。 */
@@ -301,6 +351,38 @@ export interface TextFrame {
    * —— 回退本身是必需的（否则要编数），但**必须能被观测**，不然就是"静默缺口"。只在为真时出现。
    */
   blankExtentFallback?: boolean;
+}
+
+/** 一个显示行的来源（`TextFrame.rows` 的元素；见其说明）。 */
+export interface TextRow {
+  /** 产出这一行的段下标（`MsgWinInput.segments` 的下标）。 */
+  segment: number;
+  /** 这是该段的第几个显示行（0 起）。 */
+  line: number;
+}
+
+/**
+ * **排版把每一段断成了几行、断点落在哪**（`TextFrame.rows` 的消费口径）。
+ *
+ * 返回"**行内断点**"：对这些显示行下标之后的记录位置需要一条换行标记
+ * （引擎 `sub_4691D0` 的 `flags | 8` 记录 / emulator 的 `TextItemTable.pushLineFeed`）。
+ *
+ * 口径 = **每段内部**的相邻行之间各一个断点：一段 N 行 ⇒ N-1 个。段的**末行之后不算**
+ * （那是段的收尾：`end-text-line` 0x6F 自己会推一条，见 `0x1D1`/`0x82` 的记账）。
+ * 例：一段 60 字在 800 宽/字号 30 下排成 3 行 ⇒ 断点 `[1, 2]`（第 1 行后、第 2 行后），
+ * 于是记录表是「行1 行2 行3 + 2 条换行记录」，与 `repaintRange` 的拼行规则合起来正好 3 行。
+ *
+ * 纯函数、无副作用 ⇒ 可在 Node 里断言（守卫见 `test/record-driven-lines.test.ts` 第 ② 节）。
+ */
+export function rowFeedBoundaries(rows: readonly TextRow[]): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 1 < rows.length; i++) {
+    const a = rows[i]!;
+    const b = rows[i + 1]!;
+    // 同一段内、行号递增 ⇒ 这两行之间是本段的自动换行断点（段边界处行号归 0，不是断点）。
+    if (a.segment === b.segment && b.line === a.line + 1) out.push(i);
+  }
+  return out;
 }
 
 /**
@@ -592,6 +674,12 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   const lines: TextLine[] = [];
   let glyphs: Glyph[] = [];
   let chars: string[] = [];
+  /** ★本帧每个显示行的来源（段下标 + 段内行号）—— 与 `lines` 同步增长，供 `rowFeedBoundaries` 用。 */
+  const rows: TextRow[] = [];
+  /** 正在排的那一段的下标（段边界处推进）；`flush` 用它记来源。 */
+  let segmentAt = 0;
+  /** 当前段已经产出的显示行数（段边界处归 0）⇒ `flush` 的"段内行号"就是它。 */
+  let segmentRow = 0;
   // 水平：行首 y 逐行下移，penX 在行内推进。
   // 竖排：列首 x 逐列左移，penY 在列内推进。
   // 恒为横向流：行首 x = 文字起点，行首 y 逐行下移（引擎 sub_46BE30 的换行方向）
@@ -613,6 +701,9 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
     pairRuby(line, pairs, st, blank);
     applyAlign(line, st);
     lines.push(line);
+    // ★行来源：与本段已产出的行数无关地自增"段内行号"（见 `TextFrame.rows` 的说明）。
+    rows.push({ segment: segmentAt, line: segmentRow });
+    segmentRow += 1;
     glyphs = [];
     chars = [];
   };
@@ -636,7 +727,9 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   let outOfRoom = false;
   // ★`set:BlankExtentMode == 1` 但拿不到字体度量 ⇒ 本帧有空白字时置真（见 TextFrame.blankExtentFallback）
   let blankFallback = false;
-  for (const seg of input.segments) {
+  for (let segIdx = 0; segIdx < input.segments.length; segIdx++) {
+    const seg = input.segments[segIdx]!;
+    segmentAt = segIdx;
     for (const ch of seg.text) {
       const r = blankAdvance(ch, size, blank);
       if (!r.measured && blank?.mode === 1 && isBlankExtentChar(ch)) blankFallback = true;
@@ -650,7 +743,25 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
       penX += adv;
     }
     if (outOfRoom) break;
+    // ★段的收尾**必须落在段边界上**：`end-text-line` 的换行要断在"这一段之后"，
+    //   而不是断在"这一段之后又来了一段"之后 —— 否则这一段的显示行会与下一段拼进同一行。
     if (seg.lineEnded && !wrap()) break;
+    // 段边界：下一段的显示行从 0 起算（`rows` 的 `segment`/`line` 两格，见 `TextFrame.rows`）。
+    segmentRow = 0;
+  }
+  // ★**这一个收尾换行（`flush()` 出的空行）不留**：`wrap()` 无条件 `flush()`，于是"以一个
+  //   `end-text-line` 段收尾"的页会多出末尾一条空显示行。引擎不产生它 —— `sub_46BE30` 的换行
+  //   只在**逐字循环里**触发（raw 83607-83718 的量宽/越界判据），空串上一个字都没有。
+  //   ★位置**必须在最终 `flush()` 之前**：清掉它之后，之后 `flush()` 出的行会以行号 0 重新开始
+  //   （= 属于同一个段），否则那个段的下标会与 `input.segments` 错位一格（`rows` 的 `segment` 就废了）。
+  //   中间的段边界不受影响（下一个段仍有字要排，行号会归 0 继续）。
+  if (
+    lines.length > 1 &&
+    rows[rows.length - 1]!.line > 0 &&
+    lines[lines.length - 1]!.glyphs.length === 0
+  ) {
+    lines.pop();
+    rows.pop();
   }
   if (glyphs.length > 0 || lines.length === 0) flush();
 
@@ -661,8 +772,8 @@ export function layoutWindow(win: number, input: MsgWinInput): TextFrame {
   const rev = input.revealed ?? glyphCount;
   const revealed = rev < 0 ? glyphCount : rev >= glyphCount ? glyphCount : rev;
   return blankFallback
-    ? { win, style: st, lines, glyphCount, revealed, blankExtentFallback: true }
-    : { win, style: st, lines, glyphCount, revealed };
+    ? { win, style: st, lines, rows, glyphCount, revealed, blankExtentFallback: true }
+    : { win, style: st, lines, rows, glyphCount, revealed };
 }
 
 /**

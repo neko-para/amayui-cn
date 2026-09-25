@@ -47,6 +47,7 @@ import { JsonlWriter } from './jsonlWriter.js';
 import { Telemetry } from './telemetry.js';
 import type { TraceLog } from './traceLog.js';
 import type { BootedApp } from './boot.js';
+import { observeTextureBarrier } from './textureBarrier.js';
 
 /**
  * 一帧内最多推进的指令数 —— **仅作病态死循环兜底**，不是引擎语义。
@@ -118,6 +119,18 @@ export class RendererSession {
   #traceAll = false;
   /** ★定向 trace 白名单（空 = 不记 JSONL）。 */
   #traceFilter = new Set<number>();
+  /**
+   * **纹理帧屏障②的观测账**（`tickets/T-0175` 的 ⑦，出处 `tickets/T-0166` §4-③）。
+   *
+   * 修前这一面完全不可观测：`DebugQuery` 问不到、trace 里没有逐次证据，唯一的守卫
+   * （`test/no-boot-preload.test.ts`）只是在 `pixiBackend.ts` 的**源文本**里找 `texturesIdle`
+   * 与 `present(` 的先后 —— 证明不了"派发一次 `0x1F9` ⇒ 屏障被 await 一次"。
+   * 现在每次过门都在这里记账，并经 `runQuery` 的 `barrier` 命令与 trace 行对外可见
+   * （判据与文案的唯一来源 = `app/textureBarrier.ts`）。
+   */
+  #texBarrier = { calls: 0, awaits: 0 };
+  /** 已经记过 trace 的"没有宿主缝可等"（去重；宿主不实现 `texturesIdle` 时是正常态，不该刷屏）。 */
+  #texBarrierNoSeamLogged = false;
 
   /**
    * 暂停点：解释器停在一条「未实现 opcode」上等用户在控制窗点「作为桩函数跳过」。
@@ -311,6 +324,15 @@ export class RendererSession {
               if (!inst) return null;
               return `模型 id=${inst.modelId}、纹理 ${inst.textures.size} 组、动作 ${inst.current?.motion.name ?? '（无）'}`;
             },
+            // ★`tickets/T-0175` 的 ⑦（出处 `tickets/T-0166` §4-③）：**纹理帧屏障②**的运行账。
+            //   两个数必须分开报：`calls`/`awaits` = 会话侧过了门并真的 await 了几次，
+            //   `hostWaits` = 宿主**确实等到图**的次数（`PixiBackend.texturesIdle` 里
+            //   `pendingCount > 0` 才 +1，经已登记的 `digestHostCounters` 读出来 ——
+            //   **不新开宿主方法**：`PixiBackend` 的公开面每加一个都要登记进 native-tap 的非桥清单）。
+            //   ⇒ "0x1F9 派发了但那一帧没有图在途"与"宿主没实现该缝"都能一眼区分。
+            barrier: () =>
+              `屏障② calls=${this.#texBarrier.calls} awaits=${this.#texBarrier.awaits} ` +
+              `hostWaits=${this.#pixi.digestHostCounters().barriers} 宿主缝=${this.#native.texturesIdle ? '有' : '**无**（0x1F9 后不 await，与原行为一致）'}`,
           });
         }
       } catch (err) {
@@ -882,8 +904,21 @@ export class RendererSession {
     // ★`0x249` 也要等（`tickets/T-0102` 轮 9）：它与 `0x1F9` 是同一族的"按统一 id 把纹理载入槽"
     //   （`sub_425310` raw 32717-32768；两者共用 `normalizeTextureColor`，见 `handlers/gfx-texture.ts`），
     //   同样走 `native.bindTexture` 的异步路径 ⇒ 只认 `0x1F9` 会漏掉它（语料 20 处 / 8 脚本）。
-    if (t.opcode !== 0x1f9 && t.opcode !== 0x249) return;
-    if (this.#native.texturesIdle) await this.#native.texturesIdle();
+    // ★判据与"没缝时怎么办"都在 `app/textureBarrier.ts`（纯函数，可单测）——这里只做接线 + 记账，
+    //   不再自己写一遍 opcode 集合（修前这里是一行内联的 `!==` 判断，**没有任何守卫盯着它**）。
+    // ★槽号这里**取不到**（`StepTrace` 不带操作数值，只有格式化好的 `operands` 串）⇒ 传 `-1`；
+    //   要槽号就去看同一帧的 `bindTexture imgid=… slot=…` 日志行（`0x1F9` handler 打的）。
+    const obs = observeTextureBarrier(t.opcode, -1, this.#native.texturesIdle?.bind(this.#native));
+    if (!obs.triggered) return;
+    this.#texBarrier.calls++;
+    if (obs.trace && (obs.hostSeam || !this.#texBarrierNoSeamLogged)) {
+      if (!obs.hostSeam) this.#texBarrierNoSeamLogged = true;
+      this.#traceLog.line(obs.trace);
+    }
+    if (obs.awaited) {
+      this.#texBarrier.awaits++;
+      await obs.awaited;
+    }
   }
 
   /**

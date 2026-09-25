@@ -133,7 +133,12 @@ test('★0x249（T-0086）：op3 归一化与 0x1F9 共用一处 —— 负值�
     const h = OPS.get(0x249) ?? NATIVE_OPS.get(0x249);
     assert.ok(h, '0x249 应在 OPS 或 NATIVE_OPS 里');
     h!(makeCtx(e, f, instr(0x249, [im(0x5250), im(196), im(op3)]), native, () => {}));
-    assert.equal(e.texSlots.get(196), 0x5250, '0x249 仍必须按 id 绑定槽（原有行为不回归）');
+    assert.equal(
+      e.texSlots.get(196),
+      -1,
+      '★`T-0179` 第二波 E 的最小 retarget：0x249 的槽记录写 −1（`sub_4A3800` 的 a6 = 1，raw 32757/123377），' +
+        '不是 imgid —— 旧断言（0x5250）是修复前的口径；宿主绑定仍收 imgid（上一行的 `bind` 条目）',
+    );
     assert.ok(e.isFileUsed(0x5250), '0x249 会打开文件 ⇒ 必须记「已使用」');
   };
 

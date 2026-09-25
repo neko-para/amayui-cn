@@ -1,33 +1,43 @@
 {
-  "title": "INFOEN 的 L2D 资产 id 表（全局槽 527d8c / 528944）真源未定位：脚本 0 写点 ⇒ 需要找出引擎侧是谁填的",
+  "title": "INFOEN 的 L2D 资产 id 表（全局槽 527d8c / 528944）：写入方 = src/EBINIT.txt 族（+5 个扩展包变体），行距 3 dword、idx = 1-based 角色号、覆盖 1..998",
   "type": "analysis",
   "priority": "P3",
   "area": "analysis/emulator/live2d",
-  "why": "`src/INFOEN.txt:1568/1590` 用 `lookup-array-2d (local-ptr) (global-int 527d8c|528944) <idx=13c7> 3 0` 取「角色 → `.MOC` id / `.MTN` id」，再交给 `call-script SETL2DMOC`（`src/SETL2DMOC.txt:6-…` 是脚本侧的 id → 资产映射表）。`tickets/T-0054` 轮 14 的探针（`tickets/T-0054/evidence/infoen-l2d-table-probe.txt`）实测：**跑完整条 boot 链到 TITLE（325 帧）之后，两个\"持有槽\"仍是 0**，而同一批里的对照表 `global[0x708ab6]` 有值（`src/INIT2.txt:115` 的 `mov (global-int 708ab6) 522d`）⇒ 说明\"表要有数据必须有写点\"，而这两个槽**全语料 0 写点**（`grep 527d8c|528944` 只有 BTL/INFOEN 的消费者）⇒表由**引擎侧**填（是哪个数据文件/哪条装载路径未查）。后果：INFOEN（角色资料页）的 L2D 路径**没法像 TITLE 那样在 headless 直接复现**（TITLE 的 id 由脚本自己 `mov f8c46 4f9e`），只能覆盖\"id 已知之后\"的序列（`test/live2d-chain.test.ts` 的 INFOEN 支路 E3）。另：`BTL.txt:1610/1636` 用同一对表（战斗立绘），所以这条也是 BTL 立绘的前置。",
+  "why": "`src/INFOEN.txt:1568/1590` 用 `lookup-array-2d (local-ptr 1) (global-int 527d8c|528944) <idx=13c7> 3 0` 取「角色 → `.MOC` id / `.MTN` id」，再交给 `call-script SETL2DMOC`（`src/SETL2DMOC.txt:6-…` 是脚本侧的 id → 资产映射表）。`tickets/T-0054` 轮 14 的探针（`tickets/T-0054/evidence/infoen-l2d-table-probe.txt`）实测：跑完整条 boot 链到 TITLE（325 帧）之后两个持有槽仍是 0，而对照表 `global[0x708ab6]` 有值（`src/INIT2.txt:115`）⇒ 当时判为「表由引擎侧填、来源未定位」。★本轮收口：**写入方就是游戏脚本自己** —— `src/EBINIT.txt` + `src/$1$..$5$EBINIT.txt`（本体 + 5 个扩展包），逐角色用字面 token 写 `mov (global-int 527d8c + 3*c) <统一文件 id>` 与 `mov (global-int 528944 + 3*c) <同一角色的 .MTN id>`，覆盖角色号 1..998（344 个角色、两表逐字同集合、344/344 同基名成对）。`527d8c`/`528944` 是**表基址**（本身 0 写点），消费者从基址按行距 3 取第 idx 行第 0 列。⇒ headless 里那两个槽是 0 的**根因** = 探针读的是角色 0 那一格（永远没人写）+ INFOEN 角色页实际走到的 `idx = 5063` **超出写入覆盖 1..998** ⇒ 表里恒 0 ⇒ 脚本按 `a9d0` 门走静态贴图回落（正确行为）。判据 2 因此**按真 id 可取到达标**：换成覆盖内的角色（如角色 1）就能取到 `BM001A.MOC`/`BM001A.MTN` 并真的装进实例槽（守卫 `test/t0107-infoen-real-id.test.ts`）。★方法论教训（本票踩过，见 changes §1.2）：**不要用表基址 token 有没有被写来判断表有没有数据** —— 写者只写基址 + 3c 那一格，基址本身永远 0 写点。",
   "acceptance": [
-    "定位这两个表（`527d8c` = 角色→MOC id、`528944` = 角色→MTN id）的**写入方**：是引擎某条装载路径（引用 raw 行号）、某个数据文件（给出文件与偏移）、还是某条我们还没实现的 opcode（给出 opcode）—— 三者必居其一，并写清 idx 的口径（`13c7` 是角色号？图鉴号？）",
-    "按定位结果在 emulator 里建模：headless 下 INFOEN 的 L2D 路径能取到**真 id**（并因此在 `test/l2d-*` 里可断言真实模型/动作文件），或明确判定\"该表不在本工程范围内\"并把判据降级（要写清为什么）",
-    "若新增 opcode/装载路径 ⇒ 补进 `analysis/opcodes.json`（含 argc/语义）与 `analysis/engine-capabilities.json` 的对应能力条目；若只读数据文件 ⇒ 在 `docs-new/02-data/*` 立页并把 raw/文件偏移登记进去",
-    "npm run verify 全绿；四份台账 --validate 绿"
+    "✅ 定位写入方：**游戏脚本** `src/EBINIT.txt`（本体，235 条）+ `src/$1$EBINIT.txt`..`$5$EBINIT.txt`（扩展包，合计 109 条），逐角色字面写；`idx` 口径 = **1-based 角色号**（角色 1 ⇒ `0x527d8f`/`0x528947`，逐字命中 `src/EBINIT.txt:115-116`）；行距 `3` = 每行 3 dword（12 字节），即 `lookup-array-2d` 的第 4 操作数；两张表同构、基址相差 `0xBB8 = 250*3*4` 字节。证据见 `tickets/T-0107/changes-c107.md` §1-§2。",
+    "✅ 建模/可断言：headless 下 INFOEN 的 L2D 路径**能取到真 id** —— `test/t0107-infoen-real-id.test.ts` 用角色 1 的两列 id 经 `NodeFileSource.readById` 实测解析出 `BM001A.MOC`（首 4 字节 `moc\\n`）/`BM001A.MTN`（文本头 `# Live2D Animator Motion Data`）/`0x4fa2` → `BM001A*` 的 PNG；并钉死 `idx = 5063` 超界 ⇒ 0 ⇒ 静态回落这一格。",
+    "✅ 台账：`analysis/scripts.json` 新增 `EBINIT` 条目（写入方、布局锚点、槽、不变量、坑、缺口）；`analysis/functions.json` 订正 `0x42FEC0`(0x148)/`0x4229A0`(0x149) 的语义（原写「全局时间阈值槽」、实为引擎内部累加器）；`analysis/engine-capabilities.json` 新增 `script-global-int-pool-from-sys4ini`（池装载方 = `sub_414AC0` 从 `SYS4INI.BIN`，含 raw 锚点 + 诚实登记池容量与 token 不自洽的缺口）；文档 `docs-new/02-data/character-l2d-tables.md` 新建 + `docs-new/03-engine/live2d.md` 补链。",
+    "✅ `npm run verify` 不新增红（红集合 = 3 条 `T-0146` 基线）；四份台账 `--validate` 绿；生成物重生成。"
+  ],
+  "tests": [
+    "app/amayui-emulator/test/t0107-l2d-asset-id-table.test.ts",
+    "app/amayui-emulator/test/t0107-infoen-real-id.test.ts"
   ],
   "evidence": [
     {
-      "file": "tickets/T-0054/evidence/infoen-l2d-table-probe.txt",
-      "anchor": "global[0x527d8c] = 0",
-      "note": "探针实测：boot 链到 TITLE 后两个持有槽仍是 0（对照表 708ab6 = 0x522d）⇒ 表由引擎侧填、脚本 0 写点。",
-      "line": 22
+      "file": "src/EBINIT.txt",
+      "anchor": "mov (global-int 527d8f) 4087",
+      "note": "★写入方逐字：角色 1 的 MOC 列 = `0x527d8c + 3*1`；值 `0x4087` 经统一文件 id 解析 = `BM001A.MOC`。下一行 `mov (global-int 528947) 4088` = 同一角色的 `.MTN` 列。",
+      "line": 115
     },
     {
       "file": "src/INFOEN.txt",
       "anchor": "lookup-array-2d (local-ptr 1) (global-int 527d8c) (local-int 13c7) 3 0",
-      "note": "消费者之一（角色资料页取 MOC id；同文件 :1590 取 MTN id）。",
+      "note": "消费者（角色资料页取 MOC id；同文件 :1590 取 MTN id）；`idx = 13c7 = 5063` 超出 EBINIT 写入覆盖 1..998 ⇒ 读出 0。",
       "line": 1568
     },
     {
-      "file": "src/INIT2.txt",
-      "anchor": "mov (global-int 708ab6) 522d",
-      "note": "对照：另一张全局表**有**显式写点（因此有数据）—— 用来说明\"0 写点\"这条判据本身是有效的。",
-      "line": 115
+      "file": "src/SETL2DMOC.txt",
+      "anchor": "eq (local-int 0) (global-int f8c46) 4087",
+      "note": "下游衔接：`f8c46 = 0x4087`（= 表里角色 1 那格的值）⇒ `i341 4087` + `i345 4fa2`（第 0 张纹理）。",
+      "line": 31
+    },
+    {
+      "file": "tickets/T-0054/evidence/infoen-l2d-table-probe.txt",
+      "anchor": "global[0x527d8c] = 0",
+      "note": "当年那条实测，本轮给出根因：探针读的是**表基址本身**（= 角色 0 那一格，永不被写），且角色页实际用到的 5063 也超界。",
+      "line": 22
     }
   ],
   "links": {
@@ -36,12 +46,18 @@
     ]
   },
   "id": "T-0107",
-  "status": "open",
+  "status": "done",
+  "doneWhy": "判据 1 定位成功（写入方 = `src/EBINIT.txt` 族 6 份，逐角色字面写；`idx` = 1-based 角色号；行距 3 dword；覆盖 1..998）⇒ 判据 1 的「三者必居其一」落在**游戏脚本**这一类；判据 2 因此不降级而是**达标**（真 id 可取到并有端到端守卫）；判据 3 按「脚本写入方」路径落台账（`scripts.json` + `functions.json` 两条语义订正 + `engine-capabilities.json` 新条目 + 新建数据页）；判据 4 见收尾三连与红集合。★同时给出 `T-0054` 那条「headless 读到 0」的根因，可关掉那张票的剩余项。",
   "history": [
     {
       "at": "2026-09-21",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-25",
+      "kind": "decision",
+      "what": "F 波 T-0107 收口：写入方定位到 `src/EBINIT.txt` 族（344 角色 / 1..998）；`idx` = 1-based 角色号、行距 3 dword；headless 0 值的根因 = 基址槽 0 写点 + 角色页 idx 5063 超界；新建两个守卫（棘轮 5 例 + 真资产端到端 2 例）、新建 `docs-new/02-data/character-l2d-tables.md`、`scripts.json` + `functions.json` + `engine-capabilities.json` 落库。"
     }
   ]
 }

@@ -331,7 +331,11 @@ const op_jcc: OpHandler = (c) => {
 ```ts
 // op_exit_script：引擎 sub_428A60——清理 → 置 _this[96983]=0 → 重载根脚本 INDEX0 并继续（不再抛 ScriptReset）。
 const op_exit_script: OpHandler = async (c) => {
-  // …清 40 帧 + 全局数组 + cur/callRet/callLink/callFlag/effectFlags/advFields/globalSlot…
+  // …清 40 帧 + 全局数组 + cur/callRet/dispatchSavedCur/dispatchSavedFlags/effectFlags/advFields/globalSlot…
+  //   ★`0x5D888`/`0x5D88C`（= 383112/383116）是**派发现场**的保存格（存 `cur`/`effect_flags`），
+  //     不是"控制流目标深度寄存器"：`sub_40FB60` 存（raw 18978/18982）、`sub_41A820` 的 `caller == -10`
+  //     分支读回（raw 25663/25664/25666）⇒ emulator 用 `dispatchSavedCur`/`dispatchSavedFlags` 建模
+  //     （`tickets/T-0173` 删掉的 `callLink`/`callFlag` 只是同一格的重复表示）。
   c.e.engineValues.set(96983, 0);            // ★ +96983=0 → 回标题后 load-show-logo 读 0 → SYSTEM4 跳过 LOGO
   const boot = await c.e.fileSource!.readScript(0);   // 重载根脚本 0（SYSTEM4）
   loadScriptIntoFrame(c.e.frames[0]!, parseScriptBytes(boot.data), boot.name);

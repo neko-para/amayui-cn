@@ -375,11 +375,16 @@ test('0x249 / 0x245 / 0x246：纹理槽绑定与对象参数转发', () => {
   const spy = native as unknown as {
     bindTexture?: (imgid: number, slot: number) => void;
     setTextureObjectFloat?: (slot: number, value: number) => void;
-    setTextureObjectParam?: (slot: number, value: number) => void;
+    setTextureObjectColor?: (slot: number, value: number) => void;
+    setTextureObjectSubParam?: (slot: number, value: number) => void;
   };
   spy.bindTexture = (imgid, slot) => calls.push(['bind', imgid, slot]);
   spy.setTextureObjectFloat = (slot, value) => calls.push(['float', slot, value]);
-  spy.setTextureObjectParam = (slot, value) => calls.push(['param', slot, value]);
+  // ★`tickets/T-0175` 的 ③ 拆缝（出处 `tickets/T-0163` §7-1）：颜色与"子对象参数"从此是**两条缝**
+  //   ⇒ 录制端也分成两个标签（`color` / `subparam`）。旧名 `setTextureObjectParam` **故意不再挂**：
+  //   若生产路径又直连旧名，下面的 `calls` 会**少条目**（= 立刻红），这正是这条断言要钉的。
+  spy.setTextureObjectColor = (slot, value) => calls.push(['color', slot, value]);
+  spy.setTextureObjectSubParam = (slot, value) => calls.push(['subparam', slot, value]);
   const e = new Engine(native);
   const f = new Frame();
   const step = (op: number, args: BinArg[]): void => {
@@ -389,7 +394,11 @@ test('0x249 / 0x245 / 0x246：纹理槽绑定与对象参数转发', () => {
   };
 
   step(0x249, [im(0x5250), im(196), im(0x00ff00)]);
-  assert.equal(e.texSlots.get(196), 0x5250, '0x249 按 id 绑定槽');
+  // ★`T-0179` 第二波 E 的最小 retarget：槽记录写 **−1**，不是 imgid —— 引擎 `0x249` 给 `sub_4A3800`
+  //   的第 6 参是 **1**（raw 32757）而 `0x1F9` 是 0（raw 31232），callee 里 `if ( a6 ) v7[466] = -1;`
+  //   （raw 123377）⇒ 该格的读者 `0x216`（raw 39891-39899）在 0x249 之后答 −1。
+  //   旧断言（`0x5250`）钉的是"与 0x1F9 同路"，那是修复前的口径；宿主绑定仍收 imgid（下一行 `bind`）。
+  assert.equal(e.texSlots.get(196), -1, '0x249 的槽记录 = −1（raw 123377；图像绑定在宿主侧，见 `calls` 的 bind）');
   assert.ok(e.isFileUsed(0x5250), '0x249 会打开文件 ⇒ 必须记「已使用」（鉴赏解锁的判据）');
   step(0x245, [im(196), im(500)]);
   step(0x246, [im(196), im(250)]);
@@ -397,13 +406,14 @@ test('0x249 / 0x245 / 0x246：纹理槽绑定与对象参数转发', () => {
     ['bind', 0x5250, 196],
     // ★`T-0086`：0x249 的 op3 经 `normalizeTextureColor` 归一化（引擎 sub_425310 raw 32750-32755：
     //   A 通道强置 0xFF、负值落 0）—— 旧断言是"原样下发 0x00ff00"，那是修复前的不忠实口径。
-    ['param', 196, 0xff00ff00 | 0],
+    // ★`T-0175` 的 ③：它现在走**颜色**缝（`setTextureObjectColor`），与 `0x246` 的子对象参数分开。
+    ['color', 196, 0xff00ff00 | 0],
     // ★`T-0153`（VM 半边）最小 retarget：两条**都做了单位换算**，且两个常量**不同**
     //   —— 旧断言是"原值直传"（500 / 250），那是修复前的口径。
     //   0x245：`sub_4081B0(obj, (double)op2 / dbl_51FB50)`，`dbl_51FB50 = 1000.0`（raw 4393 / 32672-32673）⇒ 0.5
     //   0x246：`(double)op2 / dbl_5201F0`，`dbl_5201F0 = 100.0`（raw 4430 / 32696-32697）⇒ 2.5
     ['float', 196, 0.5],
-    ['param', 196, 2.5],
+    ['subparam', 196, 2.5],
   ]);
 });
 

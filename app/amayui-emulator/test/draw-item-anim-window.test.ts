@@ -11,6 +11,9 @@
  *    由驱动首帧锁存时钟（raw 117437-117438）；
  *  - 窗末**一次性收尾**：`work ← target`（缩放 raw 117496、旋转 117550、平移 117646、flipbook 117831）；
  *  - `dur == 0` 但"配置过" ⇒ 当帧即收尾（与"从未配置"必须区分）；
+ *    ★例外（`T-0179` 第 63 轮）：**颜色窗（`0x202`）的 `dur <= 0` 走 `none`** —— 引擎
+ *      `sub_49AA30` raw 117443-117444 的 `if (v13 > 0)` 让整块颜色逻辑不跑，
+ *      见 `test/op-202-color-window-dur-gate.test.ts`；
  *  - flipbook 改的是**源矩形**（不是 UV）：`frame = frames·t`、`col = frame % cols`、`row = frame / cols`，
  *    偏移 `(col·srcW, row·srcH)`（raw 117797-117804）；窗末 `fbFlags & 1` ⇒ 保持末帧。
  *

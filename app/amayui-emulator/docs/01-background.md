@@ -77,7 +77,12 @@ key    = *(this + 0x5EC8C)                       // per-instance，构造时写�
 ### 3.5 脚本上下文与调用栈
 - 引擎为每个脚本上下文准备 **40 个固定帧**（`0..39`），每帧 120 字节（`0x78`），帧基址 `this + 0x5D880 + 0x78*cur`（★曾误记 0x5D894；0x5D894 只是 frame0 的 `str_table` 槽 = 帧+0x14）。
 - `cur_script`（`this[95776]`,`0x5D880`）= 当前帧深度（active 帧指针）。
-- `call_ret`(`0x5D884`)、`call_link`(`0x5D888`)、`call_flag`(`0x5D88C`)= 控制流目标深度寄存器（存帧下标或 `-1/-10/-11` 哨兵）。
+- `call_ret`(`0x5D884` = `this[95777]`) = 帧内回链的镜像（`caller`），存帧下标或 `-1/-10/-11` 哨兵。
+- `0x5D888`(`this[95778]`) / `0x5D88C`(`this[95779]`) = **派发现场的保存格**（存派发前的 `cur` / `effect_flags`）：
+  由 `sub_40FB60` 存（raw 18978/18982）、由 `sub_41A820` 的 `caller == -10` 分支读回还原
+  （raw 25663/25664/25666）—— **不是**"控制流目标深度寄存器"。emulator 里对应的字段是
+  `Engine.dispatchSavedCur` / `Engine.dispatchSavedFlags`（`handlers/control.ts` 的 411-413 还原 /
+  420-422 保存 / 568 复位）；`analysis/fields.json` 也按这个口径命名为 `dispatch_saved_*`。
 - `frames[cur].caller`（帧 `+0x4C`）是持久的帧内回链；嵌套 call-script = 切换 `cur`，被挂起帧的 IP/局部变量/字符串表一直保留。
 - 帧内字段（帧相对）：`str_table(+0x14)`、`ip(+0x18)`、`local_int(+0x34)`、`local_float(+0x38)`、`local_string(+0x3C)`、`local_ptr(+0x40)`、`local_float_ptr(+0x44)`、`local_string_ptr(+0x48)`、`caller(+0x4C)`、`frame_arg(+0x50)`、`arity(+0x60)`、操作数记数(`+0x74`，主循环据此推进 ip)、`array_container(+0x84)`；6 个池 count 在 `+0x1C..+0x30`。
 
