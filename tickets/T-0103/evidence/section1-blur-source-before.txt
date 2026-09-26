@@ -1,0 +1,16 @@
+# T-0103 段 1（SN0000 结尾的横向模糊）· before 日志：模糊源 = 本帧屏幕 ⇒ 恒黑
+
+来源：.tmp/instances/t0103b/log/amayui-emulator.log（按字节区间截取：修前那一次真跑）。
+背景：转场期间屏幕 pass 已把**区间 A** 的项排除（tickets/T-0091 的 D3），而区间 A 恰恰是被模糊的那块
+（记录写端：setTransition id=0x18aee writes=[[0,3],...,[4,63],[5,101100],[7,1],[13,0],...,[20,200],...]\n ⇒ 槽 63 / 源区间 A = 句柄 101100 = 云柱背景 0x18AEC / Slideblur Length 0→200 / 2500ms）。
+⇒ 取「本帧屏幕」= 模糊一张**没有云柱背景**的画面 ⇒ 输出恒黑。对应截图 = section1-black-before-fix.png（20890B 级纯黑）。
+
+\\n[transition] id=0x18aee cat=3 t=0.000 → 槽 63（Slideblur Length=0 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.204 → 槽 63（Slideblur Length=40 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.339 → 槽 63（Slideblur Length=67 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.508 → 槽 63（Slideblur Length=101 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.659 → 槽 63（Slideblur Length=131 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.880 → 槽 63（Slideblur Length=175 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+[transition] id=0x18aee cat=3 t=0.992 → 槽 63（Slideblur Length=198 Angle=0 目标层=1280x720 采样=33（近似；源=本帧屏幕））
+\\n
+（该次真跑窗口内的 capture 全是 20,890~21,067B 的纯黑帧；同窗口 [present] 摘要里过渡项 α=202 正盖着屏 ⇒ 槽里就是黑的。）

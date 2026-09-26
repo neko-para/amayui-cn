@@ -128,6 +128,20 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
     backend.includes('scTransitionRangeHandles') && backend.includes('#renderRangeCanvas'),
     '类别 0/2 必须用 renderItemSubset 现渲染那两条区间当源（引擎 36/37 就是它们，raw 136014-136176）',
   );
+  // ★★`tickets/T-0103` 轮 17：**类别 3 的源也必须是区间 A 的离屏副本**（引擎层 36，raw 135883 `Scene+42600`）。
+  //   为什么不能取"本帧屏幕"：D3 已把区间 A 的项排除出屏幕 pass（`scTransitionMarkedHandles` →
+  //   presenter 的 `skipped()`），而区间 A 恰恰就是被模糊的那块 ⇒ 取屏幕 = 模糊一张没有它的画面 = 整屏黑
+  //   （用户实测：SN0000 结尾的横向模糊看不见、画面直接切成黑）。
+  assert.ok(
+    /const rangeA = scTransitionRangeHandles\(this\.scene, rec\)\.a;[\s\S]{0,200}?const ra = this\.#renderRangeCanvas\(rangeA\);[\s\S]{0,200}?const src = ra\.canvas \?\? screenOnce\(\);/.test(
+      backend,
+    ),
+    '★类别 3 的模糊源必须是 `#renderRangeCanvas(区间 A)`（= 引擎层 36），`screenOnce()` 只许作空区间的退化',
+  );
+  assert.ok(
+    !backend.includes('采样=${plan.samples}（近似；源=本帧屏幕）'),
+    '★日志/口径不许再无条件写「源=本帧屏幕」（T-0103 轮 17 的缺陷口径）',
+  );
   assert.ok(
     !backend.includes('#transOld'),
     '★"上一帧整屏快照"那套概念必须已经删掉（转场的源是子集，不是整屏）',

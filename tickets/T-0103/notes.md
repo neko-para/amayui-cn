@@ -231,3 +231,72 @@ node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance <id> --
 - 新票 `T-0146`：3 条**预先存在**的 verify 红（真槽 SAVE70/71 格式、scene-report 占位项下限、host-registry 的 idle 用例并行偶发超时）——用「把我的 src 改动 `git checkout --` 回 HEAD」做 A/B，失败输出**逐字相同** ⇒ 与本轮无关。
 - `T-0145` 的 ③（装载点依据）随 D1 一并落地（证据已 retarget）。
 - 本轮**未做**：`T-0091` 的 ②（`[4]` 指向非 `create-texture` 槽）、`T-0145` 的 ①（`3f90` 门极性的文档订正）与 ④（留帧注释）、`T-0103` 的帧级像素连拍（建议在 D1 之后再谈观感对照）。
+
+## 2026-09-26 · 轮 17 —— 段 1（SN0000 结尾的横向模糊）取证 + 根因 + 修复
+
+> 用户本轮口径：「SN0000 结尾渐变到黑屏的**横向模糊丢失了**，并且**直接切换到黑色（没有预期的渐变）**；
+> 黑色后面的表现也有问题，但**先按顺序研究第一段**」。⇒ 本轮只做段 1，后段留待下一轮。
+> 全文（含脚本落点表 / 运行期实证 / 根因推导 / after 截图清单）：`evidence/section1-blur-source.md`。
+
+### 1. 现象与取证（存档 78）
+
+- 复现：`load-slot.mjs --instance <id> --slot 78` → 点 `(640,360)` → 盯实例日志的 `setTransition id=0x18aee` → 连拍。
+- **修前**：整个 2500ms 窗口（`[3]=2500`）内 `[present]` 摘要是 `101100:a255 … 101102:a202→a41`
+  （过渡项几乎不透明、正盖着屏幕），而窗口内的 capture **全是 20,890~21,067B 的纯黑帧**
+  ⇒ **槽 63 里就是黑的** ⇒ 横向模糊整段看不见、画面从云柱背景**直接切成黑**（= 用户口径）。
+  证据：`evidence/section1-black-before-fix.png` + `evidence/section1-blur-source-before.txt`。
+
+### 2. 根因（两条"各自有据"的改动在同一帧互相抵消）
+
+```
+记录写端：[5]=101100（云柱背景项 0x18AEC）、[7]=1 ⇒ 区间 A = {101100}；[4]=槽 63；[13]=0 ⇒ SlideBlur；Length 0→200
+D3（轮 16）：活动转场把区间 A/B 的项**排除出屏幕 pass**（scTransitionMarkedHandles → presenter 的 skipped()）
+D4（轮 15）：类别 3 的模糊源改取「**本帧屏幕合成**」（screenOnce）
+⇒ 模糊源 = 一张**已经被 D3 拿掉区间项**的画面 = 黑底 ⇒ 槽 63 恒黑
+```
+- 引擎侧对照（读体）：effect 的 `Tex0` = **层 36**（raw **135883-135884**，`Scene+42600 = 42456+4*36`），
+  层 36 的内容 = 那两趟区间重绘（raw **136014-136176**）⇒ **被模糊的是区间项本身**。
+- ⇒ D4 那条"有意改正"的**结论被本轮实测否定**：真机可观测量不是黑的，而且取屏幕与 D3 直接冲突。
+
+### 3. 修法（`src/renderer/pixiBackend.ts` 的 `#compositeTransitions` 类别 3 分支）
+
+```ts
+const rangeA = scTransitionRangeHandles(this.scene, rec).a;   // 记录 [5]/[7]
+const ra = this.#renderRangeCanvas(rangeA);                    // = 层 36 的等价物（与类别 0/2 同一机制）
+const src = ra.canvas ?? screenOnce();                         // 区间 A 空时才退回屏幕（退化路径，日志写明）
+```
+
+### 4. after 实测（`evidence/section1-blur-source-after.txt`）
+
+| 截图 | 窗口位置 | 内容 |
+|---|---|---|
+| `section1-blur-after.png` | t≈0.25（Length≈40） | 云柱背景被**横向拉花** ⇒ 横向模糊回来 |
+| `section1-blur-after-late.png` | 窗口末段 | 同一张模糊图**整体压暗**（α 窗 255→0）⇒ 「向黑色渐变」 |
+| `section1-black-after-window.png` | 窗口之后 | 黑（区间 A 仍被排除 + 底色 mesh 0x0），随后接 SC0000 |
+
+日志：`[transition] id=0x18aee cat=3 t=0.000…0.997 → 槽 63（Slideblur Length=0…199 … 源=区间A(1项，引擎层 36））`；
+窗口内 capture 大小 1,322,392B → 772,573B → 20,890B。
+
+### 5. 守卫
+
+- `test/transition-render-wiring.test.ts`：① 源码棘轮 —— 类别 3 的源必须是 `#renderRangeCanvas(区间 A)`、
+  `screenOnce()` 只许作空区间退化；② 口径棘轮 —— 不许再出现 `采样=…（近似；源=本帧屏幕）`。
+- 前提由既有守卫覆盖：同文件 **D3** 例（区间项不进屏幕 pass）、`test/sc-transition-window.test.ts`（窗模型）、
+  `test/op-24f-250-251-transitions.test.ts`（写端记录格）。
+- 收尾实测：`npx tsx --test test/transition-render-wiring.test.ts test/sc-transition-window.test.ts test/op-24f-250-251-transitions.test.ts`
+  = **36 pass / 0 fail**；`npm run verify` = **typecheck ×3 + 1726 pass / 0 fail / 2 skipped + `check:dead-writes`（无新增死写）**；
+  四份台账 `--validate` 绿（`capabilities.js` 145 条 / `scripts.js` 37 条 / `tickets.js` 180 张 / `gaps`）。
+  第二层台账 `clock-read-transition-window` 的 (d) 条已按本轮结论**订正**（原写「取本帧屏幕合成是有意的改正」= 现证伪）。
+
+### 6. 本轮的两条纪律（已落 `docs-new/00-overview/lessons.md` #25/#26）
+
+1. **"改一处、另一处静默失效"**：D3 与 D4 分开看都对，合起来恒黑 ⇒ 改消费端时要回看"同一帧里还有谁在改那份数据"，
+   并写成**一条端到端断言**（不能只在各自单测里"都有据"）。
+2. **debug 实例的渲染页跑的是 `dist/renderer.js`**（构建产物）⇒ 改 `src/renderer/**` 后必须
+   `npm run build:electron` 再重启实例（本轮为此白跑两轮取证）。已写进 `amayui-remote-debug` SKILL §5 坑 12。
+
+### 7. 下一步（段 2/3/4，用户要求按顺序）
+
+- 段 2/3：白晕（mesh `19258` 两段窗 `1444-1458` / `1503→1510`）+ 章节卡（`1468-1501` 四张 1280×720 贴片 + `0x18b02/0x18b16` 两条 ZoomBlur 1500ms）。
+- 段 4：`SC0000:1574 i250`（槽 9、3000ms SlideBlur）+ 人物轮廓（`1640-1643` EV002AD + `1647-1653` 2400ms 窗）。
+- 段 5（ADV 白底/文字色）已在 `T-0102` 结案，若复现再回看。

@@ -1409,11 +1409,16 @@ export class PixiBackend implements NativeBridge {
           // 类别 3 = 插值模糊（`0x250` SlideBlur / `0x251` ZoomBlur）。
           // ★参数逐条确证（raw 135837-135881）；**像素是累积近似** —— 见 `scTransitionBlurPlan` 的
           //   偏差披露（引擎走 D3DX effect 或逐像素 CPU 卷积，emulator 两者都没有）。
-          //   ★源取**本帧屏幕合成** —— 这是**有意的改正**（不是猜）：引擎读的是层 36 的纹理
-          //   （raw 135883；`Scene+42600` 就是层 36），而层 36 只由那两趟 item 重绘填
-          //   （raw 136014-136176），类别 3 **被显式跳过那一趟**
-          //   （asm `0x4B318A: cmp eax,3 / jnz loc_4B379C`）⇒ 引擎在类别 3 上读的是**陈旧 scratch**。
-          const src = screenOnce();
+          // ★★**源 = 记录区间 A 的离屏副本**（= 引擎层 36 的 emulator 等价物）——`tickets/T-0103` 轮 17 实证：
+          //   引擎那边 effect 的输入纹理就是**层 36**（raw 135883 `Scene+42600` = `42456 + 4*36` 那张），
+          //   而层 36 装的是那两趟 item 重绘（raw 136014-136176）写进去的**区间项** ⇒ 被模糊的就是区间项本身。
+          //   ★修前这里取的是"本帧屏幕合成"（`screenOnce()`），而 D3 已经把区间 A 的项**排除出屏幕 pass**
+          //   （`scTransitionMarkedHandles` → presenter 的 `skipped()`）⇒ 取屏幕 = 模糊一张**已经没有区间项**
+          //   的画面 = 整屏黑：SN0000 结尾的"横向模糊"整段看不见、画面从背景**直接切成黑**（用户实测症状）。
+          //   区间 A 为空时才退回屏幕（引擎层 36 那时是陈旧内容；这条退化路径在日志里会写明）。
+          const rangeA = scTransitionRangeHandles(this.scene, rec).a;
+          const ra = this.#renderRangeCanvas(rangeA);
+          const src = ra.canvas ?? screenOnce();
           if (!src) return;
           const plan = scTransitionBlurPlan(rec, rt, { w, h });
           if (!plan) return;
@@ -1445,7 +1450,7 @@ export class PixiBackend implements NativeBridge {
             (plan.zoom
               ? `Center=(${plan.centerUPx},${plan.centerVPx}) 归一化=(${plan.centerU.toFixed(3)},${plan.centerV.toFixed(3)})`
               : `Angle=${plan.angle}`) +
-            ` 目标层=${w}x${h} 采样=${plan.samples}（近似；源=本帧屏幕）`;
+            ` 目标层=${w}x${h} 采样=${plan.samples}（近似；源=${ra.canvas ? `区间A(${ra.drawn}项，引擎层 36）` : `本帧屏幕（区间 A 空：${rangeA.size} 项）`}）`;
           return;
         }
         // ★类别 0/2 的源 = 记录那两条 item 区间的**离屏子集**（引擎 36 = A、37 = B）。

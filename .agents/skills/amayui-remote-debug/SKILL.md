@@ -230,6 +230,7 @@ cur=3  帧数=40（活帧 11，空槽 29，已折叠）  key=0
 | 9 | 注册表心跳**滞后 5s** | 刚点完就读注册表会读到上一状态 ⇒ **要即时真值就用 §4.2 的 `frame`** |
 | 10 | 坐标是**虚拟 1280×720** | 与窗口/DPR 无关；面板缩放（0.5×/0.25×）也不影响 |
 | 11 | 悬停靠**位置变化** | 同一点重复 `move` 无效（§3.1） |
+| 12 | ★**渲染页跑的是构建产物 `dist/renderer.js`，不是 `src/`** | 宿主侧（`--import tsx`）确实直读 `src/`，但**页面**加载的是 `npm run build:electron` 的产物 ⇒ 改了 `src/renderer/**` 只重启实例，**跑的还是旧代码**（2026-09-26 实测：日志口径仍是旧文案，白跑两轮取证）。对策：`cd app/amayui-emulator && npm run build:electron` → 再重启实例。`npm run shot`/`record` 自带这一步，只有"用插件/CLI 起实例"这条路易踩（见 `docs-new/00-overview/lessons.md` #26） |
 
 ---
 

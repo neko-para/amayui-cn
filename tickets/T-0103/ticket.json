@@ -5,59 +5,53 @@
   "area": "emulator/render",
   "why": "**用户实测（轮 8）**原话：「SN0000 到 SC0000 的专场（章节切换动画）似乎有很多不一致的地方，这个有点难以描述，**先记录，最后再处理**」。\n⇒ 本票**只登记**，不进入本轮实现。已知的相邻事实（供将来动手时当起点，**不是**本票的结论）：\n- 该切换链在日志里表现为：`SCINIT`/`SCJUMP` 之后 `[call-script] 0x73 -> SC0000.BIN`，前面是一串 `detachTexture … RANGE-REMOVE` + `clearDrawContainer` + 章头转场项（`AE910AA.AGF`/`AE910AB.AGF` 建的两个 draw item + `setTransition id=0x18b02 … [3]=1500`）。\n- 转场渲染侧本身还有未收口项：`tickets/T-0091` 的 **G1**（`Scene+46512` 冻结没进窗模型）与 **G2**（转场表清空门应为全场景 `46516 == 0`），以及同票的类别 3 精确核 / `[4]` 非 create-texture 槽 / E4 可达路径。\n- 另有 `T-0099`（sleep 门帧粒度：40ms 档每处多约一帧）会直接改变演出的时序观感。",
   "acceptance": [
-    "★先做**取证**（用户说「难以描述」⇒ 必须把现象拆成可核对的条目）：用 `npm run shot` 对同一段切换在不同帧位连拍（或让用户给出时间点），逐条记录「哪一帧、哪个元素、期望 vs 实际」——至少覆盖：章头转场的条带/淡入淡出、上一屏残留、ADV 窗口背景/文字、角色名色、时序（每段时长）",
+    "★段 1（2026-09-26 用户实测）：SN0000 结尾的**横向模糊**必须看得见，并且整段由不透明**渐变到黑**（不是直接切黑）—— 已修（源=区间 A 的离屏副本），判据 = `evidence/section1-blur-after.png`（横向拉花）+ `section1-blur-after-late.png`（压暗）+ after 日志的 `源=区间A(1项，引擎层 36）`；守卫 `test/transition-render-wiring.test.ts`",
+    "★先做**取证**（用户说「难以描述」⇒ 必须把现象拆成可核对的条目）：用 `npm run shot` 对同一段切换在不同帧位连拍（或让用户给出时间点），逐条记录「哪一帧、哪个元素、期望 vs 实际」——至少覆盖：章头转场的条带/淡入淡出、上一屏残留、ADV 窗口背景/文字、角色名色、时序（每段时长）—— 段 1 已完成（见上条）；段 2/3/4 待做",
     "把每条现象归到**已知票**或新开票：转场窗口模型 ⇒ `T-0091` G1/G2；时序粒度 ⇒ `T-0099`；文字/底色 ⇒ `T-0102`；确实不属于以上三类的才在本票内实现",
     "实现按体证据（`sub_4B06D0`/`sub_4ADDB0`/`sub_4ADEE0`/`sub_4A9BE0`，raw 行号进 `evidence`），并补场景级不变量或 E4 对照",
     "npm run verify 全绿；四份台账 --validate 绿"
   ],
   "evidence": [
     {
-      "file": "tickets/T-0103/notes.md",
-      "anchor": "### 复现配方：存档 78",
-      "note": "★本轮（轮 9）用户实测补充：四段现象逐段对照（真机 vs emulator）+ 可复现存档 78 + 现象→归票初判 + 脚本/日志锚点。这是本票判据 ① 的取证条目（帧级连拍仍缺）。",
-      "line": 33
+      "file": "tickets/T-0103/evidence/section1-blur-source.md",
+      "anchor": "类别 3 的模糊源取了「本帧屏幕」",
+      "note": "★轮 17 段 1 全文：现象取证（窗口内恒黑）→ 根因（D3 排除区间项 ∩ D4 取屏幕）→ 修法 → after 截图清单（同目录 3 张 png）→ 守卫",
+      "line": 38
+    },
+    {
+      "file": "tickets/T-0103/evidence/section1-blur-source-before.txt",
+      "anchor": "采样=33（近似；源=本帧屏幕）",
+      "note": "before 日志：类别 3 的源 = 本帧屏幕（修前口径）；对应截图 section1-black-before-fix.png（窗口内纯黑）",
+      "line": 8
+    },
+    {
+      "file": "tickets/T-0103/evidence/section1-blur-source-after.txt",
+      "anchor": "引擎层 36",
+      "note": "after 日志：源 = 区间 A 的离屏副本（引擎层 36），Length 0→199；对应截图 section1-blur-after.png / section1-blur-after-late.png"
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i250 (local-int 0) (global-int 3f5c) (global-int f8025) 1 (local-int 1) (local-int 2) (local-int 4) (local-int 6) 0 9c4",
       "line": 3036,
-      "note": "第 1/4 段\"横向模糊\"的脚本侧落点：类别 3/类型 0 的滑动模糊（`i250`），源项 = 紧跟 `create-texture (global-int 3f5c)` 的全屏 draw-texture"
+      "note": "段 1 的脚本落点：类别 3 SlideBlur（`[4]`=槽 3f5c / `[5]`=0x18AEC 源区间 / 2500ms）"
     },
     {
-      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
-      "anchor": "setTransition id=0x18b02",
-      "note": "章头演出的现场日志（原日志在 .tmp，已摘录归档）：AE910AA.AGF(256×128)→slot 44；`setTransition id=0x18b02` = 类别 3 / `[13]=1`(ZoomBlur) / `[3]=1500`ms / 目标槽 `[4]=64`（该槽确实是 createTexture slot=64 1280×720 mode=1）",
-      "line": 45
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "const rangeA = scTransitionRangeHandles(this.scene, rec).a;",
+      "note": "修法落点：类别 3 的模糊源 = 区间 A 的离屏副本（引擎层 36），`screenOnce()` 只作空区间退化",
+      "line": 1419
     },
     {
-      "file": "tickets/T-0091/notes.md",
-      "anchor": "G2 不能直接 import",
-      "note": "转场侧的 G1/G2 与实现陷阱（第 1/4 段的最可能归属）",
-      "line": 33
-    },
-    {
-      "file": "tickets/T-0100/evidence/sn0000-sc0000-boundary.md",
-      "anchor": "SC0000",
-      "note": "同一次切换的完整边界（7951-7969：detach + clearDrawContainer + 章头项 + 0x73 -> SC0000.BIN）",
-      "line": 1
-    },
-    {
-      "file": "tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md",
-      "anchor": "l2d={槽1 节点1 可画1 纹理3 缓存60}",
-      "note": "★轮 14 运行期双侧对照（用户新线索的根因）：新游戏路径进 SN0000 后 513 条 present 带 TITLE 的 L2D 节点；读档路径装载日志自称「清掉上一个执行链的 L2D 运行态：实例槽 1 个 / 立绘节点 1 个」后 0 条 ⇒ 根因 = emulator 的 0x1F6/0x1F7 未清 572B 立绘节点表（新票 T-0144）",
-      "line": 21
+      "file": "app/amayui-emulator/test/transition-render-wiring.test.ts",
+      "anchor": "类别 3 的模糊源必须是",
+      "note": "守卫：源码棘轮（源必须是 #renderRangeCanvas(区间 A)）+ 口径棘轮（不许再出现 源=本帧屏幕）",
+      "line": 139
     },
     {
       "file": "tickets/T-0103/notes.md",
-      "anchor": "轮 14 —— 读法订正 + 五段落点 + 根因分流",
-      "note": "★轮 14 全文：jcc 极性（v==0 才跳）、五段的脚本落点表（云柱=SN0000:2042 / 渐黑=SC0000:1607-1621 / 白晕=mesh 19258 两段窗 / 人物轮廓=SC0000:1640-1653）、根因分流（T-0144 / T-0091 / T-0102 / T-0099）、顺带发现 4 条、固化工具",
-      "line": 82
-    },
-    {
-      "file": "tickets/T-0103/notes.md",
-      "anchor": "轮 16 —— D1~D4 落地",
-      "note": "★D1~D4 的实现与验证清单（谁改了什么、守卫在哪、E3/E4 怎么证的、剩下什么）",
-      "line": 190
+      "anchor": "轮 17 —— 段 1（SN0000 结尾的横向模糊）取证 + 根因 + 修复",
+      "note": "★轮 17 全文（现象 / 根因 / 修法 / after / 守卫 / 两条纪律 / 下一步段 2-4）",
+      "line": 235
     }
   ],
   "links": {
@@ -74,7 +68,7 @@
     ]
   },
   "id": "T-0103",
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-20",
@@ -105,6 +99,21 @@
       "at": "2026-09-23",
       "kind": "status",
       "what": "open → open —— 轮 16：D1~D4 落地 —— D1（0x1F6/0x1F7/0x21D 清 572B 立绘节点表，T-0144 done，E3+E4 已证）/ D2（转场到期帧交付终值）/ D3（区间项排除出屏幕 pass）/ D4（类别 3 的核降级 + 源决策写成一份披露）；剩 T-0091 的 ②「[4] 非 create-texture 槽」与 T-0145 的 ①④"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence, tests —— 轮 17：段 1 已修（类别 3 的模糊源 = 区间 A 的离屏副本，修前取屏幕与 D3 的排除集冲突 ⇒ 恒黑）；段 2/3/4 待做"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → doing —— 轮 17：段 1 已修（类别 3 的模糊源 = 区间 A 的离屏副本，修前取屏幕与 D3 的排除集冲突 ⇒ 恒黑）；段 2/3/4 待做"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/transition-render-wiring.test.ts",
+    "app/amayui-emulator/test/sc-transition-window.test.ts",
+    "app/amayui-emulator/test/op-24f-250-251-transitions.test.ts"
   ]
 }

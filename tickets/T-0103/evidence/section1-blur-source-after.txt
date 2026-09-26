@@ -1,0 +1,16 @@
+# T-0103 段 1 · after 日志：模糊源 = 区间 A 的离屏副本（引擎层 36）⇒ 横向模糊回来
+
+来源：同一实例日志的**下一段**（重建 dist/renderer.js 之后的真跑）。
+
+\\n[transition] id=0x18aee cat=3 t=0.000 → 槽 63（Slideblur Length=0 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.178 → 槽 63（Slideblur Length=35 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.339 → 槽 63（Slideblur Length=67 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.482 → 槽 63（Slideblur Length=96 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.624 → 槽 63（Slideblur Length=124 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.778 → 槽 63（Slideblur Length=155 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+[transition] id=0x18aee cat=3 t=0.997 → 槽 63（Slideblur Length=199 Angle=0 目标层=1280x720 采样=33（近似；源=区间A(1项，引擎层 36）））
+\\n
+对应截图：
+- section1-blur-after.png（窗口 t≈0.25，Length≈40）—— 云柱背景被横向拉花（**横向模糊**）；
+- section1-blur-after-late.png（窗口末段）—— 同一张模糊图**整体压暗**（过渡项 α 窗 255→0）= 「向黑色渐变」；
+- section1-black-after-window.png（窗口之后）—— 黑（区间 A 仍被排除 + 底色 mesh 0x0），随后接 SC0000。
