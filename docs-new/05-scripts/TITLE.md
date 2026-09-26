@@ -34,6 +34,7 @@ generated_by: scripts/build-scripts.mjs
 | `520-530` | `set-texture 5272 4 (local-int 40d)` | ★★标题画面**全部美术都建在纹理槽 4 上**（图 0x5272；静态立绘分支另用槽 5 = 0x5273）⇒ 读档按存档重绑槽 4（`records[4].flag==1 ⇒ 0xB37`）时，这些项**整体改画成存档那张图** |
 | `333-341` | `call-script 33  // SAVE` | ★Load Data 分支（`label_00001240`）：`play-sound-effect`/`i0b5`/两个全局 + `call-script 33`(SAVE.BIN) —— 前后**没有任何 detach/i1f6/release-texture** ⇒ 打开读档菜单时标题画面的绘制项全部活着 |
 | `634-638` | `draw-texture 12c 4 5a0 0 9c 9c 44e 126` | 5 块菜单板（0x12C/0x12E/0x130/0x132/0x134，各 156×156、槽 4、源在 atlas 列 0x5A0）落成对角阶梯 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)；悬停副本 0x12D/0x12F/0x131/0x133/0x135 用 atlas 列 0x502、按需建删（lines 770-800） |
+| `731-748` | `set-vertex-color-alpha 30d40 0 12c ff 0` | ★标题**入场渐显**的通用助手（`label_00003158`）：`create-mesh 30d40`（满屏）→ 两支 `set-vertex-color(-alpha)`（黑/白两档，`jcc 0` 决定走哪支）→ `i24e 10001` → `wait` → `detach-texture 30d40 1` → `poll-input` → `ret`。撤幕那一刻幕**已淡到全透明**（`state0` 被窗末烘焙成 0）⇒ 撤它画面上什么都没变 |
 
 ## 关键槽 / 局部量
 
@@ -72,6 +73,7 @@ generated_by: scripts/build-scripts.mjs
 - ★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`
 - ★`detach-texture 64 12c`（line 818，删 [100,400)）只在 **Game Start** 分支被调（line 320）；`i1f6`（line 810）只在 **Room** 分支（line 368）与退出路径（line 822）—— **Load Data 分支没有任何清理** ⇒ 不能假设「进菜单前标题项会被清」
 - ★`0x5A0`/`0x502` 是 **atlas 源列**、`0x9E` 是 atlas 行距，不是屏幕坐标（曾据此误判「在屏外」；屏幕落点来自 line 16/17 的两张常量表）；同理 `0x64` 那条的源 y=1161 已越过 BG050ABL 的图高 1152
+- ★`label_00003158`（本段）撤的是一块**已经全透明**的满屏幕 ⇒ 不该按「撤幕」去武装留帧（会白冻 60 帧）：武装判据必须是「撤幕**那一刻**真的盖着屏幕」（几何铺满 ∩ `state0` 高字节 α > 0），见 `T-0182`
 
 ## 缺口
 

@@ -54,3 +54,23 @@
 **① 类别 3 的核（D4）**：按验收给的**替代路线**收口 —— 把引擎 CPU 回退核的体读事实（`sub_4A0120`：33×33 旋转方格 + 亚像素双线性；`a1==0` 平坦+中心 3 / `a1!=0` 三角斜坡）与**不复刻的理由**（1089 采样/帧不可行 + 真机有 effect 时走 shader）写成一份披露（`TransitionBlurPlan` 的偏差披露 ①②，含 asm 判据 `0x4B3187: cmp eax,3 / jnz`），守卫 `test/sc-transition-window.test.ts` 的 D4 例钉住"两份口径不许并存"。
 **④ E4 可达路径**：`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs --slot 78` 让"读档到 SN0000 末页 → 下一步就是切章"变成一条命令（判据 = 日志 `[slot-load]`）。
 **② `[4]` 指向非 `create-texture` 槽**：仍**未做**（本票剩余项）。
+
+## 2026-09-26 · ② 收口 + **重开条件与发现路径**（用户提问追补）
+
+**收口内容**（与 `acceptance` 第 ② 条对应）：读体 `sub_4A50C0`（raw 124819-124920）确认两条路 —— `a2 > 0x3E7`（unsigned ⇒ 含 `-1`）走**后台缓冲**（raw 124839-124861，转场直接画到屏幕、记 `Scene+46456 = -1`），
+`0..999` 才查槽表 `Scene[4*slot + 42456]`。emulator 只建模「`0..999` 且该槽有 `create-texture` 表面」这一种 ⇒ 判据抽成纯函数 `transitionTargetKind(slot)`，
+宿主对后台缓冲分支**只登记不假装**（`#compositeTransitions` 打一条点明 raw 的日志并跳过本帧合成）；守卫 = `test/transition-render-wiring.test.ts` 的 8 例单元 + 源棘轮。
+
+**★重开条件（原文在第二层 `clock-read-transition-window` 的 `note` 里，此处只回链）**：
+
+- ① 出现 `[4] = -1` ／ `> 999` 的**语料现场**或 E4 采样；
+- ② 宿主引入**真实离屏渲染目标**。
+
+**★怎么发现（2026-09-26 用户提问：「这个要如何发现？目前这个单已经关掉了」）**：今天**没有任何机械检查**会亮灯（`--validate`/`--list`/看板都不读 capability 的散文），
+所以下面的三条就是答案，制度化的工作单 = `tickets/T-0186`：
+
+1. **静态（条件 ① 的普查版）**：语料扫描 —— `tickets/T-0186/evidence/transition-target-scan.txt`（262 个写端 / 181 个文件；今天**越界 0 处**，183 处 `(local-ptr 2)` 静态不可界定）；
+2. **运行期（条件 ① 的实时版）**：跑一遍复现链后 `grep 走后台缓冲 <实例日志>` **必须 0 命中** —— 日志行已存在，不需要新代码；
+3. **制度化**：`T-0186` 要把 ①② 做成守卫棘轮 + 文档化检查，并给出**重开手册**（命中时：本票 done → doing、evidence 加现场、补 E4/E3 判据、同步 capability note 与 `analysis/opcode-gaps.json`）。
+
+⇒ 本票保持 `done`（判据/守卫/缺口登记三件都在），但**它的缺口在票层是隐形的**（181 张票里只有本节的固定措辞「重开条件」），这正是 `T-0186` 存在的理由。

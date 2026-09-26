@@ -41,7 +41,8 @@
   ],
   "links": {
     "tickets": [
-      "T-0084"
+      "T-0084",
+      "T-0186"
     ],
     "docs": [
       "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
@@ -77,6 +78,11 @@
       "at": "2026-09-25",
       "kind": "status",
       "what": "doing → done —— 剩余四项全部收口：② 的判据（transitionTargetKind）+ 守卫 + 有据缺口登记已落地（红→绿 7/8→8/8）；④ 的可达路径已复现（读档 78 → 点 4 次 → cat=0 交叉淡化）并把 9 张截图归档到 evidence/；①③⑤⑥ 复核确认此前已落地。详见 changes.md。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：links —— 用户提问追补（2026-09-26）：「② 的重开条件要如何发现？这个单已经关掉了」。本票保持 done（判据 `transitionTargetKind` + 守卫 + 有据缺口登记三件都在），但把**发现路径**落到票层：notes.md 追补一节（静态语料扫描 / 运行期 `grep 走后台缓冲` / 制度化工作单），并回链 `T-0186`（把这两条做成守卫棘轮 + 重开手册）。"
     }
   ],
   "tests": [

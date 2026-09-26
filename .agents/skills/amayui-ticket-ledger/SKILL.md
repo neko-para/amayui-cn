@@ -164,6 +164,40 @@ node …fix-evidence-lines.js --any --pick T-0168:3=478 --write                 
 
 ---
 
+### 3.7 ★「已关闭但有条件缺口」的单：重开条件写在哪、怎么被发现
+
+**背景（2026-09-26 用户提问）**：「你提到 `T-0091` 的重开条件，但是这个要如何发现？目前这个单是已经关掉了的」。
+诚实答案 = **靠人记**；这一节就是把"靠人记"改成"有落脚点 + 有查法"。
+
+**写在哪（开/关单时）**：
+
+- `done` **不等于**没有缺口：允许「判据已建模 + 已加守卫 + 缺口已登记」这种收口（`T-0091` ② 就是）。
+  但这种 `done` **必须**在 `why` 或 `acceptance` 里用固定措辞写明 **`重开条件：① … ② …`**（条件要**可判定**：出现什么语料/什么日志/什么宿主能力）。
+- 缺口的事实本体仍然只写在一个地方：**引擎层缺口 → 第二层 capability 的 `note`**（`T-0091` ② 的落点在 `clock-read-transition-window`）；
+  票侧**只回链**（`links.analysis` + `links.tickets`），不要抄一遍（分层不许互相复制）。
+- ★**动机**：重开条件写在 capability 的散文里，机器不读 ⇒ `--validate`/`--list`/看板全都不会现出来。
+  实测基线（T-0186 evidence）：145 条 capability 里 **16 条**带「重开条件」（partial 9 / modeled-verified 4 / n/a-known 3），
+  而 **181 张票里 0 张**带它 —— 所以 `T-0091` 这种"已 done 却带条件缺口"的单在票层是**隐形的**。
+
+**怎么发现（今天可用的三条）**：
+
+```bash
+# ① 缺口视图（第二层侧的真源）：哪些 capability 是 partial/absent、它们的重开条件是什么
+node .agents/skills/amayui-engine-analysis/scripts/capabilities.js --list --status partial
+node .agents/skills/amayui-engine-analysis/scripts/gaps.js --stale      # 自述"已实现/不适用"的缺口条目兜底
+# ② 票侧搜措辞（固定措辞就是为了能 grep）
+grep -rl '重开条件' tickets/*/ticket.json
+# ③ 回链反查：哪些票挂在这条 capability 上（谁是它的 owner）
+grep -l 'engine-capabilities.json' tickets/*/ticket.json
+```
+
+- ★**只查 `partial|absent` 会漏**：`clock-read-transition-window` 的 status 是 `modeled-verified`（主体确实建模 + E3 守卫），
+  缺口在 `note` 的子项里 ⇒ 查重开条件**必须查 note 文本**，不能只看 status 字段。
+- 条件的"机械版"（出现即自动亮灯）优先做成**守卫测试**（语料静态棘轮）或**日志检查**（运行期），
+  而不是靠人定期回看散文 —— 这正是 `tickets/T-0186` 要做的事（样本 = `T-0091` ② 的 `[4]` 越界/后台缓冲分支）。
+
+---
+
 ## 4. 这个技能不做的事（🚫）
 
 - **不把台账/清单整表抄成票**：能力台账的 `absent/partial` 条目由台账自己管；只在"决定要做"时开票并回链。

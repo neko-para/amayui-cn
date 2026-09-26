@@ -120,6 +120,7 @@ node .agents/skills/amayui-script-analysis/scripts/brief.js --list        # 已�
 | **跨脚本的机制叙述**（子系统整体机制、opcode 语义表） | 主题文档 `docs-new/03-engine/*.md`（第三层只 `links.docs` 回链，**不抄**） | 相关守卫测试（如 opcode-table 系列） |
 | 翻译/改文案导致 `src/*.txt` 行号漂移（`amayui-script-translate` / `amayui-script-update` 动过这个文件） | 该条 `layout[].lines` 全部刷新 | 收尾三连（锚点棘轮会先红给你看） |
 | emulator 实现状态变了（该脚本相关） | `docs-new/04-app/emulator-refactor-plan.md` 的变更记录节（新条目放最上方） | `cd app/amayui-emulator && npm run verify` |
+| ★**任何任务里**读 `src/*.txt` 得出的脚本层结论（不止"分析任务"；见 §2.4） | 同条 `layout` / `slots` / `gotchas` / `invariants` | 收尾三连（§2.2） |
 
 **分层不许互相复制**（`docs-new/00-overview/authority.md` §2 的硬性规则）：
 
@@ -148,6 +149,43 @@ cd app/amayui-emulator && npx tsx --test test/script-ledger.test.ts          # �
 | `docs-new/05-scripts/README.md`、`docs-new/05-scripts/<ID>.md` | **生成物**（`node scripts/build-scripts.mjs`；勿手改） |
 | `docs-new/03-engine/engine-capabilities.md` | **生成物**（`node scripts/build-capabilities.mjs`；勿手改） |
 | `docs-new/03-engine/*.md`（其余）、`docs-new/02-data/*.md` | 叙述层（可写；但引擎层**事实**要能在第一/二层查到） |
+
+### 2.4 ★触发条件是**结论类型**，不是任务类型（2026-09-26 事故换来的）
+
+> **事故（`tickets/T-0103` 轮 17/18）**：用户报的是「SN0000 → SC0000 章节切换的横向模糊丢了 / 黑色遮罩导致背景色跳变」——
+> 任务看起来是**渲染器 bug**，本技能一次都没被加载。但两轮里我实际做的事是：读 `src/SN0000.txt:3026-3058`（段 1 的 SlideBlur：槽 `3f5c`、源区间 `f8025`、2500ms）、
+> 读 `src/SC0000.txt:1420-1510/1607-1653`（白晕窗 / 黑幕 / 人物轮廓）、读 `src/TITLE.txt`（入场渐显），
+> 并把 `src/SN0000.txt:3036` 这类**行号当证据锚进了票里** —— 而 `analysis/scripts.json` 里这三条**根本不存在**，
+> 直到用户当面指出「本次你依然没有编辑 `docs-new/05-scripts`」才补（SN0000 +7 段 / SC0000 +8 段 / TITLE +2 段）。
+>
+> **机制上的根因**：§2.1 的矩阵**没被看过** —— 技能按"任务类型"（脚本分析）加载，而"修 emulator bug 时顺手读脚本下结论"根本不触发加载。
+> ⇒ 所以纪律必须写成**按结论类型触发**，并放在本节能被顺手看到的地方。
+
+**触发条件（满足任意一条就要走 §2.4 的清单）**：本轮结论里出现了
+
+- 「`<脚本>:<行区间>` 这一段在干什么」；
+- 「某个槽 / 局部量 / 全局在这里的含义」（如 `global f8043` = ADV 暗化网格句柄）；
+- 「这里的坑是……」（"看起来是向黑、其实是目标项 α 变 0"这类）；
+- 「这里的不变量 / 入口 / 出口是……」；
+- 把 `src/*.txt` 的**行号或行内串**写进了任何票的 `evidence`、任何 md、或代码注释当**依据**。
+
+**六类内容往哪写（照 §2.1 的右两列执行）**：`layout`（行区间 + 锚点 + 一句话职责）/ `slots` / `gotchas` / `invariants` / `entry` / `gaps|notes`。
+**判据一句话**：**换一个脚本就不成立**的才属于第三层；换成别的脚本也成立的（引擎机制）去第一/二层再回链。
+
+**票侧的配套纪律**（T-0103 漏的另一半）：
+
+- 票里出现脚本层结论 ⇒ `links.analysis` 必须含 `analysis/scripts.json`；
+- 票的 `evidence[].file` 是 `src/*.txt` 时 ⇒ 第三层里**必须**有一条 `layout` 段覆盖那个行号（否则票里的脚本事实是"孤儿证据"：锚点棘轮护着它，但没人知道那一段是什么）。
+
+**自检（启发式，只读；不是硬闸门）**：
+
+```bash
+node -e "const fs=require('fs');for(const d of fs.readdirSync('tickets').filter(x=>/^T-\d{4}$/.test(x))){let t;try{t=JSON.parse(fs.readFileSync('tickets/'+d+'/ticket.json','utf8'))}catch(e){continue}const a=(t.evidence||[]).some(e=>(e.file||'').startsWith('src/'));const s=((t.links&&t.links.analysis)||[]).includes('analysis/scripts.json');if(a&&!s)console.log(d,t.status,t.title.slice(0,40))}"
+```
+
+口径：**2026-09-26 基线 = 43 张**（历史遗留，多为 done，不回填；**新票/本轮动过的票不该出现在这张清单里**）。
+它只筛"锚了 `src/*.txt` 却没回链第三层"的候选 —— 把脚本当**复现落点**引用（不是下结论）的可以在票里说明豁免；
+要做成硬闸门必须先回填那 43 张，成本大于收益，故此处只作走查提示。
 
 ---
 
@@ -268,6 +306,7 @@ node scripts/asm/cli.js -e sjis -a src/XXX.txt      # 重汇编（改脚本后�
 8. **`gaps`/`notes` 留空** —— 等于用沉默掩盖缺口（第二层同款纪律：`n/a-known` 必须写 `why:`）。
 9. **假称有守卫** —— `guards` 里的文件必须真实存在，否则守卫测试直接红。
 10. **改了 `src/*.txt` 却不跑 `assemble`/守卫** —— 脚本层改动会影响 emulator 与台账两侧，先 `npm run verify`。
+11. ★**以为"这不是脚本分析任务"就不用落第三层** —— `T-0103` 轮 17/18 的实际事故：任务是修渲染器 bug，却是在读 `src/SN0000.txt`/`src/SC0000.txt` 下结论、还把 `src/*.txt` 行号锚进了票里，第三层两轮没动。**触发条件是结论类型，不是任务类型（§2.4）**。
 
 ---
 

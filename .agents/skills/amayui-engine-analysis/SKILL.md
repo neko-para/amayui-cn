@@ -293,6 +293,9 @@ docs-new/05-scripts/<ID>.md            # 第三层：每个脚本一页（同上
 > ★**脚本层的完整流程与纪律见 `amayui-script-analysis` 技能**（§1 先读文档 / §2 同步更新矩阵 / §4 动作序）。
 > 下面是与工具用法直接相关的摘要；两处描述若漂移，以那份为准。
 > 开工前一页纸：`node .agents/skills/amayui-script-analysis/scripts/brief.js <ID>`。
+>
+> ★★**本条最容易被跳过的地方**：触发条件是**结论类型**，不是任务类型 —— 修 emulator/渲染器 bug 时顺手读脚本下结论，
+> 也照样要落第三层（见 `amayui-script-analysis` §2.4；事故 = `T-0103` 轮 17/18：读 `SN0000`/`SC0000` 两轮、票里锚了 `src/*.txt` 行号，第三层没动）。
 
 1. **先查台账**：`node .agents/skills/amayui-engine-analysis/scripts/scripts.js --id <ID>`。
    - 有 `analyzed` 条目 ⇒ **别再从头读**，按它的 `layout` 直接跳段；

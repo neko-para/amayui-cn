@@ -1,0 +1,71 @@
+{
+  "id": "T-0183",
+  "title": "逐帧画布落盘（AMAYUI_FRAMEDUMP=1）：让「段 2/3」这类逐帧像素比对可做",
+  "type": "tooling",
+  "priority": "P3",
+  "area": "emulator/tools",
+  "why": "T-0103 判据③ 要求把 SN0000→SC0000 的段 2（白晕淡入淡出）/段 3（章节卡 + 文字）拆成「哪一帧、哪个元素、期望 vs 实际」，但现有取证工具都取不到**每一帧的像素**：① debug-query `capture` = 一次往返一帧（走 `pixiBackend.captureFrame()`），2500ms 的窗在 60fps 下约 150 帧 ⇒ 逐帧不可能；② `npm run record`（tools/record.cjs）录的是**每帧模型摘要**（时钟 + 输入快照 + digest：绘制项/α/槽），已用它证明 mesh 0x19258 的 α 在模型上逐帧平滑（T-0103 evidence/trace-mesh19258-alpha.txt）⇒ 剩下的分歧只能在**像素侧**；③ `npm run shot`（tools/shot.cjs）按剧本时间点连拍，抓帧本身要 `capturePage()`，采不到的帧就是空白。⇒ 需要一个**在渲染器内、按帧**把合成结果落盘的口子（默认零开销），它是 T-0103 判据③ 的前置工具，也是段 2/3 结论的唯一来源。",
+  "acceptance": [
+    "`AMAYUI_FRAMEDUMP=1` 打开后，每个**合成完成**的帧把画布落成 PNG（默认 `.tmp/framedump/<instance>/<frameIndex>.png`）；关掉时**零开销**（不做 extract、不加每帧 await）；打开时若因背压/磁盘丢帧**必须计数并在日志里报**（不许静默丢）",
+    "窗口可收窄，否则 2500ms ≈150 张 1280×720 PNG/次：`AMAYUI_FRAMEDUMP_FRAMES=a-b`（帧序号闭区间）与 `AMAYUI_FRAMEDUMP_ON=transition`（只落转场活动帧）至少有一种可用，且两种都要有单测钉住解析口径",
+    "配套分析工具（`tools/framedump-diff.mjs` 或一次性脚本）：对落盘序列算逐帧指标（平均亮度 / 与前一帧的像素差）并输出**跳变帧清单**（阈值可配）⇒ 即 T-0103 判据③ 所要的「哪一帧跳」；工具要能同时打印模型侧 trace（record 的 digest）以便判「模型跳还是像素跳」",
+    "拿它跑一次 T-0103 段 2/3（白晕 + 章节卡 + 文字），结论（跳变帧清单 + 与轮 18「累加 α」是否同族）写进 T-0103 evidence；发现新跳变按 T-0103 判据④ 归票（不许在本票里顺手改渲染逻辑）",
+    "守卫 `test/frame-dump-gate.test.ts`：纯函数判据 `shouldDumpFrame(env, frameIndex, transitionActive)`（关=false / 窗口外=false / 窗口内=true）+ 源码棘轮（落盘只在 `AMAYUI_FRAMEDUMP` 打开时注册，且复用既有的 `#captureStageCanvas()` 出一条 extract 路径）",
+    "npm run verify 全绿；工具的用法写进 `amayui-remote-debug` 技能（抓帧一节）"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "async captureFrame(): Promise<Uint8Array> {",
+      "note": "现有一帧一往返的抓帧口（debug-query capture 走它）——逐帧采样做不了的原因",
+      "line": 1302
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#captureStageCanvas(): HTMLCanvasElement | null {",
+      "note": "既有的「抓当前舞台合成结果」私有方法（转场新/旧帧来源同一条 extract.canvas）：落盘必须复用它，不许另开抓帧路径",
+      "line": 1273
+    },
+    {
+      "file": "app/amayui-emulator/tools/record.cjs",
+      "anchor": "每帧录 **时钟 + 帧首输入快照 + digest**",
+      "note": "帧级但只有**模型**摘要（不是像素）⇒ 段 2/3 的像素侧分歧取不到",
+      "line": 13
+    },
+    {
+      "file": "app/amayui-emulator/tools/shot.cjs",
+      "anchor": "★坐标系：`sendInputEvent` 与 `capturePage` **不是同一套**",
+      "note": "连拍工具：抓帧靠 capturePage + 坐标是另一套口径 ⇒ 采不到的帧空白、且坐标口径有坑（不要照抄到新工具）",
+      "line": 226
+    },
+    {
+      "file": "tickets/T-0103/ticket.json",
+      "anchor": "段 2/3（白晕 + 章节卡 + 文字）的逐帧像素对照仍待做",
+      "note": "本票要解的就是这句待做",
+      "line": 10
+    },
+    {
+      "file": "tickets/T-0103/evidence/trace-mesh19258-alpha.txt",
+      "anchor": "mesh 0x19258",
+      "note": "模型侧已证逐帧平滑（白晕 α 曲线）⇒ 缺的只是像素侧",
+      "line": 1
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0103"
+    ],
+    "docs": [
+      "docs-new/03-engine/rendering.md"
+    ],
+    "analysis": []
+  },
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

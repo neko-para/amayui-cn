@@ -1,0 +1,53 @@
+{
+  "id": "T-0185",
+  "title": "load-slot.mjs 首次点 Load Data 偶发进不去 SAVE.BIN（需自动重试一次）",
+  "type": "bug",
+  "priority": "P3",
+  "area": "tooling/skills",
+  "why": "复现链（T-0103 / T-0144 / T-0182 都用它）里 `.agents/skills/amayui-remote-debug/scripts/load-slot.mjs` 在**刚起来的实例**上第一次跑经常在 ① 步失败：点了 Load Data、20s 内没进 SAVE.BIN ⇒ 退出码 1，而**原样再跑一次就成功**（2026-09-26 观测 3 次，3/3 都是「首跑失败、次跑成功」）。对 agent 是纯噪音：失败文案指向「槽为空？页码不对？槽文件不在实例可见目录？」这些**误导性**原因，而真实原因大概率是标题画面的淡入/输入门还没就绪（首跑时实例刚 boot 完，第一次点击落在动画/门未开的那一段）。修法 = 首次尝试失败后**自动重试一次**并打日志（成功路径完全不变），而不是让调用者猜；同时用一次实测把根因（是「未就绪」还是别的）钉下来，避免只是把 flake 藏进重试里。",
+  "acceptance": [
+    "① 步失败（20s 内没进 SAVE.BIN）时自动重试**一次**：重试前重读 `cur`（已在 SAVE.BIN ⇒ 直接继续；仍 TITLE ⇒ 再点一次 Load Data），日志打 `↻ 重试（第 2 次）`；`--no-retry` 可关掉（给需要严格单次行为的调用者）",
+    "重试只在**首次尝试**失败时发生（单次调用最多 1 次重试；第 2 次仍失败才退出 1）⇒ 真正的环境错误不会被无限重试掩盖",
+    "根因要有可核对证据（不许只靠重试掩盖）：重试路径记录两次 `cur` + `frame`/`global` 读数 + 实例启动龄，归档 `evidence/first-attempt-flake.txt`；若证据显示是「标题画面/输入门未就绪」，改成**点击前等就绪**（`wait bin=TITLE gate=free`）而不是盲重试，并把等待口径写进 `amayui-remote-debug` 技能的「读档」一节（§5 坑 13）",
+    "修完实测：冷启一次 + 同实例递跑，共 3 次调用全成功；若出现重试，日志里必须能看到重试行（3 次的记录归档进 evidence）",
+    "`npm run verify` 全绿（脚本自身不进闸门；若把「是否该重试」抽成纯函数则补单测，例如 `test/load-slot-retry.test.ts`）"
+  ],
+  "evidence": [
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/load-slot.mjs",
+      "anchor": "点了 Load Data 但没进 SAVE.BIN",
+      "note": "首跑失败的现场（① 步的 20s 等待判据）：失败文案把原因指向槽/页码/目录，而实际是首跑未就绪",
+      "line": 169
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/load-slot.mjs",
+      "anchor": "本流程从标题画面起跑",
+      "note": "① 步的前提（cur 必须是 TITLE.BIN 或 SAVE.BIN）——重试时必须重读 cur 而不是盲目重点",
+      "line": 174
+    },
+    {
+      "file": "tickets/T-0185/notes.md",
+      "anchor": "3/3 都是「首跑失败、次跑成功」",
+      "note": "★实测记录（2026-09-26，3 次）：首跑 ① 步 20s 超时、次跑同参数成功；并记下「最可能是标题画面/输入门未就绪 ⇒ 根因级修法是点击前等就绪，重试只是兜底」",
+      "line": 21
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0103",
+      "T-0144"
+    ],
+    "docs": [
+      "docs-new/00-overview/lessons.md"
+    ],
+    "analysis": []
+  },
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

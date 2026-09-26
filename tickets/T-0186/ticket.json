@@ -1,0 +1,99 @@
+{
+  "id": "T-0186",
+  "title": "已关闭单的「重开条件」如何被机械发现（样本：T-0091 ② 的 [4] 越界 / 后台缓冲分支）",
+  "type": "req",
+  "priority": "P3",
+  "area": "analysis/engine-capabilities",
+  "why": "用户问：「我注意到你提到 T-0091 的重开条件，但是这个要如何发现？目前这个单是已经关掉了的」。诚实回答 = **今天靠人记**。T-0091 ② 的收口写法是「判据已建模 + 已加守卫 + 有据缺口登记」，重开条件写在第二层 capability `clock-read-transition-window` 的 note 里（① 出现 `[4] = -1`／> 999 的语料现场或 E4 采样；② 宿主引入真实离屏渲染目标）；而 `capabilities.js --validate` 只查结构、`tickets.js --validate` 只查结构/锚点/依赖 —— **没有任何机械检查**会在条件满足时亮灯。取证（evidence/reopen-condition-inventory.txt）把这个洞量了出来：145 条 capability 里 **16 条**带「重开条件」（partial 9 / modeled-verified 4 / n/a-known 3），而 **181 张票里 0 张**带它 ⇒ 票侧的 `--list/--graph/--stats` 与看板**都不可能**把「这张已关闭的单还带着一个有条件的缺口」现出来；更糟的是 `clock-read-transition-window` 的 status 是 `modeled-verified`（主体确实建模 + 有 E3 守卫），只查 `partial|absent` 会**漏掉它**。语料侧也已扫过（evidence/transition-target-scan.txt）：262 个写端 / 181 个文件里今天**没有任何一处**会落到后台缓冲分支 ⇒ 这个坑会**静默**等着语料/版本变化。本票就是要给「重开条件」一个机械的发现路径，而不是继续写在散文里靠记忆。",
+  "acceptance": [
+    "可查询集合：`capabilities.js` 出一条「缺口视图」（如 `--gaps`），把**每条含重开条件的 capability** 连它的 status/E4 证据档、重开条件原文、以及**回链到它的票**（`tickets/*/ticket.json` 的 `links.analysis`）与那些票的 status 一起打出来；判据 = 一条命令的输出里能看见 T-0091 与它的重开条件（不许漏 modeled-verified 那一类 —— 验收②钉住）",
+    "不许漏：视图必须覆盖 16 条全部（partial 9 / modeled-verified 4 / n/a-known 3），并对「status 是 modeled-verified 但 note 里有重开条件」显式标注（这类只有查 note 才能发现，是本次 T-0091 踩的那一类）",
+    "静态棘轮（条件①的机械版）：把语料扫描固化成守卫 `test/transition-target-scan.test.ts`（E3 家族），断言今天「越界站点 = 0」（`[4]` 裸常量 > 999 或 = -1、以及 `op2` 全局在下标集合以外的形态）；将来任何越界进语料 ⇒ 测试红 ⇒ 该单**自动被发现**（这正是本轮 T-0183/T-0184 之外真正缺的那一环）",
+    "运行期网写进文档（条件①的实时版）：复现链跑一遍后 `grep 走后台缓冲` 必须 0 命中 —— 日志行**已存在**（`pixiBackend.#compositeTransitions`），本验收只是把这条检查写成可执行命令（`docs-new/03-engine/rendering.md` 或转场 spec 的「未建模分支」节 + capability note 里给命令）",
+    "「重开手册」写清：条件 ①/② 命中时的动作（谁把 T-0091 从 done 改回 doing、加哪条 evidence、要补哪条 E3/E4 判据、是否要同步 `analysis/opcode-gaps.json`），落在 T-0091 的 notes.md 追加节并由本票引用",
+    "推广：若同类（已关闭 + 有据缺口 + 有重开条件）的票 ≥ 3 张，则把扫描口径（缺口标记词 / 回链字段 / status 白名单）写进 `amayui-ticket-ledger` 技能；若全语料扫描进 verify 会明显拖慢，就把扫描降级为按需脚本 + verify 里只跑**缓存化**读法（写明取舍与缓存失效口径）",
+    "npm run verify 全绿；`capabilities.js --validate` / `tickets.js --validate` 均绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0186/evidence/reopen-condition-inventory.txt",
+      "anchor": "含「重开条件」的条目 = 16",
+      "note": "★本票的量化起点：16 条 capability 带重开条件（partial 9 / modeled-verified 4 / n/a-known 3）",
+      "line": 16
+    },
+    {
+      "file": "tickets/T-0186/evidence/reopen-condition-inventory.txt",
+      "anchor": "tickets/*/ticket.json：含「重开条件」的条目 = 0 / 181（★一个都没有）",
+      "note": "★票侧 0 张 ⇒ 看板/查询都不可能现出「已关闭但带条件缺口」",
+      "line": 25
+    },
+    {
+      "file": "tickets/T-0186/evidence/reopen-condition-inventory.txt",
+      "anchor": "按 `emulator.status` 分类会漏",
+      "note": "只查 partial|absent 会漏掉 clock-read-transition-window 这类 modeled-verified（= T-0091 ② 的落点）",
+      "line": 34
+    },
+    {
+      "file": "tickets/T-0186/evidence/transition-target-scan.txt",
+      "anchor": "写端共 262 处 / 181 个文件",
+      "note": "语料静态扫描结果：262 写端 / 181 文件",
+      "line": 42
+    },
+    {
+      "file": "tickets/T-0186/evidence/transition-target-scan.txt",
+      "anchor": "今天**没有任何一处**会落到",
+      "note": "⇒ 条件①今天不成立，静态上无人能触发（所以必须靠棘轮 + 运行期网，而不是靠人盯）",
+      "line": 46
+    },
+    {
+      "file": "tickets/T-0186/evidence/transition-target-scan.txt",
+      "anchor": "引擎走后台缓冲（直接画到屏幕",
+      "note": "已有的运行期网：这条日志行不需要新代码，只需把它写成可执行的 grep 检查",
+      "line": 47
+    },
+    {
+      "file": "tickets/T-0186/evidence/scan-transition-target.mjs",
+      "anchor": "写端站点",
+      "note": "★归档副本（从 .tmp 搬进证据区，避免一次性脚本消失后扫描不可复现）：`node tickets/T-0186/evidence/scan-transition-target.mjs` 复跑得到与 transition-target-scan.txt 相同的数字",
+      "line": 57
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "clock-read-transition-window",
+      "note": "重开条件现在的唯一落脚点（该条 note 的 (b) 项）：capability 散文里，机器不读",
+      "line": 816
+    },
+    {
+      "file": "tickets/T-0091/ticket.json",
+      "anchor": "已收口（判据已建模 + 已加守卫 + 有据缺口登记）",
+      "note": "T-0091 ② 的收口措辞：缺口被登记，但登记处不在票里 ⇒ status=done 与「有条件的缺口」并不矛盾，却没被任何查询暴露",
+      "line": 9
+    },
+    {
+      "file": "tickets/T-0091/notes.md",
+      "anchor": "★怎么发现（2026-09-26 用户提问",
+      "note": "回链的另一半（2026-09-26 追补节）：已关闭单自己写明「重开条件 + 三条发现路径 + 制度化工作单 = T-0186」",
+      "line": 69
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0091"
+    ],
+    "docs": [
+      "docs-new/03-engine/rendering.md",
+      "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json"
+    ]
+  },
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "T-0184",
+  "title": "转场模糊的 +7% 亮度偏置：整数 α 表的 8bit 前乘回合 ⇒ 浮点累积（已披露残差）",
+  "type": "req",
+  "priority": "P3",
+  "area": "emulator/render",
+  "why": "T-0103 轮 18 把类别 3（SlideBlur/ZoomBlur）的采样累加从 source-over 改成 `lighter` + 整数 α 表（`transitionBlurAlphas`，Σα 恰好 255）：运行期实测同位置亮度 77.8 → 126.6（1.63×，与理论 1/0.6158 = 1.62× 吻合），**用户已确认表现正确**。但**绝对亮度仍偏高约 7%**：canvas 合成是 8bit 前乘（每张采样先 round 到 0..255 再相加），33 个样本的整数化误差逐层累积（中灰 128 → ≈137）。这条在 T-0103 的 evidence 里已**明示披露**（blur-accumulation-alpha.md 第 3 条与末节），不是隐藏缺口 —— 本票就是它的**已披露残差的收口单**：先量化偏差，再决定「修成浮点」还是「判为人眼不可见 ⇒ 有据不修」。",
+  "acceptance": [
+    "先量化而不是先修：同一段转场（存档 78 的段 1 / 段 4）在「整数 α 表 + `lighter`」下逐帧记模糊窗内的平均亮度，与**离线浮点参考**（同一份采样做 float 累加）对比 ⇒ 给出逐帧偏差曲线与该帧最大偏差的**数字**（进 evidence，不许只给一个 7%）",
+    "归因判据：偏差是否只在模糊窗内、是否随样本数单调、是否与核长度 33 成比例（成比例 ⇒ 确认是整数化，而不是别的合成口径；不成比例 ⇒ 先找出真正来源再谈修法）",
+    "落地方案二选一并在票里写明理由：① 改 **WebGL/浮点渲染目标**（样本画进 float framebuffer 后一次读回，替掉 2D canvas 的逐层 8bit 加法）；② 保持 2D canvas，但把 33 个样本的累加搬到 `ImageData`（Uint16 手算）再一次性写回",
+    "收益判据（二择一即收口）：逐帧最大偏差降到 ≤1/255（可见性阈值）**或**证明它在任何帧上都 < 人眼阈值 ⇒ 后者把本票记为「有据不修」并写清测量口径",
+    "成本判据：这一段是每帧对 1280×720 做 33 次采样 ⇒ 给改前/改后的**单帧合成耗时**（`debug-query profile` 数据），不许吃掉 T-0099 的帧预算",
+    "npm run verify 全绿，且 `transitionBlurAlphas` 现有单元（Σα = 255 / 中心加权 / 误差 ≤1）与源码棘轮（必须 `lighter` + 还原 `source-over`）仍绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0103/evidence/blur-accumulation-alpha.md",
+      "anchor": "残差 = 前乘色逐层四舍五入（中灰 +7%）",
+      "note": "★本票的起点：三档真 canvas 测量表（source-over 0.627 / lighter+浮点 0.965 / lighter+整数 1.000）里落地版那一行的残差注记",
+      "line": 36
+    },
+    {
+      "file": "tickets/T-0103/evidence/blur-accumulation-alpha.md",
+      "anchor": "8bit 前乘色的 +7% 亮度残差",
+      "note": "同样明示披露：要精确 ⇒ 走 Pixi/WebGL 浮点 pass（本票验收③的方案①）",
+      "line": 80
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/scene/transition.ts",
+      "anchor": "export function transitionBlurAlphas",
+      "note": "整数 α 权重表本体（Σα = 255；floor + 按小数部分发余量）——偏差来源的一半",
+      "line": 544
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "const alphas = transitionBlurAlphas(plan.samples, TRANSITION_BLUR_CENTER_WEIGHT, half);",
+      "note": "偏差来源的另一半：33 次 `drawImage` 累加全在 2D canvas 上（每层 8bit 前乘 round）",
+      "line": 1440
+    },
+    {
+      "file": "tickets/T-0099/ticket.json",
+      "anchor": "sleep 门的帧粒度残差",
+      "note": "成本判据（验收⑤）要对齐的帧预算票",
+      "line": 2
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0103",
+      "T-0099"
+    ],
+    "docs": [
+      "docs-new/03-engine/rendering.md"
+    ],
+    "analysis": []
+  },
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

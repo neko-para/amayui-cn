@@ -1,0 +1,37 @@
+# 「重开条件」在四份台账里的分布（T-0186 取证 · 2026-09-26）
+
+## 口径
+
+三条只读查询（都用 `node -e` 直接读真源，不需要新代码）：
+
+1. `analysis/engine-capabilities.json` → `entries[]` 里 `JSON.stringify(entry).includes('重开条件')` 的条目；
+   按 `emulator.status` 分类（`statusEnum` 五档：modeled-verified / modeled-unverified / partial / absent / n/a-known）。
+2. `tickets/*/ticket.json` 里含「重开条件」的条目；
+3. 回链统计：`tickets/*/ticket.json` 的 `links.analysis` 里含 `analysis/engine-capabilities.json` 的条目。
+
+## 结果
+
+```
+analysis/engine-capabilities.json：条目 145（counts: modeled-verified 79 / modeled-unverified 5 / partial 32 / absent 5 / n/a-known 24）
+  含「重开条件」的条目 = 16
+    partial            (9)：frame-render-gate-mainloop  clock-write-clock-freeze  audio-device-init
+                             lazy-movie-texture-slot   lazy-572b-node-map   adv-advance-route-table
+                             msgwin-backlog-cursor   scene-3d-weather-effects-rain-snow-leaf
+                             msgwin-coexist-auto-message
+    modeled-verified   (4)：scene-3d-effect-level-writer  scene-render-freeze-46676
+                             clock-read-transition-window  render-3d-layer-dual-commit
+    n/a-known          (3)：lazy-3d-effect-203  lazy-3d-effect-202-snow  msgwin-vertical-rect-pad
+
+tickets/*/ticket.json：含「重开条件」的条目 = 0 / 181（★一个都没有）
+
+回链 `links.analysis` ⊇ analysis/engine-capabilities.json 的票 = 4（T-0084 done / T-0085 done / T-0087 done / T-0108 done）
+```
+
+## 判读
+
+- **重开条件只活在第二层（capability 的 note 散文）里**：145 条 capability 里 16 条写了它，而 181 张票里 **0 张**写；
+  票侧既没有结构化字段、也没有散文 ⇒ `tickets.js --list/--graph/--stats` 与看板 `tickets/README.md` **都不可能**把「这张已关闭的单还带着一个有条件的缺口」现出来。
+- **按 `emulator.status` 分类会漏**：`clock-read-transition-window`（= T-0091 ② 的落点）status 是 `modeled-verified`（因为主体窗口模型确实建模且带 E3 守卫），
+  缺的是 note 里 (b) 那一小项（`[4]` 指向非 `create-texture` 槽 / 后台缓冲分支）⇒ 只查 `partial|absent` 会把它漏掉（16 条里有 4 条 modeled-verified、3 条 n/a-known）。
+- 因此「怎么发现」的答案现在只能是**靠人记**：条件写在 capability 的 note 里，`capabilities.js --validate` 只查结构，
+  `tickets.js --validate` 只查结构/锚点/依赖 —— **没有任何机械检查**会在条件满足时亮灯。

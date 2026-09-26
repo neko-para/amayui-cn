@@ -46,6 +46,15 @@
 | `tickets/T-0172/evidence/anchors.json` | ★**动过被锚定的文件**：`docs-new/03-engine/rendering.md` 插入 11 行 ⇒ 那张表里 `rendering-*` 的 16 条文档行号整体 +11（这是 T-0172 的"文档行号 ↔ 真源"契约，`doc-model.test.ts` 的 B7-B 棘轮读它）。只改 `line`、**没改任何 `row`/`cites`/`raw`**；`node tickets/T-0172/evidence/check-anchors.mjs --quiet` ⇒ 46 条 0 问题 |
 | `tickets/T-0181/ticket.json` | **顺带副作用（申报）**：跑 `fix-evidence-lines.js --any --write` 时，工具按其唯一命中给 T-0181 的 3 条证据补了 `line`（该票本来没写行号）。**只加 `line`**，未改 `anchor`/`note`；`tickets.js --validate` 180 张全过 |
 
+### 第三层（脚本台账）补记（2026-09-26 追补，用户指出本轮漏项）
+
+本轮读的 `src/TITLE.txt` 正文里有一条**脚本层**结论当时没落第三层，现已补：
+`analysis/scripts.json` 的 `TITLE` 条目追加 `layout` 段 `731-748`（锚点 `set-vertex-color-alpha 30d40 0 12c ff 0`，
+= 标题入场渐显助手 `label_00003158`：满屏幕淡到全透明 → `wait` → `detach-texture 30d40 1`）
+与一条 `gotchas`（撤一块**已经全透明**的幕不该武装留帧 —— 这正是本票的判据）。
+生成物 `docs-new/05-scripts/TITLE.md` 由 `node scripts/build-scripts.mjs` 重生成；
+`scripts.js --validate` 与 `test/script-ledger.test.ts` 全绿。
+
 ### 残余
 
 - 撤幕留帧仍是**宿主启发式**（`HOLD_MAX_FRAMES=60` 上限、解除点只有"新内容可见"那一族），
