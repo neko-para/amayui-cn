@@ -10,7 +10,7 @@
 落地结构：
 
 ```
-.agents/skills/amayui-remote-debug/scripts/
+app/amayui-emulator/tools/
   emu.mjs                 ← 核心驱动（原语 + 原语 CLI：status/reset/frame/probe/globals/cap/tap/log）
   ops/README.md           ← ★用例索引（一条一行：前置/判据/状态；含待登记场景）
   ops/load-from-title.mjs ← 用例：TITLE → Load Data → 槽 N（内置"开屏重试一次"）

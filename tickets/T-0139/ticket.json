@@ -5,7 +5,7 @@
   "area": "emulator/tooling",
   "why": "本轮实施下来，把一个 emulator 实例**完整驱动起来**所需要的能力已经齐了（实例注册表、每实例路由、声明式输入命令表、`capture` 取帧、`focus` 焦点控制），但这些知识现在**散在五张票的 notes 与代码里**：agent 每次都要重新摸索 —— 本轮就现场去找了 `CONFIG_XY`、左侧分类贴片公式、`debug-query` 的超时/503 语义，还踩了 `shot` 名字被 `tools/debugsrv.cjs` 占用这个坑。\n\n⇒ 需要一个**技能**把这些收成一份可加载的操作手册：**发现实例 → 驱动它 → 取画面 → 读进度**，并写清所有硬约束与已知坑，后续任何 agent（含子代理）不必再靠读源码重新推导。",
   "acceptance": [
-    "`.agents/skills/amayui-remote-debug/SKILL.md` 存在且能被 `skill` 工具按名字加载（会话技能目录里出现）；frontmatter 的 name/description 与实际内容一致",
+    "★2026-09-26 **退役**（用户决定；评估见 `tickets/T-0191/notes.md` §10）：本票交付的技能目录 `.agents/skills/amayui-remote-debug/` 已删除 —— 资产（`emu.mjs` + `ops/*`）早一步搬到 `app/amayui-emulator/tools/`，手册内容去重后移交给**工具描述 + `AGENTS.md` + 插件 README「agent tool」节**。原判据（`.agents/skills/amayui-remote-debug/SKILL.md` 存在且能被 `skill` 工具按名字加载）**在交付时成立、退役后不适用**，如实留档在此。",
     "手册覆盖四个环节：① 发现（`GET /dsh-emulator/api/__instances`；注册表两种落点 `<repo>/.tmp/instance.json` 与 `<repo>/.tmp/instances/*/instance.json`；活实例判据 pid 活 且 heartbeatAt 不早于 20 秒前）；② 起停（`node --import tsx app/amayui-emulator/src/web/host.ts --instance <id> [--port 0] [--idle-sec N]`、同 id 互斥、闲置自停、磁盘状态保留而内存不保留）；③ 驱动（逐条命令表 `move` / `leave` / `click` / `press` / `release` / `wheel` / `key` / `keyup` / `capture` / `focus auto|on|off`，含参数、坐标语义=引擎虚拟 1280x720、以及「hover 靠位置变化触发」）；④ 读结果（`capture` 的 base64 PNG 怎么落盘并看图、`bin`/`frames` 看进度、宿主日志 `[web] status` 看每步 bin）",
     "写清硬约束与坑：web 形态下「没有渲染页 ⇒ debug-query 必然 503」（VM 活在页面里）；渲染侧抓帧命令叫 `capture`（`shot` 被 `tools/debugsrv.cjs` 在主进程截获走 capturePage）；`AMAYUI_DEBUG_QUERY_TIMEOUT_MS` 可调超时；同一时刻只允许一个 Electron/verify；viewers 大于 1 等于两个 VM 抢同一份 overlay/log；面板「收起」不杀会话但可能被浏览器节流",
     "至少两条**可复制的完整示例**（命令 + 期望观察）：a) 起实例 → 等 `TITLE` → `capture` 落盘看图 → 推进一页；b) 打开某个界面并切分类（用 `src/tools/config1Chain.ts` 里**已验证**的坐标口径，并显式标注哪些坐标已验证、哪些待核）",
@@ -35,14 +35,17 @@
   "links": {
     "docs": [
       "tickets/T-0136/notes.md",
-      "tickets/T-0138/evidence/iframe-reload-forensics.txt"
+      "tickets/T-0138/evidence/iframe-reload-forensics.txt",
+      "AGENTS.md",
+      "plugins/amayui-emulator/README.md"
     ],
     "tickets": [
       "T-0114",
       "T-0133",
       "T-0135",
       "T-0136",
-      "T-0138"
+      "T-0138",
+      "T-0191"
     ]
   },
   "id": "T-0139",
@@ -57,9 +60,14 @@
       "at": "2026-09-23",
       "kind": "status",
       "what": "open → done —— 手册落地并当场验证可加载（skill amayui-remote-debug）；四环节/硬约束/两条实测示例/已验证与待核分栏/边界按 acceptance 逐条写入 changes.md；零生产代码改动"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, links, tests —— 技能退役：资产已搬 app/amayui-emulator/tools/、内容去重移交工具描述 + AGENTS.md + 插件 README；守卫规格 retarget 到 plugins/amayui-emulator/README.md#agent tool：`amayui_emulator`（评估见 T-0191 §10）"
     }
   ],
   "tests": [
-    ".agents/skills/amayui-remote-debug/SKILL.md#amayui-remote-debug"
+    "plugins/amayui-emulator/README.md#agent tool：`amayui_emulator`"
   ]
 }

@@ -1,0 +1,59 @@
+{
+  "title": "`emu.mjs slotFingerprint` 在受限 shell 下 spawn 失败 ⇒ 槽指纹对账静默跳过且归因错误（判据④假阴性）",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/tools",
+  "why": "现象（2026-09-26 实测）：本会话（DSH 文件沙箱 workspace-write）里，**管道式子进程 stdio** 会被拒 —— `spawn(process.execPath, […])` 以默认 `stdio:'pipe'` 调用直接 **EPERM**（两种形态都实测：`spawnSync` 回 `error.code=EPERM`；用 Promise 包起来的 `spawn` 是 `REJECTED EPERM`，即 `spawn()` 在 Promise executor 里**同步抛出**）。而 `emu.mjs` 的 `slotFingerprint()` 正是这个形状：它 `spawn(process.execPath, ['--import','tsx','src/tools/saveDump.ts', rel])` 并 `p.stdout.on('data', …)` 收输出。\n\n后果链（判据④失效 + 归因错）：`slotFingerprint` 的 promise 被 reject ⇒ `verifyLoadedSlot` 的 `.catch(() => null)` 吃掉 ⇒ 打印 `⚠ 槽 N 的文件读不到（不在实例可见目录？）⇒ 跳过指纹对账`。也就是说：**槽文件明明在**（`.tmp/instances/<id>/overlay/SAVE/SAVE<NN>.DAT`），报的却是「读不到 / 目录不对」；而 op 仍 exit 0 并打印 `✔ 已载入槽 N` ⇒ 「载错了槽」与「根本没能对账」在输出上**不可区分**，T-0188/T-0189 的判据④在受限 shell 里等于不存在。\n\n已核的旁证（缩小修法范围）：`slotFingerprint` 是 `emu.mjs` 里**唯一**用管道 stdio 的 spawn —— `startInstance`（文件 fd：`stdio: ['ignore', out, out]`）与 `stopInstance` 的 `taskkill`（`stdio:'ignore'`）都不受影响，所以在同一环境下 `reset`/`start`/`stop` 照常。\n\n★同理外推（待核，不作为本票判据）：若按 T-0191 让工具去跑 ops，**不能用 pipe 抓 op 的 stdout**，否则会撞同一条沙箱边界。",
+  "acceptance": [
+    "先能红：给出**不依赖真实例**的最小复现（守卫测试或一条可复跑命令），在受限沙箱下命中「spawn 被拒 ⇒ 走跳过指纹对账」这条路并有可核输出",
+    "修法二选一并写明理由：① 不起子进程 —— 把 `src/tools/saveDump.ts` 的槽头解析抽成可 `import` 的纯函数，`slotFingerprint` 进程内直接读（首选，顺带消掉 tsx 冷启）；② 保留子进程但改成 `stdio:'inherit'` + 输出重定向到临时文件后读回（**不许用 pipe**）",
+    "红→绿：修前打印「跳过指纹对账」，修后打印真 `savedCur`/帧记录数并与日志 `[slot-load]` 的值一致；且**两种情形必须可区分** —— 槽文件真的不存在时仍保留原来的跳过文案（不许把「文件不存在」与「被沙箱拒」混成同一句）",
+    "副作用透明：`ops/README.md` 的判据④说明与 `emu.mjs` 文件头写清这条降级通道与规避方式（受限 shell 下判据④怎么跑、跑不了时怎么看出来）",
+    "`tickets.js --validate` 绿；`npm run verify` 不因本票变红"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/tools/emu.mjs",
+      "anchor": "export async function slotFingerprint(",
+      "note": "★唯一用管道 stdio 的 spawn（内部 `p.stdout.on('data', …)`）⇒ 受限 shell 下 EPERM",
+      "line": 848
+    },
+    {
+      "file": "app/amayui-emulator/tools/emu.mjs",
+      "anchor": "const fp = await slotFingerprint(id, slot).catch(() => null);",
+      "note": "★reject 被吃掉的地方 ⇒ 对账静默跳过（判据④失效）",
+      "line": 679
+    },
+    {
+      "file": "app/amayui-emulator/tools/emu.mjs",
+      "anchor": "⇒ 跳过指纹对账",
+      "note": "★误导性归因文案（「文件读不到（不在实例可见目录？）」），而文件其实就在实例目录里",
+      "line": 681
+    },
+    {
+      "file": "app/amayui-emulator/tools/ops/README.md",
+      "anchor": "选行对不对改由",
+      "note": "判据④的定义处（读档用例靠**载入后的槽指纹对账**判「载入的是不是目标槽」）⇒ 被静默跳过就等于该判据不存在",
+      "line": 53
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0188",
+      "T-0189"
+    ],
+    "docs": [
+      "docs-new/00-overview/lessons.md"
+    ],
+    "analysis": []
+  },
+  "id": "T-0192",
+  "status": "open",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

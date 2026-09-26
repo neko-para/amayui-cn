@@ -353,6 +353,9 @@ amayui_emulator {
 | **`input`** | `kind` `x` `y` `button` `hover`(click 缺省 true) `hover_wait_ms`(250) `settle_ms` `delta` `vk` `keyup`(true) | `click/move/leave/press/release/wheel/key` 的封装。★**合成悬停**：`move(目标左侧 2px) → move(目标) → 等 hover_wait_ms → click`。回执里逐条列命令与各自的 `roundTripMs`。 |
 | **`profile`** | `sub` `min_ms` `watch` `slow_ms` | `profile on/off/reset/report [minMs]/watch on\|off/slow <ms>` 的封装。归因卡顿的标准接法：`reset` → `on` → 发输入 → `report 20`。 |
 | **`wait`** | `until{}` `timeout_ms`(30000) `poll_ms`(200) | 轮询**只读**探针 `frame`（+ `run`/`global`）直到条件成立：`bin`（正则）、`gate`（`free`/`waiting`）、`frames_above`/`frames_below`/`frames_change`、`global`（正则，配 `until.global_idx`）。超时回 `ok:false` + **每个条件的期望/实得**。 |
+| **`ops`** | — | **查询**：列 `app/amayui-emulator/tools/ops/` 里的操作脚本 —— 每条给 `{name, file, purpose, pre, criteria, sideEffects, status, indexed}`，另带 `pending[]`（索引里"待登记"的表）与 `ghost[]`（索引里有、目录里没有）。**只读，不 spawn 任何进程**；用途/前置/判据从**文件头**解析（前 120 行），状态从 `ops/README.md` 的主表取。 |
+| **`op`** | `name` `args[]` `tail`(40) `timeout_ms`(300000) | **执行**：`node <ops>/<name>.mjs --instance <id> …args`。★工具**不解释** `args`（各 op 的 CLI 就是它的参数表；`args` 里再给 `--instance` 会被拒），日志写 `.tmp/emudbg/op-<name>-<stamp>.log`（**文件 fd，不是 pipe**，见 §已知限制 8），回 `{exitCode, timedOut, logPath, lines[], argv}`。超时收整棵进程树。 |
+| **`op-create`** | `name` `purpose` | **创建**：用 `ops/_template.mjs` 生成 `ops/<name>.mjs`（**拒绝覆盖**、名字限 `[a-z0-9-]{2,64}`），占位 `{{NAME}}/{{PURPOSE}}/{{DATE}}` 就地替换；回执给 4 条待办（① 开屏手势 ② 机器可读判据 ③ 特有坑 ④ 去 `ops/README.md` 登记一行）。 |
 
 ### `input` 的两条输入语义（照抄引擎实测，别踩）
 
@@ -361,6 +364,35 @@ amayui_emulator {
    也是"TITLE 这类菜单不悬停点不动"的机制。`move 867 385` 连发两次**没有用**。
 2. `click` = `cursor + press + release` 三连（天然会先移动），但需要"先悬停若干帧让菜单展开/高亮"
    的界面仍要拆开 —— 那是 `hover_wait_ms` 在管的事。
+
+## `ops` / `op` / `op-create`：把「操作脚本」也搬到工具面上（`tickets/T-0191`）
+
+**背景**：`T-0188` 把"从某个界面做某件事"的固定流程固化成了工程脚本（`app/amayui-emulator/tools/ops/*.mjs`，
+一个用例一个文件 + 索引 `ops/README.md`），但它们此前只能由 agent 用 shell `node …` 直接跑 ——
+工具面（本节的 8 个动作）**既列不出有哪些 op，也跑不了 op，更表达不出 op 的判据**（日志 `[slot-load]`、
+槽指纹、侧栏路由项数…）。三个新动作把这条缝补上：
+
+```jsonc
+amayui_emulator { action: "ops" }                                  // 列（用例/前置/判据/副作用/状态）
+amayui_emulator { action: "op", name: "load-from-title", instance: "sb189",
+                  args: ["--slot", "79", "--expect", "SN0000.BIN"] }  // 跑
+amayui_emulator { action: "op-create", name: "load-from-battle",
+                  purpose: "战斗界面 → 读档槽 N" }                    // 建（模板）
+```
+
+**四条设计取舍**（与工具面其它部分同一套原则）：
+
+1. **真源仍在脚本侧**：坐标、两帧点击、判据、副作用都写在 `ops/*.mjs` 的文件头 + `ops/README.md` 里；
+   工具只**读**（`ops`）与**转发**（`op`）——绝不复制一份坐标表（两处真源是之后必然漂移的债）。
+2. **工具不解析 op 的参数**：`args` 原样透传给脚本 CLI（各用例自己的 `--slot`/`--expect`/`--keep-sidebar`
+   就是它的参数表）；唯一挡掉的是 `args` 里再给 `--instance`（实例只能有一处决定）。
+3. **执行用文件 fd，不用 pipe**：`stdio: ['ignore', fd, fd]` ⇒ 受限沙箱下也能跑（`tickets/T-0192` 的
+   EPERM 正是 pipe 引起的），跑完再读回日志尾部；完整日志留在 `.tmp/emudbg/op-<name>-*.log`。
+4. **创建只生成骨架 + 清单**：`op-create` 不猜坐标、不写判据，只把模板铺好并把"还差哪三样 + 去索引登记"
+   摆出来 —— 这三样**只能**由实测得出（`ops/README.md` 的"新增一条 op 的三步"）。
+
+★**边界**：ops 是纯 node 工程脚本，**脱离 DSH 也能跑**（`node app/amayui-emulator/tools/emu.mjs …`）——
+工具只是它的一个前端；反过来，`emu.mjs` 也不需要工具（它自己走插件的每实例路由 / 文件注册表）。
 
 ## 与"临时写 .mjs"的对比
 
@@ -439,6 +471,12 @@ amayui_emulator {
    代价是收工必须 `action=stop`（或让它 `idle_sec` 到期）。
 7. **本工具不碰用户实例**：没有 `instance` 参数而同时有多个活实例时**直接报错**，不猜；
    `stop` 对非本进程起的实例要求 `force:true`。
+8. ★**受限沙箱里"管道式子进程"会 EPERM，别误判成代码坏了**（`tickets/T-0192`）：`spawn` 的默认
+   `stdio:'pipe'` 在受限模式下被拒（`spawn EPERM`）。因此 `action=op` 收日志**只用文件 fd**
+   （`stdio: ['ignore', fd, fd]`）；`tool-smoke.mjs` / `smoke-client.mjs` 也不受影响。
+   受影响的是 **`node plugins/amayui-emulator/smoke.mjs`**（它自己用 `pipe` 起宿主，`smoke.mjs:176`）
+   以及一切 `tsx` / `node --test` 路径 ⇒ 换不受限的 shell 跑，或按 `AGENTS.md` §2 用
+   `scripts/ts-resolve-hook.mjs` + 纯 node 的等价口径。
 
 ## 两条不变量为什么不冲突
 
@@ -452,8 +490,9 @@ amayui_emulator {
 ```bash
 node --check plugins/amayui-emulator/lib/index.js
 node --check plugins/amayui-emulator/lib/tools.js
-node plugins/amayui-emulator/smoke.mjs          # Host 半（路由 + 代理 + 注册表发现）
+node plugins/amayui-emulator/tool-smoke.mjs     # tool 半（ops/op/op-create；假 root，22 条断言，**受限 shell 也能跑**）
 node plugins/amayui-emulator/smoke-client.mjs   # Client 半（浮窗/iframe 不变式）
+node plugins/amayui-emulator/smoke.mjs          # Host 半（路由 + 代理 + 注册表发现）★要能起子进程的 shell，见「已知限制 8」
 ```
 
 ★`lib/tools.js` 的逻辑是**纯函数级**可自测的（`createExecutor({getRoot, spawned, toolLog})`，
@@ -462,11 +501,20 @@ node plugins/amayui-emulator/smoke-client.mjs   # Client 半（浮窗/iframe 不
 
 ## 变更历史
 
+* **`T-0191`**：**ops 三件事上工具面**（本 README 的「`ops` / `op` / `op-create`」整节）——
+  ① 把 ops 资产从技能目录搬到 `app/amayui-emulator/tools/`（`emu.mjs` + `ops/*` + `load-slot.mjs` 兼容壳），
+  它们是**纯 node 工程脚本**、脱离 DSH 也能跑；② `lib/tools.js` 新增 `listOps`/`parseOpsIndex`/`readOpFile`
+  与 `doOps`/`doOp`/`doOpCreate`（`op` 用**文件 fd** 收日志，不走 pipe）；③ `lib/index.js` 的 action 枚举
+  从 8 个扩到 11 个；④ 新增离线自测 `tool-smoke.mjs`（22 条断言，假 root，受限 shell 也能跑）。
+  ★同时订正：本节此前把 agent tool 的出处写成 `T-0181`，而 `T-0181` 是 OOM/纹理泄漏票（`mem` 命令那条）——
+  工具面的属主票是 `T-0191`。
+
 * **`T-0181`**：**agent tool `amayui_emulator`（本 README 的「agent tool」整节）**。
   起因是"每次驱动 emulator 都要现场写一个 `.mjs`"（那轮 1.5s 卡顿定位跑了十几次）。
   新增 `lib/tools.js`（`createExecutor` + 注册表扫描 + `POST /api/debug-query` 客户端 +
   PNG 落盘/尺寸 + `wait` 的只读探针），`lib/index.js` 增 `tools` 注入与工具注册，
   `inject` 从 `['fs','webServer']` 扩到 `['fs','webServer','tools']`。
+  ★出处订正见上面 `T-0191` 那条（`T-0181` 是 OOM 票，不覆盖本工具面）。
   八个动作：`instances` / `start` / `stop` / `query` / `capture` / `input` / `profile` / `wait`。
   三条硬设计：复用既有 HTTP 路由（不另写驱动逻辑）、**PNG 只落盘不回 base64**、
   **往返毫秒进回执**。GUI 面板的"纯观察"不变量不变（`start`/`stop` 只覆盖本进程起的实例）。

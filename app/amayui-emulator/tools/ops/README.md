@@ -1,32 +1,50 @@
 # `ops/` —— 模拟器操作脚本索引（一个用例一个文件）
 
-> 这一层只放**"从某个界面做某件事"**的固定流程；与实例对话的原语（点击/等条件/读态/起停）
-> 都在上一层 `../emu.mjs`（核心驱动）。**新增用例照抄 `_template.mjs`，并在这张表加一行。**
+> **这一层只放「从某个界面做某件事」的固定流程**；与实例对话的原语（点击/等条件/读态/起停）都在上一层
+> `../emu.mjs`（核心驱动）。**新增用例照抄 `_template.mjs`（或让工具 `action=op-create` 生成），并在这张表加一行。**
+>
+> ★**位置**：`app/amayui-emulator/tools/ops/`（2026-09-26 从技能目录搬来，见 `tickets/T-0191`）——
+> 这些是**工程脚本**，不依赖 DSH：任何终端、任何 agent 都能跑。
 
-怎么跑（`--instance` 是实例 id，见 `node ../emu.mjs status`）：
+## 怎么跑（两条等价入口）
 
 ```bash
-node .agents/skills/amayui-remote-debug/scripts/emu.mjs reset --instance sn187        # 回到干净状态（TITLE）
-node .agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs --instance sn187 --slot 79
-node .agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs   --instance sn187 --slot 78
+# ① CLI（纯 node，脱离 DSH 也能跑）
+node app/amayui-emulator/tools/emu.mjs reset --instance sn187                          # 回到干净状态（TITLE）
+node app/amayui-emulator/tools/ops/load-from-title.mjs --instance sn187 --slot 79
+node app/amayui-emulator/tools/ops/load-from-adv.mjs   --instance sn187 --slot 78
+node app/amayui-emulator/tools/load-slot.mjs --instance sn187 --slot 78                # 旧入口（兼容壳）
+
+# ② DSH 工具 `amayui_emulator`（一次调用；查询/执行/创建三件事都在工具面上）
+#    action=ops        → 列出本目录里有哪些 op（名字/前置/判据/状态，不跑任何东西）
+#    action=op         → 执行一条：{"action":"op","name":"load-from-title","args":["--slot","79","--expect","SN0000.BIN"]}
+#    action=op-create  → 用 _template.mjs 生成一条新用例（名字 + 用途），并回执「还必须补哪三样」
 ```
+
+`--instance` 是实例 id（`node app/amayui-emulator/tools/emu.mjs status` 看活实例）。
 
 | 脚本 | 用例（从哪个界面、做什么） | 前置 | 判据 | 副作用（★必读） | 状态 |
 |---|---|---|---|---|---|
 | `load-from-title.mjs` | **TITLE → Load Data → 槽 N**（标题画面读档） | 实例在 `TITLE.BIN` 或已在存档列表 | `cur = SAVE.BIN` → 日志 `[slot-load]` →（可选 `--expect BIN`）帧链到该脚本 | 无（不动任何配置） | ✅ 实测 2026-09-26（槽 78 / 79） |
-| `load-from-adv.mjs` | **ADV 界面（游戏内）右侧侧栏 → LOAD → 槽 N** | 实例已在带 ADV 侧栏的场景（SN0000/SC0000/NOVEL 族） | 侧栏表校验通过（或退回扫描命中）→ 选行核对 `global 138e`（页内行号 0 基）→ `cur = SAVE.BIN` **且 `f7ff0 == 1`（读档模式，安全断言）** → 日志 `[slot-load]` | ★★**会修改 ADV 侧栏配置**（运行期把 charm 表 `global 13b0` 写死为 `[0xd 0xe 1 0xb 0xc 2 3 4 5]`，SAVE/LOAD 放第 0/1 格）；**只改内存、不写回 `SAVE.DAT`**；`--keep-sidebar` 可关（改走候选扫描） | 🟡 机制已验证（扫描/安全断言/默认布局无 SAVE-LOAD 都实测过），**写死路径待补跑**（见 `tickets/T-0189/notes.md` §4） |
-| `_template.mjs` | 新用例的模板（不是可跑的用例） | — | — | — | 模板 |
+| `load-from-adv.mjs` | **ADV 界面（游戏内）右侧侧栏 → LOAD → 槽 N** | 实例已在带 ADV 侧栏的场景（SN0000/SC0000/NOVEL 族） | 侧栏表校验通过（或退回扫描命中）→ `cur = SAVE.BIN` **且 `f7ff0 == 1`（读档模式，安全断言）** → 日志 `[slot-load]` → 槽指纹对账 | ★★**会修改 ADV 侧栏配置**（运行期把 charm 表 `global 13b0` 写死为 `[0xd 0xe 1 0xb 0xc 2 3 4 5]`，SAVE/LOAD 放第 0/1 格）；**只改内存、不写回 `SAVE.DAT`**；`--keep-sidebar` 可关（改走候选扫描） | ✅ 实测 2026-09-26（槽 78，见 `tickets/T-0189/evidence/e2e-load-from-adv.log`） |
+| `_template.mjs` | 新用例的模板（不是可跑的用例；`action=op-create` 就用它） | — | — | — | 模板 |
 
 > ★**副作用的规矩**：一个 op 若要改"配置类"状态（侧栏排布、渲染开关…），必须
 > ① 在**文件头 + 本表**里写明改什么、改到哪、怎么恢复；② 尽量只改**运行期内存**（`emu.setGlobal/setArray`
 > → `debug-query` 的 `set-global`/`set-array`，按 ENC 写脚本全局池），**不许**写回玩家数据（`SAVE.DAT`）；
 > ③ 给一个**关掉它的开关**（如 `--keep-sidebar`）。
 
+## 新增一条 op 的三步
+
+1. `amayui_emulator action=op-create {name, purpose}`（或手工 `cp _template.mjs <名字>.mjs`）；
+2. 填**三样缺一不可**的东西：① **开屏手势**（点哪/悬停哪/要先展开什么；坐标一律从 `src/<脚本>.txt` 的
+   `i090 <x> <y> <w> <h>` 热点或 `capture` 图上量，**不许**套别的场景的坐标）；② **机器可读的开屏判据**
+   （首选 `cur` 变 `*.BIN`，其次全局如 `f7ff0`，再其次日志行；**`sleep` 不算判据**）；③ **该场景特有的坑**；
+3. 在本文件上面的表里加一行（工具 `action=ops` 读的就是这张表 + 各文件头）。
 
 ## 待登记（**未实测，别直接拿坐标硬上**）
 
-写在这里是为了"一眼看到还缺哪些"，而不是说它们能用。每个都要按 `_template.mjs` 的三样东西补齐：
-**① 开屏手势 ② 机器可读的开屏判据 ③ 该场景特有的坑**。
+写在这里是为了"一眼看到还缺哪些"，而不是说它们能用。每个都要按上面三步补齐：
 
 | 待登记用例 | 已知信息 | 缺什么 |
 |---|---|---|
@@ -65,16 +83,36 @@ node .agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs   --instan
 
 ★**改了 `src/vm/debugCommand.ts` / `src/renderer/**` 之后要 `npm run build:electron` 再重启实例**：
 渲染页跑的是**构建产物** `dist/renderer.js`，不重建的话"新命令在页面里不存在"
-（实测回执：`未知查询：set-array` ⇒ 见 `lessons.md` #26 与 SKILL §5 坑 12）。
+（实测回执：`未知查询：set-array` ⇒ 见 `lessons.md` #26）。
 
 输入输出全走 `debug-query`，而 VM 活在渲染页里 ⇒ **页面不在/被节流，命令就不会被处理**。
 每个 op 开跑时都会 `waitTicking()` 把这一关过掉，失败时给的是**分类诊断**（`emu.mjs status` 也会打）：
 
 | 诊断 | 含义 | 修法（都在设备侧，不在脚本这层） |
 |---|---|---|
-| `no-viewer`（503） | 没有渲染页 | 用插件 `action=start` 重起（带 `--attach-headless`），或在 DSH 面板里选中该实例 |
+| `no-viewer`（503） | 没有渲染页 | 用工具 `action=start` 重起（带 `--attach-headless`），或在 DSH 面板里选中该实例 |
 | `stalled`（"没等到帧边界"） | 页面在，但帧循环停摆（面板被收起/切走 ⇒ Chromium 节流 rAF） | 把该实例的面板页**调回前台保持可见**，或重起该实例 |
 
-本机实测（2026-09-26）：宿主自带的 `--attach-headless` **起一个死一个**
-（宿主日志 `无头渲染页退出 code=4294967295`）⇒ 实际在跑的渲染页就是**面板那一页**。
+本机实测（2026-09-26）：宿主自带的 `--attach-headless` 曾**起一个死一个**
+（宿主日志 `无头渲染页退出 code=4294967295`）⇒ 实际在跑的渲染页常常就是**面板那一页**。
 **不要**为此去起自己的浏览器页/用 playwright —— 那是设备侧的事，这一层只发命令读结果。
+
+## 附：手驱动时的实测坐标（虚拟 1280×720，= `capture` 的 PNG 像素，1:1）
+
+工具 `action=input` 与 `debug-query` 的 `click/move` 都用**引擎虚拟坐标**。`ops/*.mjs` 里已经量好的坐标以
+`emu.mjs` 的 `XY` 表为准；下面是**还没固化成 op** 的那些（写在这里是为了不必回头翻票）：
+
+| 界面 | 元素 | 坐标 / 公式 | 出处 |
+|---|---|---|---|
+| TITLE | Load Data | `(1070, 480)` | `emu.mjs` `XY.loadData` |
+| TITLE | OPTION（第 3 项） | `(807, 621)` | `tickets/T-0141` |
+| OPTION | 左侧分类第 i 项（1 基，i=1..6） | `(120, 119 + 50*(i-1))` | 同上：命中带 `y = 100+50i .. 149+50i`，**每项整 50 高、无缝隙**（`y=150` 已是第 2 项） |
+| OPTION | 第 5 项「角色设定」（唯一进 `CONFIG2.BIN` 的页） | `(120, 319)` | 同上 |
+| 存档列表 | 页号按钮「N0」 | `(606 + 42*N, 30)`（页 0 → x606、页 70 → x900） | `XY.pageButton` |
+| 存档列表 | 第 i 行 | 用 `emu.calibrateRowY()` 探两点拟合，**别用公式死算** | `XY.rowY` 的注释（列表带滚动偏移） |
+| 存档列表 | 确认框「是」 | `(636, 321)` | `XY.confirmYes`（★点一行就会弹它，**不必**点左下角 LOAD） |
+| ADV | 折叠侧栏热点条 | `(1255, 363)`（矩形 1230,233–1280,493） | `XY.advSidebarStrip` |
+
+★**两侧大箭头 `(1231,358)` 证据互相矛盾**（多次成功过，也多次点不动）⇒ 翻页优先用**页号按钮**，
+并先 `capture` 现量落点、用 `wait`/`frame` 看脚本名有没有变来判"到底动没动"。
+★**别用 `tools/shot.cjs --load N` 当"载入第 N 槽"**：它自陈只标记，实际载入列表当前行（`shot.cjs:254-256`）。

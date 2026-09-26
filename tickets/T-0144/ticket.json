@@ -9,7 +9,7 @@
     "**② `0x1F7` 两条路径同样擦 572B 节点表**：单 key（`count <= 1`，raw 130831-130835）与区间（`[handle, handle+count)`，raw 131077）—— 依据同上；`i1f7` 语料极多（TITLE/SYSTEM4/LOGO/NOVEL/各 SC 脚本）",
     "**③ 不得顺手清实例槽**：`0x1F6`/`0x1F7` 的引擎体**只清两张 map**，不销毁 10 个实例槽（那是 `0x342`（`sub_4A1A60`）与读档装载段 `sub_410160` raw 19387-19388 的事）⇒ 守卫要断言「清完之后 `l2dSlots` 仍在、`l2dNodes` 为空」",
     "**④ 守卫**：`test/l2d-clear-on-container-ops.test.ts`（新）至少 4 条 —— (a) 造 TITLE 型节点（key `0x14` + 槽 0 有模型）→ `0x1F6` ⇒ `l2dNodes` 为空、(b) 同前 → `0x1F7 <key> 1` ⇒ 该 key 没了、(c) 同前 → `0x1F7 <key> <count>` 区间 ⇒ 区间内没了、区间外还在、(d) 三者都**不动** `l2dSlots`；另加一条 `present` 级断言：清完之后不再出现「节点 1 / 可画 1」",
-    "**⑤ E4（两条路径对照）**：新游戏链推进到 `SN0000` 尾/`SC0000` 章头，该段不再出现 TITLE 立绘；判据 = 实例日志 `[present …] l2d=` 不再是 `{槽… 节点1 可画1 …}`（读档路径早已是 `无`）。复现配方见 `tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md`；读档用 `.agents/skills/amayui-remote-debug/scripts/load-slot.mjs`",
+    "**⑤ E4（两条路径对照）**：新游戏链推进到 `SN0000` 尾/`SC0000` 章头，该段不再出现 TITLE 立绘；判据 = 实例日志 `[present …] l2d=` 不再是 `{槽… 节点1 可画1 …}`（读档路径早已是 `无`）。复现配方见 `tickets/T-0103/evidence/l2d-residual-gamestart-vs-load.md`；读档用 `app/amayui-emulator/tools/load-slot.mjs`",
     "**⑥ 订正 T-0090 的旁注依据**（行为保留、依据改正）：`save-slot.ts:314-315` / `live2d/runtime.ts:187-188` 引的 `sub_403EF0` 已被 `src/vm/native.ts:527-529` 按体订正为「仮想ディスプレイ（点击热点/路由表）复位，不碰显示容器」；正确依据 = `sub_410160` raw 19385-19388（清 `Scene+1064` + `Scene+1096` + 10 个实例槽）",
     "`npm run verify` 全绿；四份台账 `--validate` 绿",
     "**⑦ 定义层（轮 15 已订正，实现按订正后的定义走）**：`analysis/opcodes.json` 的 `0x1F6`/`0x1F7` 语义已**逐张点名四张表**（含 `Scene+1096` = 572B Live2D 立绘节点表，含 raw 锚点）；capability `scene-drawtable-flush-and-dirty` 的「已实现」口径已收窄为「只清了 2 张」。⇒ 实现时**以订正后的定义为判据**（不是\"照旧实现的推断\"），并把 `Scene+1080` 那张 572B-A 表在 emulator 里落在哪写清楚。",

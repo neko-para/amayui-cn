@@ -134,7 +134,7 @@ npm run replay -- ../../.tmp/t0103-record.jsonl        # headless 复现（`engi
 ### 5. 工具（本轮固化，后续大量读档直接用）
 
 ```bash
-node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance <id> --slot 78
+node app/amayui-emulator/tools/load-slot.mjs --instance <id> --slot 78
 ```
 
 - 固定流程：TITLE → Load Data `(1070,480)` → 页号按钮 `(606 + 42*N, 30)` → 第 i 行 `y = 90 + 60*i` → LOAD `(145,686)` → 确认 `(636,321)`；判据 = 实例日志出现 `[slot-load]`（退出码 0/1/2）。
@@ -227,7 +227,7 @@ node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance <id> --
 
 ### 轮 16 的其它收尾
 
-- 读档流程固化：`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs`（+ SKILL.md §3.2）。
+- 读档流程固化：`app/amayui-emulator/tools/load-slot.mjs`（+ SKILL.md §3.2）。
 - 新票 `T-0146`：3 条**预先存在**的 verify 红（真槽 SAVE70/71 格式、scene-report 占位项下限、host-registry 的 idle 用例并行偶发超时）——用「把我的 src 改动 `git checkout --` 回 HEAD」做 A/B，失败输出**逐字相同** ⇒ 与本轮无关。
 - `T-0145` 的 ③（装载点依据）随 D1 一并落地（证据已 retarget）。
 - 本轮**未做**：`T-0091` 的 ②（`[4]` 指向非 `create-texture` 槽）、`T-0145` 的 ①（`3f90` 门极性的文档订正）与 ④（留帧注释）、`T-0103` 的帧级像素连拍（建议在 D1 之后再谈观感对照）。

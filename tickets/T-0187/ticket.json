@@ -17,14 +17,38 @@
     {
       "file": "analysis/engine-capabilities.json",
       "anchor": "msgwin-char-reveal-grid",
-      "note": "▼ 图标链的第二层条目（已建模 / E2 / guard=test/char-reveal.test.ts）；note 里含 SO000.AGF 的口径、主循环 raw 20887-20895 的消费链、以及两处待核（源矩形越界 / 序章该不该有 ▼）",
+      "note": "▼ 图标链的第二层条目（已建模 / E2 / guard=test/char-reveal.test.ts）；note 里含 SO000.AGF 的口径、主循环 raw 20887-20895 的消费链、以及两处待核（源矩形越界 / 序章该不该有 ▼）。★2026-09-26 本轮已按运行期证据订正：序章槽 12 = 父帧 NOVEL 绑的 SO026（448×112）⇒ 不越界；新增「bit30 被 hover 清掉后门重跑不武装」一条（status → partial）",
       "line": 2920
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64",
-      "note": "SN0000 侧的字格指令落点（★与 SYSTEM4 装到槽 12 的 SO000 口径不同：这里是 8 帧 56×56、srcY 取 (local-int 1)）",
-      "line": 1081
+      "note": "SN0000 侧的字格指令落点（★与 SYSTEM4 装到槽 12 的 SO000 口径不同：这里是 8 帧 56×56、srcY 取 (local-int 1)）。★本页（:2992）的 `(local-int 1) = 1×0x38 = 56` = 取 SO026 第 2 行",
+      "line": 2992
+    },
+    {
+      "file": "src/NOVEL.txt",
+      "anchor": "mov (global-int f807b) ffffff",
+      "note": "★现象②的复位点：父帧 NOVEL 的 ADV 场景入口块把正文填充色重置成白（:121）并 `i076` 应用（:124），随后 `call-script (global-int 1394)` 进 SN0000（:147）。这一段在 `i0ae`(:29) 之后 ⇒ **读档续跑不重跑**",
+      "line": 121
+    },
+    {
+      "file": "src/CHECKCONFIG.txt",
+      "anchor": "mov (global-int f807b) (local-ptr 1)",
+      "note": "★「旁白白、台词随角色」的判决点：先 `f807b = ffffff`(:48)，再按 `a9dd & 2` 用 `adcd[14acda]` 覆盖（:64）→ `i076/i077/i078/i1a4`(:78-81)；`SYSTEM4.txt:84` 在读档 preamble 里调它，而那一刻 `14acda` 还是上一场景的值",
+      "line": 64
+    },
+    {
+      "file": "analysis/engine-capabilities.json",
+      "anchor": "adv-text-color-state-carryover",
+      "note": "★新增第二层条目：正文颜色/描边的状态归属（复位点只有场景入口块；读档既不还原 Font 也不还原池外的 `f807b`/`14acda`）—— 现象②的归因落点",
+      "line": 5192
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(a1 + 698852) = *(_DWORD *)(a1 + 561836);",
+      "note": "读档恢复段（`sub_410160` a4=3，raw 19685-19702）：图像槽/1000 记录/`Engine[698852]`/`Engine+84088` 起 40 B/面板复位 —— **清单里没有 Font 字段** ⇒ 正文颜色不在读档还原范围（现象②「存档恢复清单是否包含该状态」的判据）",
+      "line": 19685
     }
   ],
   "links": {
@@ -42,13 +66,23 @@
       "analysis/scripts.json"
     ]
   },
-  "status": "open",
+  "status": "doing",
   "id": "T-0187",
   "history": [
     {
       "at": "2026-09-26",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 分析完成（两处现象均已用已测 ops 复现并归因，落库见 notes.md）：① ▼ 的旧口径被推翻（槽 12 = NOVEL 绑的 SO026，源矩形在界内），真因 = hover 经 sub_4051A0 清 bit30 而 0x72 门重跑在 emulator 里不再武装（引擎 raw 28539-28555 无条件武装）；② 旁白黄 = SN0000 自己从不设色 + `f807b`/`14acda` 池外 + 读档恢复清单不含 Font ⇒ 颜色跨读档保留（待真机 E4 定「是否与引擎一致」）。下一步：① 的 3 行搬运 + 守卫。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → doing —— 分析完成（两处现象均已用已测 ops 复现并归因，落库见 notes.md）：① ▼ 的旧口径被推翻（槽 12 = NOVEL 绑的 SO026，源矩形在界内），真因 = hover 经 sub_4051A0 清 bit30 而 0x72 门重跑在 emulator 里不再武装（引擎 raw 28539-28555 无条件武装）；② 旁白黄 = SN0000 自己从不设色 + `f807b`/`14acda` 池外 + 读档恢复清单不含 Font ⇒ 颜色跨读档保留（待真机 E4 定「是否与引擎一致」）。下一步：① 的 3 行搬运 + 守卫。"
     }
   ]
 }

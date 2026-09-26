@@ -296,6 +296,153 @@ export function globalLine(lines) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// ops 层（`app/amayui-emulator/tools/ops/*.mjs`）：**查询 / 执行 / 创建**
+//
+// 为什么这三件事在**工具面上**做（`tickets/T-0191`）：
+//   ① 工具是唯一"跨终端可见"的稳定入口 —— `action=ops` 直接把「现在有哪些用例、前置/判据/副作用」
+//      摆在面前，不必先知道脚本在哪、更不必"现场读界面猜坐标"；
+//   ② ops 依旧是**工程脚本**（纯 node、脱离 DSH 也能跑，见 `ops/README.md`）——
+//      工具只是它的前端，不是它的前置：命令/坐标/判据的真源仍在 `ops/*.mjs` + `ops/README.md`；
+//   ③ ★工具**不解析 op 的参数**：`args` 原样透传给脚本（各用例自己的 CLI 就是它的参数表），
+//      否则"每个 op 有哪些参数"会多出第二份真源（本文件头把"两处真源"列为最贵的债）。
+//
+// ★stdio 纪律（`tickets/T-0192` 的实测）：**不许用管道抓子进程 stdout** ——
+//   受限沙箱下 `spawn` 默认 `stdio:'pipe'` 会 EPERM（tsx/esbuild 就是这么死的）。
+//   这里沿用 `doStart` 的老路：stdout/stderr 直接重定向到**文件 fd**，跑完再读回来。
+// ────────────────────────────────────────────────────────────────────────────
+
+/** ops 目录（`<root>/app/amayui-emulator/tools/ops`）。 */
+export function opsDir(root) {
+  return path.join(root, 'app', 'amayui-emulator', 'tools', 'ops')
+}
+
+/** op 名字的合法形状（要能直接当文件名；`_` 开头的留给模板/私有件）。 */
+const OP_NAME_RE = /^[a-z0-9][a-z0-9-]{1,63}$/
+/** 生成新用例的模板（`op-create` 用）。 */
+const OP_TEMPLATE = '_template.mjs'
+/** 用例索引（人写真源；`action=ops` 从它取"状态"列与"待登记"表）。 */
+const OPS_INDEX = 'README.md'
+
+/** 取文件头里"以某前缀开头的那一行"的正文（前缀形如 `前置：`/`判据：`；取不到回 null）。 */
+function headerField(text, prefix) {
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/^\s*\*\s?/, '').trim()
+    if (line.startsWith(prefix)) return line.slice(prefix.length).trim() || null
+  }
+  return null
+}
+
+/**
+ * 读一个 op 文件的**自述**（用例/前置/判据/副作用）。
+ * ★只读文件头（前 120 行）：op 脚本可能很长（`emu.mjs` 上千行），列清单不该把整份读进来。
+ */
+export function readOpFile(file) {
+  let text = ''
+  try {
+    text = fs.readFileSync(file, 'utf8').split(/\r?\n/).slice(0, 120).join('\n')
+  } catch {
+    return null
+  }
+  const head = text.match(/^\s*\*\s*ops\/(\S+?)\s*——\s*\*\*(.+?)\*\*/m) || text.match(/^\s*\*\s*(\S+?)\s*——\s*\*\*(.+?)\*\*/m)
+  const side = text.match(/^\s*\*\s*[^\n]*?(会修改[^\n]*|副作用[^\n]*)/m)
+  return {
+    // 文件头写的是 `**用例：…**` ⇒ 去掉那个前缀，回执里不必重复
+    purpose: head ? head[2].replace(/^用例[:：]\s*/, '').trim() : null,
+    pre: headerField(text, '前置：'),
+    criteria: headerField(text, '判据：'),
+    sideEffects: side ? side[1].replace(/\*+/g, '').trim() : null,
+  }
+}
+
+/**
+ * 解析 `ops/README.md`：主表 → 名字→状态；"待登记"小节 → 待登记表。
+ * 解析失败/文件不在 ⇒ 回空表（**不抛**：索引是给人读的，缺了不该让 `action=ops` 挂掉）。
+ */
+export function parseOpsIndex(root) {
+  const status = new Map()
+  const pending = []
+  let text = ''
+  try {
+    text = fs.readFileSync(path.join(opsDir(root), OPS_INDEX), 'utf8')
+  } catch {
+    return { status, pending }
+  }
+  let section = ''
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (line.startsWith('#')) {
+      section = line
+      continue
+    }
+    if (!line.startsWith('|')) continue
+    const cells = line.split('|').slice(1, -1).map((c) => c.trim())
+    const m = cells[0] ? cells[0].match(/^`([^`]+)\.mjs`/) : null
+    if (!m) continue
+    const name = m[1]
+    if (name.startsWith('_')) continue // 模板不入清单
+    if (/待登记/.test(section)) {
+      pending.push({ name, known: cells[1] || null, missing: cells[2] || null })
+      continue
+    }
+    // 主表 = 6 列：脚本 | 用例 | 前置 | 判据 | 副作用（★必读） | 状态
+    if (cells.length >= 6) {
+      status.set(name, {
+        purpose: cells[1] || null,
+        pre: cells[2] || null,
+        criteria: cells[3] || null,
+        sideEffects: cells[4] || null,
+        status: cells[5] || null,
+      })
+    } else {
+      status.set(name, { status: cells[cells.length - 1] || null })
+    }
+  }
+  return { status, pending }
+}
+
+/** `action=ops` 的数据面：目录里的 op + 索引里的状态 + 待登记 + 只在索引里的"幽灵"。**不 spawn**。 */
+export function listOps(root) {
+  const dir = opsDir(root)
+  const { status, pending } = parseOpsIndex(root)
+  let files = []
+  try {
+    files = fs.readdirSync(dir).filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
+  } catch {
+    /* 目录不在 ⇒ 空清单（不是错误） */
+  }
+  const ops = files.sort().map((f) => {
+    const name = f.slice(0, -4)
+    const meta = readOpFile(path.join(dir, f)) || {}
+    const idx = status.get(name)
+    const indexed = status.has(name)
+    return {
+      name,
+      file: path.relative(root, path.join(dir, f)).split(path.sep).join('/'),
+      // 文件头优先（更近、更细），索引表兜底（`_template.mjs` 之类没有文件头字段时也能给出信息）
+      purpose: meta.purpose ?? idx?.purpose ?? null,
+      pre: meta.pre ?? idx?.pre ?? null,
+      criteria: meta.criteria ?? idx?.criteria ?? null,
+      sideEffects: meta.sideEffects ?? idx?.sideEffects ?? null,
+      indexed,
+      status: indexed ? idx?.status ?? null : '（索引里没有这一行 —— 请补 ops/README.md 的表）',
+    }
+  })
+  // 索引里登记了、目录里却没有 ⇒ 也报出来（防"文档说能用、实际没有"）
+  const ghost = [...status.keys()]
+    .filter((n) => !ops.some((o) => o.name === n))
+    .map((n) => ({ name: n, status: status.get(n)?.status ?? null }))
+  const tpl = path.join(dir, OP_TEMPLATE)
+  return {
+    absDir: dir,
+    dir: path.relative(root, dir).split(path.sep).join('/'),
+    ops,
+    pending,
+    ghost,
+    template: fs.existsSync(tpl) ? path.relative(root, tpl).split(path.sep).join('/') : null,
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // 工具实现（`ctx.tools.register` 的 execute）
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -597,6 +744,144 @@ export function createExecutor(deps) {
     }
   }
 
+  // ── action=ops / op / op-create ───────────────────────────────────────────
+  /** 列 op（只读；不 spawn、不碰进程）。 */
+  function doOps() {
+    const root = getRoot()
+    const r = listOps(root)
+    log(`ops → ${r.ops.length} 条已登记（待登记 ${r.pending.length} / 只在索引里 ${r.ghost.length}）`)
+    return {
+      ok: true,
+      action: 'ops',
+      dir: r.dir,
+      ops: r.ops,
+      pending: r.pending,
+      ghost: r.ghost,
+      template: r.template,
+      note: r.ops.length
+        ? `${r.ops.length} 条可用 op（同表另见 ${r.dir}/README.md）。跑一条用 action=op {name, args}；新建用 action=op-create。`
+        : `目录 ${r.dir} 里没有 op。用 action=op-create 生成第一条。`,
+    }
+  }
+
+  /**
+   * 跑一条 op：`node <ops>/<name>.mjs --instance <id> …args`。
+   *
+   * ★工具**不解释** `args`（各 op 的 CLI 就是它的参数表）—— 只挡一条：不许用 `args` 再给 `--instance`
+   *   （实例由工具的 instance 参数决定，两处都给必然打架）。
+   */
+  async function doOp(args) {
+    const root = getRoot()
+    const name = String(args.name || '')
+    if (!OP_NAME_RE.test(name)) {
+      throw new Error(`op 名字非法：${JSON.stringify(args.name)}（小写字母/数字/短横，2..64 字符；例 "load-from-title"）`)
+    }
+    const dir = opsDir(root)
+    const file = path.join(dir, `${name}.mjs`)
+    if (!fs.existsSync(file)) {
+      const r = listOps(root)
+      throw new Error(
+        `没有 op <${name}>。可用：${r.ops.map((o) => o.name).join(', ') || '（目录里一条都没有）'}` +
+          `；用 action=ops 看每一条的前置/判据/副作用。`,
+      )
+    }
+    const rec = resolveInstance(args) // op 必须挂在一个活实例上（给了 instance 就用它）
+    const extra = Array.isArray(args.args) ? args.args.map(String) : []
+    if (extra.includes('--instance')) throw new Error('args 里不要再给 --instance —— 用工具的 instance 参数选实例')
+    const timeoutMs = intIn(args.timeout_ms, 'timeout_ms', 1000, 900000, 300000)
+    const logDir = path.join(root, '.tmp', 'emudbg')
+    fs.mkdirSync(logDir, { recursive: true })
+    const logPath = path.join(logDir, `op-${name}-${stamp()}.log`)
+    const argv = [file, '--instance', rec.id, ...extra]
+    const t0 = Date.now()
+    // ★文件 fd，不是 pipe（`tickets/T-0192`：受限沙箱下 pipe 会 EPERM）。
+    const out = fs.openSync(logPath, 'a')
+    const child = spawn(process.execPath, argv, {
+      cwd: path.join(root, 'app', 'amayui-emulator'),
+      env: { ...process.env, AMAYUI_AUDIO_ENABLED: '0' },
+      stdio: ['ignore', out, out],
+      windowsHide: true,
+    })
+    fs.closeSync(out)
+    let timedOut = false
+    const exitCode = await new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        timedOut = true
+        killTree(child.pid)
+        resolve(null)
+      }, timeoutMs)
+      child.on('exit', (code) => {
+        clearTimeout(timer)
+        resolve(code)
+      })
+      child.on('error', (err) => {
+        clearTimeout(timer)
+        log(`op ${name} spawn 失败：${err.message}`)
+        resolve(null)
+      })
+    })
+    const lines = readLogTail(logPath, intIn(args.tail, 'tail', 1, 500, 40))
+      .split(/\r?\n/)
+      .filter(Boolean)
+    const rel = path.relative(root, logPath).split(path.sep).join('/')
+    const ms = Date.now() - t0
+    const ok = exitCode === 0 && !timedOut
+    log(`op ${name} instance=${rec.id} exit=${exitCode}${timedOut ? '（超时）' : ''} 用时=${ms}ms log=${rel}`)
+    return {
+      ok,
+      action: 'op',
+      instance: rec.id,
+      name,
+      argv: ['node', ...argv],
+      exitCode,
+      timedOut,
+      elapsedMs: ms,
+      logPath: rel,
+      lines,
+      note: ok
+        ? `op <${name}> 成功（exit 0，${ms}ms）；完整日志 ${rel}。★判据要读上面这些行（每条 op 的判据写在它自己的文件头）。`
+        : `op <${name}> ${timedOut ? `超时 ${timeoutMs}ms（已收进程树）` : `失败 exit=${exitCode}`}；完整日志 ${rel}。`,
+    }
+  }
+
+  /** 用 `_template.mjs` 生成一条新 op（**拒绝覆盖**；生成后还差三样，回执里列出来）。 */
+  function doOpCreate(args) {
+    const root = getRoot()
+    const name = String(args.name || '')
+    if (!OP_NAME_RE.test(name)) {
+      throw new Error(`op 名字非法：${JSON.stringify(args.name)}（小写字母/数字/短横，2..64 字符；例 "load-from-battle"）`)
+    }
+    const dir = opsDir(root)
+    const tpl = path.join(dir, OP_TEMPLATE)
+    if (!fs.existsSync(tpl)) throw new Error(`找不到模板 ${path.relative(root, tpl).split(path.sep).join('/')}（ops 目录被挪走了？）`)
+    const dest = path.join(dir, `${name}.mjs`)
+    if (fs.existsSync(dest)) {
+      throw new Error(`op <${name}> 已存在：${path.relative(root, dest).split(path.sep).join('/')}（不覆盖；换名字或自己改）`)
+    }
+    const purpose = String(args.purpose || '').trim() || '（★待写：一句话说明"从哪个界面做什么"）'
+    const body = fs
+      .readFileSync(tpl, 'utf8')
+      .replaceAll('{{NAME}}', name)
+      .replaceAll('{{PURPOSE}}', purpose)
+      .replaceAll('{{DATE}}', new Date().toISOString().slice(0, 10))
+    fs.writeFileSync(dest, body, 'utf8')
+    const rel = path.relative(root, dest).split(path.sep).join('/')
+    log(`op-create ${name} → ${rel}`)
+    return {
+      ok: true,
+      action: 'op-create',
+      name,
+      path: rel,
+      checklist: [
+        '① 开屏手势：点哪 / 悬停哪 / 要不要先展开（坐标从 src/<脚本>.txt 的 i090 热点或 capture 图上量，别套别的场景）',
+        '② 机器可读判据：优先 cur 变 *.BIN，其次全局（如 f7ff0），再其次日志行 —— sleep 不算判据',
+        '③ 该场景特有的坑：写进文件头（通用两条 = 两帧点击 / 视觉展开≠逻辑展开）',
+        `④ 在 ${path.relative(root, path.join(dir, OPS_INDEX)).split(path.sep).join('/')} 的表里加一行（action=ops 从它取"状态"列）`,
+      ],
+      note: `已生成 ${rel}（模板 ${OP_TEMPLATE}，未覆盖任何文件）。填完三样 + 登记一行后，action=op {name:"${name}"} 就能跑。`,
+    }
+  }
+
   // ── action=capture ────────────────────────────────────────────────────────
   /**
    * 抓一帧 → **PNG 落盘**，回执只带路径/字节数/尺寸。
@@ -787,6 +1072,13 @@ export function createExecutor(deps) {
         return doStart(args)
       case 'stop':
         return doStop(args) // 自己 resolve（可以只收"本进程起的"）
+      // ── ops 三件事（`tickets/T-0191`）：查询 / 执行 / 创建 ──
+      case 'ops':
+        return { ...doOps(), elapsedMs: Date.now() - t0 }
+      case 'op':
+        return doOp(args)
+      case 'op-create':
+        return { ...doOpCreate(args), elapsedMs: Date.now() - t0 }
       case 'query': {
         const rec = resolveInstance(args)
         const cmds = Array.isArray(args.commands) && args.commands.length ? args.commands.map(String) : null
@@ -851,7 +1143,7 @@ export function createExecutor(deps) {
       }
       default:
         throw new Error(
-          `action 必须是 instances/start/stop/query/capture/input/profile/wait 之一（收到 ${JSON.stringify(args.action)}）`,
+          `action 必须是 instances/start/stop/query/capture/input/profile/wait/ops/op/op-create 之一（收到 ${JSON.stringify(args.action)}）`,
         )
     }
   }

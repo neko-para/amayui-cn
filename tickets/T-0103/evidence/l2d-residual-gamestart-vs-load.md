@@ -76,7 +76,7 @@ L2D 节点**在表里、可画**，只是被 handle 更大的 mesh 盖住（引�
 # ① 起一个带渲染页的实例（同 id 会拒绝并行）
 cd app/amayui-emulator && node --import tsx src/web/host.ts --instance t0103 --port 0 --attach-headless --idle-sec 0
 # ② 新游戏路径：点 Game Start (1180,372) → 点「ゲーム開始」(811,605) → 进 SN0000
-#    读档路径：node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance t0103 --slot 78
+#    读档路径：node app/amayui-emulator/tools/load-slot.mjs --instance t0103 --slot 78
 # ③ 判据：grep 实例日志的 [present …] 里的 l2d= 字段（新游戏路径应为 节点1；读档路径应为 无）
 ```
 

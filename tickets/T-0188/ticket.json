@@ -16,31 +16,31 @@
   ],
   "evidence": [
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "file": "app/amayui-emulator/tools/emu.mjs",
       "anchor": "export async function tap(",
       "note": "★两帧点击原语（一次注入 cursor+press+release 不激活菜单/侧栏 ⇒ move→press→≥2 帧→release）",
       "line": 478
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "file": "app/amayui-emulator/tools/emu.mjs",
       "anchor": "export async function resetInstance(",
       "note": "reset：pid 真死判据 + 注册表 pid 对齐 + 可驱动判据 + 引擎时钟新鲜度断言",
       "line": 795
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "file": "app/amayui-emulator/tools/emu.mjs",
       "anchor": "export async function pickSlotInSaveScreen(",
       "note": "两个 op 共用的 UI 原语：在已打开的 SAVE/LOAD 画面里选槽→LOAD→确认（确认只按一次，避免残留输入边沿清掉 ▼ 的武装位）",
       "line": 586
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/ops/README.md",
+      "file": "app/amayui-emulator/tools/ops/README.md",
       "anchor": "待登记（**未实测，别直接拿坐标硬上**）",
       "note": "用例索引：已实测 2 条 + 待登记 4 条（battle/workshop/field/guild）各写清缺什么",
-      "line": 1
+      "line": 45
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs",
+      "file": "app/amayui-emulator/tools/ops/load-from-adv.mjs",
       "anchor": "const LOAD_MODE_VALUE = 1;",
       "note": "★安全断言：SAVE/LOAD 画面的模式全局 `f7ff0`（0=存档 / 1=读档）；在存档画面点槽位会覆盖存档 ⇒ 不确认就中止",
       "line": 60

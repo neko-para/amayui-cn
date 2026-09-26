@@ -4,7 +4,7 @@
   "type": "bug",
   "priority": "P3",
   "area": "tooling/skills",
-  "why": "复现链（T-0103 / T-0144 / T-0182 都用它）里 `.agents/skills/amayui-remote-debug/scripts/load-slot.mjs` 在**刚起来的实例**上第一次跑经常在 ① 步失败：点了 Load Data、20s 内没进 SAVE.BIN ⇒ 退出码 1，而**原样再跑一次就成功**（2026-09-26 观测 3 次，3/3 都是「首跑失败、次跑成功」）。对 agent 是纯噪音：失败文案指向「槽为空？页码不对？槽文件不在实例可见目录？」这些**误导性**原因，而真实原因大概率是标题画面的淡入/输入门还没就绪（首跑时实例刚 boot 完，第一次点击落在动画/门未开的那一段）。修法 = 首次尝试失败后**自动重试一次**并打日志（成功路径完全不变），而不是让调用者猜；同时用一次实测把根因（是「未就绪」还是别的）钉下来，避免只是把 flake 藏进重试里。",
+  "why": "复现链（T-0103 / T-0144 / T-0182 都用它）里 `app/amayui-emulator/tools/load-slot.mjs` 在**刚起来的实例**上第一次跑经常在 ① 步失败：点了 Load Data、20s 内没进 SAVE.BIN ⇒ 退出码 1，而**原样再跑一次就成功**（2026-09-26 观测 3 次，3/3 都是「首跑失败、次跑成功」）。对 agent 是纯噪音：失败文案指向「槽为空？页码不对？槽文件不在实例可见目录？」这些**误导性**原因，而真实原因大概率是标题画面的淡入/输入门还没就绪（首跑时实例刚 boot 完，第一次点击落在动画/门未开的那一段）。修法 = 首次尝试失败后**自动重试一次**并打日志（成功路径完全不变），而不是让调用者猜；同时用一次实测把根因（是「未就绪」还是别的）钉下来，避免只是把 flake 藏进重试里。",
   "acceptance": [
     "① 步失败（20s 内没进 SAVE.BIN）时自动重试**一次**：重试前重读 `cur`（已在 SAVE.BIN ⇒ 直接继续；仍 TITLE ⇒ 再点一次 Load Data），日志打 `↻ 重试（第 2 次）`；`--no-retry` 可关掉（给需要严格单次行为的调用者）",
     "重试只在**首次尝试**失败时发生（单次调用最多 1 次重试；第 2 次仍失败才退出 1）⇒ 真正的环境错误不会被无限重试掩盖",
@@ -14,13 +14,13 @@
   ],
   "evidence": [
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs",
+      "file": "app/amayui-emulator/tools/ops/load-from-title.mjs",
       "anchor": "两次都没进 SAVE.BIN",
       "note": "首跑失败的重试落点（retarget：实现已从 load-slot.mjs 搬到本文件，load-slot.mjs 变兼容壳；★不删证据）",
       "line": 56
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs",
+      "file": "app/amayui-emulator/tools/ops/load-from-title.mjs",
       "anchor": "本用例只从 TITLE 起跑",
       "note": "① 步的前提（cur 必须是 TITLE.BIN 或 SAVE.BIN）——重试时必须重读 cur 而不是盲目重点（retarget 到新实现）",
       "line": 43

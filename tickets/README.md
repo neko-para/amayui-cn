@@ -7,24 +7,25 @@
 
 ## 概览
 
-共 **188** 张：🔜 doing **4** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **173** · 🚫 dropped **4**（P0 9 / P1 70）
+共 **190** 张：🔜 doing **5** · ⛔ blocked **0** · ⬜ open **7** · ✅ done **174** · 🚫 dropped **4**（P0 9 / P1 70）
 
-按域：`emulator/render` 31 · `emulator/vm` 18 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/msgwin` 5 · `emulator/tooling` 5 · `emulator/tools` 4 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/engine-capabilities` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1 · `tooling/skills` 1
+按域：`emulator/render` 31 · `emulator/vm` 18 · `emulator/hosts` 15 · `emulator/test` 14 · `emulator/frame-loop` 13 · `emulator/adv` 11 · `emulator/save-slot` 9 · `emulator/ops` 9 · `emulator/input` 8 · `docs/03-engine` 7 · `emulator/tools` 6 · `emulator/msgwin` 5 · `emulator/tooling` 5 · `emulator/audio` 3 · `analysis/emulator/verify` 3 · `emulator/boot` 2 · `emulator/verify` 2 · `emulator/save-data` 2 · `emulator/save-render` 2 · `analysis/engine-capabilities` 2 · `emulator/live2d` 2 · `emulator/deadcode` 1 · `emulator/arch` 1 · `repo` 1 · `engine/opcodes` 1 · `translation/src` 1 · `tooling/repo` 1 · `emulator/core` 1 · `renderer/scene` 1 · `emulator/save-load` 1 · `emulator/opcodes` 1 · `emulator/text` 1 · `analysis/emulator/live2d` 1 · `analysis` 1 · `app/emulator/native` 1 · `toolkit/test` 1 · `docs/05-scripts` 1 · `analysis/emulator/vm` 1 · `analysis/opcode-gaps` 1 · `docs/analysis/engine-capabilities` 1 · `analysis/analysis/emulator/vm` 1 · `tooling/skills` 1
 
-## 🔜 doing（4）
+## 🔜 doing（5）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
 | [`T-0148`](./T-0148/ticket.json) | P1 | analysis | `analysis/emulator/vm` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目 | 4 | — | `notes.md` `changes-coverage.md` `quote-gone-adjudication.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0179`](./T-0179/ticket.json) | P2 | refactor | `analysis/analysis/emulator/vm` | 缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件） | 5 | — | `notes.md` `changes-round70.md` `changes-t0179.md` | — |
+| [`T-0187`](./T-0187/ticket.json) | P2 | bug | `emulator/msgwin` | SN0000 的两处 ADV 不一致：▼「点击继续」闪烁图标丢失 + 从 SC0000 读档进 SN0000 后旁白变黄（应为白） | 7 | — | `notes.md` | — |
 | [`T-0185`](./T-0185/ticket.json) | P3 | bug | `tooling/skills` | load-slot.mjs 首次点 Load Data 偶发进不去 SAVE.BIN（需自动重试一次） | 5 | — | `notes.md` | — |
 
 ## ⬜ open（7）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
-| [`T-0187`](./T-0187/ticket.json) | P2 | bug | `emulator/msgwin` | SN0000 的两处 ADV 不一致：▼「点击继续」闪烁图标丢失 + 从 SC0000 读档进 SN0000 后旁白变黄（应为白） | 7 | — | — | — |
+| [`T-0192`](./T-0192/ticket.json) | P2 | bug | `emulator/tools` | `emu.mjs slotFingerprint` 在受限 shell 下 spawn 失败 ⇒ 槽指纹对账静默跳过且归因错误（判据④假阴性） | 5 | — | `notes.md` | — |
 | [`T-0019`](./T-0019/ticket.json) | P3 | refactor | `emulator/msgwin` | 拆 handlers/msgwin.ts（1338 行）与 vm/msgwin.ts（803 行） | 3 | — | `notes.md` | — |
 | [`T-0051`](./T-0051/ticket.json) | P3 | analysis | `emulator/verify` | 真机/真界面待验证清单（E4）：0x32 存档缩略图、0x32 缩放插值、0x207 同尺寸转送、0x214 收场换位、0x10A 侧栏钉光标 | 5 | — | `notes.md` | — |
 | [`T-0088`](./T-0088/ticket.json) | P3 | req | `emulator/hosts` | AGERC 对话框宿主缝缺口：0x140（AGERC ShowDialog cmd 8）的返回值只能由真人点选，且两张运行时表未建模 | 5 | — | `notes.md` | — |
@@ -32,7 +33,7 @@
 | [`T-0184`](./T-0184/ticket.json) | P3 | req | `emulator/render` | 转场模糊的 +7% 亮度偏置：整数 α 表的 8bit 前乘回合 ⇒ 浮点累积（已披露残差） | 6 | — | — | — |
 | [`T-0186`](./T-0186/ticket.json) | P3 | req | `analysis/engine-capabilities` | 已关闭单的「重开条件」如何被机械发现（样本：T-0091 ② 的 [4] 越界 / 后台缓冲分支） | 7 | — | evidence/(3) | — |
 
-## ✅ done（173）
+## ✅ done（174）
 
 | id | P | 类型 | 域 | 标题 | 判据 | 守卫 | 过程文档 | 阻塞于 |
 |---|---|---|---|---|---|---|---|---|
@@ -95,7 +96,7 @@
 | [`T-0134`](./T-0134/ticket.json) | P1 | req | `emulator/hosts` | 调试观察宿主 Phase 1：VM 外层桥接三件套（输入/focus/帧捕获）+ 宿主服务实例化 | 9 | `app/amayui-emulator/test/bridge-input-focus.test.ts` `app/amayui-emulator/test/frame-capture-seam.test.ts` `app/amayui-emulator/test/host-instance.test.ts` `app/amayui-emulator/test/host-service.test.ts` | `notes.md` `changes.md` evidence/(2) | — |
 | [`T-0135`](./T-0135/ticket.json) | P1 | req | `emulator/hosts` | 调试观察宿主 Phase 2：Node web 宿主（HTTP+SSE，静音）+ DSH 插件（同源 iframe） | 10 | `app/amayui-emulator/test/web-envelope.test.ts` `app/amayui-emulator/test/web-bridge.test.ts` `app/amayui-emulator/test/bridge-input-focus.test.ts` | `notes.md` `changes.md` evidence/(4) | — |
 | [`T-0136`](./T-0136/ticket.json) | P1 | req | `emulator/hosts` | 观察台化：实例注册表（文件心跳）+ 每实例路由 + 面板纯观察（含闲置自停） | 10 | `app/amayui-emulator/test/host-registry.test.ts` | `notes.md` `changes.md` evidence/(3) | — |
-| [`T-0139`](./T-0139/ticket.json) | P1 | tooling | `emulator/tooling` | 编写「操纵远程调试器」技能（.agents/skills/amayui-remote-debug） | 6 | `.agents/skills/amayui-remote-debug/SKILL.md#amayui-remote-debug` | `changes.md` | — |
+| [`T-0139`](./T-0139/ticket.json) | P1 | tooling | `emulator/tooling` | 编写「操纵远程调试器」技能（.agents/skills/amayui-remote-debug） | 6 | `plugins/amayui-emulator/README.md#agent tool：`amayui_emulator`` | `notes.md` `changes.md` | — |
 | [`T-0140`](./T-0140/ticket.json) | P1 | req | `emulator/hosts` | agent 自持无头渲染页（--attach-headless），让「没人看」也能调试；并加宿主侧第二渲染者防护 | 6 | `app/amayui-emulator/src/web/host.ts#attachHeadless` `app/amayui-emulator/tools/attach-headless.cjs` `plugins/amayui-emulator/float-e2e.cjs#每个观察者自己的 frames 计数器单调不减` | `changes.md` evidence/(2) | — |
 | [`T-0143`](./T-0143/ticket.json) | P1 | bug | `emulator/hosts` | emulator web 宿主：缺构建产物（dist/web 被删/没建）时只说 `not found: index.html`，指不出「你没构建」 | 6 | `app/amayui-emulator/test/host-dist-assets.test.ts` `app/amayui-emulator/test/host-dist-assets.test.ts#缺 web 产物` | `changes.md` | — |
 | [`T-0144`](./T-0144/ticket.json) | P1 | bug | `emulator/render` | 0x1F6 clearDrawContainer / 0x1F7 detach-texture 未清 572B 立绘节点表（Scene+1080/+1096）… | 9 | `app/amayui-emulator/test/l2d-clear-on-container-ops.test.ts` `app/amayui-emulator/test/game-start-chain.test.ts` | evidence/(1) | — |
@@ -176,6 +177,7 @@
 | [`T-0178`](./T-0178/ticket.json) | P2 | bug | `emulator/live2d` | `0x345`（装 L2D 纹理）的失败支未按体抛错：**读文件失败** ⇒ 应抛 `ShowMessageError`（语料 437 处，与 `0x34E`… | 7 | `app/amayui-emulator/test/l2d-texture-load-failure.test.ts` | — | — |
 | [`T-0188`](./T-0188/ticket.json) | P2 | tooling | `emulator/tools` | 模拟器操作固化成工程脚本：emu.mjs（核心驱动）+ ops/*（用例：reset／从 TITLE 读档／从 ADV 读档） | 7 | — | `notes.md` evidence/(3) | — |
 | [`T-0189`](./T-0189/ticket.json) | P2 | req | `emulator/vm` | 测试场景下强制指定 ADV 侧栏（charm 表）排布：调试面写全局 / 环境开关（不动玩家 SAVE.DAT） | 7 | `app/amayui-emulator/test/debug-write.test.ts` `app/amayui-emulator/test/sidebar-charm-override.test.ts` | `notes.md` evidence/(2) | — |
+| [`T-0191`](./T-0191/ticket.json) | P2 | tooling | `emulator/tools` | 工具面 `amayui_emulator` 与技能用例层 `ops/*.mjs` 未打通：既不能列出 ops，也不能驱动 ops（判据也表达不出来） | 6 | `plugins/amayui-emulator/tool-smoke.mjs#拒绝覆盖已有 op` | `notes.md` | — |
 | [`T-0014`](./T-0014/ticket.json) | P3 | tooling | `emulator/deadcode` | 删死代码：interpreter.run()、Engine.pickHoverLabel()、HeadlessScene.waitFlags、PixiBack… | 4 | `app/amayui-emulator/test/adv-msgwin.test.ts` `app/amayui-emulator/test/route-dispatch.test.ts` `app/amayui-emulator/test/anim-window-done.test.ts` | `notes.md` `changes.md` | — |
 | [`T-0015`](./T-0015/ticket.json) | P3 | docs | `emulator/frame-loop` | 订正文档与代码矛盾：renderer.ts/native.ts 称"Pixi ticker 每帧驱动渲染"、run(frames) 返回语义不同 | 2 | — | — | — |
 | [`T-0020`](./T-0020/ticket.json) | P3 | refactor | `emulator/test` | 收敛测试结构：mk() 17 变体统一 + 5 处自造帧循环接到共享驱动 | 2 | `app/amayui-emulator/test/harness-convergence.test.ts` | `changes.md` | — |

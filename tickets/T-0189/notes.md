@@ -15,7 +15,7 @@
 | 引擎/VM（纯函数） | `app/amayui-emulator/src/vm/debugWrite.ts`（新增） | `setGlobalInt` / `setGlobalIntArray` / `forceIntArray`：**按 ENC 写**脚本全局 int 池；**不碰** `stringIndexTable`/`onSaveDataChanged`（不写回 SAVE.DAT） |
 | 命令解析 | `src/vm/debugCommand.ts` | 新增 `{a:'set-global'}` / `{a:'set-array'}` + `parseNumToken`（`0x…`/含 a-f = 十六进制，纯数字 = 十进制）+ 帮助文本两行；非法输入按既有口径"当查询回报" |
 | 渲染窗执行 | `src/renderer/app/session.ts` | 两个 case → 调 `debugWrite`，回执打 `global 0x.. ← 值（原 值）` + ★只改运行期内存 |
-| 用例（ops） | `.agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs` | **开跑前自动** `forceSidebarLayout` 写死 `[0xd 0xe 1 0xb 0xc 2 3 4 5]` → 读回校验 → 点固定第 1 格（LOAD）；校验失败/`--keep-sidebar` 时退回候选扫描；模式安全断言（`f7ff0 == 1`）保留 |
+| 用例（ops） | `app/amayui-emulator/tools/ops/load-from-adv.mjs` | **开跑前自动** `forceSidebarLayout` 写死 `[0xd 0xe 1 0xb 0xc 2 3 4 5]` → 读回校验 → 点固定第 1 格（LOAD）；校验失败/`--keep-sidebar` 时退回候选扫描；模式安全断言（`f7ff0 == 1`）保留 |
 | 核心驱动 | `.../scripts/emu.mjs` | 新增 `SIDEBAR`（表基址/槽数/动作 id/固定排布）、`setGlobal`/`setArray`/`forceSidebarLayout`/`readSidebarLayout`；CLI 加 `set-global` / `set-array` / `sidebar [--show]`；修 `parseArgv` 的"收尾裸开关记成 undefined"与"未知实例把读值解成 NaN"两处 |
 | 文档 | `ops/README.md` / `amayui-remote-debug` SKILL §3.2 | **副作用（★必读）列**：`load-from-adv` 会改侧栏配置（运行期，不写回 SAVE.DAT）；写原语与 `--keep-sidebar` 都写明 |
 | 第二层台账 | `analysis/engine-capabilities.json` 的 `adv-advance-route-table` | note 补：侧栏排布来源 = charm 表 `global 13b0`（默认在 INITCHARM、玩家改动在 CHARMEDIT）+ 测试期覆盖方式；已重生成 `docs-new/03-engine/engine-capabilities.md` |

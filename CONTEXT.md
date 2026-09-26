@@ -13,7 +13,7 @@
 | 分析 `src/*.txt` 脚本 | 技能 **`amayui-script-analysis`**（先读文档 → 读脚本 → 落 `analysis/scripts.json` → `build-scripts.mjs` → `docs-new/05-scripts/`） |
 | 改台账**条目**（结构化/多条一起改） | `ledger.js --plan`（计划文件驱动、默认 dry-run；见 §7.17）——不要手改 JSON、不要"整段 old 串替换" |
 | 看某条指令**还缺什么**（缺口全文/明细） | `gaps.js --show <opcode>` / `--missing <opcode>` / `--stale`（体检）/ `--recount`（口径唯一） |
-| 起/驱动调试实例（agent 自足） | 技能 **`amayui-remote-debug`**（`--attach-headless` + `debug-query` 的 move/click/wheel/key/capture/frame/global） |
+| 起/驱动调试实例（agent 自足） | DSH 工具 **`amayui_emulator`**（`action=instances/start/stop/query/capture/input/profile/wait`）+ **`action=ops/op/op-create`** 查/跑/建操作脚本；脚本真源 `app/amayui-emulator/tools/{emu.mjs,ops/*.mjs}`。环境/权限（沙箱挡管道、跑 TS 用 hook 不用 tsx）见 **`AGENTS.md`** |
 | 文档模型（真源/生成物/沿革） | `docs-new/00-overview/authority.md` 附录 **A1–A6** |
 | 证据等级 **E0–E4** | `docs-new/03-engine/engine-capabilities.md` 头部 + 台账 schema 的 `evidenceEnum` |
 | 审计的原始结论 | `docs-new/99-records/2026-09-impl-audit/impl-audit-2026-09.md`（人读）+ `.../raw/impl-audit-findings.json`（机器可读 383 条） |
@@ -153,6 +153,9 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
   ★★但注意 `&&` 链：一旦 `test:all` 非零，`check:dead-writes` 会被**跳过** —— 改动涉及字段读写时请**单独再跑一次**。
   ★★`test:all` 的**运行器需要能起子进程**（`node --test` 与 `tsx` 用**管道 stdio**）：**受限沙箱下会 EPERM**，
     表现为"整片用例 `status=null/-1`"的**伪红**（不是代码问题）⇒ 用 `danger-full-access` 跑，或改用逐文件 `stdio:'inherit'` 的等价口径。
+     ★**环境/权限的完整清单与替代做法见 `AGENTS.md`**（沙箱挡管道的红名单 + "用 `scripts/ts-resolve-hook.mjs` + 纯 node 跑 TS，别默认上 tsx"）。
+     本会话实测（2026-09-26）：`npx tsx …`（esbuild 服务）、`node --test …`（测试隔离子进程）、
+     `plugins/amayui-emulator/smoke.mjs`（自持 pipe 起宿主）三者在 workspace-write 下都红；`tool-smoke.mjs` / `smoke-client.mjs` / `npx tsc` 绿。
 其它判据: 四份台账 --validate（tickets / capabilities / scripts / opcode-gaps）
           五份生成物 --check（opcode-table / opcode-gaps / doc-index / status / tickets）
           死写 check:dead-writes（基线 11，只许收缩）
@@ -175,7 +178,8 @@ TypeScript 重写的 AGE 引擎 + 引擎逆向工程（真源 = `engine/天结_u
 |---|---|
 | 资源根 | `install/`（`emulator.config.json` 无 `resources.path` ⇒ 默认）；真机 base = `C:\Users\liaoh\AppData\Local\Eushully\天結いキャッスルマイスター\`（overlay 同名前缀 `.overlay\`） |
 | 音频 | **默认静音**（`emulator.config.json` 的 `audio.enabled=false`；单次覆盖 `AMAYUI_AUDIO_ENABLED=1`） |
-| 起调试实例（agent 自足、静音） | `cd app/amayui-emulator && AMAYUI_AUDIO_ENABLED=0 node --import tsx src/web/host.ts --instance <id> --port 0 --attach-headless --idle-sec 0` |
+| 起调试实例（agent 自足、静音） | `cd app/amayui-emulator && AMAYUI_AUDIO_ENABLED=0 node --import tsx src/web/host.ts --instance <id> --port 0 --attach-headless --idle-sec 0`（也可用工具 `action=start`） |
+| 查/跑/建**操作脚本（ops）** | 工具 `action=ops`（列用例/前置/判据/副作用/状态）、`action=op {name,args}`（执行 + 回日志尾部）、`action=op-create {name,purpose}`；真源 = `app/amayui-emulator/tools/ops/*.mjs` + 索引 `ops/README.md`，原语库 `tools/emu.mjs` |
 | 驱动 | `POST http://127.0.0.1:3080/dsh-emulator/<id>/api/debug-query`，body `{"args":["frame"｜"capture"｜"click x y"｜"wheel 120"｜"key 13"｜"global <下标>"]}` |
 | 验证过的坐标 | TITLE 的 Game Start `(1180,372)`；GAMESTART 的 ゲーム開始 `(811,605)`（虚拟 1280×720） |
 | 键/滚轮行为 | 默认 `set:WheelKeyUp=3`（= ←）/ `WheelKeyDown=1`（= →）/ 横滚 −1；ADV 里**上滚 = 按一下 ← ⇒ 打开侧边栏**（引擎行为）；右键在侧栏已开且本帧注册过 `mouseJump` 时走取消路由 |

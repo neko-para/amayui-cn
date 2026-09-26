@@ -2,7 +2,7 @@
 
 ## 1. 症状（首次尝试失败）
 
-`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs` 在**刚起来的实例**上第一次跑，经常在 ① 步失败：
+`app/amayui-emulator/tools/load-slot.mjs` 在**刚起来的实例**上第一次跑，经常在 ① 步失败：
 
 ```
 ✗ 点了 Load Data 但没进 SAVE.BIN          ← 20s 内 cur 没变成 SAVE.BIN（退出码 1）

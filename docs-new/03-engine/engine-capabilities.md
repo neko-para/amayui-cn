@@ -20,12 +20,12 @@ generated_by: scripts/build-capabilities.mjs
 
 | 状态 | 条数 | 含义 |
 |---|---|---|
-| `modeled-verified` | 79 | 已建模且有守卫（E2/E3） |
-| `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 32 | 只实现了一部分（缺口写在该条 note） |
+| `modeled-verified` | 78 | 已建模且有守卫（E2/E3） |
+| `modeled-unverified` | 6 | 已建模但只有静态结论（E1）或缺少守卫 |
+| `partial` | 33 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 5 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **145** | 需要关注（非 n/a 且非已核验）= **42** |
+| **合计** | **146** | 需要关注（非 n/a 且非已核验）= **44** |
 
 ## 按子系统
 
@@ -38,7 +38,7 @@ generated_by: scripts/build-capabilities.mjs
 | 声音 | 7 | 1 |
 | 存档槽 | 2 | 0 |
 | 帧循环 | 19 | 5 |
-| 消息窗 | 33 | 17 |
+| 消息窗 | 34 | 18 |
 | 渲染 | 31 | 9 |
 | 资源 | 17 | 3 |
 | 转场 | 4 | 0 |
@@ -132,7 +132,7 @@ generated_by: scripts/build-capabilities.mjs
 | `text-drawmode-fork` | 消息窗 | set:DrawMode 双路径：0 = GDI 整串 TextOutA / 1 = D3DX 逐字 GetGlyphOutline | ➖ n/a | E1 |
 | `text-font-rebuild-cascade` | 消息窗 | 字体参数 → 句柄重建级联（0x75/0x197/0x1A5/0x2FE/0x2BD/0x2BE/0x2DB → sub_459F40 / sub_45A6E0） | 🟠 部分 | E2 · `test/config1-chain.test.ts#排版结果进入渲染模型` |
 | `msgwin-window-reveal-gate-300` | 消息窗 | 每窗「逐行贴出」闸门 + 贴出完成后的延时清场循环（Engine[122466+win] bit0/bit16、Engine[122476+win]；op 0x300 = sub_426990） | ✅ 已核验 | E3 · `test/char-reveal.test.ts` |
-| `msgwin-char-reveal-grid` | 消息窗 | 字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20） | ✅ 已核验 | E2 · `test/char-reveal.test.ts` |
+| `msgwin-char-reveal-grid` | 消息窗 | 字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20） | 🟠 部分 | E2 · `test/char-reveal.test.ts` |
 | `gfx-texture-load-sync` | 资源 | 纹理加载的同步性：set-texture(0x1F9) 在同一指令内完成 读文件 + 解码 + 装槽 ⇒ 同帧「绑定 + 绘制」不可能错位 | ✅ 已核验 | E2 · `test/texture-frame-barrier.test.ts` |
 | `drawitem-world-matrix-composition` | 渲染 | DrawItem 世界矩阵合成（pivot 夹逼 + work 缩放/旋转/平移）与 `+0x68` 用世界矩阵门 | ✅ 已核验 | E2 · `test/draw-item-scale.test.ts` |
 | `glyph-raster-direct-to-slot` | 消息窗 | 字形光栅化（GetGlyphOutline + 覆盖率 α）直绘到纹理槽（0x204 draw-string → sub_456710） | ✅ 已核验 | E2 · `test/draw-string.test.ts` |
@@ -193,6 +193,7 @@ generated_by: scripts/build-capabilities.mjs
 | `script-request-queue-drain-dispatch` | 帧循环 | 脚本请求队列只在三处被放行（0x1F5 停靠结束 / 0x7C 列表收尾 / 0x2 的 -10 恢复臂） | 🟠 部分 | E2 · `test/op-1f5-dequeue.test.ts#停靠期间入队的请求在清停靠标志那一刻被派发` |
 | `script-global-int-pool-from-sys4ini` | ScriptContext | 脚本全局 int 池（boot 时从 SYS4INI.BIN 的池块装载） | 🟡 已建模未核验 | E3 · `test/t0107-infoen-real-id.test.ts` |
 | `present-without-backbuffer-clear` | 渲染 | 逐帧 present **不清后缓冲**（两处整屏 ClearTarget 都被恒 0 的 `Scene+46460` 位守卫） | 🟠 部分 | E3 · `test/frame-hold-cover.test.ts` |
+| `adv-text-color-state-carryover` | 消息窗 | ADV 正文颜色/描边的状态归属：复位点只有「场景入口块」，读档既不还原也不复位 | 🟡 已建模未核验 | E1 |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -420,6 +421,15 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_459F40, sub_45A6E0, sub_4185F0, sub_418680, sub_4328F0, sub_432DD0, sub_428990 @ raw 70940-71273
 - **读的字段**：Font+1232/+1236/+1248/+1260(主模板), Font+1292/+1296/+1308/+1320(注音模板), Font+201684(主字号), Font+218584(注音字号), Font+201664(字体名白名单)
 - **emulator 现状**：7 条参数面（0x75/0x197/0x1A5/0x2BD/0x2BE/0x2FE/0x2DB）与面名映射/竖排都已落地并接线。★T-0151（P2 stale-ledger）换掉了两个指错的锚点。当前锚点一律用标识符（行号刻意不写 —— 它们随每次重构漂，实测已漂过一轮，见 journal）：op 体 `op_set_main_size`(0x75) / `op_set_ruby_size`(0…
+
+### `msgwin-char-reveal-grid`（partial）
+
+- **能力**：字格图标动画（0x73 = ▼「点击继续」精灵表网格）+ 文字逐字泵（sub_45BE20）
+- **触发**：脚本 i073（字格+节拍，全库 27 处：NOVEL/SN0000/SYSTEM4）→ 每次 0x72 wait-for-input 武装（置 bit30、游标清零、重启节拍）→ 帧循环按 Engine+430600 计时器每步贴一格 → 点击推进或 0x1CE 0 收尾
+- **缺失时为什么静默**：整条链是纯数据 + 计时器：0x73 只在窗对象里写 40 字节字格、0x72 只置两个位与一个整数、主循环只是按节拍多贴一格。缺任何一环都不会报错、脚本也读不到差别，只表现为「文字不逐字出现（一次性全出）」「字数停在第一节拍」「字格门未开时每帧空转调用什么也不做」—— 全是合法路径。
+- **引擎**：sub_41F250, sub_456430, sub_453AD0, sub_453AF0, sub_453A90, sub_45A940, sub_41EEF0, sub_420280, sub_423620, sub_41A420, sub_41B1C0, sub_45AD30, sub_45BE20 @ raw 20887-20895
+- **读的字段**：Engine+699204(bit30 = 逐字模式), Engine+107704(逐字游标 k), Engine+107705(模数 = 字格数 win+92), Engine+107706(0x1CE op1 副本), Engine+430600(逐字节拍计时器), Engine+122371(当前消息窗), FontVWindow+60..+99(0x73 写的字格块), FontVWindow+296/+132(0x304/0x305 行游标), FontVWindow+104/+108/+276/+280(绘制项区间)
+- **emulator 现状**：已实现：0x73 写真格（gate/cells/tickMs/srcSurface/originX/originY/cellW/cellH）+ 0x1CE 开关（v≠0 置位与游标归零、v=0 收尾）+ 0x72 武装（Engine[107704]/[107705] 与 bit30）+ 点击推进先收尾 + 0x20A 重画不动游标 + 0x304/0x305 文本块括号。★0x73 不是"文字逐字…
 
 ### `gallery-unlock-file-used-flags`（partial）
 

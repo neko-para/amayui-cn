@@ -14,7 +14,7 @@ cd app/amayui-emulator && AMAYUI_AUDIO_ENABLED=0 node --import tsx src/web/host.
     --instance t0103 --port 0 --attach-headless --idle-sec 0
 
 # 2) 读档到槽 78（判据 = 日志出现 [slot-load]）
-node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance t0103 --slot 78
+node app/amayui-emulator/tools/load-slot.mjs --instance t0103 --slot 78
 
 # 3) 驱动到切章：反复点消息区（本次 4 次命中），日志出现 [transition] 即命中
 curl -X POST http://127.0.0.1:3080/dsh-emulator/t0103/api/debug-query \

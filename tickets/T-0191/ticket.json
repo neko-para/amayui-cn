@@ -1,0 +1,103 @@
+{
+  "title": "工具面 `amayui_emulator` 与技能用例层 `ops/*.mjs` 未打通：既不能列出 ops，也不能驱动 ops（判据也表达不出来）",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/tools",
+  "why": "现象（2026-09-26 调研，起因 = 用户口径「这个技能可以配合工具 plugins/amayui-emulator，但似乎这个工具目前尚未支持查询/驱动 ops」）：插件 `plugins/amayui-emulator` 的 agent tool 只有 8 个动作（`instances/start/stop/query/capture/input/profile/wait`，见 default 分支的合法值串），且整目录 grep `ops`/`emu.mjs` **零命中** ⇒ 既没有「列出有哪些 op」的**查询面**，也没有「跑一条 op」的**驱动面**。而 T-0188 落地的用例层（`app/amayui-emulator/tools/ops/*.mjs`（写这行时还在技能目录，本票已搬走）：已实测 2 条 + 模板 + 待登记 4 条）今天只能由 agent 用 shell `node …/ops/<name>.mjs --instance … --slot …` 直接跑（`SKILL.md` §3.2 就是这么教的）。\n\n为什么这是真缺口而不是等价路径：① 工具的 `wait` 只有 `bin/gate/frames_*/global` 四种条件（探针是 `frame`/`run`/`global` 的**人读文本正则**，插件 README「已知限制 3」自陈），而两个 op 的判据是**日志 `[slot-load]` + 槽指纹对账 + 模式全局 `f7ff0` + 侧栏路由项数 + `waitIdle` 往返门** ⇒ 判据在工具面上**一条都表达不了**；② 工具的 `input.click` 是「合成悬停 + 单次 `cursor+press+release`」，**没有两帧点击**（T-0188 纪律①：侧栏/底部按钮必须 `move→press→停≥2帧→release`，实测单次三连不激活）；③ 坐标表与选槽原语（`emu.mjs` 的 `XY`、`calibrateRowY`、`pickSlotInSaveScreen`、`waitSidebarReady`）只活在脚本侧 ⇒ 用工具手工复现一个 op，等于**重新读界面猜坐标**，正是 T-0188 与 `lessons.md` #29 明令禁止的做法。\n\n为什么会长成这样（两轮各自收口，不是单点遗漏）：工具侧三条硬设计写着「不解析任何仿真命令」「等待是**调用方**的诉求，不是引擎的能力」，ops 侧边界写着「原语与用例分层」「这一层不模拟设备」；两轮（工具 T-0180/0181 那一轮、脚本 T-0188/T-0189 那一轮）从未对齐接口面，也**没有任何票**覆盖「工具 × ops」。\n\n★另（本票一并认领）：工具面代码注释引的是 `tickets/T-0181`（`lib/tools.js:1`、`lib/index.js:373`），而 T-0181 是 OOM/纹理泄漏票（`mem` 命令那条），**不覆盖 agent tool** ⇒ 工具面至今没有属主票。",
+  "acceptance": [
+    "决策落纸（见本票 `notes.md` §9）：选**方案 A** —— 工具加 `action=ops`（列）/ `action=op`（跑）/ `action=op-create`（建），并把 ops 资产从技能目录搬到 `app/amayui-emulator/tools/`（`emu.mjs` + `ops/*` + `load-slot.mjs` 兼容壳）。理由 = 真源唯一（坐标/判据只在 ops 侧，工具不复制）+ 工具不必跨 `.agents/` 取脚本 + 脚本仍是工程脚本（纯 node，脱离 DSH 也能跑）",
+    "`action=ops`：列 `<root>/app/amayui-emulator/tools/ops/*.mjs`（排除 `_` 前缀），每条给 `{name,file,purpose,pre,criteria,sideEffects,status,indexed}`（文件头优先、`ops/README.md` 主表兜底），另带 `pending[]`（待登记表）与 `ghost[]`（索引有、目录无）；**只读、不 spawn**。✅ 真 root 实测：2 条已登记 / 4 条待登记 / 0 幽灵",
+    "`action=op {name,args}`：`node <ops>/<name>.mjs --instance <id> …args`；`--instance` 由工具注入、`args` **原样透传**（工具不解释各 op 的参数表），且 `args` 里再给 `--instance` 会被拒；日志写 `.tmp/emudbg/op-<name>-<stamp>.log`（**stdio = 文件 fd，不用 pipe**，见 T-0192），回 `{exitCode,timedOut,logPath,lines[],argv}`；超时收整棵进程树。✅ 离线假 root 实测：exit 0 + 判据行回执 + 三条参数/名字纪律各自报可读错误",
+    "`action=op-create {name,purpose}`：用 `ops/_template.mjs` 生成 `ops/<name>.mjs`（**拒绝覆盖**、名字限 `[a-z0-9-]{2,64}`），`{{NAME}}/{{PURPOSE}}/{{DATE}}` 就地替换；回执给 4 条待办（① 开屏手势 ② 机器可读判据 ③ 特有坑 ④ 去 `ops/README.md` 登记一行）。✅ 离线实测",
+    "离线自测 `plugins/amayui-emulator/tool-smoke.mjs`：假 root + 假实例记录 + **真跑一次 spawn**（同时回归『文件 fd 而非 pipe』那条纪律），**22/22 绿**；已登记为本票守卫。★如实登记未做：把它纳入 `npm run verify` 的闸门（跨包 import + `typecheck:test` 口径需另行设计）",
+    "文档与索引同步：`app/amayui-emulator/tools/ops/README.md`（两条等价入口 + 新增三步 + 手驱动坐标表）、插件 README（动作表 11 项 + `ops/op/op-create` 整节 + 已知限制 8）、`SKILL.md` 去重成**入口索引**、新增 `AGENTS.md`（环境/权限）、`CONTEXT.md`/`lessons.md`/`analysis/engine-capabilities.json` 换指、16 个文件里的旧脚本路径机械换指（`ledger.js --plan` 的 patches）；`tickets.js --validate` 绿 + 看板重建"
+  ],
+  "evidence": [
+    {
+      "file": "plugins/amayui-emulator/lib/tools.js",
+      "anchor": "export function listOps(root)",
+      "note": "★查询面：目录 + 文件头自述 + `ops/README.md` 主表/待登记表 → 一份清单（不 spawn）",
+      "line": 404
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/tools.js",
+      "anchor": "async function doOp(args)",
+      "note": "★执行面：`--instance` 注入 / `args` 透传 / 日志走**文件 fd** / 超时收进程树 / 回日志尾部",
+      "line": 773
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/tools.js",
+      "anchor": "function doOpCreate(args)",
+      "note": "★创建面：模板 + 占位替换 + 拒绝覆盖 + 4 条待办清单",
+      "line": 848
+    },
+    {
+      "file": "plugins/amayui-emulator/lib/tools.js",
+      "anchor": "action 必须是 instances/start/stop/query/capture/input/profile/wait/ops/op/op-create 之一",
+      "note": "动作面从 8 个扩到 11 个（缺口本体的对照点）",
+      "line": 1146
+    },
+    {
+      "file": "plugins/amayui-emulator/tool-smoke.mjs",
+      "anchor": "tool-smoke：${pass} 通过",
+      "note": "★离线守卫：假 root + 假实例 + 真 spawn 一次（22 条断言）",
+      "line": 179
+    },
+    {
+      "file": "app/amayui-emulator/tools/ops/README.md",
+      "anchor": "## 新增一条 op 的三步",
+      "note": "ops 的索引与纪律（含新增三步与手驱动坐标表）——工具 `action=ops` 读的就是这份 + 各文件头",
+      "line": 37
+    },
+    {
+      "file": "plugins/amayui-emulator/README.md",
+      "anchor": "## `ops` / `op` / `op-create`",
+      "note": "工具面这一节的四条设计取舍（真源在脚本侧 / 不解析 args / 文件 fd / 建只给骨架）",
+      "line": 368
+    },
+    {
+      "file": "AGENTS.md",
+      "anchor": "## 2. ★跑 TypeScript",
+      "note": "环境/权限知识落点（沙箱挡管道 + hook+node 替代 tsx）",
+      "line": 50
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0188",
+      "T-0139",
+      "T-0192"
+    ],
+    "docs": [
+      "docs-new/00-overview/lessons.md",
+      "AGENTS.md",
+      "plugins/amayui-emulator/README.md",
+      "app/amayui-emulator/tools/ops/README.md",
+      "CONTEXT.md"
+    ],
+    "analysis": []
+  },
+  "id": "T-0191",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence, links, tests, doneWhy —— 方案 A 落地：工具加 ops 三件事 + 资产搬到 app/amayui-emulator/tools/ + 文档按单一真源重排；守卫 tool-smoke 22/22"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → done —— 方案 A 落地：工具加 ops 三件事 + 资产搬到 app/amayui-emulator/tools/ + 文档按单一真源重排；守卫 tool-smoke 22/22"
+    }
+  ],
+  "tests": [
+    "plugins/amayui-emulator/tool-smoke.mjs#拒绝覆盖已有 op"
+  ],
+  "doneWhy": "本票的产物横跨三处、都在 `npm run verify` 的测试面之外（插件 `lib/tools.js` 的纯函数面 + ops 工程脚本 + 技能/文档），因此以『离线守卫 + 真机实测 + 文档换指』三条作收口凭据：① `plugins/amayui-emulator/tool-smoke.mjs` 22/22 绿（含真 spawn 一次、三条参数纪律、创建/拒绝覆盖）；② 真 root 的 `action=ops` 实测（2 已登记 / 4 待登记 / 0 幽灵）与 `emu.mjs`/`load-slot.mjs` 在**新路径**下的 `status` 实测通过；③ 技能/工具的重复内容已按单一真源重排（`SKILL.md` → 入口索引、`ops/README.md` → 用例索引 + 坐标表、插件 README → 动作与设计取舍、`AGENTS.md` → 环境权限），16 个文件里的旧脚本路径机械换指，`tickets.js --validate` 绿。★未做（如实登记）：把 tool-smoke 纳入 verify 闸门；真机端到端跑一条 op（插件 `lib/*.js` 要重启 web profile 才生效）。"
+}

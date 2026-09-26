@@ -30,8 +30,9 @@
  * 判据：① 侧栏表校验通过（或退回扫描命中）② `cur = SAVE.BIN` ③ **`f7ff0 == 1`（读档模式，安全断言）**
  *       ④ 日志出现 `[slot-load]` ⑤（可选 `--expect BIN`）载入后帧链到该脚本。
  *
- * ★状态（2026-09-26）：实现完成，**端到端未跑通验证**（验证到一半实例损坏、用户中止）——
- *   票面（`tickets/T-0188` 判据④）已如实登记，**不假称通过**。
+ * ★状态（2026-09-26）：**端到端已跑通**（实例 sb189：写面读回校验 ✔ → 侧栏就绪 7→19 → `SAVE.BIN`
+ *   且 `f7ff0 == 1` → 选槽 → 槽指纹 `savedCur=2`/帧记录 3 条一致 → 帧链到 `SN0000.BIN`）；
+ *   证据 = `tickets/T-0189/evidence/e2e-load-from-adv.log`，票面判据见 `tickets/T-0188`。
  *
  * 用法：
  *   node .../ops/load-from-adv.mjs --instance sn187 --slot 78 [--expect SN0000.BIN] [--keep-sidebar]

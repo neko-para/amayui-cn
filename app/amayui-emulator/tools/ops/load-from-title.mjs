@@ -12,7 +12,7 @@
  *   **自动重试一次**；仍失败才报错退出。
  *
  * 用法：
- *   node .agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs --instance sn187 --slot 79
+ *   node app/amayui-emulator/tools/ops/load-from-title.mjs --instance sn187 --slot 79
  *   node .../ops/load-from-title.mjs --instance sn187 --slot 78 --expect SN0000.BIN
  */
 import { XY, binOf, isTitle, isLoadUiFamily, pickSlotInSaveScreen, tap, waitBin, waitIdle, waitTicking } from '../emu.mjs';

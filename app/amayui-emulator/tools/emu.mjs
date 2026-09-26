@@ -9,11 +9,15 @@
  *   索引见 `ops/README.md`）—— 这样"现在有哪些可用的操作脚本"永远是一眼能看完的一张表。
  *
  * ```bash
- * node .agents/skills/amayui-remote-debug/scripts/emu.mjs status   --instance t0103
- * node .agents/skills/amayui-remote-debug/scripts/emu.mjs reset    --instance t0103     # 重启并等回 TITLE
- * node .agents/skills/amayui-remote-debug/scripts/emu.mjs probe    --instance t0103     # 关键引擎态（色/门/链）
- * node .agents/skills/amayui-remote-debug/scripts/emu.mjs --help
+ * node app/amayui-emulator/tools/emu.mjs status   --instance t0103
+ * node app/amayui-emulator/tools/emu.mjs reset    --instance t0103     # 重启并等回 TITLE
+ * node app/amayui-emulator/tools/emu.mjs probe    --instance t0103     # 关键引擎态（色/门/链）
+ * node app/amayui-emulator/tools/emu.mjs --help
  * ```
+ *
+ * 也可以由 DSH 工具 `amayui_emulator` 的 `action=ops` / `action=op` / `action=op-create` 驱动
+ * （查询 / 执行 / 创建 ops，见 `plugins/amayui-emulator/README.md` 的「agent tool」节）——
+ * 工具是这条路上的**可选前端**，不是前置：本文件与 `ops/*.mjs` 都是纯 node 脚本，脱离 DSH 也能跑。
  *
  * ## 被实测钉死的四条原语纪律（踩过才写下来的，别绕开）
  * 1. ★**菜单/侧栏类目标要"两帧点击"**（`tap()`）：一次注入 `cursor+press+release` **不激活**
@@ -48,7 +52,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawn } from 'node:child_process';
 
-export const REPO = path.resolve(import.meta.dirname, '..', '..', '..', '..');
+/** 仓库根（本文件在 `<repo>/app/amayui-emulator/tools/` ⇒ 上溯三级）。 */
+export const REPO = path.resolve(import.meta.dirname, '..', '..', '..');
 export const TMP = path.join(REPO, '.tmp');
 export const PLUGIN = 'http://127.0.0.1:3080/dsh-emulator';
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -879,7 +884,7 @@ export async function slotFingerprint(id, slot, { timeoutMs = 60_000 } = {}) {
 // ---------------------------------------------------------------------------
 const HELP = `emu.mjs —— 调试实例核心驱动（原语层）
 
-用法：node .agents/skills/amayui-remote-debug/scripts/emu.mjs <子命令> [--instance <id>] [参数]
+用法：node app/amayui-emulator/tools/emu.mjs <子命令> [--instance <id>] [参数]
 
   status                     实例一览 + 当前 bin/帧数/门（就绪判据）
   reset                      重启实例并等回 TITLE（唯一合法的"回到干净状态"）

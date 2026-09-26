@@ -411,12 +411,16 @@ export function apply(ctx) {
       'action=input 注入 click/move/leave/press/release/wheel/key（click 缺省**合成悬停**：菜单类界面必须先悬停再点，实测不悬停点不动）；' +
       'action=profile 是 profile on/off/reset/report [minMs]/watch/slow 的封装（归因卡顿用）；' +
       'action=wait 等 bin/gate/frames/global 到某个条件（带超时，替代 sleep + 反复 frame 猜）。' +
+      'action=ops 列可用**操作脚本（ops）**：名字/用例/前置/判据/副作用/状态（读 app/amayui-emulator/tools/ops/，不跑任何东西）；' +
+      'action=op 执行一条 op（spawn 纯 node 脚本 + 日志落 .tmp/emudbg/op-<名字>-*.log 并回尾部行；args 原样透传给该脚本的 CLI）；' +
+      'action=op-create 用模板生成一条新 op（拒绝覆盖；回执列出还必须补的「开屏手势 / 机器可读判据 / 特有坑」三样 + 去 ops/README.md 登记一行）。' +
+      '★ops 与它的原语库 emu.mjs 都在 app/amayui-emulator/tools/ 下、是纯 node 工程脚本（脱离 DSH 也能跑）——工具只是它的前端；' +
       '调试命令表见 app/amayui-emulator/src/vm/debugCommand.ts；坐标是引擎虚拟 1280×720。',
     parameters: {
       action: {
         type: 'string',
         required: true,
-        description: 'instances | start | stop | query | capture | input | profile | wait',
+        description: 'instances | start | stop | query | capture | input | profile | wait | ops | op | op-create',
       },
       instance: {
         type: 'string',
@@ -462,6 +466,14 @@ export function apply(ctx) {
       grace_ms: { type: 'integer', description: 'stop：SIGTERM 后等多久再强杀进程树（缺省 8000）。' },
       force: { type: 'boolean', description: 'stop：收掉**不是本进程起的**实例时必须显式给 true。' },
       include_dead: { type: 'boolean', description: 'instances：连"记录在但 pid/心跳已过期"的也列出来（live=false）。' },
+      name: { type: 'string', description: 'op / op-create：op 名字（= app/amayui-emulator/tools/ops/<名字>.mjs，小写字母/数字/短横）。' },
+      args: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'op：原样透传给该 op 脚本 CLI 的额外参数（如 ["--slot","79","--expect","SN0000.BIN"]）——工具不解释它们；不要再给 --instance。',
+      },
+      purpose: { type: 'string', description: 'op-create：一句话用例（写进新文件的文件头；缺省留一个"★待写"占位）。' },
+      tail: { type: 'integer', description: 'op：回执里带日志尾部多少行（缺省 40）。' },
     },
     output: {
       schema: {
@@ -481,6 +493,16 @@ export function apply(ctx) {
           results: { type: 'array', items: { type: 'object', additionalProperties: true } },
           lines: { type: 'array', items: { type: 'string' } },
           satisfied: { type: 'boolean' },
+          ops: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          pending: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          ghost: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          checklist: { type: 'array', items: { type: 'string' } },
+          dir: { type: 'string' },
+          template: { type: 'string' },
+          exitCode: { type: 'integer' },
+          timedOut: { type: 'boolean' },
+          logPath: { type: 'string' },
+          argv: { type: 'array', items: { type: 'string' } },
         },
       },
       render: (args, value) => [{ type: 'text', text: renderToolResult(value) }],
@@ -538,6 +560,23 @@ function renderToolResult(v) {
   } else if (v.action === 'profile') {
     body.push(`  $ ${v.cmd}   [HTTP ${v.status} · ${v.roundTripMs}ms]`)
     for (const l of (v.lines || []).slice(0, 20)) body.push(`      ${l}`)
+  } else if (v.action === 'ops') {
+    for (const o of v.ops || []) {
+      body.push(`  ● ${o.name}  ${o.status || ''}`)
+      if (o.purpose) body.push(`      用例：${o.purpose}`)
+      if (o.pre) body.push(`      前置：${o.pre}`)
+      if (o.criteria) body.push(`      判据：${o.criteria}`)
+      if (o.sideEffects) body.push(`      ★${o.sideEffects}`)
+    }
+    for (const p of v.pending || []) body.push(`  ○ ${p.name}（待登记，未实测）缺：${p.missing || '?'}`)
+    for (const g of v.ghost || []) body.push(`  ⚠ 索引里有、目录里没有：${g.name}（${g.status || '?'}）`)
+  } else if (v.action === 'op') {
+    body.push(`  $ ${(v.argv || []).join(' ')}`)
+    body.push(`  exit=${v.exitCode ?? '?'}${v.timedOut ? '（超时）' : ''} · 日志 ${v.logPath || '?'}`)
+    for (const l of (v.lines || []).slice(-20)) body.push(`      ${l}`)
+  } else if (v.action === 'op-create') {
+    body.push(`  已生成 ${v.path}`)
+    for (const c of v.checklist || []) body.push(`      ${c}`)
   } else if (v.action === 'start' || v.action === 'stop') {
     body.push(`  ${v.note || ''}`)
   }

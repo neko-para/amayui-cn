@@ -23,7 +23,7 @@
 
 ## 1. 运行期实证（存档 78 → 点一下推进）
 
-- 复现：`.agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance <id> --slot 78` → 点 `(640,360)`。
+- 复现：`app/amayui-emulator/tools/load-slot.mjs --instance <id> --slot 78` → 点 `(640,360)`。
 - 记录写端（日志原文）：
   ```
   createTexture slot=63 1280x720 mode=1 @1.5x class=normal (新建空白表面)

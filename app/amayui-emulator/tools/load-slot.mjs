@@ -8,7 +8,7 @@
  * 本文件保留**只为不让既有文档/技能里的命令失效**，实现已不再单独一份（避免两份漂移）。
  *
  * 用法（与以前一致）：
- *   node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance t0103 --slot 78
+ *   node app/amayui-emulator/tools/load-slot.mjs --instance t0103 --slot 78
  *   node .../load-slot.mjs --list
  *
  * 退出码：0 = 已载入；1 = 参数/实例/流程问题（旧版的 2「载入未发生」也归到 1）。
