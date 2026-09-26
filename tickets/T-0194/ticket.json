@@ -1,0 +1,69 @@
+{
+  "id": "T-0194",
+  "title": "悬停「错误地重置」▼ 动画：emulator 按 raw 会在 hover 派发时清 bit30（▼ 从第一帧重来 / 停一拍），而真机口径是悬停完全不影响 ▼ —— 未定案，待 ≪10 ms 采样",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/msgwin",
+  "why": "**现象（emulator）**：ADV 页显完后鼠标经过画面 / 侧栏条（hover 派发）⇒ ▼「点击继续」图标的闪烁 loop 被打断：`Engine.finishCharReveal()` 按 raw 清掉 `effect_flags` 的 bit30（`CHAR_REVEAL_ACTIVE`），等待门指令重跑时再重新武装（`Engine[107704] = 0` = 格号归零 + `sub_453A90` 重启节拍）⇒ 表现为「▼ 停一下 / 从第一帧重来」。\n\n**真机口径（用户 2026-09-26 实测）**：悬停 / 开合侧栏**完全不影响** ▼ 的动画。\n\n**raw 却是另一回事**：等待泵的悬浮分支 `sub_411BC0`（raw 20322-20339）= `sub_405360(_this, -3)` 压返回点 → `ip = ipBase + 4*label` → 清 bit31（20334）→ **`sub_4051A0`（20336）**；`sub_4051A0`（raw 10924-10935）= 置位时先 `sub_45A940(Font, Engine[122371], -2, 0)`（整段贴出）再**清 bit30**；悬浮 label 末尾的 `ret`（`0x05` = `sub_41A9B0` raw 25704-25727）弹帧返回栈落回**门指令本身** ⇒ 门重跑（LABEL_17 raw 28539-28555）重新武装 ⇒ 按 raw，▼ 应当「停一拍并从第一帧重来」。\n\n**配置门是开的**（审计结论 1，见 `evidence/A4-dispatch-sites.md`）：`Engine+697620` vtable[1] = `sub_4904D0`（raw 110691-110701）对**缺失键返回 0**，且该键在构造期被注入默认 0（raw 111541-111543），真机实际读的 `…\\Eushully\\天結いキャッスルマイスター.overlay\\SYS4REG.INI` 里也**有** `[set] ControlDisibleCursor=0` ⇒ `!GetConfig(...)` 恒为真 ⇒ **20247 / 20336 确实会调 `sub_4051A0`**。\n\n**审计的第二条（关键）**：raw 里**没有任何派发站点能同时满足「清 bit31 / 派 ENTER label / 不清 bit30」** —— 每条清 bit31 的路径都在同一路径上清/零 bit30（13731→13734-13738、14004 / 17959 / 18983 / 20370 / 20873 / 43688 整字零、20197→20198 无门、20250 前置 20247、20276→20282 内联、20334→20336 门开、20432→20433 无门、24510 整字零），唯二例外是**整字恢复**类写点（`0x05 ret` = raw 25718-25723 从 `Engine+429732` 弹回；`0x7C` = raw 25810）。⇒ 真机采样里出现的 `0x40000400`（bit30=1 且 bit31=0）**只能**是「清过之后被 `ret` 弹回旧值」或「250 ms 采样漏窗」。\n\n**★我上一轮「① 收口（悬停不清 bit30、不重启节拍、格号相位连续）」的结论已撤回**（`tickets/T-0187/recheck.md` §5.11）：250 ms 采样能做实的只有「`i072` 从未在 bit30 为 0 时执行过」，它**区分不了**「没被清」与「被清了但没重新武装」；而按审计第 3 条，**清 bit30 根本不写格节拍计时器**（`Engine+430600` 的 `[2]/[5]` 只由 `sub_453A90`/`sub_453A60` 写）⇒「计时器没回落 + 格号相位连续」与「`sub_4051A0` 跑过」**完全相容**。\n\n**影响**：若按 raw，玩家只要把鼠标划过画面就会打断「可以继续点击」的提示（体感卡顿/以为卡死，正是 `T-0187` ① 的原始症状来源）；真机既不受影响，就说明 emulator 要么漏了某个门/分支，要么机制在别处（候选：该键的真机生效值 / 悬停派发是否真的到达这一跳 / `sub_4051A0` 的清除被别的状态位挡住 / 是否存在第三个消费点）。**在拿到依据之前不动代码**（用户 2026-09-26 裁定：不许按观察改，也不许用「看着对」的实现迎合）。",
+  "acceptance": [
+    "取证（有界、要么真机要么 raw，二选一即可）：给出「一次纯悬停手势里 `effect_flags` 的 bit30 有没有掉、`Engine+430816`（格号）相位有没有断」的**可复核**记录 —— 采样间隔必须 **≪10 ms**（清位是瞬态；250 ms 已被证明区分不了），或改判据为数 `Engine+430600[2]`（节拍基线）有没有「少跳」（两种假设的预测不同：没被清 ⇒ 不缺拍；被清了没重新武装 ⇒ 缺拍）。证据落 `tickets/T-0194/evidence/`",
+    "结论 =「悬停确实会清位」（即 raw 现状正确）：在能力台账 `msgwin-char-reveal-grid` 的 note 里把「与真机观察冲突」改成「已核」，并补一次真机目视（悬停中 ▼ 是否停一拍）作为独立佐证；现守卫 `test/char-reveal.test.ts` 已是 raw 口径，保持绿",
+    "结论 =「悬停不清位」：在 raw 里找到真正的分叉（候选见 why 末段），按 raw 落地并在 `analysis/engine-capabilities.json` + 守卫里钉住；**不许**加「按观察来的开关」（`T-0187` 第三轮已回退过一处同类改动）",
+    "台账同步：无论结论落哪边，都更新 `analysis/engine-capabilities.json` 的 `msgwin-char-reveal-grid` 条目（沿革写 `journal`，叙述里不复述「订正」）+ `node scripts/build-capabilities.mjs` 重生成 `docs-new/03-engine/engine-capabilities.md`；`test/capability-ledger.test.ts` 与 `test/char-reveal.test.ts` 绿",
+    "边界：本条只管「悬停 × ▼ 武装位」这一件事；`Font` 场景态复位（读档/exit-script）是 `T-0193`，▼ 目标的坐标系（mode 1 窗框原点）是 `T-0187`"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0194/evidence/A4-dispatch-sites.md",
+      "anchor": "## 0. 先给结论（TL;DR）",
+      "note": "★独立审计（只读 raw，29740 B，本轮归档进来）：①配置 getter 对缺失键返回 0 且键本来就有（默认 0 + 真机 INI 有 `ControlDisibleCursor=0`）⇒ 20247/20336 确实会调 `sub_4051A0`；②raw 里没有任何站点能「清 bit31 + 派 ENTER label + 不清 bit30」；③**清 bit30 不写格节拍计时器**（推翻了「计时器没回落 ⇒ 没跑过」的推断）；④`i093` 4954 处里只有 668 处在 ENTER label 里 ⇒「shown 1→0 ⇒ 一定是悬停 ENTER 派发」不成立。"
+    },
+    {
+      "file": "tickets/T-0187/recheck.md",
+      "anchor": "### 5.11",
+      "note": "★撤回记录：我原先的「① 收口（悬停不清 bit30/不重启节拍/不重置格号）」作废；诚实状态 = 「`i072` 从未在 bit30 为 0 时执行过」，区分不了「没被清」与「被清了但没重新武装」。下一个有界实验就写在这一节末尾。"
+    },
+    {
+      "file": "tickets/T-0187/evidence/cellk-samples.zip",
+      "note": "★两轮真机只读采样原始日志（round1 359 行/94 s、round2 639 行/168 s，250 ms 间隔；含 `flags`/`cellK`/`tickNow`/`tickBase`/`shown`/`fill`）。★已知不够：间隔太粗，区分不了瞬态清位。采样器（含本轮加的 `follow=+0x152A0` 列）= `tickets/T-0194/evidence/watch-engine.ps1`。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "★仍存疑（`tickets/T-0187` ①，**未决，不许照观察改**）",
+      "note": "emulator 侧的现状：`finishCharReveal()` 已回到 raw 字面（`sub_4051A0` raw 10924-10935 只要 bit30 置位就清）；「真机悬停不影响 ▼」与 raw 的冲突作为**未决疑问**登记在这里，`T-0187` 第三轮那处「按观察改」的实现已完整回退。"
+    },
+    {
+      "file": "app/amayui-emulator/test/char-reveal.test.ts",
+      "anchor": "★T-0187：▼ 武装三件事同条件",
+      "note": "现守卫 = **raw 口径**（悬停清 bit30 后，门指令重跑必须重新武装且不重播文字；变异验证：把归零恢复成无条件、或把武装塞回 `revealArmed` 门 ⇒ 红）。收口后按结论决定是否新增/改写。"
+    },
+    {
+      "file": "tickets/T-0187/verify.md",
+      "anchor": "## V1 ① 的未决冲突",
+      "note": "用户侧取证清单（V1）：肉眼判据（悬停停留时 ▼ 是「短暂消失/跳到第一帧」还是「完全没变化」）+ 配置切换（若 CONFIG 里有该开关，切到相反值再试）；结果→动作两条分支都写好了。这条清单一并转由本条承接。"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0187",
+      "T-0193"
+    ],
+    "docs": [
+      "docs-new/03-engine/engine-capabilities.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json"
+    ]
+  },
+  "status": "open",
+  "tests": [
+    "app/amayui-emulator/test/char-reveal.test.ts#悬停清 bit30 后，门指令重跑必须把 ▼ 重新武装"
+  ],
+  "history": [
+    {
+      "at": "2026-09-27",
+      "kind": "created",
+      "what": "创建（用户指示：把目前 hover 错误 reset 动画的情况记录成票）：`T-0187` ① 的「悬停 × bit30 武装位」冲突从未决疑问升级为独立票（`T-0187` 关票时保留在 verify.md V1，现转由本条承接）。现状 = **未定案**：emulator 按 raw 会在 hover 派发时清 bit30 并重启节拍，真机口径则是悬停不影响 ▼；审计已排除「配置门关着」与「存在能不清 bit30 的派发站点」，并指出清位不写节拍计时器 ⇒ 250 ms 采样区分不了两种假设。下一步 = ≪10 ms 采样（或数 `430600[2]` 少跳）。"
+    }
+  ]
+}

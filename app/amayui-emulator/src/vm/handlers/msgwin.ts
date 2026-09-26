@@ -501,6 +501,10 @@ function snapshotOf(style: MsgWinStyle): FontStyleSnapshot {
 
 /** 该窗的完整发布载荷（`emitWin` 与"覆写色只作用于本次发布"那条通路共用一份构造）。 */
 function winPayload(e: Engine, w: number, style: MsgWinStyle): MsgWinInput {
+  // ★`set:BlankExtentMode`（空白字前进量的门）：引擎在每个消费点现读配置
+  //   （raw 12230/85126/87272 … 全是 `GetConfig(..., aSetBlankextent) == 1`）⇒ 这里也逐次读，
+  //   不在 Engine 上缓存（脚本 `0x1B5` 一族的写配置指令会改它）。
+  const blankExtent = blankExtentOf(e);
   return {
     style,
     segments: e.msgwin.slot(w).segments,
@@ -508,11 +512,10 @@ function winPayload(e: Engine, w: number, style: MsgWinStyle): MsgWinInput {
     // ★两个 DrawItem 区间（`0x213` 写 `+104/+108`、`0x25D` 写 `+276/+280`）：渲染侧的
     //   `scDetachTexture` 靠它判"脚本删掉这窗的正文图元 ⇒ 画面上的字也该消失"（见其说明）。
     itemRanges: itemRangesOf(e, w),
-    cell: cellFrameOf(e, w),
-    // ★`set:BlankExtentMode`（空白字前进量的门）：引擎在每个消费点现读配置
-    //   （raw 12230/85126/87272 … 全是 `GetConfig(..., aSetBlankextent) == 1`）⇒ 这里也逐次读，
-    //   不在 Engine 上缓存（脚本 `0x1B5` 一族的写配置指令会改它）。
-    blankExtent: blankExtentOf(e),
+    // ★▼ 的目标与**本载荷的排版**同源：`style`（= 渲染侧 `scMsgWinSync` 拿去 `layoutWindow` 的那份）
+    //   与 `blankExtent` 都原样传进去 ⇒ 两边不可能各排一套版式（见 `cellFrameOf` 的说明）。
+    cell: cellFrameOf(e, w, style, blankExtent),
+    blankExtent,
   };
 }
 
@@ -564,16 +567,52 @@ function itemRangesOf(e: Engine, win: number): { base: number; count: number }[]
 /**
  * 该窗此刻要画的**字格图标那一格**（`0x73` 配的精灵表 + 主循环每 `tickMs` 换一格）。
  *
- * 目标位置两条路（引擎 `sub_45A940` raw 71349 的 `v7 = Font[348]` 分岔）：
- *  - `Font+1392 == 1`（NOVEL 分支）：**跟随最后一条 24B 字记录的笔位** ⇒ 就是"文字结尾处"；
- *  - `Font+1392 == 0`（ADV）：`(op2 + 窗框 x, op3 + 窗框 y)`，ADV win1 实测 = (1080,667)。
+ * ## 目标位置两条路（引擎 `sub_45A940` raw 71349 的 `v7 = Font[348]` 分岔）
  *
- * ★2026-09 实测补充（用户指出序章确实有 ▼，用的是 SO026 第二行【横向】那张）：
- * 序章的 win8 是**满屏叙述窗**（`i070 8 500 2d0 0 0` ⇒ 框 (0,0)-(1280,720)），
- * 这时"窗内固定位"没有意义（会落到 (0,-5) 左上角）⇒ 只要窗口铺满视口就按 NOVEL 分支处理
- * （跟随文字末尾）。这条是 E4 实测定的，待真机截图最终确认（已登记）。
+ * ★★**两条路都在屏幕坐标系里，且模式 1 = 模式 0 的位置再加上该窗当前笔位**：
+ *
+ * ```c
+ * 71349  v7 = _this[348];                          // Font+1392 = Engine[21672]（`0x1B1` 写）
+ * 71350  if ( v7 == 1 ) {
+ * 71352    v8  = v6[20] + *(v6[12] - 20) + v6[3];   // op2 + 笔位 x + win+12（窗框 x）
+ * 71354    v30 = v6[21] + *(v6[12] - 16) + v6[4];   // op3 + 笔位 y + win+16（窗框 y）
+ *        } else {                                   // v7 == 0（ADV）
+ * 71370    v11 = v6[20]; v12 = v6[3];
+ * 71373    v8  = v11 + v12;                         // op2 + win+12
+ * 71375    v30 = v6[4] + v6[21];                    // win+16 + op3
+ *        }
+ * ```
+ *
+ * ★2026-09 修（用户实测：**SC0000 的 ▼ 跑到屏幕右上角**）：模式 1 这条路**漏了
+ * `v6[3]/v6[4]`（窗框原点）**，于是把笔位——一个**窗内表面坐标**（与 `layoutWindow` 里
+ * `st.originX/originY`、渲染侧那张 `st.w × st.h` 画布同一坐标系）——当**屏幕坐标**用。
+ * 窗框在 (190,557) 的下方 ADV 窗因此把 ▼ 画到窗**上方** 556px 处（症状就是"右上角"）。
+ * ⇒ 现在两条路都从同一个基址 `(op2 + 框x, op3 + 框y)` 起算，模式 1 只做 `+= 笔位`：
+ *  **同一坐标系**是这一项的定义，不是"看着对"的调参。
+ *
+ * ## 笔位 = 该窗最后一行文字的笔位（复用渲染侧那一份排版）
+ *
+ * 引擎读的是 `win+48` 记录向量里**最后一条 24B 记录**的 `+4`/`+8`（push 点 raw 83912-83917、
+ * 初值 = 窗对象构造 raw 90453-90462 的 `(win+28, win+32)`）：
+ *  - 逐字排版把它推进成"该字画完后的笔位 x / 当前行 y"（raw 83736-83738 + 83912-83916）；
+ *  - `0x6F end-text-line`（raw 82684-82685）才把它改写成"(文字块原点 x, 下一行 y)"。
+ * 而 ▼ 出现的时刻是 `wait-for-input` **之前**（`src/SN0000.txt:2986-2993`：末段
+ * `show-text "地的那一刻。"` → `i305` → `i073` → `wait-for-input` → **才** `end-text-line`）
+ * ⇒ 笔位 = **末行最后一个字画完后的位置**。
+ *
+ * ★实现上直接用**渲染侧同一份排版输入**（`style` + `segments` + `blankExtent` 由
+ * `winPayload` 传进来，就是 `scMsgWinSync` 拿去 `layoutWindow` 的那三样）取末行的末字与推进量
+ * ⇒ 不存在"▼ 一套版式、画面另一套"的漂移面（推进量也走同一支 `advance(ch, size, blank)`）。
+ *
+ * ★另外两点**有意保留**（不是遗漏，别当 bug 改）：
+ *  1. **对齐**：`line.glyphs[].x` 已含 `0x303` 的居中/右对齐位移，而引擎 `Font[348]==1`
+ *     那一支在 D3D 路径上确实按"该行的对齐位置"重贴（raw 71414-71421 的 `sub_4572A0` +
+ *     `sub_4AC750`）⇒ 用**对齐后**的末字位置与研究结论一致（序章 win8 是 `i303 8 1 1f4`）。
+ *  2. `end-text-line` 把笔位改写成"下一行行首"这一步**没有建模**：它只在页末段确实以
+ *     `end-text-line` 收尾时才与上面的取法不同，而语料里 ▼ 出现的时刻都不是那种形状
+ *     （见上例）。真在别处撞上时，按 raw 82684-82685 补"末段 lineEnded ⇒ 笔位 = (originX, 行 y + 字号 + 行距)"。
  */
-function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
+function cellFrameOf(e: Engine, win: number, style: MsgWinStyle, blankExtent: BlankExtent): MsgCellFrame | undefined {
   if ((e.effectFlags & CHAR_REVEAL_ACTIVE) === 0) return undefined;
   // ★▼ **只在本页逐字显完之后**才出现在载荷里 —— 这是"图标何时可见"的**唯一判决点**。
   //   引擎依据：文字泵 `sub_45BE20` 在等待泵里**自旋到整页显完**（raw 13847/13863/13907/13920 的
@@ -588,24 +627,26 @@ function cellFrameOf(e: Engine, win: number): MsgCellFrame | undefined {
   const g = e.msgwin.gridOf(win);
   if (!g || !g.gate || g.cells <= 0 || g.cellW <= 0 || g.cellH <= 0) return undefined;
   const geom = e.msgwin.geom(win);
-  const followText = e.engineValues.get(ENGINE_FIELD.followTextMode) === 1 || (geom.x <= 0 && geom.y <= 0 && geom.w >= 640 && geom.h >= 360);
+  // ★分岔**只由 `Font+1392` 决定**（raw 71349 逐字；`0x1B1` = `sub_41FEA0` raw 29159-29161 写它）。
+  //   ★2026-09 订正：这里曾有一条**没有 raw 依据**的启发式（"窗铺满视口 ⇒ 也按模式 1"，E4 加的）。
+  //   raw 里没有第二个判据；而序章/NOVEL 的 mode 1 来自 `src/NOVEL.txt:8 i1b1 1`——它在同一个脚本
+  //   `:147 call-script (global-int 1394)` 把序章调起来**之前**（`:266 i1b1 0` 在返回路径上）
+  //   ⇒ 序章本来就走模式 1，不靠启发式。见 `test/msgcell-follow-text-frame.test.ts`。
+  const followText = e.engineValues.get(ENGINE_FIELD.followTextMode) === 1;
+  // 模式 0 的公式（raw 71370-71376）：目标 = op2/op3 + 窗框原点。模式 1 在它之上加笔位。
   let x = g.textX + geom.x;
   let y = g.textY + geom.y;
   if (followText) {
-    // 引擎 raw 71352-71359 的 mode-1：`v6[12]` = win+48 = 记录向量的 **end 指针** ⇒
-    // `buf[-20]`/`buf[-16]` 就是**最后一条 24B 记录**的 `+4`/`+8`：
-    //   - 逐字排版（sub_46BE30 raw 83899/83912）把它写成"该字画完后的笔位 / 该行 y"；
-    //   - `0x6F end-text-line`（raw 82684-82685）才把它重置成"下一行行首 x / 下一行 y"。
-    // 语料里页末最后一条是 `concat`（不是 end-text-line）⇒ 目标 = **末行最后一个字的后面**
-    // （用户实测："应该在最后一行的末尾"）。
-    const style = styleOfWin(e, win);
-    const layout = layoutWindow(win, { style, segments: e.msgwin.slot(win).segments });
+    // raw 71352-71359 的 mode-1：`v6[12]` = win+48 = 记录向量的 **end 指针** ⇒
+    // `*(v6[12] - 20)` / `*(v6[12] - 16)` 就是**最后一条 24B 记录**的 `+4`/`+8`
+    // （24B 元素：`end - 24` 是末条的首地址 ⇒ `-20`/`-16` 正是它的 `+4`/`+8`）= 当前笔位。
+    const layout = layoutWindow(win, { style, segments: e.msgwin.slot(win).segments, blankExtent });
     const line = layout.lines[layout.lines.length - 1];
     const glyph = line && line.glyphs.length > 0 ? line.glyphs[line.glyphs.length - 1] : undefined;
-    // 末字右边 = 字形 x + 该字的推进量（`advance` = 半角格数 × 0.5em，与排版同源）
-    const penX = glyph ? glyph.x + advance(glyph.ch, style.main.size) : line ? line.x + line.width : 0;
-    x = g.textX + penX;
-    y = g.textY + (line ? line.y : 0);
+    // 末字右边 = 字形 x + 该字的推进量（与 `layoutWindow` 内部同一支 `advance`，含 blankExtent 门）
+    const penX = glyph ? glyph.x + advance(glyph.ch, style.main.size, blankExtent) : line ? line.x + line.width : 0;
+    x += penX;
+    y += line ? line.y : 0;
   }
   return {
     srcSurface: g.srcSurface,
@@ -943,10 +984,25 @@ const op_wait_for_input: OpHandler = (c) => {
   const grid = m.gridOf(w);
   m.charTotal = grid ? grid.cells : 0;
   e.engineValues.set(ENGINE_FIELD.charModulus, m.charTotal);
-  m.cellK = 0;
-  // ★0 = "已预备、等本页逐字显完再起步"：引擎主循环里文字泵（sub_409400 的 `while(!sub_45BE20) Sleep`）
-  //   是自旋的 —— 一页没贴完就走不到 raw 20887-20895 的图标分支 ⇒ 图标天然出现在文字之后。
-  m.cellNextAt = 0;
+  // ★★▼ 字格的**武装**：引擎 LABEL_17（raw 28539-28555）逐字是
+  //   `if ((effect_flags & 0x40000000) == 0) { effect_flags |= 0x40000000; Engine[107704] = 0; sub_453A90(...); }`
+  //   ⇒ **三件事都在"bit30 原本是 0"这一个条件下**：置位、游标归零（`Engine[107704]`）、重启节拍。
+  //   反之 bit30 已经置位时，门指令重跑**只做上面的模数查询**，绝不碰游标/节拍 ⇒ ▼ 的 loop
+  //   **不受**门重跑影响（这正是用户 2026-09-26 在真机上观察到的「loop 不受其它动画影响」）。
+  //   ★与"这一页的**文字**要不要重新显现"（下面的 `revealArmed` 门，`T-0016`）是**两件事**：
+  //   悬停派发会经 `sub_4051A0`（raw 10924-10935）清 bit30，而悬停 label 的 `ret` 把 ip 送回
+  //   门指令（`sub_405360(_this, -3)` raw 20328 / `0x5` raw 25716；门长 3 dword ⇒ 正好回到门本身，
+  //   见 raw 28484）⇒ 键/悬停把 bit30 清掉之后，门一重跑就重新武装（游标归零）。
+  //   ★把这一臂塞进 `revealArmed` 门（旧实现）会让 ▼ 一去不回：`tickets/T-0187` ① 的实测症状是
+  //   `[cell]` 只发一次、之后 bit30 恒 0。
+  if ((e.effectFlags & CHAR_REVEAL_ACTIVE) === 0) {
+    e.effectFlags |= CHAR_REVEAL_ACTIVE;
+    m.cellK = 0; // `Engine[107704] = 0`
+    // ★0 = "已预备、等本页逐字显完再起步"：引擎主循环里文字泵（sub_409400 的 `while(!sub_45BE20) Sleep`）
+    //   是自旋的 —— 一页没贴完就走不到 raw 20887-20895 的图标分支 ⇒ 图标天然出现在文字之后。
+    m.cellNextAt = 0; // `sub_453A90(Engine+107650)` 重启节拍
+    e.engineValues.set(ENGINE_FIELD.charCursor, 0);
+  }
   if (!m.isRevealing(w) && !m.revealArmed(w)) {
     const laid = layoutWindow(w, { style: styleOfWin(e, w), segments: m.slot(w).segments });
     const total = laid.glyphCount;
@@ -961,7 +1017,6 @@ const op_wait_for_input: OpHandler = (c) => {
       m.charMode = total > 0;
       m.charCursor = 0;
       e.engineValues.set(ENGINE_FIELD.charCursor, 0);
-      e.effectFlags |= CHAR_REVEAL_ACTIVE;
     }
   }
   if (m.isRevealing(w)) {

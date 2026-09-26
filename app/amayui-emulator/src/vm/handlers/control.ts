@@ -615,6 +615,11 @@ const op_exit_script: OpHandler = async (c) => {
   setDispatching(c.e, false); // 引擎整体复位 ⇒ 497400 回初值 0（构造点 raw 18149）
   c.e.dispatchSavedCur = -1;
   c.e.advFields.clear();
+  // ★`tickets/T-0187` ③：整体复位还有 **Font 的场景态**那一半 —— raw 18025 调 `sub_465390`
+  //   ⇒ `Font+1360 = 0xFFFFFF`(填充白) / `+1364 = 0` / `+1368 = 0` / `+1372 = 1`（描边档位；raw 78891-78894）、
+  //   `Font+1392 = 0`（raw 78951），raw 18077 再直接清 `Engine+86688`(=`Font+1392`)。
+  //   不落这一半的后果：`followTextMode` 会被上一场戏的 `i1b1 1`（全语料只有 `NOVEL.txt:8` 写）带过边界。
+  c.e.resetFontSceneState();
   c.e.globalSlot97058 = 0;
   c.e.msgwin.reset();
   c.e.native.msgWinClearAll?.(); // 文本图层也要清（引擎：换脚本即整块清 0，见 sub_40DF10）

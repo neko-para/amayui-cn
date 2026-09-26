@@ -218,11 +218,15 @@ test('★真槽续跑不依赖 INI 的 `[set]` 段：`sv1/sv2` 取自**槽文件
   assert.equal(e.frames[0]!.ip, 2, '帧 0 落在 call-script 的下一条');
 });
 
-test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/T-0071`）', async () => {
+test('★读档整池清零后写回文件前缀 + 装回「槽 → 图像」表（`tickets/T-0071` / 订正 `T-0187`）', async () => {
   // 两条引擎口径（`sub_410160` raw 19705/19747 与 19843-19910）：
-  //  ① int 池的还原是 `memset(pool, 0, 4*count + 4)` + `memcpy(pool, fileInts, 4*count)` —— **只动 `0..count`**，
-  //     `count` 以上的下标保留进程里的旧值。ADV 场景大量用**池外**的引擎全局（实测 `global 708ada` = 7,375,578、
-  //     `global f8c48` = 1,018,952，而池长只有 1,015,792）⇒ 用 `clear()` 全清会让它们读成 0（背景/网格参数全丢）。
+  //  ① int 池的还原是 `memset(pool, 0, 4*Engine[382952] + 4)` + `memcpy(pool, fileInts, 4*count)`
+  //     —— ★**按池容量清零，再写回文件前缀**。旧注释（`T-0071`）写的「只覆盖池内下标/不得清掉池外下标」
+  //     其前提「memset 只动 `0..count`」**已在 2026-09-27 被真机只读实测推翻**（`tickets/T-0187/recheck.md` §5.10）：
+  //     真机 `Engine+382952` = 0x00708ADC = 7,375,836 ≫ SAVE78 的 int count = 1,015,792
+  //     ⇒ `[count, capacity)` 装载后为 0 ⇒ 两个入口（TITLE / ADV）之间不残留状态。
+  //     ADV 用到的 `global 708ada`(7,375,578)/`f8c48`(1,018,952) 在池内 ⇒ 同样清零，
+  //     必须由**装载路径重新派生**（引擎做法：`CALLBACK_LOAD`/`SETCHARM`/`set-texture`…）。
   //  ② 1000 条 20 B 的**图像槽表**要装回 `Engine.texSlots`（= `0x1F9` `set-texture` 写的那张表），
   //     并且 `flag == 1 && id >= 0` 的条目要**重新解码**（宿主 `bindTexture`）—— 读档续跑跳过了场景 init，
   //     那些 `set-texture <背景大图> <槽>` 不会再执行（实测槽 79：槽 4 ← `BG050ABL.AGF`）。
@@ -259,10 +263,17 @@ test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/
     readSaveSlot: async (s: number) => (s === 3 ? bytes : null),
     readScript: async (id: number) => (id === scriptId ? { index: id, name: 'ROOT.BIN', data: rootBin } : null),
   } as unknown as Engine['fileSource'];
-  // 读档前的"当前进程状态"：池外下标（200 万，远超池长 2）必须有值；池内下标 0 也要有旧值（应被文件覆盖成 0）。
+  // 读档前的"当前进程状态"：池外下标（200 万）必须有值、池内下标 0 也要有旧值 —— 装载后**两者都应为 0**
+  // （引擎按池容量 memset ⇒ 与文件 count 无关；`T-0187` 订正）。
   const { enc } = await import('../src/vm/bits.js');
   e.globals.int.set(2_000_000, enc(e.key, 424242));
   e.globals.int.set(0, enc(e.key, 1234));
+  // ★`tickets/T-0187` ③：Font 的**场景态**同样必须由控制转移复位（值 = `Engine.resetFontSceneState()` 的
+  //   raw 锚点：`sub_40DF10` raw 18025 的 `sub_465390` ⇒ 78891-78894/78951、raw 18077 清 `Font+1392`）。
+  //   这里摆成"上一场戏留下的值"：`followTextMode=1`（= 序章链跑过 `src/NOVEL.txt:8 i1b1 1`）、阿瓦罗黄、描边 3 向。
+  e.engineValues.set(ENGINE_FIELD.followTextMode, 1);
+  e.engineValues.set(ENGINE_FIELD.colorFill, 0xffe100);
+  e.engineValues.set(ENGINE_FIELD.outlineMode, 3);
 
   const { parseScriptBytes } = await import('../src/script/bin.js');
   const { loadScriptIntoFrame } = await import('../src/vm/ops.js');
@@ -272,7 +283,11 @@ test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/
   await run(e, 2, 0);
 
   const { dec } = await import('../src/vm/bits.js');
-  assert.equal(dec(e.key, e.globals.int.get(2_000_000) ?? 0), 424242, '★池外下标（> 池长）必须原样保留');
+  assert.equal(
+    e.globals.int.get(2_000_000),
+    undefined,
+    '★装载按**池容量** memset 整池清零 ⇒ 池外下标（> 文件 count）也必须读成 0（2026-09-27 订正，见 T-0187/recheck.md §5.10）',
+  );
   assert.equal(e.globals.int.get(0), undefined, '池内下标 0 被文件里的 0 覆盖（引擎的 memset 段）');
   assert.equal(dec(e.key, e.globals.int.get(1) ?? 0), 7, '池内下标 1 = 文件里的值');
 
@@ -297,6 +312,17 @@ test('★读档只覆盖池内下标 + 装回「槽 → 图像」表（`tickets/
     logs.some((m) => m.includes('releaseFrameHold')),
     `装载点必须调用 releaseFrameHold（实际 ${logs.filter((m) => m.includes('frame-hold') || m.includes('releaseFrameHold')).join(' | ') || '（无）'}）`,
   );
+  // ★`tickets/T-0187` ③：控制转移 = 回到根帧重新进场景 ⇒ Font 的**场景态**回引擎初值。
+  //   ★判据（用户 2026-09-27 口径「读档总是能正确恢复表现」+ 实测）：不复位 ⇒ 先读序章档再读章节档时
+  //   `Font+1392` 留 1 ⇒ `0x73` 的 ▼ 走「跟随笔位」分支算到屏外；复位后由重跑的脚本入口按场景重新设定
+  //   （序章链 `src/NOVEL.txt:8 i1b1 1`；章节链 `SYSTEM4 > SC0000` 不设 ⇒ 保持 0 = ADV 窗固定位）。
+  assert.equal(
+    e.engineValues.get(ENGINE_FIELD.followTextMode),
+    0,
+    '★读档必须把 `Font+1392` 归 0（raw 18077 的整块复位那一半；不复位 ⇒ ▼ 被上一场戏的 `i1b1 1` 带到屏外）',
+  );
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0xffffff, '`Font+1360` 回白（raw 78891）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.outlineMode), 1, '`Font+1372` 回 1（raw 78894）');
 });
 
 test('0xAE 的门关着 ⇒ 不动任何帧状态（与引擎的门控路径逐字一致）', async () => {

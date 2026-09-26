@@ -45,11 +45,15 @@ generated_by: scripts/build-scripts.mjs
 
 - `i2de`(0x2DE) 是**字体名→字体表下标**（不是字符串资源 id）：映射错会让所有字体判定恒为 -1 ⇒ 每次启动都回退默认面名
 - **load-string 没命中的结果是空串**（引擎读侧 LOBYTE(dword_55D0FC)=0 后返回空串；emulator 同为 ?? ''）⇒ i2de('') = -1 ⇒ 本脚本把该槽改成默认面名并重新 save-string。所以「某个字体项自己变回默认」既可能是字体真没装上，也可能是**存档里那条记录根本没读到**：字符串记录区起点算错 4 字节就会静默丢掉最后一条，而真存档里最后一条恰是 bbf（CONFIG 第 3 行）——见 docs-new/03-engine/save-data.md §3
+- ★本函数的调用时机决定用哪个 `14acda`：`SYSTEM4.txt:84` 的 `call-script 51db` 在 SYSTEM4 的**读档续跑 preamble 之内** ⇒ 读档时也会跑一遍，而那一刻 `14acda` 还是**上一场景**遗留的值（池外全局 `0x14ACDA` = 1,356,506 > int 池长 1,015,792 ⇒ 读档不还原），页面脚本要到自己的页前导才改写它 ⇒ 读档后第一页的颜色＝上一场景最后那个说话人的颜色（`T-0187` ② 的机制）
+- ★adcd / 14acda 的角色（T-0187 复核 2026-09-26 订正）：adcd 是**池内数组起始下标常量**（全库 0 处赋值，只作 lookup-array 的数组操作数 = 0xADCD），14acda 才是**索引变量**（脚本反复 mov 0/1/2/3）⇒ 读法 = pool[0xADCD + pool[0x14ACDA]]；**填色被覆盖的充要条件 = (a9dd & 3) == 0 且 adcd[14acda] > 0**（&1 走 f807c、&2 走 f807b，两位都在 &3 != 0 时被跳过）⇒ 出厂 a9dd = 2 时这条把填色**钉成白**。
+- ★★上一条 gotcha 的「充要条件」**方向写反了，以本条为准**（T-0187 第二轮实测 2026-09-26，见 tickets/T-0187/recheck.md §5）：本项目 `jcc v mask label` = **v == 0 才跳**，按该极性重读 :50-64 —— `a9dd&3 != 0` 时 :51 **不跳**、`:56`（`a9dd&1 == 0`）**跳**（跳过 f807c）、`:62`（`a9dd&2 != 0`）**不跳** ⇒ **:63-64 执行**。所以充要条件是 **`(a9dd & 2) != 0 且 adcd[14acda] > 0` ⇒ `f807b = adcd[14acda]`（填充随当前说话人）**；`a9dd = 2`（真机与实例实测值）**正好命中这一支**，不是「钉成白」。实测指纹（实例 t0187b、游戏内 load 78）：`f807b = 0xFFE100`（阿瓦罗黄）、`f807c = 0`、`f8079 = 3`、`f807a = 1`、`a9de = 1`、`14acda = 0`（重放后）、`adcd = 0xFFFFFF`。★由此定位 ② 的真因：`src/CALLBACK_LOAD.txt:197-227` 在读档时**重算 global 14acda（当前说话人）**，随后 CHECKCONFIG 用它取色 ⇒ 白的/黄的分歧出在 `14acda` 的取值，不在 `sub_45F1B0` 的文本记录。
 
 ## 相关
 
 - 引擎常态能力：`save-data-tables-persistence`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 引擎常态能力：`text-style-scope-queue-time`（见 `docs-new/03-engine/engine-capabilities.md`）
+- 引擎常态能力：`adv-text-color-state-carryover`（见 `docs-new/03-engine/engine-capabilities.md`）
 - 函数结论：`0x430DF0`（见 `analysis/functions.json`）
 - 函数结论：`0x423390`（见 `analysis/functions.json`）
 - 主题文档：`docs-new/03-engine/save-data.md`

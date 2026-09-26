@@ -374,6 +374,34 @@ export class Engine {
   ]);
 
   /**
+   * **Font 的「场景态」复位** —— 引擎整体复位 `sub_40DF10` 里属于 Font 的那两笔（`tickets/T-0187` ③）。
+   *
+   * 引擎证据（`engine/天结_unpacked.exe_utf8.c`）：
+   *  - 整体复位 `sub_40DF10` **raw 18025** 调 `sub_465390(Font, …)`；该函数 **raw 78891-78894** 写
+   *    `Font+1360 = 0xFFFFFF`（填充白）/ `+1364 = 0`（描边色）/ `+1368 = 0` / `+1372 = 1`（描边档位），
+   *    **raw 78951** 写 `Font+1392 = 0`；
+   *  - 同一函数 **raw 18077** 再直接写 `Engine+86688`（= `Font+1392` = 本工程 `followTextMode`）**= 0**。
+   *  ⇒ 这四个字段（`colorFill`/`colorOutline`/`outlineMode`/`followTextMode`）在引擎里是**整体复位的一部分**，
+   *    复位值就是它们的引擎初值（`0xFFFFFF` / `0` / `1` / `0`）—— 写的是 raw 的字面值，不是为某张截图调的参。
+   *
+   * 调用点（两处，都必须是「回到根帧重新进场景」这一类事件）：
+   *  1. `exit-script`(`0x9` = `sub_428A60`) **就是**整体复位（raw 35270）⇒ `handlers/control.ts`；
+   *  2. 读档的控制转移（`sub_410160` raw 19914-19918：两张面板复位 + `cur = 0` + 装载存档记录的脚本；
+   *     emulator 的等价物 = `handlers/save-slot.ts` 的 `transferToRootAfterLoad`）。
+   * 之后**重跑的脚本入口**会按场景重新设定（序章链 `src/NOVEL.txt:8 i1b1 1`；章节链 `SYSTEM4 > SC0000`
+   * 不设 ⇒ 保持 0 = ADV 窗的固定位分支）。
+   *
+   * ★漏掉它的后果（`tickets/T-0187` ③ 的实测）：先读序章档、再读章节档 ⇒ `Font+1392` 留 1
+   * ⇒ `0x73` 的 ▼ 按「跟随笔位」分支算到 `(1235,728)`（屏外）。
+   */
+  resetFontSceneState(): void {
+    this.engineValues.set(ENGINE_FIELD.colorFill, 0xffffff);
+    this.engineValues.set(ENGINE_FIELD.colorOutline, 0);
+    this.engineValues.set(ENGINE_FIELD.outlineMode, 1);
+    this.engineValues.set(ENGINE_FIELD.followTextMode, 0);
+  }
+
+  /**
    * **字体面名解析策略**：这套资源是纯日文（`jp`）还是 ShiftJIS 编码的中文（`cnjp`）。
    *
    * 由 `emulator.config.json` 的 `resources.version` 决定（`applyEmulatorOptionsToEngine` 写入），
@@ -1786,6 +1814,12 @@ export class Engine {
    * **悬停/点击的收尾**（引擎 `sub_4051A0` raw 10923-10935）：
    * `if (effect_flags & 0x40000000) { if (!(flags & 0x100000)) sub_45A940(Font, 当前窗, -2, 0); 清 bit30 }`
    * ＝ **把在飞的逐字显现立刻收尾（整段贴出）并清 bit30**。
+   *
+   * ★仍存疑（`tickets/T-0187` ①，**未决，不许照观察改**）：用户真机实测「悬停/打开/收起侧边栏
+   * **完全不影响** ▼ 的动画」，而 raw 字面（10929-10933 只要 bit30 置位就清）⇒ 悬停会把 ▼ 的
+   * loop 打断、门重跑再从头武装。冲突的两个候选解释（配置门 `set:ControlDisibleCursor` 的真机
+   * 取值 / 悬停派发是否到达这一跳）与**判别实验**登记在 `analysis/engine-capabilities.json`
+   * 的 `msgwin-char-reveal-grid` 与 `tickets/T-0187/notes.md`；探针结果出来之前，本函数**按 raw**。
    */
   finishCharReveal(): void {
     for (const win of this.msgwin.reveal.keys()) this.msgwin.finishReveal(win);

@@ -58,7 +58,7 @@ generated_by: scripts/build-scripts.mjs
 | [`LOADCONFIG`](./LOADCONFIG.md) | `LOADCONFIG.BIN` | **把 SAVE.DAT 里的用户设置读回全局**：29 个 `load-int (global …)` / `load-string (global-st… | 5 | 2 | ✅ 已分析 | `test/save-data.test.ts` |
 | [`MMODE`](./MMODE.md) | `MMODE.BIN` | **BGM 鑑賞界面**（回想第三个按钮）：三列 × 13 行的曲目列表（已收集显示曲名、未收集显示 `UNKNOWN`）+ 底部播放控制（上一首/暂停/下… | 4 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
 | [`MUINIT`](./MUINIT.md) | `MUINIT.BIN` | **BGM 曲目元数据表**（无画面）：填三张 1-based 表 —— `12265c[1..36]` = 统一文件 id、`1226c0[1..36]`… | 1 | 3 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
-| [`NOVEL`](./NOVEL.md) | `NOVEL.BIN` | **ADV/NOVEL 场景的包装脚本**（SYSTEM4 的 mode 6 分支）：登记 ADV 消息窗图（槽 0xC）、画消息窗九宫格，再 `call-… | 5 | 3 | 🟠 部分 | — |
+| [`NOVEL`](./NOVEL.md) | `NOVEL.BIN` | **ADV/NOVEL 场景的包装脚本**（SYSTEM4 的 mode 6 分支）：登记 ADV 消息窗图（槽 0xC）、画消息窗九宫格，再 `call-… | 6 | 4 | 🟠 部分 | — |
 | [`ROOM`](./ROOM.md) | `ROOM.BIN` | **回想（EU-ROOM）菜单**：一张背景 + 四个按钮（CG鑑賞 / シーン回想 / BGM鑑賞 / 情報画面），每个按钮旁显示 `回収数` 与 `回収… | 5 | 4 | 🟠 部分 | `test/gallery-bgm-list.test.ts` |
 | [`SAVE`](./SAVE.md) | `SAVE.BIN` | 存档/读档界面（SAVE）：槽列表（每行用 `0x1A0` 读头拿状态/日期/游玩秒数）+ 存/读/删/复制与备注输入。 | 3 | 6 | 🟠 部分 | — |
 | [`SC0000`](./SC0000.md) | `SC0000.BIN` | 章节（节）脚本：按 `global 3f3c` 分派到各「G」章头块做章节切换演出（云柱/缩放模糊/白晕/渐黑/人物轮廓），再 call-script 进 … | 12 | 10 | 🟠 部分 | `test/t0102-chapter-chain.test.ts` |
@@ -69,7 +69,7 @@ generated_by: scripts/build-scripts.mjs
 | [`SETFATE`](./SETFATE.md) | `SETFATE.BIN` | 「ゲーム開始」时对全角色（最多 1000 项）初始化「运命/缘分」标志表。 | 3 | 4 | 🟠 部分 | `test/game-start-chain.test.ts` |
 | [`SETL2DMOC`](./SETL2DMOC.md) | `SETL2DMOC.BIN` | **Live2D 模型装载分发表**（统一文件 id `0x522d`）：按 `global f8c46`（模型文件 id）逐支比较，命中即 `i341 <… | 3 | 2 | ⚪ 仅登记 | `test/live2d-enabled-flag.test.ts` `test/input.test.ts` |
 | [`SETMEMOIR`](./SETMEMOIR.md) | `SETMEMOIR.BIN` | **回想界面的收集度计算表**（无画面）：用 `0x19D` 逐条查询 CG 表 / 场景表 / BGM 表的"是否已收集"，写出收集数、收集率与已收集下标… | 4 | 5 | ✅ 已分析 | `test/gallery-bgm-list.test.ts` |
-| [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 18 | 11 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
+| [`SN0000`](./SN0000.md) | `SN0000.BIN` | 序章脚本（含引擎『字格逐字显现』的真实用例）。 | 22 | 13 | 🟠 部分 | `test/char-reveal.test.ts` `test/game-start-chain.test.ts` |
 | [`SP2563`](./SP2563.md) | `SP2563.BIN` | 剧情 ADV 脚本（本体 SP*.txt 之一，17000+ 行）：立绘/文本推进 + 音频惯用法（音效「先装载后起播」、语音通道复位后静音）。 | 2 | 2 | 🟠 部分 | — |
 | [`SYSTEM4`](./SYSTEM4.md) | `SYSTEM4.BIN` | 引擎最先执行的脚本（统一文件 id 0）：初始化引擎字段/消息窗，再逐级 call-script 数据表 INIT 脚本，最后进 LOGO/TITLE。 | 9 | 4 | 🟠 部分 | `test/save-data.test.ts` `test/t0102-chapter-chain.test.ts` |
 | [`TITLE`](./TITLE.md) | `TITLE.BIN` | 标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 … | 15 | 15 | 🟠 部分 | `test/config-version-substr.test.ts` `test/title-exit.test.ts` `test/game-start-chain.test.ts` `test/live2d-chain.test.ts` `test/live2d-render.test.ts` |

@@ -28,7 +28,7 @@ state: live
 | `set:WheelKeyUp` / `set:WheelKeyDown` | **缺失** | `sub_411BC0`（等待门每帧） | 把配置值当作**掩码位序号**，与输入掩码比较 ⇒ 滚轮可推进消息 | 滚轮键位比较分支不成立（`1 << 0` = bit0，实际恒不命中） |
 | `message:AdvanceMesOnWheel` | **0** | `sub_409400`、`sub_411BC0`；另经 `0x2CC` 回读给脚本 | 滚轮允许翻页 | 滚轮不翻页（脚本可读到 0） |
 | `set:ReDrawTextOnKey` | **缺失** | `sub_411BC0` | 按键时整屏重绘 | 不重绘 |
-| `set:ControlDisibleCursor` | **缺失** | `sub_411BC0`、`sub_411900` | 隐藏光标（`sub_4051A0`） | 不隐藏 |
+| `set:ControlDisibleCursor` | **缺失** | `sub_411BC0`（键命中 raw 20246-20247 / 悬停 20335-20336） | ★**`!GetConfig(...)` ⇒ 调 `sub_4051A0`**：把在飞的逐字显现一次贴完并**清 `effect_flags` bit30**（该位同时是 ▼ 字格动画的武装位，raw 20887-20893） | 位非 0 ⇒ **不调** `sub_4051A0`（本次手势不收尾、▼ 继续闪） |
 | `display:UseIVideoWindow` | **1** | `sub_411BC0` | 走 IVideo 窗口相关分支 | —— |
 | `system:EffectSkipOnClick` | **0** | `sub_411BC0`；另经 `0x306` 回读给脚本 | 点击可跳过特效 | 不跳过 |
 | `set:IsReggist` | **缺失** | `sub_411BC0` | 未注册提示（60s 后弹 `E_0`） | 无提示 |
@@ -55,7 +55,8 @@ state: live
 | `message:ReadTextSkip` | ✅ 已实现（`0x6E/0x71/0x72` 的门 + `0x1CA` 运行期覆盖） |
 | `message:MesWinAlpha` | ✅ 已实现（`0x6E` 每段 `SLEEP_GATE`）+ `0x7F` getter 读字段 |
 | `set:CancelMesSkipOnClick` | 🟠 三态机已实现但按 `cfgInt` 门控 ⇒ 当前休眠（与引擎一致） |
-| `set:WheelKeyUp/Down`、`set:ReDrawTextOnKey`、`set:ControlDisibleCursor` | ❌ 未建模（见台账 `adv-advance-route-table` 的 note） |
+| `set:WheelKeyUp/Down`、`set:ReDrawTextOnKey` | ❌ 未建模（见台账 `adv-advance-route-table` 的 note） |
+| `set:ControlDisibleCursor` | ✅ 已按门实现（`engine.ts` 的 `controlDisableCursor()`；键分支 1421 / 悬停分支 1488 都按 `=== 0` 调 `finishCharReveal`）。★`T-0187` ① 的**未决冲突**：用户真机实测「悬停/开合侧边栏完全不影响 ▼ 的动画」，而按 raw（位缺失 ⇒ 0 ⇒ 调 `sub_4051A0`）应当清 bit30 ⇒ ▼ 停一拍、门重跑再从头武装；判别实验与后果见 `tickets/T-0187/verify.md` 的 V1 |
 | `message:AutoMessage*` | ❌ 自动播放未建模（只作为配置值存在） |
 | `message:MessageSpeed` | ❌ 消息窗对象布局节流未建模（`sub_409400`） |
 | `message:AdvanceMesOnWheel` | ✅ 经 `0x2CC` 可被脚本读到 |

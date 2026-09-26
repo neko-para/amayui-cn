@@ -217,6 +217,61 @@ test('★0x73 = ▼ 图标精灵表：0x72 武装后每 op10 ms 换一格，点�
   assert.equal(native.scene.msgWins.get(1)?.cell, undefined, '停后主机端不再画 ▼（收尾重发布时不带格）');
 });
 
+/**
+ * ★T-0187 ①（2026-09-26，**全部按 raw 字面**）：▼ 的武装与 `sub_4051A0` 收尾的两条契约。
+ *
+ * ① 武装（raw 28549-28554）：`0x72` 的 LABEL_17 里 `|= 0x40000000` / `Engine[107704] = 0` /
+ *   `sub_453A90` **三件事同在一个 `if ((effect_flags & 0x40000000) == 0)` 条件下** —— 旧实现把
+ *   "置位" 塞进 `T-0016` 的 `revealArmed` 门（导致 ▼ 一去不回），又把两个归零放在条件外
+ *   （导致**每次门重跑都重启 loop**）。悬停 label 的 `ret` 会回到门指令本身（`sub_405360(_this,-3)`
+ *   raw 11031-11041 + `0x72` 自写长度 3 dword raw 28484 + `0x5` raw 25716）。
+ * ② 收尾（`sub_4051A0` raw 10924-10935）：**只要 bit30 置位就清**（无"文字是否还在逐字"的前置）
+ *   ⇒ 悬停/点击把 ▼ 停掉，随后门重跑重新武装（游标归零）。
+ *   ★未决：用户真机实测「悬停/打开/收起侧边栏完全不影响 ▼ 的动画」与 ② 冲突 —— 判据是真机探针 A
+ *   （悬停中读 `_this[174801]` 的 bit30 与 `Engine[107704]`），见 `analysis/engine-capabilities.json`
+ *   的 `msgwin-char-reveal-grid` 与 `tickets/T-0187/notes.md`。**在探针结果出来之前按 raw，不改。**
+ */
+test('★T-0187：▼ 武装三件事同条件；收尾与门重跑按 raw（收尾清位 ⇒ 门重跑重新武装）', () => {
+  const native = new HeadlessScene({});
+  const { e, step } = mk(native);
+  e.engineValues.set(21668, 5);
+  step(0x80, [im(1)]);
+  step(0x70, [im(1), im(0x370), im(0x94), im(0xbe), im(0x22d)]);
+  step(0x73, [im(1), im(0x37a), im(0x6e), im(0xc), im(0), im(0), im(0x23), im(0x23), im(0xa), im(0x64)]);
+  step(0x71, [im(1)]);
+  step(0x6e, [im(0), str('あいうえお')]);
+  showPanel(step);
+  step(0x72, [im(1)]);
+  // ---- 契约 A：逐字进行中被悬停/点击 ⇒ 立刻整段贴出（`sub_4051A0` 的第一半）----------
+  assert.equal(e.msgwin.isRevealing(), true, '前置：文字还在逐字');
+  e.finishCharReveal();
+  assert.equal(e.msgwin.isRevealing(), false, '★A：收尾把在飞的逐字一次贴完');
+  assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, 0, '★A：逐字中的收尾会清 bit30');
+  // ---- 契约 B：文字显完后收尾照样清 bit30（raw 10929-10933 无前置）⇒ ▼ 停 ------------
+  step(0x72, [im(1)]); // 门重跑 ⇒ 重新武装（三件事都该发生）
+  assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, CHAR_REVEAL_ACTIVE, '前置：已重新武装');
+  for (let k = 1; k <= 5; k++) e.serviceTextReveal(1000 + k * 20);
+  assert.equal(e.serviceCharGrid(1110), false, '前置：显完后的第一帧只起算节拍');
+  assert.equal(e.serviceCharGrid(1210), true, '前置：▼ 出第一格');
+  assert.equal(e.serviceCharGrid(1310), true, '前置：继续换格');
+  e.finishCharReveal(); // 悬停/点击的收尾（`sub_4051A0`）
+  assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, 0, '★B（raw）：文字已显完也照清 bit30');
+  assert.equal(e.serviceCharGrid(5000), false, '★B：清位后不再换格');
+  // ---- 契约 C：bit30 被清后，门重跑必须重新武装（旧实现把它藏进 revealArmed 门 ⇒ ▼ 一去不回）----
+  step(0x72, [im(1)]);
+  assert.equal(e.effectFlags & CHAR_REVEAL_ACTIVE, CHAR_REVEAL_ACTIVE, '★C：门重跑必须重新武装');
+  assert.equal(e.msgwin.isRevealing(), false, '★C：重跑不得把那页文字重新逐字（T-0016 的纪律）');
+  assert.equal(e.serviceCharGrid(5000), false, '重新武装的那一帧只起算节拍（sub_453A90 重启计时）');
+  assert.equal(e.serviceCharGrid(5100), true, '再过一拍 ⇒ 重新贴格 0');
+  assert.equal(e.msgwin.cellK, 1, '★C：游标归零后从第 0 格重来');
+  // ---- 契约 D：bit30 已置位时的门重跑只做模数查询，不得碰游标/节拍 ----------------------
+  const beforeD = e.msgwin.cellK;
+  step(0x72, [im(1)]);
+  assert.equal(e.serviceCharGrid(5100), false, '★D：归零分支不该被走（cellNextAt 未被清零）');
+  assert.equal(e.serviceCharGrid(5200), true, '★D：门重跑不得重启节拍');
+  assert.equal(e.msgwin.cellK, (beforeD + 1) % 10, '★D：格号继续递增，而不是回到 loop 第一帧');
+});
+
 test('无字格页同样按 message:MessageSpeed（逐字只有一条路；0x73 只管 ▼ 图标）', () => {
   const { e, step } = mk();
   e.engineValues.set(21668, 25);

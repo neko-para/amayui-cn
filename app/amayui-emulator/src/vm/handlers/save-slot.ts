@@ -132,6 +132,14 @@ async function transferToRootAfterLoad(e: Engine): Promise<void> {
   e.routes.reset(); // = sub_403EF0(panelA)：面板命中区/路由表复位
   e.msgwin.reset(); // 文本窗口对象复位（清屏上残留的文本）
   e.native.msgWinClearAll?.(); // 宿主侧文本图层同清（与 exit-script 同口径）
+  // ★`tickets/T-0187` ③：控制转移 = **回到根帧重新进场景** ⇒ Font 的**场景态**回到引擎初值。
+  //   值取自引擎整体复位里那两笔（raw 18025 的 `sub_465390` ⇒ 78891-78894 / 78951；raw 18077 直接清
+  //   `Font+1392`）；`Engine.resetFontSceneState()` 的注释里有完整锚点。
+  //   为什么必须有（用户 2026-09-27 口径「读档总是能正确恢复表现」+ 实测）：先读序章档（链里有
+  //   `NOVEL.txt:8 i1b1 1`）再读章节档（链 `SYSTEM4 > SC0000`，不设该位）⇒ 不复位就让 `0x73` 的 ▼
+  //   走「跟随笔位」分支算到屏外 `(1235,728)`；复位后章节档 = 固定位 `(1080,667)`、序章档仍由
+  //   重跑的 `NOVEL.txt:8` 置 1 ⇒ 两条都正确。
+  e.resetFontSceneState();
   // 「正在读档」门：`0xAE`（存档版本分支）读的就是它。语料里 `0xAE` 出现 0 次 ⇒ 这里只如实置位。
   e.engineValues.set(LOAD_IN_PROGRESS_FLAG, 1);
   e.cur = 0; // ★引擎 `Engine[383104] = 0`
@@ -262,14 +270,23 @@ async function restoreEngineSlot(
   //    `DEC(key, ...)`（`operand.ts` 的 `readIntOperand`）⇒ 存明文会让续跑后的**所有全局量读成垃圾**。
   //    float/string 池没有这层（引擎直接读 `*(float*)(pool+4*i)` / 字符串指针）。
   //    int 池是**定长稀疏数组**（本机 81 个真槽全是 1,015,792 项 = 4 MB）⇒ 只装非零项（读侧缺省即 0）。
-  //    ★★**只覆盖池内下标，不得清掉池外下标**（`tickets/T-0071`）：引擎的还原是
-  //    `memset(pool, 0, 4*count + 4)` + `memcpy(pool, fileInts, 4*count)`（raw 19705/19747）——
-  //    它只动 `0..count` 这一段，**`count` 以上的下标原样保留进程里的旧值**。
-  //    这不是细节：ADV 场景大量使用**池外**的引擎全局（实测 `SN0000`/`NOVEL` 用 `global 708ada`
-  //    = 7,375,578、`global f8c48` = 1,018,952，而池长只有 1,015,792）—— 读档时它们必须是"当时那份
-  //    进程状态"，用 `clear()` 全清会让续跑读到 0（背景/网格参数全丢）。
+  //    ★★**整池清零，再写回文件前缀** —— 引擎的还原逐字是
+  //    `memset(pool, 0, 4*Engine[382952] + 4)` + `memcpy(pool, file, 4*count)`（raw 19705/19747），
+  //    即：**按池容量清零**，再 memcpy 文件里那段**前缀**；float/string 同型（raw 19706/19752、19739-19741/19776）。
+  //    ★**订正（2026-09-27，`T-0187`）**：本段旧注释写的是「**只覆盖池内下标，不得清掉池外下标**」
+  //    （`tickets/T-0071`），其前提「memset 只动 `0..count`」**是错的**：memset 的长度是**池容量**，
+  //    文件里的 count 只是**被保存的前缀**。真机只读实测（`tickets/T-0187/recheck.md` §5.10）：
+  //    `Engine+382952` = **0x00708ADC = 7,375,836**，而 SAVE78 的 int count = **1,015,792**
+  //    ⇒ 清零范围**远大于**文件前缀 ⇒ 下标 `[count, capacity)` 装载后**为 0**
+  //    （`f807b` = 1,015,931、`14acda` = 1,356,506 这类槽都在这一段里）。
+  //    ⇒ 这正是「同一份存档、从 TITLE 读 与 从 ADV 读 结果必须一致」的依据：两个入口之间**不残留任何状态**。
+  //    旧实现（保留 `>count` 的旧值）会让上一场戏的值漏进本场戏（实测：从 SC0000 读档 ⇒ 旁白取到上一场景的填充色）。
+  //    ★**注意（别把这条当成"清零就没事"）**：ADV 用的 `global 708ada`(7,375,578)/`f8c48`(1,018,952) 这类槽
+  //    **也在池内**（容量 7,375,836 ≥ 7,375,578）⇒ 它们同样被清零，**必须由装载路径重新派生**
+  //    （引擎正是如此：`CALLBACK_LOAD`/`SETCHARM`/`set-texture`…）。若清空后画面出问题，
+  //    缺的是"重新派生"，**不是**"保留旧值"。
   const poolCount = p.ints.length;
-  for (const k of [...e.globals.int.keys()]) if (k <= poolCount) e.globals.int.delete(k);
+  e.globals.int.clear();
   for (let i = 0; i < poolCount; i++) {
     const v = p.ints[i]!;
     if (v !== 0) e.globals.int.set(i, enc(e.key, v));
@@ -433,6 +450,13 @@ async function restoreEngineSlot(
   e.routes.reset();
   e.msgwin.reset();
   e.native.msgWinClearAll?.();
+  // ★`tickets/T-0187` ③：Font 的**场景态**回引擎初值 —— 续跑是「每帧从入口重跑到自己的 `i0ae`」，
+  //   也就是**重新进场景**；场景态的引擎初值 = 整体复位里那两笔（raw 18025 的 `sub_465390` ⇒
+  //   78891-78894/78951、raw 18077 直接清 `Font+1392`），见 `Engine.resetFontSceneState()`。
+  //   ★实测的必要性（用户 2026-09-27）：先读序章档（链里 `NOVEL.txt:8 i1b1 1`）再读章节档
+  //   （链 `SYSTEM4 > SC0000`，入口不设该位）⇒ 不复位就让 `0x73` 的 ▼ 按"跟随笔位"算到屏外 (1235,728)；
+  //   复位后章节档 = 固定位 (1080,667)，序章档仍由重跑的 `NOVEL.txt:8` 置 1（两条都正确）。
+  e.resetFontSceneState();
 
   // ④ 帧 0 的装载 —— 引擎的**两条路**（raw 19916-19927，`tickets/T-0072`）：
   //    引擎先把帧 0 交给 **`CALLBACK_LOAD.BIN`**（返回帧 = **-11** 哨兵）；它 `exit` 时 `sub_41A820`
@@ -544,6 +568,10 @@ export async function loadSlotIntoEngine(
     e.routes.reset();
     e.msgwin.reset();
     e.native.msgWinClearAll?.();
+    // ★`tickets/T-0187` ③：Font 的**场景态**同样回引擎初值（值/锚点见 `Engine.resetFontSceneState()`）——
+    //   这条续跑路也是"每帧从入口重跑到自己的 `i0ae`" = 重新进场景。若状态块里另外带了这些字段，
+    //   后面的恢复会覆盖回来（那是有据可依的那一份）。
+    e.resetFontSceneState();
     const legacy = state.frames.some((f) => f.index === undefined || f.caller === undefined);
     if (legacy) {
       e.native.log(

@@ -1,0 +1,71 @@
+{
+  "id": "T-0193",
+  "title": "读档 / exit-script 不复位「Font 场景态」：`Font+1392`（▼ 目标的 mode 位）等字段跨边界残留 ⇒ 先读序章档再读章节档时 ▼ 目标被算到屏外",
+  "type": "bug",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "why": "**缺陷**（2026-09-27 实测 + raw 写点普查确认；从 `T-0187` ③ 拆出）：emulator 里 `Font+1392`（= `Engine[21672]` = `followTextMode`，决定 `0x73` 的 ▼ 目标走「固定位」还是「跟随笔位」）**全库只有 `i1b1` 一个写点**（`handlers/engine-fields.ts` 的 `op_set_field_21672`），而引擎里它是**场景态**、是引擎**整体复位**的一部分 ⇒ 「回根帧重新进场景」的那几处（读档的控制转移/续跑、`exit-script`）都没有把它带回初值。\n\n**后果（实测）**：先读序章档 78（帧链 `SYSTEM4 > NOVEL > SN0000`，`src/NOVEL.txt:8 i1b1 1` 在入口跑过）→ 再游戏内读章节档 77（帧链 `SYSTEM4 > SC0000`，入口不设该位）⇒ `Font+1392` 留 **1** ⇒ `0x73` 的 ▼ 走「跟随笔位」分支：`(op2 + 笔位 + 窗框) = (890+155+190, 110+61+557) = (1235,728)`，y=728 已超出 720 ⇒ 35×35 的 ▼ **整块画在屏外**。同一路径上 `Font+1360`（填充色）等场景态字段同样残留（`T-0187` ② 的「读档后旁白应是白」也落在这一类）。\n\n**引擎依据（raw，`engine/天结_unpacked.exe_utf8.c`）**：整体复位 `sub_40DF10` raw 18025 调 `sub_465390(Font, …)` ⇒ raw 78891 `Font+1360 = 0xFFFFFF`、78892 `+1364 = 0`、78893 `+1368 = 0`、78894 `+1372 = 1`、78951 `+1392 = 0`；同一函数 raw **18077** 再直接写 `Engine+86688`（= `Font+1392`）**= 0**。能到达 `sub_40DF10` 的调用点只有 engine 构造（raw 22721）与 `exit-script`（`0x9` = `sub_428A60` raw 35270）。\n\n**写点普查（本轮做全：`+ 1392` / `[348]` / `21672` / `86688` 四种写法，外加装载函数里全部 `memcpy`/`memset` 的目标区间）**：`Font+1392` 只有三处写点 —— `0x1B1`(raw 29161)、Font 构造 `sub_464FD0`(78766)、整体复位 `sub_40DF10`(18077 与 18025→78951)；**装载函数 `sub_410160` 不写它**（其批量写只覆盖三张全局池 / 72B 文本记录表 / `Engine+84088` 那 40 B 块）。而 `exit-script` 语料 **339 处**（`SC69xx` 章末、`GAMEOVER.txt:265`、`GAMECLEAR`…）⇒ 这条缺口在正常流程里也**可达**。\n\n**口径披露**：复位**值**取自 raw；把复位**点**放在读档的控制转移/续跑入口是**推断**（raw 的 `sub_410160` 并不调 `sub_40DF10`），依据 = 用户口径「引擎不会出现这种明显的 bug，加载存档总是可以正确恢复表现」+ 该处本来就有同口径的面板/文本复位（`routes.reset()` / `msgwin.reset()`）。真机只读确认方式（可选、还没做）：78→77 那一刻读 `Engine+0x152A0`（`Font+1392`）应为 0；采样器 `.tmp/t0187-recheck/watch-engine.ps1` 已含该列（`follow`）。",
+  "acceptance": [
+    "复位点落地：新增 `Engine.resetFontSceneState()`，按 raw 复位值写 `colorFill=0xFFFFFF` / `colorOutline=0` / `outlineMode=1` / `followTextMode=0`，并在**三处装载点**（真槽续跑 `restoreEngineSlot`、本工程状态块续跑、续不上时的 `transferToRootAfterLoad`）与 `op_exit_script` 调用",
+    "行为判据（实例 `t0187f` 实测，宿主日志 `.tmp/instances/t0187f/log/amayui-emulator.log` 的 `[cell]` 行）：TITLE 读 77 ⇒ `win=1 目标=(1080,667)`；游戏内读 78 ⇒ `win=8 目标=(730,364)`（序章链的 `NOVEL.txt:8 i1b1 1` 重新置位 ⇒ 未被复位误伤）；再游戏内读 77 ⇒ **`win=1 目标=(1080,667)`**（修前 `(1235,728)` 屏外）。★用户 2026-09-27 目视确认位置正确",
+    "守卫：`test/exit-script.test.ts` 的「Font 的场景态回引擎初值」+ `test/slot-load-resume.test.ts` 里「读档必须把 `Font+1392` 归 0 / 填充回白 / 档位回 1」三条断言；变异验证：注掉任一调用点 ⇒ 对应断言红",
+    "边界写明：同一症状的**另一半根因**（`cellFrameOf` 的 mode 1 漏窗框原点 `win+12/+16`、以及无 raw 依据的「满屏窗也按 mode 1」启发式）在 `T-0187` 内修掉，守卫 `test/msgcell-follow-text-frame.test.ts`；本条只负责「场景态复位」这一半，分界见 `T-0187/recheck.md` §5.12",
+    "真机口径（可选收口项）：若将来做一次真机只读采样，`Engine+0x152A0` 在 78→77 那一刻应为 0、在序章档应为 1；与推断不符则按实测回改并重开"
+  ],
+  "evidence": [
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "*(_DWORD *)(_this + 86688) = 0;",
+      "note": "★整体复位 `sub_40DF10` raw 18077 直接清 `Engine+86688` = `Font+1392`（▼ 目标的 mode 位）；同一函数 raw 18025 调 `sub_465390` ⇒ raw 78891-78894（`Font+1360=0xFFFFFF`/`+1364=0`/`+1368=0`/`+1372=1`）、raw 78951（`+1392=0`）。到达该函数的只有构造（raw 22721）与 `exit-script`（`0x9`=`sub_428A60` raw 35270）。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "resetFontSceneState(): void {",
+      "note": "★修复本体：按 raw 复位值复位 Font 场景态（`colorFill`/`colorOutline`/`outlineMode`/`followTextMode`）。注释里写了完整 raw 锚点与两处调用口径。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/control.ts",
+      "anchor": "c.e.resetFontSceneState();",
+      "note": "`op_exit_script`（`0x9` = 引擎整体复位 `sub_428A60`）必须调它 —— 这条本来就有 raw 依据，原先漏了 Font 这一半。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "再读章节档",
+      "note": "三处装载点都调 `e.resetFontSceneState()`（与 raw 19913-19915 的面板/文本复位同一位置）：`restoreEngineSlot`（真槽续跑；`load-from-title` / `load-from-adv` 走这条）、本工程状态块续跑、`transferToRootAfterLoad`（续不上时）。"
+    },
+    {
+      "file": "tickets/T-0187/recheck.md",
+      "anchor": "### 5.12",
+      "note": "★全过程台账：根因（mode 1 漏窗框原点 ⇒ 右上角）+ `Font+1392` 写点普查 + 修后三态实测表 + 「复位点在装载入口是推断」的口径披露。"
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0187",
+      "T-0071"
+    ],
+    "docs": [
+      "docs-new/03-engine/engine-capabilities.md"
+    ],
+    "analysis": [
+      "analysis/engine-capabilities.json"
+    ]
+  },
+  "status": "done",
+  "tests": [
+    "app/amayui-emulator/test/exit-script.test.ts#Font 的**场景态**回引擎初值",
+    "app/amayui-emulator/test/slot-load-resume.test.ts#读档必须把"
+  ],
+  "history": [
+    {
+      "at": "2026-09-27",
+      "kind": "created",
+      "what": "创建（从 `T-0187` ③ 拆出）：读档 / exit-script 不复位 Font 场景态（`Font+1392` 等）⇒ 序章那次 `NOVEL.txt:8 i1b1 1` 跨过读档边界、章节档的 ▼ 目标被算到屏外。同症状的坐标系半边留在 `T-0187`。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → done —— 已完成：新增 Engine.resetFontSceneState()（raw 复位值 白/0/1/0）并在三处装载点 + op_exit_script 调用；实例实测 78→77 的 [cell] 目标 (1235,728)→(1080,667)（用户目视确认）；守卫 = exit-script「Font 场景态回引擎初值」+ slot-load-resume「读档必须把 Font+1392 归 0」。真机只读确认（Engine+0x152A0）作为可选收口项留在 changes.md §7。"
+    }
+  ]
+}

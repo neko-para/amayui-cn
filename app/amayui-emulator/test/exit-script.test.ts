@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Engine, Frame } from '../src/vm/engine.js';
+import { ENGINE_FIELD } from '../src/vm/engineFieldIds.js';
 import { makeCtx } from '../src/vm/step.js';
 import { NATIVE_OPS, loadScriptIntoFrame } from '../src/vm/ops.js';
 import { readIntOperand } from '../src/vm/operand.js';
@@ -112,5 +113,44 @@ test('GAMEOVER→回标题不再播版权页：exit-script 后 0x130 读回 0（
   const c = makeCtx(e, f, gi, native, () => {});
   NATIVE_OPS.get(0x130)!(c);
   assert.equal(readIntOperand(e, f, gi, 1), 0, '回标题后 load-show-logo 读 +96983=0 → call-script LOGO 被跳过');
+  await src.dispose?.();
+});
+
+/**
+ * ★`tickets/T-0187` ③：整体复位里属于 **Font 的场景态**那一半（`Engine.resetFontSceneState()`）。
+ *
+ * 引擎锚点：`sub_40DF10`（整体复位）raw 18025 调 `sub_465390(Font, …)` ⇒ raw 78891 `Font+1360 = 0xFFFFFF`、
+ * 78892 `+1364 = 0`、78893 `+1368 = 0`、78894 `+1372 = 1`、78951 `+1392 = 0`；raw 18077 再直接清
+ * `Engine+86688`（= `Font+1392`）。`exit-script`(`0x9`) = `sub_428A60` raw 35270 ⇒ 就是这次整体复位。
+ */
+test('★exit-script(0x9)：Font 的**场景态**回引擎初值（填充白 / 描边 0 / 档位 1 / `Font+1392`=0）', async () => {
+  const src = new NodeFileSource({ resourceDir: RAW_DIR });
+  const native = new StubNative(() => {});
+  const e = new Engine(native);
+  e.fileSource = src;
+  // 前置 = "上一场戏留下的值"：序章 `NOVEL.txt:8 i1b1 1` + 阿瓦罗台词黄 + 3 向描边
+  e.engineValues.set(ENGINE_FIELD.followTextMode, 1);
+  e.engineValues.set(ENGINE_FIELD.colorFill, 0xffe100);
+  e.engineValues.set(ENGINE_FIELD.colorOutline, 0x123456);
+  e.engineValues.set(ENGINE_FIELD.outlineMode, 3);
+  const bootSrc: ScriptBinary = {
+    ...scriptDerived(),
+    signature: 'SYS0000',
+    isVer5: false,
+    headerLen: 0,
+    localVars: [0, 0, 0, 0, 0, 0],
+    subHeaderLength: 0,
+    tables: [],
+    instructions: [instr(0x9, [])],
+    labelTargets: new Set(),
+    raw: new Uint8Array(0),
+  };
+  loadScriptIntoFrame(e.curScript(), bootSrc, 'FAKE.BIN');
+  await stepOnce(e); // exit-script(0x9)
+
+  assert.equal(e.engineValues.get(ENGINE_FIELD.followTextMode), 0, '★`Font+1392` 回 0（raw 78951 + raw 18077）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorFill), 0xffffff, '`Font+1360` 回白（raw 78891）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.colorOutline), 0, '`Font+1364` 回 0（raw 78892）');
+  assert.equal(e.engineValues.get(ENGINE_FIELD.outlineMode), 1, '`Font+1372` 回 1（raw 78894）');
   await src.dispose?.();
 });

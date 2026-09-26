@@ -15,47 +15,87 @@
   ],
   "evidence": [
     {
+      "file": "app/amayui-emulator/src/vm/handlers/msgwin.ts",
+      "anchor": "m.cellNextAt = 0; // `sub_453A90(Engine+107650)` 重启节拍",
+      "note": "★① 保留的（raw 推导）修法：`op_wait_for_input` 的「三件事同条件」——`|= CHAR_REVEAL_ACTIVE` / `m.cellK = 0`（`Engine[107704]`）/ `m.cellNextAt = 0`（`sub_453A90`）全在 `if ((e.effectFlags & CHAR_REVEAL_ACTIVE) === 0)` 里（引擎 LABEL_17 raw 28539-28555 逐字同形；旧实现把归零放在条件外 ⇒ 每次门重跑都重启 loop）",
+      "line": 1003
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "★仍存疑（`tickets/T-0187` ①，**未决，不许照观察改**）",
+      "note": "★已还原的、按观察改的那处：`finishCharReveal()` **回到 raw 字面**（`sub_4051A0` raw 10924-10935 只要 bit30 置位就清）；「真机悬停不影响 ▼」与 raw 的冲突作为疑问留下，判据 = 真机探针 A（悬停中读 `_this[174801]` 的 bit30 与 `Engine[107704]`），见 notes.md",
+      "line": 1789
+    },
+    {
+      "file": "app/amayui-emulator/test/char-reveal.test.ts",
+      "anchor": "★T-0187：▼ 武装三件事同条件；收尾与门重跑按 raw（收尾清位 ⇒ 门重跑重新武装）",
+      "note": "① 的守卫（raw 口径，契约 A–D）：逐字中被收尾⇒整段贴出；显完后收尾照样清 bit30；门重跑必须重新武装且不重播文字；bit30 已置位时门重跑不碰游标/节拍。变异验证：把归零恢复成无条件、或把武装塞回 `revealArmed` 门 ⇒ 红",
+      "line": 235
+    },
+    {
+      "file": "engine/天结_unpacked.exe_utf8.c",
+      "anchor": "sub_45F1B0((int *)(a1 + 85296), hFile);",
+      "note": "★② 已确证 emulator 缺的那一块：全量读档（`a7 && a4 >= 2` = `0x1A1`）恢复 **Font 的 72B 文本缓冲记录 + 回看页表**（raw 74482 清表 / 74494、74555-74557 逐条推回）；`SLOT_GAPS` 只承认 40 B 块 ⇒ `a6/a7` 从未建模",
+      "line": 19422
+    },
+    {
       "file": "analysis/engine-capabilities.json",
       "anchor": "msgwin-char-reveal-grid",
-      "note": "▼ 图标链的第二层条目（已建模 / E2 / guard=test/char-reveal.test.ts）；note 里含 SO000.AGF 的口径、主循环 raw 20887-20895 的消费链、以及两处待核（源矩形越界 / 序章该不该有 ▼）。★2026-09-26 本轮已按运行期证据订正：序章槽 12 = 父帧 NOVEL 绑的 SO026（448×112）⇒ 不越界；新增「bit30 被 hover 清掉后门重跑不武装」一条（status → partial）",
+      "note": "▼ 链的第二层条目。★2026-09-27 真机两轮采样定案（见 tickets/T-0187/recheck.md §5.10）：悬停**会**派发脚本（shown 1↔0、flags 出现 0x21C wait 置的 0x400），但**不清 bit30、不重启节拍（tickNow/tickBase 不动）、不重置格号（cellK 相位连续）** ⇒ ▼ 连续闪是引擎的必然行为；模拟器在悬停段调 finishCharReveal() 是偏差。另：真机池容量 Engine+382952 = 0x708ADC = 7,375,836 ≫ 存档前缀 1,015,792 ⇒ 装载 memset 会清零「存档前缀之外」⇒ 两条入口必然一致（推翻 T-0071 注释的前提）。",
       "line": 2920
     },
     {
       "file": "src/SN0000.txt",
       "anchor": "i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64",
-      "note": "SN0000 侧的字格指令落点（★与 SYSTEM4 装到槽 12 的 SO000 口径不同：这里是 8 帧 56×56、srcY 取 (local-int 1)）。★本页（:2992）的 `(local-int 1) = 1×0x38 = 56` = 取 SO026 第 2 行",
+      "note": "SN0000 的字格指令；本页（:2992）`(local-int 1) = 1×0x38 = 56` = SO026 第 2 行（槽 12 由父帧 NOVEL 绑）",
       "line": 2992
     },
     {
       "file": "src/NOVEL.txt",
       "anchor": "mov (global-int f807b) ffffff",
-      "note": "★现象②的复位点：父帧 NOVEL 的 ADV 场景入口块把正文填充色重置成白（:121）并 `i076` 应用（:124），随后 `call-script (global-int 1394)` 进 SN0000（:147）。这一段在 `i0ae`(:29) 之后 ⇒ **读档续跑不重跑**",
+      "note": "② 的复位点：父帧 NOVEL 的 ADV 场景入口把正文填充色重置成白（:121）并 `i076` 应用（:124）",
       "line": 121
     },
     {
       "file": "src/CHECKCONFIG.txt",
       "anchor": "mov (global-int f807b) (local-ptr 1)",
-      "note": "★「旁白白、台词随角色」的判决点：先 `f807b = ffffff`(:48)，再按 `a9dd & 2` 用 `adcd[14acda]` 覆盖（:64）→ `i076/i077/i078/i1a4`(:78-81)；`SYSTEM4.txt:84` 在读档 preamble 里调它，而那一刻 `14acda` 还是上一场景的值",
+      "note": "② 的判决点：先无条件 `f807b = ffffff`(:48)，再按 `a9dd & 2` 用 `adcd[14acda]` 覆盖（:64）",
       "line": 64
     },
     {
-      "file": "analysis/engine-capabilities.json",
-      "anchor": "adv-text-color-state-carryover",
-      "note": "★新增第二层条目：正文颜色/描边的状态归属（复位点只有场景入口块；读档既不还原 Font 也不还原池外的 `f807b`/`14acda`）—— 现象②的归因落点",
-      "line": 5192
+      "file": "tickets/T-0187/verify.md",
+      "anchor": "## V1 ① 的未决冲突",
+      "note": "★本票的**待核实清单**（取证改线）：V0 inspector 作废（用户实测采不到需要的量）/ V1 悬停与 bit30（肉眼判据 + 配置切换）/ V2 读档后的白（**回想对照实验**，纯肉眼）/ V3 emulator 回归 / V4 agent 侧待办；每条含判据·取证手段·结果→动作",
+      "line": 0
     },
     {
-      "file": "engine/天结_unpacked.exe_utf8.c",
-      "anchor": "*(_DWORD *)(a1 + 698852) = *(_DWORD *)(a1 + 561836);",
-      "note": "读档恢复段（`sub_410160` a4=3，raw 19685-19702）：图像槽/1000 记录/`Engine[698852]`/`Engine+84088` 起 40 B/面板复位 —— **清单里没有 Font 字段** ⇒ 正文颜色不在读档还原范围（现象②「存档恢复清单是否包含该状态」的判据）",
-      "line": 19685
+      "file": "tickets/T-0187/recheck.md",
+      "anchor": "### 5.10",
+      "note": "★真机两轮采样（只读）：① 收口（悬停不清 bit30/不重启节拍/不重置格号）+ 池容量 0x708ADC 的实测 + ② 的 fill 黄/白实证；原始日志 evidence/cellk-samples.zip"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/engine.ts",
+      "anchor": "resetFontSceneState(): void {",
+      "note": "★③ 的落地（2026-09-27）：Font 的**场景态**复位 —— 按 raw 的复位值写 `colorFill=0xFFFFFF`/`colorOutline=0`/`outlineMode=1`/`followTextMode=0`（引擎整体复位 `sub_40DF10` raw 18025 调 `sub_465390` ⇒ raw 78891-78894/78951；raw 18077 再直接清 `Font+1392` = `Engine+86688`）。调用点 = 真槽续跑 `restoreEngineSlot` / 状态块续跑 / 续不上时 `transferToRootAfterLoad` / `op_exit_script`(0x9 = 整体复位)。"
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
+      "anchor": "再读章节档",
+      "note": "★③ 的三个装载点都调 `e.resetFontSceneState()`（与 raw 19913-19915 的面板/文本复位同一处）：`restoreEngineSlot`（真槽续跑；`load-from-title`/`load-from-adv` 走这条）、本工程状态块那条续跑路、`transferToRootAfterLoad`（续不上）。实测：修前 78→77 ⇒ `[cell] 目标=(1235,728)`（屏外），修后 ⇒ `(1080,667)`（ADV 窗右下角），且序章档仍 `(730,364)`（入口重跑 `NOVEL.txt:8 i1b1 1`）。"
+    },
+    {
+      "file": "tickets/T-0187/recheck.md",
+      "anchor": "### 5.12",
+      "note": "★③ 的全过程与定案：根因（mode 1 漏窗框原点 ⇒ 右上角）+ `Font+1392` 全库写点普查（三处写点、装载函数不写）+ 落地（Font 场景态复位）+ 修后三态实测表 + 「复位点放在装载入口是推断」的口径披露。"
     }
   ],
   "links": {
     "tickets": [
       "T-0144",
       "T-0102",
-      "T-0067"
+      "T-0067",
+      "T-0193",
+      "T-0194"
     ],
     "docs": [
       "docs-new/03-engine/adv-text-rendering.md",
@@ -66,7 +106,7 @@
       "analysis/scripts.json"
     ]
   },
-  "status": "doing",
+  "status": "done",
   "id": "T-0187",
   "history": [
     {
@@ -83,6 +123,87 @@
       "at": "2026-09-26",
       "kind": "status",
       "what": "open → doing —— 分析完成（两处现象均已用已测 ops 复现并归因，落库见 notes.md）：① ▼ 的旧口径被推翻（槽 12 = NOVEL 绑的 SO026，源矩形在界内），真因 = hover 经 sub_4051A0 清 bit30 而 0x72 门重跑在 emulator 里不再武装（引擎 raw 28539-28555 无条件武装）；② 旁白黄 = SN0000 自己从不设色 + `f807b`/`14acda` 池外 + 读档恢复清单不含 Font ⇒ 颜色跨读档保留（待真机 E4 定「是否与引擎一致」）。下一步：① 的 3 行搬运 + 守卫。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— E4 订正（用户真机核对）：读档后颜色总是正确恢复成白 ⇒ ② 是缺陷，上一轮「黄色=忠实复刻」的结论撤回（把它当成拿 emulator 表现反推引擎）。已 raw 确证 emulator 缺的那块：全量读档（0x1A1 / a7&&a4>=2）会调 sub_45F1B0(Font,hFile) 恢复 Font+3364 的 72B 文本缓冲记录（raw 19421-19422 / 74482 / 74494 / 74555-74557），而 emulator 的 SLOT_GAPS 只承认 40B 块、a6/a7 从未建模。下一步：读完 sub_45F1B0 的块格式与 0x71/0x6E 次序，判定「白」来自恢复的记录样式 / Font 字段 / preamble 不重跑，再改 emulator。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → doing —— E4 订正（用户真机核对）：读档后颜色总是正确恢复成白 ⇒ ② 是缺陷，上一轮「黄色=忠实复刻」的结论撤回（把它当成拿 emulator 表现反推引擎）。已 raw 确证 emulator 缺的那块：全量读档（0x1A1 / a7&&a4>=2）会调 sub_45F1B0(Font,hFile) 恢复 Font+3364 的 72B 文本缓冲记录（raw 19421-19422 / 74482 / 74494 / 74555-74557），而 emulator 的 SLOT_GAPS 只承认 40B 块、a6/a7 从未建模。下一步：读完 sub_45F1B0 的块格式与 0x71/0x6E 次序，判定「白」来自恢复的记录样式 / Font 字段 / preamble 不重跑，再改 emulator。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— ① 已修复并实测：op_wait_for_input 的 bit30 重新武装移出 revealArmed 门（raw 28539-28555 的忠实移植），守卫 test/char-reveal.test.ts 新增用例（变异验证红），amayui_emulator 工具实测 —— load-from-title --slot 78 后 capture 看到文字末尾的 ▼、run 读到 effectFlags=0xc0000000、slot c = 0x5190。② 第二轮：排除「preambles 不重跑」与「CALLBACK_LOAD 设色」；确证 emulator 缺 sub_45F1B0(Font,hFile)（全量读档恢复 Font+3364 的 72B 文本缓冲 + 回看页表，raw 19421-19422）；分叉收敛到池外全局的语义（14acda 远在池分配之外）。下一步：打 CHECKCONFIG 前后对账 + 实现 sub_45F1B0。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → doing —— ① 已修复并实测：op_wait_for_input 的 bit30 重新武装移出 revealArmed 门（raw 28539-28555 的忠实移植），守卫 test/char-reveal.test.ts 新增用例（变异验证红），amayui_emulator 工具实测 —— load-from-title --slot 78 后 capture 看到文字末尾的 ▼、run 读到 effectFlags=0xc0000000、slot c = 0x5190。② 第二轮：排除「preambles 不重跑」与「CALLBACK_LOAD 设色」；确证 emulator 缺 sub_45F1B0(Font,hFile)（全量读档恢复 Font+3364 的 72B 文本缓冲 + 回看页表，raw 19421-19422）；分叉收敛到池外全局的语义（14acda 远在池分配之外）。下一步：打 CHECKCONFIG 前后对账 + 实现 sub_45F1B0。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— ① 第二轮收口（按用户真机 E4 定行为）：新增 finishCharReveal(keepIconWhenDone)，悬停分支不再在文字显完后清 bit30 ⇒ ▼ 的 loop 不被悬停/侧栏打断（点击/键分支保持 raw 无条件收尾）；char-reveal 守卫 20/20（含契约 A–D，变异验证红）；实例实测侧栏 hover 后无 [cell] k=0 重启、effectFlags=0xc0000000。缺口：调用点尚无直接测试。② 待真机探针（已写清单）：Font+1360 白/黄 与屏幕是否一致 + f807b/14acda/72B 记录表 ⇒ 判别「从恢复的文本缓冲画出来」还是「颜色字段被还原」。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → doing —— ① 第二轮收口（按用户真机 E4 定行为）：新增 finishCharReveal(keepIconWhenDone)，悬停分支不再在文字显完后清 bit30 ⇒ ▼ 的 loop 不被悬停/侧栏打断（点击/键分支保持 raw 无条件收尾）；char-reveal 守卫 20/20（含契约 A–D，变异验证红）；实例实测侧栏 hover 后无 [cell] k=0 重启、effectFlags=0xc0000000。缺口：调用点尚无直接测试。② 待真机探针（已写清单）：Font+1360 白/黄 与屏幕是否一致 + f807b/14acda/72B 记录表 ⇒ 判别「从恢复的文本缓冲画出来」还是「颜色字段被还原」。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 第三轮：按用户裁定还原「无 raw 依据、只为表现」的那处改动 —— Engine.finishCharReveal 回到 raw 字面（sub_4051A0 只要 bit30 置位就清），悬停作用域参数与调用点改动全部撤回，守卫改回 raw 口径（char-reveal 20/20）；保留的只有 raw 推导的 `op_wait_for_input` 三件事同条件。真机「悬停不影响 ▼」与 raw 的冲突作为**未决疑问**登记（不再以行为改动迎合），判据 = 真机探针 A/B（amayui-inspector 已加「5 秒后采集」按钮，由子代理实现并构建通过）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → doing —— 第三轮：按用户裁定还原「无 raw 依据、只为表现」的那处改动 —— Engine.finishCharReveal 回到 raw 字面（sub_4051A0 只要 bit30 置位就清），悬停作用域参数与调用点改动全部撤回，守卫改回 raw 口径（char-reveal 20/20）；保留的只有 raw 推导的 `op_wait_for_input` 三件事同条件。真机「悬停不影响 ▼」与 raw 的冲突作为**未决疑问**登记（不再以行为改动迎合），判据 = 真机探针 A/B（amayui-inspector 已加「5 秒后采集」按钮，由子代理实现并构建通过）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 按用户指示改线取证：inspector 判别路径作废（实测采不到需要的量），全部待核实项集中到 tickets/T-0187/verify.md（V0 工具状态 / V1 悬停×bit30 / V2 白×72B 文本缓冲 / V3 emulator 回归 / V4 agent 待办；每条给判据·手段·结果→动作）；顺带按 raw 订正 docs-new/03-engine/message-config-gates.md 的 set:ControlDisibleCursor 行（原文写「为真才调 sub_4051A0」且把 sub_411900 误列为消费者；实测全库该字符串只出现一次 raw 4348，两处消费都在 sub_411BC0，条件是 !GetConfig(...)）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → doing —— 按用户指示改线取证：inspector 判别路径作废（实测采不到需要的量），全部待核实项集中到 tickets/T-0187/verify.md（V0 工具状态 / V1 悬停×bit30 / V2 白×72B 文本缓冲 / V3 emulator 回归 / V4 agent 待办；每条给判据·手段·结果→动作）；顺带按 raw 订正 docs-new/03-engine/message-config-gates.md 的 set:ControlDisibleCursor 行（原文写「为真才调 sub_4051A0」且把 sub_411900 误列为消费者；实测全库该字符串只出现一次 raw 4348，两处消费都在 sub_411BC0，条件是 !GetConfig(...)）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 复核订正：evidence[4]（msgwin-char-reveal-grid）的 note 改为指向 tickets/T-0187/recheck.md 的三条订正 + 冲突消解结论"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 补 evidence：recheck.md §5.10（真机两轮采样定案 ①）"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：tests —— 记上 ② 的守卫：slot-load-resume 的「整池清零」用例"
+    },
+    {
+      "at": "2026-09-27",
+      "kind": "scope",
+      "what": "改字段：evidence、tests —— ③ 定案并落地（用户口径「引擎不会出现这种明显的 bug，加载存档总是可以正确恢复表现」）：①`cellFrameOf` 的 mode 1 补上窗框原点（raw 71352/71354 逐字；旧值 (1045,171) = 右上角）并删掉无 raw 依据的「满屏窗也按 mode 1」启发式；②`Font+1392` 全库写点普查（`+1392`/`[348]`/`21672`/`86688` 四种写法 + 装载函数全部批量写）⇒ 写点只有 `0x1B1`/Font 构造/整体复位 `sub_40DF10`，**装载函数不写** ⇒ 它是场景态；新增 `Engine.resetFontSceneState()`（raw 复位值 白/0/1/0）并在三个装载点 + `op_exit_script` 调用。实例实测：冷读 77 `(1080,667)` / 读 78 `(730,364)` / 78→77 **`(1080,667)`**（修前 (1045,171) → 中间态 (1235,728) 屏外）。守卫 +3 处（exit-script / slot-load-resume / msgcell-follow-text-frame）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → done —— 关票（2026-09-27 用户确认 ▼ 位置正确）。三处现象均已收口：①▼ 武装 = op_wait_for_input 的「三件事同条件」（raw 28539-28555 逐字；守卫 char-reveal）；②读档后旁白变黄 = 池按容量整池清零（真机实测 Engine+382952=7,375,836 ≫ SAVE78 count=1,015,792，守卫 slot-load-resume#整池清零）+ Font 场景态复位（用户两入口肉眼确认为白）；③SC0000 的 ▼ 跑到右上角 = 坐标系半边在本票修掉（cellFrameOf 的 mode 1 补窗框原点 win+12/+16、删无 raw 依据的满屏启发式；守卫 msgcell-follow-text-frame），场景态复位那半边按用户指示拆到 T-0193。行为改动一律按 raw，未按观察调参。★仍为未定案的登记项（不阻塞关票、保留在 verify.md V1）：真机「悬停不影响 ▼」与 raw「悬停派发经 sub_4051A0 清 bit30」的数值口径 —— 代码保持 raw 现状，收口需 ≪10 ms 采样跨一次纯悬停。"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/slot-load-resume.test.ts#整池清零",
+    "app/amayui-emulator/test/slot-load-resume.test.ts#读档必须把",
+    "app/amayui-emulator/test/exit-script.test.ts#Font 的**场景态**回引擎初值",
+    "app/amayui-emulator/test/msgcell-follow-text-frame.test.ts#mode 1"
   ]
 }

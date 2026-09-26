@@ -726,60 +726,89 @@
             "anchor": "i250 (local-int 0) (global-int 3f5c) (global-int f8025) 1",
             "lines": "3026-3058",
             "what": "★段 1「横向模糊」整块：`create-texture 3f5c`（1280×720，运行期槽 **63**）→ `draw-texture (f8025+2)`（**目标项** `0x18AEE`，全屏、引用该槽）→ `i250` 十个操作数的角色：`op1`=转场记录 key（=目标项）、`op2`=工作槽 `3f5c`、`op3`=**源区间起点** `f8025`（= 层 2 的云柱背景项）、`op4`=跨度 1、`op5..8`=四通道初值/终值（`[16]=0→[20]=200` = SlideBlur 的 **Length**、`[19]=[23]=0` = Angle 0 ⇒ **横向**）、`op9`=delay 0、`op10`=**2500ms**；随后 `3045/3051/3054` 写两端色窗：**目标项** FROM 不透明白 → TO **透明**（`local1 = 0*ff` 是故意取 0）⇒ 模糊图**由不透明淡到透明** = 用户口径的「向黑色渐变」。★emulator 的「模糊源 = 记录区间 A 的离屏副本」由此确定（`T-0103` 轮 17）"
+          },
+          {
+            "anchor": "show-text 0 @\"这个故事，始于一位技术人员为参与调查而来到此\"",
+            "lines": "2974-2993",
+            "what": "★页块（本页的**消息重放点** = `i071 8`，ip 2063 / line 2848）：页前导（`label_0000ac88` 一带算 `14acda`/`f8007` 与语音）→ `i304` → show-text(2983-2987) → `i305` → `i073 8 0 (local-int 0) c 0 (local-int 1) 38 38 8 64`（`originY` = 1×0x38 = 56 = 精灵表**第 2 行**）→ `wait-for-input`(2993)。整页**不设任何文字颜色**"
+          },
+          {
+            "anchor": "i090 49c 72 50 2f",
+            "lines": "52-66",
+            "what": "页面上热点登记（1399 != 2 时才执行）：侧栏项 :54-62、侧栏条 :63、满屏 :66；ENTER/LEAVE 都是真 label ⇒ 这一批在时鼠标悬停会派发"
+          },
+          {
+            "anchor": "label_00000c74",
+            "lines": "121-155",
+            "what": "侧栏条热点的 ENTER label：1399==1 ⇒ 直接 ret；否则 i093 清空整张路由表 → 绘制 → :147 wait → :148 置 global 1399=2 → :151 重登记 → :153 ret"
+          },
+          {
+            "anchor": "i090 (local-int 0) (local-int 1) 1 1 ffffffff ffffffff label_00002954",
+            "lines": "79-114",
+            "what": "屏幕外 (-1000,-1000) 1×1 按键绑定条目：ENTER/LEAVE = ffffffff ⇒ 鼠标命不中、悬停不派发；紧接 i097 把掩码位绑上去（ADV「键盘推进」入口）"
           }
         ],
       "slots": [
-          {
-            "key": "win 8",
-            "what": "序章正文窗（字格逐字的目标窗）"
-          },
-          {
-            "key": "global f8023",
-            "what": "开场背景图元的 handle（1015843；`i21a/i218/i219/i217/i220/i242` 的操作对象）"
-          },
-          {
-            "key": "global f803b..f8040",
-            "what": "位置三元组（f803b/c/d）与 pivot 三元组（f803e/f8040）的暂存槽"
-          },
-          {
-            "key": "global f7ff5 / f7ff6",
-            "what": "ADV 状态快照：`i1c7`(ADV 激活) / `i1cc`(本页显示中)"
-          },
-          {
-            "key": "global f801f / f801d / a9ba",
-            "what": "当前立绘的**纹理槽**与由 `i216` 反查出的 **imgid**（`i2ff` 用它取资源/播语音）"
-          },
-          {
-            "key": "win 8",
-            "what": "序章正文窗（字格逐字的目标窗，也是首文案所在的窗）"
-          },
-          {
-            "key": "global f8023..f802c",
-            "what": "10 个 CG 层句柄 = 0x18A88/0x18A9C/0x18AEC/0x18B00/…/0x18B78（由 `src/INIT2.txt:6-17` 灌；**池外全局** ⇒ 真槽不还原、靠 INIT2 重跑）"
-          },
-          {
-            "key": "global f8006",
-            "what": "当前 CG/背景图 id（`mov f8006 b37` 在被跳过带里 ⇒ 冷启动读档时是**陈值**）"
-          },
-          {
-            "key": "global f801d",
-            "what": "CG 层号（0 = 背景；1 = 立绘层；2 = 中层）"
-          },
-          {
-            "key": "global 3f54",
-            "what": "「CG 层 → 纹理槽」约定表（`3f54[层][0]` = 槽号；层 0 = 4）"
-          },
-          {
-            "key": "global f8043",
-            "what": "ADV 半透明遮罩（mesh `0x19640`）淡出的时长（切章前 = `0x5dc` = 1500ms；由 `label_0000c5e0` 消费）"
-          }
-        ],
+        {
+          "key": "win 8",
+          "what": "序章正文窗（字格逐字的目标窗）"
+        },
+        {
+          "key": "global f8023",
+          "what": "开场背景图元的 handle（1015843；`i21a/i218/i219/i217/i220/i242` 的操作对象）"
+        },
+        {
+          "key": "global f803b..f8040",
+          "what": "位置三元组（f803b/c/d）与 pivot 三元组（f803e/f8040）的暂存槽"
+        },
+        {
+          "key": "global f7ff5 / f7ff6",
+          "what": "ADV 状态快照：`i1c7`(ADV 激活) / `i1cc`(本页显示中)"
+        },
+        {
+          "key": "global f801f / f801d / a9ba",
+          "what": "当前立绘的**纹理槽**与由 `i216` 反查出的 **imgid**（`i2ff` 用它取资源/播语音）"
+        },
+        {
+          "key": "win 8",
+          "what": "序章正文窗（字格逐字的目标窗，也是首文案所在的窗）"
+        },
+        {
+          "key": "global f8023..f802c",
+          "what": "10 个 CG 层句柄 = 0x18A88/0x18A9C/0x18AEC/0x18B00/…/0x18B78（由 `src/INIT2.txt:6-17` 灌；**池外全局** ⇒ 真槽不还原、靠 INIT2 重跑）"
+        },
+        {
+          "key": "global f8006",
+          "what": "当前 CG/背景图 id（`mov f8006 b37` 在被跳过带里 ⇒ 冷启动读档时是**陈值**）"
+        },
+        {
+          "key": "global f801d",
+          "what": "CG 层号（0 = 背景；1 = 立绘层；2 = 中层）"
+        },
+        {
+          "key": "global 3f54",
+          "what": "「CG 层 → 纹理槽」约定表（`3f54[层][0]` = 槽号；层 0 = 4）"
+        },
+        {
+          "key": "global f8043",
+          "what": "ADV 半透明遮罩（mesh `0x19640`）淡出的时长（切章前 = `0x5dc` = 1500ms；由 `label_0000c5e0` 消费）"
+        },
+        {
+          "key": "global 14acda",
+          "what": "当前说话人 / 角色下标（页前导算出：`3f37 < 0` ⇒ 0，否则查 `52a49c` / `14acdc`→`14b0c4`）。`adcd[14acda]` 是逐角色色，`CHECKCONFIG` 按 `a9dd & 2` 决定要不要用它覆盖白"
+        },
+        {
+          "key": "global f807b / f807c",
+          "what": "正文填充 / 描边色的当前值 —— **本脚本从不写**（只被 `i076/i077` 读进字体）；见 gotchas"
+        }
+      ],
       "invariants": [
         "页序列：i304（文本块开始）→ show-text → i305（文本块结束）→ i073（设字格）→ wait-for-input → 点击 → i071（清场）",
         "SN0000 的第一条被汇编 show-text 在 ip = 901（= `src/SN0000.txt:1225`），页面 3 行 58 字，全部落在窗 8",
         "开场两道 `wait` 门的驻留 = 脚本 `i238` 的值（`i238 0x157c` ⇒ 5500 ms、`i238 64` ⇒ 100 ms），与 80 000 ms 的慢推窗无关（真实语料实测见 `tickets/T-0024/changes.md` 的 gateWaits 表）",
         "**读档续跑路径 = 指令 0..103 ∪ {737}（共 105 条）**，逐 token 扫过 `scripts/asm/opcodes.json` 的全部相关 code：其中 `create-texture`/`set-texture`/`draw-texture`/`i1f6`/`i1fa`/`i214`/`i21d`/`i1fd`/`i1ff`/`i23d`/`i32b` **一条都没有**（唯一的 i1f4/i1f5 是绘制块标记）⇒ **读档路径上 SN0000 一个绘制项都不创建、也不删除**；背景项 0x18A88 的创建点在指令 2850，不在该路径上",
-        "SN0000 创建的绘制项键全部 ≥ **0x18A88**（≫ TITLE 的 0x135）⇒ 一旦被创建必然画在标题残留之上；最大键 = 0x30D40（200000，`create-mesh`）"
+        "SN0000 创建的绘制项键全部 ≥ **0x18A88**（≫ TITLE 的 0x135）⇒ 一旦被创建必然画在标题残留之上；最大键 = 0x30D40（200000，`create-mesh`）",
+        "页末 `i073` 用 `originY = 页序奇偶 × 0x38` 选精灵表行（首页 0 / 之后 56）：源矩形 (0,56,56×56) 落在**父帧 NOVEL** 绑进槽 12 的 `SO026.AGF`(448×112) 之内 ⇒ 既不越界也不该被裁空（`T-0187` ① 的判据；曾按「槽 12 = SO000(350×35) ⇒ y=56 越界 ⇒ 序章本来就没有 ▼」判过，已被运行期证据推翻）"
       ],
       "gotchas": [
           "★`src/SN0000.txt:1209-1223` 是 `/* 原文存档（对照用，不参与汇编） */` 注释块 —— 里面也有 show-text，**不能**拿它当「第一条文案」的锚点（会被注释误导）；判据要用「第一条被汇编的 show-text」或 ip=901",
@@ -794,19 +823,24 @@
           "★`jcc v mask label` = **v == 0 才跳**（`app/amayui-emulator/src/vm/handlers/control.ts:81-105`）⇒ 本文件 `jcc 1 …` 是落下句、`jcc 0 ffffffff label` 是跳；读 `3012`/`3037`/`3080` 一带的分支必须按此解（运行期日志逐条印证）",
           "★段1 的「塔状云柱背景」= 层2 ← 图 `0x6c2` = BG010AA.AGF（1280×720，槽 43，`SN0000:2041-2043`）——不是章头素材，别去 SC0000 找它",
           "★段 1 的「向黑」**不来自** SC0000 的黑幕（那在 2.5s 之后），而是本块 `3051-3054` 给**目标项**写的 α 窗（FROM 不透明 → TO 透明，2500ms）配上底下那张满屏黑 mesh `0x0`；改这两条中任一条都会让「渐黑」变成硬切（`T-0103` 轮 17/18）",
-          "★横向模糊的**暗色不是脚本给的**：`i250` 的采样权重是**归一化加权平均**（Σw = 32×1 + 中心 3 = 35），宿主必须用**加法**累加（`lighter`）+ 整数 α 表（Σα = 255）；用 source-over 会把 α 累成 `1-(34/35)^33 ≈ 0.616` ⇒ 合成幕只有 62% 不透明、黑底透出 38% = 用户实测的「横向模糊引入的黑色遮罩 / 背景色跳变」（`T-0103` 轮 18；段 4 是同一分支）"
+          "★横向模糊的**暗色不是脚本给的**：`i250` 的采样权重是**归一化加权平均**（Σw = 32×1 + 中心 3 = 35），宿主必须用**加法**累加（`lighter`）+ 整数 α 表（Σα = 255）；用 source-over 会把 α 累成 `1-(34/35)^33 ≈ 0.616` ⇒ 合成幕只有 62% 不透明、黑底透出 38% = 用户实测的「横向模糊引入的黑色遮罩 / 背景色跳变」（`T-0103` 轮 18；段 4 是同一分支）",
+          "★序章的正文颜色**不由本脚本决定**：全文件只有 2 处 `i076/i077`（`:487` / `:3237`，都在侧边栏「文本样式」菜单路径），主路径一处不设 ⇒ 颜色 = 上一场景 / 场景入口留下的全局 `f807b`（冷启动进来 = 白；从别人存档读档进来 = 上一场景最后那句的角色色；`T-0187` ②）",
+          "★`i073` 的 `originY` 是**精灵表行选择器**（不是屏幕 y）。槽 12 的贴图由**父帧** NOVEL 装（`src/NOVEL.txt:7` = `SO026.AGF`），SN0000 自己一处 `set-texture` 都不碰槽 12 ⇒ 判「▼ 能不能显示」必须看**帧链**（SYSTEM4 > NOVEL > SN0000），不能只看本文件",
+          "★悬停**不可能**打断 ▼ 的 loop（T-0187 复核 2026-09-26，见 tickets/T-0187/recheck.md）：侧栏条悬停 ENTER label label_00000c74(:121) 先 i093（清空整张路由表）再置 global 1399=2(:148)、call label_00000320(:151)；而 label_00000320 在 1399==2 时经 :50-51 / :72-73 两次 jcc **跳过 :52-66 的屏幕上热点**，只登记 :79-114 那批**屏幕外 (-1000,-1000) 1×1** 条目（ENTER/LEAVE = ffffffff）⇒ 鼠标再也命不中可派发的热点 ⇒ sub_403E70 恒返回 -1 ⇒ 悬停不派发、sub_4051A0 不被调、bit30 不被清。**第一次**悬停（路由表里还有 :52-66 时）确实会派发一次。"
         ],
-      "gaps": [],
+      "gaps": [
+        "序章其余 20 余个页块未逐页读；页前导 `label_0000ac88` 一带的三张表（`52a49c`/`14acdc`/`14b0c4`）只读了形状、未逐表核"
+      ],
       "links": {
         "capabilities": [
-            "msgwin-char-reveal-grid",
-            "text-reveal-pump-409400",
-            "texture-bind-synchronous-then-query",
-            "mesh-vertex-quad-and-per-vertex-color",
-            "scene-pending-flag-0x400-gate",
-            "save-load-drawitem-clear-and-restore",
-            "clock-read-transition-window"
-          ],
+          "msgwin-char-reveal-grid",
+          "text-reveal-pump-409400",
+          "texture-bind-synchronous-then-query",
+          "mesh-vertex-quad-and-per-vertex-color",
+          "scene-pending-flag-0x400-gate",
+          "save-load-drawitem-clear-and-restore",
+          "clock-read-transition-window"
+        ],
         "functions": [
           "0x41F250",
           "0x45A940",
@@ -819,10 +853,10 @@
           "0x430380"
         ],
         "docs": [
-            "docs-new/03-engine/adv-text-rendering.md",
-            "docs-new/03-engine/scene-start-flow.md",
-            "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
-          ]
+          "docs-new/03-engine/adv-text-rendering.md",
+          "docs-new/03-engine/scene-start-flow.md",
+          "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
+        ]
       },
       "guards": [
         "test/char-reveal.test.ts",
@@ -845,82 +879,82 @@
       "role": "标题画面：背景/Logo/菜单（Game Start／Load Data／Eushly-chan Room／Option／Quit）+ 菜单悬停与点击派发 + **版本号显示**（「Version X.YY.ZZZZ」）。",
       "entry": "由启动链 call-script（LOGO 之后）进入；`i12e` 登记菜单命中区，点击经 `0x308/0x309` 命中项 → `0xa2/0xa3` 菜单派发表跳转（见 scripts 的 TITLE 菜单与 QUIT 路径）。",
       "layout": [
-          {
-            "anchor": "i2eb (local-string 0)",
-            "lines": "597-614",
-            "what": "★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7)"
-          },
-          {
-            "anchor": "i2c7 (local-string 1) (local-string 0) 2 2",
-            "lines": "601-603",
-            "what": "第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」）"
-          },
-          {
-            "anchor": "i2c7 (local-string 1) (local-string 0) 5 4",
-            "lines": "604-606",
-            "what": "第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」）"
-          },
-          {
-            "anchor": "copy-local-array (local-int cd) [0 9c 0 9c]",
-            "lines": "6-19",
-            "what": "菜单几何数据表：`25d/261/265/269/26d` 是 5 项的四邻接矩形表（`menu-bind` 的悬停导航），`cd`..`dd` 是 5 个 size 盒（`i12e` 用，全是 `[0,0x9c,0,0x9c]`），`5`/`69` 是 baseX/baseY 数组（每项的命中盒左上角）"
-          },
-          {
-            "anchor": "mouse-callback 10 label_00000460",
-            "lines": "41-64",
-            "what": "手柄/鼠标回调注册（`0xFB` 一列 + `0xCC`）与主循环：`get-input-type` 后按 `local 3fc`（输入类型 1/2/3）分派到 0x388c / 0x184 / 0x154"
-          },
-          {
-            "anchor": "menu-bind 0 label_00001184",
-            "lines": "304-315",
-            "what": "菜单表重建 + 派发：`menu-bind -1/0/1/2/3/4` 分别绑「无悬停 / Game Start / Load Data / Room / Option / Quit」，`menu-dispatch (local 3f7)` 按当前悬停项跳转"
-          },
-          {
-            "anchor": "call-script 526b",
-            "lines": "316-330",
-            "what": "★第 0 项 = Game Start：`call-script 526b`(GAMESTART) → 回来按 `global 0`（1=已选开始游戏）决定继续进 INITGAME 还是留在标题"
-          },
-          {
-            "anchor": "i12e (local-int 3f5) (local-int 1) (local-int 3f0) (local-int 3f1) (local-int cd) (local-int 5) (local-int 69) (local-int 0)",
-            "lines": "95-102",
-            "what": "鼠标悬停命中：`0x12E` 用 `cd`(盒 156×156) + `5`/`69`(baseX/baseY) + `local 0`(count=5) 逐个判点在矩形内 ⇒ 写回 `local 3f5`/`3f7`（−1 = 无）"
-          },
-          {
-            "anchor": "mov (global-int f8c46) 4f9e",
-            "lines": "526-557",
-            "what": "★标题立绘：`jcc (global-int a9d0)` 分叉 —— **!=0 走静态贴图回落**（`set-texture 5273 5` = SO004A，`i208 5` 取尺寸后按 (宽/2, 高) 摆位，526-530 / 581-587）；**==0 走 Live2D**：`mov f8c46 = 4f9e`（TITLE.MOC 文件 id）、`mov f8c47 = 0`（实例槽）→ 循环 20 次 `lookup-array (global 708ab6) (global f807f)` + 间接 `call-script`（544-548，表里是 SETL2DMOC 家族）→ 回来 `i352 0 0 0`（预置待绑纹理号 0）+ `i34e 5274 0 0 1`（装 TITLE.MTN：动作槽 0、实例槽 0、循环 1）→ `label_000024a4`（**只有 L2D 支会走到**）`i344 14 0` 建 572B 立绘节点（key 14、L2D 槽 0）"
-          },
-          {
-            "anchor": "i34e 5274 0 0 1",
-            "lines": "552-556",
-            "what": "L2D 装载收尾：`i352 0 0 0` = 预置\"待绑纹理号 0\"（`0x352` op2==0 ⇒ 纹理号）→ `i34e 5274 0 0 1` = 装 `.MTN`（文件 id 0x5274 = TITLE.MTN、动作槽 0、实例槽 0、循环位 1）；★**装载即入队**（引擎 `sub_4BCA20(queue, motion, 1)`），推进则绑在节点绘制那一次调用上。"
-          },
-          {
-            "anchor": "i344 14 0",
-            "lines": "589-590",
-            "what": "★L2D 支独有：`i344 14 0` = 在 `Scene+1096` 取/建 572B 立绘节点（key 14）、**`record[1] = 0` = L2D 实例槽号**（不是纹理槽号）。引擎 `sub_4B0360` 只在\"该槽真有模型\"时才画这个节点 ⇒ 这一条是\"标题立绘出画\"的最后一步。"
-          },
-          {
-            "anchor": "set-texture 5272 4 (local-int 40d)",
-            "lines": "520-530",
-            "what": "★★标题画面**全部美术都建在纹理槽 4 上**（图 0x5272；静态立绘分支另用槽 5 = 0x5273）⇒ 读档按存档重绑槽 4（`records[4].flag==1 ⇒ 0xB37`）时，这些项**整体改画成存档那张图**"
-          },
-          {
-            "anchor": "call-script 33  // SAVE",
-            "lines": "333-341",
-            "what": "★Load Data 分支（`label_00001240`）：`play-sound-effect`/`i0b5`/两个全局 + `call-script 33`(SAVE.BIN) —— 前后**没有任何 detach/i1f6/release-texture** ⇒ 打开读档菜单时标题画面的绘制项全部活着"
-          },
-          {
-            "anchor": "draw-texture 12c 4 5a0 0 9c 9c 44e 126",
-            "lines": "634-638",
-            "what": "5 块菜单板（0x12C/0x12E/0x130/0x132/0x134，各 156×156、槽 4、源在 atlas 列 0x5A0）落成对角阶梯 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)；悬停副本 0x12D/0x12F/0x131/0x133/0x135 用 atlas 列 0x502、按需建删（lines 770-800）"
-          },
-          {
-            "anchor": "set-vertex-color-alpha 30d40 0 12c ff 0",
-            "lines": "731-748",
-            "what": "★标题**入场渐显**的通用助手（`label_00003158`）：`create-mesh 30d40`（满屏）→ 两支 `set-vertex-color(-alpha)`（黑/白两档，`jcc 0` 决定走哪支）→ `i24e 10001` → `wait` → `detach-texture 30d40 1` → `poll-input` → `ret`。撤幕那一刻幕**已淡到全透明**（`state0` 被窗末烘焙成 0）⇒ 撤它画面上什么都没变"
-          }
-        ],
+        {
+          "anchor": "i2eb (local-string 0)",
+          "lines": "597-614",
+          "what": "★版本号显示：`i2da 0 4 54c 32b c f 2 (local 40d)` 登记 CG 数字条记录 0 → `i2eb` 取 `set:GameVersion` 到串 0 → 三次 `i2c7`（1／2／4 **字节** 段）+ `i2ec`(atoi) + `i23b`（CG 数字条，flags=1 补零）分别画「1」「07」「0019」；两个小数点由 `draw-texture 76/77` 贴在 (0x3c9,0xf7)/(0x3df,0xf7)"
+        },
+        {
+          "anchor": "i2c7 (local-string 1) (local-string 0) 2 2",
+          "lines": "601-603",
+          "what": "第二段：字节 [2,2) →「07」→ atoi=7 → `i23b 70 0 <v> 3cf f7 2 1`（2 位、补零 ⇒ 屏幕上是「07」）"
+        },
+        {
+          "anchor": "i2c7 (local-string 1) (local-string 0) 5 4",
+          "lines": "604-606",
+          "what": "第三段：字节 [5,4) →「0019」→ atoi=19 → `i23b 72 0 <v> 3e5 f7 4 1`（4 位、补零 ⇒「0019」）"
+        },
+        {
+          "anchor": "copy-local-array (local-int cd) [0 9c 0 9c]",
+          "lines": "6-19",
+          "what": "菜单几何数据表：`25d/261/265/269/26d` 是 5 项的四邻接矩形表（`menu-bind` 的悬停导航），`cd`..`dd` 是 5 个 size 盒（`i12e` 用，全是 `[0,0x9c,0,0x9c]`），`5`/`69` 是 baseX/baseY 数组（每项的命中盒左上角）"
+        },
+        {
+          "anchor": "mouse-callback 10 label_00000460",
+          "lines": "41-64",
+          "what": "手柄/鼠标回调注册（`0xFB` 一列 + `0xCC`）与主循环：`get-input-type` 后按 `local 3fc`（输入类型 1/2/3）分派到 0x388c / 0x184 / 0x154"
+        },
+        {
+          "anchor": "menu-bind 0 label_00001184",
+          "lines": "304-315",
+          "what": "菜单表重建 + 派发：`menu-bind -1/0/1/2/3/4` 分别绑「无悬停 / Game Start / Load Data / Room / Option / Quit」，`menu-dispatch (local 3f7)` 按当前悬停项跳转"
+        },
+        {
+          "anchor": "call-script 526b",
+          "lines": "316-330",
+          "what": "★第 0 项 = Game Start：`call-script 526b`(GAMESTART) → 回来按 `global 0`（1=已选开始游戏）决定继续进 INITGAME 还是留在标题"
+        },
+        {
+          "anchor": "i12e (local-int 3f5) (local-int 1) (local-int 3f0) (local-int 3f1) (local-int cd) (local-int 5) (local-int 69) (local-int 0)",
+          "lines": "95-102",
+          "what": "鼠标悬停命中：`0x12E` 用 `cd`(盒 156×156) + `5`/`69`(baseX/baseY) + `local 0`(count=5) 逐个判点在矩形内 ⇒ 写回 `local 3f5`/`3f7`（−1 = 无）"
+        },
+        {
+          "anchor": "mov (global-int f8c46) 4f9e",
+          "lines": "526-557",
+          "what": "★标题立绘：`jcc (global-int a9d0)` 分叉 —— **!=0 走静态贴图回落**（`set-texture 5273 5` = SO004A，`i208 5` 取尺寸后按 (宽/2, 高) 摆位，526-530 / 581-587）；**==0 走 Live2D**：`mov f8c46 = 4f9e`（TITLE.MOC 文件 id）、`mov f8c47 = 0`（实例槽）→ 循环 20 次 `lookup-array (global 708ab6) (global f807f)` + 间接 `call-script`（544-548，表里是 SETL2DMOC 家族）→ 回来 `i352 0 0 0`（预置待绑纹理号 0）+ `i34e 5274 0 0 1`（装 TITLE.MTN：动作槽 0、实例槽 0、循环 1）→ `label_000024a4`（**只有 L2D 支会走到**）`i344 14 0` 建 572B 立绘节点（key 14、L2D 槽 0）"
+        },
+        {
+          "anchor": "i34e 5274 0 0 1",
+          "lines": "552-556",
+          "what": "L2D 装载收尾：`i352 0 0 0` = 预置\"待绑纹理号 0\"（`0x352` op2==0 ⇒ 纹理号）→ `i34e 5274 0 0 1` = 装 `.MTN`（文件 id 0x5274 = TITLE.MTN、动作槽 0、实例槽 0、循环位 1）；★**装载即入队**（引擎 `sub_4BCA20(queue, motion, 1)`），推进则绑在节点绘制那一次调用上。"
+        },
+        {
+          "anchor": "i344 14 0",
+          "lines": "589-590",
+          "what": "★L2D 支独有：`i344 14 0` = 在 `Scene+1096` 取/建 572B 立绘节点（key 14）、**`record[1] = 0` = L2D 实例槽号**（不是纹理槽号）。引擎 `sub_4B0360` 只在\"该槽真有模型\"时才画这个节点 ⇒ 这一条是\"标题立绘出画\"的最后一步。"
+        },
+        {
+          "anchor": "set-texture 5272 4 (local-int 40d)",
+          "lines": "520-530",
+          "what": "★★标题画面**全部美术都建在纹理槽 4 上**（图 0x5272；静态立绘分支另用槽 5 = 0x5273）⇒ 读档按存档重绑槽 4（`records[4].flag==1 ⇒ 0xB37`）时，这些项**整体改画成存档那张图**"
+        },
+        {
+          "anchor": "call-script 33  // SAVE",
+          "lines": "333-341",
+          "what": "★Load Data 分支（`label_00001240`）：`play-sound-effect`/`i0b5`/两个全局 + `call-script 33`(SAVE.BIN) —— 前后**没有任何 detach/i1f6/release-texture** ⇒ 打开读档菜单时标题画面的绘制项全部活着"
+        },
+        {
+          "anchor": "draw-texture 12c 4 5a0 0 9c 9c 44e 126",
+          "lines": "634-638",
+          "what": "5 块菜单板（0x12C/0x12E/0x130/0x132/0x134，各 156×156、槽 4、源在 atlas 列 0x5A0）落成对角阶梯 (1102,294)/(992,402)/(869,485)/(729,543)/(1107,554)；悬停副本 0x12D/0x12F/0x131/0x133/0x135 用 atlas 列 0x502、按需建删（lines 770-800）"
+        },
+        {
+          "anchor": "set-vertex-color-alpha 30d40 0 12c ff 0",
+          "lines": "731-748",
+          "what": "★标题**入场渐显**的通用助手（`label_00003158`）：`create-mesh 30d40`（满屏）→ 两支 `set-vertex-color(-alpha)`（黑/白两档，`jcc 0` 决定走哪支）→ `i24e 10001` → `wait` → `detach-texture 30d40 1` → `poll-input` → `ret`。撤幕那一刻幕**已淡到全透明**（`state0` 被窗末烘焙成 0）⇒ 撤它画面上什么都没变"
+        }
+      ],
       "slots": [
         {
           "key": "local-string 0 / 1",
@@ -991,15 +1025,15 @@
         "TITLE 的绘制项键 **max = 0x135**（309）；`src/CALLBACK_LOAD.txt` 的四个 detach 区间（`1adb0 7d0`/`19640 2`/`19834 19`/`19708 6`）**都不含**任何 TITLE 键（逐个区间核对为空）"
       ],
       "gotchas": [
-          "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
-          "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）",
-          "★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位",
-          "★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）—— 把它当\"纹理槽变换\"会让整套节点/槽接线对不上",
-          "★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`",
-          "★`detach-texture 64 12c`（line 818，删 [100,400)）只在 **Game Start** 分支被调（line 320）；`i1f6`（line 810）只在 **Room** 分支（line 368）与退出路径（line 822）—— **Load Data 分支没有任何清理** ⇒ 不能假设「进菜单前标题项会被清」",
-          "★`0x5A0`/`0x502` 是 **atlas 源列**、`0x9E` 是 atlas 行距，不是屏幕坐标（曾据此误判「在屏外」；屏幕落点来自 line 16/17 的两张常量表）；同理 `0x64` 那条的源 y=1161 已越过 BG050ABL 的图高 1152",
-          "★`label_00003158`（本段）撤的是一块**已经全透明**的满屏幕 ⇒ 不该按「撤幕」去武装留帧（会白冻 60 帧）：武装判据必须是「撤幕**那一刻**真的盖着屏幕」（几何铺满 ∩ `state0` 高字节 α > 0），见 `T-0182`"
-        ],
+        "★三条指令缺一不可：`0x2EB`(取值) / `0x2C7`(字节切片) / `0x23B`(CG 数字条) —— 缺任一条片段为空 ⇒ `atoi(空串)=0` ⇒ 屏幕上出现占位值 `0.00.0000`（2026-09 实测：实现前截图就是它）",
+        "`0x2C7` 的 op3/op4 是**字节**不是字符（SJIS 全角按 2 字节），且会做全角边界修正（丢首/末字节）",
+        "★`i12e` 的命中盒参数顺序是 `(out, ?, mx, my, size盒数组, baseX数组, baseY数组, count)` —— 盒是「相对 base 的 dx0/dx1/dy0/dy1」，不是「x/y/w/h」；把 base 当 w/h 会让整列命中区错位",
+        "★`i344` 的 op2 是 **L2D 实例槽号**（不是纹理槽号）—— 把它当\"纹理槽变换\"会让整套节点/槽接线对不上",
+        "★`i344 14 0` 在 `label_000024a4`，**只有 Live2D 支会执行到**（静态回落支在 581 的 `jcc` 处直接跳过）⇒ 用截图对照两支时别只看 `set-texture`",
+        "★`detach-texture 64 12c`（line 818，删 [100,400)）只在 **Game Start** 分支被调（line 320）；`i1f6`（line 810）只在 **Room** 分支（line 368）与退出路径（line 822）—— **Load Data 分支没有任何清理** ⇒ 不能假设「进菜单前标题项会被清」",
+        "★`0x5A0`/`0x502` 是 **atlas 源列**、`0x9E` 是 atlas 行距，不是屏幕坐标（曾据此误判「在屏外」；屏幕落点来自 line 16/17 的两张常量表）；同理 `0x64` 那条的源 y=1161 已越过 BG050ABL 的图高 1152",
+        "★`label_00003158`（本段）撤的是一块**已经全透明**的满屏幕 ⇒ 不该按「撤幕」去武装留帧（会白冻 60 帧）：武装判据必须是「撤幕**那一刻**真的盖着屏幕」（几何铺满 ∩ `state0` 高字节 α > 0），见 `T-0182`"
+      ],
       "gaps": [
         "菜单命中/派发（`i12e`/`0xa2`/`0xa3`）与背景演出未逐段读（layout 列出的只是版本号这一段）",
         "L2D 分支的 SETL2DMOC 家族（`src/SETL2DMOC.txt` 与 `$n$` 变体，560+ 处 `i34x`）未逐段读 —— 只需知道它是\"MOC ↔ 纹理对照表\"；`$n$` 变体是否只覆盖 `f8c46` 的 `$n$` 前缀 MOC 未核"
@@ -1284,14 +1318,18 @@
         "全局文本样式（i076/i077/i078/i1a4）是**全局**的：本脚本只负责把它推到与当前设置一致（作用域见引擎台账 text-style-scope-queue-time）"
       ],
       "gotchas": [
-        "`i2de`(0x2DE) 是**字体名→字体表下标**（不是字符串资源 id）：映射错会让所有字体判定恒为 -1 ⇒ 每次启动都回退默认面名",
-        "**load-string 没命中的结果是空串**（引擎读侧 LOBYTE(dword_55D0FC)=0 后返回空串；emulator 同为 ?? ''）⇒ i2de('') = -1 ⇒ 本脚本把该槽改成默认面名并重新 save-string。所以「某个字体项自己变回默认」既可能是字体真没装上，也可能是**存档里那条记录根本没读到**：字符串记录区起点算错 4 字节就会静默丢掉最后一条，而真存档里最后一条恰是 bbf（CONFIG 第 3 行）——见 docs-new/03-engine/save-data.md §3"
-      ],
+          "`i2de`(0x2DE) 是**字体名→字体表下标**（不是字符串资源 id）：映射错会让所有字体判定恒为 -1 ⇒ 每次启动都回退默认面名",
+          "**load-string 没命中的结果是空串**（引擎读侧 LOBYTE(dword_55D0FC)=0 后返回空串；emulator 同为 ?? ''）⇒ i2de('') = -1 ⇒ 本脚本把该槽改成默认面名并重新 save-string。所以「某个字体项自己变回默认」既可能是字体真没装上，也可能是**存档里那条记录根本没读到**：字符串记录区起点算错 4 字节就会静默丢掉最后一条，而真存档里最后一条恰是 bbf（CONFIG 第 3 行）——见 docs-new/03-engine/save-data.md §3",
+          "★本函数的调用时机决定用哪个 `14acda`：`SYSTEM4.txt:84` 的 `call-script 51db` 在 SYSTEM4 的**读档续跑 preamble 之内** ⇒ 读档时也会跑一遍，而那一刻 `14acda` 还是**上一场景**遗留的值（池外全局 `0x14ACDA` = 1,356,506 > int 池长 1,015,792 ⇒ 读档不还原），页面脚本要到自己的页前导才改写它 ⇒ 读档后第一页的颜色＝上一场景最后那个说话人的颜色（`T-0187` ② 的机制）",
+          "★adcd / 14acda 的角色（T-0187 复核 2026-09-26 订正）：adcd 是**池内数组起始下标常量**（全库 0 处赋值，只作 lookup-array 的数组操作数 = 0xADCD），14acda 才是**索引变量**（脚本反复 mov 0/1/2/3）⇒ 读法 = pool[0xADCD + pool[0x14ACDA]]；**填色被覆盖的充要条件 = (a9dd & 3) == 0 且 adcd[14acda] > 0**（&1 走 f807c、&2 走 f807b，两位都在 &3 != 0 时被跳过）⇒ 出厂 a9dd = 2 时这条把填色**钉成白**。",
+          "★★上一条 gotcha 的「充要条件」**方向写反了，以本条为准**（T-0187 第二轮实测 2026-09-26，见 tickets/T-0187/recheck.md §5）：本项目 `jcc v mask label` = **v == 0 才跳**，按该极性重读 :50-64 —— `a9dd&3 != 0` 时 :51 **不跳**、`:56`（`a9dd&1 == 0`）**跳**（跳过 f807c）、`:62`（`a9dd&2 != 0`）**不跳** ⇒ **:63-64 执行**。所以充要条件是 **`(a9dd & 2) != 0 且 adcd[14acda] > 0` ⇒ `f807b = adcd[14acda]`（填充随当前说话人）**；`a9dd = 2`（真机与实例实测值）**正好命中这一支**，不是「钉成白」。实测指纹（实例 t0187b、游戏内 load 78）：`f807b = 0xFFE100`（阿瓦罗黄）、`f807c = 0`、`f8079 = 3`、`f807a = 1`、`a9de = 1`、`14acda = 0`（重放后）、`adcd = 0xFFFFFF`。★由此定位 ② 的真因：`src/CALLBACK_LOAD.txt:197-227` 在读档时**重算 global 14acda（当前说话人）**，随后 CHECKCONFIG 用它取色 ⇒ 白的/黄的分歧出在 `14acda` 的取值，不在 `sub_45F1B0` 的文本记录。"
+        ],
       "gaps": [],
       "links": {
         "capabilities": [
           "save-data-tables-persistence",
-          "text-style-scope-queue-time"
+          "text-style-scope-queue-time",
+          "adv-text-color-state-carryover"
         ],
         "functions": [
           "0x430DF0",
@@ -1307,7 +1345,8 @@
       ],
       "status": "analyzed",
       "evidence": "src/CHECKCONFIG.txt（全文 57 行）；E3：test/save-data.test.ts 的「真语料启动链」断言 bbc 被回退为「ＭＳ ゴシック」",
-      "notes": "本条目聚焦\"设置自检\"；颜色派生的细节与 CONFIG2 的 label_00007178 同源（在 CONFIG2 条目里有登记）。"
+      "notes": "本条目聚焦\"设置自检\"；颜色派生的细节与 CONFIG2 的 label_00007178 同源（在 CONFIG2 条目里有登记）。",
+      "set": {}
     },
     {
       "id": "SELFONT",
@@ -2759,6 +2798,11 @@
           "anchor": "detach-texture 109a0 1",
           "lines": "174-191",
           "what": "ADV 收场：`3f90 == 0` 时 `i259`（清两张槽记录镜像）+ `call label_000013fc/000016a0/00001db4` + 后续按 `4fd9` 分叉（`4fd9 == 0` ⇒ 跳 `label_00000c18` 走 `i1f6`）—— ★原写「3f90 != 0 时」是**反的**（见 `tickets/T-0145`）"
+        },
+        {
+          "anchor": "mov (global-int f807b) ffffff",
+          "lines": "119-126",
+          "what": "★ADV 场景入口 `label_0000088c` 的**颜色复位**：`mov f807b ffffff` + `mov f807c 0` + `i075 1e` + `i076 (global-int f807b)` / `i077 (global-int f807c)` ⇒ 正文填充色=白、描边色=黑；`jcc … label_000009c4` 之后是 `comment \"loadmesskip advset\"` 与 `call-script (global-int 1394)`（line 147 = 进场景脚本 SN0000）。★这一段在 `i0ae`(line 29) **之后** ⇒ 读档续跑不重跑它"
         }
       ],
       "slots": [
@@ -2773,14 +2817,21 @@
         {
           "key": "global 708ada / 708ad6",
           "what": "池外全局：记住的背景图 id / 其相关门（真槽装载不还原）"
+        },
+        {
+          "key": "global f807b / f807c",
+          "what": "正文填充色 / 描边色的**当前值**（池外全局：`0xF807B` = 1,015,931 > int 池长 1,015,792 ⇒ 读档不还原，沿用进程内旧值）。入口的 `i076/i077` 把它钉进字体；SC 族每行重算它（`CHECKCONFIG` / 各 SC 的行色例程），NOVEL/SN0000 都不重算"
         }
       ],
       "invariants": [
-        "`global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ **line 32-58 那条「恢复背景」路径恒执行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`）；但决定画不画 `186A0` 的是下一道 `4fd9` 门：`4fd9 == 0`（本机真槽）⇒ 跳 `label_00000448` 走 `i1f6`/`i23d` 支，**handle 0x186A0 在本机从未被画出**"
+        "`global 3f90` 在整个语料里只被写成 0（`grep -rn 'mov (global-int 3f90)' src/*.txt` 全为 0）⇒ **line 32-58 那条「恢复背景」路径恒执行**（★原写「恒不执行」是把 `jcc` 极性看反了，见 `tickets/T-0145`）；但决定画不画 `186A0` 的是下一道 `4fd9` 门：`4fd9 == 0`（本机真槽）⇒ 跳 `label_00000448` 走 `i1f6`/`i23d` 支，**handle 0x186A0 在本机从未被画出**",
+        "`f807b` 的复位点只有各帧自己的「场景入口块」：`NOVEL.txt:121`、`SYSTEM4.txt:272`、每个 SC 脚本的 `1113` 一带；逐行重算色的是 SC 族的行色例程（`SC0000.txt:33927-33963` = `label_00072a3c`，与 `CHECKCONFIG.txt:52-82`、`CONFIG1.txt:3196-3213` 同源）——序章 `SN0000` 主路径**一处都没有**"
       ],
       "gotchas": [
-        "★`i0ae`（line 29）**早于**背景块（line 32-58）⇒ 读档续跑时那一块被跳过；「读档后背景由 NOVEL 重画」这个说法是**错的**（app/amayui-emulator/src/vm/handlers/save-slot.ts:319-322 的括注就是这么错的，见 tickets/T-0083）"
-      ],
+          "★`i0ae`（line 29）**早于**背景块（line 32-58）⇒ 读档续跑时那一块被跳过；「读档后背景由 NOVEL 重画」这个说法是**错的**（app/amayui-emulator/src/vm/handlers/save-slot.ts:319-322 的括注就是这么错的，见 tickets/T-0083）",
+          "★读档**不复位**正文颜色：入口的 `mov (global-int f807b) ffffff`(line 121) 在 `i0ae`(line 29) 之后 ⇒ 读档续跑不执行它，而子帧 SN0000 自己一处都不设色 ⇒ 从「上一场景最后一句是角色色」的存档读档进序章，旁白会带上一场景的角色色（`T-0187` ② 实测：存档 77 = SC0000 阿瓦罗黄 `#ffe100` → 游戏内读 78 ⇒ 序章旁白 `#ffe100`；同一槽从 TITLE 冷启动读 = 白）",
+          "★读档后正文变白的机制候选（T-0187 复核 2026-09-26）：Font+1360/+1364 **不在**读档恢复范围内（raw 19705/19747 只覆盖 int 池 0..count = 1,015,792，而 f807b = 1,015,931 在其外）；但引擎有**第三族写点** —— 72B 文本记录（sub_45F090 raw 74359-74400 在入队时把 Font+1360/+1364 快照进记录 +20/+24）在重绘时**回写** Font+1360（raw 76940-76962 / 77807-77809 / 78663-78665）⇒ 「读档后白」最可能来自 sub_45F1B0 恢复的那份记录（SAVE78 是白旁白期存的）。emulator 完全没实现 sub_45F1B0。"
+        ],
       "gaps": [
         "`label_00001160`/`label_000013fc`/`label_000016a0`/`label_00001db4`/`label_00001e8c`/`label_00001eb4` 未逐段读"
       ],
@@ -3026,67 +3077,67 @@
       "role": "章节（节）脚本：按 `global 3f3c` 分派到各「G」章头块做章节切换演出（云柱/缩放模糊/白晕/渐黑/人物轮廓），再 call-script 进 ADV 正文脚本（SN*/SG*）。",
       "entry": "由 SYSTEM4 的 mode-1 内联 ADV 管线 call-script（`1394` = SCINIT/SCJUMP 表按章选出的 `0x73`；新游戏首进还会先跑 G0000 写 `global 0=6`/`1394=0x74`）；节内 `ret` 后由 SYSTEM4 收尾（SETFATE / release）再按 `global 0` 分流到 ALLMAP→SCJUMP→下一个节。",
       "layout": [
-          {
-            "anchor": "create-mesh 19258 (global-float 9)",
-            "lines": "1052-1084",
-            "what": "入口 `label_00003b38`：`i1f6` 拆场 → `create-mesh 19258` + `set-vertex-color 19258 0 ff 0`（瞬时 0xFF000000 满屏黑幕）→ `label_0006fb64` 层→槽表 → `call-script 3a SETCHARM`"
-          },
-          {
-            "anchor": "label_000047c4",
-            "lines": "1000-1015",
-            "what": "入口尾：`call label_000047c4`（按节号分派的总入口）"
-          },
-          {
-            "anchor": "label_000047c4",
-            "lines": "1256-1280",
-            "what": "节号分派表：`global 3f3c` 0/1/2/… ⇒ `label_000049f4`(G0000) / `label_00004ab8`(G0001) / …"
-          },
-          {
-            "anchor": "set-string (global-string bb9)",
-            "lines": "1281-1294",
-            "what": "G0000 プロローグ：只写章题串 `bb8=\"序章\"` / `bb9=\"現に目覚めし女神\"` + `global 2`/`global 0=6`/`1394=0x74`(SN0000)，**零绘制**"
-          },
-          {
-            "anchor": "create-texture (global-int 3f5f)",
-            "lines": "1330-1374",
-            "what": "G0001 第 1 段：层3 ← 图 76(AE910AA 256×128) + 全屏工作槽 `3f5f` 的 `draw-texture` → `i251` ZoomBlur（槽 64、1500ms、CenterU 500→400）→ `set-draw-color-alpha`/`set-draw-color` 淡入窗"
-          },
-          {
-            "anchor": "i250 (local-int 0) (global-int 3f59)",
-            "lines": "1560-1595",
-            "what": "★用户口径「又一次横向模糊」：层1 全屏工作槽 `3f59`（create-texture 500 2d0 1）+ `i250` SlideBlur（槽 9、3000ms），工作项 `0x18A9E` 同期 α255→0 淡出"
-          },
-          {
-            "anchor": "set-vertex-color 19258 0 ff 0",
-            "lines": "1596-1638",
-            "what": "★「渐黑」：`create-mesh 19258` → `set-vertex-color 19258 0 ff 0`（瞬时黑）→ `set-vertex-color-alpha 19258 0 bb8 0 (4fd5=0)`（3000ms）→ `i238 bb8` wait → `play-bgm 11`"
-          },
-          {
-            "anchor": "mov (global-int f8006) 7d",
-            "lines": "1640-1661",
-            "what": "★「人物轮廓」：层1 ← 图 `0x7d` = EV002AD.AGF 1280×720 + `set-vertex-color-alpha 19258 0 960 (4fd4) (4fd5=0)`（2400ms 黑→透明）→ `i238 3e8` wait"
-          },
-          {
-            "anchor": "输入原文：「好厉害，真是年代久远的遗迹",
-            "lines": "1694-1705",
-            "what": "★段5：G0001 的第一句话（本段**唯一**的文字；章名是贴片图）；随后 `wait-for-input`"
-          },
-          {
-            "anchor": "label_0006fb64",
-            "lines": "33253-33287",
-            "what": "层→槽表初始化子程序：`3f54 + 3L + k`（层0=(4,5,6) / 层1=(7,8,9) / 层2=(0x2b,0x35,0x3f)…；k=2 = 转场工作槽）"
-          },
-          {
-            "anchor": "set-vertex-color 19258 0 ff ffffff",
-            "lines": "1420-1458",
-            "what": "★段 2/3 的白晕开场：卡片项的 α 窗（`1420-1433`，1500ms）+ `create-mesh 19258`（`1444`，**同一 handle 第三次复用**）→ `set-vertex-color 19258 0 ff ffffff`（`1445`：瞬时**不透明白**）→ `1452` 改写成**透明白**（= FROM）→ `set-vertex-color-alpha 19258 0 3e8 …`（`1453`：1000ms → 不透明）= 白晕**淡入**；`i238 3e8` + `wait` 等满"
-          },
-          {
-            "anchor": "mov (global-int f8006) 78",
-            "lines": "1468-1510",
-            "what": "四张 1280×720 章节卡贴片（层 5/0/1/6 ← 图 `78`/`79`/`7a`/`7b`）依次上屏 + 白晕**淡出**（`1510`：`set-vertex-color-alpha 19258 0 7d0 0 (4fd5)` = 2000ms → 透明）⇒ 用户口径「白晕减弱 → 显现背景与文字」"
-          }
-        ],
+        {
+          "anchor": "create-mesh 19258 (global-float 9)",
+          "lines": "1052-1084",
+          "what": "入口 `label_00003b38`：`i1f6` 拆场 → `create-mesh 19258` + `set-vertex-color 19258 0 ff 0`（瞬时 0xFF000000 满屏黑幕）→ `label_0006fb64` 层→槽表 → `call-script 3a SETCHARM`"
+        },
+        {
+          "anchor": "label_000047c4",
+          "lines": "1000-1015",
+          "what": "入口尾：`call label_000047c4`（按节号分派的总入口）"
+        },
+        {
+          "anchor": "label_000047c4",
+          "lines": "1256-1280",
+          "what": "节号分派表：`global 3f3c` 0/1/2/… ⇒ `label_000049f4`(G0000) / `label_00004ab8`(G0001) / …"
+        },
+        {
+          "anchor": "set-string (global-string bb9)",
+          "lines": "1281-1294",
+          "what": "G0000 プロローグ：只写章题串 `bb8=\"序章\"` / `bb9=\"現に目覚めし女神\"` + `global 2`/`global 0=6`/`1394=0x74`(SN0000)，**零绘制**"
+        },
+        {
+          "anchor": "create-texture (global-int 3f5f)",
+          "lines": "1330-1374",
+          "what": "G0001 第 1 段：层3 ← 图 76(AE910AA 256×128) + 全屏工作槽 `3f5f` 的 `draw-texture` → `i251` ZoomBlur（槽 64、1500ms、CenterU 500→400）→ `set-draw-color-alpha`/`set-draw-color` 淡入窗"
+        },
+        {
+          "anchor": "i250 (local-int 0) (global-int 3f59)",
+          "lines": "1560-1595",
+          "what": "★用户口径「又一次横向模糊」：层1 全屏工作槽 `3f59`（create-texture 500 2d0 1）+ `i250` SlideBlur（槽 9、3000ms），工作项 `0x18A9E` 同期 α255→0 淡出"
+        },
+        {
+          "anchor": "set-vertex-color 19258 0 ff 0",
+          "lines": "1596-1638",
+          "what": "★「渐黑」：`create-mesh 19258` → `set-vertex-color 19258 0 ff 0`（瞬时黑）→ `set-vertex-color-alpha 19258 0 bb8 0 (4fd5=0)`（3000ms）→ `i238 bb8` wait → `play-bgm 11`"
+        },
+        {
+          "anchor": "mov (global-int f8006) 7d",
+          "lines": "1640-1661",
+          "what": "★「人物轮廓」：层1 ← 图 `0x7d` = EV002AD.AGF 1280×720 + `set-vertex-color-alpha 19258 0 960 (4fd4) (4fd5=0)`（2400ms 黑→透明）→ `i238 3e8` wait"
+        },
+        {
+          "anchor": "输入原文：「好厉害，真是年代久远的遗迹",
+          "lines": "1694-1705",
+          "what": "★段5：G0001 的第一句话（本段**唯一**的文字；章名是贴片图）；随后 `wait-for-input`"
+        },
+        {
+          "anchor": "label_0006fb64",
+          "lines": "33253-33287",
+          "what": "层→槽表初始化子程序：`3f54 + 3L + k`（层0=(4,5,6) / 层1=(7,8,9) / 层2=(0x2b,0x35,0x3f)…；k=2 = 转场工作槽）"
+        },
+        {
+          "anchor": "set-vertex-color 19258 0 ff ffffff",
+          "lines": "1420-1458",
+          "what": "★段 2/3 的白晕开场：卡片项的 α 窗（`1420-1433`，1500ms）+ `create-mesh 19258`（`1444`，**同一 handle 第三次复用**）→ `set-vertex-color 19258 0 ff ffffff`（`1445`：瞬时**不透明白**）→ `1452` 改写成**透明白**（= FROM）→ `set-vertex-color-alpha 19258 0 3e8 …`（`1453`：1000ms → 不透明）= 白晕**淡入**；`i238 3e8` + `wait` 等满"
+        },
+        {
+          "anchor": "mov (global-int f8006) 78",
+          "lines": "1468-1510",
+          "what": "四张 1280×720 章节卡贴片（层 5/0/1/6 ← 图 `78`/`79`/`7a`/`7b`）依次上屏 + 白晕**淡出**（`1510`：`set-vertex-color-alpha 19258 0 7d0 0 (4fd5)` = 2000ms → 透明）⇒ 用户口径「白晕减弱 → 显现背景与文字」"
+        }
+      ],
       "slots": [
         {
           "key": "global 3f3c",
@@ -3130,36 +3181,36 @@
         }
       ],
       "invariants": [
-          "G0001 段一处都不写 `global 0`（停在 1）⇒ ADV 窗走「纸窗」支（T-0102 的白底同源）",
-          "G0001 段没有任何文字绘制指令（无 i2da/i2eb/i23b/i2c7/i2ec/i304/i305）：章名是**贴片图**不是文本",
-          "段1 的「塔状云柱背景」不在本脚本：它是 SN0000:2042 的图 0x6c2 = BG010AA.AGF 1280×720",
-          "运行期素材（日志实证）：0x76=AE910AA(256×128)、0x77=AE910AB(768×256)、0x78=AE910AD(768×256)、0x79=AE900AB(1280×720)、0x7a=AE900AA(1280×720)、0x7b=AE902AA(1280×720)、0x7d=EV002AD(1280×720)",
-          "「渐黑」= 1607-1621（3000ms）；反向的「黑淡出显出人物轮廓」= 1640-1653（2400ms，state1=0）",
-          "mesh `0x19258` 在本脚本里被复用四次（白晕 `1444`/`1503`、黑幕 `1607`、淡出 `1653`）⇒ **同一个 handle 承担「白晕 / 黑幕」两种角色**，判读一律看当时的 `state0`/`state1` 而不是 handle；★引擎对**已存在**的项执行 `create-mesh` 时是否重置两格态色**未逐字确证**（emulator 现按「只重建几何、不重置态色」实现）——本脚本的每一处 create 之后都立刻显式写两端色，故此处无观测差异"
-        ],
+        "G0001 段一处都不写 `global 0`（停在 1）⇒ ADV 窗走「纸窗」支（T-0102 的白底同源）",
+        "G0001 段没有任何文字绘制指令（无 i2da/i2eb/i23b/i2c7/i2ec/i304/i305）：章名是**贴片图**不是文本",
+        "段1 的「塔状云柱背景」不在本脚本：它是 SN0000:2042 的图 0x6c2 = BG010AA.AGF 1280×720",
+        "运行期素材（日志实证）：0x76=AE910AA(256×128)、0x77=AE910AB(768×256)、0x78=AE910AD(768×256)、0x79=AE900AB(1280×720)、0x7a=AE900AA(1280×720)、0x7b=AE902AA(1280×720)、0x7d=EV002AD(1280×720)",
+        "「渐黑」= 1607-1621（3000ms）；反向的「黑淡出显出人物轮廓」= 1640-1653（2400ms，state1=0）",
+        "mesh `0x19258` 在本脚本里被复用四次（白晕 `1444`/`1503`、黑幕 `1607`、淡出 `1653`）⇒ **同一个 handle 承担「白晕 / 黑幕」两种角色**，判读一律看当时的 `state0`/`state1` 而不是 handle；★引擎对**已存在**的项执行 `create-mesh` 时是否重置两格态色**未逐字确证**（emulator 现按「只重建几何、不重置态色」实现）——本脚本的每一处 create 之后都立刻显式写两端色，故此处无观测差异"
+      ],
       "gotchas": [
-          "★`jcc v mask label` 是 **v == 0 才跳**（`app/amayui-emulator/src/vm/handlers/control.ts:81-105`）⇒ 本段 `jcc 1 …` = 落下句（1452/1453 会执行）、`jcc 0 ffffffff label` = **跳**（1504-1507 与 1647-1651 **不执行**）。运行期日志（createMesh/setVertexColor/setTransition 的先后）逐条印证；这是本段最容易读反/改错的地方",
-          "★`0x322` 的 op2 是 **blend 选择子**（写 MeshEntry[9]），不是顶点下标；`0x323` 的 op2/op3 = **延迟/时长(ms)**、op4=目标 α、op5=目标 rgb（写 state1）",
-          "★`4fd1..4fd5` 是跨脚本残留的池外全局：入口(1066-1070)写黑、1446-1450 改白、1609-1613 再改黑 ⇒ 读它之前先看谁写过",
-          "★白晕是 mesh 19258 的**两段**窗：1444-1458 淡入 1000ms（state0 瞬 0xFFFFFFFF → 1452 改 0x00FFFFFF → 挂 state1=0xFFFFFFFF）+ 1503→1510 淡出 2000ms（=用户口径的「光晕减弱」），中间 1465-1466 有 1000ms wait",
-          "★「渐黑」是**渐**的（`1607-1616`）：`create-mesh 19258` → `set-vertex-color 0 ff 0`（瞬时黑）→ `set-vertex-color 0 0 0`（改回**透明**黑 = FROM）→ `set-vertex-color-alpha 0 bb8 ff 0`（**3000ms** → 不透明黑）；揭示靠 `1653` 的 `set-vertex-color-alpha 19258 0 960 0 (4fd5)`（**2400ms** → 透明）。这两个时长就是观感判据（`T-0103` 轮 18 逐帧核过：α 0→43→…→255，再 255→201→…→0）",
-          "★**卡片与人物轮廓共用同一个 draw item**（层 1 那一格，运行期 handle 101020）：`1641-1643` 只是把 `f8006` 从 `7a` 换成 `7d`、并重设槽 7 的图（`bindTexture imgid=0x7d`）⇒ 换图发生在黑幕 α=255 时，屏上不可见；别按「先撤卡片、再建轮廓」理解",
-          "★段 4 的第二次横向模糊（`1574`：工作槽 `3f59`=9、3000ms、源 = 卡片项 `f8024`）与 SN0000 段 1 是**同一分支**（`[13]=0` SlideBlur）⇒ 段 1/段 4 的「黑色遮罩」是同一根因（`T-0103` 轮 18）"
-        ],
+        "★`jcc v mask label` 是 **v == 0 才跳**（`app/amayui-emulator/src/vm/handlers/control.ts:81-105`）⇒ 本段 `jcc 1 …` = 落下句（1452/1453 会执行）、`jcc 0 ffffffff label` = **跳**（1504-1507 与 1647-1651 **不执行**）。运行期日志（createMesh/setVertexColor/setTransition 的先后）逐条印证；这是本段最容易读反/改错的地方",
+        "★`0x322` 的 op2 是 **blend 选择子**（写 MeshEntry[9]），不是顶点下标；`0x323` 的 op2/op3 = **延迟/时长(ms)**、op4=目标 α、op5=目标 rgb（写 state1）",
+        "★`4fd1..4fd5` 是跨脚本残留的池外全局：入口(1066-1070)写黑、1446-1450 改白、1609-1613 再改黑 ⇒ 读它之前先看谁写过",
+        "★白晕是 mesh 19258 的**两段**窗：1444-1458 淡入 1000ms（state0 瞬 0xFFFFFFFF → 1452 改 0x00FFFFFF → 挂 state1=0xFFFFFFFF）+ 1503→1510 淡出 2000ms（=用户口径的「光晕减弱」），中间 1465-1466 有 1000ms wait",
+        "★「渐黑」是**渐**的（`1607-1616`）：`create-mesh 19258` → `set-vertex-color 0 ff 0`（瞬时黑）→ `set-vertex-color 0 0 0`（改回**透明**黑 = FROM）→ `set-vertex-color-alpha 0 bb8 ff 0`（**3000ms** → 不透明黑）；揭示靠 `1653` 的 `set-vertex-color-alpha 19258 0 960 0 (4fd5)`（**2400ms** → 透明）。这两个时长就是观感判据（`T-0103` 轮 18 逐帧核过：α 0→43→…→255，再 255→201→…→0）",
+        "★**卡片与人物轮廓共用同一个 draw item**（层 1 那一格，运行期 handle 101020）：`1641-1643` 只是把 `f8006` 从 `7a` 换成 `7d`、并重设槽 7 的图（`bindTexture imgid=0x7d`）⇒ 换图发生在黑幕 α=255 时，屏上不可见；别按「先撤卡片、再建轮廓」理解",
+        "★段 4 的第二次横向模糊（`1574`：工作槽 `3f59`=9、3000ms、源 = 卡片项 `f8024`）与 SN0000 段 1 是**同一分支**（`[13]=0` SlideBlur）⇒ 段 1/段 4 的「黑色遮罩」是同一根因（`T-0103` 轮 18）"
+      ],
       "gaps": [],
       "links": {
         "capabilities": [
-            "clock-read-transition-window",
-            "mesh-vertex-quad-and-per-vertex-color",
-            "clock-read-transition-window"
-          ],
+          "clock-read-transition-window",
+          "mesh-vertex-quad-and-per-vertex-color",
+          "clock-read-transition-window"
+        ],
         "functions": [],
         "docs": [
-            "docs-new/03-engine/opcode-table.md",
-            "docs-new/03-engine/scene-start-flow.md",
-            "docs-new/03-engine/live2d.md",
-            "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
-          ]
+          "docs-new/03-engine/opcode-table.md",
+          "docs-new/03-engine/scene-start-flow.md",
+          "docs-new/03-engine/live2d.md",
+          "docs-new/99-records/2026-09-transition/transition-render-spec-2026-09.md"
+        ]
       },
       "guards": [
         "test/t0102-chapter-chain.test.ts"

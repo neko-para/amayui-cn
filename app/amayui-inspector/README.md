@@ -42,7 +42,7 @@ dotnet app/amayui-inspector/AmayuiInspector.App/bin/Debug/net10.0-windows/Amayui
 & app/amayui-inspector/AmayuiInspector.App/bin/Debug/net10.0-windows/AmayuiInspector.App.exe
 ```
 
-**WPF 壳用法**：下拉选进程 →「扫描 this」（定位 `this`，填充 Engine 面板）→「刷新快照」重读当前状态；
+**WPF 壳用法**：下拉选进程 →「扫描 this」（定位 `this`，填充 Engine 面板）→「刷新快照」重读当前状态；「5 秒后采集」（`MainViewModel.DelayedCaptureMs = 5000`）点一下即开始 5s 倒计时，期间按钮显示 `取消（Ns）`、状态文字显示 `Ns 后采集…`，倒数到 0 自动走**与「刷新快照」完全相同**的采集路径并提示 `快照已刷新（延迟采集）· 时刻 · this=0x…`，倒计时中再点该按钮即取消（适合先点按钮、再切回游戏做动作的场景）；
 「全局表」按 过滤(仅非空/仅掉落区/全部)/范围(hex) 加载解码后的 global-int，支持**「全量」**(0..区段末，≈8M 槽)与**分页**，避免一次物化过多行；每行含 **「字符串」列**（对应槽位的 global-string，经嵌入的 `subs_cn_jp.json` 把运行时占位码位还原为简体，取前 16 字符）；「脚本帧」展示 40 帧字段（高亮当前帧，`frame_arg` 映射脚本文件名）。
 
 CLI 用法：

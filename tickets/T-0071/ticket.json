@@ -24,7 +24,7 @@
     {
       "file": "app/amayui-emulator/src/vm/handlers/save-slot.ts",
       "anchor": "只覆盖池内下标，不得清掉池外下标",
-      "note": "int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）",
+      "note": "★★2026-09-27 订正（`T-0187`）：本条原来的结论「int 池的还原范围与引擎一致（memset+memcpy 只动 0..count）」**已作废** —— memset 的长度是**池容量** `Engine[382952]`（真机只读实测 = `0x00708ADC` = 7,375,836），而文件里的 count（1,015,792）只是**被保存的前缀** ⇒ 下标 `[count, capacity)` 装载后**为 0**。emulator 已改为 `e.globals.int.clear()` 后写回文件非零值（与 float/string 同型），守卫 `test/slot-load-resume.test.ts` 的「整池清零」用例。见 `tickets/T-0187/recheck.md` §5.10。",
       "line": 264
     },
     {
@@ -67,6 +67,11 @@
       "at": "2026-09-19",
       "what": "open → done —— 两张表装回 + int 池只覆盖池内；守卫 test/slot-load-resume.test.ts 的「★读档只覆盖池内下标 + 装回『槽 → 图像』表」",
       "kind": "status"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— evidence[1] 的 note 按 2026-09-27 真机实测订正（池容量 vs 文件前缀）"
     }
   ]
 }
