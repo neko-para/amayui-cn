@@ -40,6 +40,7 @@ import {
   scTransitionTargetRect,
   scTransitionBlurPlan,
   scTransitionBlurOffsets,
+  transitionBlurAlphas,
   scTransitionRangeHandles,
   transitionTargetKind,
   TRANSITION_BLUR_CENTER_WEIGHT,
@@ -1426,8 +1427,18 @@ export class PixiBackend implements NativeBridge {
           const half = (plan.samples - 1) / 2;
           const total = (plan.samples - 1) + TRANSITION_BLUR_CENTER_WEIGHT;
           ctx.clearRect(0, 0, w, h);
+          // ★★累加必须是**加法**（`lighter`），不能用默认的 source-over（`tickets/T-0103` 轮 18）：
+          //   采样权重是**归一化的加权平均**（Σw = `total` = 32×1 + 中心 3 = 35），
+          //   而 source-over 逐层叠加的 α 是 `1 - Π(1 - w_i/total) = 1 - (34/35)^33 ≈ 0.616`
+          //   ⇒ 合成结果只有 **62% 不透明**，底下那张满屏黑（mesh 0x0 / 黑幕）透出 38%
+          //   ⇒ 用户实测的「横向模糊引入的黑色遮罩、背景颜色跳变（真机是同时向黑色渐变并引入模糊）」。
+          //   ★α 还要**量化成整数 /255 且求和恰好 255**（`transitionBlurAlphas`）：canvas 每层只认 8bit α，
+          //   直接喂 `w/total` 会把每层都截掉一点，33 层下来 α 落到 ≈246/255（实测，仍是一层淡黑纱）。
+          //   ★残差（已披露）：8bit 的前乘色逐层四舍五入 ⇒ 中灰 128 会累到 ≈137（+7% 亮度），
+          //   精确解需要浮点累加（WebGL/Pixi pass）；相对"38% 黑遮罩"已经量级消失。
+          ctx.globalCompositeOperation = 'lighter';
+          const alphas = transitionBlurAlphas(plan.samples, TRANSITION_BLUR_CENTER_WEIGHT, half);
           for (let k = 0; k < plan.samples; k++) {
-            const weight = k === half ? TRANSITION_BLUR_CENTER_WEIGHT : 1;
             ctx.save();
             if (off.kind === 'zoom') {
               // 绕中心的均匀缩放：采样 k 的比例 `1 + (k-half)*step` ⇒ 画的时候用它的**倒数**。
@@ -1440,10 +1451,11 @@ export class PixiBackend implements NativeBridge {
               // 沿 Angle 的平移：采样位移 `(k-half)*(dx,dy)` ⇒ 画在**负位移**处。
               ctx.translate(-(k - half) * off.dx, -(k - half) * off.dy);
             }
-            ctx.globalAlpha = weight / total;
+            ctx.globalAlpha = alphas[k]! / 255;
             ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, w, h);
             ctx.restore();
           }
+          ctx.globalCompositeOperation = 'source-over';
           ctx.globalAlpha = 1;
           blurLog =
             `${plan.zoom ? 'Zoomblur' : 'Slideblur'} Length=${plan.length} ` +

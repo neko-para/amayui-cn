@@ -1,0 +1,29 @@
+{
+  "name": "t0103-save78",
+  "boot": { "script": 0 },
+  "clock": { "kind": "wall" },
+  "readyMarker": "-> TITLE.BIN",
+  "readySettleMs": 6000,
+  "tailMs": 45000,
+  "maxFrames": 30000,
+  "events": [
+    { "kind": "cursor", "x": 1070, "y": 480, "note": "TITLE 菜单第 1 项 Load Data（★record 的 sendInputEvent 坐标 = 虚拟坐标，**不要**套 shot.cjs 的 toSend：实测套了会差一行 ⇒ 载入 079 而不是 078）" },
+    { "kind": "press", "x": 1070, "y": 480, "button": 0, "holdMs": 160 },
+    { "kind": "release", "x": 1070, "y": 480, "button": 0 },
+    { "kind": "cursor", "x": 900, "y": 30, "afterMarker": "-> SAVE.BIN", "settleMs": 4000, "note": "存档列表页号按钮「70」（0900,30 ⇒ 显示 070..079）" },
+    { "kind": "press", "x": 900, "y": 30, "button": 0, "holdMs": 150 },
+    { "kind": "release", "x": 900, "y": 30, "button": 0 },
+    { "kind": "cursor", "x": 400, "y": 570, "settleMs": 1200, "note": "第 8 行（y=90+60*8=570 ⇒ 槽 078）" },
+    { "kind": "press", "x": 400, "y": 570, "button": 0, "holdMs": 150 },
+    { "kind": "release", "x": 400, "y": 570, "button": 0 },
+    { "kind": "cursor", "x": 145, "y": 686, "settleMs": 1000, "note": "左下 LOAD" },
+    { "kind": "press", "x": 145, "y": 686, "button": 0, "holdMs": 150 },
+    { "kind": "release", "x": 145, "y": 686, "button": 0 },
+    { "kind": "cursor", "x": 636, "y": 321, "afterMarker": "SBUNKIMOVE.BIN", "settleMs": 2500, "note": "确认框「是」" },
+    { "kind": "press", "x": 636, "y": 321, "button": 0, "holdMs": 150 },
+    { "kind": "release", "x": 636, "y": 321, "button": 0 },
+    { "kind": "cursor", "x": 640, "y": 360, "afterMarker": "[slot-load]", "settleMs": 12000, "note": "载入落定后点一下推进（进入 SN0000 结尾的切章）" },
+    { "kind": "press", "x": 640, "y": 360, "button": 0, "holdMs": 150 },
+    { "kind": "release", "x": 640, "y": 360, "button": 0 }
+  ]
+}

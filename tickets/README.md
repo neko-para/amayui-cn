@@ -18,7 +18,7 @@
 | [`T-0148`](./T-0148/ticket.json) | P1 | analysis | `analysis/emulator/vm` | 全指令「实现 × 引擎」逐条核对与缺口汇总（2026-09）：364 条注册指令 + 54 条能力条目 | 4 | — | `notes.md` `changes-coverage.md` `quote-gone-adjudication.md` | — |
 | [`T-0067`](./T-0067/ticket.json) | P2 | bug | `emulator/render` | 保存时存档页面闪一帧（瞬间露出 ADV 界面） | 3 | `app/amayui-emulator/test/frame-hold-cover.test.ts` `app/amayui-emulator/test/transition-render-wiring.test.ts` | `notes.md` evidence/(1) | — |
 | [`T-0179`](./T-0179/ticket.json) | P2 | refactor | `analysis/analysis/emulator/vm` | 缺口台账 `partial` 的 140 条 `missing[]` 缺 live 承接票：批量改指本票 + 逐条裁决（实现 / 关掉 / 保留并写重开条件） | 5 | — | `notes.md` `changes-round70.md` `changes-t0179.md` | — |
-| [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 5 | `app/amayui-emulator/test/transition-render-wiring.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/op-24f-250-251-transitions.test.ts` | `notes.md` evidence/(12) | — |
+| [`T-0103`](./T-0103/ticket.json) | P3 | bug | `emulator/render` | SN0000 → SC0000 的章节切换演出（转场）多处不一致（用户描述：很难讲清，先记录） | 6 | `app/amayui-emulator/test/transition-render-wiring.test.ts` `app/amayui-emulator/test/sc-transition-window.test.ts` `app/amayui-emulator/test/op-24f-250-251-transitions.test.ts` | `notes.md` evidence/(16) | — |
 
 ## ⬜ open（4）
 

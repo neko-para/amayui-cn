@@ -527,6 +527,39 @@ export const TRANSITION_BLUR_SAMPLES = 33;
 export const TRANSITION_BLUR_CENTER_WEIGHT = 3;
 
 /**
+ * 类别 3 的采样 **8bit α 权重表**（长度 = `samples`，**求和恰好 255**）——`tickets/T-0103` 轮 18。
+ *
+ * 为什么需要它（实测教训）：宿主把 33 个采样用 canvas 2D 累加进记录 `[4]` 的槽，而 canvas 的
+ * `globalAlpha` 每层只有 **8bit** 精度：
+ *  - 喂浮点 `w/total`（= 1/35 ≈ 0.0286）时每层都被截掉一点 ⇒ 33 层后 α ≈ **246/255**（仍有一层淡黑纱）；
+ *  - 用默认的 `source-over` 累加更糟：α = `1 - (34/35)^33 ≈ 0.616` ⇒ 只有 62% 不透明，
+ *    底下的满屏黑透出 38% —— 这正是用户实测的「横向模糊引入的黑色遮罩、背景颜色跳变」。
+ * ⇒ 本函数把权重**量化成整数 /255 并让总和精确等于 255**（先按 `floor` 分配，余量按小数部分从大到小发），
+ * 宿主用 `lighter`（加法）累加即可得到 α = 1 的归一化加权平均（源不透明处结果不透明）。
+ *
+ * ★残差（已披露）：8bit 的**前乘色**逐层四舍五入 ⇒ 中灰 128 会累到 ≈137（+7% 亮度）；
+ * 精确解需要浮点累加（WebGL/Pixi pass），相对"38% 黑遮罩"已量级消失（测量见
+ * `tickets/T-0103/evidence/blur-accumulation-alpha.md`）。
+ */
+export function transitionBlurAlphas(
+  samples: number,
+  centerWeight: number = TRANSITION_BLUR_CENTER_WEIGHT,
+  centerIdx: number = (samples - 1) / 2,
+): number[] {
+  const n = Math.max(0, Math.floor(samples));
+  if (n === 0) return [];
+  const weights = new Array<number>(n).fill(1);
+  if (Number.isInteger(centerIdx) && centerIdx >= 0 && centerIdx < n) weights[centerIdx] = centerWeight;
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const ideal = weights.map((w) => (255 * w) / sum);
+  const out = ideal.map((v) => Math.floor(v));
+  let rem = 255 - out.reduce((a, b) => a + b, 0);
+  const order = ideal.map((v, i) => [v - Math.floor(v), i] as [number, number]).sort((p, q) => q[0] - p[0]);
+  for (let j = 0; rem > 0; j++, rem--) out[order[j % order.length]![1]]!++;
+  return out;
+}
+
+/**
  * 类别 3 的画法参数（纯函数）。`size` = 目标层 `[4]` 的尺寸（引擎 `layer[[4]]+1040/+1044`）。
  * 非类别 3 ⇒ `null`。
  */

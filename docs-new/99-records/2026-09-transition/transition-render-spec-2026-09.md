@@ -538,6 +538,12 @@ goto LABEL_478;                                // → sub_49E170(this) 弹栈
 ★**不是"本帧屏幕"**：转场期间屏幕 pass 已把区间项排除（D3），取屏幕等于模糊一张没有区间项的画面
 ⇒ 实测恒黑（SN0000 结尾的横向模糊整段看不见）。取证与截图见 `tickets/T-0103/evidence/section1-blur-source.md`。
 
+★**轮 18 追记（同一票）**：类别 3 的**采样累加**必须是**加法**（`globalCompositeOperation='lighter'`）
++ 一张**整数 α 权重表**（`transitionBlurAlphas`，Σα 恰好 255）。引擎的权重表是归一化加权平均（Σw = 35），
+而 canvas 默认的 source-over 累积 α = `1-(34/35)^33 ≈ 0.616` ⇒ 合成幕只有 62% 不透明、底下黑幕透出 38%
+= 用户实测的「横向模糊引入的黑色遮罩 / 背景色跳变」（段 1 与段 4 同一段代码）。测量与 before/after 见
+`tickets/T-0103/evidence/blur-accumulation-alpha.md`；残差 = 8bit 前乘色逐层四舍五入（中灰 +7%）。
+
 ---
 
 ## 8. raw 锚点清单（供以后核对行号漂移）

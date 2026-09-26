@@ -142,6 +142,18 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
     !backend.includes('采样=${plan.samples}（近似；源=本帧屏幕）'),
     '★日志/口径不许再无条件写「源=本帧屏幕」（T-0103 轮 17 的缺陷口径）',
   );
+  // ★★`tickets/T-0103` 轮 18：类别 3 的 33 个采样必须**加法累加**（`lighter`），不能走默认 source-over。
+  //   权重之和恰好 = `total`（= 采样数-1 + 中心权重 3）⇒ 归一化加权平均；而 source-over 的 α 累积是
+  //   `1 - (34/35)^33 ≈ 0.616` ⇒ 合成幕只有 62% 不透明 ⇒ 底下黑幕透出 38% = 用户实测的
+  //   「横向模糊引入的黑色遮罩、背景颜色跳变」。
+  assert.ok(
+    /globalCompositeOperation = 'lighter'/.test(backend),
+    '★类别 3 的采样累加必须是 `lighter`（加法）—— source-over 会把 α 累成 ≈0.616 ⇒ 黑遮罩（T-0103 轮 18）',
+  );
+  assert.ok(
+    /globalCompositeOperation = 'source-over'/.test(backend),
+    '★加法累加用完必须还原成 source-over（否则后续记录的合成会被污染）',
+  );
   assert.ok(
     !backend.includes('#transOld'),
     '★"上一帧整屏快照"那套概念必须已经删掉（转场的源是子集，不是整屏）',
@@ -206,7 +218,37 @@ test('★源码棘轮：`[4]` 是**离屏槽**，宿主必须 composeIntoSlot（
   assert.ok(cache.includes('composeIntoSlot('), 'TextureCache 必须提供"把 2D 合成画进槽表面"的入口');
 });
 
-test('★`[4]` 的两个分支：`0..999` = 槽表（引擎 `Scene[4*slot+42456]`），其余（含 -1）= 后台缓冲', () => {
+test('★T-0103 轮 18：类别 3 的 8bit α 权重表 —— Σα 恰好 255、中心加权、量化误差 ≤ 1/255', async () => {
+  const mod = await import('../src/renderer/scene/transition.js');
+  const N = 33;
+  const C = mod.TRANSITION_BLUR_CENTER_WEIGHT;
+  const a = mod.transitionBlurAlphas(N, C);
+  assert.equal(a.length, N, '采样数必须与 33 一致');
+  assert.equal(
+    a.reduce((x, y) => x + y, 0),
+    255,
+    '★Σα 必须恰好 255 —— 否则合成幕带黑纱：浮点 α 每层被 8bit 截掉一点 ⇒ 实测 ≈246/255；source-over 更糟（1-(34/35)^33 ≈ 0.616）',
+  );
+  const center = (N - 1) / 2;
+  assert.ok(a[center]! > a[0]!, '中心样本必须比两侧重（引擎 raw 126180-126183 的权重 3 vs 1）');
+  const idealCenter = (255 * C) / (N - 1 + C);
+  const idealSide = 255 / (N - 1 + C);
+  assert.ok(Math.abs(a[center]! - idealCenter) <= 1, `中心 α 应贴近理想 ${idealCenter.toFixed(2)}（实得 ${a[center]}）`);
+  for (let k = 0; k < N; k++) {
+    if (k === center) continue;
+    assert.ok(Math.abs(a[k]! - idealSide) <= 1, `侧样本 α 应贴近 ${idealSide.toFixed(2)}（实得 ${a[k]}）`);
+  }
+  assert.ok(
+    a.every((v) => v > 0),
+    '每个采样都要有非零权重（量化不许把某一层压成 0 ⇒ 丢采样）',
+  );
+  assert.deepEqual(mod.transitionBlurAlphas(1, C), [255], '退化：单采样 ⇒ 整颗权重');
+  assert.equal(mod.transitionBlurAlphas(2, C).reduce((x, y) => x + y, 0), 255, '退化：双采样也要 Σ=255');
+  assert.deepEqual(mod.transitionBlurAlphas(0, C), [], '0 采样 ⇒ 空表');
+});
+
+test('★`[4]` 的两个分支：`0..999` = 槽表（引擎 `Scene[4*slot+42456]`），其余（含 -1）= 后台缓冲', (
+) => {
   // 体：`sub_4A50C0` raw 124839 `if ( a2 > 0x3E7 )` —— `a2` 是 **unsigned**，所以 `-1`（0xFFFFFFFF）
   // 也落这一支；`0x3E7` = 999 = 那张槽表的上界（`Scene[4*slot + 42456]`）。
   assert.equal(transitionTargetKind(0), 'slot', '槽 0 是表内第一格');
