@@ -44,6 +44,12 @@
       "line": 179
     },
     {
+      "file": "tickets/T-0191/evidence/e2e-action-op-load78.log",
+      "anchor": "✔ [ops] 已载入槽 78：cur = SN0000.BIN",
+      "note": "★真机端到端（DSH 重载后、经**工具面** `action=op` 跑的）：TITLE → Load Data → 页 70 → 行 8 → 确认 → `[slot-load]` → **槽指纹一致** → SN0000.BIN；exit 0、11.2s",
+      "line": 1
+    },
+    {
       "file": "app/amayui-emulator/tools/ops/README.md",
       "anchor": "## 新增一条 op 的三步",
       "note": "ops 的索引与纪律（含新增三步与手驱动坐标表）——工具 `action=ops` 读的就是这份 + 各文件头",
@@ -59,7 +65,7 @@
       "file": "AGENTS.md",
       "anchor": "## 2. ★跑 TypeScript",
       "note": "环境/权限知识落点（沙箱挡管道 + hook+node 替代 tsx）",
-      "line": 50
+      "line": 61
     }
   ],
   "links": {
@@ -94,10 +100,15 @@
       "at": "2026-09-26",
       "kind": "status",
       "what": "open → done —— 方案 A 落地：工具加 ops 三件事 + 资产搬到 app/amayui-emulator/tools/ + 文档按单一真源重排；守卫 tool-smoke 22/22"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence, doneWhy —— 真机端到端补齐（DSH 重载后经工具面）：action=ops / op（槽 78 全判据通过，exit 0）/ op-create 三者实测；op 日志归档 evidence/"
     }
   ],
   "tests": [
     "plugins/amayui-emulator/tool-smoke.mjs#拒绝覆盖已有 op"
   ],
-  "doneWhy": "本票的产物横跨三处、都在 `npm run verify` 的测试面之外（插件 `lib/tools.js` 的纯函数面 + ops 工程脚本 + 技能/文档），因此以『离线守卫 + 真机实测 + 文档换指』三条作收口凭据：① `plugins/amayui-emulator/tool-smoke.mjs` 22/22 绿（含真 spawn 一次、三条参数纪律、创建/拒绝覆盖）；② 真 root 的 `action=ops` 实测（2 已登记 / 4 待登记 / 0 幽灵）与 `emu.mjs`/`load-slot.mjs` 在**新路径**下的 `status` 实测通过；③ 技能/工具的重复内容已按单一真源重排（`SKILL.md` → 入口索引、`ops/README.md` → 用例索引 + 坐标表、插件 README → 动作与设计取舍、`AGENTS.md` → 环境权限），16 个文件里的旧脚本路径机械换指，`tickets.js --validate` 绿。★未做（如实登记）：把 tool-smoke 纳入 verify 闸门；真机端到端跑一条 op（插件 `lib/*.js` 要重启 web profile 才生效）。"
+  "doneWhy": "产物横跨三处、都在 `npm run verify` 的测试面之外（插件 `lib/tools.js` 的纯函数面 + ops 工程脚本 + 技能/文档），因此以『离线守卫 + 真机端到端 + 文档换指』三条作收口凭据：① `plugins/amayui-emulator/tool-smoke.mjs` 22/22 绿（含真 spawn 一次、三条参数纪律、创建/拒绝覆盖）；② **真机端到端**（DSH 重载后、经工具面）：`action=ops` 列出 2 条已登记 + 4 条待登记、`action=op {load-from-title --slot 78}` **exit 0 / 11.2s**（判据全中：`cur = SAVE.BIN` → `[slot-load]` → 槽指纹 `savedCur=2`/帧记录 3 条 ✔ 一致 → 帧链到 `SN0000.BIN`，日志归档 `evidence/e2e-action-op-load78.log`）、`action=op-create` 在真 root 生成骨架（占位替换干净、新 op 立刻以 `indexed=false` 出现在清单里，产物已清理）；③ 文档按单一真源重排（`SKILL.md` → 入口索引并**已退役删除**、`ops/README.md` → 用例索引 + 坐标表、插件 README → 动作与取舍、`AGENTS.md` → 环境权限），16 个文件里的旧脚本路径机械换指，`tickets.js --validate` 绿。★未做（如实登记）：把 tool-smoke 纳入 verify 闸门（跨包 import + `typecheck:test` 口径需另行设计）。"
 }

@@ -117,7 +117,10 @@ node --import ./scripts/ts-resolve-hook.mjs app/amayui-emulator/src/tools/saveDu
 
 ## 6. 待核（不作为本票判据）
 
-* 插件宿主进程（DSH server 内部）是否也受同一条沙箱约束 —— 本次无法在不改代码的前提下验证；
-  证据只能给到"agent shell 的后代进程"这一层（`T-0191` 取舍时按"可能同样受限"设计更稳）。
+* ~~插件宿主进程（DSH server 内部）是否也受同一条沙箱约束~~ —— ★**2026-09-26 已答：不受**。
+  证据 = `T-0191` 的真机端到端：工具（插件宿主）spawn 的 op 内部又 `spawn(tsx src/tools/saveDump.ts)`（默认 pipe），
+  **成功**读回槽指纹（`槽指纹对账：槽 78 文件 savedCur=2/帧记录 3 条 vs 日志 … ⇒ ✔ 一致`，
+  归档 `tickets/T-0191/evidence/e2e-action-op-load78.log`）⇒ 这条限制只覆盖 **agent shell 的后代进程**。
+  ★实务推论：同一个 op，**用工具 `action=op` 跑**判据④工作；**在受限 agent shell 里直接 `node …/ops/x.mjs` 跑**则判据④静默跳过。
 * `npx tsx --test` 在**不受限**的终端（用户自己开的 pwsh）里是否正常 —— 预期正常，
   本票只登记本会话观测到的事实。

@@ -124,9 +124,15 @@
 **验证（实测）**：`tool-smoke.mjs` **22/22**；真 root 的 `action=ops` = **2 已登记 / 4 待登记 / 0 幽灵**；
 `emu.mjs status` 与 `load-slot.mjs --list` 在**新路径**下照常；`smoke-client.mjs` 绿；
 `smoke.mjs`（Host 半）在受限 shell 里仍红 —— 那是它自持 `pipe` 起宿主的**既有**问题（见 §7 事实 2 与 `AGENTS.md` §1.1），本票未改它。
-★**未做（如实登记）**：① 把 `tool-smoke.mjs` 纳入 `npm run verify` 的闸门（跨包 import + `typecheck:test` 口径需另行设计）；
-② **真机端到端**跑一条 op（`action=op` 打在活实例上）—— 插件 `lib/*.js` 的改动要**重启 web profile** 才在工具面上生效，
-留待重载后由用户/后续会话补一次。
+★**真机端到端（2026-09-26，用户重启环境后、经工具面跑的）**：`action=ops` 列出 2 条已登记 + 4 条待登记；
+`action=op {name:"load-from-title", args:["--slot","78","--expect","SN0000.BIN"]}` 打在 `t0187`（当时在 `TITLE.BIN` 且可驱动）上
+⇒ **exit 0 / 11.2s**，判据全中（`cur = SAVE.BIN` → 日志 `[slot-load]` → **槽指纹 `savedCur=2`/帧记录 3 条 ✔ 一致** → 帧链到 `SN0000.BIN`），
+日志归档 `tickets/T-0191/evidence/e2e-action-op-load78.log`；`action=op-create` 在真 root 生成骨架（占位替换干净、
+新 op 立刻以 `indexed=false` 出现在清单里，产物已清理）。
+★**顺带答掉 `T-0192` 的一条待核**：**插件宿主（DSH server）不受"管道式子进程"那条沙箱约束** ——
+工具 spawn 的 op 内部又 `spawn(tsx src/tools/saveDump.ts)`（默认 pipe）并**成功**读回槽指纹；
+而同一条 op 在 **agent shell** 里跑就会在判据④静默跳过（`AGENTS.md` §1.1 的红名单仍成立 —— 它只覆盖 agent shell 的后代）。
+★**未做（如实登记）**：把 `tool-smoke.mjs` 纳入 `npm run verify` 的闸门（跨包 import + `typecheck:test` 口径需另行设计）。
 
 ## 10. 「技能能不能直接删掉？」（评估 + **已执行**）
 

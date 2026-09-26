@@ -9,6 +9,31 @@
 
 ---
 
+## 0. 搜索：一律先用 `rg`（ripgrep）
+
+**本仓库的搜索约定**：内容检索一律用 **`rg`**（ripgrep，已注入系统 PATH；本机实测 `ripgrep 15.2.0`）。
+它天然跳过 `.gitignore`（`node_modules/`、`dist/`、`.tmp/`…），比 `Select-String -Recurse` / `findstr /s` /
+`Get-ChildItem -Recurse | Select-String` 快几个数量级，而且**不会因为扫进 node_modules 把命令拖到超时**。
+
+```bash
+rg -n "amayui_emulator" plugins/amayui-emulator          # 定点路径 + 行号
+rg -n --glob '!*.map' "TODO" app/amayui-emulator/src
+rg -l "load-from-title" app plugins tickets              # 只要文件名
+rg -n --hidden --no-ignore "…" .tmp                      # 需要时显式带上被忽略的目录
+```
+
+★**环境缺 `rg` 就停下来告诉用户**：不要静默降级成 `Select-String` / `findstr` / `grep` / `Get-ChildItem -Recurse`。
+缺工具是**环境问题** —— 先报出来、让用户装或注入 PATH 再继续；静默降级会得到"看起来跑完了、其实扫了一半"的结论
+（本会话实测：一次 `Get-ChildItem -Recurse … | Select-String` 因为没忽略 `node_modules` 直接 **300s 超时**）。
+★已知：**macOS 环境目前应该还没装 `rg`** ⇒ 在那台机器上**先停下提示**（`brew install ripgrep`），别用替代品悄悄跑完。
+（DSH 自带的 `grep` 工具本身就是 ripgrep 实现，用它也可以；**在 shell 里**请用 `rg`。）
+
+★**只扫该扫的地方**：即使有 `rg`，也别对全仓库做广度优先的递归扫描（本仓库文件量很大：`app/amayui-emulator/node_modules`、
+`dist/`、`install/`、`res/` 都是重的）。把路径收窄到真源区：`plugins/`、`app/amayui-emulator/{src,test,tools}`、
+`tickets/`、`analysis/`、`docs-new/`、`.agents/skills/`、`scripts/`。
+
+---
+
 ## 1. ★最重要的一条：沙箱会挡住"管道式子进程"，别把它误判成代码坏了
 
 本仓库的 agent 会话跑在 DSH 文件沙箱下（常见模式 = `workspace-write`）。**受限模式下命名管道被禁**，
@@ -38,6 +63,11 @@ Error: spawn EPERM        errno: -4048, code: 'EPERM', syscall: 'spawn'
 | `plugins/amayui-emulator/smoke-client.mjs` | ✅ **绿**（纯内存渲染，不起子进程）—— 对照用 |
 
 **症状辨识**：一句 `spawn EPERM` + `syscall: 'spawn'` + 你并没有写错路径/权限 ⇒ 先想"沙箱挡管道"，别再翻代码。
+
+★**一条已实测的绕法（2026-09-26）**：同一条 op，**用工具 `action=op` 跑判据就完整** ——
+插件宿主（DSH server）**不受**这条限制（它 spawn 的 op 内部再起 `tsx` 也能拿回回执：槽指纹 ✔ 一致，
+见 `tickets/T-0191/evidence/e2e-action-op-load78.log`）。红名单说的是 **agent shell 的后代进程**，
+所以"要跑 op 又不想为它提权"的首选就是走工具面：`amayui_emulator action=op {name,args}`。
 
 ### 1.2 需要更宽权限时的申请口径
 
