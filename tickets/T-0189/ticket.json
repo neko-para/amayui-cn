@@ -1,0 +1,121 @@
+{
+  "id": "T-0189",
+  "title": "测试场景下强制指定 ADV 侧栏（charm 表）排布：调试面写全局 / 环境开关（不动玩家 SAVE.DAT）",
+  "type": "req",
+  "priority": "P2",
+  "area": "emulator/vm",
+  "why": "用户口径（2026-09-26）：「侧边栏默认是可以配置的，我之前将 SAVE 和 LOAD 配置到了较高的位置，而全默认的情况下侧边栏完全没有这两个按钮。考虑强制要求启动模拟器时 cache 带上 SAVE.DAT」→ 随后自我修正：「其实我也不太确定有没有更好的办法，强制带 SAVE.DAT 可能会导致一些错误/无法测试/不稳定，请先研究这里是否有可能针对测试场景，通过一个开关在加载 SAVE.DAT 后，强制覆盖对应位置的配置（例如，打开开关的情况下完全固定右侧侧边栏排布为特定顺序）」。\n研究结论（全文见 `evidence/sidebar-charm-table-findings.md`）：侧栏 9 个格子的**热点矩形是脚本写死的**（`src/SN0000.txt:54-62`），**每格是什么动作**由 `global 13b0` 的 9 项动作 id 表决定（派发点 `src/SN0000.txt:401` `lookup-array (global-int 13b0) (global-int f8019)`；已见语义 `1`=MENU、`0xd`=SAVE、`0xe`=LOAD）。默认值在 `src/INITCHARM.txt:6` = `[1 b c 2 3 4 5 6 7]`（**没有 SAVE/LOAD**，与用户口径一致），玩家改动在 `CHARMEDIT`（写 `global 13b0` + `save-int` 持久化到 SAVE.DAT）。★**关键时机**：派发是**点击时**才读这张表 ⇒ **只要在点击前把表写成固定排布即可，不必动 SAVE.DAT、不必重启**。⇒ 用户想要的开关**可行**，且不必以『强制带 SAVE.DAT』实现。",
+  "acceptance": [
+    "实现**写面**（二选一或都做，推荐①）：① `debug-query` 增加写命令 `set-global <hex> <dec>`（并扩到 `set-array <hex> <idx> <dec>`，用来写 `global 13b0` 的数组元素）；② 实例侧环境开关（如 `AMAYUI_FORCE_CHARM=d,e,1,b,c,2,3,4,5`）：在配置装载之后把 charm 表写成固定排布（仅测试实例用）",
+    "★**不动玩家数据**：不得把『强制带 `cache/SAVE.DAT`』作为默认实现（可作为**显式 opt-in** 的兜底，如 `--player-data cache`）；写面只改**运行期状态**",
+    "尊重引擎口径：写脚本全局必须走 **ENC**（`enc(key, v)`，见 `handlers/save-slot.ts` 的池装载注释）；写数组要按**数组对象/Ref** 写，**不许**只往池里塞裸 dword（否则 `lookup-array` 读到的仍是旧数组）",
+    "判据（端到端）：打开开关/发完写命令后，`ops/load-from-adv.mjs` 在**任意玩家配置**下都能从 ADV 侧栏进 SAVE/LOAD 画面（`f7ff0 == 1`）并载入指定槽 —— 证据 = 一次真跑日志 + 帧链落到目标脚本；这条同时补上 `T-0188` 里『ADV 用例未跑通验证』那一格",
+    "守卫：覆盖逻辑抽成纯函数（如 `forceCharmTable(e, ids)`）并加单测（含『数组不存在时要先建数组』与『越界 id 拒绝』两例）；再加一条 E3（真脚本：覆盖后 SN0000 的侧栏派发按新表分派到 SAVE/LOAD）",
+    "文档：第二层 capability（侧栏/消息窗菜单派发那条）note 补『排布来源 = charm 表 `global 13b0`（默认在 INITCHARM；玩家改动在 CHARMEDIT）+ 测试期可覆盖』；`ops/README.md` 的 ADV 用例前置从『要有带 SAVE/LOAD 的侧栏配置』改成『op 自己把侧栏定死（本票）或显式带 cache/SAVE.DAT』",
+    "npm run verify 全绿；`capabilities.js --validate` / `tickets.js --validate` 绿"
+  ],
+  "evidence": [
+    {
+      "file": "tickets/T-0189/evidence/sidebar-charm-table-findings.md",
+      "anchor": "每格是什么动作",
+      "note": "★本票的研究全文：结构（位置写死/内容可配）→ 默认布局无 SAVE/LOAD → 持久化链 → 三种覆盖方案（H1 环境开关 / H2 调试面写全局（推荐）/ H3 snapshot+restore）与『强制带 SAVE.DAT』的取舍",
+      "line": 1
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "lookup-array (local-ptr 0) (global-int 13b0) (global-int f8019)",
+      "note": "★派发点：**点击时**读 charm 表 ⇒ 覆盖只要赶在点击之前（不必改存档/不必重启）",
+      "line": 401
+    },
+    {
+      "file": "src/SN0000.txt",
+      "anchor": "mov (global-int f7ff0) 1",
+      "note": "SAVE/LOAD 的模式来源：侧栏 LOAD 项（动作 id `e`）置 `f7ff0 = 1` 再 `call-script 33 // SAVE`",
+      "line": 599
+    },
+    {
+      "file": "src/INITCHARM.txt",
+      "anchor": "copy-local-array (global-int 13b0) [1 b c 2 3 4 5 6 7]",
+      "note": "★默认排布（9 项，无 SAVE/LOAD）；紧随其后的循环逐项 `save-int (local-ptr 0)` = 登记进 SAVE.DAT",
+      "line": 6
+    },
+    {
+      "file": "docs-new/05-scripts/CHARMEDIT.md",
+      "anchor": "charm 表（43 项）；由 INITCHARM 填充、交换时 save-int 持久化",
+      "note": "玩家改排布的界面（右侧菜单的『編集』= CHARMEDIT：写 global 13b0 + save-int）",
+      "line": 46
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/strings.ts",
+      "anchor": "const key = stringTableKey(3, p.index(1) ?? 0);",
+      "note": "`save-int` 的键/值口径（键 = 哨兵 3 + 操作数索引；值 = 槽里的值）⇒ 覆盖实现不能绕开这张表的口径",
+      "line": 175
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugWrite.ts",
+      "anchor": "export function forceIntArray(",
+      "note": "★H2 落地的写面本体：按 ENC 写脚本全局 int 池；只改运行期内存、不写回 SAVE.DAT（单测 test/debug-write.test.ts 9 例）",
+      "line": 62
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/debugCommand.ts",
+      "anchor": "set-global",
+      "note": "命令解析侧新增的 set-global / set-array 动作（数字口径与其它命令一致；非法输入按\"当查询回报\"，不抛错）",
+      "line": 86
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs",
+      "anchor": "★改侧栏配置（运行期）",
+      "note": "★用例侧自动配置 + 显式标注副作用的落点（写死 → 读回校验 → 点固定第 1 格；--keep-sidebar 可关）",
+      "line": 96
+    },
+    {
+      "file": "tickets/T-0189/evidence/e2e-load-from-adv.log",
+      "anchor": "未知查询：set-array",
+      "note": "★端到端尝试（2026-09-26）：半程证据 + 两条没跑完的原因（① 渲染页跑构建产物 ⇒ 新命令要 build:electron；② 环境回到\"页面在但帧循环停摆\"）。同一条日志里还记着\"默认布局没有 SAVE/LOAD\"与\"候选扫描机制可用\"两条已验事实",
+      "line": 1
+    },
+    {
+      "file": "tickets/T-0189/notes.md",
+      "anchor": "## 4. 2026-09-26 的端到端尝试记录",
+      "note": "★§4 = 端到端尝试的完整记录：已验到的 4 条 + 没跑完的 2 条原因 + 补跑命令 + 顺带修掉的两条 flake（选行核对 138e / 确认点 3 次）",
+      "line": 43
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0188",
+      "T-0028"
+    ],
+    "docs": [
+      "docs-new/05-scripts/CHARMEDIT.md",
+      "docs-new/03-engine/message-config-gates.md"
+    ],
+    "analysis": [
+      "analysis/scripts.json"
+    ]
+  },
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— H2 落地（2026-09-26）：写面 = debug-query 的 set-global / set-array（vm/debugWrite.ts，按 ENC 写脚本全局池、不写回 SAVE.DAT）；ops/load-from-adv.mjs 开跑前自动把 charm 表 13b0 写死为 [0xd 0xe 1 0xb 0xc 2 3 4 5] 并读回校验（--keep-sidebar 可关），文件头与 ops/README 已标注\"会修改侧栏配置\"；守卫 test/debug-write.test.ts 9/9。仍欠：判据④端到端真跑（当前无可用渲染页）与判据⑤的 E3。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → doing —— H2 已实现 + 单测 9/9；剩端到端真跑与 E3"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 端到端尝试（2026-09-26，实例 sb189）：已验 = 默认布局确实无 SAVE/LOAD（sidebar --show 读到 0x1 0xb 0xc 0x2 0x3 0x4 0x5 0x6 0x7）+ 候选扫描机制可用（9 格逐试、右键取消、最后响亮失败）+ reset 的可驱动性诊断准确；未跑完 = ① 渲染页跑构建产物 ⇒ 新命令 set-array 在页面里不存在（须 build:electron），② 重建+reset 后环境回到\"页面在但帧循环停摆\"。顺带修掉两条 flake：选行后核对 global 138e（页内行号 0 基）并对不上就重试；确认「是」改成最多点 3 次（对话框延迟导致\"点空 ⇒ 45s 超时\"）。补跑命令写在 notes.md §4。"
+    }
+  ]
+}

@@ -137,21 +137,44 @@ curl -s -X POST $B -H 'content-type: application/json' -d '{"args":["<命令>"]}
 3. 命令的执行侧是**渲染页**（`session.ts` 用共享的 `applyScenarioEvent` 逐个事件落到 `InputManager`，
    不经 DOM ⇒ 浏览器宿主与 Electron 宿主同一套词汇）。
 
-### 3.2 ★读档固定流程（`scripts/load-slot.mjs`）—— 后续大量读档就用它，别每次重对坐标
+### 3.2 ★操作脚本：核心驱动 `scripts/emu.mjs` + 用例 `scripts/ops/*`（**别每次读界面重对坐标**）
+
+2026-09-26 起这一层拆成两半（`tickets/T-0188`）：**原语**在 `emu.mjs`，**用例**在 `ops/`，索引见 `ops/README.md`。
 
 ```bash
-# 从 TITLE 起跑（若已在存档列表也能接着用）：载入槽 78 并做日志判据
-node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --instance t0103 --slot 78
-node .agents/skills/amayui-remote-debug/scripts/load-slot.mjs --list     # 只列活实例 + 槽目录口径
+S=.agents/skills/amayui-remote-debug/scripts
+node $S/emu.mjs status  --instance sn187b     # 实例一览 + 是否「可驱动」（有渲染页且帧循环在跑）+ 分类诊断
+node $S/emu.mjs reset   --instance sn187b     # ★唯一合法的「回到干净状态」：重启并等回 TITLE
+node $S/emu.mjs probe   --instance sn187b     # 关键引擎态：帧链 / effectFlags(▼ 武装位) / 字体填充色 / 字格游标 / 引擎时钟
+node $S/ops/load-from-title.mjs --instance sn187b --slot 79 [--expect SN0000.BIN]   # TITLE → Load Data → 槽 N
+node $S/ops/load-from-adv.mjs   --instance sn187b --slot 78                         # ADV 侧栏 → LOAD → 槽 N
+node $S/load-slot.mjs   --instance sn187b --slot 78   # 旧入口 = 兼容壳（转发到 ops/load-from-title.mjs）
 ```
 
-* **前置**：实例活着且 `viewers ≥ 1`（`--attach-headless`，否则 debug-query 503）；槽文件要能被该实例的文件源看到
-  （`<repo>/.tmp/instances/<id>/{overlay,base}/SAVE/SAVE<NN>.DAT`；槽缓存是启动时建的 ⇒ **加槽后要重起实例**）。
-* **判据**：日志出现 `[slot-load]`（退出码 0/1/2 = 成功 / 起跑状态问题 / 载入未发生）。日志**不含槽号**
-  ⇒ 「载入的是不是目标槽」要用内容指纹核（`src/tools/slotThumbPng.ts <SAVE78.STH> out.png` 或 `capture` 看画面）。
-* ★**首跑失败 = 重跑一次**（2026-09-26 观测 3/3）：刚 boot 完的实例第一次跑常在 ① 步 20s 超时（退出码 1），
-  同参数第二次就好；失败文案（「槽为空？页码不对？」）是**误导**，别去查槽文件/页码。正解（点击前 `wait bin=TITLE gate=free`）
-  登记在 `tickets/T-0185`，修完前按"重跑一次"处理（见 §5 坑 13）。
+* **用例索引在 `ops/README.md`**：一条用例一个文件、一张表（前置/判据/状态）。已实测：`title` / `adv`；
+  **待登记**（别拿别的场景坐标硬上）：`battle`（战斗）、`workshop`（工房）、`field`（地图）、`guild`。
+  新场景照抄 `ops/_template.mjs`，必须给出三样：**① 开屏手势 ② 机器可读的开屏判据 ③ 该场景特有的坑**。
+* ★**前置是"可驱动"，不是"进程活着"**：VM 活在渲染页里 ⇒ `emu.mjs status` 会打
+  `no-viewer`（503：没人挂页）或 `stalled`（页面在但帧循环停摆，多半是面板页被收起/切走、被 Chromium 节流）。
+  每个 op 开跑前都 `waitTicking()` 过这一关。★本机 `--attach-headless` **起一个死一个**
+  （宿主日志 `无头渲染页退出 code=4294967295`，见 `tickets/T-0188/evidence/headless-attach-dies.log`）
+  ⇒ 实际渲染页常是**面板那一页**（保持可见）。
+* ★**输入的三条硬纪律**（都在 `emu.mjs` 里实现，别绕开）：① **菜单/侧栏/底部按钮要"两帧点击"**
+  （`emu.tap()`：一次注入 `cursor+press+release` 不激活）；② **悬停靠位置变化**（同点重复 `move` 无效）；
+  ③ **ADV 侧栏"视觉展开 ≠ 逻辑展开"**（`T-0028`：先悬停折叠条 `1230,233–1280,493` 重登记热点，再点按钮）。
+* ★**侧栏是可配置的**：默认布局里**没有 SAVE/LOAD**（默认动作表 `src/INITCHARM.txt:6` = `[1 b c 2 3 4 5 6 7]`；
+  玩家改动在 `CHARMEDIT`）⇒ **不许写死"第 i 格 = LOAD"**。
+  实现（`tickets/T-0189` 的 H2，已落地）：调试面有写原语 **`set-global <下标> <值>` / `set-array <基址> <i> <值>`**
+  （`emu.mjs` 的 `setGlobal`/`setArray`/`forceSidebarLayout`，CLI 还给了 `emu.mjs sidebar [--show]`），
+  **按 ENC 写脚本全局池、只改运行期内存、不写回 `SAVE.DAT`**；`ops/load-from-adv.mjs`
+  **开跑前自动**把 charm 表写死为 `[0xd 0xe 1 0xb 0xc 2 3 4 5]`（SAVE 第 0 格 / LOAD 第 1 格）并读回校验，
+  校验不过才退回候选扫描。★**这是有副作用的用例**：它确实改了本实例当次运行的侧栏排布（`--keep-sidebar` 可关），
+  所以文件头与 `ops/README.md` 的"副作用"列都写明了。
+* **判据**：日志出现 `[slot-load]`；日志**不含槽号** ⇒「载入的是不是目标槽」要核指纹
+  （`src/tools/slotThumbPng.ts <SAVE78.STH> out.png` 或 `capture` 看画面；`emu.slotFingerprint()` 还能读槽头的 `savedCur`/帧记录数与日志对齐）。
+* ★**首跑失败 = 重跑一次**（2026-09-26 观测 3/3）：刚 boot 完的实例第一次点 Load Data 常在 20s 内进不去
+  `SAVE.BIN`，同参数第二次就好；失败文案（「槽为空？页码不对？」）是**误导**。`ops/load-from-title.mjs`
+  已把"开屏重试一次"内置（见 §5 坑 13）。
 * **已实测的坐标与坑**（2026-09-24，`debug-query` 虚拟坐标 = `capture` 的 1280×720 像素坐标）：
   Load Data `(1070,480)`；页号按钮「N0」`(606 + 42*N, 30)`（页 0 → x606、页 70 → x900，绿高亮像素扫描标定）；
   第 i 行 `y = 90 + 60*i`（行分隔带 64/124/…/604）；LOAD `(145,686)`；确认「是」`(636,321)`。
@@ -234,7 +257,9 @@ cur=3  帧数=40（活帧 11，空槽 29，已折叠）  key=0
 | 10 | 坐标是**虚拟 1280×720** | 与窗口/DPR 无关；面板缩放（0.5×/0.25×）也不影响 |
 | 11 | 悬停靠**位置变化** | 同一点重复 `move` 无效（§3.1） |
 | 12 | ★**渲染页跑的是构建产物 `dist/renderer.js`，不是 `src/`** | 宿主侧（`--import tsx`）确实直读 `src/`，但**页面**加载的是 `npm run build:electron` 的产物 ⇒ 改了 `src/renderer/**` 只重启实例，**跑的还是旧代码**（2026-09-26 实测：日志口径仍是旧文案，白跑两轮取证）。对策：`cd app/amayui-emulator && npm run build:electron` → 再重启实例。`npm run shot`/`record` 自带这一步，只有"用插件/CLI 起实例"这条路易踩（见 `docs-new/00-overview/lessons.md` #26） |
-| 13 | ★**`load-slot.mjs` 首跑常失败、次跑就好** | 实例刚 boot 完时第一次跑：① 步「点了 Load Data 但没进 SAVE.BIN」（20s 超时、退出码 1），**同参数再跑一次就成功**（2026-09-26 观测 3/3）。失败文案指向「槽为空？页码不对？目录不对？」——三条都不是。**别按那句文案去查槽文件/页码**，直接重跑一次；等就绪的正解是 `wait bin=TITLE gate=free`（登记在 `tickets/T-0185`，修完前按"重跑一次"处理） |
+| 13 | ★**`load-slot.mjs` 首跑常失败、次跑就好** | 实例刚 boot 完时第一次跑：① 步「点了 Load Data 但没进 SAVE.BIN」（20s 超时），**同参数再跑一次就成功**（2026-09-26 观测 3/3）。失败文案指向「槽为空？页码不对？目录不对？」——三条都不是。**别按那句文案去查槽文件/页码**：`ops/load-from-title.mjs` 已内置"开屏重试一次"；根因实证仍欠（登记在 `tickets/T-0185`） |
+| 14 | ★**操作脚本分两层：原语 vs 用例** | 原语只在 `scripts/emu.mjs`（发现/发命令/两帧点击/等条件/读态/起停），**用例在 `scripts/ops/*.mjs`**（一条一文件，索引 `ops/README.md`）。新场景（战斗/工房/…）照抄 `ops/_template.mjs` 加一条并登记 —— **不许**再写"临时脚本读界面猜坐标"，也不许把用例塞回 `emu.mjs` |
+| 15 | ★**这一层不模拟设备** | 输入输出全走 `debug-query`；VM 活在渲染页里是**设备侧**的事 ⇒ 我们**不起自己的浏览器页、不用 playwright/puppeteer、不改玩家数据**。页面不在/被节流时只做两件事：分类报出来（`no-viewer` / `stalled`）+ 给出设备侧修法 |
 
 ---
 

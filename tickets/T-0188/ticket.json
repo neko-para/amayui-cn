@@ -1,0 +1,86 @@
+{
+  "id": "T-0188",
+  "title": "模拟器操作固化成工程脚本：emu.mjs（核心驱动）+ ops/*（用例：reset／从 TITLE 读档／从 ADV 读档）",
+  "type": "tooling",
+  "priority": "P2",
+  "area": "emulator/tools",
+  "why": "用户口径（2026-09-26）：「启动、加载存档等操作不稳定性太高…将 reset（重启进入 TITLE）、从 TITLE 加载存档 N、从 ADV 界面加载存档 N 这三个操作固化成一个工程上的脚本（而非依赖你读界面循环）；后续还会存在像从战斗界面加载存档、从工房界面加载存档等场景，注意标注清楚用例」；随后追加：「emu 是核心驱动脚本，将这些『操作 snippet』拆分到外部来驱动，不要混合在 emu 中，这样后续也能快速了解到有哪些可用脚本」。\n本轮实测到的五个根因（都写进了脚本注释/错误信息）：① **菜单/侧栏/底部按钮必须『两帧点击』**（一次注入 cursor+press+release 不激活，实测）；② **悬停靠位置变化**（同点重复 move 无效）；③ **ADV 侧栏『视觉展开 ≠ 逻辑展开』**（T-0028：直接点展开后的按钮位置什么也不发生，必须先悬停折叠条重登记热点）；④ 首跑 `load-slot` 偶发进不去 SAVE.BIN（T-0185），且失败文案误导；⑤ 本机 `--attach-headless` **起一个死一个**（宿主日志 `无头渲染页退出 code=4294967295`）⇒ 必须把『没有渲染页(503)』与『页面在但帧循环停摆（面板被节流）』分成两种可读状态，而不是让命令悄悄发不出去。\n另一条硬事实（决定了 ADV 用例不能写死坐标）：**侧栏是可配置的**，默认布局里根本没有 SAVE/LOAD（默认值见 `src/INITCHARM.txt:6`）⇒ 覆盖方案见 `T-0189`；本票只保证『用例层不假设位置 + 失败时说得清』。",
+  "acceptance": [
+    "三层结构落地：`scripts/emu.mjs`（**原语**：实例发现/发 debug-query（含瞬时故障重试）/两帧点击/悬停/等条件/读帧与全局/引擎态 probe/抓帧/收日志/槽文件指纹/起停 reset）+ `scripts/ops/*.mjs`（**用例**，一个用例一个文件）+ `scripts/ops/README.md`（**用例索引**：已实测 2 条 + 待登记 4 条含 battle/workshop/field/guild，每条写清缺哪三样：开屏手势/机器可读判据/特有坑）",
+    "`reset` 是唯一合法的『回到干净状态』入口，且**不许被旧页面骗过**：先按 **pid** 确认旧进程真死（心跳有 20s 容差，拿它当判据会以为停掉了其实还在跑）→ 起 → 等注册表（且 pid 对得上）→ 等**可驱动**（有渲染页且帧循环在跑）→ 等 TITLE → 引擎时钟新鲜度断言（> 120s 判为旧 VM 残留，报错而不是继续）",
+    "`ops/load-from-title.mjs --slot N` 实测通过：判据 = ① `cur = SAVE.BIN` ② 日志 `[slot-load]` ③（可选 `--expect BIN`）载入后帧链到该脚本；证据 `evidence/op1-load-from-title-79.log`（槽 79 → SN0000.BIN，含开屏首跑失败自动重试一次的实现）",
+    "`ops/load-from-adv.mjs --slot N` 实现完成但**本轮未跑通验证**（验证进行到一半，用户报当前实例已损坏并中止）⇒ 票里**不许假称通过**：它含『侧栏候选扫描（0..8）』与**模式安全断言**（`global f7ff0` = 0 存档 / 1 读档；不是读档模式就中止、绝不点槽位以免覆盖存档），待 T-0189 的覆盖开关落地后再跑一次并把证据补进本票",
+    "旧入口 `scripts/load-slot.mjs` 变**兼容壳**（转发到 `ops/load-from-title.mjs`，保留 `--list`），既有文档/技能里的命令不失效；不允许两份实现并存漂移",
+    "可用性诊断可读：`emu.mjs status` 对每个活实例打出 `可驱动` 或分类诊断（`no-viewer` / `stalled`，各附修法）；每个 op 开跑前 `waitTicking()` 过同一关（失败信息含修法，且**只描述设备侧修法 —— 这一层不模拟设备、不起自己的浏览器页、不用 playwright**）",
+    "`tickets.js --validate` 绿；`npm run verify` 全绿（脚本不进闸门，但不得破坏既有测试）；`ops/README.md` 的表格能一眼回答『现在有哪些可用的操作脚本』"
+  ],
+  "evidence": [
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "anchor": "export async function tap(",
+      "note": "★两帧点击原语（一次注入 cursor+press+release 不激活菜单/侧栏 ⇒ move→press→≥2 帧→release）",
+      "line": 404
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "anchor": "export async function resetInstance(",
+      "note": "reset：pid 真死判据 + 注册表 pid 对齐 + 可驱动判据 + 引擎时钟新鲜度断言",
+      "line": 614
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "anchor": "export async function pickSlotInSaveScreen(",
+      "note": "两个 op 共用的 UI 原语：在已打开的 SAVE/LOAD 画面里选槽→LOAD→确认（确认只按一次，避免残留输入边沿清掉 ▼ 的武装位）",
+      "line": 485
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/ops/README.md",
+      "anchor": "待登记（**未实测，别直接拿坐标硬上**）",
+      "note": "用例索引：已实测 2 条 + 待登记 4 条（battle/workshop/field/guild）各写清缺什么",
+      "line": 1
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs",
+      "anchor": "const LOAD_MODE_VALUE = 1;",
+      "note": "★安全断言：SAVE/LOAD 画面的模式全局 `f7ff0`（0=存档 / 1=读档）；在存档画面点槽位会覆盖存档 ⇒ 不确认就中止",
+      "line": 60
+    },
+    {
+      "file": "tickets/T-0188/evidence/op1-load-from-title-79.log",
+      "anchor": "✔ [ops] 已载入槽 79：cur = SN0000.BIN",
+      "note": "★本票唯一跑通到底的端到端证据（TITLE → Load Data → 页 70 → 行 9 → LOAD → 确认 → [slot-load] → SN0000.BIN）",
+      "line": 1
+    },
+    {
+      "file": "tickets/T-0188/evidence/headless-attach-dies.log",
+      "anchor": "无头渲染页退出 code=4294967295",
+      "note": "本机环境事实：`--attach-headless` 起一个死一个 ⇒ 实际渲染页是面板那一页；据此把 no-viewer / stalled 分开报",
+      "line": 1
+    },
+    {
+      "file": "src/INITCHARM.txt",
+      "anchor": "copy-local-array (global-int 13b0) [1 b c 2 3 4 5 6 7]",
+      "note": "★ADV 侧栏**默认布局里没有 SAVE/LOAD**（默认 9 项动作表）⇒ 用例不许写死『第 i 格 = LOAD』（覆盖方案见 T-0189）",
+      "line": 6
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0185",
+      "T-0189",
+      "T-0028"
+    ],
+    "docs": [
+      "docs-new/00-overview/lessons.md"
+    ],
+    "analysis": []
+  },
+  "status": "doing",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    }
+  ]
+}

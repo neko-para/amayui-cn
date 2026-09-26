@@ -14,16 +14,16 @@
   ],
   "evidence": [
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/load-slot.mjs",
-      "anchor": "点了 Load Data 但没进 SAVE.BIN",
-      "note": "首跑失败的现场（① 步的 20s 等待判据）：失败文案把原因指向槽/页码/目录，而实际是首跑未就绪",
-      "line": 169
+      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs",
+      "anchor": "两次都没进 SAVE.BIN",
+      "note": "首跑失败的重试落点（retarget：实现已从 load-slot.mjs 搬到本文件，load-slot.mjs 变兼容壳；★不删证据）",
+      "line": 56
     },
     {
-      "file": ".agents/skills/amayui-remote-debug/scripts/load-slot.mjs",
-      "anchor": "本流程从标题画面起跑",
-      "note": "① 步的前提（cur 必须是 TITLE.BIN 或 SAVE.BIN）——重试时必须重读 cur 而不是盲目重点",
-      "line": 174
+      "file": ".agents/skills/amayui-remote-debug/scripts/ops/load-from-title.mjs",
+      "anchor": "本用例只从 TITLE 起跑",
+      "note": "① 步的前提（cur 必须是 TITLE.BIN 或 SAVE.BIN）——重试时必须重读 cur 而不是盲目重点（retarget 到新实现）",
+      "line": 1
     },
     {
       "file": "tickets/T-0185/notes.md",
@@ -42,12 +42,22 @@
     ],
     "analysis": []
   },
-  "status": "open",
+  "status": "doing",
   "history": [
     {
       "at": "2026-09-26",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：evidence —— 实现搬家：读档用例从 load-slot.mjs 拆到 emu.mjs（原语）+ ops/load-from-title.mjs（用例），load-slot.mjs 变兼容壳；本票的\"首跑失败自动重试一次\"已在 ops/load-from-title.mjs 的 openSaveScreen() 里落地（并在开跑前 waitTicking() 就绪门）。仍欠：根因实证（是不是标题画面/输入门未就绪）与\"冷启+连跑 3 次\"的验证（本轮验证用的实例已损坏，见 T-0188 的记录）。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → doing —— 重试已落地（新 ops），剩根因实证 + 3 次连跑验证"
     }
   ]
 }

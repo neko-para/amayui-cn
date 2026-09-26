@@ -38,6 +38,7 @@ import type { ControlStatus } from '../ipcFileSource.js';
 import type { RenderStatus } from '../renderStatus.js';
 import type { PixiBackend } from '../pixiBackend.js';
 import { runFrameLoop, type FrameLoopGates, type FrameLoopOptions } from '../../frame/loop.js';
+import { setGlobalInt, setGlobalIntArray } from '../../vm/debugWrite.js';
 import { capturePng, type FrameHost } from '../../frame/host.js';
 // ★`tickets/T-0135`：输入注入走共享层的声明式执行器（宿主无关）——`applyScenarioEvent`。
 import { applyScenarioEvent, type ScenarioEvent } from '../../frame/scenario.js';
@@ -714,6 +715,21 @@ export class RendererSession {
         return ['（内部错误：snapshot 必须走 onDebugQuery 的异步分支 —— 它要等帧边界）'];
       case 'restore':
         return ['（内部错误：restore 必须走 onDebugQuery 的异步分支 —— 它要等帧边界）'];
+      case 'set-global':
+      case 'set-array': {
+        // ★`tickets/T-0189`（H2）：测试期把"配置类"的脚本全局定死（例：ADV 侧栏 charm 表 `global 13b0`）。
+        //   口径全在 `vm/debugWrite.ts`（**按 ENC 写**脚本全局池；**只改运行期内存、不写回 SAVE.DAT**）。
+        const r =
+          act.a === 'set-global'
+            ? setGlobalInt(this.#e, act.index, act.value)
+            : setGlobalIntArray(this.#e, act.base, act.index, act.value);
+        const out = [
+          `global 0x${r.index.toString(16)} ← ${r.value}（原 ${r.prev}）`,
+          '★只改运行期内存（ENC 写入脚本全局池）；**不写回 SAVE.DAT**，也不动玩家数据',
+        ];
+        this.#traceLog.line(`[set-global] ${out[0]}`);
+        return out;
+      }
       case 'capture':
         // ★`capture` 是**异步**的（要 await 抓帧）⇒ 不走这条同步路径：真正的处理在 `onDebugQuery` 的
         //   `act.a === 'capture'` 分支（那里能 await 并把 base64 放进结果的 `png` 字段）。

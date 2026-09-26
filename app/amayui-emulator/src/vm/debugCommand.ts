@@ -73,6 +73,22 @@ export type DebugAction =
   | { a: 'snapshot' }
   | { a: 'restore'; json: string }
   /**
+   * **写脚本全局 / 全局数组元素**（`tickets/T-0189`；"测试期把配置类全局定死"的 H2 方案）。
+   *
+   * 起因：ADV 侧栏（charm 表）的**每格是什么动作**存在全局数组 `global 13b0[0..8]` 里，
+   * 而**默认布局里没有 SAVE/LOAD**（`src/INITCHARM.txt:6` = `[1 b c 2 3 4 5 6 7]`），玩家排布又存在
+   * SAVE.DAT 里 ⇒ 任何"点侧栏读档"的用例都不该依赖玩家配置。派发是**点击时**读表（`src/SN0000.txt:401`）
+   * ⇒ 只要在点击前把表写死即可。
+   *
+   * ★口径（与 `save-slot.ts` 的池装载一致）：写的是**脚本全局 int 池**（`Engine.globals.int`），
+   *   **按 ENC 写**（`enc(key, v)`；否则脚本读出来是垃圾），**只改运行期内存、不写回 SAVE.DAT**
+   *   —— 这条是刻意的：不许把"玩家数据"当成测试夹具。
+   * ★`set-array` 就是 `set-global(base + index)`（数组在 emulator 里 = 一段连续全局槽，见 `memory.ts`
+   *   的 `lookup-array`：`op1 = &op2[op3]`），分开命名只为让用例读起来是"写数组元素"。
+   */
+  | { a: 'set-global'; index: number; value: number }
+  | { a: 'set-array'; base: number; index: number; value: number }
+  /**
    * **计时器**（`tickets/T-0180`）：`profile [on|off|reset|report [minMs]|watch on|off|slow <ms>]`。
    * 起因 = 用户实测"存档页 80→90 有 ~4s 同步阻塞"，而文件层实测只要 2ms/次 ⇒ 必须按帧记账才能定位。
    * 无参 = `report`（最常问的那一个）。
@@ -128,6 +144,8 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '  mem                   页面内存账（JS 堆 + 纹理缓存的项数/像素数 + 槽账；只读，不清理）',
   '  snapshot              导出一份**引擎态**快照（JSON；池/帧链/槽/门/文本项/路由）',
   '  restore <base64>      灌回一份引擎态快照（base64 里是 snapshot 输出的 UTF-8 JSON）',
+  '  set-global <下标> <值>  写**脚本全局 int**（按 ENC 写；只改运行期内存，**不写回 SAVE.DAT**）',
+  '  set-array <基址> <i> <值> 写**全局数组元素**（= set-global 基址+i；例：侧栏 charm 表 `13b0`）',
   '  move <x> <y>          注入光标移动到虚拟坐标（1280×720；触发引擎的命中测试/悬停）',
   '  leave                 注入「光标出窗」（等价窗口 mouseleave；侧栏收起那条路）',
   '  click <x> <y> [左|右]  注入一次点击（= press + release；缺省左键）',
@@ -142,9 +160,20 @@ export const DEBUG_COMMAND_HELP: string[] = [
   '★下标与常量口径：`0x…`=十六进制；含 a-f 的串=十六进制；纯数字=十进制。',
 ];
 
+/**
+ * 命令行里的**数字口径**（与帮助文本「`0x…`=十六进制；含 a-f 的串=十六进制；纯数字=十进制」同一套）：
+ * 下标与值共用。返回 `null` = 不合法（调用方按"当查询回报"处理，**不抛错、不崩**）。
+ */
+function parseNumToken(s: string): number | null {
+  const t = s.trim();
+  if (/^0x[0-9a-f]+$/i.test(t)) return Number.parseInt(t.slice(2), 16);
+  if (/^-?\d+$/.test(t)) return Number.parseInt(t, 10);
+  if (/^[0-9a-f]+$/i.test(t) && /[a-f]/i.test(t)) return Number.parseInt(t, 16);
+  return null;
+}
+
 /** 解析一行命令（纯函数；不接触引擎、不接触 DOM）。返回 `null` = 空行。 */
-export function parseDebugCommand(raw: string): DebugAction | null {
-  const text = raw.trim();
+export function parseDebugCommand(raw: string): DebugAction | null {  const text = raw.trim();
   if (text === '') return null;
   const parts = text.split(/\s+/);
   const cmd = parts[0]!.toLowerCase();
@@ -224,6 +253,38 @@ export function parseDebugCommand(raw: string): DebugAction | null {
   if (cmd === 'mem') {
     if (parts[1] !== undefined) return { a: 'query', text: `mem：不吃参数（收到「${parts[1]}」）` };
     return { a: 'mem' };
+  }
+
+  // ---- 写脚本全局 / 全局数组元素（`tickets/T-0189`）----
+  // 口径与命令行其它地方一致：`0x…` / 含 a-f 的串 = 十六进制，纯数字 = 十进制；
+  // 非法参数走既有的"当查询回报"（不抛错、不崩），面板与 CLI 拿到同一句失败。
+  if (cmd === 'set-global' || cmd === 'set-array') {
+    if (cmd === 'set-array') {
+      if (parts.length !== 4) {
+        return { a: 'query', text: 'set-array：用法 set-array <基址下标> <元素下标> <值>（例：set-array 13b0 1 e）' };
+      }
+      const base = parseNumToken(parts[1]!);
+      const idx = parseNumToken(parts[2]!);
+      const value = parseNumToken(parts[3]!);
+      if (base === null || base < 0 || !Number.isInteger(base)) {
+        return { a: 'query', text: `set-array：基址下标不合法（收到「${parts[1]}」）` };
+      }
+      if (idx === null || idx < 0 || !Number.isInteger(idx)) {
+        return { a: 'query', text: `set-array：元素下标不合法（收到「${parts[2]}」）` };
+      }
+      if (value === null) return { a: 'query', text: `set-array：值不合法（收到「${parts[3]}」）` };
+      return { a: 'set-array', base, index: idx, value };
+    }
+    if (parts.length !== 3) {
+      return { a: 'query', text: 'set-global：用法 set-global <下标> <值>（例：set-global a9ce 1）' };
+    }
+    const index = parseNumToken(parts[1]!);
+    const value = parseNumToken(parts[2]!);
+    if (index === null || index < 0 || !Number.isInteger(index)) {
+      return { a: 'query', text: `set-global：下标不合法（收到「${parts[1]}」）` };
+    }
+    if (value === null) return { a: 'query', text: `set-global：值不合法（收到「${parts[2]}」）` };
+    return { a: 'set-global', index, value };
   }
 
   // ---- 输入注入（`tickets/T-0135`；解析出来的就是 `ScenarioEvent` 的形状）----

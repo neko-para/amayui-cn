@@ -1,0 +1,30 @@
+▶ [ops] 从 ADV 侧栏载入槽 78（实例 sb189）
+  起跑状态：cur = SC0000.BIN
+  ★改侧栏配置（运行期）：global 0x13b0[0..8] ← [0xd, 0xe, 0x1, 0xb, 0xc, 0x2, 0x3, 0x4, 0x5]（第 0 格 SAVE / 第 1 格 LOAD；只改内存，不写回 SAVE.DAT）
+  ⚠ 写侧栏表失败（{"query":"set-array 0x13b0 0 13","ok":false,"lines":["未知查询：set-array","可用查询：","  global <下标> [count]   全局 int 槽（给解码后的值 + 原始编码值）","  local <下标>            当前帧的 local int 槽","  frame [下标|all]       列**活）⇒ 退回候选扫描
+  扫描第 0 格 @ 1220,137
+  第 0 格不是存档画面（cur=FELLOW.BIN）⇒ 右键取消，继续
+  扫描第 1 格 @ 1220,187
+  第 1 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
+  扫描第 2 格 @ 1220,237
+  第 2 格不是存档画面（cur=TITLE.BIN）⇒ 右键取消，继续
+  扫描第 3 格 @ 1220,287
+  第 3 格不是存档画面（cur=TITLE.BIN）⇒ 右键取消，继续
+  扫描第 4 格 @ 1220,337
+  第 4 格不是存档画面（cur=GAMESTART.BIN）⇒ 右键取消，继续
+  扫描第 5 格 @ 1220,387
+  第 5 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
+  扫描第 6 格 @ 1220,437
+  第 6 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
+  扫描第 7 格 @ 1220,487
+  第 7 格不是存档画面（cur=HISTORY.BIN）⇒ 右键取消，继续
+  扫描第 8 格 @ 1220,537
+  第 8 格不是存档画面（cur=HIDEWIN.BIN）⇒ 右键取消，继续
+file:///E:/Games/Eushully/%E5%A4%A9%E7%B5%90/.agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs:162
+    throw new Error(
+          ^
+
+Error: 扫完 9 格都没有能打开存档/读档画面的格子：这个场景的侧栏里没有 SAVE/LOAD（默认布局就是这样，见 src/INITCHARM.txt:6）⇒ 换一条路径（先用 ops/load-from-title.mjs 从 TITLE 读档），或检查写命令是否可用（`set-array`，tickets/T-0189）。
+    at file:///E:/Games/Eushully/%E5%A4%A9%E7%B5%90/.agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs:162:11
+
+Node.js v24.14.0
