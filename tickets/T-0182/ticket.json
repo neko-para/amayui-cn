@@ -1,0 +1,85 @@
+{
+  "title": "TITLE→GAMESTART→SN0000 过渡中 TITLE 画面闪一帧（撤幕留帧从未武装）",
+  "type": "bug",
+  "priority": "P1",
+  "area": "emulator/render",
+  "why": "用户实测（2026-09-26）：路径 TITLE → Game Start → GAMESTART → ゲーム開始 → SN0000 时，GAMESTART 渐黑之后、SN0000 渐入之前，屏幕上错误地闪出一帧旧画面（TITLE 背景 0xa + TITLE 立绘节点 key 0x14 + GAMESTART 配置界面 28 项）；预期是「黑 → 从黑渐入 SN0000」。根因（实证）：pixiBackend 的撤幕留帧 #coversViewportMeshInRange 判据硬写「顶点外接矩形要 >= 1280x720」，而 2026-09-25 的 T-0155 半像素订正（gfx-item.ts 的 HALF_PIXEL=0.5）把语料里所有 create-mesh 满屏四边形变成 (-0.5,-0.5)..(1279.5,719.5) ⇒ Math.max(xs)=1279.5 < VIEW_W=1280 ⇒ 判据永远为假 ⇒ 「满屏幕布被撤 → 留帧」这条路径彻底失效（真跑日志里 detachTexture h=0x30d40 count=1 REMOVE 之后再没有 [frame-hold] 满屏幕布 … 被撤 行）。这正是 T-0067/T-0155 一族「撤幕那一帧露出下面的界面」的回归。",
+  "acceptance": [
+    "满屏幕布（语料标准几何 (-0.5,-0.5)..(1279.5,719.5)）被撤时留帧必须武装：真跑日志在 detachTexture h=0x30d40 count=1 REMOVE 的前一行出现 [frame-hold] 满屏幕布 0x30d40 被撤 → 留帧最多 60 帧",
+    "从幕被撤到 SC0000 的新幕可见之间，**呈现**（present）的帧只能是上一帧的黑（留帧跳过）：日志里 detach 之后紧跟 [frame-hold] 跳过本次 present，直到 [frame-hold] createMesh 0x19258 → 新内容可见，解除留帧",
+    "武装判据由共享层纯函数承担（无时钟、无副作用），守卫钉住四件：语料满屏四边形 ⇒ 算铺满；半屏/不可画/无几何 ⇒ 不算；全透明幕 ⇒ 不算（TITLE 入场渐显不该武装）；宿主侧不许再手写几何判据（源码棘轮）",
+    "真语料 E3 把「链路里那块幕的真实 rect」与「共享判据」接起来（改任一侧口径即红）",
+    "npm run verify 全绿；before/after 证据（真跑日志 + 逐帧摘要）归档进 tickets/T-0182/evidence/"
+  ],
+  "evidence": [
+    {
+      "file": "app/amayui-emulator/src/renderer/pixiBackend.ts",
+      "anchor": "#coversViewportMeshInRange",
+      "note": "撤幕留帧的武装判据（修前硬写 min<=0 && max>=VIEW_W ⇒ 与半像素订正后的顶点口径冲突；修后 = 一行委托共享层 meshesCoverViewInRange）",
+      "line": 906
+    },
+    {
+      "file": "app/amayui-emulator/src/renderer/drawitem/eval.ts",
+      "anchor": "export function meshCoversViewport",
+      "note": "修后的武装判据本体（几何 ∩ 此刻 α>0），与 itemCoversView 同族、无时钟无副作用",
+      "line": 189
+    },
+    {
+      "file": "app/amayui-emulator/src/vm/handlers/gfx-item.ts",
+      "anchor": "HALF_PIXEL",
+      "note": "T-0155 订正：顶点 x/y 各减 0.5 ⇒ 满屏四边形 = (-0.5,-0.5)..(1279.5,719.5)（判据恒假的那半）",
+      "line": 455
+    },
+    {
+      "file": "tickets/T-0182/evidence/transition-frames-before.md",
+      "anchor": "SETFATE.BIN:ip=33",
+      "note": "before 轨迹逐帧摘要：幕被撤那一帧（f1170）仍是 29 个旧绘制项（含 TITLE 全屏背景 0xa、立绘节点 key 0x14）",
+      "line": 53
+    },
+    {
+      "file": "tickets/T-0182/evidence/curtain-drop-no-hold.log",
+      "anchor": "detachTexture h=0x30d40 count=1 REMOVE",
+      "note": "before 真跑日志：撤幕前后没有 [frame-hold] 满屏幕布 … 被撤 行 ⇒ 留帧从未武装",
+      "line": 15
+    },
+    {
+      "file": "tickets/T-0182/evidence/curtain-drop-hold-after.log",
+      "anchor": "满屏幕布 0x30d40 被撤",
+      "note": "after 真跑日志：撤幕即武装 → 两次 [frame-hold] 跳过本次 present → createMesh 0x19258 新内容可见才解除",
+      "line": 11
+    }
+  ],
+  "links": {
+    "tickets": [
+      "T-0067",
+      "T-0155"
+    ],
+    "docs": [
+      "docs-new/03-engine/rendering.md",
+      "docs-new/00-overview/lessons.md"
+    ]
+  },
+  "id": "T-0182",
+  "status": "done",
+  "history": [
+    {
+      "at": "2026-09-26",
+      "kind": "created",
+      "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, links, tests —— T-0182 收口：武装判据搬进共享层（meshFillsViewport ∩ meshCoversViewport）→ 撤幕留帧恢复武装；after 真跑日志见 evidence/curtain-drop-hold-after.log"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "open → done —— T-0182 收口：武装判据搬进共享层（meshFillsViewport ∩ meshCoversViewport）→ 撤幕留帧恢复武装；after 真跑日志见 evidence/curtain-drop-hold-after.log"
+    }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/frame-hold-cover.test.ts",
+    "app/amayui-emulator/test/mesh-vertex-quad.test.ts"
+  ]
+}

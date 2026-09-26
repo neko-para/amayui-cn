@@ -22,10 +22,10 @@ generated_by: scripts/build-capabilities.mjs
 |---|---|---|
 | `modeled-verified` | 79 | 已建模且有守卫（E2/E3） |
 | `modeled-unverified` | 5 | 已建模但只有静态结论（E1）或缺少守卫 |
-| `partial` | 31 | 只实现了一部分（缺口写在该条 note） |
+| `partial` | 32 | 只实现了一部分（缺口写在该条 note） |
 | `absent` | 5 | 引擎有、emulator 完全没有 |
 | `n/a-known` | 24 | 与本 2D 精灵 + 消息窗重写无关（必须写 why） |
-| **合计** | **144** | 需要关注（非 n/a 且非已核验）= **41** |
+| **合计** | **145** | 需要关注（非 n/a 且非已核验）= **42** |
 
 ## 按子系统
 
@@ -39,7 +39,7 @@ generated_by: scripts/build-capabilities.mjs
 | 存档槽 | 2 | 0 |
 | 帧循环 | 19 | 5 |
 | 消息窗 | 33 | 17 |
-| 渲染 | 30 | 8 |
+| 渲染 | 31 | 9 |
 | 资源 | 17 | 3 |
 | 转场 | 4 | 0 |
 | 输入 | 6 | 0 |
@@ -192,6 +192,7 @@ generated_by: scripts/build-capabilities.mjs
 | `queue-int-family-reset-on-exit-script` | 帧循环 | exit-script 的整体复位把 Queue_int / Stack_int 两族容器逐个**重建为空容器** | ✅ 已核验 | E2 · `test/t0156-control-frame.test.ts#整体复位重建 Queue_int 族` |
 | `script-request-queue-drain-dispatch` | 帧循环 | 脚本请求队列只在三处被放行（0x1F5 停靠结束 / 0x7C 列表收尾 / 0x2 的 -10 恢复臂） | 🟠 部分 | E2 · `test/op-1f5-dequeue.test.ts#停靠期间入队的请求在清停靠标志那一刻被派发` |
 | `script-global-int-pool-from-sys4ini` | ScriptContext | 脚本全局 int 池（boot 时从 SYS4INI.BIN 的池块装载） | 🟡 已建模未核验 | E3 · `test/t0107-infoen-real-id.test.ts` |
+| `present-without-backbuffer-clear` | 渲染 | 逐帧 present **不清后缓冲**（两处整屏 ClearTarget 都被恒 0 的 `Scene+46460` 位守卫） | 🟠 部分 | E3 · `test/frame-hold-cover.test.ts` |
 
 ## 缺口明细（`absent` / `partial`）
 
@@ -518,3 +519,12 @@ generated_by: scripts/build-capabilities.mjs
 - **引擎**：sub_41A0E0, sub_41AB80, sub_41A820, sub_40FB60 @ raw 25224-25822
 - **读的字段**：Engine+429752, Engine+497400, Engine+497380, Engine+497384, Engine+387940
 - **emulator 现状**：第 1 点已接线：`op_frame_countdown` 在停靠标志原值非 0、未在派发中时清标志并 `dispatchNextRequest`（handlers/frame.ts，raw 25224-25230），守卫 test/op-1f5-dequeue.test.ts；第 3 点（0x2 的 -10 臂）由同一 `dispatchNextRequest` 的恢复路径承接。第 2 点不接线…
+
+### `present-without-backbuffer-clear`（partial）
+
+- **能力**：逐帧 present **不清后缓冲**（两处整屏 ClearTarget 都被恒 0 的 `Scene+46460` 位守卫）
+- **触发**：每帧 present 入口 `sub_4B4040`（raw 136785：`(Scene+46460 & 1) != 0` 才 `sub_498B60`）与帧头一族 `sub_4AAF90`（raw 137026：`(Scene+46460 & 2) == 0` 才清）；该字段的**唯一写点**是 raw 130425 的 `Scene+46460 = 0`（在 `sub_4AAF90` 内）⇒ 两位恒 0、这两处整屏清屏在正常游戏过程中**从不发生**。其余 `sub_498B60` 调用点都先 `sub_4A50C0(层)` 切到**离屏 scratch 层**（转场 36/37 与类别 3 的目标层：raw 134926/134938/135825/136021/136175/136514），或落在 `sub_4B4910` 的条件分支（raw 137342）
+- **缺失时为什么静默**：★引擎的 present **不清后缓冲**（`IDirect3DDevice9::Clear` 只在两处被恒 0 的位守卫挡住，其余都清离屏层）⇒ 撤掉的绘制项/幕在屏上**留到被新内容覆盖为止**：撤幕那一帧屏上留的是上一帧。宿主若改成「每批指令后整帧重合成」，就会把引擎**从未呈现**过的中间态如实画出来（幕已撤、旧场景还在、新一屏未建）—— 不报错、无日志，只表现为「闪一帧旧画面」（`T-0067` 的存档页、`T-0182` 的 TITLE→GAMESTART→SN0000）
+- **引擎**：sub_4B4040, sub_4AAF90, sub_498B60, sub_4B06D0, sub_4B4910 @ raw 130286-137342
+- **读的字段**：Scene+46460
+- **emulator 现状**：emulator 侧补偿 = 撤幕留帧（`pixiBackend.#holdFrameAfterCurtainDrop`：撤掉一块「此刻真的盖着屏幕」的幕 ⇒ 最多跳过 `HOLD_MAX_FRAMES=60` 次 present，直到新内容可见；解除点 = 新可见幕 / 铺满一屏的 `draw-texture` / `CopyScene`，`0x1F6 clearDrawContainer` 只…

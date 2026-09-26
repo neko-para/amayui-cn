@@ -1,0 +1,71 @@
+# T-0182 · after 证据：撤幕武装留帧 → 中间帧被跳过 → 由 SC0000 的新幕解除
+
+来源：`.tmp/amayui-emulator.log`（2026-09-26，修后重跑 `npm run record -- --scenario tools/scenarios/gamestart.json
+--out .tmp/flash/gamestart-after2.jsonl.gz --centered`；行号 = 原文件 1-based）。`.tmp/` 是 gitignore 临时区 ⇒ 归档到这里。
+
+## ① 全流程的留帧事件（修后只有**一次**撤幕武装，且只在"幕真的盖着屏幕"的那一刻）
+
+```
+L325: [frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+L327: [frame-hold] createMesh 0x0 → 新内容可见，解除留帧（剩 60 帧）
+L581: [frame-hold] 满屏幕布 0x30d40 被撤 → 留帧最多 60 帧（等新内容）
+L601: [frame-hold] 跳过本次 present（剩 59 帧）
+L604: [frame-hold] 跳过本次 present（剩 58 帧）
+L605: [frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+L611: [frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+L614: [frame-hold] createMesh 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+L635: [frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+L673: [frame-hold] 跳过本次 present（剩 59 帧）
+L680: [frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+L683: [frame-hold] createMesh 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+```
+
+★对照 before（`curtain-drop-no-hold.log`）：撤幕那一刻**没有**武装行，于是 f1170/f1171 两帧把
+TITLE 背景 + GAMESTART 配置界面如实呈现出来 = 用户看到的闪帧。
+★修后 TITLE 的**入场渐显**（`TITLE.txt:731-748`：先把满屏黑幕淡到全透明、再撤掉）**不再**武装 ——
+因为撤的那一刻 `state0` 已被窗末烘焙成 0（全透明），撤掉它画面上什么都没变；在那里留帧只会白冻 60 帧。
+
+## ② 过渡窗口的原文（幕被撤 → 两次跳过 → clearDrawContainer → 新幕解除）
+
+```
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 11507ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(-0.5,-0.5..1279.5,719.5) 0x30d40:148/#000000(-0.5,-0.5..1279.5,719.5)} slotTex=7 l2d={槽1 节点1 可画1 纹理3 缓存60} 帧间隔 avg=9.1ms max=41ms 丢帧=1%(n=240) 最慢帧 间隔=37ms 合成=1.8ms 批=60 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 12008ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(-0.5,-0.5..1279.5,719.5) 0x30d40:234/#000000(-0.5,-0.5..1279.5,719.5)} slotTex=7 l2d={槽1 节点1 可画1 纹理3 缓存60} 帧间隔 avg=9.1ms max=41ms 丢帧=2%(n=240) 最慢帧 间隔=31ms 合成=1.9ms 批=60 wait=0x400
+=== gate 0x400 cleared (scene anims done) ===
+[frame-hold] 满屏幕布 0x30d40 被撤 → 留帧最多 60 帧（等新内容）
+detachTexture h=0x30d40 count=1 REMOVE (drawItems=0, meshes=1)
+[msgwin] win=9 1 行 0 字 横排 18px
+  [call-script] 0x51e4 -> INITGAME.BIN (11 instr)
+  [call-script] 0x5e -> UNITECH.BIN (307 instr)
+  [call-script] 0x50e9 -> CALCCC.BIN (145 instr)
+  [call-script] 0x5227 -> CCINIT.BIN (3427 instr)
+  [call-script] 0x100019e -> $1$CCINIT.BIN (389 instr)
+  [call-script] 0x200002b -> $2$CCINIT.BIN (1 instr)
+  [call-script] 0x300039f -> $3$CCINIT.BIN (164 instr)
+  [call-script] 0x40000f9 -> $4$CCINIT.BIN (1 instr)
+  [call-script] 0x500022f -> $5$CCINIT.BIN (110 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x51e5 -> SETFATE.BIN (129 instr)
+[frame-hold] 跳过本次 present（剩 59 帧）
+[input-state] hasCursor=1 pos=(811,605) moved=0 edge=0x0 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[perf] 帧 #1098：★本帧**占住主线程** 227ms（steps 10000） · 宿主阶段 advanceModel 0ms×1 advance/l2dTick 0ms×1 advance/scAdvance 0ms×1
+[frame-hold] 跳过本次 present（剩 58 帧）
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=29 meshes=1 l2dNodes=1 文本窗=1→0（保留纹理槽）
+releaseTexture layer=4
+releaseTexture layer=5
+releaseMovieSlots 42..999：析构影片对象 0 个、解绑槽→imgid 记录 1 条（引擎 raw 25331-25343）
+detachTexture h=0x19258 count=1 REMOVE (drawItems=0, meshes=0)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=0 l2dNodes=0 文本窗=0→0（保留纹理槽）
+releaseMovieSlots 42..999：析构影片对象 0 个、解绑槽→imgid 记录 0 条（引擎 raw 25331-25343）
+[frame-hold] createMesh 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+createMesh h=0x19258 v=4 layer=0 rect=(-0.5,-0.5)..(1279.5,719.5) base0=0xffffffff
+```

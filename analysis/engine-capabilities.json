@@ -16,13 +16,13 @@
   },
   "generatedFrom": ".tmp/capabilities-enum.md（四组 grep 枚举；raw 行号以直读为准）",
   "counts": {
-    "total": 144,
+    "total": 145,
     "modeled-verified": 79,
     "modeled-unverified": 5,
-    "partial": 31,
+    "partial": 32,
     "absent": 5,
     "n/a-known": 24,
-    "needsAttention": 41
+    "needsAttention": 42
   },
   "entries": [
     {
@@ -4428,19 +4428,18 @@
         "guard": "test/live2d-render.test.ts",
         "note": "出画几何/摆放/门控/批次粒度只在 `src/live2d/render.ts` 实现一次，快照与 Pixi 合成同源。**批次粒度 = 一个网格一批**（= 引擎对每个 DrawData 的一次 `DrawIndexedPrimitive`）：引擎把该网格的 opacity 写满它的每个顶点（sub_4C88B0 raw 153207）⇒ 每批一个 alpha 精确；★按纹理号合并是**错的**（实测 TITLE 的 D_EYE.09/10 在默认参数下 opacity=0，把整张角色纹理 3062 个三角形压成透明 ⇒ 角色从画面上消失）。其它 raw 锚点：153036-153091（VB/IB/UV 流）、148038-148068（位置流 12B + 三角形列表提交）、147824-147975（剔除/blend）、118508-118511（节点矩阵初始化单位阵）。已建模：画布居中平移、UV 原样透传（不翻转）、三角形列表索引、drawOrder 序、VISIBLE: 覆盖、槽空/bit0 清掉/键过滤三种门控。**E4 已做**（2026-09-17）：真界面截图 .tmp/l2dfix-0-title.png（角色完整出画）与 .tmp/t0042d-0-title.png（修前\"只有背景、没有角色\"）对照；日志 `[present …] l2d={槽1 节点1 可画1 纹理3}`。未建模：节点 +508 的 4x4（语料只用 0x344，初始化即单位阵）按单位阵、.MTN 的 LAYOUT: 按不影响摆放（语料 236/237 缺省）、背面剔除按不剔除（超集）。 ★切批粒度 = **一个网格一批**（`src/live2d/render.ts`；「按纹理号合并」是错的），直接锚点 raw **148038-148068** 写在 `trigger` 里；`engine.raw` = `134277-134416`（覆盖 572B 节点归并那一段）。"
       },
-
       "journal": [
-          {
-            "at": "2026-09-21（T-0075 审计 contradiction）",
-            "field": "note",
-            "what": "★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：本条的 `trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（`src/live2d/render.ts` 一个网格一批）自相矛盾 ⇒ 已按体与实现改写；`engine.raw` 同时扩到 `134277-134416`（覆盖 572B 节点归并那一段），切批粒度的直接锚点 raw **148038-148068** 写在 `trigger` 里。"
-          },
-          {
-            "at": "2026-09-25（T-0179 第 70 轮）",
-            "field": "evidence",
-            "what": "数据卫生：删掉顶层 vestigial 字段 evidence=E4（它与权威字段 emulator.evidence=E3 互相矛盾）。note 里那句「E4 已做」的依据是 .tmp/l2dfix-0-title.png / .tmp/t0042d-0-title.png 两张对照截图，而 .tmp/ 是 gitignore 的临时区（纪律：证据不许指 .tmp/）⇒ 不构成持久的 E4 凭据，故不改 emulator.evidence。沿革存于此。"
-          }
-        ]
+        {
+          "at": "2026-09-21（T-0075 审计 contradiction）",
+          "field": "note",
+          "what": "★**订正（2026-09-21，收口 T-0075 审计的 contradiction）**：本条的 `trigger` 原写「按纹理号分组成三角批次」，与同条 note（「按纹理号合并是**错的**」）和实现（`src/live2d/render.ts` 一个网格一批）自相矛盾 ⇒ 已按体与实现改写；`engine.raw` 同时扩到 `134277-134416`（覆盖 572B 节点归并那一段），切批粒度的直接锚点 raw **148038-148068** 写在 `trigger` 里。"
+        },
+        {
+          "at": "2026-09-25（T-0179 第 70 轮）",
+          "field": "evidence",
+          "what": "数据卫生：删掉顶层 vestigial 字段 evidence=E4（它与权威字段 emulator.evidence=E3 互相矛盾）。note 里那句「E4 已做」的依据是 .tmp/l2dfix-0-title.png / .tmp/t0042d-0-title.png 两张对照截图，而 .tmp/ 是 gitignore 的临时区（纪律：证据不许指 .tmp/）⇒ 不构成持久的 E4 凭据，故不改 emulator.evidence。沿革存于此。"
+        }
+      ]
     },
     {
       "id": "stage-stepper-0x40-gate",
@@ -5161,6 +5160,33 @@
         }
       ],
       "journal": []
+    },
+    {
+      "id": "present-without-backbuffer-clear",
+      "subsystem": "渲染",
+      "name": "逐帧 present **不清后缓冲**（两处整屏 ClearTarget 都被恒 0 的 `Scene+46460` 位守卫）",
+      "trigger": "每帧 present 入口 `sub_4B4040`（raw 136785：`(Scene+46460 & 1) != 0` 才 `sub_498B60`）与帧头一族 `sub_4AAF90`（raw 137026：`(Scene+46460 & 2) == 0` 才清）；该字段的**唯一写点**是 raw 130425 的 `Scene+46460 = 0`（在 `sub_4AAF90` 内）⇒ 两位恒 0、这两处整屏清屏在正常游戏过程中**从不发生**。其余 `sub_498B60` 调用点都先 `sub_4A50C0(层)` 切到**离屏 scratch 层**（转场 36/37 与类别 3 的目标层：raw 134926/134938/135825/136021/136175/136514），或落在 `sub_4B4910` 的条件分支（raw 137342）",
+      "engine": {
+        "fns": [
+          "sub_4B4040",
+          "sub_4AAF90",
+          "sub_498B60",
+          "sub_4B06D0",
+          "sub_4B4910"
+        ],
+        "raw": "130286-137342"
+      },
+      "reads": [
+        "Scene+46460"
+      ],
+      "whySilent": "★引擎的 present **不清后缓冲**（`IDirect3DDevice9::Clear` 只在两处被恒 0 的位守卫挡住，其余都清离屏层）⇒ 撤掉的绘制项/幕在屏上**留到被新内容覆盖为止**：撤幕那一帧屏上留的是上一帧。宿主若改成「每批指令后整帧重合成」，就会把引擎**从未呈现**过的中间态如实画出来（幕已撤、旧场景还在、新一屏未建）—— 不报错、无日志，只表现为「闪一帧旧画面」（`T-0067` 的存档页、`T-0182` 的 TITLE→GAMESTART→SN0000）",
+      "confidence": "confirmed",
+      "emulator": {
+        "status": "partial",
+        "evidence": "E3",
+        "guard": "test/frame-hold-cover.test.ts",
+        "note": "emulator 侧补偿 = **撤幕留帧**（`pixiBackend.#holdFrameAfterCurtainDrop`：撤掉一块「此刻真的盖着屏幕」的幕 ⇒ 最多跳过 `HOLD_MAX_FRAMES=60` 次 present，直到新内容可见；解除点 = 新可见幕 / 铺满一屏的 `draw-texture` / `CopyScene`，`0x1F6 clearDrawContainer` 只**续期**不解除）。武装判据在共享层 `renderer/drawitem/eval.ts`（`meshFillsViewport` ∩ `meshCoversViewport`，**无时钟、无副作用**，与 `itemCoversView` 共用 `FRAME_HOLD_COVER_RATIO`）。★2026-09-26（`T-0182`）：该判据曾手写在宿主里、口径 `max(xs) >= VIEW_W`，被 `T-0155` 的半像素顶点订正（`x/y -= 0.5`）打成**恒假** ⇒ 留帧从未武装（症状 = 过渡中闪一帧 TITLE 背景 + GAMESTART 配置界面）；现在由 `test/frame-hold-cover.test.ts`（判据取值表 + 源码棘轮）与 `test/mesh-vertex-quad.test.ts`（真语料 rect 接进判据）守住。残余（**有据**）：① 仍是**宿主启发式** —— 正确模型应是共享的「backbuffer 不清屏」策略（`T-0057` 的 C13）；② **按区间删一屏 UI**（`detach-texture <区间>`）**不**武装留帧 ⇒ 存档页消失一瞬那类症状仍在 `T-0067`"
+      }
     }
   ]
 }

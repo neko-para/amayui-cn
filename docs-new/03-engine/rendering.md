@@ -115,6 +115,17 @@ else  // 完成/收尾
   为什么需要：实测（`.tmp` 日志）批边界会落在"幕已撤、旧图元未清、新幕未建"的脚本级 teardown 中间，于是画出**一帧没有覆盖幕的旧场景**（`[meshsig 17480ms] meshes={0:0} items=29`，29 个图元正是 GAMESTART 配置界面）—— 用户看到的就是"配置界面向黑渐变完成后又闪了一下"。这条是 **emulator 侧策略**（非引擎 opcode 语义）：引擎那边 present 由"场景脏 + 动画待播"驱动且**从不整屏清 backbuffer**（`ClearTarget` 被 `_this+46460&1` 守卫、该字段恒 0），撤幕帧屏上留的是上一帧的黑，而重写侧是"每批指令后整帧重合成"，粒度对不上。实现见 `pixiBackend.ts` 的 `#holdFrameAfterCurtainDrop`/`#releaseFrameHoldIfVisible`。
   - ★两处收紧（用户实测"进 SN0000 时**背景**闪一下"）：① **建项 ≠ 可见** —— 引擎建几何（`0x320`）与设色（`0x322`）是两条指令，中间那一帧的幕还是全透明 ⇒ 解除判据 = "**`state0` 的高字节 alpha > 0**"（`pixiBackend.ts` 的 `#meshVisible`；`calcDiffuse` 输出那条已废弃的实现不成判据），`0x1F6 clearDrawContainer` 也**不再解除**留帧（改为续期）；② 上限 8 → 60 帧 —— 8 帧在慢机上不够跨过"撤幕 → 清容器 → 建新场景"这串脚本级操作。
   - 日志可复现：`.tmp/amayui-emulator.log` 里 `[frame-hold] 满屏幕布 0x30d40 被撤 → …` → `createMesh 0x19258 颜色仍透明 → 继续留帧` → `setVertexColor 0x19258 → 新内容可见，解除留帧`（解除时刻的幕是**不透明黑**，与留帧中屏上那帧黑完全相同 ⇒ 无缝），随后才是 `setVertexColorAlpha 0x19258 … → state1=0` 的 3.6s 淡出。
+  - ★★**武装判据（2026-09-26，`T-0182`）**：判据**只留共享层一份** —— `drawitem/eval.ts` 的
+    `meshFillsViewport`（几何：**与视口的交集面积** ≥ `FRAME_HOLD_COVER_RATIO`）∩ `meshCoversViewport`
+    （此刻 `state0` α>0；窗还开着时只要任一端 α>0 就算"可能盖着"），区间版 = `meshesCoverViewInRange`。
+    **宿主侧不许再手写几何判据**：旧实现写在 `pixiBackend.#coversViewportMeshInRange` 里，口径是
+    `min(xs) <= 0 && max(xs) >= VIEW_W`；`T-0155` 给 `0x320` 的顶点加了引擎的半像素偏移
+    （`x/y -= 0.5`）之后，语料里每一块满屏幕布都成了 `(-0.5,-0.5)..(1279.5,719.5)` ⇒
+    `1279.5 >= 1280` 为假 ⇒ **判据恒假**、撤幕留帧**再没武装过**（症状：TITLE → GAMESTART → SN0000 时，
+    渐黑之后、SN0000 渐入之前闪出一帧 TITLE 背景 + GAMESTART 配置界面；`tickets/T-0182`）。
+    另一条推论：撤一块**已经全透明**的幕在画面上什么都没改变（TITLE 入场渐显 `TITLE.txt:731-748`
+    撤幕那一刻 `state0` 已被窗末烘焙成 0）⇒ 那里**不该**武装，否则白冻 60 帧（连标题立绘的 Live2D
+    动作一起冻住）——「几何铺满」与「此刻真的盖着」必须分开判。
 - ✅ 视口 1280×720；窗口 `useContentSize:true` + `win.setContentSize(1280,720)`；`autoDensity + devicePixelRatio`（canvas CSS 1280×720、底层按 DPR 高清）。
 - ✅ 严格 flag：draw-item/mesh 只认 bit0|bit1，未知位（如 draw-item `&4`）抛 `UnknownFlagError` 中断；未实现 opcode 抛 `NotImplementedOp`。
 - ✅ 诊断日志：`log-line`/`log-line-sync` IPC → `app/amayui-emulator/.tmp/..`(实际 `E:\Games\Eushully\天結\.tmp\amayui-emulator.log`)；renderer 逐行/批次落盘 + 关窗同步兜底。

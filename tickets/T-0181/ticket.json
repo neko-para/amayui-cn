@@ -16,17 +16,20 @@
     {
       "file": "app/amayui-emulator/src/renderer/pixi/presenter.ts",
       "anchor": "#disposeFrameTextures(): void {",
-      "note": "帧末销毁本帧的临时裁剪纹理（原来从不销毁 ⇒ 源上 resize 监听泄漏 54 万条）"
+      "note": "帧末销毁本帧的临时裁剪纹理（原来从不销毁 ⇒ 源上 resize 监听泄漏 54 万条）",
+      "line": 134
     },
     {
       "file": "app/amayui-emulator/src/renderer/pixi/textureCache.ts",
       "anchor": "srcListenerCounts(): { imgid: number; source: string; listeners: number; keys: string[] }[] {",
-      "note": "泄漏的直接读数（每个源上各事件的监听条数）"
+      "note": "泄漏的直接读数（每个源上各事件的监听条数）",
+      "line": 332
     },
     {
       "file": "app/amayui-emulator/test/texture-listener-leak-t0181.test.ts",
       "anchor": "★临时裁剪纹理必须销毁：源上的监听条数**不随帧数增长**",
-      "note": "红→绿实测过的守卫（连画 30 帧）"
+      "note": "红→绿实测过的守卫（连画 30 帧）",
+      "line": 72
     }
   ],
   "tests": [

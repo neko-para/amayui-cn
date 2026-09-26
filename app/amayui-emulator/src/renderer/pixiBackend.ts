@@ -127,6 +127,10 @@ import type { MsgWinInput } from '../text/layout.js';
 import { fontFailures } from './text/fontLoader.js';
 import { TextureCache } from './pixi/textureCache.js';
 import { VIEW_H, VIEW_W } from './viewport.js';
+// ★`tickets/T-0182`：撤幕留帧的**武装**判据在共享层（与 `itemCoversView` 同一个覆盖率口径，
+//   无时钟无副作用）；宿主侧只做"区间筛选"。修前它手写在 `#coversViewportMeshInRange` 里，
+//   与 T-0155 的半像素顶点口径冲突后静默失效（见该方法的注释）。
+import { meshesCoverViewInRange } from './drawitem/eval.js';
 // ★`tickets/T-0180` §10：`advanceModel`/`present` 内部阶段计时（那一类"steps 很少却工作几百 ms"的帧）。
 import { profiler } from '../vm/profile.js';
 import type { RenderStatus } from './renderStatus.js';
@@ -884,22 +888,23 @@ export class PixiBackend implements NativeBridge {
   }
 
   /**
-   * `[handle, handle+count)` 区间里是否有**满屏覆盖幕**（顶点四边形铺满视口）。
+   * `[handle, handle+count)` 区间里是否有**此刻盖着屏幕的幕**（几何铺满视口 **且** α>0）。
    *
-   * 用途见 `#holdFrameAfterCurtainDrop`。
+   * 用途见 `#holdFrameAfterCurtainDrop`。判据本体在共享层
+   * （`drawitem/eval.ts` 的 `meshesCoverViewInRange` / `meshCoversViewport` / `meshFillsViewport`
+   * —— **无时钟、无副作用**，与 `itemCoversView` 共用同一个覆盖率口径）。
+   *
+   * ★**不许在这里手写几何判据**（`tickets/T-0182` 的事故）：旧实现写的是
+   * `min(xs) <= 0 && max(xs) >= VIEW_W`，而 T-0155 的半像素订正让语料满屏幕布变成
+   * `(-0.5,-0.5)..(1279.5,719.5)` ⇒ `1279.5 >= 1280` 为假 ⇒ 撤幕留帧**再也没武装过**
+   * （症状：GAMESTART 渐黑后闪一帧 TITLE/配置界面）。这套判据只留一份，改几何口径时
+   * 单测（`test/frame-hold-cover.test.ts`）与真语料 E3（`test/mesh-vertex-quad.test.ts`）会一起红。
+   *
+   * ★"α>0"那一半同样必要：撤一块**已经全透明**的幕在画面上什么都没改变（TITLE 的入场渐显就是），
+   * 在那里武装只会白冻 60 帧。
    */
   #coversViewportMeshInRange(handle: number, count: number): boolean {
-    const hi = count <= 1 ? handle + 1 : handle + count;
-    for (const m of this.scene.meshes.values()) {
-      if (m.handle < handle || m.handle >= hi) continue;
-      if ((m.flags & 1) === 0 || m.verts.length < 3) continue;
-      const xs = m.verts.map((v) => v.x);
-      const ys = m.verts.map((v) => v.y);
-      if (Math.min(...xs) <= 0 && Math.min(...ys) <= 0 && Math.max(...xs) >= VIEW_W && Math.max(...ys) >= VIEW_H) {
-        return true;
-      }
-    }
-    return false;
+    return meshesCoverViewInRange(this.scene.meshes.values(), handle, count, VIEW_W, VIEW_H);
   }
 
   /**

@@ -132,6 +132,94 @@ export function itemCoversView(
 }
 
 /**
+ * **几何口径**：这块 mesh 的外接矩形是否铺满视口（撤幕留帧武装判据的几何半边；`tickets/T-0182`）。
+ *
+ * 与 `itemCoversView` 同族、同纪律：**无时钟、无副作用**（只读 `flags` 与顶点几何），
+ * 只用 `FRAME_HOLD_COVER_RATIO` 一个比例口径 —— 两处判据不许各写一套阈值。
+ *
+ * ★判据口径 = "**与视口的交集面积**"，而不是"外接矩形要 >= 1280×720"。
+ * 后者是 `tickets/T-0182` 的缺陷成因：`tickets/T-0155` 给 `0x320` 的顶点加了引擎的半像素偏移
+ * （`sub_4A1F00` raw 122235-122238：`x/y -= dbl_51D7F8(0.5)`，见 `handlers/gfx-item.ts` 的 `HALF_PIXEL`），
+ * 于是语料里**每一块满屏幕布**的外接矩形都是 `(-0.5,-0.5)..(1279.5,719.5)` ——
+ * `Math.max(xs) = 1279.5 < 1280` ⇒ 旧判据**恒假** ⇒ "满屏幕布被撤 → 留帧"整条路径静默失效
+ * （症状：GAMESTART 渐黑之后、SN0000 渐入之前闪出一帧 TITLE/配置界面）。
+ * 交集口径对半像素、对"比视口略大/略小"的幕都成立（`-0.5..1279.5` 的交集 =
+ * `1279.5×719.5 = 99.96%` 视口 ≥ 0.9）。
+ */
+export function meshFillsViewport(
+  m: MeshObj,
+  viewW: number,
+  viewH: number,
+  ratio: number = FRAME_HOLD_COVER_RATIO,
+): boolean {
+  if ((m.flags & 1) === 0) return false; // 无几何（引擎绘制门 raw 133502 `flags & 1`）
+  if (m.verts.length < 3) return false; // 少于三角形 ⇒ 铺不满（`0x320` 的 vcount 下限是 1，别假设 4）
+  if (!(viewW > 0) || !(viewH > 0)) return false; // 视口未就绪 ⇒ 宁可不武装
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const v of m.verts) {
+    if (v.x < x0) x0 = v.x;
+    if (v.y < y0) y0 = v.y;
+    if (v.x > x1) x1 = v.x;
+    if (v.y > y1) y1 = v.y;
+  }
+  const ix = Math.min(viewW, x1) - Math.max(0, x0);
+  const iy = Math.min(viewH, y1) - Math.max(0, y0);
+  if (!(ix > 0) || !(iy > 0)) return false;
+  return ix * iy >= ratio * viewW * viewH;
+}
+
+/**
+ * 这块 mesh **此刻是否真的盖着屏幕**（= 几何铺满 **且** 当前端色 α>0；`tickets/T-0182`）。
+ *
+ * ★为什么"几何铺满"不够：撤掉一块**已经全透明**的满屏幕布在画面上什么都没改变
+ * （典型站点：TITLE 的入场渐显 `TITLE.txt:731-748` —— 先 `create-mesh 30d40` 造满屏黑幕、
+ * 再用 `0x323` 把它 300ms 淡到全透明、`wait` 到窗末、最后 `detach-texture 30d40 1` 撤掉；
+ * 撤的那一刻 `state0` 已被窗末烘焙成 `0x00000000`）⇒ 在那里武装留帧只会白白冻结 60 帧
+ * （把标题立绘的 Live2D 动作也冻住），而引擎那边撤一块透明幕本来就不改变任何像素。
+ * 判据只读 `state0`/`state1`/`flags`（**无时钟、无副作用**；不调 `calcDiffuse`，那会锁存窗起点）。
+ *
+ * 两半的保守方向：
+ *  - 无动画窗（bit1 清）⇒ 可见色**就是** `state0`（引擎语义，见 `#meshVisible`）⇒ 按它精确判；
+ *  - 有动画窗（bit1 置）⇒ 可见色在两端之间插值 ⇒ **任一端 α>0 就算"可能盖着"**（宁可多留几帧，
+ *    也不能因为"起点是透明的"就漏判一块正在淡入的幕）。
+ */
+export function meshCoversViewport(
+  m: MeshObj,
+  viewW: number,
+  viewH: number,
+  ratio: number = FRAME_HOLD_COVER_RATIO,
+): boolean {
+  if (!meshFillsViewport(m, viewW, viewH, ratio)) return false;
+  if ((m.state0 >>> 24) & 0xff) return true;
+  return (m.flags & 2) !== 0 && (((m.state1 >>> 24) & 0xff) > 0);
+}
+
+/**
+ * **`[handle, handle+count)` 区间里有没有"此刻盖着屏幕的幕"**（撤幕留帧武装判据的区间版）。
+ *
+ * `count <= 1` = `0x1F7` 的单图元移除（`sub_4AB950`）；`count > 1` = 区间批量移除（`sub_4ABB60`）
+ * —— 与 `scDetachTexture` 的分派口径一致。
+ */
+export function meshesCoverViewInRange(
+  meshes: Iterable<MeshObj>,
+  handle: number,
+  count: number,
+  viewW: number,
+  viewH: number,
+  ratio: number = FRAME_HOLD_COVER_RATIO,
+): boolean {
+  const hi = count <= 1 ? handle + 1 : handle + count;
+  for (const m of meshes) {
+    if (m.handle < handle || m.handle >= hi) continue;
+    if (meshCoversViewport(m, viewW, viewH, ratio)) return true;
+  }
+  return false;
+}
+
+/**
  * draw-item 的 diffuse 色（full ARGB）。
  *
  * **求值器位置（实证，见文件头"逐帧求值器"一节）**：A 层 = `sub_49AA30` 内 raw 117434-117483

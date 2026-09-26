@@ -1,0 +1,54 @@
+# T-0182 · before 证据：撤幕不武装留帧（真跑日志原文）
+
+来源：`.tmp/amayui-emulator.log`（2026-09-26 11:19，`npm run record -- --scenario tools/scenarios/gamestart.json
+--out .tmp/flash/gamestart-before.jsonl.gz --centered` 的那一次真跑；行号 = 原文件 1-based）。
+`.tmp/` 是 gitignore 的临时区 ⇒ 按 T-0057 R6 归档到这里。
+
+## ① 幕被撤的那一笔（原第 578..582 行附近）
+
+```
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 11170ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(-0.5,-0.5..1279.5,719.5) 0x30d40:147/#000000(-0.5,-0.5..1279.5,719.5)} slotTex=7 l2d={槽1 节点1 可画1 纹理3 缓存60} 帧间隔 avg=8.3ms max=10ms 丢帧=0%(n=240) 最慢帧 间隔=10ms 合成=2.0ms 批=60 wait=0x400
+[input-state] hasCursor=1 pos=(811,605) moved=1 edge=0x1 btn=0 wheel=0 mouseJump=0x18a mouseSlot=0x32
+[present 11670ms] items={10:a255 1000:a255 1001:a255 1002:a255 1200:a255 1201:a255 1210:a255 1211:a255 1212:a255 1300:a255 1330:a255 1500:a255 1301:a255 1331:a255 1501:a255 1302:a255 1332:a255 1502:a255 1303:a255 1333:a255 1503:a255 1304:a255 1334:a255 1504:a255 1305:a255 1335:a255 1505:a255 1600:a255 1100:a255} meshes={0x0:255/#000000(-0.5,-0.5..1279.5,719.5) 0x30d40:232/#000000(-0.5,-0.5..1279.5,719.5)} slotTex=7 l2d={槽1 节点1 可画1 纹理3 缓存60} 帧间隔 avg=8.3ms max=10ms 丢帧=0%(n=240) 最慢帧 间隔=9ms 合成=1.0ms 批=60 wait=0x400
+=== gate 0x400 cleared (scene anims done) ===
+detachTexture h=0x30d40 count=1 REMOVE (drawItems=0, meshes=1)
+[msgwin] win=9 1 行 0 字 横排 18px
+  [call-script] 0x51e4 -> INITGAME.BIN (11 instr)
+  [call-script] 0x5e -> UNITECH.BIN (307 instr)
+  [call-script] 0x50e9 -> CALCCC.BIN (145 instr)
+  [call-script] 0x5227 -> CCINIT.BIN (3427 instr)
+```
+
+★注意：`detachTexture h=0x30d40 count=1 REMOVE (drawItems=0, meshes=1)` 前后**没有**
+`[frame-hold] 满屏幕布 0x30d40 被撤 …` 这一行 —— 判据 `#coversViewportMeshInRange` 判假（见 §③）。
+
+## ② 同一段之后，留帧只在 clearDrawContainer 处才武装（原第 597..610 行附近）
+
+```
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x77a -> ADDITEM.BIN (111 instr)
+  [call-script] 0x51e5 -> SETFATE.BIN (129 instr)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=29 meshes=1 l2dNodes=1 文本窗=1→0（保留纹理槽）
+releaseTexture layer=4
+releaseTexture layer=5
+releaseMovieSlots 42..999：析构影片对象 0 个、解绑槽→imgid 记录 1 条（引擎 raw 25331-25343）
+detachTexture h=0x19258 count=1 REMOVE (drawItems=0, meshes=0)
+[frame-hold] clearDrawContainer → 继续留帧（最多 60 帧，等新内容）
+clearDrawContainer: 释放 drawItems=0 meshes=0 l2dNodes=0 文本窗=0→0（保留纹理槽）
+releaseMovieSlots 42..999：析构影片对象 0 个、解绑槽→imgid 记录 0 条（引擎 raw 25331-25343）
+[frame-hold] createMesh 0x19258 → 新内容可见，解除留帧（剩 60 帧）
+createMesh h=0x19258 v=4 layer=0 rect=(-0.5,-0.5)..(1279.5,719.5) base0=0xffffffff
+setVertexColor h=0x19258 idx=0 a=255 rgb=0x0 → state0=0xff000000
+  [call-script] 0x3a -> SETCHARM.BIN (14 instr)
+```
+
+（`clearDrawContainer → 继续留帧` 是 `Math.max(#holdFrames, 60)`，即使此前是 0 也会武装 ⇒ 它会掩盖"幕撤没武装"这件事。）
+
+## ③ 判据为什么判假
+
+```
+createMesh h=0x30d40 v=4 layer=0 rect=(-0.5,-0.5)..(1279.5,719.5)     ← 顶点几何（T-0155 半像素订正）
+#coversViewportMeshInRange: Math.max(...xs) >= VIEW_W  即  1279.5 >= 1280  ⇒ false
+```

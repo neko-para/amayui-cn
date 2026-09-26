@@ -24,7 +24,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HeadlessScene } from '../src/renderer/headlessScene.js';
-import { calcDiffuse, meshColor, mulArgb, type MeshObj } from '../src/renderer/drawItem.js';
+import { calcDiffuse, meshColor, meshFillsViewport, mulArgb, type MeshObj } from '../src/renderer/drawItem.js';
 
 /** 一个满屏 mesh（几何已建、基础色全白）—— 与语料里的 `0x320` 站点同形。 */
 function fullScreenMesh(handle = 0x19640): MeshObj {
@@ -150,6 +150,37 @@ test('★E3 回归：Game Start → ゲーム開始 → SN0000 首文案时的�
   };
   const full = r.scene.meshes.filter(covers);
   assert.ok(full.length > 0, `应有满屏 mesh（顶点色幕布）；实际 ${JSON.stringify(r.scene.meshes)}`);
+  // ★`tickets/T-0182`：**真语料的满屏几何必须真的被"撤幕留帧"的共享判据认下来**。
+  //   为什么钉在 E3 这一层：修前 `pixiBackend.#coversViewportMeshInRange` 自己写了一份
+  //   `max(xs) >= VIEW_W` 的判据，T-0155 把顶点改成 `-0.5..1279.5` 之后那份判据**恒假** ⇒
+  //   撤幕留帧再没武装过（症状：GAMESTART 渐黑后闪一帧 TITLE/配置界面）。
+  //   这条断言把「真实 MESH 几何」与「共享判据」接在一起 ⇒ 任一侧换个口径就会红。
+  //   （"α>0 那半边"由 `test/frame-hold-cover.test.ts` 的 `meshCoversViewport` 用例钉住：
+  //     这里报的是**跑完那一刻**的态色，与"撤幕那一刻是否盖着屏幕"不是同一时刻。）
+  for (const m of full) {
+    const mm = /^(-?[\d.]+),(-?[\d.]+)\.\.(-?[\d.]+),(-?[\d.]+)$/.exec(m.rect)!;
+    const [x0, y0, x1, y1] = mm.slice(1).map(Number) as [number, number, number, number];
+    const quad = {
+      handle: m.handle,
+      flags: m.flags,
+      state0: 0,
+      state1: 0,
+      verts: [
+        { x: x0, y: y0, z: 0, u: 0, v: 0 },
+        { x: x1, y: y0, z: 0, u: 1, v: 0 },
+        { x: x0, y: y1, z: 0, u: 0, v: 1 },
+        { x: x1, y: y1, z: 0, u: 1, v: 1 },
+      ],
+      baseColors: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
+      blend: 0,
+    } as MeshObj;
+    assert.equal(
+      meshFillsViewport(quad, 1280, 720),
+      true,
+      `★真语料满屏幕布 0x${m.handle.toString(16)}（rect=${m.rect}）必须被 meshFillsViewport 认成"铺满一屏"——` +
+        `否则撤幕留帧不会武装（T-0182）`,
+    );
+  }
   for (const m of r.scene.meshes) {
     assert.equal(m.verts, 4, `mesh 0x${m.handle.toString(16)} 应有 4 个顶点（引擎 create-mesh op9=4）`);
     assert.equal(m.flags & 1, 1, `mesh 0x${m.handle.toString(16)} 的 bit0（几何已建）应置`);

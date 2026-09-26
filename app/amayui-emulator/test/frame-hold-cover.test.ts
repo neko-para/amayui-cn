@@ -38,15 +38,46 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FRAME_HOLD_COVER_RATIO, itemCoversView } from '../src/renderer/drawItem.js';
+import {
+  FRAME_HOLD_COVER_RATIO,
+  itemCoversView,
+  meshCoversViewport,
+  meshFillsViewport,
+  meshesCoverViewInRange,
+} from '../src/renderer/drawItem.js';
 import { VIEW_H, VIEW_W } from '../src/renderer/viewport.js';
-import type { Item } from '../src/renderer/drawItem.js';
+import type { Item, MeshObj } from '../src/renderer/drawItem.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 
 /** 造一个"已建项"（只填本判据读的字段：flags/srcW/srcH）。 */
 const item = (srcW: number, srcH: number, flags = 1): Item => ({ flags, srcW, srcH }) as unknown as Item;
+
+/**
+ * 造一块 mesh（只填本判据读的字段：flags/verts/state0/state1）。
+ * 缺省 `state0 = 0xff000000`（不透明黑）= "**真的盖着屏幕**"的那一档。
+ */
+const mesh = (
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  flags = 1,
+  state0 = 0xff000000,
+  state1 = 0,
+): MeshObj =>
+  ({
+    flags,
+    state0,
+    state1,
+    verts: [
+      { x: x0, y: y0, z: 0, u: 0, v: 0 },
+      { x: x1, y: y0, z: 0, u: 1, v: 0 },
+      { x: x0, y: y1, z: 0, u: 0, v: 1 },
+      { x: x1, y: y1, z: 0, u: 1, v: 1 },
+    ],
+  }) as unknown as MeshObj;
 
 test('★T-0067：`itemCoversView` —— 满屏为真、**转场贴片（256×128）为假**、不可画/零尺寸为假', () => {
   assert.equal(VIEW_W, 1280, '视口宽（口径固定，变了要重核本守卫）');
@@ -107,3 +138,103 @@ test('★T-0067（源码棘轮）：`configureDrawItem` 不许再无条件解除
   );
   assert.match(src, /const HOLD_MAX_FRAMES = 60;/, '★上限必须保留（防"新内容一直铺不满"永久冻帧）');
 });
+
+/**
+ * ## `tickets/T-0182`：**武装**判据（`meshFillsViewport` / `meshCoversViewport` / `meshesCoverViewInRange`）
+ *
+ * 症状（用户实测 2026-09-26）：TITLE → Game Start → GAMESTART → ゲーム開始 → SN0000 时，
+ * GAMESTART 渐黑之后、SN0000 渐入之前闪出一帧旧画面（TITLE 全屏背景 0xa + TITLE 立绘节点 key 0x14
+ * + GAMESTART 配置界面 28 项）；预期是「黑 → 从黑渐入 SN0000」。
+ *
+ * 机制：`0x1F7 detach-texture` 撤掉**盖着屏幕的幕**时要武装留帧（`#holdFrameAfterCurtainDrop`），
+ * 而武装判据当时手写在 `#coversViewportMeshInRange` 里、口径是"顶点外接矩形要 >= 1280×720"。
+ * `tickets/T-0155` 给 `0x320` 的顶点加上引擎的半像素偏移（`x/y -= 0.5`）之后，语料里每一块
+ * 满屏幕布都是 `(-0.5,-0.5)..(1279.5,719.5)` ⇒ `Math.max(xs) = 1279.5 < 1280` ⇒ **判据恒假**
+ * ⇒ 留帧从未武装（真跑日志里 `detachTexture h=0x30d40 count=1 REMOVE` 之后再没有
+ * `[frame-hold] 满屏幕布 … 被撤` 行）。
+ *
+ * ⇒ 判据口径固定为：**几何** = "与视口的交集面积 ≥ `FRAME_HOLD_COVER_RATIO`"（对半像素、
+ * 对略大/略小的幕都成立）**且** 当前端色 α>0（撤一块全透明的幕在画面上什么都没改变 ⇒ 不该武装；
+ * 反例站点 = TITLE 的入场渐显，撤幕那一刻 `state0` 已被窗末烘焙成 0）。
+ * 并且**只留共享层这一份**（宿主侧不再手写几何）。
+ */
+test('★T-0182：`meshFillsViewport` —— 语料满屏四边形（半像素偏移 -0.5..1279.5）必须算"铺满"', () => {
+  // ★判决用例：这一条在修前**必然失败**（旧判据要求 `max(xs) >= 1280`，而真值是 1279.5）
+  assert.equal(
+    meshFillsViewport(mesh(-0.5, -0.5, 1279.5, 719.5), VIEW_W, VIEW_H),
+    true,
+    '★T-0155 之后的真语料几何必须算铺满（T-0182 的元凶就是这里判假）',
+  );
+  assert.equal(meshFillsViewport(mesh(0, 0, 1280, 720), VIEW_W, VIEW_H), true, '半像素订正前的旧几何同样算铺满（口径对两侧都成立）');
+  assert.equal(meshFillsViewport(mesh(-10, -10, 1290, 730), VIEW_W, VIEW_H), true, '比视口略大的幕也算铺满');
+  assert.equal(meshFillsViewport(mesh(-0.5, -0.5, 1215.5, 719.5), VIEW_W, VIEW_H), true, '≥90% 面积 ⇒ 算铺满（与 itemCoversView 同一比例口径）');
+  assert.equal(meshFillsViewport(mesh(-0.5, -0.5, 1150, 719.5), VIEW_W, VIEW_H), false, '略低于 90% ⇒ 不算');
+  assert.equal(meshFillsViewport(mesh(0, 0, 640, 360), VIEW_W, VIEW_H), false, '半屏 mesh 不算（别把局部贴片当幕）');
+  assert.equal(meshFillsViewport(mesh(0, 0, 1280, 100), VIEW_W, VIEW_H), false, '整宽但很薄的条不算');
+  assert.equal(meshFillsViewport(mesh(0, 0, 1280, 720, 0), VIEW_W, VIEW_H), false, 'flags bit0 = 0（无几何）不算');
+  assert.equal(meshFillsViewport({ flags: 1, verts: [] } as unknown as MeshObj, VIEW_W, VIEW_H), false, '无顶点不算');
+  assert.equal(
+    meshFillsViewport(
+      {
+        flags: 1,
+        verts: [
+          { x: 0, y: 0, z: 0, u: 0, v: 0 },
+          { x: 1280, y: 720, z: 0, u: 1, v: 1 },
+        ],
+      } as unknown as MeshObj,
+      VIEW_W,
+      VIEW_H,
+    ),
+    false,
+    '顶点 <3（引擎 vcount 下限是 1，别假设 4）不算',
+  );
+  assert.equal(meshFillsViewport(mesh(-0.5, -0.5, 1279.5, 719.5), 0, 0), false, '视口未就绪 ⇒ 不算（宁可不武装）');
+  // 几何口径**不**看颜色（那半边在 meshCoversViewport 里）
+  assert.equal(meshFillsViewport(mesh(0, 0, 1280, 720, 1, 0, 0), VIEW_W, VIEW_H), true, '几何口径不掺 α（两块判据各管一半）');
+});
+
+test('★T-0182：`meshCoversViewport` —— 只有"几何铺满 **且** 此刻 α>0"才算盖着屏幕', () => {
+  const quad = (flags: number, state0: number, state1: number): MeshObj => mesh(-0.5, -0.5, 1279.5, 719.5, flags, state0, state1);
+  assert.equal(meshCoversViewport(quad(1, 0xff000000, 0), VIEW_W, VIEW_H), true, '不透明黑幕（窗已收尾，state0 = 当前色）⇒ 盖着屏幕');
+  assert.equal(meshCoversViewport(quad(1, 0x80000000, 0), VIEW_W, VIEW_H), true, '50% 黑幕也算盖着（撤掉它会改变画面亮度）');
+  assert.equal(
+    meshCoversViewport(quad(1, 0x00000000, 0x00000000), VIEW_W, VIEW_H),
+    false,
+    '★全透明幕（TITLE 入场渐显撤幕那一刻：state0 已被窗末烘焙成 0）⇒ **不算**（撤了画面不变，武装只会白冻 60 帧）',
+  );
+  assert.equal(
+    meshCoversViewport(quad(3, 0x00000000, 0xff000000), VIEW_W, VIEW_H),
+    true,
+    '★窗还在跑（bit1 置）且终点 α>0 ⇒ 保守算"可能盖着"（正在淡入的黑幕不能漏判）',
+  );
+  assert.equal(meshCoversViewport(quad(3, 0x00000000, 0x00000000), VIEW_W, VIEW_H), false, '窗还在跑但两端都全透明 ⇒ 全程透明 ⇒ 不算');
+  assert.equal(meshCoversViewport(quad(3, 0xff000000, 0x00000000), VIEW_W, VIEW_H), true, '窗还在跑且起点不透明 ⇒ 算');
+  assert.equal(meshCoversViewport(mesh(0, 0, 640, 360, 1, 0xff000000, 0), VIEW_W, VIEW_H), false, '半屏（几何不铺满）⇒ 不算，哪怕它是不透明的');
+});
+
+test('★T-0182：`meshesCoverViewInRange` —— 单图元（count<=1）与区间（count>1）的分派口径', () => {
+  const curtain = { ...mesh(-0.5, -0.5, 1279.5, 719.5), handle: 0x30d40 } as unknown as MeshObj;
+  const small = { ...mesh(0, 0, 200, 100), handle: 0x3e8 } as unknown as MeshObj;
+  const meshes = [small, curtain];
+  assert.equal(meshesCoverViewInRange(meshes, 0x30d40, 1, VIEW_W, VIEW_H), true, '单图元移除：命中满屏幕 ⇒ 武装');
+  assert.equal(meshesCoverViewInRange(meshes, 0x30d40, 0, VIEW_W, VIEW_H), true, 'count=0（脚本偶尔这么写）按单图元处理');
+  assert.equal(meshesCoverViewInRange(meshes, 0x3e8, 1, VIEW_W, VIEW_H), false, '单图元移除：只删小贴片 ⇒ 不武装');
+  assert.equal(meshesCoverViewInRange(meshes, 0x30000, 0x1000, VIEW_W, VIEW_H), true, '区间移除 [0x30000,0x31000) 含满屏幕 ⇒ 武装');
+  assert.equal(meshesCoverViewInRange(meshes, 0x12c, 0x2bc, VIEW_W, VIEW_H), false, '区间不含满屏幕 ⇒ 不武装');
+  assert.equal(meshesCoverViewInRange(meshes, 0x30d41, 1, VIEW_W, VIEW_H), false, 'handle 不在区间（右开）⇒ 不武装');
+});
+
+test('★T-0182（源码棘轮）：撤幕武装判据必须委托共享层，不许再手写 `max(xs) >= VIEW_W`', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'app/amayui-emulator/src/renderer/pixiBackend.ts'), 'utf8');
+  assert.match(
+    src,
+    /#coversViewportMeshInRange\(handle: number, count: number\): boolean \{[\s\S]*?meshesCoverViewInRange\(this\.scene\.meshes\.values\(\), handle, count, VIEW_W, VIEW_H\)/,
+    '区间判据必须委托 `meshesCoverViewInRange`（与 itemCoversView 同一份比例口径）',
+  );
+  assert.equal(
+    /Math\.max\(\.\.\.xs\)\s*>=\s*VIEW_W/.test(src),
+    false,
+    '★不许再出现手写的 `Math.max(...xs) >= VIEW_W` —— 它被 T-0155 的半像素订正打成恒假（T-0182）',
+  );
+});
+
