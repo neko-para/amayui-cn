@@ -38,6 +38,7 @@
  */
 import {
   SIDEBAR,
+  SIDEBAR_EXPANDED_MIN_ROUTES,
   XY,
   binOf,
   cancel,
@@ -46,8 +47,10 @@ import {
   hover,
   pickSlotInSaveScreen,
   readSidebarLayout,
+  routeCount,
   tap,
   waitBin,
+  waitSidebarReady,
   waitTicking,
 } from '../emu.mjs';
 
@@ -81,9 +84,12 @@ if (start === 'TITLE.BIN' || start === 'SAVE.BIN') {
   throw new Error(`本用例要从**游戏内的 ADV 场景**起跑（当前 ${start}）——先用 ops/load-from-title.mjs 进一段剧情`);
 }
 
-/** 展开侧栏（悬停折叠条 → 让展开 label 重登记热点）。 */
+/** 展开侧栏（悬停折叠条 → 让展开 label 重登记热点）**并等动画跑完**（序章也有侧栏，只是要等渐变）。 */
 async function expandSidebar() {
-  await hover(id, ...XY.advSidebarStrip, { settleMs: 700 });
+  const before = await routeCount(id).catch(() => NaN);
+  const r = await waitSidebarReady(id); // 内含"悬停折叠条 + 等路由项数稳定"
+  console.log(`  ✔ 侧栏就绪：路由项 ${before} → ${r.routes}（等 ${r.waitedMs}ms；判据 = ≥${SIDEBAR_EXPANDED_MIN_ROUTES} 且连续两次稳定）`);
+  return r;
 }
 
 /** 校验"表真的被写成了固定排布"（写命令可能失败/旧构建不支持）。 */

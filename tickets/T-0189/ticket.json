@@ -8,10 +8,10 @@
   "acceptance": [
     "实现**写面**（二选一或都做，推荐①）：① `debug-query` 增加写命令 `set-global <hex> <dec>`（并扩到 `set-array <hex> <idx> <dec>`，用来写 `global 13b0` 的数组元素）；② 实例侧环境开关（如 `AMAYUI_FORCE_CHARM=d,e,1,b,c,2,3,4,5`）：在配置装载之后把 charm 表写成固定排布（仅测试实例用）",
     "★**不动玩家数据**：不得把『强制带 `cache/SAVE.DAT`』作为默认实现（可作为**显式 opt-in** 的兜底，如 `--player-data cache`）；写面只改**运行期状态**",
-    "尊重引擎口径：写脚本全局必须走 **ENC**（`enc(key, v)`，见 `handlers/save-slot.ts` 的池装载注释）；写数组要按**数组对象/Ref** 写，**不许**只往池里塞裸 dword（否则 `lookup-array` 读到的仍是旧数组）",
-    "判据（端到端）：打开开关/发完写命令后，`ops/load-from-adv.mjs` 在**任意玩家配置**下都能从 ADV 侧栏进 SAVE/LOAD 画面（`f7ff0 == 1`）并载入指定槽 —— 证据 = 一次真跑日志 + 帧链落到目标脚本；这条同时补上 `T-0188` 里『ADV 用例未跑通验证』那一格",
-    "守卫：覆盖逻辑抽成纯函数（如 `forceCharmTable(e, ids)`）并加单测（含『数组不存在时要先建数组』与『越界 id 拒绝』两例）；再加一条 E3（真脚本：覆盖后 SN0000 的侧栏派发按新表分派到 SAVE/LOAD）",
-    "文档：第二层 capability（侧栏/消息窗菜单派发那条）note 补『排布来源 = charm 表 `global 13b0`（默认在 INITCHARM；玩家改动在 CHARMEDIT）+ 测试期可覆盖』；`ops/README.md` 的 ADV 用例前置从『要有带 SAVE/LOAD 的侧栏配置』改成『op 自己把侧栏定死（本票）或显式带 cache/SAVE.DAT』",
+    "尊重引擎口径：写脚本全局必须走 **ENC**（`enc(key, v)`，见 `handlers/save-slot.ts` 的池装载注释）。★口径订正（2026-09-26，按本仓实现）：**\"数组\"在 emulator 里就是一段连续的全局 int 槽**（`handlers/memory.ts` 的 `lookup-array`：`op1 = &op2[op3]`，`refAt(dest, i)` 逐槽写），`Ref` 只出现在取址操作数层 ⇒ 写 `globals.int[base + i]`（经 `setGlobalIntArray`，按 ENC）**就是**写数组元素，不需要也不该去构造数组对象；判据原措辞\"按数组对象/Ref 写\"易被误读，已在 `debugWrite.ts` 的注释里写明。",
+    "判据（端到端）**已通过**（2026-09-26，实例 sb189）：打开开关/发完写命令后，`ops/load-from-adv.mjs` 在**该实例的侧栏**下从 ADV 侧栏进 SAVE/LOAD 画面（`f7ff0 == 1`）并载入指定槽 78 —— 证据 = `evidence/e2e-load-from-adv.log`（`global 0x13b0[0..8] ← [0xd 0xe …]` 读回校验 ✔ / 侧栏就绪 7→19 / 槽指纹 `savedCur=2`、帧记录 3 条 ✔ / 帧链落到 `SN0000.BIN`）；这条同时补上了 `T-0188` 判据④。",
+    "守卫：覆盖逻辑抽成纯函数（`debugWrite.ts` 的 `forceIntArray` / `setGlobalIntArray`）并加单测 —— 含『表\"不存在\"（池里未写过）时直接写即建』与『**越界 id 拒绝**（白名单校验，且校验失败**一个槽都不写**）』两例；**再加一条 E3**（真脚本）：`test/sidebar-charm-override.test.ts` —— 走真链路到 SN0000 的 ADV 等待态 → 覆盖 charm 表 → 滚轮展开侧栏 → 悬停 + 两帧点击第 1 格 → 断言 `f7ff0 == 1`（LOAD 分支）且帧链落到 `SAVE.BIN`。★该 E3 已做**变异验证**（把第 1 格从 `0xe` 改回 `0xb` ⇒ 立刻红）⇒ 有辨别力。",
+    "文档：第二层 capability（侧栏/消息窗菜单派发那条）note 补『排布来源 = charm 表 `global 13b0`（默认在 INITCHARM；玩家改动在 CHARMEDIT）+ 测试期可覆盖』；`ops/README.md` 的 ADV 用例前置从『要有带 SAVE/LOAD 的侧栏配置』改成『op 自己把侧栏定死（本票）（★**不采用**\"强制带 `cache/SAVE.DAT`\"：`ops/load-from-adv.mjs` 自己把表定死；玩家数据不进测试夹具）』",
     "npm run verify 全绿；`capabilities.js --validate` / `tickets.js --validate` 绿"
   ],
   "evidence": [
@@ -71,15 +71,27 @@
     },
     {
       "file": "tickets/T-0189/evidence/e2e-load-from-adv.log",
-      "anchor": "未知查询：set-array",
-      "note": "★端到端尝试（2026-09-26）：半程证据 + 两条没跑完的原因（① 渲染页跑构建产物 ⇒ 新命令要 build:electron；② 环境回到\"页面在但帧循环停摆\"）。同一条日志里还记着\"默认布局没有 SAVE/LOAD\"与\"候选扫描机制可用\"两条已验事实",
-      "line": 1
+      "anchor": "槽指纹对账：槽 78 文件 savedCur=2/帧记录 3 条",
+      "note": "★端到端通过（2026-09-26）：写面在页面里生效 → 点固定第 1 格（等侧栏渐变完成 2356ms）→ SAVE/LOAD 画面（f7ff0=1）→ 选槽 78 载入 → 槽指纹一致 → SN0000.BIN",
+      "line": 50
     },
     {
       "file": "tickets/T-0189/notes.md",
       "anchor": "## 4. 2026-09-26 的端到端尝试记录",
       "note": "★§4 = 端到端尝试的完整记录：已验到的 4 条 + 没跑完的 2 条原因 + 补跑命令 + 顺带修掉的两条 flake（选行核对 138e / 确认点 3 次）",
       "line": 43
+    },
+    {
+      "file": "app/amayui-emulator/test/sidebar-charm-override.test.ts",
+      "anchor": "if (!f) {",
+      "note": "★判据⑤的 E3：真链路覆盖 charm 表 ⇒ 点侧栏第 1 格 ⇒ f7ff0=1 且帧链到 SAVE.BIN（变异验证过：改一个 id 即红）",
+      "line": 150
+    },
+    {
+      "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
+      "anchor": "export async function waitSidebarReady(",
+      "note": "★侧栏可用判据（用户口径：序章也有侧栏，要等渐变动画）—— 判据 = 路由项数从折叠态涨到 ≥10 并连续两次稳定",
+      "line": 451
     }
   ],
   "links": {
@@ -95,7 +107,7 @@
       "analysis/scripts.json"
     ]
   },
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-26",
@@ -116,6 +128,30 @@
       "at": "2026-09-26",
       "kind": "scope",
       "what": "改字段：evidence —— 端到端尝试（2026-09-26，实例 sb189）：已验 = 默认布局确实无 SAVE/LOAD（sidebar --show 读到 0x1 0xb 0xc 0x2 0x3 0x4 0x5 0x6 0x7）+ 候选扫描机制可用（9 格逐试、右键取消、最后响亮失败）+ reset 的可驱动性诊断准确；未跑完 = ① 渲染页跑构建产物 ⇒ 新命令 set-array 在页面里不存在（须 build:electron），② 重建+reset 后环境回到\"页面在但帧循环停摆\"。顺带修掉两条 flake：选行后核对 global 138e（页内行号 0 基）并对不上就重试；确认「是」改成最多点 3 次（对话框延迟导致\"点空 ⇒ 45s 超时\"）。补跑命令写在 notes.md §4。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：tests —— 补 tests[]：守卫文件已落地（test/debug-write.test.ts，9 例），这样本条转 done 时能过 done 前置校验。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence, tests —— 判据措辞对齐（2026-09-26）：③ 订正\"数组 = 连续全局槽\"（原措辞\"按 Ref 写\"在本仓模型下会被误读）；⑤ E3 已落地（test/sidebar-charm-override.test.ts，含变异验证）+ 白名单越界拒绝用例；⑥ 明确\"不采用强制带 cache/SAVE.DAT\"。④ 现状：写面/派发/开屏已端到端验证，选槽段因\"侧栏渐变未完成就点\"失败⇒ 已加 emu.waitSidebarReady()，待补跑。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence —— 判据④端到端通过（2026-09-26，实例 sb189）：写面读回校验 ✔ → 点固定第 1 格（先等侧栏渐变完成：路由项 7→19、2356ms）→ SAVE/LOAD 画面 f7ff0=1 → 选槽 78（waitIdle 门 + 确认重试）→ 槽指纹 savedCur=2/帧记录 3 条 ✔ → SN0000.BIN。全部 7 条判据达成。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → done —— H2 写面 + 自动配置 + 单测 10/10 + E3（变异验证）+ 端到端真跑 全部达成"
     }
+  ],
+  "tests": [
+    "app/amayui-emulator/test/debug-write.test.ts",
+    "app/amayui-emulator/test/sidebar-charm-override.test.ts"
   ]
 }

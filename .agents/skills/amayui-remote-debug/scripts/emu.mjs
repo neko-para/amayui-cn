@@ -68,7 +68,8 @@ export const XY = {
   /** 确认框「是」。 */
   confirmYes: [636, 321],
   rowX: 400,
-  /** 列表第 i 行的 y（行中心 90/150/…/630；实点 y570 ⇒ 槽 078 已核对）。 */
+  /** 列表第 i 行的 y（**只是兜底公式**：2026-09-26 实测同一台机上 `y=570 ⇒ 078` 而 `y=630 ⇒ 077`，
+   *  说明列表带滚动偏移 ⇒ 真路径是 `calibrateRowY()` 探两点拟合，再用 `global 138e` 核对）。 */
   rowY: (i) => 90 + 60 * i,
   /** ADV 右侧**折叠**侧栏的热点条（矩形 1230,233-1280,493 的中心）—— 悬停它才展开。 */
   advSidebarStrip: [1255, 363],
@@ -346,6 +347,20 @@ export async function hover(id, x, y, { settleMs = 400, fromX = x - 2 } = {}) {
 }
 
 /**
+ * ★**标题 = `TITLE.BIN`**（用户口径 2026-09-26）；**不要**把 `SBUNKI`/`SBUNKIMOVE` 当成标题动画：
+ * 它们是**装载画面族**（存档/读档画面的背景与动画），证据 = 装载那一步的帧链
+ * `[slot-load] 装载时的帧链：0=SYSTEM4 1=TITLE 2=SAVE 3=SBUNKI 4=SBUNKIMOVE`（`SAVE.BIN` 调出来的）。
+ * ⇒ 看到 `cur = SBUNKI.BIN` 意味着**还在装载流程里**（或那次装载的残留），**不是**"回到了标题"；
+ *   `reset` 与"从 TITLE 读档"的前置都只认 `TITLE.BIN`。
+ * （本条来自一次实测误判：曾据此放宽前置，结果把"其实还在装载链里"误当成"在标题"。）
+ */
+export const TITLE_BIN = 'TITLE.BIN';
+/** 装载画面族：出现它说明在走 `SAVE.BIN` 的装载流程（不是标题）。 */
+export const LOAD_UI_FAMILY = ['SBUNKI.BIN', 'SBUNKIMOVE.BIN'];
+export const isTitle = (bin) => bin === TITLE_BIN;
+export const isLoadUiFamily = (bin) => LOAD_UI_FAMILY.includes(bin);
+
+/**
  * **ADV 侧栏（charm 表）排布**：`global 13b0[0..8]` 的 9 项动作 id（`tickets/T-0189`）。
  *
  * - 语义：`1` = MENU、`0xd` = SAVE、`0xe` = LOAD（其余 id 见 `src/SN0000.txt` 的派发链）；
@@ -357,6 +372,13 @@ export const SIDEBAR = {
   tableGlobal: 0x13b0,
   slots: 9,
   ID: { MENU: 0x1, SAVE: 0xd, LOAD: 0xe },
+  /**
+   * ★**动作 id 白名单**（真源 = `src/SN0000.txt` 的派发链 `label_00001554` 逐项 `eq (local-int 0) (local-ptr 0) <id>`）：
+   * SN0000 认得的只有这 15 个：`0`（空）/ `1`=MENU / `5`=REPLAYVOICE / `6`=HISTORY / `d`=SAVE / `e`=LOAD /
+   * `f`=CONFIG / `10`=INFO / `15`=SBUNKI，其余 `2/3/4/7/b/c` 也是它认的分支（脚本族不同名字可能不同）。
+   * ⇒ 写面**拒绝**白名单外的值（写进去只会"点了没反应"，最难查）。
+   */
+  VALID_IDS: [0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x15],
   /** 测试期固定排布：SAVE / LOAD 放到第 0 / 1 格，其余沿用默认（`1 b c 2 3 4 5 6 7` 里去掉已用的）。 */
   FORCED_LAYOUT: [0xd, 0xe, 1, 0xb, 0xc, 2, 3, 4, 5],
 };
@@ -380,9 +402,18 @@ export const hexTok = (n) => `0x${(n >>> 0).toString(16)}`;
  *
  * ★只改**运行期内存**（emu 侧按 ENC 写脚本全局池），**不写回 `SAVE.DAT`** ⇒ 玩家数据不受影响；
  *   但**效果是改了侧栏配置**（本实例当次运行内），所以调用方必须在输出里明确声明。
+ * ★写前按 `SIDEBAR.VALID_IDS` 校验（越界 id 会让"点了没反应"这种最难查的失败出现）；
+ *   校验失败**一个槽都不写**（`forceIntArray` 先校验后落值）。
  * 返回逐项回执行，便于进日志/证据。
  */
 export async function forceSidebarLayout(id, layout = SIDEBAR.FORCED_LAYOUT) {
+  const bad = layout.filter((v) => !SIDEBAR.VALID_IDS.includes(v));
+  if (bad.length) {
+    throw new Error(
+      `侧栏排布里出现派发链不认的动作 id：${bad.map((v) => '0x' + v.toString(16)).join(' ')}` +
+        `（合法集见 SIDEBAR.VALID_IDS，真源 = src/SN0000.txt 的派发链）`,
+    );
+  }
   const lines = [];
   for (let i = 0; i < layout.length; i++) {
     lines.push(await setArray(id, SIDEBAR.tableGlobal, i, layout[i]));
@@ -395,6 +426,82 @@ export async function readSidebarLayout(id, slots = SIDEBAR.slots) {
   const out = [];
   for (let i = 0; i < slots; i++) out.push(await globalOf(id, (SIDEBAR.tableGlobal + i).toString(16)));
   return out;
+}
+
+/** 路由表项数（`RoutePanel.snapshotState().entries`）—— 判"侧栏展开的热点是否已登记"用。 */
+export async function routeCount(id) {
+  const s = await snapshotOf(id);
+  const entries = s.routes?.entries;
+  return Array.isArray(entries) ? entries.length : NaN;
+}
+
+/** 侧栏展开态的热点项数下限（折叠态只有 2~3 项：折叠条 + 全屏热点；展开后 +9 个按钮 ⇒ ≥10）。 */
+export const SIDEBAR_EXPANDED_MIN_ROUTES = 10;
+
+/**
+ * **等虚拟机"不忙"了再点**（`tickets/T-0188`，用户实测 2026-09-26）：
+ * 存档列表的每页要**同步**读 10 个槽头（引擎 `0x1A0`，一处 ~84–117ms ⇒ 一页可到数秒）——
+ * 这段时间**渲染页被 JS 阻塞**，此期间注入的点击会**丢**（用户原话：「加载存档界面比预期慢，
+ * 导致点 79 的动作过快丢失了」）。`cur` 变成 `SAVE.BIN` **不代表列表画完了**。
+ *
+ * 判据 = **`debug-query` 的往返耗时**：阻塞时请求要么超时、要么很慢；空闲时 `frame` 只要几十~两百 ms。
+ * 连续 `stable` 次快于 `fastMs` 才算"不忙"（默认 2 次 < 600ms）。
+ */
+export async function waitIdle(id, { timeoutMs = 25_000, fastMs = 600, stable = 2, intervalMs = 250 } = {}) {
+  const t0 = Date.now();
+  let ok = 0;
+  for (;;) {
+    const t = Date.now();
+    let ms = Infinity;
+    try {
+      await dq(id, 'frame', { retries: 0, timeoutMs: 8000 });
+      ms = Date.now() - t;
+    } catch {
+      ms = Infinity; // 阻塞/超时 ⇒ 当作"忙"
+    }
+    ok = ms <= fastMs ? ok + 1 : 0;
+    if (ok >= stable) return { waitedMs: Date.now() - t0, lastMs: ms };
+    if (Date.now() - t0 > timeoutMs) {
+      throw new Error(
+        `等虚拟机空闲超时（${timeoutMs}ms，最后一次往返 ${ms === Infinity ? '超时' : ms + 'ms'}）：` +
+          `页面可能还在同步读存档头（引擎 0x1A0 一页可到数秒）⇒ 这段时间点击会丢。`,
+      );
+    }
+    await sleep(intervalMs);
+  }
+}
+
+/**
+ * **等 ADV 侧栏"真的可用"**（`tickets/T-0188`，用户口径 2026-09-26）：
+ * ★**序章一样有侧栏**，只是要先等它的**渐变动画**跑完 —— 动画期间热点还没重登记，点/悬停都会落空
+ * （实测：序章第一页直接点按钮 ⇒ 9 格扫描全落空，误以为"这个场景没有侧栏"）。
+ *
+ * 判据（机器可读）：`RoutePanel` 的**项数**从折叠态（2~3）涨到展开态（≥ `SIDEBAR_EXPANDED_MIN_ROUTES`）
+ * **并连续两次采样保持稳定**（= 展开 label 末尾的 `call label_00000320` 已把 9 个按钮热点登记完）。
+ * ★为什么不看 `global 1399`：它在动画**开始**就置 2（`src/SN0000.txt:50` 的展开分支），
+ *   离"热点可用"还差整段动画；也不看 `bin`（场景名在动画前后不变）。
+ */
+export async function waitSidebarReady(id, { timeoutMs = 20_000, intervalMs = 400, settleMs = 500 } = {}) {
+  await hover(id, ...XY.advSidebarStrip, { settleMs });
+  const t0 = Date.now();
+  let last = -1;
+  let stable = 0;
+  for (;;) {
+    const n = await routeCount(id).catch(() => NaN);
+    if (Number.isFinite(n) && n >= SIDEBAR_EXPANDED_MIN_ROUTES && n === last) stable++;
+    else stable = 0;
+    last = Number.isFinite(n) ? n : -1;
+    if (stable >= 2) return { routes: n, waitedMs: Date.now() - t0 };
+    if (Date.now() - t0 > timeoutMs) {
+      throw new Error(
+        `等侧栏展开超时（${timeoutMs}ms，最后路由项数 ${last}；期望 ≥${SIDEBAR_EXPANDED_MIN_ROUTES}）：` +
+          `① 光标要在折叠条上（${XY.advSidebarStrip.join(',')}，靠"位置变化"触发命中）；` +
+          `② 序章也有侧栏，但**要等渐变动画跑完**（热点在动画末尾才重登记）；` +
+          `③ 若这个场景确实没有 ADV 侧栏（战斗/工房等），要用它们各自的 ops（见 ops/README.md）。`,
+      );
+    }
+    await sleep(intervalMs);
+  }
 }
 
 /**
@@ -477,6 +584,33 @@ export function lastSlotLoad(id) {
 // 存档列表画面：选槽 → 载入（**两个 ops 共用的那一段 UI 流程**）
 // ---------------------------------------------------------------------------
 /**
+ * **行 y 的自标定** —— ⚠**当前不可用，保留作记录**。
+ *
+ * 2026-09-26 曾用它 + `global 138e` 做"选中的是不是目标行"的核对，实测**是假阴性**：
+ * 画面明确显示 079 已选中（确认框也是 079、缩略图就是 79 的内容）而 `138e` 仍读 7
+ * —— `138e` 是 `SAVE.DAT` 里**上一次读档**留下的旧值（`SAVE.txt:11-14` 启动时 load-int 进来），
+ * **不随鼠标选行变化**。⇒ 选行对不对**不能靠它**；正确做法是载入后用**槽指纹**核对
+ * （见 `slotFingerprint`：把槽头 `savedCur`/帧记录数与日志 `[slot-load] 真槽装载…` 对齐）。
+ * 这里保留函数是因为它记录的"探两点拟合"思路对将来的列表类界面仍可能有用，
+ * 但**调用方必须提供真的会变的信号**，否则它会返回 `null`（两点读数相同 ⇒ 调用方走兜底公式）。
+ */
+export async function calibrateRowY(id, targetRow, { yA = 480, yB = 680 } = {}) {
+  const probe = async (y) => {
+    const before = await globalOf(id, '138e').catch(() => NaN);
+    await tap(id, XY.rowX, y, { settleMs: 450 });
+    const after = await globalOf(id, '138e').catch(() => NaN);
+    // ★只有"读数确实变了"才算有效探针（138e 这种陈旧值 ⇒ 直接判标定失败，别拿它当行号）。
+    return before === after ? NaN : after;
+  };
+  const rowA = await probe(yA);
+  const rowB = await probe(yB);
+  if (!Number.isFinite(rowA) || !Number.isFinite(rowB) || !(rowB > rowA)) return null;
+  const slope = (rowB - rowA) / (yB - yA);
+  const y = yA + (targetRow - rowA) / slope;
+  return Math.round(Math.max(60, Math.min(710, y)));
+}
+
+/**
  * 在**已经打开的 SAVE/LOAD 画面**上选槽并载入（这是"UI 原语"，不是用例；
  * "从哪个界面打开这张画面"由 `ops/*.mjs` 负责）。
  *
@@ -486,30 +620,37 @@ export async function pickSlotInSaveScreen(id, slot, { expect, timeoutMs = 45_00
   const before = logCursor(id);
   const tens = Math.floor(slot / 10);
   const ones = slot % 10;
-  const rowIdx = ones; // 页内行号（0 基）：`global 138e`（SAVE.txt:11 载入的那一格）
   console.log(`  选槽：点页号按钮「${tens}0」@ ${XY.pageButton(tens).join(',')}`);
+  // ★**进画面后先等虚拟机不忙**（列表首屏要同步读 10 个槽头，`0x1A0`；此时点击会丢）。
+  const idle0 = await waitIdle(id).catch((e) => {
+    console.log(`  ⚠ waitIdle（首屏）：${e.message}`);
+    return null;
+  });
+  if (idle0) console.log(`  虚拟机空闲（${idle0.waitedMs}ms，最后一次往返 ${idle0.lastMs}ms）⇒ 可以点行`);
   await tap(id, ...XY.pageButton(tens), { settleMs: 700 });
-  console.log(`  选行：第 ${ones} 行 (y=${XY.rowY(ones)})`);
-  // ★选行要**核对 + 重试**：`global 138e` = 页内行号（0 基），实测它会跟着选中行变
-  //   （2026-09-26：点 y=678 ⇒ 138e=7 ⇒ 对话框里是槽 077）。对不上就再点一次，
-  //   免得"点了但没选中"一路走到 LOAD 才发现（那时对话框问的是别的槽，最坏会覆盖存档）。
-  let rowOk = false;
-  for (let attempt = 1; attempt <= 3 && !rowOk; attempt++) {
-    await tap(id, XY.rowX, XY.rowY(ones), { settleMs: 700 });
-    const sel = await globalOf(id, '138e').catch(() => NaN);
-    rowOk = sel === rowIdx;
-    console.log(`    第 ${attempt} 次点行 ⇒ global 138e = ${sel}（期望 ${rowIdx}）${rowOk ? ' ✔' : ' ↻'}`);
-  }
-  if (!rowOk) throw new Error(`三次都没选中第 ${ones} 行（global 138e 对不上）—— 别继续（LOAD 会问别的槽）`);
-  console.log('  点 LOAD');
-  await tap(id, ...XY.loadButton, { settleMs: 900 });
-  // ★确认「是」：对话框出现有延迟，而**在哪个槽上确认**由 138e 决定 ⇒ 这里按"最多点 3 次、
-  //   直到日志出现 [slot-load]"来收口（点空 = 无事发生，不是危险操作；真正的危险是选错行，上面已核对）。
-  //   只按一次是旧口径，实测会撞上"对话框还没出现 ⇒ 点了空 ⇒ 45s 超时"（2026-09-26）。
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    console.log(`  确认「是」@ ${XY.confirmYes.join(',')}（第 ${attempt} 次）`);
-    await tap(id, ...XY.confirmYes, { settleMs: 700, hoverFirst: false });
-    if (await waitLog(id, '[slot-load]', { since: before, timeoutMs: attempt === 3 ? timeoutMs : 5000 })) break;
+  // ★**切页同样要等**（每页重画 = 又一轮同步读头）。
+  const idle1 = await waitIdle(id).catch((e) => {
+    console.log(`  ⚠ waitIdle（切页）：${e.message}`);
+    return null;
+  });
+  if (idle1) console.log(`  切页后空闲（${idle1.waitedMs}ms，最后一次往返 ${idle1.lastMs}ms）`);
+  // ★行 y：用兜底公式 `XY.rowY()`（实测 `y=570 ⇒ 槽 078`、`y=630 ⇒ 槽 079`，**已用确认框缩略图核对**）。
+  //   **不用** `global 138e` 核对 —— 它是 SAVE.DAT 里的陈旧值、不随选行变化（实测假阴性会把对的流程杀掉）；
+  //   选行对不对由**载入后的槽指纹**对账（见函数末尾 `verifyLoadedSlot`）。
+  const rowY = XY.rowY(ones);
+  // ★**点行就会弹「要读取吗？」确认框**（2026-09-26 实测：单选一行 ⇒ 框出现、该行高亮、缩略图 = 该槽）
+  //   ⇒ **不要再点左下角的 LOAD 按钮**（那一步会把对话框的流程带偏：之后点「是」落空 ⇒ 45s 超时）。
+  //   失败时**重来一轮**（重新选行 ⇒ 重新弹框），而不是继续盲点。
+  for (let round = 1; round <= 2; round++) {
+    console.log(`  选行：第 ${ones} 行 (y=${rowY})${round > 1 ? '（第 2 轮重来）' : ''}`);
+    await tap(id, XY.rowX, rowY, { settleMs: 1200 });
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`  确认「是」@ ${XY.confirmYes.join(',')}（第 ${attempt} 次）`);
+      await tap(id, ...XY.confirmYes, { settleMs: 700, hoverFirst: false });
+      if (await waitLog(id, '[slot-load]', { since: before, timeoutMs: attempt === 3 ? 8000 : 5000 })) break;
+    }
+    if (await waitLog(id, '[slot-load]', { since: before, timeoutMs: 500 })) break;
+    console.log('  ↻ 这一轮没载入 ⇒ 重新选行再确认');
   }
   const hit = await waitLog(id, '[slot-load]', { since: before, timeoutMs: 1000 });
   if (!hit) {
@@ -518,12 +659,37 @@ export async function pickSlotInSaveScreen(id, slot, { expect, timeoutMs = 45_00
     );
   }
   for (const l of hit) console.log('   ' + l.trim().slice(0, 200));
+  // ★**槽指纹对账**：引擎日志里没有槽号（`0x1A0` 只回结果码）⇒ 拿槽头的 `savedCur`/帧记录数
+  //   与日志 `[slot-load] 真槽装载：… savedCur=N、帧记录 M 条` 对齐（核不过就**报警**，不静默）。
+  await verifyLoadedSlot(id, slot, hit);
   if (expect) {
     const ok = await waitBin(id, expect, { timeoutMs });
     if (!ok) throw new Error(`载入后 ${timeoutMs}ms 内没看到 ${expect}（当前 ${await binOf(id)}）`);
     console.log(`  ✔ 帧链已到 ${expect}`);
   }
   return { slot, log: hit, bin: await binOf(id) };
+}
+
+/**
+ * 载入后**核对槽号**：拿槽文件的头（`savedCur` / 帧记录数）与日志里的装载参数对账。
+ * ★这是"载入的是不是目标槽"唯一可机读的口径（引擎不回槽号）；不一致时**报警但不回滚**
+ *   （载入本身是只读操作，最坏是"载错了槽"，再载一次即可）。
+ */
+async function verifyLoadedSlot(id, slot, logLines) {
+  const fp = await slotFingerprint(id, slot).catch(() => null);
+  if (!fp) {
+    console.log(`  ⚠ 槽 ${slot} 的文件读不到（不在实例可见目录？）⇒ 跳过指纹对账`);
+    return;
+  }
+  const txt = logLines.join('\n');
+  const savedCur = Number((txt.match(/savedCur=(-?\d+)/) ?? [])[1] ?? NaN);
+  const recCount = Number((txt.match(/帧记录\s*(\d+)\s*条/) ?? [])[1] ?? NaN);
+  const ok = savedCur === fp.savedCur && (Number.isNaN(recCount) || recCount === fp.frames.length);
+  console.log(
+    `  槽指纹对账：槽 ${slot} 文件 savedCur=${fp.savedCur}/帧记录 ${fp.frames.length} 条` +
+      ` vs 日志 savedCur=${savedCur}/帧记录 ${recCount} 条 ⇒ ${ok ? '✔ 一致' : '✗ 不一致'}`,
+  );
+  if (!ok) console.log('  ⚠ 载入的槽与目标槽**不一致**（引擎不回槽号；可用 slotThumbPng 看缩略图复核）');
 }
 
 // ---------------------------------------------------------------------------
@@ -646,9 +812,9 @@ export async function resetInstance(id, { titleTimeoutMs = 180_000, idleSec = 0,
   const t0 = Date.now();
   while (Date.now() - t0 < titleTimeoutMs) {
     const bin = await binOf(id);
-    if (bin === 'TITLE.BIN') {
+    if (isTitle(bin)) {
       const p = await probeOf(id);
-      console.log(`  ✔ 已回到 TITLE（${Date.now() - t0}ms；引擎时钟 ${Math.round((p.clockMs ?? 0) / 1000)}s）`);
+      console.log(`  ✔ 已回到 TITLE（${bin}；${Date.now() - t0}ms；引擎时钟 ${Math.round((p.clockMs ?? 0) / 1000)}s）`);
       if (!allowStale && Number.isFinite(p.clockMs) && p.clockMs > freshMs) {
         throw new Error(
           `reset 后引擎时钟已 ${Math.round(p.clockMs / 1000)}s（> ${Math.round(freshMs / 1000)}s）⇒ 回答命令的是**旧页面残留的 VM**，不是刚起的实例。` +
@@ -659,7 +825,7 @@ export async function resetInstance(id, { titleTimeoutMs = 180_000, idleSec = 0,
     }
     await sleep(800);
   }
-  throw new Error(`reset 后 ${titleTimeoutMs}ms 内没到 TITLE.BIN（当前 ${await binOf(id)}）`);
+  throw new Error(`reset 后 ${titleTimeoutMs}ms 内没回到 TITLE.BIN（当前 ${await binOf(id)}${isLoadUiFamily(await binOf(id)) ? '（装载画面族：还在装载流程里）' : ''}）`);
 }
 
 // ---------------------------------------------------------------------------

@@ -56,9 +56,32 @@ export function setGlobalIntArray(
 }
 
 /**
+ * 校验一组"表值"（调用方给出**白名单**时用；例：ADV 侧栏动作 id 只有派发链认得的那些）。
+ * 抛错而不是静默写入 —— 往配置表里塞一个派发链不认的 id，症状是"点了没反应"，最难查。
+ */
+export function assertIntArrayValues(values: number[], allowed?: readonly number[]): void {
+  for (const v of values) {
+    if (!Number.isInteger(v)) throw new Error(`表格值必须是整数（收到 ${v}）`);
+    if (allowed && !allowed.includes(v)) {
+      throw new Error(
+        `表格值 ${v}（0x${(v >>> 0).toString(16)}）不在白名单里：${allowed.map((x) => '0x' + x.toString(16)).join(' ')}`,
+      );
+    }
+  }
+}
+
+/**
  * 一次性把一张表写死（`values[i]` → `base + i`）。返回逐项结果，供调用方打日志/回执。
  * 用例侧就是用它把侧栏定死：`forceIntArray(e, 0x13b0, [0xd, 0xe, 1, 0xb, 0xc, 2, 3, 4, 5])`。
+ *
+ * @param allowed 给了就做**白名单校验**（见 `assertIntArrayValues`）—— 例：侧栏动作 id 的合法集。
  */
-export function forceIntArray(e: WriteGlobalsEngineLike, base: number, values: number[]): WriteResult[] {
+export function forceIntArray(
+  e: WriteGlobalsEngineLike,
+  base: number,
+  values: number[],
+  { allowed }: { allowed?: readonly number[] } = {},
+): WriteResult[] {
+  assertIntArrayValues(values, allowed);
   return values.map((v, i) => setGlobalIntArray(e, base, i, v));
 }

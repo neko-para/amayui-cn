@@ -1,30 +1,52 @@
+=== 端到端复跑（2026-09-26；用户监视器同步核实）===
+
+=== 0/3 等 TITLE.BIN ===
+✔ TITLE.BIN
+
+=== 1/3 ops/load-from-title.mjs --slot 79 ===
+▶ [ops] 从 TITLE 载入槽 79（实例 sb189）
+  起跑状态：cur = TITLE.BIN
+  点 Load Data @ 1070,480（第 1 次）
+  ✔ 已进 SAVE/LOAD 画面
+  ✔ 列表已就绪（等 287ms，最后一次往返 10ms）
+  选槽：点页号按钮「70」@ 900,30
+  虚拟机空闲（292ms，最后一次往返 18ms）⇒ 可以点行
+  切页后空闲（372ms，最后一次往返 92ms）
+  选行：第 9 行 (y=630)
+  确认「是」@ 636,321（第 1 次）
+   [slot-load] 按存档还原绘制项 69/69 项（引擎 sub_410160 raw 19810-19832：清 Scene+1032 后逐条插回；handle 0x18a88,0x19835,0x19836,0x19837,0x19838,0x19839,0x1983a,0x1983e,…）⇒ 上一屏的项全部作废
+   [slot-load] 清掉上一个执行链的 L2D 运行态：实例槽 1 个 / 立绘节点 1 个（L2D 不在存档 body 里；见 tickets/T-0090）
+   [slot-load] 装载时的帧链：0=SYSTEM4.BIN(caller=-1) 1=TITLE.BIN(caller=0) 2=SAVE.BIN(caller=1) 3=SBUNKI.BIN(caller=2) 4=SBUNKIMOVE.BIN(caller=3) 26=DRAWTOOLTIP.BIN(caller=0) 28=DRAWORN.BIN(caller=0) 29=ATSEEK
+   [slot-load] 重建存档里的图像槽 1 个 + 纹理槽 0 个：槽4←0xb37
+   [slot-load] 真槽装载：帧 0 ← CALLBACK_LOAD.BIN（引擎 sub_410160 raw 19916 的 CALLBACK_LOAD 那一跳；它 exit 后再装记录 0 = SYSTEM4.BIN），savedCur=2、帧记录 3 条
+   [slot-load] BGM 还原：重播存档里的当前曲 #13（引擎 CALLBACK_LOAD.BIN:20 的 i0b7 0）
+  槽指纹对账：槽 79 文件 savedCur=2/帧记录 3 条 vs 日志 savedCur=2/帧记录 3 条 ⇒ ✔ 一致
+  ✔ 帧链已到 SN0000.BIN
+✔ [ops] 已载入槽 79：cur = SN0000.BIN
+
+=== 2/3 ops/load-from-adv.mjs --slot 78（ADV 侧栏）===
 ▶ [ops] 从 ADV 侧栏载入槽 78（实例 sb189）
-  起跑状态：cur = SC0000.BIN
+  起跑状态：cur = SN0000.BIN
   ★改侧栏配置（运行期）：global 0x13b0[0..8] ← [0xd, 0xe, 0x1, 0xb, 0xc, 0x2, 0x3, 0x4, 0x5]（第 0 格 SAVE / 第 1 格 LOAD；只改内存，不写回 SAVE.DAT）
-  ⚠ 写侧栏表失败（{"query":"set-array 0x13b0 0 13","ok":false,"lines":["未知查询：set-array","可用查询：","  global <下标> [count]   全局 int 槽（给解码后的值 + 原始编码值）","  local <下标>            当前帧的 local int 槽","  frame [下标|all]       列**活）⇒ 退回候选扫描
-  扫描第 0 格 @ 1220,137
-  第 0 格不是存档画面（cur=FELLOW.BIN）⇒ 右键取消，继续
-  扫描第 1 格 @ 1220,187
-  第 1 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
-  扫描第 2 格 @ 1220,237
-  第 2 格不是存档画面（cur=TITLE.BIN）⇒ 右键取消，继续
-  扫描第 3 格 @ 1220,287
-  第 3 格不是存档画面（cur=TITLE.BIN）⇒ 右键取消，继续
-  扫描第 4 格 @ 1220,337
-  第 4 格不是存档画面（cur=GAMESTART.BIN）⇒ 右键取消，继续
-  扫描第 5 格 @ 1220,387
-  第 5 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
-  扫描第 6 格 @ 1220,437
-  第 6 格不是存档画面（cur=SC0000.BIN）⇒ 右键取消，继续
-  扫描第 7 格 @ 1220,487
-  第 7 格不是存档画面（cur=HISTORY.BIN）⇒ 右键取消，继续
-  扫描第 8 格 @ 1220,537
-  第 8 格不是存档画面（cur=HIDEWIN.BIN）⇒ 右键取消，继续
-file:///E:/Games/Eushully/%E5%A4%A9%E7%B5%90/.agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs:162
-    throw new Error(
-          ^
-
-Error: 扫完 9 格都没有能打开存档/读档画面的格子：这个场景的侧栏里没有 SAVE/LOAD（默认布局就是这样，见 src/INITCHARM.txt:6）⇒ 换一条路径（先用 ops/load-from-title.mjs 从 TITLE 读档），或检查写命令是否可用（`set-array`，tickets/T-0189）。
-    at file:///E:/Games/Eushully/%E5%A4%A9%E7%B5%90/.agents/skills/amayui-remote-debug/scripts/ops/load-from-adv.mjs:162:11
-
-Node.js v24.14.0
+  读回校验：0xd 0xe 0x1 0xb 0xc 0x2 0x3 0x4 0x5 ⇒ ✔ 已按固定排布
+  点固定第 1 格（LOAD）@ 1220,187
+  ✔ 侧栏就绪：路由项 7 → 19（等 2356ms；判据 = ≥10 且连续两次稳定）
+  ✔ 已进入存档/读档画面（cur=SAVE.BIN；侧栏已按固定排布写入）
+  选槽：点页号按钮「70」@ 900,30
+  虚拟机空闲（294ms，最后一次往返 15ms）⇒ 可以点行
+  切页后空闲（298ms，最后一次往返 17ms）
+  选行：第 8 行 (y=570)
+  确认「是」@ 636,321（第 1 次）
+  确认「是」@ 636,321（第 2 次）
+  确认「是」@ 636,321（第 3 次）
+  ↻ 这一轮没载入 ⇒ 重新选行再确认
+  选行：第 8 行 (y=570)（第 2 轮重来）
+  确认「是」@ 636,321（第 1 次）
+   [slot-load] 按存档还原绘制项 38/38 项（引擎 sub_410160 raw 19810-19832：清 Scene+1032 后逐条插回；handle 0x18aec,0x19835,0x19836,0x19837,0x19838,0x19839,0x1983a,0x1983e,…）⇒ 上一屏的项全部作废
+   [slot-load] 装载时的帧链：0=SYSTEM4.BIN(caller=-1) 1=NOVEL.BIN(caller=0) 2=SN0000.BIN(caller=1) 3=SAVE.BIN(caller=2) 4=SBUNKI.BIN(caller=3) 5=SBUNKIMOVE.BIN(caller=4) 26=DRAWTOOLTIP.BIN(caller=0) 28=DRAWORN.
+   [slot-load] 重建存档里的图像槽 1 个 + 纹理槽 0 个：槽43←0x6c2
+   [slot-load] 真槽装载：帧 0 ← CALLBACK_LOAD.BIN（引擎 sub_410160 raw 19916 的 CALLBACK_LOAD 那一跳；它 exit 后再装记录 0 = SYSTEM4.BIN），savedCur=2、帧记录 3 条
+   [slot-load] BGM 还原：重播存档里的当前曲 #13（引擎 CALLBACK_LOAD.BIN:20 的 i0b7 0）
+  槽指纹对账：槽 78 文件 savedCur=2/帧记录 3 条 vs 日志 savedCur=2/帧记录 3 条 ⇒ ✔ 一致
+  ✔ 帧链已到 SN0000.BIN
+✔ [ops] 已载入槽 78：cur = SN0000.BIN

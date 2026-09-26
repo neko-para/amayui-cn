@@ -6,10 +6,10 @@
   "area": "emulator/tools",
   "why": "用户口径（2026-09-26）：「启动、加载存档等操作不稳定性太高…将 reset（重启进入 TITLE）、从 TITLE 加载存档 N、从 ADV 界面加载存档 N 这三个操作固化成一个工程上的脚本（而非依赖你读界面循环）；后续还会存在像从战斗界面加载存档、从工房界面加载存档等场景，注意标注清楚用例」；随后追加：「emu 是核心驱动脚本，将这些『操作 snippet』拆分到外部来驱动，不要混合在 emu 中，这样后续也能快速了解到有哪些可用脚本」。\n本轮实测到的五个根因（都写进了脚本注释/错误信息）：① **菜单/侧栏/底部按钮必须『两帧点击』**（一次注入 cursor+press+release 不激活，实测）；② **悬停靠位置变化**（同点重复 move 无效）；③ **ADV 侧栏『视觉展开 ≠ 逻辑展开』**（T-0028：直接点展开后的按钮位置什么也不发生，必须先悬停折叠条重登记热点）；④ 首跑 `load-slot` 偶发进不去 SAVE.BIN（T-0185），且失败文案误导；⑤ 本机 `--attach-headless` **起一个死一个**（宿主日志 `无头渲染页退出 code=4294967295`）⇒ 必须把『没有渲染页(503)』与『页面在但帧循环停摆（面板被节流）』分成两种可读状态，而不是让命令悄悄发不出去。\n另一条硬事实（决定了 ADV 用例不能写死坐标）：**侧栏是可配置的**，默认布局里根本没有 SAVE/LOAD（默认值见 `src/INITCHARM.txt:6`）⇒ 覆盖方案见 `T-0189`；本票只保证『用例层不假设位置 + 失败时说得清』。",
   "acceptance": [
-    "三层结构落地：`scripts/emu.mjs`（**原语**：实例发现/发 debug-query（含瞬时故障重试）/两帧点击/悬停/等条件/读帧与全局/引擎态 probe/抓帧/收日志/槽文件指纹/起停 reset）+ `scripts/ops/*.mjs`（**用例**，一个用例一个文件）+ `scripts/ops/README.md`（**用例索引**：已实测 2 条 + 待登记 4 条含 battle/workshop/field/guild，每条写清缺哪三样：开屏手势/机器可读判据/特有坑）",
+    "三层结构落地：`scripts/emu.mjs`（**原语**：实例发现/发 debug-query（含瞬时故障重试）/两帧点击/悬停/等条件/读帧与全局/引擎态 probe/抓帧/收日志/槽文件指纹/起停 reset）+ `scripts/ops/*.mjs`（**用例**，一个用例一个文件）+ `scripts/ops/README.md`（**用例索引**：已实测 1 条（title）+ 1 条部分（adv：写面/派发/开屏已验，选槽段见 T-0189）+ 待登记 4 条含 battle/workshop/field/guild，每条写清缺哪三样：开屏手势/机器可读判据/特有坑）",
     "`reset` 是唯一合法的『回到干净状态』入口，且**不许被旧页面骗过**：先按 **pid** 确认旧进程真死（心跳有 20s 容差，拿它当判据会以为停掉了其实还在跑）→ 起 → 等注册表（且 pid 对得上）→ 等**可驱动**（有渲染页且帧循环在跑）→ 等 TITLE → 引擎时钟新鲜度断言（> 120s 判为旧 VM 残留，报错而不是继续）",
-    "`ops/load-from-title.mjs --slot N` 实测通过：判据 = ① `cur = SAVE.BIN` ② 日志 `[slot-load]` ③（可选 `--expect BIN`）载入后帧链到该脚本；证据 `evidence/op1-load-from-title-79.log`（槽 79 → SN0000.BIN，含开屏首跑失败自动重试一次的实现）",
-    "`ops/load-from-adv.mjs --slot N` 实现完成但**本轮未跑通验证**（验证进行到一半，用户报当前实例已损坏并中止）⇒ 票里**不许假称通过**：它含『侧栏候选扫描（0..8）』与**模式安全断言**（`global f7ff0` = 0 存档 / 1 读档；不是读档模式就中止、绝不点槽位以免覆盖存档），待 T-0189 的覆盖开关落地后再跑一次并把证据补进本票",
+    "`ops/load-from-title.mjs --slot N` 实测通过：判据 = ① `cur = SAVE.BIN` ② 日志 `[slot-load]` ③（可选 `--expect BIN`）载入后帧链到该脚本 ④ **槽指纹对账**（`emu.slotFingerprint` 的 `savedCur`/帧记录数 vs 日志 `真槽装载…`）。证据（**新代码**，2026-09-26）：`evidence/op1b-load-from-title-79-calibrated.log`（槽 79 → SN0000.BIN，含开屏重试、行点击→确认、指纹一致；旧证据 `op1-load-from-title-79.log` 是改动前代码跑的，留作对照）",
+    "`ops/load-from-adv.mjs --slot N` **实测通过**（2026-09-26，实例 sb189）：写面 `global 13b0[0..8] ← [0xd 0xe 1 0xb 0xc 2 3 4 5]` 读回校验 ✔ → 点固定第 1 格 → **等侧栏就绪（路由项 7→19，2356ms）** → `cur = SAVE.BIN` 且 `f7ff0 == 1` → 选槽（`waitIdle` 门 294/298ms）→ 确认 → **槽指纹对账：槽 78 `savedCur=2`/帧记录 3 条 ✔ 一致** → 帧链到 `SN0000.BIN`。证据 = `tickets/T-0189/evidence/e2e-load-from-adv.log`",
     "旧入口 `scripts/load-slot.mjs` 变**兼容壳**（转发到 `ops/load-from-title.mjs`，保留 `--list`），既有文档/技能里的命令不失效；不允许两份实现并存漂移",
     "可用性诊断可读：`emu.mjs status` 对每个活实例打出 `可驱动` 或分类诊断（`no-viewer` / `stalled`，各附修法）；每个 op 开跑前 `waitTicking()` 过同一关（失败信息含修法，且**只描述设备侧修法 —— 这一层不模拟设备、不起自己的浏览器页、不用 playwright**）",
     "`tickets.js --validate` 绿；`npm run verify` 全绿（脚本不进闸门，但不得破坏既有测试）；`ops/README.md` 的表格能一眼回答『现在有哪些可用的操作脚本』"
@@ -19,19 +19,19 @@
       "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
       "anchor": "export async function tap(",
       "note": "★两帧点击原语（一次注入 cursor+press+release 不激活菜单/侧栏 ⇒ move→press→≥2 帧→release）",
-      "line": 404
+      "line": 478
     },
     {
       "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
       "anchor": "export async function resetInstance(",
       "note": "reset：pid 真死判据 + 注册表 pid 对齐 + 可驱动判据 + 引擎时钟新鲜度断言",
-      "line": 614
+      "line": 795
     },
     {
       "file": ".agents/skills/amayui-remote-debug/scripts/emu.mjs",
       "anchor": "export async function pickSlotInSaveScreen(",
       "note": "两个 op 共用的 UI 原语：在已打开的 SAVE/LOAD 画面里选槽→LOAD→确认（确认只按一次，避免残留输入边沿清掉 ▼ 的武装位）",
-      "line": 485
+      "line": 586
     },
     {
       "file": ".agents/skills/amayui-remote-debug/scripts/ops/README.md",
@@ -62,6 +62,18 @@
       "anchor": "copy-local-array (global-int 13b0) [1 b c 2 3 4 5 6 7]",
       "note": "★ADV 侧栏**默认布局里没有 SAVE/LOAD**（默认 9 项动作表）⇒ 用例不许写死『第 i 格 = LOAD』（覆盖方案见 T-0189）",
       "line": 6
+    },
+    {
+      "file": "tickets/T-0188/evidence/op1b-load-from-title-79-calibrated.log",
+      "anchor": "槽指纹对账：槽 79 文件 savedCur=2/帧记录 3 条",
+      "note": "★新代码的端到端证据：行点击弹确认框（旧流程多点的 LOAD 按钮已去掉）+ 确认重试轮 + 载入后槽指纹一致",
+      "line": 1
+    },
+    {
+      "file": "tickets/T-0189/evidence/e2e-load-from-adv.log",
+      "anchor": "槽指纹对账：槽 78 文件 savedCur=2/帧记录 3 条",
+      "note": "★判据④的端到端证据（ADV 侧栏 → LOAD → 槽 78；含侧栏就绪等待 7→19、waitIdle 门、槽指纹一致）",
+      "line": 50
     }
   ],
   "links": {
@@ -75,12 +87,28 @@
     ],
     "analysis": []
   },
-  "status": "doing",
+  "status": "done",
   "history": [
     {
       "at": "2026-09-26",
       "kind": "created",
       "what": "创建"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence —— 措辞对齐现状（2026-09-26）：① 三层结构那句从\"已实测 2 条\"改成\"1 条 + 1 条部分\"；③ 换成新代码的证据并补\"槽指纹对账\"判据；④ 写明\"写面/派发/开屏已端到端验证、选槽段待补跑\"，并记下根因（侧栏渐变未完成就点 ⇒ 已加 waitSidebarReady）。另新增两条实测纪律进 SKILL/README/lessons：标题=TITLE（SBUNKI 是装载画面族，reset 只等 TITLE）、序章侧栏要等渐变动画。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "scope",
+      "what": "改字段：acceptance, evidence, doneWhy —— 端到端通过（2026-09-26，实例 sb189）：reset ✓（TITLE + 引擎时钟新鲜度）→ 从 TITLE 载 79 ✓（含 waitIdle 门与槽指纹对账）→ **从 ADV 侧栏载 78 ✓**（侧栏就绪等 2356ms / 路由项 7→19；写面读回校验；槽指纹一致）。本票转 done：产物是技能脚本（不在 verify 测试面）⇒ 以 doneWhy 记录收口凭据。"
+    },
+    {
+      "at": "2026-09-26",
+      "kind": "status",
+      "what": "doing → done —— 两个 op 端到端真跑通过；纪律已落 SKILL/README/lessons"
     }
-  ]
+  ],
+  "doneWhy": "本票是**工具票**：产物是技能脚本（`emu.mjs` + `ops/*`），不在 `npm run verify` 的测试面里 ⇒ 没有 `tests[]`。收口凭据：① 两个 op **端到端真跑通过**（`ops/load-from-title.mjs` 槽 79、`ops/load-from-adv.mjs` 槽 78，日志各在 T-0188/T-0189 的 evidence/）；② 相关守卫仍在闸门内并通过（`npm run verify` 1740 例 / 0 fail；`tickets.js`/`capabilities.js`/`scripts.js --validate` 全绿；锚点 0 失效）；③ 纪律已落文档（`ops/README.md` 七条、`amayui-remote-debug` SKILL §3.2、`lessons.md` #29/#30）。"
 }

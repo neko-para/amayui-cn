@@ -43,13 +43,25 @@ test('★setGlobalIntArray = 写 base+index（数组在 emulator 里就是一段
   assert.equal(dec(e.key, e.globals.int.get(0x13b1)!), 14);
 });
 
-test('★forceIntArray 一次写死整张表（侧栏用例的入口）', () => {
+test('★forceIntArray 一次写死整张表（侧栏用例的入口；表"不存在"= 池里没写过 ⇒ 直接写即建）', () => {
   const e = fakeEngine();
   const layout = [0xd, 0xe, 1, 0xb, 0xc, 2, 3, 4, 5];
   const rs = forceIntArray(e, 0x13b0, layout);
   assert.equal(rs.length, 9);
   const read = layout.map((_, i) => dec(e.key, e.globals.int.get(0x13b0 + i) ?? 0));
   assert.deepEqual(read, layout, '9 项按顺序落在 13b0..13b8');
+});
+
+test('★白名单：越界的表值**拒绝写入**（不是静默写进去）', () => {
+  const e = fakeEngine();
+  const allowed = [0, 1, 2, 3, 4, 5, 6, 7, 0xb, 0xc, 0xd, 0xe, 0xf, 0x10, 0x15]; // SN0000 派发链认得的 id
+  assert.doesNotThrow(() => forceIntArray(e, 0x13b0, [0xd, 0xe], { allowed }));
+  assert.throws(() => forceIntArray(e, 0x13b0, [0xd, 0x99], { allowed }), /不在白名单里/);
+  assert.throws(() => forceIntArray(e, 0x13b0, [1.5], { allowed }), /必须是整数/);
+  // ★拒绝时必须**什么都没写**（先校验后落值）——否则会留下半张表
+  const e2 = fakeEngine();
+  assert.throws(() => forceIntArray(e2, 0x13b0, [0xd, 0x99], { allowed }));
+  assert.equal(e2.globals.int.size, 0, '校验失败 ⇒ 一个槽都不许动');
 });
 
 test('★写面不碰 SAVE.DAT：不出现 stringIndexTable / onSaveDataChanged（源码棘轮，只看代码不看注释）', async () => {
